@@ -109,25 +109,25 @@ func NewTableBehavior[T any](themeObj themes.Theme, columns []ColumnDef, formatt
 
 // ============= Configuration (fluent, chainable) =============
 
-// PageSize sets items per page (default: 15)
+// PageSize sets items per page (default: 15).
 func (tb *TableBehavior[T]) PageSize(size int) *TableBehavior[T] {
 	tb.pageSize = size
 	return tb
 }
 
-// EmptyMessage sets the message shown when no items exist
+// EmptyMessage sets the message shown when no items exist.
 func (tb *TableBehavior[T]) EmptyMessage(msg string) *TableBehavior[T] {
 	tb.emptyMessage = msg
 	return tb
 }
 
-// PaginationPrefix sets the prefix for pagination info ("Events", "Skills")
+// PaginationPrefix sets the prefix for pagination info ("Events", "Skills").
 func (tb *TableBehavior[T]) PaginationPrefix(prefix string) *TableBehavior[T] {
 	tb.paginationPrefix = prefix
 	return tb
 }
 
-// Dimensions sets the container width and height
+// Dimensions sets the container width and height.
 func (tb *TableBehavior[T]) Dimensions(width, height int) *TableBehavior[T] {
 	tb.width = width
 	tb.height = height
@@ -159,13 +159,13 @@ func (tb *TableBehavior[T]) SetHeight(height int) *TableBehavior[T] {
 	return tb
 }
 
-// HidePagination hides pagination info
+// HidePagination hides pagination info.
 func (tb *TableBehavior[T]) HidePagination() *TableBehavior[T] {
 	tb.showPagination = false
 	return tb
 }
 
-// ShowPagination shows pagination info (default)
+// ShowPagination shows pagination info (default).
 func (tb *TableBehavior[T]) ShowPagination() *TableBehavior[T] {
 	tb.showPagination = true
 	return tb
@@ -208,31 +208,31 @@ func (tb *TableBehavior[T]) GetSelectedIndex() int {
 	return tb.selectedIndex
 }
 
-// IsEmpty returns true if there are no items to display
+// IsEmpty returns true if there are no items to display.
 func (tb *TableBehavior[T]) IsEmpty() bool {
 	tb.refreshDisplayItems()
 	return len(tb.displayItems) == 0
 }
 
-// Count returns the number of displayed items
+// Count returns the number of displayed items.
 func (tb *TableBehavior[T]) Count() int {
 	tb.refreshDisplayItems()
 	return len(tb.displayItems)
 }
 
-// TotalCount returns the total number of items (before filtering)
+// TotalCount returns the total number of items (before filtering).
 func (tb *TableBehavior[T]) TotalCount() int {
 	return len(tb.allItems)
 }
 
 // ============= ListNavigator Interface =============
 
-// GetTotalItems implements ListNavigator
+// GetTotalItems implements ListNavigator.
 func (tb *TableBehavior[T]) GetTotalItems() int {
 	return tb.Count()
 }
 
-// SetSelectedIndex implements ListNavigator
+// SetSelectedIndex implements ListNavigator.
 func (tb *TableBehavior[T]) SetSelectedIndex(idx int) {
 	tb.refreshDisplayItems()
 
@@ -271,7 +271,7 @@ func (tb *TableBehavior[T]) SetSelectedIndex(idx int) {
 	}
 }
 
-// GetPageSize implements ListNavigator
+// GetPageSize implements ListNavigator.
 func (tb *TableBehavior[T]) GetPageSize() int {
 	return tb.pageSize
 }
@@ -321,7 +321,7 @@ func (tb *TableBehavior[T]) SetFilter(pred FilterPredicate[T]) *TableBehavior[T]
 	return tb
 }
 
-// ClearFilter removes the active filter
+// ClearFilter removes the active filter.
 func (tb *TableBehavior[T]) ClearFilter() *TableBehavior[T] {
 	tb.filterPredicate = nil
 	tb.needsRefresh = true
@@ -330,7 +330,7 @@ func (tb *TableBehavior[T]) ClearFilter() *TableBehavior[T] {
 	return tb
 }
 
-// HasFilter returns true if a filter is active
+// HasFilter returns true if a filter is active.
 func (tb *TableBehavior[T]) HasFilter() bool {
 	return tb.filterPredicate != nil
 }
@@ -366,7 +366,7 @@ func (tb *TableBehavior[T]) SetSort(cmp SortComparator[T], reverse bool) *TableB
 	return tb
 }
 
-// ClearSort removes the active sort
+// ClearSort removes the active sort.
 func (tb *TableBehavior[T]) ClearSort() *TableBehavior[T] {
 	tb.sortComparator = nil
 	tb.sortReverse = false
@@ -376,7 +376,7 @@ func (tb *TableBehavior[T]) ClearSort() *TableBehavior[T] {
 	return tb
 }
 
-// HasSort returns true if a sort is active
+// HasSort returns true if a sort is active.
 func (tb *TableBehavior[T]) HasSort() bool {
 	return tb.sortComparator != nil
 }
@@ -429,7 +429,7 @@ func (tb *TableBehavior[T]) RenderPaginationInfo() string {
 
 	totalItems := len(tb.displayItems)
 	if totalItems == 0 {
-		return fmt.Sprintf("%s: 0", tb.paginationPrefix)
+		return tb.paginationPrefix + ": 0"
 	}
 
 	currentPage := (tb.selectedIndex / tb.pageSize) + 1
@@ -440,7 +440,7 @@ func (tb *TableBehavior[T]) RenderPaginationInfo() string {
 
 // ============= Internal =============
 
-// refreshDisplayItems recalculates displayItems from allItems applying filter and sort
+// refreshDisplayItems recalculates displayItems from allItems applying filter and sort.
 func (tb *TableBehavior[T]) refreshDisplayItems() {
 	if !tb.needsRefresh {
 		return
@@ -485,7 +485,7 @@ func (tb *TableBehavior[T]) refreshDisplayItems() {
 	}
 }
 
-// updateTableRows syncs the bubbles/table model with current page
+// updateTableRows syncs the bubbles/table model with current page.
 func (tb *TableBehavior[T]) updateTableRows() {
 	if len(tb.displayItems) == 0 {
 		tb.table.SetRows([]table.Row{})
