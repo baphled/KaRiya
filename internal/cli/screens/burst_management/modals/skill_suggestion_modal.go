@@ -107,6 +107,23 @@ func (m *SkillSuggestionModal) IsVisible() bool {
 	return m.visible
 }
 
+// SetDimensions sets the terminal dimensions.
+func (m *SkillSuggestionModal) SetDimensions(width, height int) {
+	m.width = width
+	m.height = height
+
+	modalWidth := width - 12
+	if modalWidth < 60 {
+		modalWidth = 60
+	}
+	if modalWidth > 90 {
+		modalWidth = 90
+	}
+	contentWidth := modalWidth - 8
+
+	m.table.Dimensions(contentWidth, height-16)
+}
+
 // Update handles input events.
 func (m *SkillSuggestionModal) Update(msg tea.Msg) (tea.Cmd, interface{}) {
 	if !m.visible {

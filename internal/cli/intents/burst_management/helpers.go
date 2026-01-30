@@ -57,6 +57,10 @@ func (i *Intent) getStateName() string {
 		return "Suggesting Bursts"
 	case StateSuggestionReview:
 		return "Review Suggestion"
+	case StateInferringSkills:
+		return "Inferring Skills"
+	case StateSkillSuggestionReview:
+		return "Review Skills"
 	default:
 		return "Unknown"
 	}

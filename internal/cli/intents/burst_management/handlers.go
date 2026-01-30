@@ -739,3 +739,114 @@ func (i *Intent) handleSuggestionReviewComplete(msg SuggestionReviewCompleteMsg)
 
 	return i.startFactExtractionForBursts(createdBursts)
 }
+
+// =============================================================================
+// Skill Inference Message Handlers
+// =============================================================================
+
+// handleSkillSuggestionsLoaded handles the SkillSuggestionsLoadedMsg.
+func (i *Intent) handleSkillSuggestionsLoaded(msg SkillSuggestionsLoadedMsg) tea.Cmd {
+	i.inferringSkills = false
+	i.loadingModal = nil
+
+	if msg.Error != nil {
+		// Silently ignore cancelled operations.
+		if errors.Is(msg.Error, context.Canceled) {
+			i.state = StateList
+			return nil
+		}
+		i.skillInferenceError = msg.Error
+		i.ShowErrorModal("Skill Inference Failed", msg.Error.Error())
+		i.state = StateList
+		return nil
+	}
+
+	if len(msg.Suggestions) == 0 {
+		// No skills detected - show message and return to list.
+		i.ShowErrorModal("No Skills Detected",
+			"No skills were detected from the burst events. "+
+				"The events may not contain enough technical details.")
+		i.state = StateList
+		return nil
+	}
+
+	// Show skill suggestion modal.
+	i.skillSuggestionModal = burstmodals.NewSkillSuggestionModal(msg.Suggestions, i.Theme())
+	width, height := i.getTerminalDimensions()
+	i.skillSuggestionModal.SetDimensions(width, height)
+	i.skillSuggestionModal.Show()
+	i.state = StateSkillSuggestionReview
+	return nil
+}
+
+// handleSkillSuggestionsError handles the SkillSuggestionsErrorMsg.
+func (i *Intent) handleSkillSuggestionsError(msg SkillSuggestionsErrorMsg) tea.Cmd {
+	i.inferringSkills = false
+	i.loadingModal = nil
+
+	// Silently ignore cancelled operations.
+	if errors.Is(msg.Err, context.Canceled) {
+		i.state = StateList
+		return nil
+	}
+
+	i.skillInferenceError = msg.Err
+	i.ShowErrorModal("Skill Inference Failed", msg.Err.Error())
+	i.state = StateList
+	return nil
+}
+
+// handleSkillsCreated handles the SkillsCreatedMsg.
+func (i *Intent) handleSkillsCreated(msg SkillsCreatedMsg) tea.Cmd {
+	i.loadingModal = nil
+
+	if msg.Error != nil {
+		// Silently ignore cancelled operations.
+		if errors.Is(msg.Error, context.Canceled) {
+			i.state = StateList
+			return nil
+		}
+		i.ShowErrorModal("Skill Creation Failed", msg.Error.Error())
+		i.state = StateList
+		return nil
+	}
+
+	// Skills created successfully - show success message and return to list.
+	successMsg := fmt.Sprintf("Successfully created %d skill(s)", len(msg.Skills))
+	i.ShowErrorModal("Skills Created", successMsg)
+	i.state = StateList
+	return nil
+}
+
+// handleSkillSuggestionModalUpdate handles skill suggestion modal updates.
+func (i *Intent) handleSkillSuggestionModalUpdate(msg tea.Msg) tea.Cmd {
+	if i.skillSuggestionModal == nil || !i.skillSuggestionModal.IsVisible() {
+		return nil
+	}
+
+	cmd, action := i.skillSuggestionModal.Update(msg)
+
+	if action != nil {
+		switch action.(type) {
+		case burstmodals.SkillSuggestionAction:
+			// Modal closed - check what action was taken.
+			accepted := i.skillSuggestionModal.GetAcceptedSuggestions()
+
+			if len(accepted) > 0 {
+				// Create skills from accepted suggestions.
+				i.loadingModal = feedback.NewLoadingModal(
+					fmt.Sprintf("Creating %d skill(s)...", len(accepted)),
+					true,
+				).WithTheme(i.Theme())
+				return tea.Batch(cmd, i.createSkillsFromSuggestions(accepted))
+			}
+
+			// No accepted suggestions - just return to list.
+			i.skillSuggestionModal = nil
+			i.state = StateList
+			return cmd
+		}
+	}
+
+	return cmd
+}
