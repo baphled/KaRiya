@@ -84,8 +84,11 @@ func NewMetadataEditorModelNew(
 	// Extract form data from event
 	formData := forms.GetMetadataFormData(event)
 
-	// Create huh form with available tags, categories, and skills
-	form := forms.NewMetadataEditorFormWithData(formData, availableTags, availableCategories, availableSkills)
+	// Create huh form with available tags, categories, and skills.
+	// Use height-constrained form so multi-selects with many options
+	// scroll within the modal overlay instead of overflowing.
+	formHeight := forms.DefaultFormHeight(24)
+	form := forms.NewMetadataEditorFormWithDataAndHeight(formData, availableTags, availableCategories, availableSkills, formHeight)
 
 	return &MetadataEditorModelNew{
 		BaseStandardModel: NewBaseStandardModel(),

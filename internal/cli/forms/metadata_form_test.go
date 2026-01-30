@@ -158,4 +158,50 @@ var _ = Describe("MetadataForm", func() {
 			Expect(form).NotTo(BeNil())
 		})
 	})
+
+	Describe("Height-aware metadata forms", func() {
+		It("should create a height-constrained form via NewMetadataEditorFormWithHeight", func() {
+			availableTags := []string{"go", "python", "testing"}
+			availableCategories := []string{"technical", "leadership"}
+			availableSkills := []*career.Skill{}
+
+			form := forms.NewMetadataEditorFormWithHeight(
+				testEvent, availableTags, availableCategories, availableSkills, 20,
+			)
+
+			Expect(form).NotTo(BeNil())
+		})
+
+		It("should create a height-constrained form with data via NewMetadataEditorFormWithDataAndHeight", func() {
+			data := &forms.MetadataFormData{
+				Date:       "2024-01-15",
+				Company:    "Height Test Co",
+				Project:    "Viewport Test",
+				Tags:       []string{"tag1"},
+				Categories: []string{"cat1"},
+			}
+
+			availableTags := []string{"tag1", "tag2", "tag3"}
+			availableCategories := []string{"cat1", "cat2"}
+			availableSkills := []*career.Skill{}
+
+			form := forms.NewMetadataEditorFormWithDataAndHeight(
+				data, availableTags, availableCategories, availableSkills, 20,
+			)
+
+			Expect(form).NotTo(BeNil())
+		})
+
+		It("should use DefaultFormHeight to calculate appropriate height", func() {
+			// Terminal height 40 should give reasonable form height.
+			height := forms.DefaultFormHeight(40)
+			Expect(height).To(BeNumerically(">=", 10))
+			Expect(height).To(BeNumerically("<=", 30))
+		})
+
+		It("should enforce minimum height for small terminals", func() {
+			height := forms.DefaultFormHeight(15)
+			Expect(height).To(BeNumerically(">=", 10))
+		})
+	})
 })
