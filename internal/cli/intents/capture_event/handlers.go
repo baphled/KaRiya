@@ -196,29 +196,63 @@ func (i *Intent) HandleError(result *screens.ErrorResult) tea.Cmd {
 	return i.setFailedCmd("SCREEN_ERROR", "Unknown screen error", fmt.Errorf("%v", data))
 }
 
+// handleReviewSubmit handles submit/confirm actions from the review state.
+// When postSaveReview is true (we're reviewing after a successful save), it
+// completes the intent with the current review data. Otherwise, it transitions
+// to the submit state and triggers event persistence.
+func (i *Intent) handleReviewSubmit() tea.Cmd {
+	if i.state.postSaveReview {
+		result := &Result{
+			Event:          i.state.reviewState.Event,
+			Bursts:         i.state.reviewState.InferredBursts,
+			Facts:          i.state.reviewState.InferredFacts,
+			AcceptedFields: make(map[string]bool),
+			RejectedFields: i.state.reviewState.RejectedItems,
+		}
+		i.setCompleted(result)
+		return nil
+	}
+	i.state.currentState = StateSubmit
+	return i.performSubmit()
+}
+
 // updateChooseStrategy handles messages while choosing capture strategy.
 func (i *Intent) updateChooseStrategy(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "up", "k":
+		switch msg.Type {
+		case tea.KeyUp:
 			if i.state.selectedStrategyIndex > 0 {
 				i.state.selectedStrategyIndex--
 			}
 			return nil
 
-		case "down", "j":
+		case tea.KeyDown:
 			if i.state.selectedStrategyIndex < 1 {
 				i.state.selectedStrategyIndex++
 			}
 			return nil
 
-		case "enter":
+		case tea.KeyEnter:
 			strategies := []CaptureStrategy{StrategyQuick, StrategyManual}
 			i.state.strategy = strategies[i.state.selectedStrategyIndex]
 			i.state.captureForm.SetStrategy(string(i.state.strategy))
 			i.state.currentState = StateForm
 			return i.state.captureForm.Init()
+		}
+
+		switch msg.String() {
+		case "k":
+			if i.state.selectedStrategyIndex > 0 {
+				i.state.selectedStrategyIndex--
+			}
+			return nil
+
+		case "j":
+			if i.state.selectedStrategyIndex < 1 {
+				i.state.selectedStrategyIndex++
+			}
+			return nil
 		}
 
 		switch intents.HandleGlobalKeys(msg) {
@@ -378,21 +412,24 @@ func (i *Intent) updateReviewInferredEvent(msg tea.Msg) tea.Cmd {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Handle special keys via tea.Key* constants.
+		switch msg.Type {
+		case tea.KeyEnter:
+			return i.handleReviewSubmit()
+
+		case tea.KeyUp:
+			i.navigateReviewItems(-1)
+			return nil
+
+		case tea.KeyDown:
+			i.navigateReviewItems(1)
+			return nil
+		}
+
+		// Handle rune/vim keys and chords via string comparison.
 		switch msg.String() {
-		case "ctrl+s", "enter":
-			if i.state.postSaveReview {
-				result := &Result{
-					Event:          i.state.reviewState.Event,
-					Bursts:         i.state.reviewState.InferredBursts,
-					Facts:          i.state.reviewState.InferredFacts,
-					AcceptedFields: make(map[string]bool),
-					RejectedFields: i.state.reviewState.RejectedItems,
-				}
-				i.setCompleted(result)
-				return nil
-			}
-			i.state.currentState = StateSubmit
-			return i.performSubmit()
+		case "ctrl+s":
+			return i.handleReviewSubmit()
 
 		case "e":
 			i.state.reviewState.EditingMode = EditingModeMetadata
@@ -440,36 +477,12 @@ func (i *Intent) updateReviewInferredEvent(msg tea.Msg) tea.Cmd {
 			i.rejectCurrentItem()
 			return nil
 
-		case "j", "down":
-			totalItems := len(i.state.reviewState.InferredBursts) + len(i.state.reviewState.InferredFacts)
-			if totalItems > 0 {
-				i.state.reviewState.SelectedIndex++
-				if i.state.reviewState.SelectedIndex >= totalItems {
-					i.state.reviewState.SelectedIndex = 0
-				}
-				if i.state.reviewState.SelectedIndex < len(i.state.reviewState.InferredBursts) {
-					i.state.reviewState.SelectedItemType = "burst"
-				} else {
-					i.state.reviewState.SelectedItemType = "fact"
-					i.state.reviewState.SelectedIndex -= len(i.state.reviewState.InferredBursts)
-				}
-			}
+		case "j":
+			i.navigateReviewItems(1)
 			return nil
 
-		case "k", "up":
-			totalItems := len(i.state.reviewState.InferredBursts) + len(i.state.reviewState.InferredFacts)
-			if totalItems > 0 {
-				i.state.reviewState.SelectedIndex--
-				if i.state.reviewState.SelectedIndex < 0 {
-					i.state.reviewState.SelectedIndex = totalItems - 1
-				}
-				if i.state.reviewState.SelectedIndex < len(i.state.reviewState.InferredBursts) {
-					i.state.reviewState.SelectedItemType = "burst"
-				} else {
-					i.state.reviewState.SelectedItemType = "fact"
-					i.state.reviewState.SelectedIndex -= len(i.state.reviewState.InferredBursts)
-				}
-			}
+		case "k":
+			i.navigateReviewItems(-1)
 			return nil
 		}
 
@@ -539,7 +552,7 @@ func (i *Intent) updateSubmit(msg tea.Msg) tea.Cmd {
 // This is called when an editing modal (metadata, bursts, facts) is active.
 func (i *Intent) updateEditingModal(msg tea.Msg) tea.Cmd {
 	if keyMsg, ok := msg.(tea.KeyMsg); ok {
-		if keyMsg.String() == "esc" {
+		if keyMsg.Type == tea.KeyEsc {
 			i.state.reviewState.metadataModal = nil
 			i.state.reviewState.burstModal = nil
 			i.state.reviewState.factModal = nil

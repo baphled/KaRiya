@@ -12,7 +12,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// NewIntent creates a new CaptureEvent intent.
+// NewIntent creates a new CaptureEvent intent from the given context.
+// It validates the context and returns an error if required fields are missing.
 func NewIntent(ctx *IntentContext) (*Intent, error) {
 	if err := ctx.Validate(); err != nil {
 		return nil, err
@@ -201,7 +202,9 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 	}
 }
 
-// View renders the intent's current state using StandardView.
+// View renders the intent's current state. When screens are active, it delegates
+// to the active screen and overlays any modal. Otherwise it falls back to the
+// legacy breadcrumb-based view.
 func (i *Intent) View() string {
 	if !i.active {
 		return "CaptureEvent intent is not active"

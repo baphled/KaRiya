@@ -69,38 +69,44 @@ type Model struct {
 
 // ReviewInferredEventState represents the state of the ReviewInferredEvent sub-flow.
 type ReviewInferredEventState struct {
-	// Event being reviewed.
+	// Event is the career event being reviewed for enrichment.
 	Event *career.Event
 
-	// InferredBursts are the bursts suggested by enrichment.
+	// InferredBursts are the activity bursts suggested by enrichment.
 	InferredBursts []*career.Burst
 
-	// InferredFacts are the facts suggested by enrichment.
+	// InferredFacts are the career facts suggested by enrichment.
 	InferredFacts []*career.Fact
 
-	// EditingMode indicates which sub-flow is active.
+	// EditingMode indicates which editing sub-flow is active (metadata, bursts, or facts).
 	EditingMode EditingMode
 
-	// EditingIndex is the index of the item being edited (for bursts/facts).
+	// EditingIndex is the index of the item being edited within bursts or facts.
 	EditingIndex int
 
-	// AcceptedBursts tracks user-accepted bursts.
+	// AcceptedBursts holds the bursts the user has accepted during review.
 	AcceptedBursts []*career.Burst
 
-	// AcceptedFacts tracks user-accepted facts.
+	// AcceptedFacts holds the facts the user has accepted during review.
 	AcceptedFacts []*career.Fact
 
-	// RejectedItems tracks items rejected by the user.
+	// RejectedItems maps item IDs to rejection reasons for items the user rejected.
 	RejectedItems map[string]string
 
-	// Modal sub-components for editing.
+	// metadataModal is the form model for editing event metadata fields.
 	metadataModal *models.MetadataEditorModelNew
-	burstModal    *models.BurstSuggestionModelNew
-	factModal     *models.FactEditorModelNew
 
-	// Selection tracking for accept/reject workflow.
+	// burstModal is the form model for editing burst suggestions.
+	burstModal *models.BurstSuggestionModelNew
+
+	// factModal is the form model for editing fact suggestions.
+	factModal *models.FactEditorModelNew
+
+	// SelectedItemType tracks which item kind ("burst" or "fact") is currently highlighted.
 	SelectedItemType string
-	SelectedIndex    int
+
+	// SelectedIndex is the zero-based index of the currently highlighted item within its type.
+	SelectedIndex int
 }
 
 // IsActive returns true if this intent is currently active.

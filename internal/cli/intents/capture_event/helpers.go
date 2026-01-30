@@ -186,6 +186,31 @@ func (i *Intent) transitionToFormScreen(strategy CaptureStrategy) tea.Cmd {
 	return nil
 }
 
+// navigateReviewItems moves the selection cursor through inferred bursts and facts
+// by the given delta (+1 for down, -1 for up). It wraps around at both ends and
+// automatically updates the SelectedItemType based on the new index position.
+func (i *Intent) navigateReviewItems(delta int) {
+	totalItems := len(i.state.reviewState.InferredBursts) + len(i.state.reviewState.InferredFacts)
+	if totalItems == 0 {
+		return
+	}
+
+	i.state.reviewState.SelectedIndex += delta
+	if i.state.reviewState.SelectedIndex >= totalItems {
+		i.state.reviewState.SelectedIndex = 0
+	}
+	if i.state.reviewState.SelectedIndex < 0 {
+		i.state.reviewState.SelectedIndex = totalItems - 1
+	}
+
+	if i.state.reviewState.SelectedIndex < len(i.state.reviewState.InferredBursts) {
+		i.state.reviewState.SelectedItemType = "burst"
+	} else {
+		i.state.reviewState.SelectedItemType = "fact"
+		i.state.reviewState.SelectedIndex -= len(i.state.reviewState.InferredBursts)
+	}
+}
+
 // acceptCurrentItem accepts the currently selected burst or fact.
 func (i *Intent) acceptCurrentItem() {
 	if i.state.reviewState.SelectedItemType == "burst" {
@@ -258,6 +283,7 @@ func (i *Intent) getTheme() themes.Theme {
 	return themes.NewDefaultTheme()
 }
 
+// getCardStyle returns the card base style from the current theme for content containers.
 func (i *Intent) getCardStyle() lipgloss.Style {
 	return i.getTheme().Styles().CardBase
 }
@@ -365,11 +391,17 @@ func (i *Intent) getContextHelp() string {
 	}
 }
 
-// modalContentData holds modal content for overlay rendering.
+// modalContentData holds the title, body content, and footer text used to render
+// an editing modal overlay on top of the review screen.
 type modalContentData struct {
-	title   string
+	// title is the modal header text (e.g. "Edit Metadata").
+	title string
+
+	// content is the modal body rendered by the underlying form model.
 	content string
-	footer  string
+
+	// footer is the help/shortcut text shown at the bottom of the modal.
+	footer string
 }
 
 // getMetadataModalContent returns the modal content for metadata editing.

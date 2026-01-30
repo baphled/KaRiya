@@ -42,7 +42,8 @@ type IntentContext struct {
 	CareerService *careerservice.Service
 }
 
-// Validate ensures the context is complete.
+// Validate ensures the context has all required fields. It returns an error if
+// CaptureStrategy is empty, and initialises Metadata to an empty map if nil.
 func (c *IntentContext) Validate() error {
 	if c.CaptureStrategy == "" {
 		return intents.NewFailedResult[*IntentContext](
