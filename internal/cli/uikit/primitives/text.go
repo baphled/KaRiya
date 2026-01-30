@@ -297,6 +297,13 @@ func CenterInTerminal(content string, width, height int) string {
 	return lipgloss.Place(width, height, lipgloss.Center, lipgloss.Center, content)
 }
 
+// PlaceInTerminal places content at the top-center of the available area.
+// It does not enforce logo/footer positioning; higher-level layout helpers are
+// responsible for arranging full-screen pinned layouts.
+func PlaceInTerminal(content string, width, height int) string {
+	return lipgloss.Place(width, height, lipgloss.Center, lipgloss.Top, content)
+}
+
 // JoinVertical joins multiple strings vertically with the specified alignment.
 func JoinVertical(align lipgloss.Position, parts ...string) string {
 	return lipgloss.JoinVertical(align, parts...)

@@ -174,6 +174,23 @@ func (s *EventListScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	return nil, nil
 }
 
+// SetContentHeight configures the table to use the specified height with viewport scrolling.
+// This enables the table to fill available space and scroll when content exceeds height.
+// Should be called by the intent after getting available height from ScreenLayout.
+func (s *EventListScreen) SetContentHeight(height int) {
+	width := s.Width()
+	if width == 0 {
+		width = 100
+	}
+
+	if height < 10 || width < 50 {
+		return
+	}
+
+	s.tableBehavior.Dimensions(width, height)
+	s.tableBehavior.SetHeight(height)
+}
+
 // RenderContent returns just the content (table) without StandardView wrapper.
 // This allows the intent to wrap it with proper breadcrumbs and themed footer.
 func (s *EventListScreen) RenderContent() string {
