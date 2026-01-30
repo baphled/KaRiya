@@ -1,4 +1,4 @@
-package captureevent_test
+package e2e_test
 
 import (
 	"strings"
@@ -75,10 +75,8 @@ var _ = Describe("Capture Navigation", func() {
 		})
 
 		It("should ignore 'q' key at strategy selection (quit only from main menu)", func() {
-			// q no longer quits from within intents - only from main menu
-			// This test verifies 'q' is handled gracefully (does nothing)
 			env.Quit()
-			// Intent should still be active
+			// Intent should still be active - q is ignored within intents.
 		})
 	})
 
@@ -86,7 +84,7 @@ var _ = Describe("Capture Navigation", func() {
 		BeforeEach(func() {
 			env = e2e.SetupWithMemory(GinkgoT())
 			env.SelectIntentByName("capture_event")
-			env.Confirm() // Select Quick strategy
+			env.Confirm()
 		})
 
 		AfterEach(func() {
@@ -99,18 +97,13 @@ var _ = Describe("Capture Navigation", func() {
 
 		It("should go back when pressing Escape from form", func() {
 			env.Cancel()
-			// In full app flow, Escape from form goes back to strategy or main menu
-			// depending on router handling - verify we're not stuck in form
 			env.AssertViewNotContains("Enter Details")
 		})
 
 		It("should allow typing event text", func() {
-			// NOTE: Text must avoid hotkey characters like 'm' (menu), 'q' (quit), 'j'/'k' (nav)
-			// Huh forms maintain internal input state that doesn't always render in test harness
 			env.TypeText("Gave a presentation")
-			env.Tab() // Move to next field
+			env.Tab()
 			view := env.GetView()
-			// Verify form is still active (not crashed)
 			Expect(view).NotTo(ContainSubstring("Select Capture Strategy"))
 			Expect(view).To(Or(ContainSubstring("Date"), ContainSubstring("Event")))
 		})
@@ -120,8 +113,8 @@ var _ = Describe("Capture Navigation", func() {
 		BeforeEach(func() {
 			env = e2e.SetupWithMemory(GinkgoT())
 			env.SelectIntentByName("capture_event")
-			env.NavigateDown() // Go to Manual
-			env.Confirm()      // Select Manual strategy
+			env.NavigateDown()
+			env.Confirm()
 		})
 
 		AfterEach(func() {
@@ -141,8 +134,6 @@ var _ = Describe("Capture Navigation", func() {
 
 		It("should go back when pressing Escape from form", func() {
 			env.Cancel()
-			// In full app flow, Escape from form navigates back
-			// Verify we're no longer in the form state
 			env.AssertViewNotContains("Enter Details")
 		})
 	})
@@ -165,18 +156,15 @@ var _ = Describe("Capture Navigation", func() {
 
 		It("should navigate back when cancelling from form", func() {
 			env.SelectIntentByName("capture_event")
-			env.Confirm() // Select Quick strategy
-			env.Cancel()  // Cancel from form
-			// Should navigate back - either to strategy or menu
+			env.Confirm()
+			env.Cancel()
 			env.AssertViewNotContains("Enter Details")
 		})
 
 		It("should ignore 'q' key from strategy selection (quit only from main menu)", func() {
 			env.SelectIntentByName("capture_event")
-			// q no longer quits from within intents - only from main menu
-			// This test verifies 'q' is handled gracefully (does nothing)
 			env.Quit()
-			// Intent should still be active
+			// Intent should still be active - q is ignored within intents.
 		})
 	})
 
@@ -191,18 +179,16 @@ var _ = Describe("Capture Navigation", func() {
 
 		It("should navigate back when pressing Escape from form", func() {
 			env.SelectIntentByName("capture_event")
-			env.NavigateDown() // Select Manual
-			env.Confirm()      // Enter form
-			env.Cancel()       // Go back
-			// Should no longer be in form state
+			env.NavigateDown()
+			env.Confirm()
+			env.Cancel()
 			env.AssertViewNotContains("Enter Details")
 		})
 
 		It("should allow re-selecting intent after cancellation", func() {
 			env.SelectIntentByName("capture_event")
-			env.Confirm() // Select Quick strategy (form)
-			env.Cancel()  // Go back
-			// Re-select the intent if we're at menu
+			env.Confirm()
+			env.Cancel()
 			view := env.GetView()
 			if !strings.Contains(view, "Select Capture Strategy") {
 				env.SelectIntentByName("capture_event")
@@ -227,8 +213,8 @@ var _ = Describe("Capture Navigation", func() {
 		})
 
 		It("should navigate up with 'k' key", func() {
-			env.PressKeyRune('j') // Go down to Manual
-			env.PressKeyRune('k') // Go back up to Quick
+			env.PressKeyRune('j')
+			env.PressKeyRune('k')
 			env.AssertViewContains("Quick")
 		})
 	})
@@ -290,15 +276,14 @@ var _ = Describe("Capture Navigation", func() {
 		})
 
 		It("should not go below last item", func() {
-			env.PressKey(tea.KeyDown) // Go to Manual (last item)
-			env.PressKey(tea.KeyDown) // Try to go further down
+			env.PressKey(tea.KeyDown)
+			env.PressKey(tea.KeyDown)
 			env.AssertViewContainsAny("Manual", "Quick")
 		})
 
 		It("should not go above first item", func() {
-			env.PressKey(tea.KeyUp) // Try to go above first item
+			env.PressKey(tea.KeyUp)
 			env.AssertViewContains("Quick")
 		})
 	})
-
 })
