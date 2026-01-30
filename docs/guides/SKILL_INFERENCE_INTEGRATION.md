@@ -12,7 +12,7 @@ This guide explains how to integrate the Skill Inference Service with the UI lay
 
 The Skill Inference Service (`internal/service/career/skillinference`) provides:
 
-✅ **Keyword Detection**: Word boundary regex matching for 150 technologies  
+✅ **Keyword Detection**: Word boundary regex matching for 224 technologies across 14 categories  
 ✅ **Confidence Scoring**: 3-tier pattern-based confidence (0.5/0.75/0.95)  
 ✅ **Skill Persistence**: Create/update skills with event linking  
 ✅ **Case-Insensitive**: Skill name matching and deduplication  
@@ -437,22 +437,55 @@ See `docs/examples/skill_inference_integration_example.go` for a complete workin
 
 ---
 
-## Current Status
+## Soft Skills Detection (Phase 11)
 
-✅ **Service Layer**: Complete (78 tests, 100% passing)  
-⏳ **UI Integration**: Design complete, implementation pending  
-⏳ **Modal Components**: Design complete, implementation pending  
-⏳ **E2E Tests**: Pending UI integration  
+The skill inference system detects soft skills through the `CompetencyCategory` system.
+
+### Soft Skill Categories
+
+| Category | String Value | Example Text |
+|----------|-------------|--------------|
+| Communication | `communication` | "Presented technical design to stakeholders" |
+| Collaboration | `collaboration` | "Collaborated with cross-functional partners" |
+| Problem Solving | `problem-solving` | "Debugged and diagnosed root cause" |
+| Project Management | `project-management` | "Planned sprint milestones and delivery schedule" |
+| Architecture | `architecture` | "Architected distributed microservices platform" |
+
+### How Soft Skills Are Detected
+
+1. **Tag-based**: Events tagged with soft skill categories are detected immediately.
+2. **Keyword-based**: Event text is analyzed for soft skill keywords (8-12 per category).
+3. **Competency inference**: `InferCompetencies()` assigns soft skill categories to facts.
+4. **Profile inference**: `categoryStrengthMapping` generates CV strength descriptions.
+5. **UI selector**: `AllowedCategories` includes all 11 competency types.
+
+### Integration Points
+
+- **Constants**: `internal/constants/constants.go` - 5 new `CompetencyCategory` values.
+- **Classification**: `internal/service/career/classification/classifier.go` - Keyword lists and tag mapping.
+- **Fact Inference**: `internal/service/career/burstfact/classifier.go` - `InferCompetencies()` with soft skills.
+- **UI Selector**: `internal/cli/uikit/selectors/category_selector.go` - 11 categories in `AllowedCategories`.
+- **Profile**: `internal/service/career/cv/profile_inference.go` - Strength and value proposition mappings.
 
 ---
 
-## Next Steps
+## Current Status
 
-1. ✅ **Phase 5 Complete**: Service layer with persistence
-2. ⏳ **Phase 6**: Create `SkillSuggestionModal` component
-3. ⏳ **Phase 7**: Integrate with `burst_management` intent
-4. ⏳ **Phase 8**: E2E testing with real repositories
-5. ⏳ **Phase 9**: Add to `skillsmanagement` intent as "Auto-Detect" action
+✅ **Service Layer**: Complete (112+ tests, 100% passing)
+✅ **Technology Dictionary**: 224 keywords across 14 categories
+✅ **UI Integration**: Complete (3 triggers, suggestion modal, events drill-down)
+✅ **Modal Components**: Complete (skill suggestion review modal)
+✅ **E2E Tests**: 364 passing
+✅ **Soft Skills**: 5 categories, 37 new tests across 5 packages
+
+---
+
+## Completed Phases
+
+1. ✅ **Phases 0-6**: Service layer with persistence (112 tests)
+2. ✅ **Phases 7-9**: UI integration (3 triggers, suggestion modal, drill-down)
+3. ✅ **Phase 10**: Expanded keyword dictionary (224 keywords, 14 categories)
+4. ✅ **Phase 11**: Soft skills detection (5 categories, full stack integration)
 
 ---
 
@@ -460,12 +493,17 @@ See `docs/examples/skill_inference_integration_example.go` for a complete workin
 
 - Service Implementation: `internal/service/career/skillinference/`
 - Technology Dictionary: `internal/service/career/technology/`
+- Classification: `internal/service/career/classification/`
+- Burstfact Classifier: `internal/service/career/burstfact/classifier.go`
+- Profile Inference: `internal/service/career/cv/profile_inference.go`
+- UI Category Selector: `internal/cli/uikit/selectors/category_selector.go`
+- Constants: `internal/constants/constants.go`
 - Integration Tests: `internal/service/career/skillinference/integration_test.go`
-- Domain Models: `internal/domain/career/skill.go`, `internal/domain/career/event.go`
-- Repository Interfaces: `internal/repository/career/`
+- E2E Tests: `internal/testutil/e2e/skill_inference_e2e_test.go`
+- Modal Usage Guide: `docs/guides/MODAL_USAGE_GUIDE.md`
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: January 30, 2026  
+**Document Version**: 2.0
+**Last Updated**: January 30, 2026
 **Author**: AI Assistant (Claude Sonnet 4)
