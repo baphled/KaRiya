@@ -245,7 +245,7 @@ var _ = Describe("CaptureEvent E2E Workflow", func() {
 
 			// Wait for save to complete
 			maxAttempts := 10
-			for attempt := 0; attempt < maxAttempts; attempt++ {
+			for range maxAttempts {
 				view := env.GetView()
 				if isAtMainMenu(view) {
 					break

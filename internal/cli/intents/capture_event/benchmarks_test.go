@@ -1,4 +1,3 @@
-//nolint:errcheck // Benchmark tests - error handling not relevant for performance measurement.
 package capture_event
 
 import (
@@ -16,8 +15,11 @@ func BenchmarkCaptureEventInit(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		intent, _ := NewIntent(ctx)
+	for range b.N {
+		intent, err := NewIntent(ctx)
+		if err != nil {
+			b.Fatal(err)
+		}
 		_ = intent.Init()
 	}
 }
@@ -29,10 +31,13 @@ func BenchmarkCaptureEventView(b *testing.B) {
 		PreviousEvent:   nil,
 		Metadata:        make(map[string]string),
 	}
-	intent, _ := NewIntent(ctx)
+	intent, err := NewIntent(ctx)
+	if err != nil {
+		b.Fatal(err)
+	}
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = intent.View()
 	}
 }
@@ -44,12 +49,15 @@ func BenchmarkCaptureEventUpdate(b *testing.B) {
 		PreviousEvent:   nil,
 		Metadata:        make(map[string]string),
 	}
-	intent, _ := NewIntent(ctx)
+	intent, err := NewIntent(ctx)
+	if err != nil {
+		b.Fatal(err)
+	}
 
 	msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}}
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = intent.Update(msg)
 	}
 }

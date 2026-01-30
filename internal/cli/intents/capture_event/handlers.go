@@ -87,7 +87,7 @@ func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 			return i.reviewState.factModal.Init()
 
 		default:
-			return i.setFailedCmd("INVALID_NAVIGATION", fmt.Sprintf("Unknown navigation action: %s", action), nil)
+			return i.setFailedCmd("INVALID_NAVIGATION", "Unknown navigation action: "+action, nil)
 		}
 	}
 
@@ -176,11 +176,11 @@ func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
 
 	case StateReview:
 		if reviewData, ok := data.(map[string]interface{}); ok {
-			//nolint:errcheck // Type assertions are safe for map data extraction.
-			event, _ := reviewData["event"].(*career.Event)
-			//nolint:errcheck // Type assertions are safe for map data extraction.
+			event, eventOK := reviewData["event"].(*career.Event)
+			if !eventOK {
+				return i.setFailedCmd("INVALID_REVIEW_DATA", "Review data missing valid event", nil)
+			}
 			bursts, _ := reviewData["bursts"].([]*career.Burst)
-			//nolint:errcheck // Type assertions are safe for map data extraction.
 			facts, _ := reviewData["facts"].([]*career.Fact)
 
 			i.reviewState.Event = event
@@ -207,11 +207,11 @@ func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
 
 	case StateSubmit:
 		if submitData, ok := data.(map[string]interface{}); ok {
-			//nolint:errcheck // Type assertion is safe for map data extraction.
-			event, _ := submitData["event"].(*career.Event)
-			//nolint:errcheck // Type assertion is safe for map data extraction.
+			event, eventOK := submitData["event"].(*career.Event)
+			if !eventOK {
+				return i.setFailedCmd("INVALID_SUBMIT_DATA", "Submit data missing valid event", nil)
+			}
 			bursts, _ := submitData["bursts"].([]*career.Burst)
-			//nolint:errcheck // Type assertion is safe for map data extraction.
 			facts, _ := submitData["facts"].([]*career.Fact)
 
 			i.result = &intents.IntentResult[*Result]{
@@ -248,10 +248,11 @@ func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
 func (i *Intent) HandleError(result *screens.ErrorResult) tea.Cmd {
 	data := result.Data()
 	if errorData, ok := data.(map[string]interface{}); ok {
-		//nolint:errcheck // Type assertion is safe for map data extraction.
 		err, _ := errorData["error"].(error)
-		//nolint:errcheck // Type assertion is safe for map data extraction.
 		msg, _ := errorData["message"].(string)
+		if msg == "" {
+			msg = "Unknown screen error"
+		}
 		return i.setFailedCmd("SCREEN_ERROR", msg, err)
 	}
 	return i.setFailedCmd("SCREEN_ERROR", "Unknown screen error", fmt.Errorf("%v", data))
@@ -287,8 +288,9 @@ func (i *Intent) updateEditingModal(msg tea.Msg) tea.Cmd {
 	case EditingModeMetadata:
 		if i.reviewState.metadataModal != nil {
 			modal, cmd := i.reviewState.metadataModal.Update(msg)
-			//nolint:errcheck // Type assertion is safe - Update always returns same type.
-			i.reviewState.metadataModal = modal.(*models.MetadataEditorModelNew)
+			if typed, ok := modal.(*models.MetadataEditorModelNew); ok {
+				i.reviewState.metadataModal = typed
+			}
 
 			if i.reviewState.metadataModal.IsSubmitted() {
 				i.reviewState.Event = i.reviewState.metadataModal.GetEvent()
@@ -304,16 +306,18 @@ func (i *Intent) updateEditingModal(msg tea.Msg) tea.Cmd {
 	case EditingModeBursts:
 		if i.reviewState.burstModal != nil {
 			modal, cmd := i.reviewState.burstModal.Update(msg)
-			//nolint:errcheck // Type assertion is safe - Update always returns same type.
-			i.reviewState.burstModal = modal.(*models.BurstSuggestionModelNew)
+			if typed, ok := modal.(*models.BurstSuggestionModelNew); ok {
+				i.reviewState.burstModal = typed
+			}
 			return cmd
 		}
 
 	case EditingModeFacts:
 		if i.reviewState.factModal != nil {
 			modal, cmd := i.reviewState.factModal.Update(msg)
-			//nolint:errcheck // Type assertion is safe - Update always returns same type.
-			i.reviewState.factModal = modal.(*models.FactEditorModelNew)
+			if typed, ok := modal.(*models.FactEditorModelNew); ok {
+				i.reviewState.factModal = typed
+			}
 
 			if i.reviewState.factModal.IsSubmitted() {
 				i.reviewState.factModal = nil
