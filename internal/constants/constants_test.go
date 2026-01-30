@@ -60,9 +60,9 @@ var _ = Describe("Constants", func() {
 
 	Describe("CompetencyCategory", func() {
 		Describe("AllCompetencyCategories", func() {
-			It("returns all defined competency categories", func() {
+			It("returns all defined competency categories including soft skills", func() {
 				categories := constants.AllCompetencyCategories()
-				Expect(categories).To(HaveLen(6))
+				Expect(categories).To(HaveLen(11))
 				Expect(categories).To(ContainElements(
 					constants.CompetencyTechnical,
 					constants.CompetencyLeadership,
@@ -70,18 +70,31 @@ var _ = Describe("Constants", func() {
 					constants.CompetencyConsulting,
 					constants.CompetencyResearch,
 					constants.CompetencyMentoring,
+					constants.CompetencyCommunication,
+					constants.CompetencyCollaboration,
+					constants.CompetencyProblemSolving,
+					constants.CompetencyProjectManagement,
+					constants.CompetencyArchitecture,
 				))
 			})
 		})
 
 		Describe("IsValidCompetencyCategory", func() {
-			It("returns true for valid categories", func() {
+			It("returns true for original categories", func() {
 				Expect(constants.IsValidCompetencyCategory("technical")).To(BeTrue())
 				Expect(constants.IsValidCompetencyCategory("leadership")).To(BeTrue())
 				Expect(constants.IsValidCompetencyCategory("product")).To(BeTrue())
 				Expect(constants.IsValidCompetencyCategory("consulting")).To(BeTrue())
 				Expect(constants.IsValidCompetencyCategory("research")).To(BeTrue())
 				Expect(constants.IsValidCompetencyCategory("mentoring")).To(BeTrue())
+			})
+
+			It("returns true for soft skill categories", func() {
+				Expect(constants.IsValidCompetencyCategory("communication")).To(BeTrue())
+				Expect(constants.IsValidCompetencyCategory("collaboration")).To(BeTrue())
+				Expect(constants.IsValidCompetencyCategory("problem-solving")).To(BeTrue())
+				Expect(constants.IsValidCompetencyCategory("project-management")).To(BeTrue())
+				Expect(constants.IsValidCompetencyCategory("architecture")).To(BeTrue())
 			})
 
 			It("returns false for invalid categories", func() {

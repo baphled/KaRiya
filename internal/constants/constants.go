@@ -89,6 +89,22 @@ const (
 	// CompetencyMentoring covers knowledge transfer skills such as coaching
 	// junior engineers, conducting code reviews, and running workshops.
 	CompetencyMentoring CompetencyCategory = "mentoring"
+
+	// CompetencyCommunication covers presenting, documenting, and explaining
+	// technical concepts to diverse audiences including stakeholders and teams.
+	CompetencyCommunication CompetencyCategory = "communication"
+	// CompetencyCollaboration covers cross-functional teamwork, partnering with
+	// other teams, and coordinating efforts across organisational boundaries.
+	CompetencyCollaboration CompetencyCategory = "collaboration"
+	// CompetencyProblemSolving covers analytical debugging, troubleshooting
+	// complex issues, and systematic root-cause investigation.
+	CompetencyProblemSolving CompetencyCategory = "problem-solving"
+	// CompetencyProjectManagement covers planning sprints, tracking milestones,
+	// estimating effort, and delivering projects on schedule.
+	CompetencyProjectManagement CompetencyCategory = "project-management"
+	// CompetencyArchitecture covers system design, scalability decisions,
+	// distributed systems thinking, and technical design authority.
+	CompetencyArchitecture CompetencyCategory = "architecture"
 )
 
 // AllCompetencyCategories returns every defined CompetencyCategory value in
@@ -102,6 +118,11 @@ func AllCompetencyCategories() []CompetencyCategory {
 		CompetencyConsulting,
 		CompetencyResearch,
 		CompetencyMentoring,
+		CompetencyCommunication,
+		CompetencyCollaboration,
+		CompetencyProblemSolving,
+		CompetencyProjectManagement,
+		CompetencyArchitecture,
 	}
 }
 
