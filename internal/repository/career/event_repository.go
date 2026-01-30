@@ -35,6 +35,10 @@ type EventRepository interface {
 
 	// Count returns the total number of career events matching the given filters.
 	Count(ctx context.Context, filters EventListFilters) (int, error)
+
+	// LinkSkill creates an association between an event and a skill.
+	// This is used by the skill inference service to record detected skills.
+	LinkSkill(ctx context.Context, eventID string, skillID string) error
 }
 
 // EventListFilters provides flexible filtering options for career events.

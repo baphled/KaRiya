@@ -165,6 +165,30 @@ func (r *EventRepository) Count(_ context.Context, filters career_repo.EventList
 	return len(r.applyFilters(events, filters)), nil
 }
 
+// LinkSkill creates an association between an event and a skill.
+func (r *EventRepository) LinkSkill(_ context.Context, eventID string, skillID string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	event, exists := r.events[eventID]
+	if !exists {
+		return career_repo.ErrEventNotFound
+	}
+
+	// Check if skill is already linked (prevent duplicates)
+	for _, existingSkillID := range event.Skills {
+		if existingSkillID == skillID {
+			return nil
+		}
+	}
+
+	// Add skill to event
+	event.Skills = append(event.Skills, skillID)
+	event.UpdatedAt = time.Now()
+
+	return nil
+}
+
 // containsAnyTag checks if any tags match.
 func containsAnyTag(eventTags, filterTags []string) bool {
 	tagSet := make(map[string]bool)

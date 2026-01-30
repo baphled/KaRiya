@@ -137,3 +137,9 @@ func (i *Intent) renderWithScreen(screen screens.Screen) string {
 	i.rebuildModalRegistry()
 	return i.modalRegistry.RenderOverlay(baseView)
 }
+
+// GetTestContext returns the intent context for testing purposes.
+// This method is only for testing and should not be used in production code.
+func (i *Intent) GetTestContext() *IntentContext {
+	return i.context
+}

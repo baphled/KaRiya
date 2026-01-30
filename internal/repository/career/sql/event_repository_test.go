@@ -281,4 +281,51 @@ var _ = Describe("Event Repository", func() {
 			Expect(count).To(Equal(2))
 		})
 	})
+
+	Describe("LinkSkill", func() {
+		It("should link a skill to an event", func() {
+			event := &career.Event{
+				ID:   "event-1",
+				Text: "Test event",
+				Date: time.Now(),
+			}
+			err := repo.Create(ctx, event)
+			Expect(err).To(BeNil())
+
+			// Link a skill to the event
+			err = repo.LinkSkill(ctx, "event-1", "skill-1")
+			Expect(err).To(BeNil())
+
+			// Verify the skill was linked
+			retrieved, err := repo.GetByID(ctx, "event-1")
+			Expect(err).To(BeNil())
+			Expect(retrieved.Skills).To(ContainElement("skill-1"))
+		})
+
+		It("should return error if event does not exist", func() {
+			err := repo.LinkSkill(ctx, "nonexistent", "skill-1")
+			Expect(err).To(Equal(career_repo.ErrEventNotFound))
+		})
+
+		It("should not duplicate skill if already linked", func() {
+			event := &career.Event{
+				ID:     "event-1",
+				Text:   "Test event",
+				Date:   time.Now(),
+				Skills: []string{"skill-1"},
+			}
+			err := repo.Create(ctx, event)
+			Expect(err).To(BeNil())
+
+			// Try to link the same skill again
+			err = repo.LinkSkill(ctx, "event-1", "skill-1")
+			Expect(err).To(BeNil())
+
+			// Verify skill appears only once
+			retrieved, err := repo.GetByID(ctx, "event-1")
+			Expect(err).To(BeNil())
+			Expect(retrieved.Skills).To(HaveLen(1))
+			Expect(retrieved.Skills).To(ContainElement("skill-1"))
+		})
+	})
 })
