@@ -336,7 +336,11 @@ linters-settings:
         sizeThreshold: 128
 
   # ---------------------------------------------------------------------------
-  # A8. Comment Hygiene
+  # A8. Comment Hygiene (Forbidden Markers Only)
+  # ---------------------------------------------------------------------------
+  # godox catches forbidden comment markers.
+  # Mid-function comment enforcement is in scripts/check-patterns-strict.sh
+  # (no standard Go linter exists for "no comments inside functions")
   # ---------------------------------------------------------------------------
   godox:
     keywords:
@@ -344,6 +348,8 @@ linters-settings:
       - FIXME
       - HACK
       - XXX
+      - NOTE
+      - IMPORTANT
       - BUG
 
   # ---------------------------------------------------------------------------
