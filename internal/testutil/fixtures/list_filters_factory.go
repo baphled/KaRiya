@@ -1,6 +1,8 @@
 package fixtures
 
 import (
+	"time"
+
 	repo "github.com/baphled/kariya/internal/repository/career"
 )
 
@@ -32,6 +34,14 @@ func EventListFiltersWithSort(sortBy, sortOrder string) *repo.EventListFilters {
 	}
 }
 
+// EventListFiltersWithDateRange creates an EventListFilters with date range.
+func EventListFiltersWithDateRange(startDate, endDate *time.Time) *repo.EventListFilters {
+	return &repo.EventListFilters{
+		StartDate: startDate,
+		EndDate:   endDate,
+	}
+}
+
 // FactListFilters creates a minimal FactListFilters with sensible defaults.
 func FactListFilters() *repo.FactListFilters {
 	return &repo.FactListFilters{}
@@ -56,6 +66,21 @@ func FactListFiltersWithLimit(offset, limit int) *repo.FactListFilters {
 	return &repo.FactListFilters{
 		Offset: offset,
 		Limit:  limit,
+	}
+}
+
+// FactListFiltersWithSort creates a FactListFilters with sorting.
+func FactListFiltersWithSort(sortBy, sortOrder string) *repo.FactListFilters {
+	return &repo.FactListFilters{
+		SortBy:    sortBy,
+		SortOrder: sortOrder,
+	}
+}
+
+// FactListFiltersWithAudience creates a FactListFilters filtered by audience relevance.
+func FactListFiltersWithAudience(audience string) *repo.FactListFilters {
+	return &repo.FactListFilters{
+		AudienceRelevance: audience,
 	}
 }
 
@@ -97,5 +122,27 @@ func SkillListFiltersWithLimit(offset, limit int) *repo.SkillListFilters {
 	return &repo.SkillListFilters{
 		Offset: offset,
 		Limit:  limit,
+	}
+}
+
+// SkillListFiltersWithLevel creates a SkillListFilters filtered by level.
+func SkillListFiltersWithLevel(level string) *repo.SkillListFilters {
+	return &repo.SkillListFilters{
+		Level: level,
+	}
+}
+
+// SkillListFiltersWithSort creates a SkillListFilters with sorting.
+func SkillListFiltersWithSort(sortBy, sortOrder string) *repo.SkillListFilters {
+	return &repo.SkillListFilters{
+		SortBy:    sortBy,
+		SortOrder: sortOrder,
+	}
+}
+
+// SkillListFiltersWithMinEvents creates a SkillListFilters filtered by minimum event count.
+func SkillListFiltersWithMinEvents(minEvents int) *repo.SkillListFilters {
+	return &repo.SkillListFilters{
+		MinEvents: minEvents,
 	}
 }
