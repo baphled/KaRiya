@@ -1,4 +1,4 @@
-.PHONY: test test-race coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance check-docblocks check-patterns check-patterns-quiet check-patterns-strict check-intent-architecture check-intent-architecture-files golangci-lint install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ai-commit ci-local ci-install-tools gosec session-start session-end session-reset check-session verify-hooks tdd-check tdd-red tdd-green tdd-refactor tdd-document pre-task what-to-use generate-diagrams generate-state-matrix generate-docs diagrams new-feature new-bug new-intent
+.PHONY: test test-race coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance check-docblocks check-fixtures check-patterns check-patterns-quiet check-patterns-strict check-intent-architecture check-intent-architecture-files golangci-lint install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ai-commit ci-local ci-install-tools gosec session-start session-end session-reset check-session verify-hooks tdd-check tdd-red tdd-green tdd-refactor tdd-document pre-task what-to-use generate-diagrams generate-state-matrix generate-docs diagrams new-feature new-bug new-intent
 
 # Run all tests in verbose mode (race detection in CI only)
 test:
@@ -79,8 +79,15 @@ check-docblocks:
 	@go vet -vettool=./bin/docblocks ./internal/cli/behaviors/... ./internal/cli/intents/... ./tools/analyzers/docblocks/...
 	@echo "✅ Docblocks: all checks passed."
 
+# Check fixture usage enforcement (no inline career.* structs in test files)
+check-fixtures:
+	@echo "Running fixture usage analyzer..."
+	@go build -o ./bin/noinlinecareer ./cmd/noinlinecareer
+	@go vet -vettool=./bin/noinlinecareer ./...
+	@echo "✅ Fixture usage: all checks passed."
+
 # Check full project compliance (all rules)
-check-compliance: staticcheck check-intent-architecture check-docblocks
+check-compliance: staticcheck check-intent-architecture check-docblocks check-fixtures
 	@bash scripts/check-compliance.sh
 
 # Install all CI tools locally
