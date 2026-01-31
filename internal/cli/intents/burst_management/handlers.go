@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/screens"
@@ -281,6 +282,9 @@ func (i *Intent) handleModalUpdates(msg tea.Msg) tea.Cmd {
 	if cmd := i.handleFactsModalUpdate(msg); cmd != nil {
 		return cmd
 	}
+	if cmd := i.handleSkillsModalUpdate(msg); cmd != nil {
+		return cmd
+	}
 	if cmd := i.handleEditModalUpdate(msg); cmd != nil {
 		return cmd
 	}
@@ -466,6 +470,9 @@ func (i *Intent) handleDetailModalKeypress(keyMsg tea.KeyMsg) tea.Cmd {
 	case "c":
 		i.detailModal.Hide()
 		return i.showConfirmBurstModal()
+	case "s":
+		i.detailModal.Hide()
+		return i.showBurstSkillsModal()
 	case "i":
 		if i.selectedBurst != nil && !i.selectedBurst.Confirmed {
 			i.ShowWarningModal("Burst Not Confirmed", "Please confirm this burst before inferring skills.")
@@ -515,6 +522,24 @@ func (i *Intent) handleEventsModalUpdate(msg tea.Msg) tea.Cmd {
 		}
 	}
 	_, cmd := i.eventsModal.Update(msg)
+	return cmd
+}
+
+// handleSkillsModalUpdate handles skills modal updates.
+func (i *Intent) handleSkillsModalUpdate(msg tea.Msg) tea.Cmd {
+	if i.skillsModal == nil || !i.skillsModal.IsVisible() {
+		return nil
+	}
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		if keyMsg.Type == tea.KeyEsc || keyMsg.Type == tea.KeyEnter {
+			i.skillsModal = nil
+			if i.selectedBurst != nil {
+				return i.showBurstDetailModal(i.selectedBurst)
+			}
+			return noopCmd
+		}
+	}
+	_, cmd := i.skillsModal.Update(msg)
 	return cmd
 }
 
@@ -606,9 +631,12 @@ func (i *Intent) handleFactExtractionComplete(msg FactExtractionCompleteMsg) tea
 		return nil
 	}
 
-	// Auto-trigger skill inference if we have a confirmed burst with facts
-	if i.selectedBurst != nil && i.selectedBurst.Confirmed && len(msg.Facts) > 0 {
-		// Automatically infer skills from this burst
+	targetBurst := i.selectedBurst
+	if targetBurst == nil {
+		targetBurst = msg.Burst
+	}
+	if targetBurst != nil && targetBurst.Confirmed && len(msg.Facts) > 0 {
+		i.selectedBurst = targetBurst
 		return i.startSkillInference()
 	}
 
@@ -681,6 +709,17 @@ func (i *Intent) handleBurstEventsLoaded(msg BurstEventsLoadedMsg) tea.Cmd {
 	i.eventsModal = burstmodals.NewBurstEventsModal(
 		i.selectedBurst.ID, i.selectedBurst.Name, msg.Events, i.Theme())
 	i.showModalWithDimensions(i.eventsModal)
+	return nil
+}
+
+// handleBurstSkillsLoaded handles the BurstSkillsLoadedMsg.
+func (i *Intent) handleBurstSkillsLoaded(msg BurstSkillsLoadedMsg) tea.Cmd {
+	if !i.handleLoadError(msg.Error, "Load Skills Failed") {
+		return nil
+	}
+	i.skillsModal = burstmodals.NewBurstSkillsModal(
+		i.selectedBurst.ID, i.selectedBurst.Name, msg.Skills, i.Theme())
+	i.showModalWithDimensions(i.skillsModal)
 	return nil
 }
 
@@ -789,8 +828,17 @@ func (i *Intent) handleSkillSuggestionsLoaded(msg SkillSuggestionsLoadedMsg) tea
 		return nil
 	}
 
-	// Show skill suggestion modal.
-	i.skillSuggestionModal = burstmodals.NewSkillSuggestionModal(msg.Suggestions, i.Theme())
+	newSuggestions := filterNewSuggestions(msg.Suggestions, msg.ExistingSkillNames)
+	if len(newSuggestions) == 0 {
+		i.ShowSuccessModal("All Skills Already Tracked",
+			fmt.Sprintf("Detected skills already in your profile: %s",
+				strings.Join(msg.ExistingSkillNames, ", ")))
+		i.state = StateList
+		return nil
+	}
+
+	// Show skill suggestion modal with only new skills.
+	i.skillSuggestionModal = burstmodals.NewSkillSuggestionModal(newSuggestions, i.Theme())
 	width, height := i.getTerminalDimensions()
 	i.skillSuggestionModal.SetDimensions(width, height)
 	i.skillSuggestionModal.Show()
@@ -842,30 +890,18 @@ func (i *Intent) handleSkillSuggestionModalUpdate(msg tea.Msg) tea.Cmd {
 		return nil
 	}
 
+	if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.String() == "a" {
+		return i.handleSkillSuggestionAccept(msg)
+	}
+
 	_, cmd := i.skillSuggestionModal.Update(msg)
 
-	// Check if modal was closed (action != "").
 	if !i.skillSuggestionModal.IsVisible() {
 		action := i.skillSuggestionModal.GetAction()
 
 		switch action {
-		case burstmodals.SuggestionActionAccept, burstmodals.SuggestionActionReject:
-			// Individual accept/reject - keep modal open until all processed.
-			// Modal automatically closes when no suggestions remain.
+		case burstmodals.SuggestionActionReject:
 			if !i.skillSuggestionModal.IsVisible() {
-				// All suggestions processed - create skills from accepted.
-				accepted := i.skillSuggestionModal.GetAcceptedSkills()
-
-				if len(accepted) > 0 {
-					i.loadingModal = feedback.NewLoadingModal(
-						fmt.Sprintf("Creating %d skill(s)...", len(accepted)),
-						true,
-					).WithTheme(i.Theme())
-					i.skillSuggestionModal = nil
-					return tea.Batch(cmd, i.loadingModal.Init(), i.createSkillsFromSuggestions(accepted))
-				}
-
-				// No accepted suggestions - just return to list.
 				i.skillSuggestionModal = nil
 				i.state = StateList
 			}
@@ -889,6 +925,26 @@ func (i *Intent) handleSkillSuggestionModalUpdate(msg tea.Msg) tea.Cmd {
 	}
 
 	return cmd
+}
+
+// handleSkillSuggestionAccept saves the accepted skill synchronously, mirroring burst acceptance.
+func (i *Intent) handleSkillSuggestionAccept(msg tea.Msg) tea.Cmd {
+	selected := i.skillSuggestionModal.GetCurrentSkill()
+	if selected == nil {
+		return noopCmd
+	}
+
+	i.saveSkillFromSuggestion(*selected)
+	i.skillSuggestionModal.Update(msg)
+
+	if !i.skillSuggestionModal.IsVisible() {
+		accepted := i.skillSuggestionModal.GetAcceptedSkills()
+		successMsg := fmt.Sprintf("Successfully created %d skill(s)", len(accepted))
+		i.ShowSuccessModal("Skills Created", successMsg)
+		i.skillSuggestionModal = nil
+		i.state = StateList
+	}
+	return noopCmd
 }
 
 // handleSuggestionEventsModalUpdate handles updates when the suggestion events modal is visible.

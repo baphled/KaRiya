@@ -212,6 +212,7 @@ func (r *DefaultIntentRegistrar) registerBurstManagement(ctx context.Context, ro
 			Service:               r.config.CareerService,
 			SkillInferenceService: r.config.SkillInferenceService,
 			BurstRepository:       burstRepo,
+			SkillRepository:       r.config.CareerService.GetSkillRepository(),
 			Context:               ctx,
 		}
 		intent, err := burstmanagement.NewIntent(burstCtx)

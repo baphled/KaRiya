@@ -31,11 +31,11 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(suggestions).To(HaveLen(1))
-			Expect(suggestions[0].Name).To(Equal("Go"))
+			Expect(result.Suggestions).To(HaveLen(1))
+			Expect(result.Suggestions[0].Name).To(Equal("Go"))
 		})
 
 		It("should NOT match 'go' in 'goal'", func() {
@@ -47,11 +47,11 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
 			// Should not detect "Go" from "goal"
-			goSkills := filterByName(suggestions, "Go")
+			goSkills := filterByName(result.Suggestions, "Go")
 			Expect(goSkills).To(BeEmpty())
 		})
 
@@ -64,10 +64,10 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			goSkills := filterByName(suggestions, "Go")
+			goSkills := filterByName(result.Suggestions, "Go")
 			Expect(goSkills).To(BeEmpty())
 		})
 
@@ -80,12 +80,12 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(suggestions)).To(BeNumerically(">=", 3))
+			Expect(len(result.Suggestions)).To(BeNumerically(">=", 3))
 
-			names := extractNames(suggestions)
+			names := extractNames(result.Suggestions)
 			Expect(names).To(ContainElement("Go"))
 			Expect(names).To(ContainElement("PostgreSQL"))
 			Expect(names).To(ContainElement("Docker"))
@@ -102,11 +102,11 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(suggestions).NotTo(BeEmpty())
-			Expect(suggestions[0].Name).To(Equal("Go"))
+			Expect(result.Suggestions).NotTo(BeEmpty())
+			Expect(result.Suggestions[0].Name).To(Equal("Go"))
 		})
 
 		It("should match 'go' (lowercase)", func() {
@@ -118,11 +118,11 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(suggestions).NotTo(BeEmpty())
-			Expect(suggestions[0].Name).To(Equal("Go"))
+			Expect(result.Suggestions).NotTo(BeEmpty())
+			Expect(result.Suggestions[0].Name).To(Equal("Go"))
 		})
 
 		It("should match 'GO' (all caps)", func() {
@@ -134,10 +134,10 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			names := extractNames(suggestions)
+			names := extractNames(result.Suggestions)
 			Expect(names).To(ContainElement("Go"))
 		})
 	})
@@ -152,10 +152,10 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			goSkill := findByName(suggestions, "Go")
+			goSkill := findByName(result.Suggestions, "Go")
 			Expect(goSkill).NotTo(BeNil())
 			Expect(goSkill.Contexts).NotTo(BeEmpty())
 			Expect(goSkill.Contexts[0]).To(ContainSubstring("using Go"))
@@ -171,10 +171,10 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			goSkill := findByName(suggestions, "Go")
+			goSkill := findByName(result.Suggestions, "Go")
 			Expect(goSkill).NotTo(BeNil())
 			Expect(goSkill.Contexts).NotTo(BeEmpty())
 
@@ -192,10 +192,10 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			goSkill := findByName(suggestions, "Go")
+			goSkill := findByName(result.Suggestions, "Go")
 			Expect(goSkill).NotTo(BeNil())
 			Expect(goSkill.Contexts).NotTo(BeEmpty())
 
@@ -224,12 +224,12 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
 
 			// Should have ONE "Go" suggestion (not three)
-			goSkills := filterByName(suggestions, "Go")
+			goSkills := filterByName(result.Suggestions, "Go")
 			Expect(goSkills).To(HaveLen(1))
 
 			// Should reference all 3 events
@@ -253,10 +253,10 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			goSkill := findByName(suggestions, "Go")
+			goSkill := findByName(result.Suggestions, "Go")
 			Expect(goSkill).NotTo(BeNil())
 			Expect(goSkill.Contexts).To(HaveLen(2))
 		})
@@ -270,10 +270,10 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 				{ID: "event-5", Text: "Fifth Go usage", Date: time.Now()},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			goSkill := findByName(suggestions, "Go")
+			goSkill := findByName(result.Suggestions, "Go")
 			Expect(goSkill).NotTo(BeNil())
 			Expect(goSkill.Contexts).To(HaveLen(3)) // Max 3 contexts
 		})
@@ -289,12 +289,12 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(suggestions).NotTo(BeEmpty())
+			Expect(result.Suggestions).NotTo(BeEmpty())
 			// Should return canonical name "Go" not "golang"
-			Expect(suggestions[0].Name).To(Equal("Go"))
+			Expect(result.Suggestions[0].Name).To(Equal("Go"))
 		})
 
 		It("should deduplicate 'go' and 'golang' as same skill", func() {
@@ -311,12 +311,12 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
 
 			// Should have ONE "Go" suggestion (not two)
-			goSkills := filterByName(suggestions, "Go")
+			goSkills := filterByName(result.Suggestions, "Go")
 			Expect(goSkills).To(HaveLen(1))
 			Expect(goSkills[0].EventIDs).To(HaveLen(2))
 		})
@@ -330,10 +330,10 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			k8sSkill := findByName(suggestions, "Kubernetes")
+			k8sSkill := findByName(result.Suggestions, "Kubernetes")
 			Expect(k8sSkill).NotTo(BeNil())
 		})
 	})
@@ -348,26 +348,26 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(suggestions).To(BeEmpty())
+			Expect(result.Suggestions).To(BeEmpty())
 		})
 
 		It("should return empty slice for empty events", func() {
 			events := []*career.Event{}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(suggestions).To(BeEmpty())
+			Expect(result.Suggestions).To(BeEmpty())
 		})
 
 		It("should return empty slice for nil events", func() {
-			suggestions, err := service.InferSkillsFromEvents(ctx, nil)
+			result, err := service.InferSkillsFromEvents(ctx, nil)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(suggestions).To(BeEmpty())
+			Expect(result.Suggestions).To(BeEmpty())
 		})
 	})
 
@@ -381,12 +381,12 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(suggestions)).To(BeNumerically(">=", 3))
+			Expect(len(result.Suggestions)).To(BeNumerically(">=", 3))
 
-			names := extractNames(suggestions)
+			names := extractNames(result.Suggestions)
 			Expect(names).To(ContainElement("Go"))
 			Expect(names).To(ContainElement("PostgreSQL"))
 			Expect(names).To(ContainElement("Kubernetes"))
@@ -401,19 +401,19 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
 
-			goSkill := findByName(suggestions, "Go")
+			goSkill := findByName(result.Suggestions, "Go")
 			Expect(goSkill).NotTo(BeNil())
 			Expect(goSkill.Category).To(Equal("backend"))
 
-			pgSkill := findByName(suggestions, "PostgreSQL")
+			pgSkill := findByName(result.Suggestions, "PostgreSQL")
 			Expect(pgSkill).NotTo(BeNil())
 			Expect(pgSkill.Category).To(Equal("database"))
 
-			reactSkill := findByName(suggestions, "React")
+			reactSkill := findByName(result.Suggestions, "React")
 			Expect(reactSkill).NotTo(BeNil())
 			Expect(reactSkill.Category).To(Equal("frontend"))
 		})

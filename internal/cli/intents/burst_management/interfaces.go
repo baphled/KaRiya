@@ -34,7 +34,7 @@ type BurstService interface {
 // SkillInferenceService defines the interface for skill inference operations.
 type SkillInferenceService interface {
 	// InferSkillsFromEvents analyzes event descriptions and infers skills with confidence scores.
-	InferSkillsFromEvents(ctx context.Context, events []*career.Event) ([]skillinference.SkillSuggestion, error)
+	InferSkillsFromEvents(ctx context.Context, events []*career.Event) (*skillinference.InferenceResult, error)
 
 	// CreateSkillsFromSuggestions persists skill suggestions as confirmed skills.
 	CreateSkillsFromSuggestions(ctx context.Context, suggestions []skillinference.SkillSuggestion) ([]*career.Skill, error)

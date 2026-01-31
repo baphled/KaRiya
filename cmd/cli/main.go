@@ -112,11 +112,16 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 	var svc *careerservice.Service
 
 	if inMemory {
-		repo = careermemory.NewEventRepository()
+		eventRepo := careermemory.NewEventRepository()
+		skillRepo := careermemory.NewSkillRepository()
+		skillRepo.SetEventRepository(eventRepo)
+		eventRepo.SetSkillRepository(skillRepo)
+
+		repo = eventRepo
 		svc = careerservice.NewService(repo)
 		svc.SetFactRepository(careermemory.NewFactRepository())
 		svc.SetBurstRepository(careermemory.NewBurstRepository())
-		svc.SetSkillRepository(careermemory.NewSkillRepository())
+		svc.SetSkillRepository(skillRepo)
 	} else {
 		if dbPath == "" {
 			homeDir, err := os.UserHomeDir()

@@ -93,10 +93,11 @@ var _ = Describe("SkillInferenceService Interface", func() {
 		})
 
 		It("should implement InferSkillsFromEvents", func() {
-			suggestions, err := mockService.InferSkillsFromEvents(ctx, events)
+			result, err := mockService.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(suggestions).NotTo(BeNil())
+			Expect(result).NotTo(BeNil())
+			Expect(result.Suggestions).NotTo(BeNil())
 		})
 
 		It("should implement InferSkillsFromBurst", func() {
@@ -106,10 +107,11 @@ var _ = Describe("SkillInferenceService Interface", func() {
 				EventIDs: []string{"event-1"},
 			}
 
-			suggestions, err := mockService.InferSkillsFromBurst(ctx, burst, events)
+			result, err := mockService.InferSkillsFromBurst(ctx, burst, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(suggestions).NotTo(BeNil())
+			Expect(result).NotTo(BeNil())
+			Expect(result.Suggestions).NotTo(BeNil())
 		})
 
 		It("should implement CreateSkillsFromSuggestions", func() {
@@ -138,24 +140,23 @@ var _ = Describe("SkillInferenceService Interface", func() {
 		})
 
 		It("should accept context as first parameter", func() {
-			// InferSkillsFromEvents
-			_, err := mockService.InferSkillsFromEvents(ctx, events)
+			result, err := mockService.InferSkillsFromEvents(ctx, events)
 			Expect(err).NotTo(HaveOccurred())
+			Expect(result).NotTo(BeNil())
 
-			// InferSkillsFromBurst
 			burst := &career.Burst{ID: "burst-1"}
-			_, err = mockService.InferSkillsFromBurst(ctx, burst, events)
+			result, err = mockService.InferSkillsFromBurst(ctx, burst, events)
 			Expect(err).NotTo(HaveOccurred())
+			Expect(result).NotTo(BeNil())
 
-			// CreateSkillsFromSuggestions
 			_, err = mockService.CreateSkillsFromSuggestions(ctx, []skillinference.SkillSuggestion{})
 			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("should return error as second return value", func() {
-			// This validates the (result, error) pattern
-			_, err := mockService.InferSkillsFromEvents(ctx, nil)
-			Expect(err).To(BeNil()) // Mock returns nil by default
+			result, err := mockService.InferSkillsFromEvents(ctx, nil)
+			Expect(err).To(BeNil())
+			Expect(result).NotTo(BeNil())
 		})
 	})
 })
@@ -166,16 +167,16 @@ type mockSkillInferenceService struct{}
 func (m *mockSkillInferenceService) InferSkillsFromEvents(
 	_ context.Context,
 	_ []*career.Event,
-) ([]skillinference.SkillSuggestion, error) {
-	return []skillinference.SkillSuggestion{}, nil
+) (*skillinference.InferenceResult, error) {
+	return &skillinference.InferenceResult{Suggestions: []skillinference.SkillSuggestion{}}, nil
 }
 
 func (m *mockSkillInferenceService) InferSkillsFromBurst(
 	_ context.Context,
 	_ *career.Burst,
 	_ []*career.Event,
-) ([]skillinference.SkillSuggestion, error) {
-	return []skillinference.SkillSuggestion{}, nil
+) (*skillinference.InferenceResult, error) {
+	return &skillinference.InferenceResult{Suggestions: []skillinference.SkillSuggestion{}}, nil
 }
 
 func (m *mockSkillInferenceService) CreateSkillsFromSuggestions(

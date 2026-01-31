@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/intents"
@@ -486,7 +487,18 @@ func (i *Intent) handleSkillSuggestionsLoaded(msg SkillSuggestionsLoadedMsg) tea
 		return nil
 	}
 
-	i.skillSuggestionModal = burstmodals.NewSkillSuggestionModal(msg.Suggestions, i.Theme())
+	newSuggestions := filterNewSuggestions(msg.Suggestions, msg.ExistingSkillNames)
+	if len(newSuggestions) == 0 {
+		successModal := feedback.NewSuccessModal(
+			fmt.Sprintf("Detected skills already in your profile: %s",
+				strings.Join(msg.ExistingSkillNames, ", ")))
+		successModal.Title = "All Skills Already Tracked"
+		i.feedbackModal = successModal
+		i.state = StateList
+		return nil
+	}
+
+	i.skillSuggestionModal = burstmodals.NewSkillSuggestionModal(newSuggestions, i.Theme())
 	width, height := i.getTerminalDimensions()
 	i.skillSuggestionModal.SetDimensions(width, height)
 	i.skillSuggestionModal.Show()

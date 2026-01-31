@@ -1,9 +1,12 @@
 package e2e_test
 
 import (
+	"context"
+
 	burstmgmt "github.com/baphled/kariya/internal/cli/intents/burst_management"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/service/career/burstfact"
+	"github.com/baphled/kariya/internal/service/career/skillinference"
 	"github.com/baphled/kariya/internal/testutil/e2e"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -577,5 +580,89 @@ var _ = Describe("E2E Burst Management Workflow", func() {
 			// Verify no bursts were created.
 			env.AssertBurstCount(0)
 		})
+	})
+})
+
+var _ = Describe("E2E Skill Suggestion Acceptance from Burst (SQL-backed)", func() {
+	var env *e2e.TestEnv
+
+	BeforeEach(func() {
+		env = e2e.GetSharedEnv(GinkgoT())
+		env.PopulateTestData(10, 0, 0)
+	})
+
+	AfterEach(func() {
+		env.Cleanup()
+	})
+
+	It("should persist accepted skill suggestions to the SQL database", func() {
+		env.SelectIntentByName("burst_management")
+
+		events := env.GetEvents()
+		Expect(len(events)).To(BeNumerically(">=", 2))
+
+		env.PressKeyRune('s')
+		burstSuggestions := []burstfact.BurstSuggestion{
+			{
+				EventIDs:        []string{events[0].ID, events[1].ID},
+				ConfidenceScore: 0.90,
+				Name:            "API Development",
+				Description:     "Built REST API",
+			},
+		}
+		env.SendMessage(burstmgmt.BurstSuggestionsLoadedMsg{
+			Suggestions: burstSuggestions,
+		})
+
+		env.PressKeyRune('a')
+
+		env.AssertBurstCount(1)
+
+		bursts := env.GetBursts()
+		acceptedBurst := bursts[0]
+		Expect(acceptedBurst.Name).To(Equal("API Development"))
+
+		env.Confirm()
+
+		skillSuggestions := []skillinference.SkillSuggestion{
+			{
+				Name:       "Go",
+				Category:   "Backend",
+				Confidence: 0.95,
+				EventIDs:   []string{events[0].ID, events[1].ID},
+				Contexts:   []string{"Built REST API with Go"},
+			},
+			{
+				Name:       "PostgreSQL",
+				Category:   "Database",
+				Confidence: 0.85,
+				EventIDs:   []string{events[0].ID},
+				Contexts:   []string{"Designed PostgreSQL schema"},
+			},
+		}
+		env.SendMessage(burstmgmt.SkillSuggestionsLoadedMsg{
+			Suggestions: skillSuggestions,
+		})
+
+		env.PressKeyRune('a')
+		env.PressKeyRune('a')
+
+		view := env.GetView()
+		Expect(view).To(ContainSubstring("Skills Created"),
+			"should show success modal after skill creation completes")
+		Expect(view).To(ContainSubstring("Successfully created 2 skill"),
+			"success modal should indicate 2 skills were created")
+
+		repoSkills, err := env.SkillRepo.List(context.Background(), nil)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(len(repoSkills)).To(Equal(2),
+			"SQL database should have 2 skills after accepting all suggestions")
+
+		skillNames := make(map[string]bool)
+		for _, s := range repoSkills {
+			skillNames[s.Name] = true
+		}
+		Expect(skillNames).To(HaveKey("Go"))
+		Expect(skillNames).To(HaveKey("PostgreSQL"))
 	})
 })

@@ -29,6 +29,8 @@ var _ = Describe("E2E Skill Inference from ManageSkills", func() {
 	BeforeEach(func() {
 		skillRepo = careermemory.NewSkillRepository()
 		eventRepo = careermemory.NewEventRepository()
+		skillRepo.SetEventRepository(eventRepo)
+		eventRepo.SetSkillRepository(skillRepo)
 		skillInferenceService = skillinference.NewSkillInferenceService(skillRepo, eventRepo)
 
 		ctx := context.Background()
@@ -327,6 +329,8 @@ var _ = Describe("E2E Accept All Suggested Skills from ManageSkills", func() {
 	BeforeEach(func() {
 		skillRepo = careermemory.NewSkillRepository()
 		eventRepo = careermemory.NewEventRepository()
+		skillRepo.SetEventRepository(eventRepo)
+		eventRepo.SetSkillRepository(skillRepo)
 		skillInferenceService = skillinference.NewSkillInferenceService(skillRepo, eventRepo)
 
 		ctx := context.Background()
@@ -456,6 +460,8 @@ var _ = Describe("E2E Skill Suggestion Event Drill-Down from ManageSkills", func
 	BeforeEach(func() {
 		skillRepo = careermemory.NewSkillRepository()
 		eventRepo = careermemory.NewEventRepository()
+		skillRepo.SetEventRepository(eventRepo)
+		eventRepo.SetSkillRepository(skillRepo)
 		skillInferenceService = skillinference.NewSkillInferenceService(skillRepo, eventRepo)
 
 		ctx := context.Background()
@@ -609,6 +615,8 @@ var _ = Describe("E2E Skill Suggestion Event Drill-Down from BurstManagement", f
 
 		skillRepo := careermemory.NewSkillRepository()
 		eventRepo := careermemory.NewEventRepository()
+		skillRepo.SetEventRepository(eventRepo)
+		eventRepo.SetSkillRepository(skillRepo)
 		skillInferenceService := skillinference.NewSkillInferenceService(skillRepo, eventRepo)
 
 		event1 = &career.Event{
@@ -768,11 +776,11 @@ var _ = Describe("E2E Skill Inference Workflow", func() {
 		burstRepo := careermemory.NewBurstRepository()
 		mockService = mocks.NewBurstServiceMock()
 
-		// Create repositories for skill inference
 		skillRepo := careermemory.NewSkillRepository()
 		eventRepo := careermemory.NewEventRepository()
+		skillRepo.SetEventRepository(eventRepo)
+		eventRepo.SetSkillRepository(skillRepo)
 
-		// Create skill inference service
 		skillInferenceService := skillinference.NewSkillInferenceService(skillRepo, eventRepo)
 
 		// Create a burst with events
@@ -1024,6 +1032,287 @@ var _ = Describe("E2E Skill Inference Workflow", func() {
 			// And: No error modal should be shown for cancelled operations
 			view := intent.View()
 			Expect(view).NotTo(ContainSubstring("Skill Inference Failed"))
+		})
+	})
+})
+
+var _ = Describe("E2E Skill Inference Excludes Existing Skills", func() {
+	Describe("Trigger 1: Burst Management - manual 'i' from detail modal", func() {
+		var (
+			intent      *burstmgmt.Intent
+			mockService *mocks.BurstServiceMock
+			burst       *career.Burst
+			skillRepo   *careermemory.SkillRepository
+			eventRepo   *careermemory.EventRepository
+		)
+
+		BeforeEach(func() {
+			burstRepo := careermemory.NewBurstRepository()
+			mockService = mocks.NewBurstServiceMock()
+			skillRepo = careermemory.NewSkillRepository()
+			eventRepo = careermemory.NewEventRepository()
+			skillRepo.SetEventRepository(eventRepo)
+			eventRepo.SetSkillRepository(skillRepo)
+			skillInferenceService := skillinference.NewSkillInferenceService(skillRepo, eventRepo)
+
+			ctx := context.Background()
+
+			event1 := &career.Event{
+				ID:      "event-1",
+				Text:    "Built REST API with Go and Docker containers",
+				Date:    time.Date(2024, 6, 15, 0, 0, 0, 0, time.UTC),
+				Company: "Acme Corp",
+			}
+			event2 := &career.Event{
+				ID:      "event-2",
+				Text:    "Designed PostgreSQL schema for user service",
+				Date:    time.Date(2024, 7, 20, 0, 0, 0, 0, time.UTC),
+				Company: "Acme Corp",
+			}
+			_ = eventRepo.Create(ctx, event1)
+			_ = eventRepo.Create(ctx, event2)
+			mockService.SetEvents([]*career.Event{event1, event2})
+
+			_ = skillRepo.Create(ctx, &career.Skill{ID: "existing-go", Name: "Go", Category: "backend"})
+			_ = skillRepo.Create(ctx, &career.Skill{ID: "existing-pg", Name: "PostgreSQL", Category: "database"})
+
+			burst = &career.Burst{
+				ID:          "burst-1",
+				Name:        "API Development",
+				Description: "Built REST API with Go and PostgreSQL",
+				EventIDs:    []string{"event-1", "event-2"},
+				Confirmed:   true,
+			}
+
+			intentCtx := &burstmgmt.IntentContext{
+				Bursts:                []*career.Burst{burst},
+				Service:               mockService,
+				BurstRepository:       burstRepo,
+				SkillInferenceService: skillInferenceService,
+			}
+			intentCtx.Validate()
+
+			var err error
+			intent, err = burstmgmt.NewIntent(intentCtx)
+			Expect(err).NotTo(HaveOccurred())
+			intent.Init()
+		})
+
+		It("should include existing skills in suggestions and report them in ExistingSkillNames", func() {
+			intent.HandleNavigate(&screens.NavigateResult{
+				ResultData: burst,
+			})
+
+			batchCmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}})
+			Expect(intent.GetState()).To(Equal(burstmgmt.StateInferringSkills))
+
+			messages := executeSkillsBatchCmd(batchCmd)
+
+			var suggestionsMsg burstmgmt.SkillSuggestionsLoadedMsg
+			for _, msg := range messages {
+				if sm, ok := msg.(burstmgmt.SkillSuggestionsLoadedMsg); ok {
+					suggestionsMsg = sm
+					break
+				}
+			}
+			Expect(suggestionsMsg.Error).NotTo(HaveOccurred())
+
+			suggestionNames := make([]string, 0, len(suggestionsMsg.Suggestions))
+			for _, s := range suggestionsMsg.Suggestions {
+				suggestionNames = append(suggestionNames, s.Name)
+			}
+
+			Expect(suggestionNames).To(ContainElement("Go"),
+				"Go should appear in suggestions for burst context visibility")
+			Expect(suggestionNames).To(ContainElement("PostgreSQL"),
+				"PostgreSQL should appear in suggestions for burst context visibility")
+			Expect(suggestionNames).To(ContainElement("Docker"),
+				"Docker does not exist in the repo and should be suggested")
+
+			Expect(suggestionsMsg.ExistingSkillNames).To(ContainElement("Go"))
+			Expect(suggestionsMsg.ExistingSkillNames).To(ContainElement("PostgreSQL"))
+		})
+	})
+
+	Describe("Trigger 2: Burst Management - auto after fact extraction", func() {
+		var (
+			intent      *burstmgmt.Intent
+			mockService *mocks.BurstServiceMock
+			burst       *career.Burst
+			skillRepo   *careermemory.SkillRepository
+			eventRepo   *careermemory.EventRepository
+		)
+
+		BeforeEach(func() {
+			burstRepo := careermemory.NewBurstRepository()
+			mockService = mocks.NewBurstServiceMock()
+			skillRepo = careermemory.NewSkillRepository()
+			eventRepo = careermemory.NewEventRepository()
+			skillRepo.SetEventRepository(eventRepo)
+			eventRepo.SetSkillRepository(skillRepo)
+			skillInferenceService := skillinference.NewSkillInferenceService(skillRepo, eventRepo)
+
+			ctx := context.Background()
+
+			event1 := &career.Event{
+				ID:      "event-1",
+				Text:    "Built REST API with Go and Docker containers",
+				Date:    time.Date(2024, 6, 15, 0, 0, 0, 0, time.UTC),
+				Company: "Acme Corp",
+			}
+			event2 := &career.Event{
+				ID:      "event-2",
+				Text:    "Designed PostgreSQL schema for user service",
+				Date:    time.Date(2024, 7, 20, 0, 0, 0, 0, time.UTC),
+				Company: "Acme Corp",
+			}
+			_ = eventRepo.Create(ctx, event1)
+			_ = eventRepo.Create(ctx, event2)
+			mockService.SetEvents([]*career.Event{event1, event2})
+
+			_ = skillRepo.Create(ctx, &career.Skill{ID: "existing-go", Name: "Go", Category: "backend"})
+			_ = skillRepo.Create(ctx, &career.Skill{ID: "existing-pg", Name: "PostgreSQL", Category: "database"})
+
+			burst = &career.Burst{
+				ID:          "burst-1",
+				Name:        "API Development",
+				Description: "Built REST API with Go and PostgreSQL",
+				EventIDs:    []string{"event-1", "event-2"},
+				Confirmed:   true,
+			}
+
+			intentCtx := &burstmgmt.IntentContext{
+				Bursts:                []*career.Burst{burst},
+				Service:               mockService,
+				BurstRepository:       burstRepo,
+				SkillInferenceService: skillInferenceService,
+			}
+			intentCtx.Validate()
+
+			var err error
+			intent, err = burstmgmt.NewIntent(intentCtx)
+			Expect(err).NotTo(HaveOccurred())
+			intent.Init()
+		})
+
+		It("should include existing skills in suggestions and report them in ExistingSkillNames after auto-triggered inference", func() {
+			intent.HandleNavigate(&screens.NavigateResult{
+				ResultData: burst,
+			})
+
+			facts := []*career.Fact{
+				{ID: "fact-1", Text: "Expert in Go", SourceEventID: "event-1"},
+			}
+			batchCmd := intent.Update(burstmgmt.FactExtractionCompleteMsg{
+				Facts: facts,
+				Error: nil,
+			})
+			Expect(intent.GetState()).To(Equal(burstmgmt.StateInferringSkills))
+
+			messages := executeSkillsBatchCmd(batchCmd)
+
+			var suggestionsMsg burstmgmt.SkillSuggestionsLoadedMsg
+			for _, msg := range messages {
+				if sm, ok := msg.(burstmgmt.SkillSuggestionsLoadedMsg); ok {
+					suggestionsMsg = sm
+					break
+				}
+			}
+			Expect(suggestionsMsg.Error).NotTo(HaveOccurred())
+
+			suggestionNames := make([]string, 0, len(suggestionsMsg.Suggestions))
+			for _, s := range suggestionsMsg.Suggestions {
+				suggestionNames = append(suggestionNames, s.Name)
+			}
+
+			Expect(suggestionNames).To(ContainElement("Go"),
+				"Go should appear in suggestions for burst context visibility")
+			Expect(suggestionNames).To(ContainElement("PostgreSQL"),
+				"PostgreSQL should appear in suggestions for burst context visibility")
+			Expect(suggestionNames).To(ContainElement("Docker"),
+				"Docker does not exist in the repo and should be suggested")
+
+			Expect(suggestionsMsg.ExistingSkillNames).To(ContainElement("Go"))
+			Expect(suggestionsMsg.ExistingSkillNames).To(ContainElement("PostgreSQL"))
+		})
+	})
+
+	Describe("Trigger 3: Skills Management - 'i' on skills list", func() {
+		var (
+			skillsIntent *skillsmgmt.Intent
+			skillRepo    *careermemory.SkillRepository
+			eventRepo    *careermemory.EventRepository
+		)
+
+		BeforeEach(func() {
+			skillRepo = careermemory.NewSkillRepository()
+			eventRepo = careermemory.NewEventRepository()
+			skillRepo.SetEventRepository(eventRepo)
+			eventRepo.SetSkillRepository(skillRepo)
+			skillInferenceService := skillinference.NewSkillInferenceService(skillRepo, eventRepo)
+
+			ctx := context.Background()
+
+			_ = eventRepo.Create(ctx, &career.Event{
+				ID:      "e1",
+				Text:    "Built REST API with Go and Docker containers",
+				Date:    time.Date(2024, 6, 15, 0, 0, 0, 0, time.UTC),
+				Company: "Acme Corp",
+			})
+			_ = eventRepo.Create(ctx, &career.Event{
+				ID:      "e2",
+				Text:    "Designed PostgreSQL schema for user service",
+				Date:    time.Date(2024, 7, 20, 0, 0, 0, 0, time.UTC),
+				Company: "Acme Corp",
+			})
+
+			_ = skillRepo.Create(ctx, &career.Skill{ID: "existing-go", Name: "Go", Category: "backend"})
+			_ = skillRepo.Create(ctx, &career.Skill{ID: "existing-pg", Name: "PostgreSQL", Category: "database"})
+
+			skillsCtx := skillsmgmt.NewIntentContext(ctx, skillRepo)
+			skillsCtx.EventRepository = eventRepo
+			skillsCtx.SkillInferenceService = skillInferenceService
+
+			var err error
+			skillsIntent, err = skillsmgmt.NewIntent(skillsCtx)
+			Expect(err).NotTo(HaveOccurred())
+			skillsIntent.Init()
+		})
+
+		It("should report existing skills in ExistingSkillNames and filter them in handler", func() {
+			batchCmd := skillsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}})
+			Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateInferringSkills))
+
+			messages := executeSkillsBatchCmd(batchCmd)
+
+			var suggestionsMsg skillsmgmt.SkillSuggestionsLoadedMsg
+			for _, msg := range messages {
+				if sm, ok := msg.(skillsmgmt.SkillSuggestionsLoadedMsg); ok {
+					suggestionsMsg = sm
+					break
+				}
+			}
+			Expect(suggestionsMsg.Error).NotTo(HaveOccurred())
+
+			suggestionNames := make([]string, 0, len(suggestionsMsg.Suggestions))
+			for _, s := range suggestionsMsg.Suggestions {
+				suggestionNames = append(suggestionNames, s.Name)
+			}
+
+			Expect(suggestionNames).To(ContainElement("Go"),
+				"Raw suggestions should include existing skills")
+			Expect(suggestionNames).To(ContainElement("PostgreSQL"),
+				"Raw suggestions should include existing skills")
+			Expect(suggestionNames).To(ContainElement("Docker"),
+				"Docker does not exist in the repo and should be suggested")
+
+			Expect(suggestionsMsg.ExistingSkillNames).To(ContainElement("Go"))
+			Expect(suggestionsMsg.ExistingSkillNames).To(ContainElement("PostgreSQL"))
+
+			skillsIntent.Update(suggestionsMsg)
+			Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateSkillSuggestionReview))
+			view := skillsIntent.View()
+			Expect(view).To(ContainSubstring("Docker"))
 		})
 	})
 })

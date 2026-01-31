@@ -18,6 +18,13 @@ type SkillSuggestion struct {
 	Contexts   []string // Text snippets showing usage (max 3 for UI display)
 }
 
+// InferenceResult contains the results of skill inference including
+// new suggestions and names of skills that already exist in the repository.
+type InferenceResult struct {
+	Suggestions        []SkillSuggestion
+	ExistingSkillNames []string
+}
+
 // SkillInferenceService detects skills from event text and creates skill records.
 //
 // This service analyzes event text for technology mentions using a keyword
@@ -27,34 +34,34 @@ type SkillSuggestion struct {
 // Usage:
 //
 //	service := NewSkillInferenceService(skillRepo, eventRepo)
-//	suggestions, err := service.InferSkillsFromEvents(ctx, events)
+//	result, err := service.InferSkillsFromEvents(ctx, events)
 //
-//	// Review suggestions in UI, then create skills
+//	// Review result.Suggestions in UI, show result.ExistingSkillNames as info
 //	skills, err := service.CreateSkillsFromSuggestions(ctx, acceptedSuggestions)
 type SkillInferenceService interface {
 	// InferSkillsFromEvents analyzes all events for technology mentions.
-	// Returns skill suggestions sorted by confidence (highest first).
-	// Empty slice returned if no skills detected (not an error).
+	// Returns an InferenceResult containing new skill suggestions and
+	// names of skills that already exist in the repository.
 	//
 	// Algorithm:
 	// 1. Scan event text for keyword matches (word boundary regex)
 	// 2. Extract context snippets (~80 chars around match)
 	// 3. Calculate confidence based on usage patterns
 	// 4. Deduplicate same skill across events
-	// 5. Sort by confidence descending
+	// 5. Filter out skills that already exist (reported in ExistingSkillNames)
 	InferSkillsFromEvents(
 		ctx context.Context,
 		events []*career.Event,
-	) ([]SkillSuggestion, error)
+	) (*InferenceResult, error)
 
 	// InferSkillsFromBurst analyzes events within a specific burst.
 	// Useful for targeted skill detection after burst confirmation.
-	// Returns skill suggestions specific to this burst's events.
+	// Returns an InferenceResult specific to this burst's events.
 	InferSkillsFromBurst(
 		ctx context.Context,
 		burst *career.Burst,
 		events []*career.Event,
-	) ([]SkillSuggestion, error)
+	) (*InferenceResult, error)
 
 	// CreateSkillsFromSuggestions persists accepted suggestions as skills
 	// and links them to source events via junction table.

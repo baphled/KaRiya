@@ -58,6 +58,8 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 		return i.handleBurstEventsLoaded(msg)
 	case BurstFactsLoadedMsg:
 		return i.handleBurstFactsLoaded(msg)
+	case BurstSkillsLoadedMsg:
+		return i.handleBurstSkillsLoaded(msg)
 	case BurstSuggestionsLoadedMsg:
 		return i.handleBurstSuggestionsLoaded(msg)
 	case SuggestionReviewCompleteMsg:

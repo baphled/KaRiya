@@ -48,64 +48,61 @@ func NewSkillInferenceService(skillRepo SkillRepository, eventRepo EventReposito
 }
 
 // InferSkillsFromEvents analyzes all events for technology mentions.
-// Returns skill suggestions sorted by confidence (highest first).
-//
-// Algorithm:
-// 1. Scan each event's text for keyword matches (word boundary regex)
-// 2. Extract context snippets (~80 chars around match)
-// 3. Deduplicate same skill across events
-// 4. Limit contexts to 3 per skill (for UI display)
-//
-// Returns empty slice if no skills detected (not an error).
 func (s *DefaultSkillInferenceService) InferSkillsFromEvents(
 	ctx context.Context,
 	events []*career.Event,
-) ([]SkillSuggestion, error) {
+) (*InferenceResult, error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
 
 	if len(events) == 0 {
-		return []SkillSuggestion{}, nil
+		return &InferenceResult{Suggestions: []SkillSuggestion{}}, nil
 	}
 
-	// Map to collect suggestions by canonical skill name
 	suggestionMap := make(map[string]*SkillSuggestion)
 
 	for _, event := range events {
-		// Detect skills in this event
 		detectedSkills := s.detectSkillsInText(event.Text, event.ID)
 
-		// Merge into suggestion map
 		for _, detected := range detectedSkills {
 			if existing, found := suggestionMap[detected.Name]; found {
-				// Merge with existing suggestion
 				existing.EventIDs = append(existing.EventIDs, detected.EventIDs...)
 				existing.Contexts = append(existing.Contexts, detected.Contexts...)
 
-				// Keep highest confidence
 				if detected.Confidence > existing.Confidence {
 					existing.Confidence = detected.Confidence
 				}
 
-				// Limit contexts to 3
 				if len(existing.Contexts) > 3 {
 					existing.Contexts = existing.Contexts[:3]
 				}
 			} else {
-				// New suggestion
 				suggestionMap[detected.Name] = detected
 			}
 		}
 	}
 
-	// Convert map to slice
+	var existingNames []string
+
+	if s.skillRepo != nil {
+		for name := range suggestionMap {
+			existing, _ := s.skillRepo.GetByName(ctx, name)
+			if existing != nil {
+				existingNames = append(existingNames, name)
+			}
+		}
+	}
+
 	suggestions := make([]SkillSuggestion, 0, len(suggestionMap))
 	for _, suggestion := range suggestionMap {
 		suggestions = append(suggestions, *suggestion)
 	}
 
-	return suggestions, nil
+	return &InferenceResult{
+		Suggestions:        suggestions,
+		ExistingSkillNames: existingNames,
+	}, nil
 }
 
 // InferSkillsFromBurst analyzes events within a specific burst.
@@ -114,16 +111,15 @@ func (s *DefaultSkillInferenceService) InferSkillsFromBurst(
 	ctx context.Context,
 	burst *career.Burst,
 	events []*career.Event,
-) ([]SkillSuggestion, error) {
+) (*InferenceResult, error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
 
 	if burst == nil || len(burst.EventIDs) == 0 {
-		return []SkillSuggestion{}, nil
+		return &InferenceResult{Suggestions: []SkillSuggestion{}}, nil
 	}
 
-	// Filter events to only those in the burst
 	burstEventMap := make(map[string]bool)
 	for _, id := range burst.EventIDs {
 		burstEventMap[id] = true
@@ -136,7 +132,6 @@ func (s *DefaultSkillInferenceService) InferSkillsFromBurst(
 		}
 	}
 
-	// Delegate to InferSkillsFromEvents
 	return s.InferSkillsFromEvents(ctx, burstEvents)
 }
 

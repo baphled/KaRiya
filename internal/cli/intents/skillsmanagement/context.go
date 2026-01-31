@@ -96,10 +96,7 @@ type IntentContext struct {
 
 // SkillInferenceService defines the interface for skill inference operations.
 type SkillInferenceService interface {
-	// InferSkillsFromEvents analyzes all events and suggests skills.
-	InferSkillsFromEvents(ctx context.Context, events []*domain.Event) ([]skillinference.SkillSuggestion, error)
-
-	// CreateSkillsFromSuggestions persists accepted suggestions as skills.
+	InferSkillsFromEvents(ctx context.Context, events []*domain.Event) (*skillinference.InferenceResult, error)
 	CreateSkillsFromSuggestions(ctx context.Context, suggestions []skillinference.SkillSuggestion) ([]*domain.Skill, error)
 }
 

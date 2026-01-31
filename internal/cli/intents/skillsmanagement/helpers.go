@@ -3,6 +3,7 @@ package skillsmanagement
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/components"
@@ -12,6 +13,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	domain "github.com/baphled/kariya/internal/domain/career"
 	career "github.com/baphled/kariya/internal/repository/career"
+	"github.com/baphled/kariya/internal/service/career/skillinference"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -473,6 +475,30 @@ func (i *Intent) resolveEventsFromIDs(eventIDs []string) []*domain.Event {
 	return events
 }
 
+// filterNewSuggestions removes suggestions whose names appear in existingNames.
+// Returns only suggestions for skills not already tracked.
+func filterNewSuggestions(
+	suggestions []skillinference.SkillSuggestion,
+	existingNames []string,
+) []skillinference.SkillSuggestion {
+	if len(existingNames) == 0 {
+		return suggestions
+	}
+
+	existingSet := make(map[string]bool, len(existingNames))
+	for _, name := range existingNames {
+		existingSet[strings.ToLower(name)] = true
+	}
+
+	filtered := make([]skillinference.SkillSuggestion, 0, len(suggestions))
+	for _, s := range suggestions {
+		if !existingSet[strings.ToLower(s.Name)] {
+			filtered = append(filtered, s)
+		}
+	}
+	return filtered
+}
+
 // inferSkillsFromAllEvents creates async command for skill inference from all events.
 func (i *Intent) inferSkillsFromAllEvents() tea.Cmd {
 	return func() tea.Msg {
@@ -488,11 +514,14 @@ func (i *Intent) inferSkillsFromAllEvents() tea.Cmd {
 			}
 		}
 
-		// Call service to infer skills from all events
-		suggestions, err := i.context.SkillInferenceService.InferSkillsFromEvents(i.context.Ctx, events)
+		result, err := i.context.SkillInferenceService.InferSkillsFromEvents(i.context.Ctx, events)
+		if err != nil {
+			return SkillSuggestionsLoadedMsg{Error: err}
+		}
+
 		return SkillSuggestionsLoadedMsg{
-			Suggestions: suggestions,
-			Error:       err,
+			Suggestions:        result.Suggestions,
+			ExistingSkillNames: result.ExistingSkillNames,
 		}
 	}
 }

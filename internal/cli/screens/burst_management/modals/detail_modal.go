@@ -69,6 +69,7 @@ func (m *BurstDetailModal) updateFooterBadges() {
 	badges := []*primitives.Badge{
 		primitives.ViewEventsBadge(theme),
 		primitives.ViewFactsBadge(theme),
+		primitives.ViewSkillsBadge(theme),
 		primitives.EditBadge(theme),
 		primitives.DeleteBadge(theme),
 		primitives.ConfirmActionBadge(theme),

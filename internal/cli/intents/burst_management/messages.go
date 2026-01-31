@@ -28,6 +28,12 @@ type BurstFactsLoadedMsg struct {
 	Error error
 }
 
+// BurstSkillsLoadedMsg is sent when skills for a burst are loaded.
+type BurstSkillsLoadedMsg struct {
+	Skills []*career.Skill
+	Error  error
+}
+
 // BurstEditCompleteMsg is sent when burst editing is complete.
 type BurstEditCompleteMsg struct {
 	Burst     *career.Burst
@@ -50,6 +56,7 @@ type BurstConfirmedMsg struct {
 // FactExtractionCompleteMsg is sent when fact extraction is complete.
 type FactExtractionCompleteMsg struct {
 	Facts []*career.Fact
+	Burst *career.Burst
 	Error error
 }
 
@@ -74,8 +81,9 @@ type EditBurstMsg struct {
 
 // SkillSuggestionsLoadedMsg is sent when skill inference completes.
 type SkillSuggestionsLoadedMsg struct {
-	Suggestions []skillinference.SkillSuggestion
-	Error       error
+	Suggestions        []skillinference.SkillSuggestion
+	ExistingSkillNames []string
+	Error              error
 }
 
 // SkillSuggestionsErrorMsg is sent when skill inference fails.

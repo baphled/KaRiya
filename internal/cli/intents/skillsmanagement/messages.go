@@ -61,8 +61,9 @@ type RequestBrowseEventMsg struct {
 
 // SkillSuggestionsLoadedMsg is sent when skill inference completes.
 type SkillSuggestionsLoadedMsg struct {
-	Suggestions []skillinference.SkillSuggestion
-	Error       error
+	Suggestions        []skillinference.SkillSuggestion
+	ExistingSkillNames []string
+	Error              error
 }
 
 // SkillsCreatedMsg is sent when skills are created from accepted suggestions.

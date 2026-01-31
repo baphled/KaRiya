@@ -31,10 +31,10 @@ var _ = Describe("Confidence Scoring", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			goSkill := findByName(suggestions, "Go")
+			goSkill := findByName(result.Suggestions, "Go")
 			Expect(goSkill).NotTo(BeNil())
 			Expect(goSkill.Confidence).To(Equal(0.95))
 		})
@@ -48,10 +48,10 @@ var _ = Describe("Confidence Scoring", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			goSkill := findByName(suggestions, "Go")
+			goSkill := findByName(result.Suggestions, "Go")
 			Expect(goSkill).NotTo(BeNil())
 			Expect(goSkill.Confidence).To(Equal(0.95))
 		})
@@ -65,10 +65,10 @@ var _ = Describe("Confidence Scoring", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			goSkill := findByName(suggestions, "Go")
+			goSkill := findByName(result.Suggestions, "Go")
 			Expect(goSkill).NotTo(BeNil())
 			Expect(goSkill.Confidence).To(Equal(0.95))
 		})
@@ -82,10 +82,10 @@ var _ = Describe("Confidence Scoring", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			goSkill := findByName(suggestions, "Go")
+			goSkill := findByName(result.Suggestions, "Go")
 			Expect(goSkill).NotTo(BeNil())
 			Expect(goSkill.Confidence).To(Equal(0.95))
 		})
@@ -99,10 +99,10 @@ var _ = Describe("Confidence Scoring", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			goSkill := findByName(suggestions, "Go")
+			goSkill := findByName(result.Suggestions, "Go")
 			Expect(goSkill).NotTo(BeNil())
 			Expect(goSkill.Confidence).To(Equal(0.95))
 		})
@@ -116,10 +116,10 @@ var _ = Describe("Confidence Scoring", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			redisSkill := findByName(suggestions, "Redis")
+			redisSkill := findByName(result.Suggestions, "Redis")
 			Expect(redisSkill).NotTo(BeNil())
 			Expect(redisSkill.Confidence).To(Equal(0.95))
 		})
@@ -133,10 +133,10 @@ var _ = Describe("Confidence Scoring", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			goSkill := findByName(suggestions, "Go")
+			goSkill := findByName(result.Suggestions, "Go")
 			Expect(goSkill).NotTo(BeNil())
 			Expect(goSkill.Confidence).To(Equal(0.95))
 		})
@@ -150,10 +150,10 @@ var _ = Describe("Confidence Scoring", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			k8sSkill := findByName(suggestions, "Kubernetes")
+			k8sSkill := findByName(result.Suggestions, "Kubernetes")
 			Expect(k8sSkill).NotTo(BeNil())
 			Expect(k8sSkill.Confidence).To(Equal(0.95))
 		})
@@ -167,10 +167,10 @@ var _ = Describe("Confidence Scoring", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			goSkill := findByName(suggestions, "Go")
+			goSkill := findByName(result.Suggestions, "Go")
 			Expect(goSkill).NotTo(BeNil())
 			Expect(goSkill.Confidence).To(Equal(0.95))
 		})
@@ -184,10 +184,10 @@ var _ = Describe("Confidence Scoring", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			pythonSkill := findByName(suggestions, "Python")
+			pythonSkill := findByName(result.Suggestions, "Python")
 			Expect(pythonSkill).NotTo(BeNil())
 			Expect(pythonSkill.Confidence).To(Equal(0.95))
 		})
@@ -201,10 +201,10 @@ var _ = Describe("Confidence Scoring", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			pgSkill := findByName(suggestions, "PostgreSQL")
+			pgSkill := findByName(result.Suggestions, "PostgreSQL")
 			Expect(pgSkill).NotTo(BeNil())
 			Expect(pgSkill.Confidence).To(Equal(0.95))
 		})
@@ -218,10 +218,10 @@ var _ = Describe("Confidence Scoring", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			reactSkill := findByName(suggestions, "React")
+			reactSkill := findByName(result.Suggestions, "React")
 			Expect(reactSkill).NotTo(BeNil())
 			Expect(reactSkill.Confidence).To(Equal(0.95))
 		})
@@ -237,10 +237,10 @@ var _ = Describe("Confidence Scoring", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			dockerSkill := findByName(suggestions, "Docker")
+			dockerSkill := findByName(result.Suggestions, "Docker")
 			Expect(dockerSkill).NotTo(BeNil())
 			Expect(dockerSkill.Confidence).To(Equal(0.75))
 		})
@@ -254,10 +254,10 @@ var _ = Describe("Confidence Scoring", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			k8sSkill := findByName(suggestions, "Kubernetes")
+			k8sSkill := findByName(result.Suggestions, "Kubernetes")
 			Expect(k8sSkill).NotTo(BeNil())
 			Expect(k8sSkill.Confidence).To(Equal(0.75))
 		})
@@ -271,10 +271,10 @@ var _ = Describe("Confidence Scoring", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			reactSkill := findByName(suggestions, "React")
+			reactSkill := findByName(result.Suggestions, "React")
 			Expect(reactSkill).NotTo(BeNil())
 			Expect(reactSkill.Confidence).To(Equal(0.75))
 		})
@@ -288,10 +288,10 @@ var _ = Describe("Confidence Scoring", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			pgSkill := findByName(suggestions, "PostgreSQL")
+			pgSkill := findByName(result.Suggestions, "PostgreSQL")
 			Expect(pgSkill).NotTo(BeNil())
 			Expect(pgSkill.Confidence).To(Equal(0.75))
 		})
@@ -305,10 +305,10 @@ var _ = Describe("Confidence Scoring", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			nodeSkill := findByName(suggestions, "Node.js")
+			nodeSkill := findByName(result.Suggestions, "Node.js")
 			Expect(nodeSkill).NotTo(BeNil())
 			Expect(nodeSkill.Confidence).To(Equal(0.75))
 		})
@@ -322,10 +322,10 @@ var _ = Describe("Confidence Scoring", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			redisSkill := findByName(suggestions, "Redis")
+			redisSkill := findByName(result.Suggestions, "Redis")
 			Expect(redisSkill).NotTo(BeNil())
 			Expect(redisSkill.Confidence).To(Equal(0.75))
 		})
@@ -339,10 +339,10 @@ var _ = Describe("Confidence Scoring", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			k8sSkill := findByName(suggestions, "Kubernetes")
+			k8sSkill := findByName(result.Suggestions, "Kubernetes")
 			Expect(k8sSkill).NotTo(BeNil())
 			Expect(k8sSkill.Confidence).To(Equal(0.75))
 		})
@@ -356,10 +356,10 @@ var _ = Describe("Confidence Scoring", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			graphqlSkill := findByName(suggestions, "GraphQL")
+			graphqlSkill := findByName(result.Suggestions, "GraphQL")
 			Expect(graphqlSkill).NotTo(BeNil())
 			Expect(graphqlSkill.Confidence).To(Equal(0.75))
 		})
@@ -375,10 +375,10 @@ var _ = Describe("Confidence Scoring", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			dockerSkill := findByName(suggestions, "Docker")
+			dockerSkill := findByName(result.Suggestions, "Docker")
 			Expect(dockerSkill).NotTo(BeNil())
 			Expect(dockerSkill.Confidence).To(Equal(0.5))
 		})
@@ -392,10 +392,10 @@ var _ = Describe("Confidence Scoring", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			goSkill := findByName(suggestions, "Go")
+			goSkill := findByName(result.Suggestions, "Go")
 			Expect(goSkill).NotTo(BeNil())
 			Expect(goSkill.Confidence).To(Equal(0.5))
 		})
@@ -411,10 +411,10 @@ var _ = Describe("Confidence Scoring", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			goSkill := findByName(suggestions, "Go")
+			goSkill := findByName(result.Suggestions, "Go")
 			Expect(goSkill).NotTo(BeNil())
 			Expect(goSkill.Confidence).To(Equal(0.95))
 		})
@@ -428,10 +428,10 @@ var _ = Describe("Confidence Scoring", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			goSkill := findByName(suggestions, "Go")
+			goSkill := findByName(result.Suggestions, "Go")
 			Expect(goSkill).NotTo(BeNil())
 			Expect(goSkill.Confidence).To(Equal(0.95))
 		})
@@ -447,10 +447,10 @@ var _ = Describe("Confidence Scoring", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			goSkills := filterByName(suggestions, "Go")
+			goSkills := filterByName(result.Suggestions, "Go")
 			Expect(goSkills).To(HaveLen(1))                // Deduplicated
 			Expect(goSkills[0].Confidence).To(Equal(0.95)) // Highest confidence wins
 		})
@@ -464,15 +464,15 @@ var _ = Describe("Confidence Scoring", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
 
-			pgSkill := findByName(suggestions, "PostgreSQL")
+			pgSkill := findByName(result.Suggestions, "PostgreSQL")
 			Expect(pgSkill).NotTo(BeNil())
 			Expect(pgSkill.Confidence).To(Equal(0.95)) // High confidence
 
-			mongoSkill := findByName(suggestions, "MongoDB")
+			mongoSkill := findByName(result.Suggestions, "MongoDB")
 			Expect(mongoSkill).NotTo(BeNil())
 			Expect(mongoSkill.Confidence).To(Equal(0.75)) // Medium confidence
 		})
@@ -493,10 +493,10 @@ var _ = Describe("Confidence Scoring", func() {
 				},
 			}
 
-			suggestions, err := service.InferSkillsFromEvents(ctx, events)
+			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			goSkills := filterByName(suggestions, "Go")
+			goSkills := filterByName(result.Suggestions, "Go")
 			Expect(goSkills).To(HaveLen(1))
 			Expect(goSkills[0].Confidence).To(Equal(0.95)) // Highest confidence kept
 			Expect(goSkills[0].EventIDs).To(HaveLen(2))

@@ -114,6 +114,9 @@ type Intent struct {
 	// factsModal holds the burst facts modal (replaces facts screen).
 	factsModal *burstmodals.BurstFactsModal
 
+	// skillsModal holds the burst skills modal for viewing skills associated with a burst.
+	skillsModal *burstmodals.BurstSkillsModal
+
 	// editModal holds the edit burst modal.
 	editModal *burstmodals.EditBurstModal
 

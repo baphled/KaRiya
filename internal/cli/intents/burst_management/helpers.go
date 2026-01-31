@@ -4,6 +4,7 @@ package burst_management
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/behaviors"
@@ -20,6 +21,29 @@ import (
 	"github.com/baphled/kariya/internal/service/career/skillinference"
 	tea "github.com/charmbracelet/bubbletea"
 )
+
+// filterNewSuggestions removes suggestions whose names appear in existingNames.
+func filterNewSuggestions(
+	suggestions []skillinference.SkillSuggestion,
+	existingNames []string,
+) []skillinference.SkillSuggestion {
+	if len(existingNames) == 0 {
+		return suggestions
+	}
+
+	existingSet := make(map[string]bool, len(existingNames))
+	for _, name := range existingNames {
+		existingSet[strings.ToLower(name)] = true
+	}
+
+	filtered := make([]skillinference.SkillSuggestion, 0, len(suggestions))
+	for _, s := range suggestions {
+		if !existingSet[strings.ToLower(s.Name)] {
+			filtered = append(filtered, s)
+		}
+	}
+	return filtered
+}
 
 // getTerminalDimensions returns current terminal dimensions with fallback defaults.
 func (i *Intent) getTerminalDimensions() (width, height int) {
@@ -156,6 +180,7 @@ func (i *Intent) hasVisibleContentModal() bool {
 	return (i.detailModal != nil && i.detailModal.IsVisible()) ||
 		(i.eventsModal != nil && i.eventsModal.IsVisible()) ||
 		(i.factsModal != nil && i.factsModal.IsVisible()) ||
+		(i.skillsModal != nil && i.skillsModal.IsVisible()) ||
 		(i.suggestionEventsModal != nil && i.suggestionEventsModal.IsVisible())
 }
 
@@ -461,6 +486,39 @@ func (i *Intent) showBurstEventsModal() tea.Cmd {
 	}
 }
 
+// showBurstSkillsModal loads and shows skills for the current burst.
+func (i *Intent) showBurstSkillsModal() tea.Cmd {
+	if i.selectedBurst == nil {
+		return nil
+	}
+
+	if i.context.SkillRepository == nil {
+		return func() tea.Msg {
+			return BurstSkillsLoadedMsg{Skills: []*career.Skill{}}
+		}
+	}
+
+	return func() tea.Msg {
+		ctx := i.getContext()
+		skillMap := make(map[string]*career.Skill)
+		for _, eventID := range i.selectedBurst.EventIDs {
+			skills, err := i.context.SkillRepository.GetSkillsForEvent(ctx, eventID)
+			if err != nil {
+				continue
+			}
+			for _, skill := range skills {
+				skillMap[skill.ID] = skill
+			}
+		}
+
+		dedupedSkills := make([]*career.Skill, 0, len(skillMap))
+		for _, skill := range skillMap {
+			dedupedSkills = append(dedupedSkills, skill)
+		}
+		return BurstSkillsLoadedMsg{Skills: dedupedSkills}
+	}
+}
+
 // showBurstFactsModal loads and shows facts for the current burst.
 func (i *Intent) showBurstFactsModal() tea.Cmd {
 	if i.selectedBurst == nil {
@@ -533,6 +591,14 @@ func (i *Intent) updateDetailModalRegistry() {
 			i.factsModal.IsVisible,
 			i.factsModal.View,
 			i.factsModal.Update,
+		))
+	}
+
+	if i.skillsModal != nil && i.skillsModal.IsVisible() {
+		i.modalRegistry.Register(intents.NewViewModalAdapter(
+			i.skillsModal.IsVisible,
+			i.skillsModal.View,
+			i.skillsModal.Update,
 		))
 	}
 }
@@ -906,21 +972,21 @@ func (i *Intent) extractFactsForBurst(burst *career.Burst) tea.Cmd {
 	return func() tea.Msg {
 		// Check if cancelled before starting.
 		if ctx.Err() != nil {
-			return FactExtractionCompleteMsg{Error: ctx.Err()}
+			return FactExtractionCompleteMsg{Burst: burst, Error: ctx.Err()}
 		}
 
 		if service == nil {
-			return FactExtractionCompleteMsg{Error: fmt.Errorf("service not available")}
+			return FactExtractionCompleteMsg{Burst: burst, Error: fmt.Errorf("service not available")}
 		}
 
 		facts, err := service.ExtractFactsFromBurst(ctx, burst)
 		if err != nil {
-			return FactExtractionCompleteMsg{Error: err}
+			return FactExtractionCompleteMsg{Burst: burst, Error: err}
 		}
 
 		// Check if cancelled after extraction.
 		if ctx.Err() != nil {
-			return FactExtractionCompleteMsg{Error: ctx.Err()}
+			return FactExtractionCompleteMsg{Burst: burst, Error: ctx.Err()}
 		}
 
 		savedFacts := make([]*career.Fact, 0, len(facts))
@@ -930,7 +996,7 @@ func (i *Intent) extractFactsForBurst(burst *career.Burst) tea.Cmd {
 
 			// Check if cancelled during save loop.
 			if ctx.Err() != nil {
-				return FactExtractionCompleteMsg{Error: ctx.Err()}
+				return FactExtractionCompleteMsg{Burst: burst, Error: ctx.Err()}
 			}
 
 			if err := service.SaveFact(ctx, fact); err != nil {
@@ -939,7 +1005,7 @@ func (i *Intent) extractFactsForBurst(burst *career.Burst) tea.Cmd {
 			savedFacts = append(savedFacts, fact)
 		}
 
-		return FactExtractionCompleteMsg{Facts: savedFacts}
+		return FactExtractionCompleteMsg{Facts: savedFacts, Burst: burst}
 	}
 }
 
@@ -984,58 +1050,30 @@ func (i *Intent) inferSkillsFromBurst(burst *career.Burst) tea.Cmd {
 			return SkillSuggestionsErrorMsg{Err: ctx.Err()}
 		}
 
-		// Run skill detection.
-		suggestions, err := service.InferSkillsFromEvents(ctx, events)
+		result, err := service.InferSkillsFromEvents(ctx, events)
 		if err != nil {
 			return SkillSuggestionsErrorMsg{Err: fmt.Errorf("skill detection failed: %w", err)}
 		}
 
 		return SkillSuggestionsLoadedMsg{
-			Suggestions: suggestions,
-			Error:       nil,
+			Suggestions:        result.Suggestions,
+			ExistingSkillNames: result.ExistingSkillNames,
 		}
 	}
 }
 
-// createSkillsFromSuggestions persists accepted skill suggestions as confirmed skills.
-func (i *Intent) createSkillsFromSuggestions(suggestions []skillinference.SkillSuggestion) tea.Cmd {
-	if len(suggestions) == 0 {
-		return func() tea.Msg {
-			return SkillsCreatedMsg{Skills: []*career.Skill{}, Error: nil}
-		}
-	}
-
-	// Cancel any previous async operation.
-	if i.cancelFunc != nil {
-		i.cancelFunc()
-	}
-
-	// Create cancellable context for this operation.
-	ctx, cancel := context.WithCancel(context.Background())
-	i.cancelFunc = cancel
-
-	// Capture service reference to avoid race conditions.
+// saveSkillFromSuggestion persists a single accepted skill suggestion synchronously.
+// This mirrors saveAndExtractBurst: save immediately on each 'a' press.
+func (i *Intent) saveSkillFromSuggestion(suggestion skillinference.SkillSuggestion) {
 	service := i.context.SkillInferenceService
+	if service == nil {
+		i.ShowErrorModal("Skill Creation Failed", "skill inference service not available")
+		return
+	}
 
-	return func() tea.Msg {
-		// Check if cancelled before starting.
-		if ctx.Err() != nil {
-			return SkillsCreatedMsg{Error: ctx.Err()}
-		}
-
-		if service == nil {
-			return SkillsCreatedMsg{Error: fmt.Errorf("skill inference service not available")}
-		}
-
-		// Create skills from suggestions.
-		skills, err := service.CreateSkillsFromSuggestions(ctx, suggestions)
-		if err != nil {
-			return SkillsCreatedMsg{Error: fmt.Errorf("failed to create skills: %w", err)}
-		}
-
-		return SkillsCreatedMsg{
-			Skills: skills,
-			Error:  nil,
-		}
+	ctx := i.getContext()
+	_, err := service.CreateSkillsFromSuggestions(ctx, []skillinference.SkillSuggestion{suggestion})
+	if err != nil {
+		i.ShowErrorModal("Skill Creation Failed", fmt.Sprintf("Failed to create skill: %v", err))
 	}
 }
