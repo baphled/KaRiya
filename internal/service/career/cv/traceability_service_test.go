@@ -3,7 +3,6 @@ package cv
 import (
 	"context"
 	"io"
-	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
@@ -45,63 +44,28 @@ var _ = Describe("TraceabilityService", func() {
 		testEvent2 = fixtures.EventWith(uuid.New().String(), "Implemented feature Y", "", "")
 		testEvent2.Tags = []string{"technical"}
 
-		// Create test facts with all required fields
 		eventID1 := uuid.New().String()
-		testFact1 = &career.Fact{
-			ID:                   uuid.New().String(),
-			Text:                 "Increased team productivity by 20%",
-			CompetencyCategories: []string{"leadership"},
-			RoleFit:              career.RoleFitPrincipal,
-			AudienceRelevance:    []string{"hiring_manager"},
-			StrengthSignal:       "teamwork",
-			SourceEventID:        eventID1,
-			CreatedAt:            time.Now(),
-			UpdatedAt:            time.Now(),
-		}
+		testFact1 = fixtures.FactForValidation(uuid.New().String(), "Increased team productivity by 20%", career.RoleFitPrincipal, []string{"leadership"}, []string{"hiring_manager"}, eventID1)
+		testFact1.StrengthSignal = "teamwork"
 
 		eventID2 := uuid.New().String()
-		testFact2 = &career.Fact{
-			ID:                   uuid.New().String(),
-			Text:                 "Reduced system latency by 30%",
-			CompetencyCategories: []string{"technical"},
-			RoleFit:              career.RoleFitStaff,
-			AudienceRelevance:    []string{"peer"},
-			StrengthSignal:       "technical-excellence",
-			SourceEventID:        eventID2,
-			CreatedAt:            time.Now(),
-			UpdatedAt:            time.Now(),
-		}
+		testFact2 = fixtures.FactForValidation(uuid.New().String(), "Reduced system latency by 30%", career.RoleFitStaff, []string{"technical"}, []string{"peer"}, eventID2)
+		testFact2.StrengthSignal = "technical-excellence"
 
-		// Create test bullets
-		testBullet1 = &career.CVBullet{
-			ID:              uuid.New().String(),
-			Text:            "Led and mentored team on project X",
-			SourceEventIDs:  []string{testEvent1.ID},
-			SourceFactIDs:   []string{testFact1.ID},
-			Rank:            0.9,
-			InclusionReason: "ownership",
-			Confidence:      0.95,
-		}
+		testBullet1 = fixtures.CVBulletWithSources(uuid.New().String(), "", "Led and mentored team on project X", []string{testEvent1.ID}, []string{testFact1.ID})
+		testBullet1.Rank = 0.9
+		testBullet1.InclusionReason = "ownership"
+		testBullet1.Confidence = 0.95
 
-		testBullet2 = &career.CVBullet{
-			ID:              uuid.New().String(),
-			Text:            "Implemented feature Y with performance improvements",
-			SourceEventIDs:  []string{testEvent2.ID},
-			SourceFactIDs:   []string{testFact2.ID},
-			Rank:            0.85,
-			InclusionReason: "execution",
-			Confidence:      0.90,
-		}
+		testBullet2 = fixtures.CVBulletWithSources(uuid.New().String(), "", "Implemented feature Y with performance improvements", []string{testEvent2.ID}, []string{testFact2.ID})
+		testBullet2.Rank = 0.85
+		testBullet2.InclusionReason = "execution"
+		testBullet2.Confidence = 0.90
 
-		orphanedBullet = &career.CVBullet{
-			ID:              uuid.New().String(),
-			Text:            "Orphaned bullet with no sources",
-			SourceEventIDs:  []string{},
-			SourceFactIDs:   []string{},
-			Rank:            0.5,
-			InclusionReason: "unknown",
-			Confidence:      0.0,
-		}
+		orphanedBullet = fixtures.CVBulletWithSources(uuid.New().String(), "", "Orphaned bullet with no sources", []string{}, []string{})
+		orphanedBullet.Rank = 0.5
+		orphanedBullet.InclusionReason = "unknown"
+		orphanedBullet.Confidence = 0.0
 
 		// Store test data in repositories
 		Expect(eventRepo.Create(ctx, testEvent1)).To(Succeed())
@@ -122,12 +86,7 @@ var _ = Describe("TraceabilityService", func() {
 		})
 
 		It("should handle bullets with multiple sources", func() {
-			multiBullet := &career.CVBullet{
-				ID:             uuid.New().String(),
-				Text:           "Multi-source bullet",
-				SourceEventIDs: []string{testEvent1.ID, testEvent2.ID},
-				SourceFactIDs:  []string{testFact1.ID, testFact2.ID},
-			}
+			multiBullet := fixtures.CVBulletWithSources(uuid.New().String(), "", "Multi-source bullet", []string{testEvent1.ID, testEvent2.ID}, []string{testFact1.ID, testFact2.ID})
 
 			events, facts, err := service.GetBulletSources(ctx, multiBullet.ID, multiBullet)
 
@@ -144,13 +103,7 @@ var _ = Describe("TraceabilityService", func() {
 		})
 
 		It("should handle missing event gracefully", func() {
-			// GetBulletSources silently skips missing events and returns what it can find
-			bulletWithMissing := &career.CVBullet{
-				ID:             uuid.New().String(),
-				Text:           "Bullet with missing event",
-				SourceEventIDs: []string{uuid.New().String()}, // Non-existent event
-				SourceFactIDs:  []string{testFact1.ID},
-			}
+			bulletWithMissing := fixtures.CVBulletWithSources(uuid.New().String(), "", "Bullet with missing event", []string{uuid.New().String()}, []string{testFact1.ID})
 
 			events, facts, err := service.GetBulletSources(ctx, bulletWithMissing.ID, bulletWithMissing)
 
@@ -183,18 +136,8 @@ var _ = Describe("TraceabilityService", func() {
 		})
 
 		It("should handle multiple bullets using same event", func() {
-			multiBullet1 := &career.CVBullet{
-				ID:             uuid.New().String(),
-				Text:           "First usage",
-				SourceEventIDs: []string{testEvent1.ID},
-				SourceFactIDs:  []string{},
-			}
-			multiBullet2 := &career.CVBullet{
-				ID:             uuid.New().String(),
-				Text:           "Second usage",
-				SourceEventIDs: []string{testEvent1.ID},
-				SourceFactIDs:  []string{},
-			}
+			multiBullet1 := fixtures.CVBulletWithSources(uuid.New().String(), "", "First usage", []string{testEvent1.ID}, []string{})
+			multiBullet2 := fixtures.CVBulletWithSources(uuid.New().String(), "", "Second usage", []string{testEvent1.ID}, []string{})
 			bullets := []*career.CVBullet{multiBullet1, multiBullet2}
 
 			usage := service.GetEventUsage(ctx, testEvent1.ID, bullets)
@@ -222,18 +165,8 @@ var _ = Describe("TraceabilityService", func() {
 		})
 
 		It("should handle multiple bullets using same fact", func() {
-			multiBullet1 := &career.CVBullet{
-				ID:             uuid.New().String(),
-				Text:           "First usage",
-				SourceEventIDs: []string{},
-				SourceFactIDs:  []string{testFact1.ID},
-			}
-			multiBullet2 := &career.CVBullet{
-				ID:             uuid.New().String(),
-				Text:           "Second usage",
-				SourceEventIDs: []string{},
-				SourceFactIDs:  []string{testFact1.ID},
-			}
+			multiBullet1 := fixtures.CVBulletWithSources(uuid.New().String(), "", "First usage", []string{}, []string{testFact1.ID})
+			multiBullet2 := fixtures.CVBulletWithSources(uuid.New().String(), "", "Second usage", []string{}, []string{testFact1.ID})
 			bullets := []*career.CVBullet{multiBullet1, multiBullet2}
 
 			usage := service.GetFactUsage(ctx, testFact1.ID, bullets)
@@ -267,14 +200,7 @@ var _ = Describe("TraceabilityService", func() {
 		})
 
 		It("should detect bullets with missing event sources", func() {
-			// ValidateTraceability only checks if there are ANY sources declared
-			// It doesn't validate that those sources actually exist
-			bulletWithMissing := &career.CVBullet{
-				ID:             uuid.New().String(),
-				Text:           "Bullet with missing event",
-				SourceEventIDs: []string{uuid.New().String()}, // Non-existent event
-				SourceFactIDs:  []string{testFact1.ID},
-			}
+			bulletWithMissing := fixtures.CVBulletWithSources(uuid.New().String(), "", "Bullet with missing event", []string{uuid.New().String()}, []string{testFact1.ID})
 			bullets := []*career.CVBullet{testBullet1, bulletWithMissing}
 
 			report := service.ValidateTraceability(ctx, bullets)
@@ -285,14 +211,7 @@ var _ = Describe("TraceabilityService", func() {
 		})
 
 		It("should detect bullets with missing fact sources", func() {
-			// ValidateTraceability only checks if there are ANY sources declared
-			// It doesn't validate that those sources actually exist
-			bulletWithMissing := &career.CVBullet{
-				ID:             uuid.New().String(),
-				Text:           "Bullet with missing fact",
-				SourceEventIDs: []string{testEvent1.ID},
-				SourceFactIDs:  []string{uuid.New().String()}, // Non-existent fact
-			}
+			bulletWithMissing := fixtures.CVBulletWithSources(uuid.New().String(), "", "Bullet with missing fact", []string{testEvent1.ID}, []string{uuid.New().String()})
 			bullets := []*career.CVBullet{testBullet1, bulletWithMissing}
 
 			report := service.ValidateTraceability(ctx, bullets)
@@ -326,16 +245,8 @@ var _ = Describe("TraceabilityService", func() {
 		})
 
 		It("should handle multiple bullets per event", func() {
-			multiBullet1 := &career.CVBullet{
-				ID:             uuid.New().String(),
-				Text:           "First usage",
-				SourceEventIDs: []string{testEvent1.ID},
-			}
-			multiBullet2 := &career.CVBullet{
-				ID:             uuid.New().String(),
-				Text:           "Second usage",
-				SourceEventIDs: []string{testEvent1.ID},
-			}
+			multiBullet1 := fixtures.CVBulletWithSources(uuid.New().String(), "", "First usage", []string{testEvent1.ID}, []string{})
+			multiBullet2 := fixtures.CVBulletWithSources(uuid.New().String(), "", "Second usage", []string{testEvent1.ID}, []string{})
 			bullets := []*career.CVBullet{multiBullet1, multiBullet2}
 
 			mapping := service.GetEventBulletMapping(ctx, bullets)
@@ -344,11 +255,7 @@ var _ = Describe("TraceabilityService", func() {
 		})
 
 		It("should handle bullets with multiple event sources", func() {
-			multiBullet := &career.CVBullet{
-				ID:             uuid.New().String(),
-				Text:           "Multi-source",
-				SourceEventIDs: []string{testEvent1.ID, testEvent2.ID},
-			}
+			multiBullet := fixtures.CVBulletWithSources(uuid.New().String(), "", "Multi-source", []string{testEvent1.ID, testEvent2.ID}, []string{})
 			bullets := []*career.CVBullet{multiBullet}
 
 			mapping := service.GetEventBulletMapping(ctx, bullets)
@@ -379,16 +286,8 @@ var _ = Describe("TraceabilityService", func() {
 		})
 
 		It("should handle multiple bullets per fact", func() {
-			multiBullet1 := &career.CVBullet{
-				ID:            uuid.New().String(),
-				Text:          "First usage",
-				SourceFactIDs: []string{testFact1.ID},
-			}
-			multiBullet2 := &career.CVBullet{
-				ID:            uuid.New().String(),
-				Text:          "Second usage",
-				SourceFactIDs: []string{testFact1.ID},
-			}
+			multiBullet1 := fixtures.CVBulletWithSources(uuid.New().String(), "", "First usage", []string{}, []string{testFact1.ID})
+			multiBullet2 := fixtures.CVBulletWithSources(uuid.New().String(), "", "Second usage", []string{}, []string{testFact1.ID})
 			bullets := []*career.CVBullet{multiBullet1, multiBullet2}
 
 			mapping := service.GetFactBulletMapping(ctx, bullets)
@@ -397,11 +296,7 @@ var _ = Describe("TraceabilityService", func() {
 		})
 
 		It("should handle bullets with multiple fact sources", func() {
-			multiBullet := &career.CVBullet{
-				ID:            uuid.New().String(),
-				Text:          "Multi-source",
-				SourceFactIDs: []string{testFact1.ID, testFact2.ID},
-			}
+			multiBullet := fixtures.CVBulletWithSources(uuid.New().String(), "", "Multi-source", []string{}, []string{testFact1.ID, testFact2.ID})
 			bullets := []*career.CVBullet{multiBullet}
 
 			mapping := service.GetFactBulletMapping(ctx, bullets)

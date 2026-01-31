@@ -7,6 +7,7 @@ import (
 	"github.com/baphled/kariya/internal/constants"
 	career "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -32,24 +33,14 @@ var _ = Describe("DefaultSectionBuilder - Skills Section", func() {
 		)
 
 		BeforeEach(func() {
-			// Create sample bullets and events
-			bullets = []*career.CVBullet{
-				{
-					ID:              "bullet1",
-					Text:            "Built API",
-					SourceEventIDs:  []string{"event1"},
-					InclusionReason: string(constants.InclusionReasonEventDirect),
-				},
-			}
+			bullet1 := fixtures.CVBulletWith("bullet1", "", "Built API")
+			bullet1.SourceEventIDs = []string{"event1"}
+			bullet1.InclusionReason = string(constants.InclusionReasonEventDirect)
+			bullets = []*career.CVBullet{bullet1}
 
-			events = []*career.Event{
-				{
-					ID:      "event1",
-					Text:    "Built API",
-					Company: "TechCorp",
-					Skills:  []string{"Go", "PostgreSQL", "Docker"},
-				},
-			}
+			event1 := fixtures.EventWith("event1", "Built API", "TechCorp", "")
+			event1.Skills = []string{"Go", "PostgreSQL", "Docker"}
+			events = []*career.Event{event1}
 
 			facts = []*career.Fact{}
 		})
@@ -174,19 +165,14 @@ var _ = Describe("DefaultSectionBuilder - Skills Section", func() {
 
 		Context("Multiple events with same skill", func() {
 			BeforeEach(func() {
-				events = append(events, &career.Event{
-					ID:      "event2",
-					Text:    "Developed service",
-					Company: "StartupCo",
-					Skills:  []string{"Go", "Redis"},
-				})
+				event2 := fixtures.EventWith("event2", "Developed service", "StartupCo", "")
+				event2.Skills = []string{"Go", "Redis"}
+				events = append(events, event2)
 
-				bullets = append(bullets, &career.CVBullet{
-					ID:              "bullet2",
-					Text:            "Developed service",
-					SourceEventIDs:  []string{"event2"},
-					InclusionReason: string(constants.InclusionReasonEventDirect),
-				})
+				bullet2 := fixtures.CVBulletWith("bullet2", "", "Developed service")
+				bullet2.SourceEventIDs = []string{"event2"}
+				bullet2.InclusionReason = string(constants.InclusionReasonEventDirect)
+				bullets = append(bullets, bullet2)
 			})
 
 			It("should show unique skills without duplicates", func() {

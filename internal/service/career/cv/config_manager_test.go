@@ -9,6 +9,7 @@ import (
 
 	career "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -44,14 +45,10 @@ var _ = Describe("YAMLConfigManager", func() {
 
 	Describe("SaveConfig", func() {
 		It("should save a valid configuration", func() {
-			config := &career.CVConfig{
-				Name:           "test-config",
-				TargetRole:     "principal",
-				TargetAudience: "hiring_manager",
-				EventFilters: map[string]interface{}{
-					"tags": []string{"technical"},
-				},
-			}
+			config := fixtures.CVConfigWithFilters("test-config", map[string]interface{}{
+				"tags": []string{"technical"},
+			})
+			config.TargetRole = "principal"
 
 			err := manager.SaveConfig(ctx, config)
 			Expect(err).NotTo(HaveOccurred())
@@ -67,11 +64,7 @@ var _ = Describe("YAMLConfigManager", func() {
 		})
 
 		It("should overwrite existing configuration", func() {
-			config1 := &career.CVConfig{
-				Name:           "test-config",
-				TargetRole:     "principal",
-				TargetAudience: "hiring_manager",
-			}
+			config1 := fixtures.CVConfigWith("test-config", "principal", "hiring_manager")
 
 			err := manager.SaveConfig(ctx, config1)
 			Expect(err).NotTo(HaveOccurred())
@@ -108,10 +101,9 @@ var _ = Describe("YAMLConfigManager", func() {
 		})
 
 		It("should reject invalid config", func() {
-			config := &career.CVConfig{
-				Name: "test-config",
-				// Missing required fields
-			}
+			config := fixtures.CVConfig("test-config")
+			config.TargetRole = ""
+			config.TargetAudience = ""
 
 			err := manager.SaveConfig(ctx, config)
 			Expect(err).To(HaveOccurred())
@@ -121,11 +113,7 @@ var _ = Describe("YAMLConfigManager", func() {
 			subDir := filepath.Join(tempDir, "subdir", "test")
 			manager.configDir = subDir
 
-			config := &career.CVConfig{
-				Name:           "test-config",
-				TargetRole:     "principal",
-				TargetAudience: "hiring_manager",
-			}
+			config := fixtures.CVConfigWith("test-config", "principal", "hiring_manager")
 
 			err := manager.SaveConfig(ctx, config)
 			Expect(err).NotTo(HaveOccurred())
@@ -136,11 +124,7 @@ var _ = Describe("YAMLConfigManager", func() {
 		})
 
 		It("should use atomic write", func() {
-			config := &career.CVConfig{
-				Name:           "test-config",
-				TargetRole:     "principal",
-				TargetAudience: "hiring_manager",
-			}
+			config := fixtures.CVConfigWith("test-config", "principal", "hiring_manager")
 
 			// Count temp files before
 			entries, _ := os.ReadDir(tempDir)
@@ -160,14 +144,10 @@ var _ = Describe("YAMLConfigManager", func() {
 
 	Describe("LoadConfig", func() {
 		It("should load an existing configuration", func() {
-			config := &career.CVConfig{
-				Name:           "test-config",
-				TargetRole:     "principal",
-				TargetAudience: "hiring_manager",
-				EventFilters: map[string]interface{}{
-					"tags": []string{"technical", "leadership"},
-				},
-			}
+			config := fixtures.CVConfigWithFilters("test-config", map[string]interface{}{
+				"tags": []string{"technical", "leadership"},
+			})
+			config.TargetRole = "principal"
 
 			err := manager.SaveConfig(ctx, config)
 			Expect(err).NotTo(HaveOccurred())
@@ -196,11 +176,7 @@ var _ = Describe("YAMLConfigManager", func() {
 		})
 
 		It("should handle context cancellation", func() {
-			config := &career.CVConfig{
-				Name:           "test-config",
-				TargetRole:     "principal",
-				TargetAudience: "hiring_manager",
-			}
+			config := fixtures.CVConfigWith("test-config", "principal", "hiring_manager")
 
 			Expect(manager.SaveConfig(context.Background(), config)).To(Succeed())
 
@@ -214,11 +190,7 @@ var _ = Describe("YAMLConfigManager", func() {
 
 	Describe("DeleteConfig", func() {
 		It("should delete an existing configuration", func() {
-			config := &career.CVConfig{
-				Name:           "test-config",
-				TargetRole:     "principal",
-				TargetAudience: "hiring_manager",
-			}
+			config := fixtures.CVConfigWith("test-config", "principal", "hiring_manager")
 
 			Expect(manager.SaveConfig(ctx, config)).To(Succeed())
 			filePath := manager.GetConfigPath("test-config")
@@ -256,21 +228,9 @@ var _ = Describe("YAMLConfigManager", func() {
 	Describe("ListConfigs", func() {
 		It("should list all configurations", func() {
 			configs := []*career.CVConfig{
-				{
-					Name:           "config1",
-					TargetRole:     "principal",
-					TargetAudience: "hiring_manager",
-				},
-				{
-					Name:           "config2",
-					TargetRole:     "principal",
-					TargetAudience: "recruiter",
-				},
-				{
-					Name:           "config3",
-					TargetRole:     "em",
-					TargetAudience: "peer",
-				},
+				fixtures.CVConfigWith("config1", "principal", "hiring_manager"),
+				fixtures.CVConfigWith("config2", "principal", "recruiter"),
+				fixtures.CVConfigWith("config3", "em", "peer"),
 			}
 
 			for _, config := range configs {
@@ -300,11 +260,7 @@ var _ = Describe("YAMLConfigManager", func() {
 
 		It("should skip non-YAML files", func() {
 			// Save a config
-			config := &career.CVConfig{
-				Name:           "config1",
-				TargetRole:     "principal",
-				TargetAudience: "hiring_manager",
-			}
+			config := fixtures.CVConfigWith("config1", "principal", "hiring_manager")
 			err := manager.SaveConfig(ctx, config)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -322,11 +278,7 @@ var _ = Describe("YAMLConfigManager", func() {
 
 		It("should skip invalid configs during list", func() {
 			// Save valid config
-			config1 := &career.CVConfig{
-				Name:           "config1",
-				TargetRole:     "principal",
-				TargetAudience: "hiring_manager",
-			}
+			config1 := fixtures.CVConfigWith("config1", "principal", "hiring_manager")
 			Expect(manager.SaveConfig(ctx, config1)).To(Succeed())
 
 			// Manually create an invalid YAML file
@@ -375,11 +327,7 @@ var _ = Describe("YAMLConfigManager", func() {
 
 	Describe("ConfigExists", func() {
 		It("should return true for existing config", func() {
-			config := &career.CVConfig{
-				Name:           "test-config",
-				TargetRole:     "principal",
-				TargetAudience: "hiring_manager",
-			}
+			config := fixtures.CVConfigWith("test-config", "principal", "hiring_manager")
 
 			Expect(manager.SaveConfig(ctx, config)).To(Succeed())
 
@@ -410,17 +358,13 @@ var _ = Describe("YAMLConfigManager", func() {
 
 	Describe("YAML Serialization", func() {
 		It("should preserve all config fields", func() {
-			originalConfig := &career.CVConfig{
-				Name:           "test-config",
-				TargetRole:     "principal",
-				TargetAudience: "hiring_manager",
-				EventFilters: map[string]interface{}{
-					"tags":      []string{"technical", "leadership"},
-					"companies": []string{"Google", "Meta"},
-					"minDate":   "2020-01-01",
-					"maxDate":   "2023-12-31",
-				},
-			}
+			originalConfig := fixtures.CVConfigWithFilters("test-config", map[string]interface{}{
+				"tags":      []string{"technical", "leadership"},
+				"companies": []string{"Google", "Meta"},
+				"minDate":   "2020-01-01",
+				"maxDate":   "2023-12-31",
+			})
+			originalConfig.TargetRole = "principal"
 
 			err := manager.SaveConfig(ctx, originalConfig)
 			Expect(err).NotTo(HaveOccurred())
@@ -439,18 +383,15 @@ var _ = Describe("YAMLConfigManager", func() {
 		})
 
 		It("should handle complex nested filters", func() {
-			config := &career.CVConfig{
-				Name:           "complex-config",
-				TargetRole:     "em",
-				TargetAudience: "peer",
-				EventFilters: map[string]interface{}{
-					"tags":       []string{"leadership", "mentoring"},
-					"categories": []string{"leadership", "product"},
-					"companies":  []string{"Company A", "Company B"},
-					"roles":      []string{"staff", "principal"},
-					"dateRange":  map[string]string{"start": "2021-01-01", "end": "2024-12-31"},
-				},
-			}
+			config := fixtures.CVConfigWithFilters("complex-config", map[string]interface{}{
+				"tags":       []string{"leadership", "mentoring"},
+				"categories": []string{"leadership", "product"},
+				"companies":  []string{"Company A", "Company B"},
+				"roles":      []string{"staff", "principal"},
+				"dateRange":  map[string]string{"start": "2021-01-01", "end": "2024-12-31"},
+			})
+			config.TargetRole = "em"
+			config.TargetAudience = "peer"
 
 			err := manager.SaveConfig(ctx, config)
 			Expect(err).NotTo(HaveOccurred())
@@ -476,11 +417,7 @@ var _ = Describe("YAMLConfigManager", func() {
 		})
 
 		It("should prevent path traversal in SaveConfig", func() {
-			config := &career.CVConfig{
-				Name:           "../../../etc/passwd",
-				TargetRole:     "principal",
-				TargetAudience: "hiring_manager",
-			}
+			config := fixtures.CVConfigWith("../../../etc/passwd", "principal", "hiring_manager")
 
 			err := manager.SaveConfig(ctx, config)
 			// Should either fail or sanitize the name
