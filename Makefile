@@ -1,4 +1,4 @@
-.PHONY: test test-race coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance check-doc-comments check-patterns check-patterns-quiet check-patterns-strict check-intent-architecture check-intent-architecture-files golangci-lint install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ai-commit ci-local ci-install-tools gosec session-start session-end session-reset check-session verify-hooks tdd-check tdd-red tdd-green tdd-refactor tdd-document pre-task what-to-use generate-diagrams generate-state-matrix generate-docs diagrams new-feature new-bug new-intent
+.PHONY: test test-race coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance check-doc-comments check-docblocks check-patterns check-patterns-quiet check-patterns-strict check-intent-architecture check-intent-architecture-files golangci-lint install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ai-commit ci-local ci-install-tools gosec session-start session-end session-reset check-session verify-hooks tdd-check tdd-red tdd-green tdd-refactor tdd-document pre-task what-to-use generate-diagrams generate-state-matrix generate-docs diagrams new-feature new-bug new-intent
 
 # Run all tests in verbose mode (race detection in CI only)
 test:
@@ -72,12 +72,19 @@ pre-commit:
 review-commit:
 	@bash scripts/review-commit.sh
 
-# Check exported symbols have doc comments (standalone revive)
+# Check structured doc comments on exported symbols (custom analyzer)
+check-docblocks:
+	@echo "Running docblocks analyzer..."
+	@go build -o ./bin/docblocks ./cmd/docblocks
+	@go vet -vettool=./bin/docblocks ./internal/cli/behaviors/... ./internal/cli/intents/... ./tools/analyzers/docblocks/...
+	@echo "✅ Docblocks: all checks passed."
+
+# Check exported symbols have doc comments (standalone revive — DEPRECATED, use check-docblocks)
 check-doc-comments:
 	@bash scripts/check-doc-comments.sh
 
 # Check full project compliance (all rules)
-check-compliance: staticcheck check-intent-architecture check-doc-comments
+check-compliance: staticcheck check-intent-architecture check-docblocks
 	@bash scripts/check-compliance.sh
 
 # Install all CI tools locally
