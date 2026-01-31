@@ -7,7 +7,6 @@ import (
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -29,7 +28,7 @@ type EditFactModal struct {
 	original *career.Fact
 	modified *career.Fact
 	result   *EditResult
-	form     *huh.Form
+	form     forms.Form
 	formData *forms.FactFormData
 	width    int
 	height   int
@@ -77,10 +76,8 @@ func (m *EditFactModal) Update(msg tea.Msg) tea.Cmd {
 		return nil
 	}
 
-	form, cmd := m.form.Update(msg)
-	if f, ok := form.(*huh.Form); ok {
-		m.form = f
-	}
+	var cmd tea.Cmd
+	m.form, cmd = forms.Update(m.form, msg)
 
 	if forms.IsCompleted(m.form) {
 		m.syncModified()
