@@ -1,6 +1,6 @@
 # Go Documentation & Comment Rules
 
-This document defines the **mandatory** documentation, comment, and naming standards for Go code in this project. These rules are enforced by `golangci-lint` (via `stylecheck`, `revive`, `godot`) and manual code review.
+This document defines the **mandatory** documentation, comment, and naming standards for Go code in this project. These rules are enforced by `golangci-lint` (via `stylecheck`, `revive`, `godot`), the custom `docblocks` analyzer (via `go vet`), and manual code review.
 
 > **Guiding Principle**: Documentation explains *why and what* at boundaries. Code explains *how* through structure and naming.
 
@@ -101,16 +101,17 @@ All exported functions, methods, structs, interfaces, constants, and variables *
 - Describe *intent and contract*, not implementation details
 - Use structured sections where applicable (see below)
 
-### Structured Sections
+### Structured Sections (ENFORCED by `docblocks` analyzer)
 
-Use these sections when applicable:
+These sections are **mandatory** on all exported functions and methods. The `docblocks` analyzer (`make check-docblocks`) enforces their presence.
 
-| Section | When to Use |
-|---------|-------------|
-| `Expected:` or `Parameters:` | Document preconditions, parameter constraints |
-| `Returns:` | Document return values and their meaning |
-| `Side effects:` | Document state changes, I/O operations, events emitted |
-| `Errors:` | Document non-trivial error conditions |
+| Section | When Required | Content |
+|---------|---------------|---------|
+| `Expected:` | Functions with parameters | Document preconditions, parameter constraints |
+| `Returns:` | Functions with return values | Document return values and their meaning |
+| `Side effects:` | All exported functions/methods | Document state changes, I/O operations, or `None.` for pure functions |
+
+Use `Side effects: None.` for pure functions with no mutations or I/O.
 
 ### Example
 
@@ -168,12 +169,14 @@ type EventRepository interface {
 
 - Missing doc comment on exported identifier
 - Comment that only restates the name (e.g., `// Add adds two numbers`)
-- Missing required sections when applicable
+- Missing `Expected:` section on functions with parameters
+- Missing `Returns:` section on functions with return values
+- Missing `Side effects:` section on exported functions/methods
 
 ### Enforcement
 
 - **Linter**: `stylecheck` (ST1020, ST1021, ST1022)
-- **Linter**: `revive` (exported)
+- **Analyzer**: `docblocks` (`make check-docblocks`) - enforces structured sections
 
 ---
 
@@ -322,14 +325,17 @@ type Validator interface {
 
 ## 8. Enforcement Summary
 
-| Rule | Linter | Check |
-|------|--------|-------|
+| Rule | Tool | Check |
+|------|------|-------|
 | Package comments present | `stylecheck` | ST1000 |
 | Package comments present | `revive` | package-comments |
 | Exported function docs | `stylecheck` | ST1020 |
 | Exported type docs | `stylecheck` | ST1021 |
 | Exported var/const docs | `stylecheck` | ST1022 |
-| Exported identifier docs | `revive` | exported |
+| Doc starts with symbol name | `docblocks` | name-prefix |
+| `Expected:` section present | `docblocks` | missing-expected |
+| `Returns:` section present | `docblocks` | missing-returns |
+| `Side effects:` section present | `docblocks` | missing-side-effects |
 | Comments end with period | `godot` | - |
 | No TODO/FIXME/HACK/XXX | `godox` | - |
 | Inline comments | **Manual Review** | - |
@@ -337,11 +343,14 @@ type Validator interface {
 ### Running Enforcement
 
 ```bash
+# Run the docblocks structured section analyzer
+make check-docblocks
+
 # Run all linters including documentation checks
 make golangci-lint
 
-# Or directly
-golangci-lint run ./...
+# Run full compliance (includes docblocks)
+make check-compliance
 ```
 
 ---
