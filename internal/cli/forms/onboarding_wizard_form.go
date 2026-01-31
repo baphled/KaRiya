@@ -1,7 +1,7 @@
 package forms
 
 import (
-	"fmt"
+	"errors"
 	"strings"
 
 	"github.com/charmbracelet/huh"
@@ -21,7 +21,20 @@ type OnboardingFormData struct {
 // The form collects: Welcome+Name, Contact info, Professional details.
 // Data fields are bound via pointers so huh updates them directly.
 func NewOnboardingWizardForm(data *OnboardingFormData, width, height int) *huh.Form {
-	step1 := huh.NewGroup(
+	return huh.NewForm(
+		newWelcomeStep(data),
+		newContactStep(data),
+		newProfessionalStep(data),
+	).
+		WithTheme(Theme()).
+		WithWidth(width).
+		WithHeight(DefaultFormHeight(height)).
+		WithShowHelp(true).
+		WithShowErrors(true)
+}
+
+func newWelcomeStep(data *OnboardingFormData) *huh.Group {
+	return huh.NewGroup(
 		huh.NewNote().
 			Title("Welcome to KaRiya!").
 			Description("Let's set up your profile for CV generation.\nThis information will appear on your CVs."),
@@ -32,14 +45,16 @@ func NewOnboardingWizardForm(data *OnboardingFormData, width, height int) *huh.F
 			Placeholder("e.g., Jane Doe").
 			Validate(func(s string) error {
 				if strings.TrimSpace(s) == "" {
-					return fmt.Errorf("name is required")
+					return errors.New("name is required")
 				}
 				return nil
 			}).
 			Value(&data.Name),
 	).Title("Step 1 of 3: Welcome")
+}
 
-	step2 := huh.NewGroup(
+func newContactStep(data *OnboardingFormData) *huh.Group {
+	return huh.NewGroup(
 		huh.NewInput().
 			Key("email").
 			Title("Email Address").
@@ -47,10 +62,10 @@ func NewOnboardingWizardForm(data *OnboardingFormData, width, height int) *huh.F
 			Placeholder("e.g., jane@example.com").
 			Validate(func(s string) error {
 				if strings.TrimSpace(s) == "" {
-					return fmt.Errorf("email is required")
+					return errors.New("email is required")
 				}
 				if !strings.Contains(s, "@") {
-					return fmt.Errorf("please enter a valid email address")
+					return errors.New("please enter a valid email address")
 				}
 				return nil
 			}).
@@ -62,8 +77,10 @@ func NewOnboardingWizardForm(data *OnboardingFormData, width, height int) *huh.F
 			Placeholder("e.g., London, UK").
 			Value(&data.Location),
 	).Title("Step 2 of 3: Contact")
+}
 
-	step3 := huh.NewGroup(
+func newProfessionalStep(data *OnboardingFormData) *huh.Group {
+	return huh.NewGroup(
 		huh.NewInput().
 			Key("title").
 			Title("Professional Title").
@@ -84,13 +101,4 @@ func NewOnboardingWizardForm(data *OnboardingFormData, width, height int) *huh.F
 			Placeholder("e.g., https://janedoe.dev").
 			Value(&data.Portfolio),
 	).Title("Step 3 of 3: Professional Details")
-
-	form := huh.NewForm(step1, step2, step3).
-		WithTheme(Theme()).
-		WithWidth(width).
-		WithHeight(DefaultFormHeight(height)).
-		WithShowHelp(true).
-		WithShowErrors(true)
-
-	return form
 }

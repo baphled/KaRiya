@@ -1,5 +1,4 @@
 // Package behaviors provides reusable UI behavior components for the KaRiya TUI.
-
 package behaviors
 
 import (
@@ -14,6 +13,8 @@ import (
 //   - Testing with mock implementations
 //   - Decoupling behaviors/ from huh library
 //   - Consistent wizard form handling across wizard modals
+//
+//nolint:interfacebloat // WizardForm requires Init/Update/View lifecycle + state queries + dimension management.
 type WizardForm interface {
 	Init() tea.Cmd
 	Update(msg tea.Msg) tea.Cmd
