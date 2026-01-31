@@ -188,10 +188,7 @@ var _ = Describe("EventFormScreen", func() {
 		})
 
 		It("should return SubmitResult when SubmitMsg succeeds", func() {
-			testEvent := &career.Event{
-				Text:    "Test event submission",
-				Company: "ACME",
-			}
+			testEvent := fixtures.EventWith("", "Test event submission", "ACME", "")
 			_, result := screen.Update(models.SubmitMsg{
 				Event: testEvent,
 				Err:   nil,

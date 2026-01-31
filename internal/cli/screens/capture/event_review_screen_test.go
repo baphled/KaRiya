@@ -143,11 +143,7 @@ var _ = Describe("EventReviewScreen", func() {
 
 		Context("with event missing optional fields", func() {
 			It("should omit company when empty", func() {
-				noCompanyEvent := &career.Event{
-					ID:   "evt-2",
-					Text: "Simple event",
-					Date: testEvent.Date,
-				}
+				noCompanyEvent := fixtures.EventWith("evt-2", "Simple event", "", "")
 				screen = capture.NewEventReviewScreen(breadcrumbs, noCompanyEvent, nil, nil)
 				view := screen.View()
 				Expect(view).To(ContainSubstring("Simple event"))

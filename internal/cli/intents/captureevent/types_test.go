@@ -4,6 +4,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/intents"
 	ce "github.com/baphled/kariya/internal/cli/intents/captureevent"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -103,9 +104,9 @@ var _ = Describe("Intent Type", func() {
 var _ = Describe("ReviewInferredEventState", func() {
 	It("should store event, bursts, and facts", func() {
 		state := &ce.ReviewInferredEventState{
-			Event:          &career.Event{Text: "test"},
-			InferredBursts: []*career.Burst{{Name: "b1"}},
-			InferredFacts:  []*career.Fact{{Text: "f1"}},
+			Event:          fixtures.EventWith("", "test", "", ""),
+			InferredBursts: []*career.Burst{fixtures.Burst("b1")},
+			InferredFacts:  []*career.Fact{fixtures.FactWith("f1", "f1")},
 		}
 		Expect(state.Event.Text).To(Equal("test"))
 		Expect(state.InferredBursts).To(HaveLen(1))
