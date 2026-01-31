@@ -199,7 +199,7 @@ var _ = Describe("WizardBehavior", func() {
 		})
 	})
 
-	Describe("SkipWizard", func() {
+	Describe("Skip", func() {
 		It("should mark as skipped and completed", func() {
 			skipFn := wizard.Skip
 			skipFn()

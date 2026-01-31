@@ -27,11 +27,12 @@ import (
 // Note: Onboarding is MANDATORY - Esc key is blocked. Users must complete
 // the required fields (Name and Email) to proceed with the application.
 type OnboardingWizardModal struct {
-	wizard *behaviors.WizardBehavior[OnboardingData]
-	form   *forms.WizardFormAdapter
-	data   *OnboardingData
-	width  int
-	height int
+	wizard   *behaviors.WizardBehavior[OnboardingData]
+	form     *forms.WizardFormAdapter
+	formData *forms.OnboardingFormData
+	data     *OnboardingData
+	width    int
+	height   int
 }
 
 // OnboardingData holds the data collected from the onboarding wizard.
@@ -74,11 +75,12 @@ func NewOnboardingWizardModalWithConfig(width, height int, cfg *config.ProfileCo
 	wizard := behaviors.NewWizardBehavior[OnboardingData](adapter, data)
 
 	modal := &OnboardingWizardModal{
-		wizard: wizard,
-		form:   adapter,
-		data:   data,
-		width:  width,
-		height: height,
+		wizard:   wizard,
+		form:     adapter,
+		formData: formData,
+		data:     data,
+		width:    width,
+		height:   height,
 	}
 
 	return modal
@@ -250,14 +252,13 @@ func toOnboardingFormData(data *OnboardingData) *forms.OnboardingFormData {
 }
 
 func (m *OnboardingWizardModal) syncFromFormData() {
-	f := m.form.Form()
-	if f == nil {
+	if m.formData == nil {
 		return
 	}
-	m.data.Name = forms.GetString(f, "name")
-	m.data.Email = forms.GetString(f, "email")
-	m.data.Location = forms.GetString(f, "location")
-	m.data.Title = forms.GetString(f, "title")
-	m.data.GitHub = forms.GetString(f, "github")
-	m.data.Portfolio = forms.GetString(f, "portfolio")
+	m.data.Name = m.formData.Name
+	m.data.Email = m.formData.Email
+	m.data.Location = m.formData.Location
+	m.data.Title = m.formData.Title
+	m.data.GitHub = m.formData.GitHub
+	m.data.Portfolio = m.formData.Portfolio
 }

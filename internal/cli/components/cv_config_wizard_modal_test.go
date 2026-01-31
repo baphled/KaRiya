@@ -573,16 +573,17 @@ var _ = Describe("CVConfigWizardModal", func() {
 			modal.Init()
 		})
 
-		It("should synchronize step tracking with adapter after window resize", func() {
+		It("should preserve step tracking after window resize", func() {
 			modal.SetProfileID("profile-1")
 			modal.SetAudience("hiring_manager")
 			modal.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
-			Expect(modal.GetCurrentStep()).To(BeNumerically(">", 0))
+			stepBeforeResize := modal.GetCurrentStep()
+			Expect(stepBeforeResize).To(BeNumerically(">", 0))
 
 			modal.Update(tea.WindowSizeMsg{Width: 100, Height: 30})
 
-			Expect(modal.GetCurrentStep()).To(Equal(0))
+			Expect(modal.GetCurrentStep()).To(Equal(stepBeforeResize))
 		})
 
 		It("should synchronize step tracking with adapter after SetExtractedTechnologies", func() {

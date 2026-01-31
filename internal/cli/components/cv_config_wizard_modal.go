@@ -174,10 +174,7 @@ func (m *CVConfigWizardModal) Update(msg tea.Msg) tea.Cmd {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		m.buildForm()
-		if m.wizard != nil {
-			m.wizard.SetForm(m.form)
-		}
+		m.form.SetDimensions(calcCVModalWidth(m.width), m.height)
 		return m.form.Init()
 	}
 
