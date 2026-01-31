@@ -1,9 +1,8 @@
 package intents
 
 import (
-	"time"
-
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -25,15 +24,8 @@ var _ = Describe("GenerateCV - Escape Key Behavior", func() {
 			},
 		}
 
-		// Create minimal test event (required by validation)
 		events := []*career.Event{
-			{
-				ID:        "event1",
-				Text:      "Test event",
-				Date:      time.Now(),
-				CreatedAt: time.Now(),
-				UpdatedAt: time.Now(),
-			},
+			fixtures.Event("event1"),
 		}
 
 		ctx := &GenerateCVContext{
@@ -91,10 +83,7 @@ var _ = Describe("GenerateCV - Escape Key Behavior", func() {
 	Describe("Preview State", func() {
 		BeforeEach(func() {
 			intent.state.currentState = GenerateCVStatePreview
-			intent.state.generatedCV = &career.CVView{
-				ID:   "cv1",
-				Name: "Test CV",
-			}
+			intent.state.generatedCV = fixtures.CVView("cv1")
 		})
 
 		It("should go back to SelectAudience when esc is pressed", func() {
@@ -108,7 +97,7 @@ var _ = Describe("GenerateCV - Escape Key Behavior", func() {
 	Describe("Review State", func() {
 		BeforeEach(func() {
 			intent.state.currentState = GenerateCVStateReview
-			intent.state.generatedCV = &career.CVView{ID: "cv1"}
+			intent.state.generatedCV = fixtures.CVView("cv1")
 		})
 
 		It("should go back to Preview when esc is pressed", func() {
@@ -122,7 +111,7 @@ var _ = Describe("GenerateCV - Escape Key Behavior", func() {
 	Describe("Confirm State", func() {
 		BeforeEach(func() {
 			intent.state.currentState = GenerateCVStateConfirm
-			intent.state.generatedCV = &career.CVView{ID: "cv1"}
+			intent.state.generatedCV = fixtures.CVView("cv1")
 			intent.state.selectedProfile = profiles[0]
 		})
 
@@ -179,10 +168,7 @@ var _ = Describe("GenerateCV - Escape Key Behavior", func() {
 		BeforeEach(func() {
 			intent.state.currentState = GenerateCVStateExportComplete
 			intent.state.exportedPath = "/tmp/cv.txt"
-			intent.state.generatedCV = &career.CVView{
-				ID:   "cv1",
-				Name: "Test CV",
-			}
+			intent.state.generatedCV = fixtures.CVView("cv1")
 			intent.state.selectedProfile = profiles[0]
 		})
 
@@ -220,36 +206,21 @@ var _ = Describe("GenerateCV - Escape Key Behavior", func() {
 
 		It("should show 'm' in Preview footer", func() {
 			intent.state.currentState = GenerateCVStatePreview
-			intent.state.generatedCV = &career.CVView{
-				ID:               "cv1",
-				Name:             "Test",
-				GeneratedAt:      time.Now(),
-				TargetAudience:   "test",
-				SourceEventCount: 0,
-				SourceFactCount:  0,
-			}
+			intent.state.generatedCV = fixtures.CVViewWith("cv1", "Test", "", "test")
 			view := intent.View()
 			Expect(view).NotTo(BeEmpty()) // Verify view renders
 		})
 
 		It("should show 'm' in Review footer", func() {
 			intent.state.currentState = GenerateCVStateReview
-			intent.state.generatedCV = &career.CVView{
-				ID:             "cv1",
-				Name:           "Test",
-				TargetAudience: "test",
-			}
+			intent.state.generatedCV = fixtures.CVViewWith("cv1", "Test", "", "test")
 			view := intent.View()
 			Expect(view).NotTo(BeEmpty()) // Verify view renders
 		})
 
 		It("should show 'm' in Confirm footer", func() {
 			intent.state.currentState = GenerateCVStateConfirm
-			intent.state.generatedCV = &career.CVView{
-				ID:             "cv1",
-				Name:           "Test",
-				TargetAudience: "test",
-			}
+			intent.state.generatedCV = fixtures.CVViewWith("cv1", "Test", "", "test")
 			view := intent.View()
 			Expect(view).NotTo(BeEmpty()) // Verify view renders
 		})

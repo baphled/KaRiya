@@ -5,6 +5,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/skills"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -17,12 +18,7 @@ var _ = Describe("SkillFormScreen", func() {
 	)
 
 	BeforeEach(func() {
-		skill = &career.Skill{
-			ID:       "skill-1",
-			Name:     "Kubernetes",
-			Category: "devops",
-			Level:    "advanced",
-		}
+		skill = fixtures.SkillWith("skill-1", "Kubernetes", "devops", "advanced")
 	})
 
 	Describe("Construction", func() {

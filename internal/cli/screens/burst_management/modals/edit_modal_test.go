@@ -8,6 +8,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/screens/burst_management/modals"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -18,15 +19,11 @@ var _ = Describe("EditBurstModal", func() {
 	)
 
 	BeforeEach(func() {
-		burst = &career.Burst{
-			ID:          "test-burst-id",
-			Name:        "Original Burst Name",
-			Description: "Original description text",
-			EventIDs:    []string{"e1", "e2", "e3"},
-			Confirmed:   false,
-			CreatedAt:   time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-			UpdatedAt:   time.Date(2024, 2, 1, 0, 0, 0, 0, time.UTC),
-		}
+		burst = fixtures.Burst("test-burst-id", "e1", "e2", "e3")
+		burst.Name = "Original Burst Name"
+		burst.Description = "Original description text"
+		burst.CreatedAt = time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
+		burst.UpdatedAt = time.Date(2024, 2, 1, 0, 0, 0, 0, time.UTC)
 	})
 
 	Describe("NewEditBurstModal", func() {

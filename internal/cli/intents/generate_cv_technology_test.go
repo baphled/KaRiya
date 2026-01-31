@@ -3,7 +3,6 @@ package intents
 import (
 	"context"
 	"errors"
-	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
@@ -14,6 +13,7 @@ import (
 	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	"github.com/baphled/kariya/internal/service/career/cv"
 	"github.com/baphled/kariya/internal/service/career/technology"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 var _ = Describe("GenerateCV Technology Extraction", func() {
@@ -42,51 +42,25 @@ var _ = Describe("GenerateCV Technology Extraction", func() {
 					Description: "Test profile",
 				},
 			},
-			Events: []*career.Event{
-				{
-					ID:        "event-1",
-					Text:      "Implemented API",
-					Date:      time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
-					Company:   "Test Co",
-					Skills:    []string{"skill-ruby", "skill-postgres"},
-					CreatedAt: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
-					UpdatedAt: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
-				},
-				{
-					ID:        "event-2",
-					Text:      "Migrated Database",
-					Date:      time.Date(2025, 1, 2, 0, 0, 0, 0, time.UTC),
-					Company:   "Test Co",
-					Skills:    []string{"skill-postgres"},
-					CreatedAt: time.Date(2025, 1, 2, 0, 0, 0, 0, time.UTC),
-					UpdatedAt: time.Date(2025, 1, 2, 0, 0, 0, 0, time.UTC),
-				},
-			},
+			Events: func() []*career.Event {
+				e1 := fixtures.EventWith("event-1", "Implemented API", "Test Co", "")
+				e1.Skills = []string{"skill-ruby", "skill-postgres"}
+				e2 := fixtures.EventWith("event-2", "Migrated Database", "Test Co", "")
+				e2.Skills = []string{"skill-postgres"}
+				return []*career.Event{e1, e2}
+			}(),
 			Facts:           []*career.Fact{},
 			SkillRepository: skillRepo,
 			EventRepository: eventRepo,
 			AppContext:      testContext,
 		}
 
-		// Add test skills to repository.
 		//nolint:errcheck // Test setup - error handling not relevant.
-		skillRepo.Create(testContext, &career.Skill{
-			ID:       "skill-ruby",
-			Name:     "Ruby",
-			Category: "backend",
-		})
+		skillRepo.Create(testContext, fixtures.SkillWith("skill-ruby", "Ruby", "backend", ""))
 		//nolint:errcheck // Test setup - error handling not relevant.
-		skillRepo.Create(testContext, &career.Skill{
-			ID:       "skill-postgres",
-			Name:     "PostgreSQL",
-			Category: "database",
-		})
+		skillRepo.Create(testContext, fixtures.SkillWith("skill-postgres", "PostgreSQL", "database", ""))
 		//nolint:errcheck // Test setup - error handling not relevant.
-		skillRepo.Create(testContext, &career.Skill{
-			ID:       "skill-react",
-			Name:     "React",
-			Category: "frontend",
-		})
+		skillRepo.Create(testContext, fixtures.SkillWith("skill-react", "React", "frontend", ""))
 
 		// Add events to repository.
 		for _, event := range ctx.Events {
@@ -142,15 +116,8 @@ var _ = Describe("GenerateCV Technology Extraction", func() {
 			It("should provide focus area suggestion", func() {
 				// Add more events to meet threshold
 				for i := 0; i < 5; i++ {
-					event := &career.Event{
-						ID:        "event-extra-" + string(rune(i+'0')),
-						Text:      "Extra Event",
-						Date:      time.Date(2025, 1, 3+i, 0, 0, 0, 0, time.UTC),
-						Company:   "Test Co",
-						Skills:    []string{"skill-ruby", "skill-postgres"},
-						CreatedAt: time.Date(2025, 1, 3+i, 0, 0, 0, 0, time.UTC),
-						UpdatedAt: time.Date(2025, 1, 3+i, 0, 0, 0, 0, time.UTC),
-					}
+					event := fixtures.EventWith("event-extra-"+string(rune(i+'0')), "Extra Event", "Test Co", "")
+					event.Skills = []string{"skill-ruby", "skill-postgres"}
 					//nolint:errcheck // Test setup - error handling not relevant.
 					eventRepo.Create(testContext, event)
 					ctx.Events = append(ctx.Events, event)

@@ -8,6 +8,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/cv"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 var _ = Describe("ReviewScreen", func() {
@@ -18,55 +19,33 @@ var _ = Describe("ReviewScreen", func() {
 	)
 
 	BeforeEach(func() {
-		sections = []*career.CVSection{
-			{
-				Title:       "Professional Summary",
-				SectionType: "summary",
-				Summary:     "Experienced engineer with 10+ years...",
-			},
-			{
-				Title: "Professional Experience",
-				Content: []*career.SectionContentGroup{
-					{
-						Header:    "Senior Engineer at TechCorp",
-						StartDate: "2020-01",
-						EndDate:   "Present",
-						Bullets: []*career.CVBullet{
-							{Text: "Led team of 5 engineers"},
-							{Text: "Delivered critical features"},
-						},
-					},
-					{
-						Header:    "Engineer at StartupCo",
-						StartDate: "2018-01",
-						EndDate:   "2019-12",
-						Bullets: []*career.CVBullet{
-							{Text: "Built core platform"},
-						},
-					},
-				},
-			},
-			{
-				Title: "Technical Skills",
-				Content: []*career.SectionContentGroup{
-					{
-						Header: "Languages",
-						Bullets: []*career.CVBullet{
-							{Text: "Go, Python, TypeScript"},
-						},
-					},
-				},
-			},
-		}
+		summarySection := fixtures.CVSectionWithSummary("section-1", "cv-1", "Experienced engineer with 10+ years...")
+		summarySection.Title = "Professional Summary"
 
-		testCV = &career.CVView{
-			Name:             "Software Engineer CV",
-			TargetRole:       "Senior Engineer",
-			TargetAudience:   "Hiring Manager",
-			Sections:         sections,
-			SourceEventCount: 15,
-			SourceFactCount:  42,
-		}
+		experienceSection := fixtures.CVSectionWithContent("section-2", "cv-1", []*career.SectionContentGroup{
+			fixtures.ContentGroupFull("Senior Engineer at TechCorp", "2020-01", "Present", []*career.CVBullet{
+				fixtures.CVBulletWith("b-1", "section-2", "Led team of 5 engineers"),
+				fixtures.CVBulletWith("b-2", "section-2", "Delivered critical features"),
+			}),
+			fixtures.ContentGroupFull("Engineer at StartupCo", "2018-01", "2019-12", []*career.CVBullet{
+				fixtures.CVBulletWith("b-3", "section-2", "Built core platform"),
+			}),
+		})
+		experienceSection.Title = "Professional Experience"
+
+		skillsSection := fixtures.CVSectionWithContent("section-3", "cv-1", []*career.SectionContentGroup{
+			fixtures.ContentGroupWithBullets("Languages", []*career.CVBullet{
+				fixtures.CVBulletWith("b-4", "section-3", "Go, Python, TypeScript"),
+			}),
+		})
+		skillsSection.Title = "Technical Skills"
+
+		sections = []*career.CVSection{summarySection, experienceSection, skillsSection}
+
+		testCV = fixtures.CVViewWith("cv-1", "Software Engineer CV", "Senior Engineer", "Hiring Manager")
+		testCV.Sections = sections
+		testCV.SourceEventCount = 15
+		testCV.SourceFactCount = 42
 
 		screen = cv.NewCVReviewScreen(testCV)
 	})
@@ -219,12 +198,8 @@ var _ = Describe("ReviewScreen", func() {
 
 		Context("CV with no sections", func() {
 			It("should handle CV with no sections", func() {
-				emptyCV := &career.CVView{
-					Name:           "Empty CV",
-					TargetRole:     "Engineer",
-					TargetAudience: "Manager",
-					Sections:       []*career.CVSection{},
-				}
+				emptyCV := fixtures.CVViewWith("cv-empty", "Empty CV", "Engineer", "Manager")
+				emptyCV.Sections = []*career.CVSection{}
 				emptyScreen := cv.NewCVReviewScreen(emptyCV)
 
 				view := emptyScreen.View()
@@ -234,17 +209,11 @@ var _ = Describe("ReviewScreen", func() {
 
 		Context("CV with empty sections", func() {
 			It("should handle sections with no content", func() {
-				cvWithEmptySections := &career.CVView{
-					Name:           "CV",
-					TargetRole:     "Engineer",
-					TargetAudience: "Manager",
-					Sections: []*career.CVSection{
-						{
-							Title:   "Empty Section",
-							Content: []*career.SectionContentGroup{},
-						},
-					},
-				}
+				emptySection := fixtures.CVSection("section-empty", "cv-empty-s")
+				emptySection.Title = "Empty Section"
+				emptySection.Content = []*career.SectionContentGroup{}
+				cvWithEmptySections := fixtures.CVViewWith("cv-empty-s", "CV", "Engineer", "Manager")
+				cvWithEmptySections.Sections = []*career.CVSection{emptySection}
 				s := cv.NewCVReviewScreen(cvWithEmptySections)
 
 				view := s.View()

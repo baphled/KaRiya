@@ -9,6 +9,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens/timeline"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -21,26 +22,13 @@ var _ = Describe("EventListScreen", func() {
 	)
 
 	BeforeEach(func() {
-		events = []*career.Event{
-			{
-				ID:      "event-1",
-				Date:    time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-				Text:    "Backend Developer at TechCorp - Built scalable APIs",
-				Company: "TechCorp",
-			},
-			{
-				ID:      "event-2",
-				Date:    time.Date(2023, 6, 15, 0, 0, 0, 0, time.UTC),
-				Text:    "DevOps Engineer at CloudInc - Managed Kubernetes clusters",
-				Company: "CloudInc",
-			},
-			{
-				ID:      "event-3",
-				Date:    time.Date(2022, 3, 10, 0, 0, 0, 0, time.UTC),
-				Text:    "Frontend Developer at WebSolutions - Created React applications",
-				Company: "WebSolutions",
-			},
-		}
+		ev1 := fixtures.EventWith("event-1", "Backend Developer at TechCorp - Built scalable APIs", "TechCorp", "")
+		ev1.Date = time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
+		ev2 := fixtures.EventWith("event-2", "DevOps Engineer at CloudInc - Managed Kubernetes clusters", "CloudInc", "")
+		ev2.Date = time.Date(2023, 6, 15, 0, 0, 0, 0, time.UTC)
+		ev3 := fixtures.EventWith("event-3", "Frontend Developer at WebSolutions - Created React applications", "WebSolutions", "")
+		ev3.Date = time.Date(2022, 3, 10, 0, 0, 0, 0, time.UTC)
+		events = []*career.Event{ev1, ev2, ev3}
 	})
 
 	Describe("Construction", func() {

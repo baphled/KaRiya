@@ -7,6 +7,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/facts"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -26,26 +27,20 @@ var _ = Describe("FactListScreen", func() {
 
 	BeforeEach(func() {
 		createdAt = time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC)
-		factList = []*career.Fact{
-			{
-				ID:        "fact-1",
-				Text:      "Led development of microservices architecture",
-				CreatedAt: createdAt,
-				UpdatedAt: createdAt,
-			},
-			{
-				ID:        "fact-2",
-				Text:      "Reduced API response time by 40%",
-				CreatedAt: createdAt.Add(24 * time.Hour),
-				UpdatedAt: createdAt.Add(24 * time.Hour),
-			},
-			{
-				ID:        "fact-3",
-				Text:      "Mentored 5 junior engineers",
-				CreatedAt: createdAt.Add(48 * time.Hour),
-				UpdatedAt: createdAt.Add(48 * time.Hour),
-			},
-		}
+
+		f1 := fixtures.FactWith("fact-1", "Led development of microservices architecture")
+		f1.CreatedAt = createdAt
+		f1.UpdatedAt = createdAt
+
+		f2 := fixtures.FactWith("fact-2", "Reduced API response time by 40%")
+		f2.CreatedAt = createdAt.Add(24 * time.Hour)
+		f2.UpdatedAt = createdAt.Add(24 * time.Hour)
+
+		f3 := fixtures.FactWith("fact-3", "Mentored 5 junior engineers")
+		f3.CreatedAt = createdAt.Add(48 * time.Hour)
+		f3.UpdatedAt = createdAt.Add(48 * time.Hour)
+
+		factList = []*career.Fact{f1, f2, f3}
 	})
 
 	Describe("Construction", func() {

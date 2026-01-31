@@ -3,9 +3,9 @@ package intents
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -28,14 +28,8 @@ var _ = Describe("GenerateCV Clipboard Export Error Handling", func() {
 			},
 		}
 
-		// Create minimal events for testing (required by NewGenerateCVIntent)
 		events := []*career.Event{
-			{
-				ID:      "event-1",
-				Text:    "Test event for clipboard export tests",
-				Date:    time.Now(),
-				Company: "Test Company",
-			},
+			fixtures.EventWith("event-1", "Test event for clipboard export tests", "Test Company", ""),
 		}
 
 		// Create minimal context for testing

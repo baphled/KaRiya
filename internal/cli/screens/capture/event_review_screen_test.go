@@ -7,6 +7,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/capture"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -29,34 +30,22 @@ var _ = Describe("EventReviewScreen", func() {
 	BeforeEach(func() {
 		now := time.Now()
 
-		testEvent = &career.Event{
-			ID:      "evt-1",
-			Text:    "Implemented authentication system",
-			Date:    now,
-			Company: "TechCorp",
-			Project: "Auth Service",
-		}
+		testEvent = fixtures.EventWith("evt-1", "Implemented authentication system", "TechCorp", "Auth Service")
+		testEvent.Date = now
 
-		testBursts = []*career.Burst{
-			{
-				ID:          "burst-1",
-				Name:        "OAuth2 Integration",
-				Description: "OAuth2 with multiple providers",
-				EventIDs:    []string{"evt-1"},
-				CreatedAt:   now,
-				UpdatedAt:   now,
-			},
-		}
+		burst := fixtures.Burst("burst-1", "evt-1", "evt-1")
+		burst.Name = "OAuth2 Integration"
+		burst.Description = "OAuth2 with multiple providers"
+		burst.EventIDs = []string{"evt-1"}
+		burst.CreatedAt = now
+		burst.UpdatedAt = now
+		testBursts = []*career.Burst{burst}
 
-		testFacts = []*career.Fact{
-			{
-				ID:            "fact-1",
-				Text:          "Reduced login time by 50%",
-				SourceEventID: "evt-1",
-				CreatedAt:     now,
-				UpdatedAt:     now,
-			},
-		}
+		fact := fixtures.Fact("fact-1", "evt-1")
+		fact.Text = "Reduced login time by 50%"
+		fact.CreatedAt = now
+		fact.UpdatedAt = now
+		testFacts = []*career.Fact{fact}
 
 		breadcrumbs = []string{"Main Menu", "Capture Event", "Review"}
 		screen = capture.NewEventReviewScreen(breadcrumbs, testEvent, testBursts, testFacts)

@@ -8,6 +8,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/intents/burst_management"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 // testContextKey is a custom type for context keys in tests.
@@ -23,8 +24,8 @@ var _ = Describe("Context", func() {
 
 			It("should create a context with bursts", func() {
 				bursts := []*career.Burst{
-					{ID: "1", Name: "Burst 1"},
-					{ID: "2", Name: "Burst 2"},
+					fixtures.Burst("1"),
+					fixtures.Burst("2"),
 				}
 				ctx := &burst_management.IntentContext{
 					Bursts: bursts,
@@ -62,7 +63,7 @@ var _ = Describe("Context", func() {
 
 			It("should preserve existing Bursts when validating", func() {
 				bursts := []*career.Burst{
-					{ID: "1", Name: "Burst 1"},
+					fixtures.Burst("1"),
 				}
 				ctx := &burst_management.IntentContext{
 					Bursts: bursts,
@@ -101,10 +102,7 @@ var _ = Describe("Context", func() {
 					BurstRepository: nil,
 					Context:         context.Background(),
 				}
-				burst := &career.Burst{
-					ID:   "new-burst",
-					Name: "New Burst",
-				}
+				burst := fixtures.Burst("new-burst")
 				err := ctx.CreateBurst(burst)
 				Expect(err).NotTo(HaveOccurred())
 			})
@@ -116,10 +114,8 @@ var _ = Describe("Context", func() {
 					BurstRepository: nil,
 					Context:         context.Background(),
 				}
-				burst := &career.Burst{
-					ID:   "burst-1",
-					Name: "Updated Burst",
-				}
+				burst := fixtures.Burst("burst-1")
+				burst.Name = "Updated Burst"
 				err := ctx.UpdateBurst(burst)
 				Expect(err).NotTo(HaveOccurred())
 			})
@@ -151,7 +147,7 @@ var _ = Describe("Context", func() {
 		Describe("CancelEdit", func() {
 			It("should clear editing state", func() {
 				ctx := &burst_management.IntentContext{
-					EditingBurst: &career.Burst{ID: "burst-1"},
+					EditingBurst: fixtures.Burst("burst-1"),
 					IsNewBurst:   true,
 				}
 				ctx.CancelEdit()

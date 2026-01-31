@@ -14,9 +14,9 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/domain/career"
-	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	"github.com/baphled/kariya/internal/service/career/burstfact"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	"github.com/baphled/kariya/internal/testutil/mocks"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -101,7 +101,7 @@ var _ = Describe("Intent Methods", func() {
 		It("should initialize the intent successfully", func() {
 			ctx := &burst_management.IntentContext{
 				Bursts: []*career.Burst{
-					{ID: "burst-1", Name: "Burst 1"},
+					fixtures.Burst("burst-1"),
 				},
 			}
 			ctx.Validate()
@@ -117,8 +117,8 @@ var _ = Describe("Intent Methods", func() {
 
 		It("should set selected burst if bursts available", func() {
 			bursts := []*career.Burst{
-				{ID: "burst-1", Name: "First Burst"},
-				{ID: "burst-2", Name: "Second Burst"},
+				fixtures.Burst("burst-1"),
+				fixtures.Burst("burst-2"),
 			}
 			ctx := &burst_management.IntentContext{
 				Bursts: bursts,
@@ -152,7 +152,7 @@ var _ = Describe("Intent Methods", func() {
 		BeforeEach(func() {
 			ctx := &burst_management.IntentContext{
 				Bursts: []*career.Burst{
-					{ID: "burst-1", Name: "Burst 1"},
+					fixtures.Burst("burst-1"),
 				},
 			}
 			ctx.Validate()
@@ -193,10 +193,10 @@ var _ = Describe("Intent Methods", func() {
 		var intent *burst_management.Intent
 
 		BeforeEach(func() {
+			burst := fixtures.Burst("burst-1")
+			burst.Name = "Burst 1"
 			ctx := &burst_management.IntentContext{
-				Bursts: []*career.Burst{
-					{ID: "burst-1", Name: "Burst 1"},
-				},
+				Bursts: []*career.Burst{burst},
 			}
 			ctx.Validate()
 			intent, _ = burst_management.NewIntent(ctx)
@@ -224,7 +224,7 @@ var _ = Describe("Intent Methods", func() {
 
 		It("should render detail view in StateDetail", func() {
 			intent.SetState(burst_management.StateDetail)
-			intent.SetSelectedBurst(&career.Burst{ID: "burst-1", Name: "Test"})
+			intent.SetSelectedBurst(fixtures.Burst("burst-1"))
 			view := intent.View()
 			// StateDetail doesn't have a screen yet, so it falls back to state-based rendering
 			// which shows the fallback placeholder
@@ -256,10 +256,11 @@ var _ = Describe("Intent Methods", func() {
 		var intent *burst_management.Intent
 
 		BeforeEach(func() {
+			burst := fixtures.Burst("burst-1")
+			burst.Name = "Test Burst"
+			burst.Description = "Test Description"
 			ctx := &burst_management.IntentContext{
-				Bursts: []*career.Burst{
-					{ID: "burst-1", Name: "Test Burst", Description: "Test Description"},
-				},
+				Bursts: []*career.Burst{burst},
 			}
 			ctx.Validate()
 			intent, _ = burst_management.NewIntent(ctx)
@@ -412,12 +413,9 @@ var _ = Describe("Intent Methods", func() {
 		var burst *career.Burst
 
 		BeforeEach(func() {
-			burst = &career.Burst{
-				ID:          "burst-1",
-				Name:        "Test Burst",
-				Description: "Test Description",
-				EventIDs:    []string{"event-1", "event-2"},
-			}
+			burst = fixtures.Burst("burst-1", "event-1", "event-2")
+			burst.Name = "Test Burst"
+			burst.Description = "Test Description"
 			ctx := &burst_management.IntentContext{
 				Bursts: []*career.Burst{burst},
 			}
@@ -531,11 +529,9 @@ var _ = Describe("Intent Methods", func() {
 		var burst *career.Burst
 
 		BeforeEach(func() {
-			burst = &career.Burst{
-				ID:          "burst-1",
-				Name:        "Test Burst",
-				Description: "Test Description",
-			}
+			burst = fixtures.Burst("burst-1")
+			burst.Name = "Test Burst"
+			burst.Description = "Test Description"
 			ctx := &burst_management.IntentContext{
 				Bursts: []*career.Burst{burst},
 			}
@@ -627,12 +623,9 @@ var _ = Describe("Intent Methods", func() {
 		var burst *career.Burst
 
 		BeforeEach(func() {
-			burst = &career.Burst{
-				ID:          "burst-1",
-				Name:        "Test Burst",
-				Description: "Test Description",
-				Confirmed:   false, // Not confirmed yet
-			}
+			burst = fixtures.Burst("burst-1")
+			burst.Name = "Test Burst"
+			burst.Description = "Test Description"
 			ctx := &burst_management.IntentContext{
 				Bursts: []*career.Burst{burst},
 			}
@@ -704,11 +697,9 @@ var _ = Describe("Intent Methods", func() {
 		var burst *career.Burst
 
 		BeforeEach(func() {
-			burst = &career.Burst{
-				ID:          "burst-1",
-				Name:        "Original Name",
-				Description: "Original Description",
-			}
+			burst = fixtures.Burst("burst-1")
+			burst.Name = "Original Name"
+			burst.Description = "Original Description"
 			ctx := &burst_management.IntentContext{
 				Bursts: []*career.Burst{burst},
 			}
@@ -962,12 +953,9 @@ var _ = Describe("Intent Methods", func() {
 		)
 
 		BeforeEach(func() {
-			testBurst := &career.Burst{
-				ID:          "burst-1",
-				Name:        "Test Burst",
-				Description: "Test description",
-				EventIDs:    []string{"e1", "e2"},
-			}
+			testBurst := fixtures.Burst("burst-1", "e1", "e2")
+			testBurst.Name = "Test Burst"
+			testBurst.Description = "Test description"
 
 			ctx = &burst_management.IntentContext{
 				Bursts: []*career.Burst{testBurst},
@@ -1052,7 +1040,6 @@ var _ = Describe("Intent Methods", func() {
 		})
 
 		Context("state-specific content fallback", func() {
-			// These tests force the getStateContent path by having no activeScreen.
 
 			It("should show 'No bursts found' when list is empty", func() {
 				emptyCtx := &burst_management.IntentContext{
@@ -1085,12 +1072,9 @@ var _ = Describe("Intent Methods", func() {
 		)
 
 		BeforeEach(func() {
-			testBurst := &career.Burst{
-				ID:          "burst-1",
-				Name:        "Test Burst",
-				Description: "Test description",
-				EventIDs:    []string{"e1", "e2"},
-			}
+			testBurst := fixtures.Burst("burst-1", "e1", "e2")
+			testBurst.Name = "Test Burst"
+			testBurst.Description = "Test description"
 
 			ctx = &burst_management.IntentContext{
 				Bursts: []*career.Burst{testBurst},
@@ -1135,12 +1119,9 @@ var _ = Describe("Intent Methods", func() {
 		)
 
 		BeforeEach(func() {
-			burst = &career.Burst{
-				ID:          "burst-1",
-				Name:        "Test Burst",
-				Description: "Test description",
-				EventIDs:    []string{"e1", "e2"},
-			}
+			burst = fixtures.Burst("burst-1", "e1", "e2")
+			burst.Name = "Test Burst"
+			burst.Description = "Test description"
 
 			ctx = &burst_management.IntentContext{
 				Bursts: []*career.Burst{burst},
@@ -1196,12 +1177,9 @@ var _ = Describe("Intent Methods", func() {
 		})
 
 		It("should handle 'delete' action with long burst name (truncated)", func() {
-			longNameBurst := &career.Burst{
-				ID:          "burst-long",
-				Name:        "This is a very long burst name that exceeds fifty characters and should be truncated",
-				Description: "Test",
-				EventIDs:    []string{"e1", "e2"},
-			}
+			longNameBurst := fixtures.Burst("burst-long", "e1", "e2")
+			longNameBurst.Name = "This is a very long burst name that exceeds fifty characters and should be truncated"
+			longNameBurst.Description = "Test"
 			actionData := map[string]interface{}{
 				"action": "delete",
 				"burst":  longNameBurst,
@@ -1303,12 +1281,9 @@ var _ = Describe("Intent Methods", func() {
 		})
 
 		It("should handle 'confirm' action with long burst name (truncated)", func() {
-			longNameBurst := &career.Burst{
-				ID:          "burst-long",
-				Name:        "This is a very long burst name that exceeds fifty characters and should be truncated",
-				Description: "Test",
-				EventIDs:    []string{"e1", "e2"},
-			}
+			longNameBurst := fixtures.Burst("burst-long", "e1", "e2")
+			longNameBurst.Name = "This is a very long burst name that exceeds fifty characters and should be truncated"
+			longNameBurst.Description = "Test"
 			actionData := map[string]interface{}{
 				"action": "confirm",
 				"burst":  longNameBurst,
@@ -1382,12 +1357,9 @@ var _ = Describe("Intent Methods", func() {
 		)
 
 		BeforeEach(func() {
-			burst = &career.Burst{
-				ID:          "burst-1",
-				Name:        "Test Burst",
-				Description: "Test description",
-				EventIDs:    []string{"e1", "e2"},
-			}
+			burst = fixtures.Burst("burst-1", "e1", "e2")
+			burst.Name = "Test Burst"
+			burst.Description = "Test description"
 
 			ctx = &burst_management.IntentContext{
 				Bursts: []*career.Burst{burst},
@@ -1503,24 +1475,18 @@ var _ = Describe("Intent Methods", func() {
 		})
 
 		It("should handle CreateBurst without repository", func() {
-			burst := &career.Burst{
-				ID:          "new-burst",
-				Name:        "New Burst",
-				Description: "Test",
-				EventIDs:    []string{"e1", "e2"},
-			}
+			burst := fixtures.Burst("new-burst", "e1", "e2")
+			burst.Name = "New Burst"
+			burst.Description = "Test"
 			err := ctx.CreateBurst(burst)
 			// Without repository, should return nil (no-op).
 			Expect(err).To(BeNil())
 		})
 
 		It("should handle UpdateBurst without repository", func() {
-			burst := &career.Burst{
-				ID:          "burst-1",
-				Name:        "Updated Burst",
-				Description: "Test",
-				EventIDs:    []string{"e1", "e2"},
-			}
+			burst := fixtures.Burst("burst-1", "e1", "e2")
+			burst.Name = "Updated Burst"
+			burst.Description = "Test"
 			err := ctx.UpdateBurst(burst)
 			// Without repository, should return nil (no-op).
 			Expect(err).To(BeNil())
@@ -1544,16 +1510,13 @@ var _ = Describe("Intent Methods", func() {
 
 		BeforeEach(func() {
 			events = []*career.Event{
-				{ID: "e1", Text: "First event text"},
-				{ID: "e2", Text: "Second event text"},
+				fixtures.EventWith("e1", "First event text", "", ""),
+				fixtures.EventWith("e2", "Second event text", "", ""),
 			}
 
-			burst = &career.Burst{
-				ID:          "burst-1",
-				Name:        "Test Burst",
-				Description: "Test description",
-				EventIDs:    []string{"e1", "e2"},
-			}
+			burst = fixtures.Burst("burst-1", "e1", "e2")
+			burst.Name = "Test Burst"
+			burst.Description = "Test description"
 
 			mockService = mocks.NewBurstServiceMock().SetEvents(events)
 
@@ -1586,8 +1549,8 @@ var _ = Describe("Intent Methods", func() {
 		It("should load burst facts via view_facts action with service", func() {
 			// Set up facts for the burst.
 			testFacts := []*career.Fact{
-				{ID: "f1", Text: "Fact 1"},
-				{ID: "f2", Text: "Fact 2"},
+				fixtures.FactWith("f1", "Fact 1"),
+				fixtures.FactWith("f2", "Fact 2"),
 			}
 			mockService.SetFactsForBurst(burst.ID, testFacts)
 
@@ -1636,7 +1599,7 @@ var _ = Describe("Intent Methods", func() {
 
 		It("should handle BurstFactsLoadedMsg with facts", func() {
 			testFacts := []*career.Fact{
-				{ID: "f1", Text: "Fact 1"},
+				fixtures.FactWith("f1", "Fact 1"),
 			}
 
 			// First navigate to detail to set selectedBurst.
@@ -1657,8 +1620,8 @@ var _ = Describe("Intent Methods", func() {
 
 		It("should handle fact extraction complete with facts", func() {
 			extractedFacts := []*career.Fact{
-				{ID: "f1", Text: "Extracted fact 1"},
-				{ID: "f2", Text: "Extracted fact 2"},
+				fixtures.FactWith("f1", "Extracted fact 1"),
+				fixtures.FactWith("f2", "Extracted fact 2"),
 			}
 
 			msg := burst_management.FactExtractionCompleteMsg{
@@ -1726,40 +1689,32 @@ var _ = Describe("Intent Methods", func() {
 		})
 
 		It("should create burst with repository", func() {
-			burst := &career.Burst{
-				ID:          "new-burst",
-				Name:        "New Burst",
-				Description: "Test burst",
-				EventIDs:    []string{"e1", "e2"},
-			}
+			burst := fixtures.Burst("new-burst", "e1", "e2")
+			burst.Name = "New Burst"
+			burst.Description = "Test burst"
 			err := ctx.CreateBurst(burst)
 			Expect(err).To(BeNil())
 
 			// Verify it was created.
-			bursts, _ := repo.List(ctx.Context, careerrepo.BurstListFilters{})
+			bursts, _ := repo.List(ctx.Context, *fixtures.BurstListFilters())
 			Expect(bursts).To(HaveLen(1))
 			Expect(bursts[0].Name).To(Equal("New Burst"))
 		})
 
 		It("should fail CreateBurst with invalid burst", func() {
-			burst := &career.Burst{
-				ID:          "",
-				Name:        "", // Invalid - name required.
-				Description: "",
-				EventIDs:    []string{},
-			}
+			burst := fixtures.Burst("")
+			burst.Name = ""
+			burst.Description = ""
+			burst.EventIDs = []string{}
 			err := ctx.CreateBurst(burst)
 			Expect(err).NotTo(BeNil())
 		})
 
 		It("should update burst with repository", func() {
 			// Create first.
-			burst := &career.Burst{
-				ID:          "burst-1",
-				Name:        "Original Name",
-				Description: "Original",
-				EventIDs:    []string{"e1", "e2"},
-			}
+			burst := fixtures.Burst("burst-1", "e1", "e2")
+			burst.Name = "Original Name"
+			burst.Description = "Original"
 			_ = repo.Create(ctx.Context, burst)
 
 			// Update.
@@ -1773,24 +1728,19 @@ var _ = Describe("Intent Methods", func() {
 		})
 
 		It("should fail UpdateBurst with invalid burst", func() {
-			burst := &career.Burst{
-				ID:          "burst-1",
-				Name:        "", // Invalid - name required.
-				Description: "",
-				EventIDs:    []string{},
-			}
+			burst := fixtures.Burst("burst-1")
+			burst.Name = ""
+			burst.Description = ""
+			burst.EventIDs = []string{}
 			err := ctx.UpdateBurst(burst)
 			Expect(err).NotTo(BeNil())
 		})
 
 		It("should delete burst with repository", func() {
 			// Create first.
-			burst := &career.Burst{
-				ID:          "burst-1",
-				Name:        "To Delete",
-				Description: "Test",
-				EventIDs:    []string{"e1", "e2"},
-			}
+			burst := fixtures.Burst("burst-1", "e1", "e2")
+			burst.Name = "To Delete"
+			burst.Description = "Test"
 			_ = repo.Create(ctx.Context, burst)
 
 			// Delete.
@@ -1798,14 +1748,14 @@ var _ = Describe("Intent Methods", func() {
 			Expect(err).To(BeNil())
 
 			// Verify deletion.
-			bursts, _ := repo.List(ctx.Context, careerrepo.BurstListFilters{})
+			bursts, _ := repo.List(ctx.Context, *fixtures.BurstListFilters())
 			Expect(bursts).To(HaveLen(0))
 		})
 
 		It("should load bursts from repository", func() {
 			// Create some bursts.
-			_ = repo.Create(ctx.Context, &career.Burst{ID: "b1", Name: "Burst 1", EventIDs: []string{"e1", "e2"}})
-			_ = repo.Create(ctx.Context, &career.Burst{ID: "b2", Name: "Burst 2", EventIDs: []string{"e3", "e4"}})
+			_ = repo.Create(ctx.Context, fixtures.Burst("b1", "e1", "e2"))
+			_ = repo.Create(ctx.Context, fixtures.Burst("b2", "e3", "e4"))
 
 			err := ctx.LoadBursts()
 			Expect(err).To(BeNil())
@@ -1823,12 +1773,9 @@ var _ = Describe("Intent Methods", func() {
 		)
 
 		BeforeEach(func() {
-			burst = &career.Burst{
-				ID:          "burst-1",
-				Name:        "Test Burst",
-				Description: "Test description",
-				EventIDs:    []string{"e1", "e2"},
-			}
+			burst = fixtures.Burst("burst-1", "e1", "e2")
+			burst.Name = "Test Burst"
+			burst.Description = "Test description"
 
 			repo = careermemory.NewBurstRepository()
 			_ = repo.Create(context.Background(), burst)
@@ -1858,7 +1805,7 @@ var _ = Describe("Intent Methods", func() {
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
 
 			// Burst should be deleted from repository.
-			bursts, _ := repo.List(ctx.Context, careerrepo.BurstListFilters{})
+			bursts, _ := repo.List(ctx.Context, *fixtures.BurstListFilters())
 			Expect(bursts).To(HaveLen(0))
 		})
 
@@ -1879,13 +1826,13 @@ var _ = Describe("Intent Methods", func() {
 		})
 
 		It("should confirm burst and trigger fact extraction", func() {
-			extractedFacts := []career.Fact{
-				{ID: "f1", Text: "Extracted fact", SourceBurstID: burst.ID,
-					CompetencyCategories: []string{"technical"},
-					RoleFit:              "senior_ic", AudienceRelevance: []string{"peer"},
-					StrengthSignal: "technical"},
-			}
-			mockService.SetExtractedFacts(extractedFacts)
+			extractedFact := fixtures.FactFromBurst("f1", burst.ID)
+			extractedFact.Text = "Extracted fact"
+			extractedFact.CompetencyCategories = []string{"technical"}
+			extractedFact.RoleFit = "senior_ic"
+			extractedFact.AudienceRelevance = []string{"peer"}
+			extractedFact.StrengthSignal = "technical"
+			mockService.SetExtractedFacts([]career.Fact{*extractedFact})
 
 			// Navigate to detail and confirm.
 			navResult := &screens.NavigateResult{ResultData: burst}
@@ -1945,16 +1892,13 @@ var _ = Describe("Intent Methods", func() {
 
 		BeforeEach(func() {
 			events = []*career.Event{
-				{ID: "e1", Text: "Event 1"},
-				{ID: "e2", Text: "Event 2"},
+				fixtures.EventWith("e1", "Event 1", "", ""),
+				fixtures.EventWith("e2", "Event 2", "", ""),
 			}
 
-			burst = &career.Burst{
-				ID:          "burst-1",
-				Name:        "Test Burst",
-				Description: "Test",
-				EventIDs:    []string{"e1", "e2"},
-			}
+			burst = fixtures.Burst("burst-1", "e1", "e2")
+			burst.Name = "Test Burst"
+			burst.Description = "Test"
 
 			mockService = mocks.NewBurstServiceMock().SetEvents(events)
 
@@ -1991,7 +1935,7 @@ var _ = Describe("Intent Methods", func() {
 
 		It("should execute showBurstFactsModal command", func() {
 			testFacts := []*career.Fact{
-				{ID: "f1", Text: "Fact 1"},
+				fixtures.FactWith("f1", "Fact 1"),
 			}
 			mockService.SetFactsForBurst(burst.ID, testFacts)
 
@@ -2016,10 +1960,10 @@ var _ = Describe("Intent Methods", func() {
 		It("should execute startBurstDetection command", func() {
 			// Add extra events that are NOT in any existing burst.
 			extraEvents := []*career.Event{
-				{ID: "e1", Text: "Event 1"},
-				{ID: "e2", Text: "Event 2"},
-				{ID: "e3", Text: "Event 3"},
-				{ID: "e4", Text: "Event 4"},
+				fixtures.EventWith("e1", "Event 1", "", ""),
+				fixtures.EventWith("e2", "Event 2", "", ""),
+				fixtures.EventWith("e3", "Event 3", "", ""),
+				fixtures.EventWith("e4", "Event 4", "", ""),
 			}
 			mockService.SetEvents(extraEvents)
 
@@ -2095,19 +2039,15 @@ var _ = Describe("Intent Methods", func() {
 		It("should filter out events that are already in existing bursts", func() {
 			// Create events where e1 and e2 are already in an existing burst.
 			events := []*career.Event{
-				{ID: "e1", Text: "Event 1"},
-				{ID: "e2", Text: "Event 2"},
-				{ID: "e3", Text: "Event 3"},
-				{ID: "e4", Text: "Event 4"},
+				fixtures.EventWith("e1", "Event 1", "", ""),
+				fixtures.EventWith("e2", "Event 2", "", ""),
+				fixtures.EventWith("e3", "Event 3", "", ""),
+				fixtures.EventWith("e4", "Event 4", "", ""),
 			}
 			mockService.SetEvents(events)
 
 			// Create an existing burst that uses e1 and e2.
-			existingBurst := &career.Burst{
-				ID:       "existing-burst",
-				Name:     "Existing Burst",
-				EventIDs: []string{"e1", "e2"},
-			}
+			existingBurst := fixtures.Burst("existing-burst", "e1", "e2")
 
 			// Update context with existing burst.
 			ctx.Bursts = []*career.Burst{existingBurst}
@@ -2134,17 +2074,13 @@ var _ = Describe("Intent Methods", func() {
 		It("should show error when all events are already in bursts", func() {
 			// All events are already in an existing burst.
 			events := []*career.Event{
-				{ID: "e1", Text: "Event 1"},
-				{ID: "e2", Text: "Event 2"},
+				fixtures.EventWith("e1", "Event 1", "", ""),
+				fixtures.EventWith("e2", "Event 2", "", ""),
 			}
 			mockService.SetEvents(events)
 
 			// Create an existing burst that uses all events.
-			existingBurst := &career.Burst{
-				ID:       "existing-burst",
-				Name:     "Existing Burst",
-				EventIDs: []string{"e1", "e2"},
-			}
+			existingBurst := fixtures.Burst("existing-burst", "e1", "e2")
 
 			// Update context with existing burst.
 			ctx.Bursts = []*career.Burst{existingBurst}
@@ -2173,12 +2109,9 @@ var _ = Describe("Intent Methods", func() {
 		)
 
 		BeforeEach(func() {
-			burst = &career.Burst{
-				ID:          "burst-1",
-				Name:        "Test Burst",
-				Description: "Test",
-				EventIDs:    []string{"e1", "e2"},
-			}
+			burst = fixtures.Burst("burst-1", "e1", "e2")
+			burst.Name = "Test Burst"
+			burst.Description = "Test"
 
 			mockService = mocks.NewBurstServiceMock()
 
@@ -2349,12 +2282,9 @@ var _ = Describe("Intent Methods", func() {
 		)
 
 		BeforeEach(func() {
-			burst = &career.Burst{
-				ID:          "burst-1",
-				Name:        "Test Burst",
-				Description: "Test",
-				EventIDs:    []string{"e1", "e2"},
-			}
+			burst = fixtures.Burst("burst-1", "e1", "e2")
+			burst.Name = "Test Burst"
+			burst.Description = "Test"
 
 			repo = careermemory.NewBurstRepository()
 			_ = repo.Create(context.Background(), burst)
@@ -2377,8 +2307,8 @@ var _ = Describe("Intent Methods", func() {
 		It("should execute extractFactsForBurst and save facts via suggestion acceptance", func() {
 			// Set up extracted facts.
 			extractedFacts := []career.Fact{
-				{ID: "f1", Text: "Fact 1"},
-				{ID: "f2", Text: "Fact 2"},
+				*fixtures.FactWith("f1", "Fact 1"),
+				*fixtures.FactWith("f2", "Fact 2"),
 			}
 			mockService.SetExtractedFacts(extractedFacts)
 
@@ -2433,7 +2363,7 @@ var _ = Describe("Intent Methods", func() {
 
 		It("should handle extractFactsForBurst with save error via suggestion acceptance (skips failed saves)", func() {
 			extractedFacts := []career.Fact{
-				{ID: "f1", Text: "Fact 1"},
+				*fixtures.FactWith("f1", "Fact 1"),
 			}
 			mockService.SetExtractedFacts(extractedFacts)
 			mockService.SetSaveFactError(errors.New("save failed"))
@@ -2464,7 +2394,7 @@ var _ = Describe("Intent Methods", func() {
 		It("should show re-extract confirmation when facts already exist", func() {
 			// Set up existing facts for the burst.
 			existingFacts := []*career.Fact{
-				{ID: "f1", Text: "Existing fact"},
+				fixtures.FactWith("f1", "Existing fact"),
 			}
 			mockService.SetFactsForBurst(burst.ID, existingFacts)
 

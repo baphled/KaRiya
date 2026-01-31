@@ -8,7 +8,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens/capture"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/types"
-	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -218,11 +218,7 @@ var _ = Describe("EventFormScreen", func() {
 
 	Describe("Event Editing", func() {
 		It("should support loading existing event", func() {
-			existingEvent := &career.Event{
-				Text:    "Existing event text",
-				Company: "ACME Corp",
-				Project: "Project X",
-			}
+			existingEvent := fixtures.EventWith("", "Existing event text", "ACME Corp", "Project X")
 
 			breadcrumbs := []string{"Main Menu", "Edit Event"}
 			screen = capture.NewEventFormScreenWithEvent(
