@@ -191,18 +191,20 @@ case "delete":
 
 ---
 
-### Exception: Test Files
+### Exception: E2E Test Files Only
 
-Test files (`*_test.go`) MAY use inline comments for readability:
+E2E test files (`*_e2e_test.go`) MAY use inline comments for readability:
 
 ```go
-// ✅ ALLOWED in tests only
+// ✅ ALLOWED in e2e tests only
 env.NavigateDown() // Go to Manual
 env.Confirm()      // Select Manual strategy
 env.Cancel()       // Go back
 ```
 
-**Rationale**: Test comments document expected behavior for readers.
+Regular test files (`*_test.go`) MUST NOT use inline comments. Use well-named variables, helper functions, and descriptive test names instead.
+
+**Rationale**: E2E tests describe complex multi-step user interactions where inline comments clarify intent.
 
 ---
 
@@ -221,7 +223,7 @@ When writing allowed comments:
 
 Pre-commit hooks check for:
 - Forbidden markers (TODO, FIXME, HACK, XXX, NOTE, IMPORTANT)
-- Inline comments (except in test files)
+- Inline comments (except in e2e test files)
 - Comments inside function bodies (linter warning)
 
 **When in doubt, delete the comment and refactor the code.**
@@ -996,7 +998,7 @@ The AI agent MUST refuse if asked to:
 
 ### Comment Violations
 - Add comments inside function bodies (extract to named methods instead)
-- Add inline comments at end of lines (except in test files)
+- Add inline comments at end of lines (except in e2e test files)
 - Add section divider comments within functions
 - Add field-level inline comments in structs
 - Use forbidden markers (TODO, FIXME, HACK, XXX, NOTE, IMPORTANT)

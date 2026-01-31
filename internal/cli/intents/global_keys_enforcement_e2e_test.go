@@ -224,7 +224,7 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 					})
 				}),
 				// BrowseTimeline moved to browse_timeline subpackage - has own tests
-				// CaptureEvent moved to capture_event subpackage - has own tests
+				// CaptureEvent moved to captureevent subpackage - has own tests
 			)
 		})
 
@@ -257,7 +257,7 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 					})
 				}),
 				// BrowseTimeline moved to browse_timeline subpackage - has own tests
-				// CaptureEvent moved to capture_event subpackage - has own tests
+				// CaptureEvent moved to captureevent subpackage - has own tests
 			)
 		})
 
@@ -299,7 +299,7 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 					})
 				}),
 				// BrowseTimeline moved to browse_timeline subpackage - has own tests
-				// CaptureEvent moved to capture_event subpackage - has own tests
+				// CaptureEvent moved to captureevent subpackage - has own tests
 			)
 		})
 	})

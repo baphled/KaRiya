@@ -1241,7 +1241,8 @@ if [ -n "$SUBDIRS" ]; then
         # burst_management/burstmanagement -> burst
         # skillsmanagement -> skills
         # factmanagement -> facts
-        SCREEN_DIR_NAME=$(echo "$INTENT_NAME" | sed 's/_intent$//' | sed 's/^browse_//' | sed 's/^browse//' | sed 's/_management$//' | sed 's/management$//')
+        # captureevent -> capture (screens/capture/)
+        SCREEN_DIR_NAME=$(echo "$INTENT_NAME" | sed 's/_intent$//' | sed 's/^browse_//' | sed 's/^browse//' | sed 's/_management$//' | sed 's/management$//' | sed 's/event$//')
         
         # Check if intent uses screens (has activeScreen or *Screen fields)
         USES_SCREENS=false
@@ -1422,9 +1423,10 @@ if [ -n "$SUBDIRS" ]; then
         INTENT_NAME=$(basename "$intent_dir")
         
         if [ -f "$HELPERS_FILE" ]; then
-            # Count render/view content methods (exclude getContextHelp, getBreadcrumbs, etc.)
+            # Count render/view content methods (exclude getContextHelp, getBreadcrumbs, modal content getters)
             # Match: getStateContent, getViewContent, getEditorContent, renderX, viewX
-            RENDER_METHODS=$(grep -E "func.*\) (get[A-Z][a-zA-Z]*Content|render[A-Z]|view[A-Z])\(" "$HELPERS_FILE" 2>/dev/null | grep -v "getContextHelp\|getBreadcrumbs" | wc -l)
+            # Exclude: get*ModalContent (modal content assembly, not screen rendering)
+            RENDER_METHODS=$(grep -E "func.*\) (get[A-Z][a-zA-Z]*Content|render[A-Z]|view[A-Z])\(" "$HELPERS_FILE" 2>/dev/null | grep -v "getContextHelp\|getBreadcrumbs\|ModalContent" | wc -l)
             
             if [ "$RENDER_METHODS" -gt 2 ]; then
                 echo -e "${RED}❌ VIOLATION: Too many render methods in helpers.go${NC}"
@@ -1485,8 +1487,8 @@ if [ -n "$SUBDIRS" ]; then
                     FOUND_SCREENS=true
                 fi
                 
-                # Without management suffix: burst_management/burstmanagement -> screens/burst/
-                SHORT_NAME=$(echo "$INTENT_NAME" | sed 's/_management$//' | sed 's/management$//' | sed 's/_intent$//')
+                # Without management/event suffix: burst_management -> screens/burst/, captureevent -> screens/capture/
+                SHORT_NAME=$(echo "$INTENT_NAME" | sed 's/_management$//' | sed 's/management$//' | sed 's/_intent$//' | sed 's/event$//')
                 if [ -d "internal/cli/screens/$SHORT_NAME" ]; then
                     FOUND_SCREENS=true
                 fi

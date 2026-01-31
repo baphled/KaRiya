@@ -537,7 +537,7 @@ issues:
   fix: false
 
   # Disable default exclusions to enable revive's exported/package-comments
-  # enforcement for migrated intents (capture_event). Default EXC0002/EXC0012-EXC0015
+  # enforcement for migrated intents (captureevent). Default EXC0002/EXC0012-EXC0015
   # globally suppressed all exported-comment checks, preventing documentation linting.
   exclude-use-default: false
   exclude:
@@ -562,7 +562,7 @@ issues:
     # Re-add EXC0011 (stylecheck): exported comment checks (handled by revive).
     - '(ST1000|ST1020|ST1021|ST1022)'
     # NOTE: EXC0002, EXC0012-EXC0015 intentionally NOT re-added.
-    # This enables revive exported/package-comments enforcement for capture_event
+    # This enables revive exported/package-comments enforcement for captureevent
     # and future migrated intents. Packages with blanket `- revive` in exclude-rules
     # are unaffected. Packages without revive suppression that have pre-existing
     # violations are covered by C25 below.

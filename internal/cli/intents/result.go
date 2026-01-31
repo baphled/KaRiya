@@ -75,7 +75,7 @@ func (e *IntentError) WithMessage(message string) *IntentError {
 // envelope that the intent router uses to determine what happened.
 //
 // The generic type parameter T specifies the concrete payload type the
-// intent produces on success (e.g., *CaptureEventResult or
+// intent produces on success (e.g., *captureevent.Result or
 // *GenerateCVResult). T must satisfy the "any" constraint.
 //
 // The Status field is one of the following ResultStatus values:
