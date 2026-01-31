@@ -9,6 +9,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/intents/burst_management"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/service/career/burstfact"
+	"github.com/baphled/kariya/internal/service/career/skillinference"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
@@ -186,6 +187,24 @@ var _ = Describe("Messages", func() {
 			}
 			Expect(msg.Error).NotTo(BeNil())
 		})
+
+		It("should store associated burst", func() {
+			burst := &career.Burst{ID: "burst-1", Name: "Test Burst", Confirmed: true}
+			msg := burst_management.FactExtractionCompleteMsg{
+				Facts: []*career.Fact{{ID: "f1", Text: "Fact"}},
+				Burst: burst,
+			}
+			Expect(msg.Burst).To(Equal(burst))
+			Expect(msg.Burst.ID).To(Equal("burst-1"))
+		})
+
+		It("should handle nil burst", func() {
+			msg := burst_management.FactExtractionCompleteMsg{
+				Facts: []*career.Fact{{ID: "f1", Text: "Fact"}},
+				Burst: nil,
+			}
+			Expect(msg.Burst).To(BeNil())
+		})
 	})
 
 	Describe("BurstSuggestionsLoadedMsg", func() {
@@ -255,6 +274,146 @@ var _ = Describe("Messages", func() {
 			}
 			Expect(msg.AcceptedSuggestions).To(HaveLen(0))
 			Expect(msg.Cancelled).To(BeFalse())
+		})
+	})
+
+	Describe("EditBurstMsg", func() {
+		It("should store edit data", func() {
+			msg := burst_management.EditBurstMsg{
+				BurstID:     "burst-1",
+				Name:        "Updated Name",
+				Description: "Updated description",
+			}
+			Expect(msg.BurstID).To(Equal("burst-1"))
+			Expect(msg.Name).To(Equal("Updated Name"))
+			Expect(msg.Description).To(Equal("Updated description"))
+		})
+
+		It("should handle empty description", func() {
+			msg := burst_management.EditBurstMsg{
+				BurstID: "burst-1",
+				Name:    "Name Only",
+			}
+			Expect(msg.Description).To(BeEmpty())
+		})
+	})
+
+	Describe("BurstSkillsLoadedMsg", func() {
+		It("should store loaded skills", func() {
+			skills := []*career.Skill{
+				{ID: "s1", Name: "Go"},
+				{ID: "s2", Name: "Docker"},
+			}
+			msg := burst_management.BurstSkillsLoadedMsg{
+				Skills: skills,
+				Error:  nil,
+			}
+			Expect(msg.Skills).To(HaveLen(2))
+			Expect(msg.Skills[0].Name).To(Equal("Go"))
+			Expect(msg.Error).To(BeNil())
+		})
+
+		It("should store error when loading fails", func() {
+			msg := burst_management.BurstSkillsLoadedMsg{
+				Skills: nil,
+				Error:  errTest,
+			}
+			Expect(msg.Skills).To(BeNil())
+			Expect(msg.Error).To(Equal(errTest))
+		})
+	})
+
+	Describe("SkillSuggestionsLoadedMsg", func() {
+		It("should store skill suggestions", func() {
+			suggestions := []skillinference.SkillSuggestion{
+				{Name: "Go", Category: "backend", Confidence: 0.95},
+				{Name: "Docker", Category: "devops", Confidence: 0.85},
+			}
+			msg := burst_management.SkillSuggestionsLoadedMsg{
+				Suggestions: suggestions,
+				Error:       nil,
+			}
+			Expect(msg.Suggestions).To(HaveLen(2))
+			Expect(msg.Suggestions[0].Name).To(Equal("Go"))
+			Expect(msg.Suggestions[0].Confidence).To(Equal(0.95))
+			Expect(msg.Error).To(BeNil())
+		})
+
+		It("should store existing skill names", func() {
+			msg := burst_management.SkillSuggestionsLoadedMsg{
+				Suggestions:        []skillinference.SkillSuggestion{{Name: "Go", Category: "backend", Confidence: 0.9}},
+				ExistingSkillNames: []string{"Docker", "Kubernetes"},
+			}
+			Expect(msg.ExistingSkillNames).To(HaveLen(2))
+			Expect(msg.ExistingSkillNames).To(ContainElements("Docker", "Kubernetes"))
+		})
+
+		It("should store error on inference failure", func() {
+			msg := burst_management.SkillSuggestionsLoadedMsg{
+				Suggestions: nil,
+				Error:       errTest,
+			}
+			Expect(msg.Suggestions).To(BeNil())
+			Expect(msg.Error).To(Equal(errTest))
+		})
+
+		It("should handle empty suggestions", func() {
+			msg := burst_management.SkillSuggestionsLoadedMsg{
+				Suggestions:        []skillinference.SkillSuggestion{},
+				ExistingSkillNames: []string{},
+			}
+			Expect(msg.Suggestions).To(BeEmpty())
+			Expect(msg.ExistingSkillNames).To(BeEmpty())
+		})
+	})
+
+	Describe("SkillSuggestionsErrorMsg", func() {
+		It("should store the error", func() {
+			msg := burst_management.SkillSuggestionsErrorMsg{
+				Err: errTest,
+			}
+			Expect(msg.Err).To(Equal(errTest))
+		})
+
+		It("should handle nil error", func() {
+			msg := burst_management.SkillSuggestionsErrorMsg{
+				Err: nil,
+			}
+			Expect(msg.Err).To(BeNil())
+		})
+	})
+
+	Describe("SkillsCreatedMsg", func() {
+		It("should store created skills", func() {
+			skills := []*career.Skill{
+				{ID: "s1", Name: "Go"},
+				{ID: "s2", Name: "Docker"},
+			}
+			msg := burst_management.SkillsCreatedMsg{
+				Skills: skills,
+				Error:  nil,
+			}
+			Expect(msg.Skills).To(HaveLen(2))
+			Expect(msg.Skills[0].Name).To(Equal("Go"))
+			Expect(msg.Error).To(BeNil())
+		})
+
+		It("should store error on creation failure", func() {
+			msg := burst_management.SkillsCreatedMsg{
+				Skills: nil,
+				Error:  errTest,
+			}
+			Expect(msg.Skills).To(BeNil())
+			Expect(msg.Error).To(Equal(errTest))
+		})
+
+		It("should handle empty skills list on success", func() {
+			msg := burst_management.SkillsCreatedMsg{
+				Skills: []*career.Skill{},
+				Error:  nil,
+			}
+			Expect(msg.Skills).To(BeEmpty())
+			Expect(msg.Error).To(BeNil())
 		})
 	})
 
