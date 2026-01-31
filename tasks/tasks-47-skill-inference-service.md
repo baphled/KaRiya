@@ -24,7 +24,7 @@
 
 ## Current Status
 
-**PHASE 11 COMPLETE** - All Phases Done, Service Layer + UI + Soft Skills Detection
+**PHASE 14 IN PROGRESS** - Skill Category Normalization & Import Auto-Categorization
 
 ### Progress Summary
 
@@ -42,6 +42,9 @@
 | 9 | ✅ COMPLETE | - | E2E Testing |
 | 10 | ✅ COMPLETE | ~10 | Expand Keyword Dictionary (150 → 224 keywords, 14 categories) |
 | 11 | ✅ COMPLETE | ~108 | Add Soft Skills Detection (5 new competency categories) |
+| 12 | ✅ COMPLETE | - | Skill Inference Feedback & Auto-Trigger After Burst Confirmation |
+| 13 | ✅ COMPLETE | 8+ | View Skills Modal & Memory Repository Event-Skill Sync Fix |
+| 14 | ⏳ IN PROGRESS | 7+ | Skill Category Normalization & Import Auto-Categorization |
 
 **Total Tests**: 112 passing → 220+ passing (after enhancements)  
 **Total Lines**: 3,287 → 5,000+ (after enhancements)  
@@ -393,6 +396,26 @@ SOFT SKILLS (~50 keyword patterns after Phase 11):
 - [ ] Update `docs/SKILLS_GUIDE.md` - Add skill inference section (if needed)
 - [ ] Update `docs/workflows/MANAGE_SKILLS_WORKFLOW.md` - Add inference workflow (if needed)
 
+### Phase 13 Files (Created/Modified) ✅
+- [x] `internal/cli/screens/burst_management/modals/skills_modal.go` - NEW: BurstSkillsModal
+- [x] `internal/cli/screens/burst_management/modals/skills_modal_test.go` - NEW: 28 specs
+- [x] `internal/repository/career/memory/skill_repository_test.go` - NEW: 6 specs for GetSkillsForEvent
+- [x] `internal/repository/career/memory/event_repository.go` - Added SetSkillRepository, sync in LinkSkill
+- [x] `internal/repository/career/memory/event_repository_test.go` - Added 2 LinkSkill sync specs
+- [x] `internal/cli/intents/burst_management/handlers.go` - Added 's' shortcut, skills modal handlers
+- [x] `internal/cli/intents/burst_management/helpers.go` - Added showBurstSkillsModal, modal registry
+- [x] `internal/cli/intents/burst_management/intent.go` - Added BurstSkillsLoadedMsg case
+- [x] `internal/cli/intents/burst_management/messages.go` - Added BurstSkillsLoadedMsg
+- [x] `internal/cli/intents/burst_management/types.go` - Added skillsModal field
+- [x] `internal/cli/intents/burst_management/context.go` - Added SkillRepository
+- [x] `internal/cli/screens/burst_management/modals/detail_modal.go` - Added ViewSkillsBadge
+- [x] `internal/cli/uikit/primitives/badge.go` - Added ViewSkillsBadge
+- [x] `internal/repository/career/memory/repositories.go` - Cross-linked repos in factory
+- [x] `internal/testutil/e2e/helpers.go` - Cross-linked repos in test helpers
+- [x] `internal/testutil/e2e/skill_inference_e2e_test.go` - Cross-linked repos in all 8 BeforeEach blocks
+- [x] `internal/cli/app/registrar.go` - Wired SkillRepository into BurstManagement IntentContext
+- [x] `cmd/cli/main.go` - Cross-linked repos in in-memory path
+
 ### Phase 10 Files (Modified) ✅
 - [x] `internal/service/career/technology/keywords.go` - Added 74 new keywords (14 categories, 224 total)
 - [x] `docs/guides/SKILL_INFERENCE_INTEGRATION.md` - Updated with expanded dictionary
@@ -430,11 +453,14 @@ SOFT SKILLS (~50 keyword patterns after Phase 11):
 | Phase | Description | Time | Cumulative |
 |-------|-------------|------|------------|
 | 0-6 | Service Layer ✅ COMPLETE | ~9.5h | 9.5h |
-| 7-9 | UI Integration (can run parallel with 10-11) | 3-6h | 12.5-15.5h |
-| **10** | **Expand Keywords (150→230) - 8 new categories** | **2-3h** | **14.5-18.5h** |
-| **11** | **Add Soft Skills Detection - 5 competency categories** | **6-8h** | **20.5-26.5h** |
+| 7-9 | UI Integration ✅ COMPLETE | 3-6h | 12.5-15.5h |
+| 10 | Expand Keywords (150→230) ✅ COMPLETE | 2-3h | 14.5-18.5h |
+| 11 | Add Soft Skills Detection ✅ COMPLETE | 6-8h | 20.5-26.5h |
+| 12 | Inference Feedback & Auto-Trigger ✅ COMPLETE | 2-3h | 22.5-29.5h |
+| 13 | View Skills Modal & Memory Repo Fix ✅ COMPLETE | 2-3h | 24.5-32.5h |
+| **14** | **Skill Category Normalization & Auto-Categorization** | **2-3h** | **26.5-35.5h** |
 
-**Total**: 20.5-26.5 hours (full system with enhancements)
+**Total**: 26.5-35.5 hours (full system with all enhancements)
 
 **Parallel Execution**: Phases 7-9, 10, and 11 can be worked on simultaneously:
 - **UI Track**: Phase 7-9 (3-6 hours)
@@ -1086,6 +1112,349 @@ The skill inference system detects soft skills through the CompetencyCategory sy
 
 ---
 
+## Phase 12: Skill Inference Feedback & Auto-Trigger After Burst Confirmation
+
+**Goal**: Fix two issues with skill inference UX:
+1. When confirming a burst, always show detected skills in the suggestion modal (including existing ones)
+2. When accepting burst suggestions, auto-trigger skill inference after fact extraction
+
+**Status**: ✅ COMPLETE
+
+**Time Estimate**: 2-3 hours
+
+**Prerequisites**: Phase 7-9 complete (UI integration exists)
+
+---
+
+### Problem Statement
+
+When a user confirms a burst (or accepts burst suggestions):
+1. Fact extraction runs automatically
+2. Skill inference runs (or should run) after fact extraction
+3. If all detected skills already exist in the profile, the user sees "No Skills Detected" — misleading because skills WERE detected, they just already exist
+4. For burst suggestion acceptance, skill inference never auto-triggers because `selectedBurst` is nil by the time `FactExtractionCompleteMsg` arrives
+
+The user wants to always see what skills are associated with a burst.
+
+### Solution
+
+**Behavior by trigger**:
+
+| Trigger | Show in Modal | Filter Existing? |
+|---------|--------------|-----------------|
+| Burst confirm (auto) | ALL detected skills | No — show all |
+| Burst detail 'i' (manual) | ALL detected skills | No — show all |
+| Skills management 'i' (manual) | Only NEW skills | Yes — filter existing (avoids 277 duplicates) |
+
+### Changes Required
+
+#### 12.1: InferenceResult Struct (DONE)
+
+`InferSkillsFromEvents` and `InferSkillsFromBurst` now return `*InferenceResult` with:
+- `Suggestions []SkillSuggestion` — all detected skills
+- `ExistingSkillNames []string` — names of skills that already exist in the repository
+
+**Files modified**:
+- `internal/service/career/skillinference/inference.go` — added `InferenceResult` struct, updated interface
+- `internal/service/career/skillinference/detector.go` — updated implementation
+- `internal/cli/intents/burst_management/interfaces.go` — updated local interface
+- `internal/cli/intents/skillsmanagement/context.go` — updated local interface
+
+#### 12.2: Stop Filtering Existing Skills from Suggestions
+
+`InferSkillsFromEvents` currently removes existing skills from `Suggestions`. Change it to keep ALL detected skills in `Suggestions` and only report existing names in `ExistingSkillNames`.
+
+**File**: `internal/service/career/skillinference/detector.go`
+- Remove `delete(suggestionMap, name)` — keep existing skills in suggestions
+
+#### 12.3: Update Messages with ExistingSkillNames (DONE)
+
+Both `SkillSuggestionsLoadedMsg` types now include `ExistingSkillNames []string`.
+
+**Files modified**:
+- `internal/cli/intents/burst_management/messages.go`
+- `internal/cli/intents/skillsmanagement/messages.go`
+
+#### 12.4: Update Intent Helpers to Populate ExistingSkillNames (DONE)
+
+Both `inferSkillsFromBurst` and `inferSkillsFromAllEvents` now extract fields from `*InferenceResult`.
+
+**Files modified**:
+- `internal/cli/intents/burst_management/helpers.go`
+- `internal/cli/intents/skillsmanagement/helpers.go`
+
+#### 12.5: Burst Management Handler — Always Show Suggestion Modal
+
+When `handleSkillSuggestionsLoaded` has suggestions (even if all existing), show the modal. "No Skills Detected" only triggers when genuinely no skills found in text.
+
+**File**: `internal/cli/intents/burst_management/handlers.go`
+
+#### 12.6: Skills Management Handler — Filter Existing Before Showing Modal
+
+Before showing the suggestion modal, filter out skills whose names appear in `ExistingSkillNames`. This avoids showing 277 duplicate skills when scanning all events.
+
+**File**: `internal/cli/intents/skillsmanagement/handlers.go`
+- Add `filterNewSuggestions` helper in `helpers.go`
+
+#### 12.7: Add Burst to FactExtractionCompleteMsg
+
+Add `Burst *career.Burst` field so `handleFactExtractionComplete` knows which burst to trigger skill inference for, even when `selectedBurst` is nil (burst suggestion acceptance flow).
+
+**File**: `internal/cli/intents/burst_management/messages.go`
+
+#### 12.8: Populate Burst in extractFactsForBurst
+
+Include the burst reference in `FactExtractionCompleteMsg` returned by the async function.
+
+**File**: `internal/cli/intents/burst_management/helpers.go`
+
+#### 12.9: Use msg.Burst in handleFactExtractionComplete
+
+Change the auto-trigger condition to use `msg.Burst` as fallback when `selectedBurst` is nil. This enables skill inference after burst suggestion acceptance.
+
+**File**: `internal/cli/intents/burst_management/handlers.go`
+
+```go
+targetBurst := i.selectedBurst
+if targetBurst == nil {
+    targetBurst = msg.Burst
+}
+
+if targetBurst != nil && targetBurst.Confirmed && len(msg.Facts) > 0 {
+    i.selectedBurst = targetBurst
+    return i.startSkillInference()
+}
+```
+
+#### 12.10: Update Tests
+
+- Update `integration_test.go` — existing skills should remain in `Suggestions`
+- Update `skill_inference_e2e_test.go` — adjust assertions for unfiltered suggestions
+- Add test: burst suggestion acceptance triggers skill inference after fact extraction
+- Verify "No Skills Detected" only for genuinely empty text detection
+
+### Phase 12 Acceptance Criteria
+
+- [x] `InferSkillsFromEvents` returns ALL detected skills (not filtered)
+- [x] `ExistingSkillNames` correctly reports which skills already exist
+- [x] Burst confirm flow shows all detected skills in suggestion modal
+- [x] Burst detail 'i' key shows all detected skills in suggestion modal
+- [x] Skills management 'i' key filters existing skills before showing modal
+- [x] Burst suggestion acceptance auto-triggers skill inference after fact extraction
+- [x] "No Skills Detected" only shows when genuinely no skills found in text
+- [x] All existing tests pass (with updated assertions)
+
+**Phase 12 Total**: 2-3 hours
+
+---
+
+---
+
+## Phase 13: View Skills Modal & Memory Repository Event-Skill Sync Fix
+
+**Goal**: Two changes:
+1. Add a "View Skills" modal (`s` key) to the burst detail modal so users can see skills associated with a burst
+2. Fix a split-brain bug in the memory `EventRepository.LinkSkill` / `SkillRepository.GetSkillsForEvent` where event-skill associations were stored in two disconnected data stores
+
+**Status**: ✅ COMPLETE
+
+**Time Estimate**: 2-3 hours
+
+**Prerequisites**: Phase 12 complete
+
+---
+
+### Problem Statement
+
+#### Issue 1: No way to view skills for a burst
+After confirming a burst and running skill inference, users had no way to view which skills were associated with a burst. The detail modal had shortcuts for events (`v`), facts (`f`), edit (`e`), delete (`d`), confirm (`c`), and infer (`i`), but no skill viewing.
+
+#### Issue 2: GetSkillsForEvent returns empty after LinkSkill (memory implementation)
+The memory implementation has a split-brain bug:
+- `EventRepository.LinkSkill` writes skill IDs to `event.Skills []string` (domain struct field)
+- `SkillRepository.GetSkillsForEvent` reads from `r.eventSkills map[string][]string` (internal map)
+- These are **two completely different data stores** that are never synchronized
+- Only `AssociateSkillWithEvent` (a test-only helper) populates the `eventSkills` map
+- The SQL implementation does NOT have this bug — both operations use the same `event_skills` junction table
+
+### Changes
+
+#### 13.1: BurstSkillsModal (DONE)
+Created `BurstSkillsModal` at `internal/cli/screens/burst_management/modals/skills_modal.go` following the exact pattern of `BurstEventsModal` and `BurstFactsModal`. Wraps `feedback.DetailModal` and displays skill name, category, and level.
+
+#### 13.2: ViewSkillsBadge (DONE)
+Added `ViewSkillsBadge` to `internal/cli/uikit/primitives/badge.go` (key: `s`, label: "View Skills"). Updated detail modal footer in `detail_modal.go` to include it.
+
+#### 13.3: Intent Wiring for Skills Modal (DONE)
+
+**Files modified**:
+- `internal/cli/intents/burst_management/messages.go` — Added `BurstSkillsLoadedMsg`
+- `internal/cli/intents/burst_management/types.go` — Added `skillsModal *burstmodals.BurstSkillsModal` field
+- `internal/cli/intents/burst_management/context.go` — Added `SkillRepository careerrepo.SkillRepository`
+- `internal/cli/intents/burst_management/handlers.go` — Added:
+  - `"s"` case in `handleDetailModalKeypress` → hides detail modal, calls `showBurstSkillsModal()`
+  - `handleBurstSkillsLoaded` handler → creates and shows `BurstSkillsModal`
+  - `handleSkillsModalUpdate` handler → Esc/Enter closes skills modal, returns to detail modal
+  - Wired `handleSkillsModalUpdate` into `handleModalUpdates`
+- `internal/cli/intents/burst_management/helpers.go` — Added:
+  - `showBurstSkillsModal()` → async loader that iterates burst EventIDs, calls `SkillRepository.GetSkillsForEvent()` per event, deduplicates by skill ID
+  - `skillsModal` in `hasVisibleContentModal()` check
+  - `skillsModal` registration in `updateDetailModalRegistry()`
+- `internal/cli/intents/burst_management/intent.go` — Added `BurstSkillsLoadedMsg` case in `Update()`
+
+#### 13.4: Memory Repository Event-Skill Sync Fix (DONE)
+
+**Root Cause**: `memory.EventRepository.LinkSkill` wrote to `event.Skills` but `memory.SkillRepository.GetSkillsForEvent` read from `r.eventSkills` map. Two disconnected stores.
+
+**Fix**: Added `SetSkillRepository(*SkillRepository)` to `memory.EventRepository`. When `LinkSkill` is called, it now also calls `skillRepo.AssociateSkillWithEvent(skillID, eventID)` to populate the `eventSkills` and `skillEvents` maps that `GetSkillsForEvent` reads from.
+
+**Files modified**:
+- `internal/repository/career/memory/event_repository.go` — Added `skillRepo` field, `SetSkillRepository` method, updated `LinkSkill` to sync with `SkillRepository`
+
+#### 13.5: Tests (DONE)
+
+**New test files**:
+- `internal/cli/screens/burst_management/modals/skills_modal_test.go` — 28 Ginkgo specs for `BurstSkillsModal` (creation, nil handling, visibility, Update, View content, SetSkills, optional fields)
+- `internal/repository/career/memory/skill_repository_test.go` — 6 Ginkgo specs for `GetSkillsForEvent` (empty list, unknown event, skills linked via LinkSkill, per-event isolation, no duplicates, AssociateSkillWithEvent compatibility)
+
+**Modified test files**:
+- `internal/repository/career/memory/event_repository_test.go` — Added 2 specs: LinkSkill syncs with SkillRepository, no duplicate association on repeated LinkSkill
+
+### Phase 13 Acceptance Criteria
+
+- [x] `s` key in burst detail modal opens skills modal
+- [x] Skills modal shows skill name, category, and level
+- [x] Empty state shown when no skills associated
+- [x] Esc/Enter returns to detail modal
+- [x] Skills modal registered in modal registry
+- [x] `BurstSkillsLoadedMsg` wired in `Update()`
+- [x] Memory `EventRepository.LinkSkill` syncs with `SkillRepository.eventSkills`
+- [x] `GetSkillsForEvent` returns skills after `LinkSkill` (memory implementation)
+- [x] Production wiring: `SkillRepository` added to `registrar.go` for burst management
+- [x] E2E tests: all 8 BeforeEach blocks cross-link repos
+- [x] All tests pass (72 + 172 + 86 + 293 + 134 + 373 specs)
+- [x] `make check-compliance` passes (25 pre-existing violations, 0 from Phase 13)
+
+**Phase 13 Total**: 2-3 hours
+
+---
+
+## Phase 14: Skill Category Normalization & Import Auto-Categorization
+
+**Goal**: Unify the three disconnected categorization systems and auto-categorize skills during CSV import
+
+**Status**: ⏳ IN PROGRESS
+
+**Time Estimate**: 2-3 hours
+
+**Prerequisites**: Phase 13 complete
+
+---
+
+### Problem Statement
+
+Three separate categorization systems existed that didn't agree:
+
+| System | Categories | Count |
+|--------|-----------|-------|
+| Technology keywords (inference) | 14 categories including `build`, `documentation`, `os` | 14 |
+| `constants.SkillCategory` (UI/forms) | 8 categories | 8 |
+| CV generation | Title-case `"Technical"`, `"Leadership"`, `"Product"`, `"Other"` | 4 |
+
+### Changes Completed
+
+#### 14.1: Unified to 12 Canonical Skill Categories (DONE)
+
+Added 4 new `SkillCategory` constants and merged 3 non-standard categories:
+
+| Constant | Value | Change |
+|----------|-------|--------|
+| `SkillCategoryTesting` | `"testing"` | NEW |
+| `SkillCategoryData` | `"data"` | NEW |
+| `SkillCategoryML` | `"ml"` | NEW |
+| `SkillCategoryMonitoring` | `"monitoring"` | NEW |
+| `build` | → `tooling` | MERGED (12 keywords) |
+| `documentation` | → `tooling` | MERGED (6 keywords) |
+| `os` | → `devops` | MERGED (7 keywords) |
+
+Added `AllSkillCategories()` (returns 12) and `IsValidSkillCategory()`.
+
+**Files modified**: `internal/constants/constants.go`, `internal/constants/constants_test.go`
+
+#### 14.2: Domain Validation (DONE)
+
+`skill.validateCategory()` now calls `constants.IsValidSkillCategory()` instead of just checking non-empty + length.
+
+**Files modified**: `internal/domain/career/skill.go`, `internal/domain/career/skill_test.go`
+
+#### 14.3: Technology Keywords Normalization (DONE)
+
+Changed 25 keywords: `build` → `tooling`, `documentation` → `tooling`, `os` → `devops`.
+
+**Files modified**: `internal/service/career/technology/keywords.go`, `internal/service/career/technology/keywords_test.go`
+
+#### 14.4: CV Generation Lowercase (DONE)
+
+`determineSkillCategory()` and `section_builder.go` now return lowercase categories.
+
+**Files modified**: `internal/service/career/cv/data_processing_service.go`, `internal/service/career/cv/section_builder.go`
+
+#### 14.5: Profile Inference Constants (DONE)
+
+Replaced hardcoded category strings with `constants.SkillCategory*` constants.
+
+**Files modified**: `internal/service/career/cv/profile_inference.go`
+
+#### 14.6: Importer Constants (DONE)
+
+Changed `Category: "other"` to `Category: string(constants.SkillCategoryOther)`.
+
+**Files modified**: `internal/cli/importer/parser.go`
+
+#### 14.7: Test Fixtures (DONE)
+
+Fixed invalid category strings in test files.
+
+**Files modified**: `internal/repository/career/memory/skill_repository_test.go`, `internal/repository/career/memory/event_repository_test.go`
+
+#### 14.8: Import Auto-Categorization (DONE)
+
+Added `GetCategoryForSkillName(name string) string` to `technology/keywords.go`. Matches by both canonical skill names and keywords (case-insensitive). Falls back to empty string.
+
+Updated `importer/parser.go` to call `GetCategoryForSkillName` before creating new skills. Known skills get the correct category (e.g., "Go" → "backend", "PostgreSQL" → "database"). Unknown skills fall back to "other".
+
+**Files modified**:
+- `internal/service/career/technology/keywords.go` — Added `GetCategoryForSkillName`
+- `internal/service/career/technology/keywords_test.go` — Added 4 test cases (canonical names, case-insensitive, keyword aliases, unknown)
+- `internal/cli/importer/parser.go` — Uses `GetCategoryForSkillName` for auto-categorization
+- `internal/cli/importer/parser_test.go` — Updated existing tests + added 3 new auto-categorization tests
+
+#### Decision: Soft Skills NOT Added to SkillCategory
+
+Soft skills (communication, collaboration, etc.) remain as `CompetencyCategory` only. Rationale:
+- They serve different purposes (CompetencyCategory classifies events, SkillCategory classifies tools/technologies)
+- The inference pipeline doesn't support soft skill detection as skills
+- It would confuse the forms UX
+
+### Phase 14 Acceptance Criteria
+
+- [x] 12 canonical skill categories defined in `constants.go`
+- [x] `AllSkillCategories()` returns all 12
+- [x] `IsValidSkillCategory()` validates against 12 categories
+- [x] Domain `skill.validateCategory()` uses canonical validation
+- [x] Technology keywords use only canonical categories (no `build`, `documentation`, `os`)
+- [x] CV generation uses lowercase categories
+- [x] Profile inference uses constants
+- [x] Import auto-categorizes known skills from technology dictionary
+- [x] Import falls back to "other" for unknown skills
+- [x] `GetCategoryForSkillName` matches by keyword AND canonical name (case-insensitive)
+- [x] All tests pass (372+ specs)
+- [x] Staticcheck clean (no non-deprecation issues)
+
+**Phase 14 Total**: 2-3 hours
+
+---
+
 ## Expected UX Examples
 
 ### After burst confirmation (automatic):
@@ -1366,4 +1735,4 @@ With the service layer complete, the next phases will:
 4. Comprehensive testing (50-75 tests)
 5. Update documentation
 
-**Updated**: January 30, 2026 - Service layer complete, planning UI integration and enhancements (Phase 7-11)
+**Updated**: January 31, 2026 - Phase 14 in progress (Skill category normalization, import auto-categorization, 12 canonical categories, GetCategoryForSkillName)
