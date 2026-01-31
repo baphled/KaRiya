@@ -71,7 +71,7 @@ func CVSectionWithSummary(id, cvViewID, summary string) *career.CVSection {
 func CVSections(n int, cvViewID string) []*career.CVSection {
 	sectionTypes := []string{"experience", "projects", "skills", "summary"}
 	sections := make([]*career.CVSection, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		sectionType := sectionTypes[i%len(sectionTypes)]
 		sections[i] = CVSectionWith(
 			fmt.Sprintf("section-%d", i+1),

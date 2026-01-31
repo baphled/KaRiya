@@ -1,7 +1,8 @@
+// Package noinlinecareer provides a static analyzer that forbids inline
+// career struct literals in test files, enforcing fixture factory usage.
 package noinlinecareer
 
 import (
-	"fmt"
 	"go/ast"
 	"go/types"
 	"strings"
@@ -112,18 +113,4 @@ func isExcludedPackage(pkgPath string) bool {
 func isTestFile(pass *analysis.Pass, file *ast.File) bool {
 	filename := pass.Fset.Position(file.Pos()).Filename
 	return strings.HasSuffix(filename, "_test.go")
-}
-
-// FormatDiagnostic creates a consistent diagnostic message for a given career type.
-//
-// Expected:
-//   - typeName is the name of the career struct type (e.g. "Event").
-//
-// Returns:
-//   - A formatted string describing the violation.
-//
-// Side effects:
-//   - None.
-func FormatDiagnostic(typeName string) string {
-	return fmt.Sprintf("inline career.%s{} in test file; use fixtures package instead", typeName)
 }

@@ -1,3 +1,4 @@
+// Package main provides the noinlinecareer analyzer CLI entry point.
 package main
 
 import (

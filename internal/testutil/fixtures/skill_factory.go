@@ -73,8 +73,12 @@ func SkillWithYears(id, name, category string, years int) *career.Skill {
 // Skills creates n skills with sequential IDs.
 func Skills(n int) []*career.Skill {
 	skills := make([]*career.Skill, n)
-	for i := 0; i < n; i++ {
-		skills[i] = SkillFactory.MustCreate().(*career.Skill)
+	for i := range n {
+		skill, ok := SkillFactory.MustCreate().(*career.Skill)
+		if !ok {
+			continue
+		}
+		skills[i] = skill
 	}
 	return skills
 }

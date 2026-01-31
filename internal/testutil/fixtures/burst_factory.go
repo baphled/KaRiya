@@ -69,8 +69,11 @@ func BurstConfirmed(id string, eventIDs ...string) *career.Burst {
 // Events are distributed using wrap-around to ensure each burst has exactly 2 event IDs.
 func Bursts(n int, events []*career.Event) []*career.Burst {
 	bursts := make([]*career.Burst, n)
-	for i := 0; i < n; i++ {
-		burst := BurstFactory.MustCreate().(*career.Burst)
+	for i := range n {
+		burst, ok := BurstFactory.MustCreate().(*career.Burst)
+		if !ok {
+			continue
+		}
 		// Link to actual events if provided (need at least 2 for valid bursts)
 		if len(events) >= 2 {
 			startIdx := (i * 2) % len(events)

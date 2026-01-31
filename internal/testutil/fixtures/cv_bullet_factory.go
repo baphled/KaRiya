@@ -2,7 +2,6 @@ package fixtures
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/bluele/factory-go/factory"
 	"github.com/brianvoe/gofakeit/v7"
@@ -95,8 +94,11 @@ func CVBulletWithSources(id, sectionID, text string, eventIDs, factIDs []string)
 // CVBullets creates n bullets for a given section.
 func CVBullets(n int, sectionID string) []*career.CVBullet {
 	bullets := make([]*career.CVBullet, n)
-	for i := 0; i < n; i++ {
-		bullet := CVBulletFactory.MustCreate().(*career.CVBullet)
+	for i := range n {
+		bullet, ok := CVBulletFactory.MustCreate().(*career.CVBullet)
+		if !ok {
+			continue
+		}
 		bullet.SectionID = sectionID
 		bullets[i] = bullet
 	}
@@ -105,7 +107,5 @@ func CVBullets(n int, sectionID string) []*career.CVBullet {
 
 // CVBulletVal creates a CVBullet value (not pointer) with the given ID and section ID.
 func CVBulletVal(id, sectionID string) career.CVBullet {
-	now := time.Now()
-	_ = now
 	return *CVBullet(id, sectionID)
 }
