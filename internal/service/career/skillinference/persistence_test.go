@@ -11,6 +11,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/baphled/kariya/internal/domain/career"
+	career_repo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/service/career/skillinference"
 )
 
@@ -26,8 +27,9 @@ var _ = Describe("Skill Persistence", func() {
 
 	BeforeEach(func() {
 		skillRepo = &mockSkillRepository{
-			skills:     make(map[string]*career.Skill),
-			skillsByID: make(map[string]*career.Skill),
+			skills:        make(map[string]*career.Skill),
+			skillsByID:    make(map[string]*career.Skill),
+			notFoundError: career_repo.ErrSkillNotFound,
 		}
 		eventRepo = &mockEventRepository{
 			events: make(map[string]*career.Event),
@@ -264,6 +266,78 @@ var _ = Describe("Skill Persistence", func() {
 			})
 		})
 
+		Context("when repository returns ErrSkillNotFound for new skills", func() {
+			BeforeEach(func() {
+				skillRepo.notFoundError = career_repo.ErrSkillNotFound
+
+				suggestions = []skillinference.SkillSuggestion{
+					{
+						Name:       "Go",
+						Category:   "Backend",
+						Confidence: 0.95,
+						EventIDs:   []string{"event-1", "event-2"},
+					},
+					{
+						Name:       "PostgreSQL",
+						Category:   "Database",
+						Confidence: 0.75,
+						EventIDs:   []string{"event-1"},
+					},
+				}
+
+				eventRepo.events["event-1"] = &career.Event{ID: "event-1", Date: testTime}
+				eventRepo.events["event-2"] = &career.Event{ID: "event-2", Date: testTime.Add(24 * time.Hour)}
+			})
+
+			It("should create new skills successfully", func() {
+				skills, err := service.CreateSkillsFromSuggestions(ctx, suggestions)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(skills).To(HaveLen(2))
+
+				goSkill := findSkillByName(skills, "Go")
+				Expect(goSkill).NotTo(BeNil())
+				Expect(goSkill.Category).To(Equal("Backend"))
+
+				pgSkill := findSkillByName(skills, "PostgreSQL")
+				Expect(pgSkill).NotTo(BeNil())
+				Expect(pgSkill.Category).To(Equal("Database"))
+			})
+
+			It("should link skills to events", func() {
+				skills, err := service.CreateSkillsFromSuggestions(ctx, suggestions)
+
+				Expect(err).NotTo(HaveOccurred())
+
+				goSkill := findSkillByName(skills, "Go")
+				pgSkill := findSkillByName(skills, "PostgreSQL")
+
+				event1 := eventRepo.events["event-1"]
+				Expect(event1.Skills).To(ConsistOf(goSkill.ID, pgSkill.ID))
+
+				event2 := eventRepo.events["event-2"]
+				Expect(event2.Skills).To(ConsistOf(goSkill.ID))
+			})
+
+			It("should handle mix of existing and new skills", func() {
+				existingSkill := &career.Skill{ID: "existing-1", Name: "Go", Category: "Backend"}
+				skillRepo.skills["go"] = existingSkill
+				skillRepo.skillsByID["existing-1"] = existingSkill
+
+				skills, err := service.CreateSkillsFromSuggestions(ctx, suggestions)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(skills).To(HaveLen(2))
+
+				goSkill := findSkillByName(skills, "Go")
+				Expect(goSkill.ID).To(Equal("existing-1"))
+
+				pgSkill := findSkillByName(skills, "PostgreSQL")
+				Expect(pgSkill).NotTo(BeNil())
+				Expect(pgSkill.ID).NotTo(Equal("existing-1"))
+			})
+		})
+
 		Context("when no suggestions provided", func() {
 			It("should return empty slice", func() {
 				skills, err := service.CreateSkillsFromSuggestions(ctx, []skillinference.SkillSuggestion{})
@@ -353,11 +427,12 @@ func findSkillByName(skills []*career.Skill, name string) *career.Skill {
 
 // Mock repositories
 type mockSkillRepository struct {
-	skills      map[string]*career.Skill // Key: lowercase name
-	skillsByID  map[string]*career.Skill
-	createError error
-	updateError error
-	nextID      int
+	skills        map[string]*career.Skill // Key: lowercase name
+	skillsByID    map[string]*career.Skill
+	createError   error
+	updateError   error
+	notFoundError error
+	nextID        int
 }
 
 func (m *mockSkillRepository) Create(ctx context.Context, skill *career.Skill) error {
@@ -391,7 +466,7 @@ func (m *mockSkillRepository) GetByName(ctx context.Context, name string) (*care
 	key := normalizeSkillName(name)
 	skill, exists := m.skills[key]
 	if !exists {
-		return nil, nil // Not found
+		return nil, m.notFoundError
 	}
 	return skill, nil
 }

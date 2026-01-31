@@ -2,6 +2,7 @@ package skillinference
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"sort"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
+	career_repo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/service/career/technology"
 )
 
@@ -345,9 +347,8 @@ func (s *DefaultSkillInferenceService) CreateSkillsFromSuggestions(
 			return nil, fmt.Errorf("failed to get event dates for skill %s: %w", suggestion.Name, err)
 		}
 
-		// Check if skill already exists (case-insensitive)
 		existingSkill, err := s.skillRepo.GetByName(ctx, suggestion.Name)
-		if err != nil {
+		if err != nil && !errors.Is(err, career_repo.ErrSkillNotFound) {
 			return nil, fmt.Errorf("failed to check existing skill %s: %w", suggestion.Name, err)
 		}
 

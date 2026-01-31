@@ -403,6 +403,22 @@ var _ = Describe("Intent", func() {
 
 			Expect(cmd).To(BeNil())
 		})
+
+		It("should process SkillsLoadedMsg even when feedback modal is visible", func() {
+			mockRepo.Create(ctx, &career.Skill{ID: "s1", Name: "Go", Category: "Backend"})
+			mockRepo.Create(ctx, &career.Skill{ID: "s2", Name: "PostgreSQL", Category: "Database"})
+
+			cmd := intent.Update(skillsmanagement.SkillsCreatedMsg{
+				Skills: []*career.Skill{{ID: "s1"}, {ID: "s2"}},
+			})
+			Expect(cmd).NotTo(BeNil())
+			Expect(intent.GetFeedbackModal()).NotTo(BeNil())
+
+			msg := cmd()
+			intent.Update(msg)
+
+			Expect(intent.GetSkills()).To(HaveLen(2))
+		})
 	})
 
 	Describe("Interface Compliance", func() {

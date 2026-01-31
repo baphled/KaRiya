@@ -120,6 +120,8 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 		return i.handleSkillSuggestionsLoaded(msg)
 	case SkillsCreatedMsg:
 		return i.handleSkillsCreatedFromInference(msg)
+	case SkillsLoadedMsg:
+		return i.handleSkillsLoaded(msg)
 	default:
 	}
 
@@ -177,9 +179,6 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 
 	// 5. Message and state handling.
 	switch msg := msg.(type) {
-	case SkillsLoadedMsg:
-		return i.handleSkillsLoaded(msg)
-
 	case SkillCreatedMsg:
 		return i.handleSkillCreated(msg)
 
