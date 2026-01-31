@@ -66,14 +66,6 @@ var _ = Describe("StandardView Consistency", func() {
 		})
 	})
 
-	// Note: FactManagement has been migrated to intents/facts/ package
-	// with its own comprehensive test suite. See fact_management/intent_test.go
-	// for StandardView consistency tests.
-	PDescribe("FactManagement (migrated to subpackage)", func() {
-		It("should use StandardView patterns - see fact_management/intent_test.go", func() {
-			Skip("Migrated to fact_management subpackage")
-		})
-	})
 })
 
 var _ = Describe("All Intents Initialization", func() {
