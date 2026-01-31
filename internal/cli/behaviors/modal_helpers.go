@@ -17,7 +17,13 @@ type StaticViewModel struct {
 	Content string
 }
 
-// View implements Viewable.
+// View renders the static background content for overlay composition.
+//
+// Returns:
+//   - The pre-rendered content string.
+//
+// Side effects:
+//   - None.
 func (m *StaticViewModel) View() string {
 	return m.Content
 }
@@ -26,11 +32,15 @@ func (m *StaticViewModel) View() string {
 // bubbletea-overlay. The modal is centered with a small upward offset
 // to avoid the footer.
 //
-// Parameters:
-//   - modal: The foreground modal (must implement Viewable - just needs View() string)
-//   - background: The rendered background view string
+// Expected:
+//   - modal must be non-nil and implement Viewable.
+//   - background must be a pre-rendered view string.
 //
-// Returns the composited view string.
+// Returns:
+//   - The composited view string with the modal overlaid on the background.
+//
+// Side effects:
+//   - None.
 func RenderModalOverlay(modal Viewable, background string) string {
 	bgModel := &StaticViewModel{Content: background}
 	overlayModel := overlay.New(
@@ -46,13 +56,17 @@ func RenderModalOverlay(modal Viewable, background string) string {
 
 // RenderModalOverlayWithOffset renders a modal with custom positioning.
 //
-// Parameters:
-//   - modal: The foreground modal (must implement Viewable - just needs View() string)
-//   - background: The rendered background view string
-//   - xOffset: Horizontal offset from center (positive = right)
-//   - yOffset: Vertical offset from center (positive = down)
+// Expected:
+//   - modal must be non-nil and implement Viewable.
+//   - background must be a pre-rendered view string.
+//   - xOffset is the horizontal offset from center (positive = right).
+//   - yOffset is the vertical offset from center (positive = down).
 //
-// Returns the composited view string.
+// Returns:
+//   - The composited view string with the modal overlaid at the specified offset.
+//
+// Side effects:
+//   - None.
 func RenderModalOverlayWithOffset(modal Viewable, background string, xOffset, yOffset int) string {
 	bgModel := &StaticViewModel{Content: background}
 	overlayModel := overlay.New(
@@ -66,8 +80,15 @@ func RenderModalOverlayWithOffset(modal Viewable, background string, xOffset, yO
 	return overlayModel.View()
 }
 
-// DefaultModalDimensions returns sensible default dimensions for modals
-// when terminal info is not available.
+// DefaultModalDimensions provides fallback modal dimensions for use when
+// terminal size information is unavailable.
+//
+// Returns:
+//   - width: The default modal width (120).
+//   - height: The default modal height (40).
+//
+// Side effects:
+//   - None.
 func DefaultModalDimensions() (width, height int) {
 	return 120, 40
 }
