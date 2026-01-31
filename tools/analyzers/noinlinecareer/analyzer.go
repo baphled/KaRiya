@@ -95,6 +95,7 @@ func isCareerPackage(pkgPath string) bool {
 
 func isExcludedPackage(pkgPath string) bool {
 	exclusions := []string{
+		"domain/career",
 		"fixtures",
 		"testutil/e2e",
 	}
