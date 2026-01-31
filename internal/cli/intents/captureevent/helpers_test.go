@@ -266,8 +266,8 @@ var _ = Describe("Helper Methods", func() {
 			})
 		})
 
-		Context("when eventService is nil", func() {
-			It("should return SubmitErrorMsg for nil service", func() {
+		Context("when CareerService is nil", func() {
+			It("should return SubmitErrorMsg for nil career service", func() {
 				intent.reviewState = &ReviewInferredEventState{
 					Event: &career.Event{
 						Text: "Valid event text for testing purposes",
@@ -275,7 +275,7 @@ var _ = Describe("Helper Methods", func() {
 					},
 					AcceptedFacts: make([]*career.Fact, 0),
 				}
-				intent.eventService = nil
+				intent.context.CareerService = nil
 				cmd := intent.performSubmit()
 				Expect(cmd).NotTo(BeNil())
 
@@ -283,6 +283,7 @@ var _ = Describe("Helper Methods", func() {
 				errMsg, ok := msg.(SubmitErrorMsg)
 				Expect(ok).To(BeTrue())
 				Expect(errMsg.Code).To(Equal("SERVICE_ERROR"))
+				Expect(errMsg.Message).To(ContainSubstring("Career service"))
 			})
 		})
 	})

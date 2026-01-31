@@ -133,9 +133,8 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 	if i.submitModal != nil {
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
-			if msg.Type == tea.KeyEsc {
+			if msg.Type == tea.KeyEsc && i.submitModal.Type != feedback.ModalLoading {
 				i.submitModal = nil
-				return nil
 			}
 			return nil
 		case feedback.ModalSpinnerTickMsg:

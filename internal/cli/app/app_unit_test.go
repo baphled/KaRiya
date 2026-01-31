@@ -830,7 +830,7 @@ var _ = Describe("App Unit Tests", func() {
 			Expect(model.GetState()).To(Equal(app.StateMenu))
 		})
 
-		// NOTE: The "intent completion via non-key message" test was removed because
+		// The "intent completion via non-key message" test was removed because
 		// it relied on legacy FormSubmittedMsg/ReviewCancelledMsg messages that no
 		// longer exist after the dead-code removal. The handleDefaultMsg routing path
 		// is already covered by the "route message to intent" and "return to menu

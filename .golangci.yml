@@ -561,7 +561,7 @@ issues:
     - 'G304: Potential file inclusion via variable'
     # Re-add EXC0011 (stylecheck): exported comment checks (handled by revive).
     - '(ST1000|ST1020|ST1021|ST1022)'
-    # NOTE: EXC0002, EXC0012-EXC0015 intentionally NOT re-added.
+    # EXC0002, EXC0012-EXC0015 are intentionally NOT re-added.
     # This enables revive exported/package-comments enforcement for captureevent
     # and future migrated intents. Packages with blanket `- revive` in exclude-rules
     # are unaffected. Packages without revive suppression that have pre-existing

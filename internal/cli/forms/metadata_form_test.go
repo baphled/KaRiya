@@ -206,7 +206,13 @@ var _ = Describe("MetadataForm", func() {
 			availableSkills := []*career.Skill{}
 
 			form := forms.NewMetadataEditorFormWithDataAndDimensions(
-				data, availableTags, availableCategories, availableSkills, 74, 20,
+				data, forms.MetadataFormConfig{
+					AvailableTags:       availableTags,
+					AvailableCategories: availableCategories,
+					AvailableSkills:     availableSkills,
+					Width:               74,
+					Height:              20,
+				},
 			)
 
 			Expect(form).NotTo(BeNil())

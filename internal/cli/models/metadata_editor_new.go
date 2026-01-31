@@ -112,11 +112,14 @@ func NewMetadataEditorModelNew(
 	formWidth := forms.ModalFormWidth(modalWidth)
 	formHeight := forms.ModalFormHeight(termHeight)
 
-	// Use NewFormWithFixedConfirm (via buildMetadataForm) so the submit
-	// button stays visible while fields scroll independently.
 	form := forms.NewMetadataEditorFormWithDataAndDimensions(
-		formData, availableTags, availableCategories, availableSkills,
-		formWidth, formHeight,
+		formData, forms.MetadataFormConfig{
+			AvailableTags:       availableTags,
+			AvailableCategories: availableCategories,
+			AvailableSkills:     availableSkills,
+			Width:               formWidth,
+			Height:              formHeight,
+		},
 	)
 
 	return &MetadataEditorModelNew{

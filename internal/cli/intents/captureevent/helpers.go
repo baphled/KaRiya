@@ -88,7 +88,7 @@ func (i *Intent) showSubmitModal() tea.Cmd {
 //
 // Expected:
 //   - i.reviewState.Event is non-nil and valid.
-//   - i.eventService and i.context.CareerService are non-nil.
+//   - i.context.CareerService is non-nil.
 //
 // Returns:
 //   - A tea.Cmd that runs asynchronously and produces a SubmitCompleteMsg
@@ -103,7 +103,6 @@ func (i *Intent) performSubmit() tea.Cmd {
 	acceptedFacts := i.reviewState.AcceptedFacts
 	strategy := i.strategy
 	careerService := i.context.CareerService
-	eventService := i.eventService
 
 	return func() tea.Msg {
 		if event == nil {
@@ -122,10 +121,10 @@ func (i *Intent) performSubmit() tea.Cmd {
 			}
 		}
 
-		if eventService == nil {
+		if careerService == nil {
 			return SubmitErrorMsg{
 				Code:    "SERVICE_ERROR",
-				Message: "Event service not initialized",
+				Message: "Career service not initialized",
 				Cause:   nil,
 			}
 		}
@@ -139,14 +138,6 @@ func (i *Intent) performSubmit() tea.Cmd {
 
 		mode := careerservice.ManualEntry
 
-		if careerService == nil {
-			return SubmitErrorMsg{
-				Code:    "SERVICE_ERROR",
-				Message: "Career service not initialized",
-				Cause:   nil,
-			}
-		}
-
 		err := careerService.CaptureEvent(ctx, event, mode)
 
 		if err != nil {
@@ -157,7 +148,8 @@ func (i *Intent) performSubmit() tea.Cmd {
 			}
 		}
 
-		if careerService != nil && len(acceptedFacts) > 0 {
+		var factErrors []string
+		if len(acceptedFacts) > 0 {
 			for _, fact := range acceptedFacts {
 				if fact.ID == "" {
 					if fact.SourceEventID == "" {
@@ -165,9 +157,17 @@ func (i *Intent) performSubmit() tea.Cmd {
 					}
 
 					if err := careerService.SaveFact(ctx, fact); err != nil {
-						continue
+						factErrors = append(factErrors, err.Error())
 					}
 				}
+			}
+		}
+
+		if len(factErrors) > 0 {
+			return SubmitErrorMsg{
+				Code:    "PARTIAL_SAVE",
+				Message: fmt.Sprintf("Event saved but %d fact(s) failed: %s", len(factErrors), strings.Join(factErrors, "; ")),
+				Cause:   fmt.Errorf("fact save failures: %s", strings.Join(factErrors, "; ")),
 			}
 		}
 
