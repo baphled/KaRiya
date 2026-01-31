@@ -146,34 +146,77 @@ func (i *Intent) removeEventFromList(eventID string) {
 	i.transitionToScreen(timeline.NewTimelineEventListScreen(i.filteredEvents))
 }
 
-// RefreshData reloads/refreshes the filtered data.
+// RefreshData re-applies current filters and rebuilds the timeline screen
+// to reflect changes in the underlying event data.
+//
+// Returns:
+//   - Always nil; the screen transition is handled internally.
+//
+// Side effects:
+//   - Re-applies filters and transitions to a new timeline list screen.
 func (i *Intent) RefreshData() tea.Cmd {
 	i.applyFilters()
 	i.transitionToScreen(timeline.NewTimelineEventListScreen(i.filteredEvents))
 	return nil
 }
 
-// HasVisibleSkillsModal returns true if the skills modal is currently visible.
+// HasVisibleSkillsModal checks whether the skills detail modal is currently
+// displayed to the user.
+//
+// Returns:
+//   - True if the skills modal exists and is visible, false otherwise.
+//
+// Side effects:
+//   - None.
 func (i *Intent) HasVisibleSkillsModal() bool {
 	return i.viewSkillsModal != nil && i.viewSkillsModal.IsVisible()
 }
 
-// HasVisibleErrorModal returns true if the error modal is currently visible.
+// HasVisibleErrorModal checks whether an error modal is currently displayed
+// to the user.
+//
+// Returns:
+//   - True if the error modal exists, false otherwise.
+//
+// Side effects:
+//   - None.
 func (i *Intent) HasVisibleErrorModal() bool {
 	return i.errorModal != nil
 }
 
-// HasVisibleQuickAddModal returns true if the quick add modal is currently visible.
+// HasVisibleQuickAddModal checks whether the quick-add event modal is currently
+// displayed to the user.
+//
+// Returns:
+//   - True if the quick add modal exists and is visible, false otherwise.
+//
+// Side effects:
+//   - None.
 func (i *Intent) HasVisibleQuickAddModal() bool {
 	return i.quickAddModal != nil && i.quickAddModal.IsVisible()
 }
 
-// HasVisibleEditModal returns true if the edit modal is currently visible.
+// HasVisibleEditModal checks whether the event edit modal is currently
+// displayed to the user.
+//
+// Returns:
+//   - True if the edit modal exists and is visible, false otherwise.
+//
+// Side effects:
+//   - None.
 func (i *Intent) HasVisibleEditModal() bool {
 	return i.editModal != nil && i.editModal.IsVisible()
 }
 
-// ShowErrorModal displays an error modal with the given title and message.
+// ShowErrorModal presents an error overlay to the user, taking highest
+// priority over all other modals in the update cycle.
+//
+// Expected:
+//   - title must be a non-empty human-readable heading.
+//   - message must describe the error for the user.
+//
+// Side effects:
+//   - Creates and assigns a new error modal that blocks other modal interactions.
 func (i *Intent) ShowErrorModal(title, message string) {
 	i.errorModal = feedback.NewErrorModal(title, message)
 }

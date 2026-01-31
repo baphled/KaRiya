@@ -25,8 +25,19 @@ type ErrorModalAdapter struct {
 	theme  themes.Theme
 }
 
-// NewErrorModalAdapter creates a new adapter for an error modal.
+// NewErrorModalAdapter wraps an error modal with the ManagedModal interface for use with the modal registry.
 // If theme is nil, a default theme will be used for rendering.
+//
+// Expected:
+//   - modal may be nil, in which case IsVisible returns false.
+//   - width and height are the terminal dimensions for rendering.
+//   - theme may be nil; a default theme will be used if so.
+//
+// Returns:
+//   - A configured ErrorModalAdapter wrapping the given modal.
+//
+// Side effects:
+//   - None.
 func NewErrorModalAdapter(modal *feedback.Modal, width, height int, theme themes.Theme) *ErrorModalAdapter {
 	return &ErrorModalAdapter{
 		modal:  modal,
@@ -36,13 +47,25 @@ func NewErrorModalAdapter(modal *feedback.Modal, width, height int, theme themes
 	}
 }
 
-// IsVisible returns true if the modal is not nil.
+// IsVisible checks whether this modal should be rendered as an overlay in the current view cycle.
 // Error modals are visible as long as they exist (nil check).
+//
+// Returns:
+//   - True if the underlying modal is non-nil.
+//
+// Side effects:
+//   - None.
 func (a *ErrorModalAdapter) IsVisible() bool {
 	return a.modal != nil
 }
 
-// View returns the modal's rendered content using the stored dimensions.
+// View renders the modal content for overlay composition using the stored dimensions.
+//
+// Returns:
+//   - The rendered modal string, or empty string if the modal is nil.
+//
+// Side effects:
+//   - None.
 func (a *ErrorModalAdapter) View() string {
 	if a.modal == nil {
 		return ""
@@ -52,6 +75,15 @@ func (a *ErrorModalAdapter) View() string {
 
 // HandleUpdate processes keyboard input for the error modal.
 // Error modals only respond to Esc to dismiss.
+//
+// Expected:
+//   - msg is forwarded to the wrapped modal for processing.
+//
+// Returns:
+//   - A ModalUpdateResult with Closed set to true if Esc was pressed.
+//
+// Side effects:
+//   - None.
 func (a *ErrorModalAdapter) HandleUpdate(msg tea.Msg) ModalUpdateResult {
 	if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.Type == tea.KeyEsc {
 		return ModalUpdateResult{Closed: true}
@@ -61,6 +93,15 @@ func (a *ErrorModalAdapter) HandleUpdate(msg tea.Msg) ModalUpdateResult {
 
 // RenderOverlay provides special rendering for error modals.
 // Uses feedback.RenderOverlay for dimming and positioning behavior.
+//
+// Expected:
+//   - baseView is the background content to overlay the modal onto.
+//
+// Returns:
+//   - The composited view with the modal overlaid, or baseView if the modal is nil.
+//
+// Side effects:
+//   - None.
 func (a *ErrorModalAdapter) RenderOverlay(baseView string) string {
 	if a.modal == nil {
 		return baseView
@@ -85,12 +126,18 @@ type FormModalAdapter[T any] struct {
 	update    func(tea.Msg) (tea.Cmd, bool, T)
 }
 
-// NewFormModalAdapter creates a new adapter for a form-based modal.
+// NewFormModalAdapter wraps a form-based modal with the ManagedModal interface for use with the modal registry.
 //
-// Parameters:
-//   - isVisible: Function returning the modal's visibility state
-//   - view: Function returning the modal's rendered content
-//   - update: Function handling message updates with form data return
+// Expected:
+//   - isVisible must be non-nil; returns the modal's visibility state.
+//   - view must be non-nil; returns the modal's rendered content.
+//   - update must be non-nil; handles message updates and returns form data.
+//
+// Returns:
+//   - A configured FormModalAdapter wrapping the provided functions.
+//
+// Side effects:
+//   - None.
 func NewFormModalAdapter[T any](
 	isVisible func() bool,
 	view func() string,
@@ -103,18 +150,39 @@ func NewFormModalAdapter[T any](
 	}
 }
 
-// IsVisible delegates to the isVisible function.
+// IsVisible checks whether this modal should be rendered as an overlay in the current view cycle.
+//
+// Returns:
+//   - True if the underlying modal reports itself as visible.
+//
+// Side effects:
+//   - None.
 func (a *FormModalAdapter[T]) IsVisible() bool {
 	return a.isVisible()
 }
 
-// View delegates to the view function.
+// View renders the modal content for overlay composition.
+//
+// Returns:
+//   - The rendered modal content string.
+//
+// Side effects:
+//   - None.
 func (a *FormModalAdapter[T]) View() string {
 	return a.view()
 }
 
-// HandleUpdate calls the modal's Update and normalizes the result.
+// HandleUpdate delegates the message to the wrapped modal and normalizes the result.
 // The Closed state is detected by checking visibility after the update.
+//
+// Expected:
+//   - msg is forwarded to the wrapped modal for processing.
+//
+// Returns:
+//   - A ModalUpdateResult with Cmd, Closed, Applied, and Data fields populated.
+//
+// Side effects:
+//   - May mutate the underlying modal's state via the update function.
 func (a *FormModalAdapter[T]) HandleUpdate(msg tea.Msg) ModalUpdateResult {
 	cmd, applied, data := a.update(msg)
 	closed := !a.isVisible()
@@ -136,17 +204,38 @@ type ConfirmModalAdapter struct {
 	modal *feedback.ConfirmModal
 }
 
-// NewConfirmModalAdapter creates a new adapter for a confirm modal.
+// NewConfirmModalAdapter wraps a confirm modal with the ManagedModal interface for use with the modal registry.
+//
+// Expected:
+//   - modal must be non-nil.
+//
+// Returns:
+//   - A configured ConfirmModalAdapter wrapping the given modal.
+//
+// Side effects:
+//   - None.
 func NewConfirmModalAdapter(modal *feedback.ConfirmModal) *ConfirmModalAdapter {
 	return &ConfirmModalAdapter{modal: modal}
 }
 
-// IsVisible returns true if modal exists and is visible.
+// IsVisible checks whether this modal should be rendered as an overlay in the current view cycle.
+//
+// Returns:
+//   - True if the underlying modal is non-nil and reports itself as visible.
+//
+// Side effects:
+//   - None.
 func (a *ConfirmModalAdapter) IsVisible() bool {
 	return a.modal != nil && a.modal.IsVisible()
 }
 
-// View returns the modal's rendered content.
+// View renders the modal content for overlay composition.
+//
+// Returns:
+//   - The rendered modal string, or empty string if the modal is nil.
+//
+// Side effects:
+//   - None.
 func (a *ConfirmModalAdapter) View() string {
 	if a.modal == nil {
 		return ""
@@ -154,8 +243,17 @@ func (a *ConfirmModalAdapter) View() string {
 	return a.modal.View()
 }
 
-// HandleUpdate processes the confirm modal's Update and normalizes the result.
+// HandleUpdate delegates the message to the wrapped confirm modal and normalizes the result.
 // The Data field contains the confirmation result (bool).
+//
+// Expected:
+//   - msg is forwarded to the wrapped modal for processing.
+//
+// Returns:
+//   - A ModalUpdateResult with Cmd, Closed, Applied, and Data fields populated.
+//
+// Side effects:
+//   - May mutate the underlying confirm modal's state.
 func (a *ConfirmModalAdapter) HandleUpdate(msg tea.Msg) ModalUpdateResult {
 	cmd, confirmed := a.modal.Update(msg)
 	closed := !a.modal.IsVisible()
@@ -182,12 +280,18 @@ type ViewModalAdapter struct {
 	update    func(tea.Msg) (tea.Model, tea.Cmd)
 }
 
-// NewViewModalAdapter creates a new adapter for a view-only modal.
+// NewViewModalAdapter wraps a view-only modal with the ManagedModal interface for use with the modal registry.
 //
-// Parameters:
-//   - isVisible: Function returning the modal's visibility state
-//   - view: Function returning the modal's rendered content
-//   - update: Function handling message updates (tea.Model pattern)
+// Expected:
+//   - isVisible must be non-nil; returns the modal's visibility state.
+//   - view must be non-nil; returns the modal's rendered content.
+//   - update must be non-nil; handles message updates using the tea.Model pattern.
+//
+// Returns:
+//   - A configured ViewModalAdapter wrapping the provided functions.
+//
+// Side effects:
+//   - None.
 func NewViewModalAdapter(
 	isVisible func() bool,
 	view func() string,
@@ -200,18 +304,39 @@ func NewViewModalAdapter(
 	}
 }
 
-// IsVisible delegates to the isVisible function.
+// IsVisible checks whether this modal should be rendered as an overlay in the current view cycle.
+//
+// Returns:
+//   - True if the underlying modal reports itself as visible.
+//
+// Side effects:
+//   - None.
 func (a *ViewModalAdapter) IsVisible() bool {
 	return a.isVisible()
 }
 
-// View delegates to the view function.
+// View renders the modal content for overlay composition.
+//
+// Returns:
+//   - The rendered modal content string.
+//
+// Side effects:
+//   - None.
 func (a *ViewModalAdapter) View() string {
 	return a.view()
 }
 
-// HandleUpdate calls the modal's Update and normalizes the result.
+// HandleUpdate delegates the message to the wrapped view modal and normalizes the result.
 // View modals don't have Applied (no form submission).
+//
+// Expected:
+//   - msg is forwarded to the wrapped modal for processing.
+//
+// Returns:
+//   - A ModalUpdateResult with Cmd and Closed fields populated. Applied is always false.
+//
+// Side effects:
+//   - May mutate the underlying modal's state via the update function.
 func (a *ViewModalAdapter) HandleUpdate(msg tea.Msg) ModalUpdateResult {
 	_, cmd := a.update(msg)
 	closed := !a.isVisible()

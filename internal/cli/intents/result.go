@@ -26,6 +26,14 @@ type IntentError struct {
 	Cause   error
 }
 
+// Error implements the error interface, producing a formatted diagnostic string
+// suitable for logging and debugging.
+//
+// Returns:
+//   - A string containing the code, message, and optional cause.
+//
+// Side effects:
+//   - None.
 func (e *IntentError) Error() string {
 	if e.Cause != nil {
 		return fmt.Sprintf("%s: %s (cause: %v)", e.Code, e.Message, e.Cause)
@@ -33,13 +41,31 @@ func (e *IntentError) Error() string {
 	return fmt.Sprintf("%s: %s", e.Code, e.Message)
 }
 
-// WithCause adds or updates the cause error.
+// WithCause attaches the root-cause error to the IntentError for debugging.
+//
+// Expected:
+//   - cause is the originating lower-level error, or nil to clear the cause.
+//
+// Returns:
+//   - The receiver for method chaining.
+//
+// Side effects:
+//   - Mutates the Cause field on the receiver.
 func (e *IntentError) WithCause(cause error) *IntentError {
 	e.Cause = cause
 	return e
 }
 
-// WithMessage updates the human-readable message.
+// WithMessage attaches a human-readable description that can be surfaced to the user or written to logs.
+//
+// Expected:
+//   - message is a non-empty string describing what happened in plain language.
+//
+// Returns:
+//   - The receiver for method chaining.
+//
+// Side effects:
+//   - Mutates the Message field on the receiver.
 func (e *IntentError) WithMessage(message string) *IntentError {
 	e.Message = message
 	return e
@@ -80,6 +106,15 @@ type IntentResult[T any] struct {
 }
 
 // NewCompletedResult creates a successful IntentResult with output data.
+//
+// Expected:
+//   - data is the intent output payload.
+//
+// Returns:
+//   - A new IntentResult with Completed status and initialized metadata.
+//
+// Side effects:
+//   - None.
 func NewCompletedResult[T any](data T) *IntentResult[T] {
 	return &IntentResult[T]{
 		Status:   Completed,
@@ -89,6 +124,12 @@ func NewCompletedResult[T any](data T) *IntentResult[T] {
 }
 
 // NewCancelledResult creates an IntentResult indicating user cancellation.
+//
+// Returns:
+//   - A new IntentResult with Cancelled status and initialized metadata.
+//
+// Side effects:
+//   - None.
 func NewCancelledResult[T any]() *IntentResult[T] {
 	return &IntentResult[T]{
 		Status:   Cancelled,
@@ -97,6 +138,17 @@ func NewCancelledResult[T any]() *IntentResult[T] {
 }
 
 // NewFailedResult creates an IntentResult indicating an error.
+//
+// Expected:
+//   - code is a machine-readable error code.
+//   - message is a human-readable error description.
+//   - cause is the underlying error, or nil if none.
+//
+// Returns:
+//   - A new IntentResult with Failed status, an IntentError, and initialized metadata.
+//
+// Side effects:
+//   - None.
 func NewFailedResult[T any](code, message string, cause error) *IntentResult[T] {
 	return &IntentResult[T]{
 		Status: Failed,
@@ -111,6 +163,17 @@ func NewFailedResult[T any](code, message string, cause error) *IntentResult[T] 
 
 // NewPartialResult creates an IntentResult indicating partial success.
 // Used for flows where some data is accepted and some is rejected (e.g., CaptureEvent).
+//
+// Expected:
+//   - data is the accepted output payload.
+//   - code is a machine-readable error code for the rejected portion.
+//   - message is a human-readable description of what was rejected.
+//
+// Returns:
+//   - A new IntentResult with Partial status, data, an IntentError, and initialized metadata.
+//
+// Side effects:
+//   - None.
 func NewPartialResult[T any](data T, code, message string) *IntentResult[T] {
 	return &IntentResult[T]{
 		Status: Partial,
@@ -123,28 +186,66 @@ func NewPartialResult[T any](data T, code, message string) *IntentResult[T] {
 	}
 }
 
-// IsSuccessful returns true if the intent completed successfully (Completed or Partial).
+// IsSuccessful indicates the intent produced usable output, either fully (Completed) or
+// with some items rejected (Partial).
+//
+// Returns:
+//   - True if the status is Completed or Partial.
+//
+// Side effects:
+//   - None.
 func (r *IntentResult[T]) IsSuccessful() bool {
 	return r.Status == Completed || r.Status == Partial
 }
 
-// IsCancelled returns true if the user cancelled the intent.
+// IsCancelled indicates the user explicitly aborted the intent before it could
+// produce any output, meaning no data was persisted.
+//
+// Returns:
+//   - True if the status is Cancelled.
+//
+// Side effects:
+//   - None.
 func (r *IntentResult[T]) IsCancelled() bool {
 	return r.Status == Cancelled
 }
 
-// IsFailed returns true if the intent encountered an error.
+// IsFailed indicates the intent encountered an unrecoverable error and produced
+// no usable output; the Error field contains diagnostic details.
+//
+// Returns:
+//   - True if the status is Failed.
+//
+// Side effects:
+//   - None.
 func (r *IntentResult[T]) IsFailed() bool {
 	return r.Status == Failed
 }
 
-// IsTerminal returns true if the result is in a terminal state (cannot transition further).
+// IsTerminal indicates the result has reached a final state and no further processing
+// is possible; the intent router uses this to decide whether to tear down the intent.
+//
+// Returns:
+//   - True if the result is Cancelled, Failed, or Successful.
+//
+// Side effects:
+//   - None.
 func (r *IntentResult[T]) IsTerminal() bool {
 	return r.IsCancelled() || r.IsFailed() || r.IsSuccessful()
 }
 
-// WithMetadata adds or updates metadata on the result.
-// Returns the result for method chaining.
+// WithMetadata attaches an auxiliary key-value pair (breadcrumbs, timestamps, diagnostic
+// hints) to the result for downstream consumers that need context beyond status and data.
+//
+// Expected:
+//   - key is a non-empty, dot-namespaced identifier (e.g. "timing.duration").
+//   - value is any serialisable payload; callers must agree on the concrete type per key.
+//
+// Returns:
+//   - The receiver for method chaining.
+//
+// Side effects:
+//   - Mutates the Metadata map on the receiver, initializing it if nil.
 func (r *IntentResult[T]) WithMetadata(key string, value interface{}) *IntentResult[T] {
 	if r.Metadata == nil {
 		r.Metadata = make(map[string]interface{})
@@ -153,8 +254,17 @@ func (r *IntentResult[T]) WithMetadata(key string, value interface{}) *IntentRes
 	return r
 }
 
-// GetMetadata retrieves metadata by key.
-// Returns the value and a boolean indicating if the key exists.
+// GetMetadata looks up a single auxiliary value (breadcrumb, timestamp, diagnostic hint)
+// previously attached via WithMetadata.
+//
+// Expected:
+//   - key is the exact identifier used when the metadata was stored.
+//
+// Returns:
+//   - The value associated with the key and true, or nil and false if not found.
+//
+// Side effects:
+//   - None.
 func (r *IntentResult[T]) GetMetadata(key string) (interface{}, bool) {
 	if r.Metadata == nil {
 		return nil, false
@@ -163,7 +273,14 @@ func (r *IntentResult[T]) GetMetadata(key string) (interface{}, bool) {
 	return val, ok
 }
 
-// GetAllMetadata returns a copy of all metadata.
+// GetAllMetadata produces a shallow copy of every auxiliary key-value pair attached to the
+// result, safe to mutate without affecting the original.
+//
+// Returns:
+//   - A shallow copy of the metadata map, or an empty map if metadata is nil.
+//
+// Side effects:
+//   - None.
 func (r *IntentResult[T]) GetAllMetadata() map[string]interface{} {
 	if r.Metadata == nil {
 		return make(map[string]interface{})
@@ -175,33 +292,63 @@ func (r *IntentResult[T]) GetAllMetadata() map[string]interface{} {
 	return result
 }
 
-// WithError sets the error on the result.
-// Returns the result for method chaining.
+// WithError attaches structured error information to the result for diagnostics
+// and downstream error handling.
+//
+// Expected:
+//   - err is a fully populated IntentError with Code and Message, or nil to clear.
+//
+// Returns:
+//   - The receiver for method chaining.
+//
+// Side effects:
+//   - Mutates the Error field on the receiver.
 func (r *IntentResult[T]) WithError(err *IntentError) *IntentResult[T] {
 	r.Error = err
 	return r
 }
 
-// WithStatus sets the status on the result.
-// Returns the result for method chaining.
+// WithStatus overrides the result's outcome classification, useful when a result
+// must be reclassified after construction (e.g., downgrading Completed to Partial).
+//
+// Expected:
+//   - status is one of Completed, Cancelled, Failed, or Partial.
+//
+// Returns:
+//   - The receiver for method chaining.
+//
+// Side effects:
+//   - Mutates the Status field on the receiver.
 func (r *IntentResult[T]) WithStatus(status ResultStatus) *IntentResult[T] {
 	r.Status = status
 	return r
 }
 
-// WithData sets the data on the result.
-// Returns the result for method chaining.
+// WithData attaches or replaces the intent's output payload, allowing post-construction
+// enrichment of the result.
+//
+// Expected:
+//   - data is a fully populated payload of type T appropriate for the current status.
+//
+// Returns:
+//   - The receiver for method chaining.
+//
+// Side effects:
+//   - Mutates the Data field on the receiver.
 func (r *IntentResult[T]) WithData(data T) *IntentResult[T] {
 	r.Data = data
 	return r
 }
 
-// IsValid checks if the result is in a valid state.
-// A result is valid if:
-// - Completed results have data
-// - Failed results have an error
-// - Cancelled results have no data or error
-// - Partial results have data and an error.
+// IsValid enforces the structural invariants each status requires: Completed results
+// need data, Failed and Partial results need an IntentError, and Cancelled results
+// must carry neither data nor error.
+//
+// Returns:
+//   - Nil if the result satisfies its status invariants, or an error describing the violation.
+//
+// Side effects:
+//   - None.
 func (r *IntentResult[T]) IsValid() error {
 	switch r.Status {
 	case Completed:
