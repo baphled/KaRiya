@@ -65,11 +65,15 @@ func resolveCareerType(pass *analysis.Pass, lit *ast.CompositeLit) *types.Named 
 		return nil
 	}
 
-	if isCareerPackage(pkg.Path()) {
-		return named
+	if !isCareerPackage(pkg.Path()) {
+		return nil
 	}
 
-	return nil
+	if !named.Obj().Exported() {
+		return nil
+	}
+
+	return named
 }
 
 func extractNamed(typ types.Type) *types.Named {

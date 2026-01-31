@@ -49,3 +49,8 @@ type CVConfig struct {
 type SectionContentGroup struct {
 	Header string
 }
+
+// unexportedTestDouble simulates an unexported test type (should be skipped by analyzer).
+type unexportedTestDouble struct {
+	name string
+}

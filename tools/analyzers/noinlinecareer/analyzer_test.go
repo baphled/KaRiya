@@ -26,3 +26,8 @@ func TestFixturePackagesExcluded(t *testing.T) {
 	testdata := analysistest.TestData()
 	analysistest.Run(t, testdata, noinlinecareer.Analyzer, "fixtures")
 }
+
+func TestUnexportedTypesSkipped(t *testing.T) {
+	testdata := analysistest.TestData()
+	analysistest.Run(t, testdata, noinlinecareer.Analyzer, "career")
+}
