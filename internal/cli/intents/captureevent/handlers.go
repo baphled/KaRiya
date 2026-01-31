@@ -45,6 +45,9 @@ func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 			if i.reviewState == nil || i.reviewState.Event == nil {
 				return i.setFailedCmd("NO_EVENT", "No event to edit", nil)
 			}
+			if i.context.CareerService == nil {
+				return i.setFailedCmd("NO_SERVICE", "Career service not available for metadata editing", nil)
+			}
 			i.reviewState.EditingMode = EditingModeMetadata
 			i.reviewState.metadataModal = models.NewMetadataEditorModelNew(
 				i.reviewState.Event,
@@ -56,6 +59,9 @@ func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 			return i.reviewState.metadataModal.Init()
 
 		case "edit_bursts":
+			if i.context.CareerService == nil {
+				return i.setFailedCmd("NO_SERVICE", "Career service not available for burst editing", nil)
+			}
 			i.reviewState.EditingMode = EditingModeBursts
 			var suggestions []burstfact.BurstSuggestion
 			for _, b := range i.reviewState.InferredBursts {
@@ -72,6 +78,9 @@ func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 			return i.reviewState.burstModal.Init()
 
 		case "edit_facts":
+			if i.context.CareerService == nil {
+				return i.setFailedCmd("NO_SERVICE", "Career service not available for fact editing", nil)
+			}
 			i.reviewState.EditingMode = EditingModeFacts
 			var fact *career.Fact
 			if len(i.reviewState.InferredFacts) > 0 {

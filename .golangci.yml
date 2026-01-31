@@ -723,7 +723,7 @@ issues:
     # C7. LEGACY: OLD SINGLE-FILE INTENTS (migration tracked)
     # Only files that still exist on disk. Migrated intents use C12.
     # =========================================================================
-    # capture_event_intent.go migrated to intents/capture_event/ (see C12)
+    # capture_event_intent.go migrated to intents/captureevent/ (see C12)
 
     - path: internal/cli/intents/generate_cv_intent\.go
       linters:
@@ -835,8 +835,8 @@ issues:
     # Other intents use blanket revive suppression (to be narrowed later).
     # =========================================================================
 
-    # capture_event - migrated from C7 with narrowed revive enforcement.
-    - path: internal/cli/intents/capture_event/
+    # captureevent - migrated from C7 with narrowed revive enforcement.
+    - path: internal/cli/intents/captureevent/
       linters:
         - gocognit
         - gocyclo
@@ -844,9 +844,9 @@ issues:
         - funlen
         - errcheck
 
-    # capture_event: suppress only specific revive rules.
+    # captureevent: suppress only specific revive rules.
     # Keeps exported and package-comments active for documentation enforcement.
-    - path: internal/cli/intents/capture_event/
+    - path: internal/cli/intents/captureevent/
       linters:
         - revive
       text: "cognitive-complexity|cyclomatic|unnecessary-stmt|unused-parameter"

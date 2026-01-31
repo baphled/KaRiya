@@ -52,26 +52,25 @@ var _ = Describe("Handlers", func() {
 				}
 			})
 
-			It("should panic for edit_metadata when CareerService is nil", func() {
-				// MetadataEditorModelNew immediately calls CareerService.GetSkillRepository(),
-				// which panics with a nil service. The full flow is tested in E2E tests
-				// with a real CareerService.
+			It("should fail gracefully for edit_metadata when CareerService is nil", func() {
 				result := &screens.NavigateResult{ResultData: "edit_metadata"}
-				Expect(func() {
-					intent.HandleNavigate(result)
-				}).To(Panic())
+				intent.HandleNavigate(result)
+				Expect(intent.IsActive()).To(BeFalse())
+				Expect(intent.Result().Status).To(Equal(intents.Failed))
 			})
 
-			It("should set burst editing mode for edit_bursts", func() {
+			It("should fail gracefully for edit_bursts when CareerService is nil", func() {
 				result := &screens.NavigateResult{ResultData: "edit_bursts"}
 				intent.HandleNavigate(result)
-				Expect(intent.GetReviewState().EditingMode).To(Equal(ce.EditingModeBursts))
+				Expect(intent.IsActive()).To(BeFalse())
+				Expect(intent.Result().Status).To(Equal(intents.Failed))
 			})
 
-			It("should set fact editing mode for edit_facts", func() {
+			It("should fail gracefully for edit_facts when CareerService is nil", func() {
 				result := &screens.NavigateResult{ResultData: "edit_facts"}
 				intent.HandleNavigate(result)
-				Expect(intent.GetReviewState().EditingMode).To(Equal(ce.EditingModeFacts))
+				Expect(intent.IsActive()).To(BeFalse())
+				Expect(intent.Result().Status).To(Equal(intents.Failed))
 			})
 
 			It("should fail on unknown action", func() {
