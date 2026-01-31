@@ -14,12 +14,19 @@ import (
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 )
 
-// CreateStandardView creates a standardized view with logo and automatic state modals.
-// The view is configured with:
-// - Terminal info from BaseIntent
-// - Logo (if available) with configured spacing
-// - Automatic modal display based on intent state (error, loading, progress, success)
-// - Full width content rendering
+// CreateStandardView produces the base ScreenLayout that all intent View methods should
+// start from. The layout includes terminal-aware sizing, an optional logo header, and
+// automatic state-driven modal overlays (error, loading, progress, success) so that
+// intents do not need to manage feedback display themselves.
+//
+// Expected:
+//   - b must be a non-nil BaseIntent with terminal info already configured via Init.
+//
+// Returns:
+//   - A fully configured ScreenLayout ready for content and help text.
+//
+// Side effects:
+//   - None.
 //
 // Example usage:
 //
@@ -44,8 +51,19 @@ func CreateStandardView(b *BaseIntent) *layout.ScreenLayout {
 	return view
 }
 
-// CreateStandardViewWithBreadcrumbs creates a standardized view with breadcrumb navigation.
-// Breadcrumbs are displayed in the header area and show the navigation path.
+// CreateStandardViewWithBreadcrumbs extends CreateStandardView by adding a breadcrumb
+// trail in the header area. Use this instead of CreateStandardView when the intent has
+// multi-level navigation and the user needs to see their current location in the hierarchy.
+//
+// Expected:
+//   - b must be a non-nil BaseIntent with terminal info already configured via Init.
+//   - crumbs must be ordered from root to current location (e.g., "Main Menu", "Settings", "Display").
+//
+// Returns:
+//   - A fully configured ScreenLayout with breadcrumbs applied.
+//
+// Side effects:
+//   - None.
 //
 // Example usage:
 //
@@ -56,11 +74,12 @@ func CreateStandardViewWithBreadcrumbs(b *BaseIntent, crumbs ...string) *layout.
 	return view
 }
 
-// applyStateModals applies modals based on BaseIntent state using priority-based display.
-// Only the highest priority modal is shown:
-// 1. Error (most critical, with bell)
-// 2. Loading (ongoing operation)
-// 3. Progress (specific progress tracking)
+// applyStateModals overlays the highest-priority feedback modal onto a ScreenLayout
+// based on the current BaseIntent state. At most one modal is shown, following this
+// priority order:
+// 1. Error (most critical, with bell).
+// 2. Loading (ongoing operation).
+// 3. Progress (specific progress tracking).
 // 4. Success (least critical, auto-dismiss).
 func applyStateModals(view *layout.ScreenLayout, base *BaseIntent) {
 	// Only show the highest priority modal
@@ -81,9 +100,10 @@ func applyStateModals(view *layout.ScreenLayout, base *BaseIntent) {
 	}
 }
 
-// extractErrorTitle extracts a meaningful title from an error.
-// Attempts to extract context from the error message or type.
-// Falls back to "Error" if no specific title can be extracted.
+// extractErrorTitle derives a user-facing modal title from an error by scanning the
+// message text for well-known keywords (e.g., "validation", "timeout", "not found").
+// It unwraps nested errors to improve classification accuracy and falls back to
+// "Error" when no keyword matches.
 func extractErrorTitle(err error) string {
 	if err == nil {
 		return "Error"
@@ -140,8 +160,17 @@ func extractErrorTitle(err error) string {
 // These functions use UIKit primitives for styled, consistent help footers.
 // They accept a theme parameter and return professionally styled keyboard shortcuts.
 
-// ThemedNavigationFooter returns styled navigation shortcuts.
-// Used for list views, menu selections, and browsing.
+// ThemedNavigationFooter renders the standard Navigate / Select / Back help badges
+// for list views, menu selections, and general browsing screens.
+//
+// Expected:
+//   - theme must be a non-nil Theme; badge colors and spacing are derived from it.
+//
+// Returns:
+//   - A rendered string of navigation help badges.
+//
+// Side effects:
+//   - None.
 func ThemedNavigationFooter(theme themes.Theme) string {
 	return primitives.RenderHelpFooter(theme,
 		primitives.NavigateBadge(theme),
@@ -150,8 +179,17 @@ func ThemedNavigationFooter(theme themes.Theme) string {
 	)
 }
 
-// ThemedFormFooter returns styled form navigation shortcuts.
-// Used for form inputs and field navigation.
+// ThemedFormFooter renders the Next / Prev / Submit / Cancel help badges
+// appropriate for screens containing form inputs and field navigation.
+//
+// Expected:
+//   - theme must be a non-nil Theme; badge colors and spacing are derived from it.
+//
+// Returns:
+//   - A rendered string of form help badges.
+//
+// Side effects:
+//   - None.
 func ThemedFormFooter(theme themes.Theme) string {
 	return primitives.RenderHelpFooter(theme,
 		primitives.NextBadge(theme),
@@ -161,8 +199,17 @@ func ThemedFormFooter(theme themes.Theme) string {
 	)
 }
 
-// ThemedListFooter returns styled list view shortcuts including search.
-// Used for lists with search and scroll capabilities.
+// ThemedListFooter renders Navigate / Select / Search / Back help badges for
+// list views that support both keyboard navigation and incremental search.
+//
+// Expected:
+//   - theme must be a non-nil Theme; badge colors and spacing are derived from it.
+//
+// Returns:
+//   - A rendered string of list view help badges.
+//
+// Side effects:
+//   - None.
 func ThemedListFooter(theme themes.Theme) string {
 	return primitives.RenderHelpFooter(theme,
 		primitives.NavigateBadge(theme),
@@ -172,8 +219,17 @@ func ThemedListFooter(theme themes.Theme) string {
 	)
 }
 
-// ThemedDetailViewFooter returns styled detail view shortcuts.
-// Used for viewing detailed content with scrolling.
+// ThemedDetailViewFooter renders Scroll / Back help badges for read-only detail
+// screens where the primary interaction is vertical scrolling through content.
+//
+// Expected:
+//   - theme must be a non-nil Theme; badge colors and spacing are derived from it.
+//
+// Returns:
+//   - A rendered string of detail view help badges.
+//
+// Side effects:
+//   - None.
 func ThemedDetailViewFooter(theme themes.Theme) string {
 	return primitives.RenderHelpFooter(theme,
 		primitives.HelpKeyBadge("↑/↓", "Scroll", theme),
@@ -181,8 +237,19 @@ func ThemedDetailViewFooter(theme themes.Theme) string {
 	)
 }
 
-// ThemedCustomFooter creates a custom themed footer from badges.
-// Use this when standard footers don't match the required shortcuts.
+// ThemedCustomFooter composes an ad-hoc help footer from caller-supplied badges.
+// Use this when none of the standard footer functions (ThemedNavigationFooter,
+// ThemedFormFooter, etc.) match the screen's shortcut set.
+//
+// Expected:
+//   - theme must be a non-nil Theme; used for overall footer layout styling.
+//   - badges must each be a non-nil Badge created with the same theme for visual consistency.
+//
+// Returns:
+//   - A rendered string of the custom help badges.
+//
+// Side effects:
+//   - None.
 //
 // Example:
 //
@@ -196,17 +263,37 @@ func ThemedCustomFooter(theme themes.Theme, badges ...*primitives.Badge) string 
 	return primitives.RenderHelpFooter(theme, badges...)
 }
 
-// ThemedGlobalBadges returns the standard global badges (Quit, Main Menu).
-// Can be appended to other footers for consistency.
+// ThemedGlobalBadges renders the application-wide Quit badge that should appear on
+// every screen. Append the result to a screen-specific footer via CombineThemedFooters
+// to ensure consistent global shortcut visibility.
+//
+// Expected:
+//   - theme must be a non-nil Theme; badge colors and spacing are derived from it.
+//
+// Returns:
+//   - A rendered string of the global help badges.
+//
+// Side effects:
+//   - None.
 func ThemedGlobalBadges(theme themes.Theme) string {
 	return primitives.RenderHelpFooter(theme,
 		primitives.QuitBadge(theme),
 	)
 }
 
-// CombineThemedFooters combines multiple themed footer strings.
-// Unlike CombineFooters, this doesn't add separators as KeyBadges
-// have their own visual separation.
+// CombineThemedFooters joins multiple pre-rendered footer segments into a single
+// help line. Empty or whitespace-only segments are silently dropped. Unlike
+// CombineFooters, no extra separators are inserted because KeyBadges already
+// include their own visual spacing.
+//
+// Expected:
+//   - footers should be strings previously rendered by Themed*Footer or ThemedCustomFooter.
+//
+// Returns:
+//   - A single string joining all non-empty footers with double-space separators.
+//
+// Side effects:
+//   - None.
 func CombineThemedFooters(footers ...string) string {
 	var nonEmpty []string
 	for _, footer := range footers {
@@ -240,14 +327,24 @@ const (
 	KeyBack
 )
 
-// HandleGlobalKeys checks if a key message matches any global shortcuts.
-// Returns the type of global key matched, or KeyNotHandled if no match.
-// This function should be called at the beginning of each intent's Update method.
+// HandleGlobalKeys classifies a key message as a global shortcut (help, back) or
+// returns KeyNotHandled so the caller can proceed with intent-specific bindings.
+// Call this at the top of every intent Update method to guarantee that global keys
+// are never swallowed by sub-component handlers.
 //
 // Per docs/KEYBOARD_REFERENCE.md:
-//   - q/ctrl+c: Quit application
-//   - ?: Show context-sensitive help
-//   - esc: Go back / Cancel
+//   - q/ctrl+c: Quit application.
+//   - ?: Show context-sensitive help.
+//   - esc: Go back / Cancel.
+//
+// Expected:
+//   - msg must be a non-zero tea.KeyMsg obtained from a tea.Msg type assertion.
+//
+// Returns:
+//   - A GlobalKeyResult indicating which global key was matched, or KeyNotHandled.
+//
+// Side effects:
+//   - None.
 //
 // Example usage:
 //
@@ -314,40 +411,83 @@ type MessageInterceptor struct {
 // GlobalKeyHandler is a function that handles a global key event.
 type GlobalKeyHandler func() tea.Cmd
 
-// NewMessageInterceptor creates a new message interceptor with no handlers.
-// Use the OnBack, OnQuit, and OnHelp methods to configure behavior.
+// NewMessageInterceptor initializes an unconfigured MessageInterceptor.
+// Chain OnBack, OnQuit, and OnHelp to register handlers, then call InterceptOr
+// to process a message through the global-key-first pipeline.
+//
+// Returns:
+//   - A MessageInterceptor with all handlers unset (global keys will fall through to the fallback).
+//
+// Side effects:
+//   - None.
 func NewMessageInterceptor() *MessageInterceptor {
 	return &MessageInterceptor{}
 }
 
-// OnBack sets the handler for escape key (back navigation).
-// This handler is called when the user presses Escape.
+// OnBack configures the behavior triggered when the user presses Escape.
+// Typically used to revert to a previous intent state or cancel an in-progress operation.
+//
+// Expected:
+//   - handler must be non-nil; a nil handler is equivalent to not registering one.
+//
+// Returns:
+//   - The same MessageInterceptor for method chaining.
+//
+// Side effects:
+//   - Replaces any previously registered back handler.
 func (m *MessageInterceptor) OnBack(handler GlobalKeyHandler) *MessageInterceptor {
 	m.backHandler = handler
 	return m
 }
 
-// OnQuit sets the handler for quit key (q or Ctrl+C).
-// This handler is called when the user wants to quit the application.
+// OnQuit configures the behavior triggered when the user presses q or Ctrl+C.
+// The handler should typically return tea.Quit, but may perform cleanup first.
+//
+// Expected:
+//   - handler must be non-nil; a nil handler is equivalent to not registering one.
+//
+// Returns:
+//   - The same MessageInterceptor for method chaining.
+//
+// Side effects:
+//   - Replaces any previously registered quit handler.
 func (m *MessageInterceptor) OnQuit(handler GlobalKeyHandler) *MessageInterceptor {
 	m.quitHandler = handler
 	return m
 }
 
-// OnHelp sets the handler for help key (?).
-// This handler is called when the user requests help.
+// OnHelp configures the behavior triggered when the user presses the ? key.
+// The handler typically toggles a help modal via BaseIntent.ToggleHelp.
+//
+// Expected:
+//   - handler must be non-nil; a nil handler is equivalent to not registering one.
+//
+// Returns:
+//   - The same MessageInterceptor for method chaining.
+//
+// Side effects:
+//   - Replaces any previously registered help handler.
 func (m *MessageInterceptor) OnHelp(handler GlobalKeyHandler) *MessageInterceptor {
 	m.helpHandler = handler
 	return m
 }
 
-// InterceptOr checks for global keys and calls the appropriate handler.
-// If no global key is matched, it calls the fallback function.
-// This ensures global keys are always processed before sub-component delegation.
+// InterceptOr runs the global key check before delegating to a sub-component.
+// If msg is a key event matching a registered global handler, that handler runs and
+// the fallback is skipped. Otherwise the fallback executes, letting the sub-component
+// (form, modal, table) process the message normally. This prevents sub-components
+// from accidentally consuming Escape, ?, or quit keys.
+//
+// Expected:
+//   - msg may be any tea.Msg; non-key messages always pass through to fallback.
+//   - fallback must be non-nil and should delegate msg to the active sub-component.
 //
 // Returns:
 //   - tea.Cmd from the matched global key handler, OR
-//   - tea.Cmd from the fallback function if no global keys matched
+//   - tea.Cmd from the fallback function if no global keys matched.
+//
+// Side effects:
+//   - Invokes exactly one handler: either the matching global key handler or the fallback.
 func (m *MessageInterceptor) InterceptOr(msg tea.Msg, fallback func() tea.Cmd) tea.Cmd {
 	// Check if this is a key message
 	keyMsg, ok := msg.(tea.KeyMsg)
@@ -378,8 +518,15 @@ func (m *MessageInterceptor) InterceptOr(msg tea.Msg, fallback func() tea.Cmd) t
 	return fallback()
 }
 
-// StandardQuitHandler returns a GlobalKeyHandler that quits the application.
-// This is the standard behavior for the quit key (q or Ctrl+C).
+// StandardQuitHandler provides the default quit behavior for use with
+// MessageInterceptor.OnQuit. The returned handler sends tea.Quit with no
+// additional cleanup, which is appropriate for most intents.
+//
+// Returns:
+//   - A GlobalKeyHandler that sends the tea.Quit command.
+//
+// Side effects:
+//   - None.
 //
 // Example usage:
 //
@@ -390,8 +537,19 @@ func StandardQuitHandler() GlobalKeyHandler {
 	}
 }
 
-// StandardHelpHandler creates a GlobalKeyHandler that toggles the help modal
-// on a BaseIntent. This is the standard behavior for the help key (?).
+// StandardHelpHandler provides the default help-toggle behavior for use with
+// MessageInterceptor.OnHelp. The returned handler calls ToggleHelp on the
+// given BaseIntent, which is appropriate for most intents that use the
+// built-in help modal.
+//
+// Expected:
+//   - intent must be a non-nil BaseIntent that has been initialized with help modal support.
+//
+// Returns:
+//   - A GlobalKeyHandler that toggles the help modal and returns nil.
+//
+// Side effects:
+//   - None directly; the returned handler toggles help visibility when invoked.
 //
 // Example usage:
 //

@@ -26,7 +26,17 @@ func (i *Intent) handleScreenResult(result interface{}) tea.Cmd {
 	return behaviors.NewScreenResultDispatcher(i).Dispatch(screenResult)
 }
 
-// HandleCancel handles screen cancellation (back/escape).
+// HandleCancel processes a screen cancellation by navigating back to the
+// previous state or marking the intent as cancelled when at the root.
+//
+// Expected:
+//   - result must be non-nil.
+//
+// Returns:
+//   - Always nil; state transitions are handled internally.
+//
+// Side effects:
+//   - Transitions to the previous screen, or marks the intent as cancelled and inactive.
 func (i *Intent) HandleCancel(result *screens.CancelResult) tea.Cmd {
 	switch i.state {
 	case StateTimeline:
@@ -44,7 +54,17 @@ func (i *Intent) HandleCancel(result *screens.CancelResult) tea.Cmd {
 	}
 }
 
-// HandleNavigate handles screen navigation results.
+// HandleNavigate dispatches navigation results to the appropriate handler
+// based on the result data type (action map, boolean confirmation, or event).
+//
+// Expected:
+//   - result must be non-nil with a populated ResultData field.
+//
+// Returns:
+//   - A command from the dispatched handler, or nil if the data type is unrecognized.
+//
+// Side effects:
+//   - May open modals, delete events, or transition screens depending on the action.
 func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 	if actionData, ok := result.ResultData.(map[string]interface{}); ok {
 		return i.handleActionData(actionData)
@@ -163,12 +183,32 @@ func (i *Intent) handleDeleteConfirmation(confirmed bool) tea.Cmd {
 	return nil
 }
 
-// HandleSubmit handles form submission results.
+// HandleSubmit fulfils the ScreenResultHandler interface for form submissions.
+// Currently unused as timeline forms are handled via modals.
+//
+// Expected:
+//   - result must be non-nil.
+//
+// Returns:
+//   - Always nil.
+//
+// Side effects:
+//   - None.
 func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
 	return nil
 }
 
-// HandleError handles error results from screens.
+// HandleError captures an error surfaced by a screen and stores it for
+// later inspection or display.
+//
+// Expected:
+//   - result must be non-nil with a populated Err field.
+//
+// Returns:
+//   - Always nil.
+//
+// Side effects:
+//   - Stores the error in the intent's deleteError field.
 func (i *Intent) HandleError(result *screens.ErrorResult) tea.Cmd {
 	i.deleteError = result.Err
 	return nil

@@ -133,62 +133,131 @@ type Intent struct {
 	cancelFunc context.CancelFunc
 }
 
-// GetState returns the current state of the intent.
+// GetState reports the intent's current lifecycle phase.
+//
+// Returns:
+//   - The current State enum value.
+//
+// Side effects:
+//   - None.
 func (i *Intent) GetState() State {
 	return i.state
 }
 
-// SetState sets the current state of the intent.
+// SetState transitions the intent to a new lifecycle phase.
+//
+// Expected:
+//   - state must be a defined State constant (e.g., StateList, StateDetail).
+//
+// Side effects:
+//   - Mutates the intent's state field.
 func (i *Intent) SetState(state State) {
 	i.state = state
 }
 
-// IsActive returns whether the intent is currently active.
+// IsActive indicates whether the intent is still processing user interactions.
+//
+// Returns:
+//   - True if the intent is active, false otherwise.
+//
+// Side effects:
+//   - None.
 func (i *Intent) IsActive() bool {
 	return i.active
 }
 
 // Deactivate marks the intent as inactive.
+//
+// Side effects:
+//   - Sets the intent's active field to false.
 func (i *Intent) Deactivate() {
 	i.active = false
 }
 
-// GetFilteredBursts returns the filtered bursts.
+// GetFilteredBursts provides the burst list after all active filters have been applied.
+//
+// Returns:
+//   - The slice of bursts after applying current filters.
+//
+// Side effects:
+//   - None.
 func (i *Intent) GetFilteredBursts() []*career.Burst {
 	return i.filteredBursts
 }
 
-// GetSelectedBurst returns the currently selected burst.
+// GetSelectedBurst provides the burst at the current cursor position.
+//
+// Returns:
+//   - The currently selected burst, or nil if none is selected.
+//
+// Side effects:
+//   - None.
 func (i *Intent) GetSelectedBurst() *career.Burst {
 	return i.selectedBurst
 }
 
-// SetSelectedBurst sets the currently selected burst.
+// SetSelectedBurst updates the cursor to point to a specific burst.
+//
+// Expected:
+//   - burst may be nil to clear the selection.
+//
+// Side effects:
+//   - Mutates the intent's selectedBurst field.
 func (i *Intent) SetSelectedBurst(burst *career.Burst) {
 	i.selectedBurst = burst
 }
 
-// GetSelectedIndex returns the selected index.
+// GetSelectedIndex reports the cursor position in the filtered burst list.
+//
+// Returns:
+//   - The index of the currently selected burst in the filtered list.
+//
+// Side effects:
+//   - None.
 func (i *Intent) GetSelectedIndex() int {
 	return i.selectedIndex
 }
 
-// SetSelectedIndex sets the selected index.
+// SetSelectedIndex moves the cursor to a specific position in the filtered list.
+//
+// Expected:
+//   - index must be >= 0 and < len(filteredBursts).
+//
+// Side effects:
+//   - Mutates the intent's selectedIndex field.
 func (i *Intent) SetSelectedIndex(index int) {
 	i.selectedIndex = index
 }
 
-// GetViewedBursts returns the bursts viewed during the session.
+// GetViewedBursts tracks which bursts the user has already inspected during this session.
+//
+// Returns:
+//   - The slice of bursts that have been viewed during this session.
+//
+// Side effects:
+//   - None.
 func (i *Intent) GetViewedBursts() []*career.Burst {
 	return i.viewedBursts
 }
 
-// AddViewedBurst adds a burst to the viewed bursts list.
+// AddViewedBurst marks a burst as viewed so the UI can distinguish visited items.
+//
+// Expected:
+//   - burst must be non-nil and present in filteredBursts.
+//
+// Side effects:
+//   - Appends the burst to the intent's viewedBursts slice.
 func (i *Intent) AddViewedBurst(burst *career.Burst) {
 	i.viewedBursts = append(i.viewedBursts, burst)
 }
 
-// Result returns the final result of the intent.
+// Result provides the intent's outcome for the router to process.
+//
+// Returns:
+//   - The intent result with type-erased data, or nil if no result is set.
+//
+// Side effects:
+//   - None.
 func (i *Intent) Result() *intents.IntentResult[interface{}] {
 	if i.result == nil {
 		return nil
@@ -203,6 +272,12 @@ func (i *Intent) Result() *intents.IntentResult[interface{}] {
 }
 
 // SetCompleted marks the intent as completed with the selected burst.
+//
+// Expected:
+//   - burst must be non-nil and represent a valid user selection.
+//
+// Side effects:
+//   - Sets the intent's result with Completed status and deactivates the intent.
 func (i *Intent) SetCompleted(burst *career.Burst) {
 	i.result = &intents.IntentResult[*Result]{
 		Status: intents.Completed,
@@ -218,6 +293,9 @@ func (i *Intent) SetCompleted(burst *career.Burst) {
 }
 
 // SetCancelled marks the intent as cancelled.
+//
+// Side effects:
+//   - Sets the intent's result with Cancelled status and deactivates the intent.
 func (i *Intent) SetCancelled() {
 	i.result = &intents.IntentResult[*Result]{
 		Status: intents.Cancelled,
@@ -225,13 +303,25 @@ func (i *Intent) SetCancelled() {
 	i.active = false
 }
 
-// GetModalRegistry returns the modal registry.
+// GetModalRegistry provides access to the modal manager for registration and lookup.
+//
+// Returns:
+//   - The intent's modal registry for managing modal lifecycle.
+//
+// Side effects:
+//   - None.
 func (i *Intent) GetModalRegistry() *intents.ModalRegistry {
 	return i.modalRegistry
 }
 
-// HasActiveModal returns true if any modal is currently visible.
-// Uses the modal registry to check for visible modals.
+// HasActiveModal checks if any modal overlay is currently visible.
+// Rebuilds the registry first to ensure it reflects the latest modal state.
+//
+// Returns:
+//   - True if any modal in the registry is visible, false otherwise.
+//
+// Side effects:
+//   - Rebuilds the modal registry to ensure it reflects current modal state.
 func (i *Intent) HasActiveModal() bool {
 	// Rebuild registry to ensure it's current with modal state.
 	i.rebuildModalRegistry()
@@ -240,38 +330,83 @@ func (i *Intent) HasActiveModal() bool {
 	return i.modalRegistry != nil && i.modalRegistry.HasVisibleModal()
 }
 
-// GetDetailModal returns the detail modal (for testing).
+// GetDetailModal provides the burst detail overlay for rendering and testing.
+//
+// Returns:
+//   - The burst detail modal instance.
+//
+// Side effects:
+//   - None.
 func (i *Intent) GetDetailModal() *burstmodals.BurstDetailModal {
 	return i.detailModal
 }
 
-// GetSuggestionModal returns the suggestion modal (for testing).
+// GetSuggestionModal provides the AI suggestion overlay for rendering and testing.
+//
+// Returns:
+//   - The suggestion review modal instance.
+//
+// Side effects:
+//   - None.
 func (i *Intent) GetSuggestionModal() *burstmodals.SuggestionReviewModal {
 	return i.suggestionModal
 }
 
-// IsExtractingFacts returns true if fact extraction is in progress.
+// IsExtractingFacts checks if an AI fact extraction operation is currently running.
+//
+// Returns:
+//   - True if facts are currently being extracted, false otherwise.
+//
+// Side effects:
+//   - None.
 func (i *Intent) IsExtractingFacts() bool {
 	return i.extractingFacts
 }
 
-// GetExtractedFactsCount returns the count of facts extracted in the last operation.
+// GetExtractedFactsCount reports how many facts the AI has identified so far.
+//
+// Returns:
+//   - The number of facts extracted in the most recent extraction operation.
+//
+// Side effects:
+//   - None.
 func (i *Intent) GetExtractedFactsCount() int {
 	return i.extractedFactsCount
 }
 
-// SetLoadingEventsForTesting sets the loadingEvents flag for testing purposes.
+// SetLoadingEventsForTesting overrides the loading events flag for tests.
 // This allows tests to simulate the loading state without requiring a full service setup.
+//
+// Expected:
+//   - loading is the desired loading state (true to simulate in-progress load).
+//
+// Side effects:
+//   - Mutates the intent's loadingEvents flag.
 func (i *Intent) SetLoadingEventsForTesting(loading bool) {
 	i.loadingEvents = loading
 }
 
-// SetLoadingFactsForTesting sets the loadingFacts flag for testing purposes.
+// SetLoadingFactsForTesting overrides the loading facts flag for tests.
+//
+// Expected:
+//   - loading is the desired loading state (true to simulate in-progress load).
+//
+// Side effects:
+//   - Mutates the intent's loadingFacts flag.
 func (i *Intent) SetLoadingFactsForTesting(loading bool) {
 	i.loadingFacts = loading
 }
 
 // NewIntent creates a new BurstManagement intent.
+//
+// Expected:
+//   - ctx must be non-nil and pass validation.
+//
+// Returns:
+//   - A fully initialized Intent ready for use, or an error if ctx is invalid.
+//
+// Side effects:
+//   - None.
 func NewIntent(ctx *IntentContext) (*Intent, error) {
 	if ctx == nil {
 		return nil, ErrInvalidContext

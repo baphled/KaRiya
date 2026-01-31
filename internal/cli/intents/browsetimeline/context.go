@@ -5,8 +5,9 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 )
 
-// IntentContext is the minimal context passed to BrowseTimeline intent.
-// It contains only what's necessary to start the intent.
+// IntentContext holds the input parameters required to initialize and operate
+// the BrowseTimeline intent, including event data, initial filters, and
+// the service dependency for CRUD operations.
 type IntentContext struct {
 	// Events is the list of events to browse.
 	Events []*career.Event
@@ -21,7 +22,14 @@ type IntentContext struct {
 	CLIEventService EventService
 }
 
-// Validate ensures the context is complete.
+// Validate ensures the context is usable by initializing nil fields to
+// safe defaults, preventing nil-pointer panics during intent operation.
+//
+// Returns:
+//   - Always nil; validation currently applies defaults rather than rejecting input.
+//
+// Side effects:
+//   - Initializes nil Events to an empty slice and nil InitialFilters to default values.
 func (c *IntentContext) Validate() error {
 	if c.Events == nil {
 		c.Events = make([]*career.Event, 0)
@@ -39,7 +47,9 @@ func (c *IntentContext) Validate() error {
 	return nil
 }
 
-// Filters represents the current filter and sort state.
+// Filters encapsulates all user-configurable criteria for narrowing and
+// ordering the timeline event list, including text search, field-based
+// filters, date ranges, and sort preferences.
 type Filters struct {
 	// SearchText is the text to search for in event descriptions.
 	SearchText string
