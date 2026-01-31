@@ -612,7 +612,7 @@ func (tb *TableBehavior[T]) Render() string {
 }
 
 // RenderPaginationInfo produces the formatted item count and page position footer.
-// Example: "Events: 42 | Page 2 of 5"
+// Example: "Events: 42 | Page 2 of 5".
 //
 // Returns:
 //   - A formatted string showing the item count and current page position.

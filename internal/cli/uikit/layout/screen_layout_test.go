@@ -76,7 +76,7 @@ var _ = Describe("ScreenLayout Pinned Layout", func() {
 			rendered := view.Render()
 			lines := strings.Split(stripAnsi(rendered), "\n")
 
-			for i := 0; i < 5; i++ {
+			for i := range 5 {
 				Expect(strings.TrimSpace(lines[i])).To(BeEmpty(), "line %d should be blank (spacing=5)", i)
 			}
 			Expect(strings.TrimSpace(lines[5])).To(ContainSubstring("LOGO"))
