@@ -142,3 +142,33 @@ func FactWithCategories(id, text, sourceEventID string, categories, audienceRele
 		UpdatedAt:            now,
 	}
 }
+
+// FactForValidation creates a fully-populated Fact suitable for validation tests.
+// All required fields are set with specified values, allowing targeted field overrides after creation.
+func FactForValidation(id, text string, roleFit career.RoleFit, categories, audienceRelevance []string, sourceEventID string) *career.Fact {
+	now := time.Now()
+	return &career.Fact{
+		ID:                   id,
+		Text:                 text,
+		CompetencyCategories: categories,
+		RoleFit:              roleFit,
+		AudienceRelevance:    audienceRelevance,
+		StrengthSignal:       "leadership capability",
+		SourceEventID:        sourceEventID,
+		CreatedAt:            now,
+		UpdatedAt:            now,
+	}
+}
+
+// FactForSave creates a Fact without an ID, suitable for SaveFact tests.
+// The service will assign the ID upon saving.
+func FactForSave(text string, categories []string, roleFit career.RoleFit, audienceRelevance []string, sourceEventID string) *career.Fact {
+	return &career.Fact{
+		Text:                 text,
+		CompetencyCategories: categories,
+		RoleFit:              roleFit,
+		AudienceRelevance:    audienceRelevance,
+		StrengthSignal:       "technical",
+		SourceEventID:        sourceEventID,
+	}
+}

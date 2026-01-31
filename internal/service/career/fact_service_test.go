@@ -222,17 +222,7 @@ var _ = Describe("Career Service - Fact Methods", func() {
 
 	Describe("ValidateFact", func() {
 		It("should validate a correct fact", func() {
-			fact := &career.Fact{
-				ID:                   uuid.New().String(),
-				Text:                 "Led critical initiative",
-				CompetencyCategories: []string{"leadership"},
-				RoleFit:              career.RoleFitPrincipal,
-				AudienceRelevance:    []string{"peer", "hiring_manager"},
-				StrengthSignal:       "leadership capability",
-				SourceEventID:        uuid.New().String(),
-				CreatedAt:            time.Now(),
-				UpdatedAt:            time.Now(),
-			}
+			fact := fixtures.FactForValidation(uuid.New().String(), "Led critical initiative", career.RoleFitPrincipal, []string{"leadership"}, []string{"peer", "hiring_manager"}, uuid.New().String())
 
 			err := service.ValidateFact(ctx, fact)
 
@@ -247,15 +237,7 @@ var _ = Describe("Career Service - Fact Methods", func() {
 		})
 
 		It("should reject fact with empty text", func() {
-			fact := &career.Fact{
-				ID:                   uuid.New().String(),
-				Text:                 "",
-				CompetencyCategories: []string{"technical"},
-				RoleFit:              career.RoleFitSeniorIC,
-				AudienceRelevance:    []string{"peer"},
-				CreatedAt:            time.Now(),
-				UpdatedAt:            time.Now(),
-			}
+			fact := fixtures.FactForValidation(uuid.New().String(), "", career.RoleFitSeniorIC, []string{"technical"}, []string{"peer"}, "")
 
 			err := service.ValidateFact(ctx, fact)
 
@@ -263,15 +245,7 @@ var _ = Describe("Career Service - Fact Methods", func() {
 		})
 
 		It("should reject fact with no competency categories", func() {
-			fact := &career.Fact{
-				ID:                   uuid.New().String(),
-				Text:                 "Some achievement",
-				CompetencyCategories: []string{},
-				RoleFit:              career.RoleFitSeniorIC,
-				AudienceRelevance:    []string{"peer"},
-				CreatedAt:            time.Now(),
-				UpdatedAt:            time.Now(),
-			}
+			fact := fixtures.FactForValidation(uuid.New().String(), "Some achievement", career.RoleFitSeniorIC, []string{}, []string{"peer"}, "")
 
 			err := service.ValidateFact(ctx, fact)
 
@@ -279,15 +253,7 @@ var _ = Describe("Career Service - Fact Methods", func() {
 		})
 
 		It("should reject fact with invalid role fit", func() {
-			fact := &career.Fact{
-				ID:                   uuid.New().String(),
-				Text:                 "Some achievement",
-				CompetencyCategories: []string{"technical"},
-				RoleFit:              "invalid_role",
-				AudienceRelevance:    []string{"peer"},
-				CreatedAt:            time.Now(),
-				UpdatedAt:            time.Now(),
-			}
+			fact := fixtures.FactForValidation(uuid.New().String(), "Some achievement", "invalid_role", []string{"technical"}, []string{"peer"}, "")
 
 			err := service.ValidateFact(ctx, fact)
 
@@ -295,17 +261,7 @@ var _ = Describe("Career Service - Fact Methods", func() {
 		})
 
 		It("should reject fact with no source reference", func() {
-			fact := &career.Fact{
-				ID:                   uuid.New().String(),
-				Text:                 "Some achievement",
-				CompetencyCategories: []string{"technical"},
-				RoleFit:              career.RoleFitSeniorIC,
-				AudienceRelevance:    []string{"peer"},
-				SourceEventID:        "", // No source
-				SourceBurstID:        "", // No source
-				CreatedAt:            time.Now(),
-				UpdatedAt:            time.Now(),
-			}
+			fact := fixtures.FactForValidation(uuid.New().String(), "Some achievement", career.RoleFitSeniorIC, []string{"technical"}, []string{"peer"}, "")
 
 			err := service.ValidateFact(ctx, fact)
 
@@ -313,16 +269,7 @@ var _ = Describe("Career Service - Fact Methods", func() {
 		})
 
 		It("should reject fact with aspirational language", func() {
-			fact := &career.Fact{
-				ID:                   uuid.New().String(),
-				Text:                 "Will lead critical initiatives",
-				CompetencyCategories: []string{"leadership"},
-				RoleFit:              career.RoleFitPrincipal,
-				AudienceRelevance:    []string{"peer"},
-				SourceEventID:        uuid.New().String(),
-				CreatedAt:            time.Now(),
-				UpdatedAt:            time.Now(),
-			}
+			fact := fixtures.FactForValidation(uuid.New().String(), "Will lead critical initiatives", career.RoleFitPrincipal, []string{"leadership"}, []string{"peer"}, uuid.New().String())
 
 			err := service.ValidateFact(ctx, fact)
 
@@ -330,16 +277,7 @@ var _ = Describe("Career Service - Fact Methods", func() {
 		})
 
 		It("should reject fact with no audience relevance", func() {
-			fact := &career.Fact{
-				ID:                   uuid.New().String(),
-				Text:                 "Some achievement",
-				CompetencyCategories: []string{"technical"},
-				RoleFit:              career.RoleFitSeniorIC,
-				AudienceRelevance:    []string{}, // No audience
-				SourceEventID:        uuid.New().String(),
-				CreatedAt:            time.Now(),
-				UpdatedAt:            time.Now(),
-			}
+			fact := fixtures.FactForValidation(uuid.New().String(), "Some achievement", career.RoleFitSeniorIC, []string{"technical"}, []string{}, uuid.New().String())
 
 			err := service.ValidateFact(ctx, fact)
 
@@ -347,16 +285,11 @@ var _ = Describe("Career Service - Fact Methods", func() {
 		})
 
 		It("should accept fact with burst source reference", func() {
-			fact := &career.Fact{
-				ID:                   uuid.New().String(),
-				Text:                 "Multi-phase initiative success",
-				CompetencyCategories: []string{"leadership"},
-				RoleFit:              career.RoleFitPrincipal,
-				AudienceRelevance:    []string{"peer", "hiring_manager"},
-				SourceBurstID:        uuid.New().String(),
-				CreatedAt:            time.Now(),
-				UpdatedAt:            time.Now(),
-			}
+			fact := fixtures.FactFromBurst(uuid.New().String(), uuid.New().String())
+			fact.Text = "Multi-phase initiative success"
+			fact.CompetencyCategories = []string{"leadership"}
+			fact.RoleFit = career.RoleFitPrincipal
+			fact.AudienceRelevance = []string{"peer", "hiring_manager"}
 
 			err := service.ValidateFact(ctx, fact)
 
@@ -366,21 +299,13 @@ var _ = Describe("Career Service - Fact Methods", func() {
 
 	Describe("Integration: Event to Fact to Validation", func() {
 		It("should successfully extract and validate facts from event", func() {
-			event := &career.Event{
-				ID:        uuid.New().String(),
-				Text:      "Led platform architecture project and mentored team",
-				Date:      time.Now().Add(-30 * 24 * time.Hour),
-				Company:   "TechCorp",
-				CreatedAt: time.Now().Add(-30 * 24 * time.Hour),
-				UpdatedAt: time.Now().Add(-30 * 24 * time.Hour),
-			}
+			event := fixtures.EventWith(uuid.New().String(), "Led platform architecture project and mentored team", "TechCorp", "")
+			event.Date = time.Now().Add(-30 * 24 * time.Hour)
 
-			// Extract facts
 			facts, err := service.ExtractFactsFromEvent(ctx, event)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(facts).NotTo(BeEmpty())
 
-			// Validate each fact
 			for _, fact := range facts {
 				err := service.ValidateFact(ctx, &fact)
 				Expect(err).NotTo(HaveOccurred())
@@ -388,40 +313,22 @@ var _ = Describe("Career Service - Fact Methods", func() {
 		})
 
 		It("should successfully extract and validate facts from burst", func() {
-			event1 := &career.Event{
-				ID:        uuid.New().String(),
-				Text:      "Designed system architecture",
-				Date:      time.Now().Add(-60 * 24 * time.Hour),
-				Company:   "TechCorp",
-				CreatedAt: time.Now().Add(-60 * 24 * time.Hour),
-				UpdatedAt: time.Now().Add(-60 * 24 * time.Hour),
-			}
-			event2 := &career.Event{
-				ID:        uuid.New().String(),
-				Text:      "Led implementation and delivered solution",
-				Date:      time.Now().Add(-50 * 24 * time.Hour),
-				Company:   "TechCorp",
-				CreatedAt: time.Now().Add(-50 * 24 * time.Hour),
-				UpdatedAt: time.Now().Add(-50 * 24 * time.Hour),
-			}
+			event1 := fixtures.EventWith(uuid.New().String(), "Designed system architecture", "TechCorp", "")
+			event1.Date = time.Now().Add(-60 * 24 * time.Hour)
+
+			event2 := fixtures.EventWith(uuid.New().String(), "Led implementation and delivered solution", "TechCorp", "")
+			event2.Date = time.Now().Add(-50 * 24 * time.Hour)
 
 			_ = service.CaptureEvent(ctx, event1, ManualEntry)
 			_ = service.CaptureEvent(ctx, event2, ManualEntry)
 
-			burst := &career.Burst{
-				ID:        uuid.New().String(),
-				Name:      "System Architecture Initiative",
-				EventIDs:  []string{event1.ID, event2.ID},
-				CreatedAt: time.Now().Add(-60 * 24 * time.Hour),
-				UpdatedAt: time.Now(),
-			}
+			burst := fixtures.Burst(uuid.New().String(), event1.ID, event2.ID)
+			burst.Name = "System Architecture Initiative"
 
-			// Extract facts
 			facts, err := service.ExtractFactsFromBurst(ctx, burst)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(facts).NotTo(BeEmpty())
 
-			// Validate each fact
 			for _, fact := range facts {
 				err := service.ValidateFact(ctx, &fact)
 				Expect(err).NotTo(HaveOccurred())
@@ -434,15 +341,7 @@ var _ = Describe("Career Service - Fact Methods", func() {
 			factRepo := careermemory.NewFactRepository()
 			service.SetFactRepository(factRepo)
 
-			// Verify by creating and retrieving a fact
-			fact := &career.Fact{
-				Text:                 "Test fact for repository",
-				CompetencyCategories: []string{"technical"},
-				RoleFit:              career.RoleFitStaff,
-				AudienceRelevance:    []string{"peer"},
-				StrengthSignal:       "technical",
-				SourceEventID:        uuid.New().String(),
-			}
+			fact := fixtures.FactForSave("Test fact for repository", []string{"technical"}, career.RoleFitStaff, []string{"peer"}, uuid.New().String())
 
 			err := service.SaveFact(ctx, fact)
 			Expect(err).NotTo(HaveOccurred())
@@ -461,16 +360,9 @@ var _ = Describe("Career Service - Fact Methods", func() {
 			factRepo = careermemory.NewFactRepository()
 			service.SetFactRepository(factRepo)
 
-			event = &career.Event{
-				ID:        uuid.New().String(),
-				Text:      "Led migration to microservices",
-				Date:      time.Now().Add(-30 * 24 * time.Hour),
-				Company:   "TechCorp",
-				CreatedAt: time.Now().Add(-30 * 24 * time.Hour),
-				UpdatedAt: time.Now(),
-			}
+			event = fixtures.EventWith(uuid.New().String(), "Led migration to microservices", "TechCorp", "")
+			event.Date = time.Now().Add(-30 * 24 * time.Hour)
 
-			// Extract and save facts
 			facts, err := service.ExtractFactsFromEvent(ctx, event)
 			Expect(err).NotTo(HaveOccurred())
 			for _, fact := range facts {
@@ -509,36 +401,20 @@ var _ = Describe("Career Service - Fact Methods", func() {
 			factRepo = careermemory.NewFactRepository()
 			service.SetFactRepository(factRepo)
 
-			event1 := &career.Event{
-				ID:        uuid.New().String(),
-				Text:      "Led platform migration",
-				Date:      time.Now().Add(-60 * 24 * time.Hour),
-				CreatedAt: time.Now().Add(-60 * 24 * time.Hour),
-				UpdatedAt: time.Now(),
-			}
-			event2 := &career.Event{
-				ID:        uuid.New().String(),
-				Text:      "Architected microservices",
-				Date:      time.Now().Add(-60 * 24 * time.Hour),
-				CreatedAt: time.Now().Add(-60 * 24 * time.Hour),
-				UpdatedAt: time.Now(),
-			}
+			event1 := fixtures.EventWith(uuid.New().String(), "Led platform migration", "", "")
+			event1.Date = time.Now().Add(-60 * 24 * time.Hour)
 
-			// Save events to repository first (required for burst fact extraction)
+			event2 := fixtures.EventWith(uuid.New().String(), "Architected microservices", "", "")
+			event2.Date = time.Now().Add(-60 * 24 * time.Hour)
+
 			err := service.CaptureEvent(ctx, event1, ManualEntry)
 			Expect(err).NotTo(HaveOccurred())
 			err = service.CaptureEvent(ctx, event2, ManualEntry)
 			Expect(err).NotTo(HaveOccurred())
 
-			burst = &career.Burst{
-				ID:        uuid.New().String(),
-				Name:      "Platform Migration",
-				EventIDs:  []string{event1.ID, event2.ID},
-				CreatedAt: time.Now().Add(-60 * 24 * time.Hour),
-				UpdatedAt: time.Now(),
-			}
+			burst = fixtures.Burst(uuid.New().String(), event1.ID, event2.ID)
+			burst.Name = "Platform Migration"
 
-			// Extract and save facts
 			facts, err := service.ExtractFactsFromBurst(ctx, burst)
 			Expect(err).NotTo(HaveOccurred())
 			for _, fact := range facts {
@@ -578,14 +454,7 @@ var _ = Describe("Career Service - Fact Methods", func() {
 		})
 
 		It("should save a valid fact", func() {
-			fact := &career.Fact{
-				Text:                 "Led migration to microservices",
-				CompetencyCategories: []string{"technical", "leadership"},
-				RoleFit:              career.RoleFitStaff,
-				AudienceRelevance:    []string{"hiring_manager", "peer"},
-				StrengthSignal:       "leadership",
-				SourceEventID:        uuid.New().String(),
-			}
+			fact := fixtures.FactForSave("Led migration to microservices", []string{"technical", "leadership"}, career.RoleFitStaff, []string{"hiring_manager", "peer"}, uuid.New().String())
 
 			err := service.SaveFact(ctx, fact)
 			Expect(err).NotTo(HaveOccurred())
@@ -601,28 +470,14 @@ var _ = Describe("Career Service - Fact Methods", func() {
 		})
 
 		It("should return error for invalid fact", func() {
-			fact := &career.Fact{
-				Text:                 "", // Empty text
-				CompetencyCategories: []string{"technical"},
-				RoleFit:              career.RoleFitStaff,
-				AudienceRelevance:    []string{"peer"},
-				StrengthSignal:       "technical",
-				SourceEventID:        uuid.New().String(),
-			}
+			fact := fixtures.FactForSave("", []string{"technical"}, career.RoleFitStaff, []string{"peer"}, uuid.New().String())
 
 			err := service.SaveFact(ctx, fact)
 			Expect(err).To(HaveOccurred())
 		})
 
 		It("should return error for fact with aspirational language", func() {
-			fact := &career.Fact{
-				Text:                 "I will lead migration",
-				CompetencyCategories: []string{"technical"},
-				RoleFit:              career.RoleFitStaff,
-				AudienceRelevance:    []string{"peer"},
-				StrengthSignal:       "technical",
-				SourceEventID:        uuid.New().String(),
-			}
+			fact := fixtures.FactForSave("I will lead migration", []string{"technical"}, career.RoleFitStaff, []string{"peer"}, uuid.New().String())
 
 			err := service.SaveFact(ctx, fact)
 			Expect(err).To(HaveOccurred())
@@ -630,14 +485,7 @@ var _ = Describe("Career Service - Fact Methods", func() {
 		})
 
 		It("should update existing fact if ID is set", func() {
-			fact := &career.Fact{
-				Text:                 "Original text",
-				CompetencyCategories: []string{"technical"},
-				RoleFit:              career.RoleFitStaff,
-				AudienceRelevance:    []string{"peer"},
-				StrengthSignal:       "technical",
-				SourceEventID:        uuid.New().String(),
-			}
+			fact := fixtures.FactForSave("Original text", []string{"technical"}, career.RoleFitStaff, []string{"peer"}, uuid.New().String())
 
 			err := service.SaveFact(ctx, fact)
 			Expect(err).NotTo(HaveOccurred())
@@ -655,14 +503,7 @@ var _ = Describe("Career Service - Fact Methods", func() {
 
 		It("should return error when repository is not set", func() {
 			serviceWithoutRepo := NewService(repo)
-			fact := &career.Fact{
-				Text:                 "Test fact",
-				CompetencyCategories: []string{"technical"},
-				RoleFit:              career.RoleFitStaff,
-				AudienceRelevance:    []string{"peer"},
-				StrengthSignal:       "technical",
-				SourceEventID:        uuid.New().String(),
-			}
+			fact := fixtures.FactForSave("Test fact", []string{"technical"}, career.RoleFitStaff, []string{"peer"}, uuid.New().String())
 
 			err := serviceWithoutRepo.SaveFact(ctx, fact)
 			Expect(err).To(HaveOccurred())
@@ -678,14 +519,7 @@ var _ = Describe("Career Service - Fact Methods", func() {
 			factRepo = careermemory.NewFactRepository()
 			service.SetFactRepository(factRepo)
 
-			fact = &career.Fact{
-				Text:                 "Fact to delete",
-				CompetencyCategories: []string{"technical"},
-				RoleFit:              career.RoleFitStaff,
-				AudienceRelevance:    []string{"peer"},
-				StrengthSignal:       "technical",
-				SourceEventID:        uuid.New().String(),
-			}
+			fact = fixtures.FactForSave("Fact to delete", []string{"technical"}, career.RoleFitStaff, []string{"peer"}, uuid.New().String())
 			err := service.SaveFact(ctx, fact)
 			Expect(err).NotTo(HaveOccurred())
 		})
