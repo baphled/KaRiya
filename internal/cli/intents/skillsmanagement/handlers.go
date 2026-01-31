@@ -516,7 +516,7 @@ func (i *Intent) handleSkillSuggestionModalUpdate(msg tea.Msg) tea.Cmd {
 						true,
 					).WithTheme(i.Theme())
 					i.skillSuggestionModal = nil
-					return tea.Batch(cmd, i.createSkillsFromSuggestions(accepted))
+					return tea.Batch(cmd, i.loadingModal.Init(), i.createSkillsFromSuggestions(accepted))
 				}
 
 				i.skillSuggestionModal = nil
@@ -584,13 +584,15 @@ func (i *Intent) createSkillsFromSuggestions(suggestions []skillinference.SkillS
 
 // handleSkillsCreatedFromInference handles skills created from accepted suggestions.
 func (i *Intent) handleSkillsCreatedFromInference(msg SkillsCreatedMsg) tea.Cmd {
+	i.loadingModal = nil
+
 	if msg.Error != nil {
 		i.feedbackModal = feedback.NewErrorModal("Skill Creation Failed", msg.Error.Error())
 		i.state = StateList
 		return nil
 	}
 
-	// Skills created successfully - refresh the list to show them
+	i.feedbackModal = feedback.NewSuccessModal(fmt.Sprintf("Successfully created %d skill(s)", len(msg.Skills)))
 	i.state = StateList
 	return i.RefreshData()
 }

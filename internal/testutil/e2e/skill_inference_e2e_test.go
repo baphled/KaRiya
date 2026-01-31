@@ -200,6 +200,80 @@ var _ = Describe("E2E Skill Inference from ManageSkills", func() {
 			Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateList))
 		})
 	})
+
+	Describe("Skill creation from inference", func() {
+		It("should show success modal when skills are created successfully", func() {
+			createdSkills := []*career.Skill{
+				{ID: "skill-1", Name: "Go", Category: "Backend"},
+				{ID: "skill-2", Name: "PostgreSQL", Category: "Database"},
+			}
+
+			skillsIntent.Update(skillsmgmt.SkillsCreatedMsg{
+				Skills: createdSkills,
+				Error:  nil,
+			})
+
+			Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateList))
+
+			view := skillsIntent.View()
+			Expect(view).To(ContainSubstring("Successfully created 2 skill(s)"))
+
+			modal := skillsIntent.GetFeedbackModal()
+			Expect(modal).NotTo(BeNil())
+			Expect(modal.Type).To(Equal(feedback.ModalSuccess))
+		})
+
+		It("should show error modal when skill creation fails", func() {
+			skillsIntent.Update(skillsmgmt.SkillsCreatedMsg{
+				Skills: nil,
+				Error:  context.DeadlineExceeded,
+			})
+
+			Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateList))
+
+			view := skillsIntent.View()
+			Expect(view).To(ContainSubstring("Skill Creation Failed"))
+
+			modal := skillsIntent.GetFeedbackModal()
+			Expect(modal).NotTo(BeNil())
+			Expect(modal.Type).To(Equal(feedback.ModalError))
+		})
+
+		It("should clear loading modal after skills are created", func() {
+			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}})
+			Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateInferringSkills))
+
+			view := skillsIntent.View()
+			Expect(view).To(ContainSubstring("Analyzing all events for skills"))
+
+			skillsIntent.Update(skillsmgmt.SkillsCreatedMsg{
+				Skills: []*career.Skill{{ID: "s1", Name: "Go", Category: "Backend"}},
+				Error:  nil,
+			})
+
+			Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateList))
+
+			view = skillsIntent.View()
+			Expect(view).NotTo(ContainSubstring("Analyzing all events"))
+			Expect(view).To(ContainSubstring("Successfully created 1 skill(s)"))
+		})
+
+		It("should clear loading modal on skill creation error", func() {
+			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}})
+			Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateInferringSkills))
+
+			skillsIntent.Update(skillsmgmt.SkillsCreatedMsg{
+				Skills: nil,
+				Error:  context.DeadlineExceeded,
+			})
+
+			Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateList))
+
+			view := skillsIntent.View()
+			Expect(view).NotTo(ContainSubstring("Analyzing all events"))
+			Expect(view).To(ContainSubstring("Skill Creation Failed"))
+		})
+	})
 })
 
 var _ = Describe("E2E Skill Suggestion Event Drill-Down from ManageSkills", func() {

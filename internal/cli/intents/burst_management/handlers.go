@@ -857,13 +857,12 @@ func (i *Intent) handleSkillSuggestionModalUpdate(msg tea.Msg) tea.Cmd {
 				accepted := i.skillSuggestionModal.GetAcceptedSkills()
 
 				if len(accepted) > 0 {
-					// Create skills from accepted suggestions.
 					i.loadingModal = feedback.NewLoadingModal(
 						fmt.Sprintf("Creating %d skill(s)...", len(accepted)),
 						true,
 					).WithTheme(i.Theme())
 					i.skillSuggestionModal = nil
-					return tea.Batch(cmd, i.createSkillsFromSuggestions(accepted))
+					return tea.Batch(cmd, i.loadingModal.Init(), i.createSkillsFromSuggestions(accepted))
 				}
 
 				// No accepted suggestions - just return to list.
