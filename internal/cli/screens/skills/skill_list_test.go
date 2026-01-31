@@ -5,6 +5,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/skills"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -18,10 +19,10 @@ var _ = Describe("SkillsListScreen", func() {
 
 	BeforeEach(func() {
 		skillsList = []*career.Skill{
-			{ID: "1", Name: "Ruby", Category: "backend", Level: "expert"},
-			{ID: "2", Name: "React", Category: "frontend", Level: "advanced"},
-			{ID: "3", Name: "Kubernetes", Category: "devops", Level: "intermediate"},
-			{ID: "4", Name: "PostgreSQL", Category: "database", Level: "advanced"},
+			fixtures.SkillWith("1", "Ruby", "backend", "expert"),
+			fixtures.SkillWith("2", "React", "frontend", "advanced"),
+			fixtures.SkillWith("3", "Kubernetes", "devops", "intermediate"),
+			fixtures.SkillWith("4", "PostgreSQL", "database", "advanced"),
 		}
 	})
 

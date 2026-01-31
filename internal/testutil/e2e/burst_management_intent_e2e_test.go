@@ -10,7 +10,6 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/domain/career"
-	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	"github.com/baphled/kariya/internal/service/career/burstfact"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
@@ -132,7 +131,7 @@ var _ = Describe("Accepting a Burst Suggestion", func() {
 		intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
 
 		// Then: The burst should be saved to the repository
-		savedBursts, err := burstRepo.List(context.Background(), careerrepo.BurstListFilters{})
+		savedBursts, err := burstRepo.List(context.Background(), *fixtures.BurstListFilters())
 		Expect(err).NotTo(HaveOccurred())
 		Expect(savedBursts).To(HaveLen(1), "Burst should be saved to repository")
 		Expect(savedBursts[0].Name).To(Equal("API Development"))
@@ -200,7 +199,7 @@ var _ = Describe("Accepting a Burst Suggestion", func() {
 				"Should have 2 bursts in memory")
 
 			// Then: Only the accepted bursts should be saved
-			savedBursts, _ := burstRepo.List(context.Background(), careerrepo.BurstListFilters{})
+			savedBursts, _ := burstRepo.List(context.Background(), *fixtures.BurstListFilters())
 			Expect(savedBursts).To(HaveLen(2), "Only accepted bursts should be saved")
 
 			names := []string{savedBursts[0].Name, savedBursts[1].Name}
@@ -975,7 +974,7 @@ var _ = Describe("Burst Suggestion Integration E2E", func() {
 
 			Expect(len(intent.GetFilteredBursts())).To(Equal(1))
 
-			allBursts, err := burstRepo.List(context.Background(), careerrepo.BurstListFilters{})
+			allBursts, err := burstRepo.List(context.Background(), *fixtures.BurstListFilters())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(allBursts).To(HaveLen(1))
 			Expect(allBursts[0].Name).To(Equal("Backend Development"))
@@ -1010,7 +1009,7 @@ var _ = Describe("Burst Suggestion Integration E2E", func() {
 			}
 			intent.Update(completeMsg)
 
-			allBursts, err := burstRepo.List(context.Background(), careerrepo.BurstListFilters{})
+			allBursts, err := burstRepo.List(context.Background(), *fixtures.BurstListFilters())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(allBursts).To(HaveLen(2))
 		})
@@ -1557,12 +1556,9 @@ var _ = Describe("Burst Suggestion Workflow Bug Regressions", func() {
 			// EXPECTED: selectedBurst should be cleared when entering suggestion review
 
 			// Pre-populate with an existing burst (simulating Init with existing data)
-			existingBurst := &career.Burst{
-				ID:          "existing-1",
-				Name:        "Existing Burst",
-				Description: "This existed before suggestions",
-				EventIDs:    []string{"e1", "e2"},
-			}
+			existingBurst := fixtures.Burst("existing-1", "e1", "e2")
+			existingBurst.Name = "Existing Burst"
+			existingBurst.Description = "This existed before suggestions"
 			intent.SetSelectedBurst(existingBurst)
 			Expect(intent.GetSelectedBurst()).NotTo(BeNil(), "Setup: selectedBurst should be set")
 
@@ -2003,7 +1999,7 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
 
 			// Verify burst is in repository
-			repobursts, err := burstRepo.List(context.Background(), careerrepo.BurstListFilters{})
+			repobursts, err := burstRepo.List(context.Background(), *fixtures.BurstListFilters())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(repobursts).To(HaveLen(1))
 			Expect(repobursts[0].Name).To(Equal("Persisted Burst"))
@@ -2219,7 +2215,7 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 			Expect(intent.GetFilteredBursts()).To(HaveLen(len(suggestions)))
 
 			// Verify in repository too
-			repoBursts, _ := burstRepo.List(context.Background(), careerrepo.BurstListFilters{})
+			repoBursts, _ := burstRepo.List(context.Background(), *fixtures.BurstListFilters())
 			Expect(repoBursts).To(HaveLen(len(suggestions)))
 		})
 	})
@@ -2256,7 +2252,7 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 			Expect(intent.GetFilteredBursts()[0].Name).To(Equal("My New Project Burst"))
 
 			// 5. Verify burst is persisted to repository
-			repoBursts, err := burstRepo.List(context.Background(), careerrepo.BurstListFilters{})
+			repoBursts, err := burstRepo.List(context.Background(), *fixtures.BurstListFilters())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(repoBursts).To(HaveLen(1))
 			Expect(repoBursts[0].Name).To(Equal("My New Project Burst"))
@@ -2303,7 +2299,7 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 			}
 
 			// 5. Verify burst is in repository with events
-			repoBursts, err := burstRepo.List(context.Background(), careerrepo.BurstListFilters{})
+			repoBursts, err := burstRepo.List(context.Background(), *fixtures.BurstListFilters())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(repoBursts).To(HaveLen(1))
 			Expect(repoBursts[0].EventIDs).To(Equal([]string{"e1", "e2", "e3"}),
@@ -2345,7 +2341,7 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 			}
 
 			// Verify bursts are in repository
-			repoBursts, _ := burstRepo.List(context.Background(), careerrepo.BurstListFilters{})
+			repoBursts, _ := burstRepo.List(context.Background(), *fixtures.BurstListFilters())
 			Expect(repoBursts).To(HaveLen(2))
 		})
 	})
@@ -2359,12 +2355,9 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 		)
 
 		BeforeEach(func() {
-			burst = &career.Burst{
-				ID:          "burst-1",
-				Name:        "Test Burst",
-				Description: "Test description",
-				EventIDs:    []string{"e1", "e2"},
-			}
+			burst = fixtures.Burst("burst-1", "e1", "e2")
+			burst.Name = "Test Burst"
+			burst.Description = "Test description"
 
 			burstRepo = careermemory.NewBurstRepository()
 			_ = burstRepo.Create(context.Background(), burst)
@@ -2460,7 +2453,7 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 			})
 
 			It("should not delete burst when cancelled", func() {
-				initialBursts, _ := burstRepo.List(context.Background(), careerrepo.BurstListFilters{})
+				initialBursts, _ := burstRepo.List(context.Background(), *fixtures.BurstListFilters())
 				initialCount := len(initialBursts)
 
 				// Navigate to detail and delete.
@@ -2472,7 +2465,7 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
 
 				// Burst should still exist.
-				finalBursts, _ := burstRepo.List(context.Background(), careerrepo.BurstListFilters{})
+				finalBursts, _ := burstRepo.List(context.Background(), *fixtures.BurstListFilters())
 				Expect(len(finalBursts)).To(Equal(initialCount))
 			})
 
@@ -2695,13 +2688,9 @@ var _ = Describe("User Journey: Database Failure Handling", func() {
 	)
 
 	BeforeEach(func() {
-		burst = &career.Burst{
-			ID:          "burst-1",
-			Name:        "Test Burst",
-			Description: "A test burst for deletion",
-			EventIDs:    []string{"e1", "e2"},
-			Confirmed:   false,
-		}
+		burst = fixtures.Burst("burst-1", "e1", "e2")
+		burst.Name = "Test Burst"
+		burst.Description = "A test burst for deletion"
 
 		mockRepo = mocks.NewBurstRepositoryMock().AddBurst(burst)
 		mockService = mocks.NewBurstServiceMock()
@@ -2836,12 +2825,9 @@ var _ = Describe("User Journey: Service Unavailable Handling", func() {
 	)
 
 	BeforeEach(func() {
-		burst = &career.Burst{
-			ID:          "burst-1",
-			Name:        "Test Burst",
-			Description: "A burst without service access",
-			EventIDs:    []string{"e1", "e2", "e3"},
-		}
+		burst = fixtures.Burst("burst-1", "e1", "e2", "e3")
+		burst.Name = "Test Burst"
+		burst.Description = "A burst without service access"
 
 		// Context without a service (simulating service unavailable).
 		ctx = &burst_management.IntentContext{
@@ -3308,7 +3294,7 @@ var _ = Describe("User Journey: Complete Burst Lifecycle", func() {
 			Expect(intent.GetFilteredBursts()).To(BeEmpty())
 
 			// And: Repository should be empty.
-			repoBursts, _ := burstRepo.List(context.Background(), careerrepo.BurstListFilters{})
+			repoBursts, _ := burstRepo.List(context.Background(), *fixtures.BurstListFilters())
 			Expect(repoBursts).To(BeEmpty())
 		})
 	})
@@ -3522,12 +3508,9 @@ var _ = Describe("User Journey: Edge Cases and Boundary Conditions", func() {
 		)
 
 		BeforeEach(func() {
-			burst = &career.Burst{
-				ID:          "burst-long",
-				Name:        "This is a very long burst name that exceeds fifty characters and should be truncated in certain views",
-				Description: "A burst with a very long name to test truncation behavior",
-				EventIDs:    []string{"e1", "e2"},
-			}
+			burst = fixtures.Burst("burst-long", "e1", "e2")
+			burst.Name = "This is a very long burst name that exceeds fifty characters and should be truncated in certain views"
+			burst.Description = "A burst with a very long name to test truncation behavior"
 
 			ctx = &burst_management.IntentContext{
 				Bursts: []*career.Burst{burst},
@@ -3574,12 +3557,10 @@ var _ = Describe("User Journey: Edge Cases and Boundary Conditions", func() {
 		)
 
 		BeforeEach(func() {
-			burst = &career.Burst{
-				ID:          "burst-empty",
-				Name:        "Empty Burst",
-				Description: "A burst with no events",
-				EventIDs:    []string{},
-			}
+			burst = fixtures.Burst("burst-empty")
+			burst.Name = "Empty Burst"
+			burst.Description = "A burst with no events"
+			burst.EventIDs = []string{}
 
 			mockService = mocks.NewBurstServiceMock()
 
@@ -3627,18 +3608,12 @@ var _ = Describe("User Journey: Edge Cases and Boundary Conditions", func() {
 			events := make([]*career.Event, 50)
 			for i := 0; i < 50; i++ {
 				eventIDs[i] = fmt.Sprintf("e%d", i+1)
-				events[i] = &career.Event{
-					ID:   eventIDs[i],
-					Text: fmt.Sprintf("Event %d description", i+1),
-				}
+				events[i] = fixtures.EventWith(eventIDs[i], fmt.Sprintf("Event %d description", i+1), "", "")
 			}
 
-			burst = &career.Burst{
-				ID:          "burst-many",
-				Name:        "Burst With Many Events",
-				Description: "A burst with 50 events",
-				EventIDs:    eventIDs,
-			}
+			burst = fixtures.Burst("burst-many", eventIDs...)
+			burst.Name = "Burst With Many Events"
+			burst.Description = "A burst with 50 events"
 
 			mockService = mocks.NewBurstServiceMock().SetEvents(events)
 
@@ -3680,12 +3655,9 @@ var _ = Describe("User Journey: Edge Cases and Boundary Conditions", func() {
 		)
 
 		BeforeEach(func() {
-			burst = &career.Burst{
-				ID:          "burst-resize",
-				Name:        "Test Burst",
-				Description: "Testing resize behavior",
-				EventIDs:    []string{"e1", "e2"},
-			}
+			burst = fixtures.Burst("burst-resize", "e1", "e2")
+			burst.Name = "Test Burst"
+			burst.Description = "Testing resize behavior"
 
 			ctx = &burst_management.IntentContext{
 				Bursts: []*career.Burst{burst},

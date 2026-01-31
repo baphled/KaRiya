@@ -1,9 +1,8 @@
 package intents
 
 import (
-	"time"
-
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
@@ -47,13 +46,7 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 			}
 
 			events = []*career.Event{
-				{
-					ID:        uuid.New().String(),
-					Text:      "Test event for CV generation",
-					Date:      time.Now(),
-					CreatedAt: time.Now(),
-					UpdatedAt: time.Now(),
-				},
+				fixtures.EventWith(uuid.New().String(), "Test event for CV generation", "", ""),
 			}
 
 			ctx := &GenerateCVContext{
@@ -110,14 +103,10 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 
 			It("should go back on escape from Preview", func() {
 				intent.state.currentState = GenerateCVStatePreview
-				intent.state.generatedCV = &career.CVView{
-					ID:               "cv1",
-					Name:             "Test",
-					GeneratedAt:      time.Now(),
-					TargetAudience:   "test",
-					SourceEventCount: 1,
-					SourceFactCount:  0,
-				}
+				generatedCV := fixtures.CVViewWith("cv1", "Test", "", "test")
+				generatedCV.SourceEventCount = 1
+				generatedCV.SourceFactCount = 0
+				intent.state.generatedCV = generatedCV
 
 				intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
 
@@ -216,11 +205,9 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 							TargetRole:     "staff",
 							TargetAudience: "hiring_manager",
 						}},
-						Events: []*career.Event{{
-							ID:   uuid.New().String(),
-							Text: "Test",
-							Date: time.Now(),
-						}},
+						Events: []*career.Event{
+							fixtures.EventWith(uuid.New().String(), "Test", "", ""),
+						},
 					})
 				}),
 				// BrowseTimeline moved to browse_timeline subpackage - has own tests
@@ -249,11 +236,9 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 							TargetRole:     "staff",
 							TargetAudience: "hiring_manager",
 						}},
-						Events: []*career.Event{{
-							ID:   uuid.New().String(),
-							Text: "Test",
-							Date: time.Now(),
-						}},
+						Events: []*career.Event{
+							fixtures.EventWith(uuid.New().String(), "Test", "", ""),
+						},
 					})
 				}),
 				// BrowseTimeline moved to browse_timeline subpackage - has own tests
@@ -291,11 +276,9 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 							TargetRole:     "staff",
 							TargetAudience: "hiring_manager",
 						}},
-						Events: []*career.Event{{
-							ID:   uuid.New().String(),
-							Text: "Test",
-							Date: time.Now(),
-						}},
+						Events: []*career.Event{
+							fixtures.EventWith(uuid.New().String(), "Test", "", ""),
+						},
 					})
 				}),
 				// BrowseTimeline moved to browse_timeline subpackage - has own tests

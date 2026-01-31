@@ -8,6 +8,7 @@ import (
 	browse_timeline "github.com/baphled/kariya/internal/cli/intents/browsetimeline"
 	"github.com/baphled/kariya/internal/cli/intents/captureevent"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -20,16 +21,9 @@ var _ = Describe("View Duplication Prevention", func() {
 		)
 
 		BeforeEach(func() {
-			events = []*career.Event{
-				{
-					ID:        "event1",
-					Text:      "Test event",
-					Date:      time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
-					Company:   "Test Co",
-					CreatedAt: time.Now(),
-					UpdatedAt: time.Now(),
-				},
-			}
+			evt := fixtures.EventWith("event1", "Test event", "Test Co", "")
+			evt.Date = time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
+			events = []*career.Event{evt}
 
 			ctx := &browse_timeline.IntentContext{
 				Events: events,
@@ -82,16 +76,9 @@ var _ = Describe("View Duplication Prevention", func() {
 				},
 			}
 
-			events := []*career.Event{
-				{
-					ID:        "event1",
-					Text:      "Test achievement",
-					Date:      time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
-					Company:   "Test Co",
-					CreatedAt: time.Now(),
-					UpdatedAt: time.Now(),
-				},
-			}
+			evt := fixtures.EventWith("event1", "Test achievement", "Test Co", "")
+			evt.Date = time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
+			events := []*career.Event{evt}
 
 			ctx := &intents.GenerateCVContext{
 				AvailableProfiles: profiles,

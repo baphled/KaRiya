@@ -47,7 +47,7 @@ var _ = Describe("MetadataForm", func() {
 		})
 
 		It("should apply data to event", func() {
-			newEvent := &career.Event{}
+			newEvent := fixtures.EventWith("", "", "", "")
 			data := &forms.MetadataFormData{
 				Date:       "2024-01-15",
 				Company:    "New Company",

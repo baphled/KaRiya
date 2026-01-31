@@ -2,7 +2,7 @@ package forms_test
 
 import (
 	"github.com/baphled/kariya/internal/cli/forms"
-	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -18,11 +18,7 @@ var _ = Describe("SkillForm", func() {
 
 		Context("creating form for existing skill", func() {
 			It("should pre-populate fields with skill data", func() {
-				skill := &career.Skill{
-					Name:     "Ruby",
-					Category: "backend",
-					Level:    "advanced",
-				}
+				skill := fixtures.SkillWith("skill-ruby", "Ruby", "backend", "advanced")
 				form := forms.NewSkillForm(skill)
 				Expect(form).NotTo(BeNil())
 			})
@@ -44,13 +40,8 @@ var _ = Describe("SkillForm", func() {
 
 	Describe("GetSkillFormData", func() {
 		It("should extract form data from skill", func() {
-			years := 3
-			skill := &career.Skill{
-				Name:      "React",
-				Category:  "frontend",
-				Level:     "intermediate",
-				YearsUsed: &years,
-			}
+			skill := fixtures.SkillWithYears("skill-react", "React", "frontend", 3)
+			skill.Level = "intermediate"
 
 			data := forms.GetSkillFormData(skill)
 			Expect(data.Name).To(Equal("React"))
@@ -60,10 +51,7 @@ var _ = Describe("SkillForm", func() {
 		})
 
 		It("should handle nil years", func() {
-			skill := &career.Skill{
-				Name:     "Docker",
-				Category: "devops",
-			}
+			skill := fixtures.SkillWith("skill-docker", "Docker", "devops", "")
 
 			data := forms.GetSkillFormData(skill)
 			Expect(data.YearsUsed).To(Equal(""))
@@ -73,7 +61,7 @@ var _ = Describe("SkillForm", func() {
 	Describe("ApplySkillFormData", func() {
 		Context("with valid data", func() {
 			It("should apply data to new skill", func() {
-				skill := &career.Skill{}
+				skill := fixtures.SkillWith("", "", "", "")
 				data := &forms.SkillFormData{
 					Name:      "Kubernetes",
 					Category:  "devops",
@@ -90,12 +78,7 @@ var _ = Describe("SkillForm", func() {
 			})
 
 			It("should update existing skill", func() {
-				years := 1
-				skill := &career.Skill{
-					Name:      "Ruby",
-					Category:  "backend",
-					YearsUsed: &years,
-				}
+				skill := fixtures.SkillWithYears("skill-ruby", "Ruby", "backend", 1)
 				data := &forms.SkillFormData{
 					Name:      "Ruby",
 					Category:  "backend",
@@ -109,7 +92,7 @@ var _ = Describe("SkillForm", func() {
 			})
 
 			It("should handle empty optional fields", func() {
-				skill := &career.Skill{}
+				skill := fixtures.SkillWith("", "", "", "")
 				data := &forms.SkillFormData{
 					Name:      "Python",
 					Category:  "backend",
@@ -125,7 +108,7 @@ var _ = Describe("SkillForm", func() {
 			})
 
 			It("should trim whitespace from name and category", func() {
-				skill := &career.Skill{}
+				skill := fixtures.SkillWith("", "", "", "")
 				data := &forms.SkillFormData{
 					Name:     "  PostgreSQL  ",
 					Category: "  database  ",
@@ -140,7 +123,7 @@ var _ = Describe("SkillForm", func() {
 
 		Context("with invalid data", func() {
 			It("should ignore invalid years format", func() {
-				skill := &career.Skill{}
+				skill := fixtures.SkillWith("", "", "", "")
 				data := &forms.SkillFormData{
 					Name:      "Go",
 					Category:  "backend",
@@ -152,7 +135,7 @@ var _ = Describe("SkillForm", func() {
 			})
 
 			It("should ignore negative years", func() {
-				skill := &career.Skill{}
+				skill := fixtures.SkillWith("", "", "", "")
 				data := &forms.SkillFormData{
 					Name:      "Go",
 					Category:  "backend",
@@ -164,7 +147,7 @@ var _ = Describe("SkillForm", func() {
 			})
 
 			It("should ignore years over 50", func() {
-				skill := &career.Skill{}
+				skill := fixtures.SkillWith("", "", "", "")
 				data := &forms.SkillFormData{
 					Name:      "Go",
 					Category:  "backend",

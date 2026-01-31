@@ -8,6 +8,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/importer"
 	"github.com/baphled/kariya/internal/domain/career"
 	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -230,14 +231,8 @@ Test event,,Technical,technical,,`
 	Describe("Duplicate Detection", func() {
 		It("should detect duplicates with existing events", func() {
 			// Create an existing event
-			existingEvent := &career.Event{
-				ID:        "123",
-				Text:      "Existing event",
-				Date:      time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),
-				Company:   "MyCompany",
-				CreatedAt: time.Now(),
-				UpdatedAt: time.Now(),
-			}
+			existingEvent := fixtures.EventWith("123", "Existing event", "MyCompany", "")
+			existingEvent.Date = time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
 
 			parserWithExisting := importer.NewCSVParser([]*career.Event{existingEvent}, nil, context.Background())
 
@@ -499,7 +494,7 @@ Test event,2024-01,Technical,technical,MyProject,MyCompany,Go;Ruby`
 
 		It("should reuse existing skills from repository", func() {
 			// Pre-create a skill
-			existingSkill := &career.Skill{Name: "Go", Category: "backend", Level: "expert"}
+			existingSkill := fixtures.SkillWith("", "Go", "backend", "expert")
 			err := skillRepo.Create(ctx, existingSkill)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -577,7 +572,7 @@ Test event,2024-01,Technical,technical,MyProject,MyCompany,  Go  ;  Ruby  `
 
 		It("should handle case-sensitive skill matching", func() {
 			// Pre-create a skill with specific case
-			existingSkill := &career.Skill{Name: "Go", Category: "backend"}
+			existingSkill := fixtures.SkillWith("", "Go", "backend", "")
 			err := skillRepo.Create(ctx, existingSkill)
 			Expect(err).NotTo(HaveOccurred())
 

@@ -3,24 +3,16 @@ package browsetimeline
 import (
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 // createBenchmarkEvents creates n test events for benchmarking.
 func createBenchmarkEvents(n int) []*career.Event {
 	events := make([]*career.Event, n)
-	now := time.Now()
 	for i := 0; i < n; i++ {
-		events[i] = &career.Event{
-			ID:        fmt.Sprintf("event-%d", i),
-			Text:      "Benchmark event",
-			Company:   "BenchCorp",
-			Date:      now,
-			CreatedAt: now,
-			UpdatedAt: now,
-		}
+		events[i] = fixtures.EventWith(fmt.Sprintf("event-%d", i), "Benchmark event", "BenchCorp", "")
 	}
 	return events
 }

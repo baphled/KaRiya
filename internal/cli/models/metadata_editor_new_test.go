@@ -11,6 +11,7 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	careerservice "github.com/baphled/kariya/internal/service/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -36,17 +37,10 @@ var _ = Describe("MetadataEditorModelNew", func() {
 		cliService = nil // Can be nil for these tests
 
 		// Create a test event
-		event = &career.Event{
-			ID:         "test-event-1",
-			Text:       "Test event",
-			Date:       time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),
-			Company:    "Test Company",
-			Project:    "Test Project",
-			Tags:       []string{"backend", "go"},
-			Categories: []string{"development"},
-			CreatedAt:  time.Now(),
-			UpdatedAt:  time.Now(),
-		}
+		event = fixtures.EventWith("test-event-1", "Test event", "Test Company", "Test Project")
+		event.Date = time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
+		event.Tags = []string{"backend", "go"}
+		event.Categories = []string{"development"}
 
 		model = models.NewMetadataEditorModelNew(event, service, cliService, ctx, nil)
 	})

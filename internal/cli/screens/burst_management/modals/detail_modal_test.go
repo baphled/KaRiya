@@ -1,14 +1,13 @@
 package modals_test
 
 import (
-	"time"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/baphled/kariya/internal/cli/screens/burst_management/modals"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -20,18 +19,9 @@ var _ = Describe("BurstDetailModal", func() {
 	)
 
 	BeforeEach(func() {
-		now := time.Now()
-		confirmedAt := now.Add(-24 * time.Hour)
-		burst = &career.Burst{
-			ID:          "test-burst-id",
-			Name:        "Backend Development",
-			Description: "API and microservices work",
-			EventIDs:    []string{"e1", "e2", "e3"},
-			Confirmed:   true,
-			ConfirmedAt: &confirmedAt,
-			CreatedAt:   now.Add(-48 * time.Hour),
-			UpdatedAt:   now,
-		}
+		burst = fixtures.BurstConfirmed("test-burst-id", "e1", "e2", "e3")
+		burst.Name = "Backend Development"
+		burst.Description = "API and microservices work"
 		theme = themes.NewDefaultTheme()
 	})
 
@@ -193,14 +183,9 @@ var _ = Describe("BurstDetailModal", func() {
 	Describe("SetBurst", func() {
 		It("updates the displayed burst", func() {
 			modal = modals.NewBurstDetailModal(burst, theme)
-			newBurst := &career.Burst{
-				ID:          "new-burst-id",
-				Name:        "New Burst Name",
-				Description: "New description",
-				EventIDs:    []string{"e4", "e5"},
-				CreatedAt:   time.Now(),
-				UpdatedAt:   time.Now(),
-			}
+			newBurst := fixtures.Burst("new-burst-id", "e4", "e5")
+			newBurst.Name = "New Burst Name"
+			newBurst.Description = "New description"
 
 			modal.SetBurst(newBurst)
 
@@ -210,14 +195,9 @@ var _ = Describe("BurstDetailModal", func() {
 		It("updates view content", func() {
 			modal = modals.NewBurstDetailModal(burst, theme)
 			modal.Show()
-			newBurst := &career.Burst{
-				ID:          "new-id",
-				Name:        "Updated Burst",
-				Description: "Updated description",
-				EventIDs:    []string{"e1"},
-				CreatedAt:   time.Now(),
-				UpdatedAt:   time.Now(),
-			}
+			newBurst := fixtures.Burst("new-id", "e1")
+			newBurst.Name = "Updated Burst"
+			newBurst.Description = "Updated description"
 
 			modal.SetBurst(newBurst)
 			view := modal.View()
@@ -240,15 +220,9 @@ var _ = Describe("BurstDetailModal", func() {
 
 	Describe("Unconfirmed Burst", func() {
 		It("does not show confirmed badge for unconfirmed burst", func() {
-			unconfirmedBurst := &career.Burst{
-				ID:          "unconfirmed-id",
-				Name:        "Unconfirmed Burst",
-				Description: "Not confirmed yet",
-				EventIDs:    []string{"e1", "e2"},
-				Confirmed:   false,
-				CreatedAt:   time.Now(),
-				UpdatedAt:   time.Now(),
-			}
+			unconfirmedBurst := fixtures.Burst("unconfirmed-id", "e1", "e2")
+			unconfirmedBurst.Name = "Unconfirmed Burst"
+			unconfirmedBurst.Description = "Not confirmed yet"
 			modal = modals.NewBurstDetailModal(unconfirmedBurst, theme)
 			modal.Show()
 

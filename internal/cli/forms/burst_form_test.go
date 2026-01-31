@@ -42,7 +42,7 @@ var _ = Describe("BurstForm", func() {
 		})
 
 		It("should apply data to burst", func() {
-			newBurst := &career.Burst{}
+			newBurst := fixtures.Burst("", "")
 			data := &forms.BurstFormData{
 				Name:        "New Name",
 				Description: "New Description",

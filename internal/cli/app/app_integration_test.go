@@ -5,13 +5,11 @@ import (
 	"context"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/baphled/kariya/internal/cli/app"
 	"github.com/baphled/kariya/internal/cli/bootstrap"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/config"
-	career "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
 	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	careerservice "github.com/baphled/kariya/internal/service/career"
@@ -42,7 +40,7 @@ var _ = Describe("App Menu Integration Tests", func() {
 		svc.SetSkillRepository(skillRepo)
 		cliService = service.NewCLIEventService(svc)
 		//nolint:errcheck // Test setup - error handling not relevant.
-		repo.Create(ctx, &career.Event{ID: "e1", Text: "Test event", Date: time.Now()})
+		repo.Create(ctx, fixtures.Event("e1"))
 		//nolint:errcheck // Test setup - error handling not relevant.
 		burstRepo.Create(ctx, fixtures.Burst("b1", "e1", "e2"))
 		//nolint:errcheck // Test setup - error handling not relevant.
@@ -174,11 +172,11 @@ var _ = Describe("Navigation Integration", func() {
 		svc.SetSkillRepository(skillRepo)
 		cliService = service.NewCLIEventService(svc)
 		//nolint:errcheck // Test setup - error handling not relevant.
-		repo.Create(context.Background(), &career.Event{ID: "e1", Text: "test event", Date: time.Now()})
+		repo.Create(context.Background(), fixtures.Event("e1"))
 		//nolint:errcheck // Test setup - error handling not relevant.
-		burstRepo.Create(context.Background(), &career.Burst{ID: "b1", Name: "dummy", EventIDs: []string{"e1"}})
+		burstRepo.Create(context.Background(), fixtures.Burst("b1", "e1"))
 		//nolint:errcheck // Test setup - error handling not relevant.
-		factRepo.Create(context.Background(), &career.Fact{ID: "f1", Text: "dummy", CompetencyCategories: []string{"leadership"}, RoleFit: "staff", AudienceRelevance: []string{"peer"}, SourceEventID: "e1"})
+		factRepo.Create(context.Background(), fixtures.FactWithCategories("f1", "dummy", "e1", []string{"leadership"}, []string{"peer"}))
 		log := logger.DefaultLogger()
 		bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
 		model = app.NewModel(cliService, svc, bootstrapResult)
@@ -268,11 +266,11 @@ var _ = Describe("Intent Navigation - All Intents", func() {
 		svc.SetSkillRepository(skillRepo)
 		cliService = service.NewCLIEventService(svc)
 		//nolint:errcheck // Test setup - error handling not relevant.
-		repo.Create(context.Background(), &career.Event{ID: "e1", Text: "test event", Date: time.Now()})
+		repo.Create(context.Background(), fixtures.Event("e1"))
 		//nolint:errcheck // Test setup - error handling not relevant.
-		burstRepo.Create(context.Background(), &career.Burst{ID: "b1", Name: "dummy", EventIDs: []string{"e1"}})
+		burstRepo.Create(context.Background(), fixtures.Burst("b1", "e1"))
 		//nolint:errcheck // Test setup - error handling not relevant.
-		factRepo.Create(context.Background(), &career.Fact{ID: "f1", Text: "dummy", CompetencyCategories: []string{"leadership"}, RoleFit: "staff", AudienceRelevance: []string{"peer"}, SourceEventID: "e1"})
+		factRepo.Create(context.Background(), fixtures.FactWithCategories("f1", "dummy", "e1", []string{"leadership"}, []string{"peer"}))
 		log := logger.DefaultLogger()
 		bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
 		model = app.NewModel(cliService, svc, bootstrapResult)
@@ -354,11 +352,11 @@ var _ = Describe("Intent Navigation - Detailed", func() {
 		svc.SetSkillRepository(skillRepo)
 		cliService = service.NewCLIEventService(svc)
 		//nolint:errcheck // Test setup - error handling not relevant.
-		repo.Create(context.Background(), &career.Event{ID: "e1", Text: "test event", Date: time.Now()})
+		repo.Create(context.Background(), fixtures.Event("e1"))
 		//nolint:errcheck // Test setup - error handling not relevant.
-		burstRepo.Create(context.Background(), &career.Burst{ID: "b1", Name: "dummy", EventIDs: []string{"e1"}})
+		burstRepo.Create(context.Background(), fixtures.Burst("b1", "e1"))
 		//nolint:errcheck // Test setup - error handling not relevant.
-		factRepo.Create(context.Background(), &career.Fact{ID: "f1", Text: "dummy", CompetencyCategories: []string{"leadership"}, RoleFit: "staff", AudienceRelevance: []string{"peer"}, SourceEventID: "e1"})
+		factRepo.Create(context.Background(), fixtures.FactWithCategories("f1", "dummy", "e1", []string{"leadership"}, []string{"peer"}))
 		log := logger.DefaultLogger()
 		bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
 		model = app.NewModel(cliService, svc, bootstrapResult)
@@ -512,23 +510,23 @@ var _ = Describe("Intent List Navigation - Specific", func() {
 		svc.SetSkillRepository(skillRepo)
 		cliService = service.NewCLIEventService(svc)
 		//nolint:errcheck // Test setup - error handling not relevant.
-		repo.Create(context.Background(), &career.Event{ID: "e1", Text: "event 1", Date: time.Now()})
+		repo.Create(context.Background(), fixtures.Event("e1"))
 		//nolint:errcheck // Test setup - error handling not relevant.
-		repo.Create(context.Background(), &career.Event{ID: "e2", Text: "event 2", Date: time.Now()})
+		repo.Create(context.Background(), fixtures.Event("e2"))
 		//nolint:errcheck // Test setup - error handling not relevant.
-		repo.Create(context.Background(), &career.Event{ID: "e3", Text: "event 3", Date: time.Now()})
+		repo.Create(context.Background(), fixtures.Event("e3"))
 		//nolint:errcheck // Test setup - error handling not relevant.
-		burstRepo.Create(context.Background(), &career.Burst{ID: "b1", Name: "burst 1", EventIDs: []string{"e1"}})
+		burstRepo.Create(context.Background(), fixtures.Burst("b1", "e1"))
 		//nolint:errcheck // Test setup - error handling not relevant.
-		burstRepo.Create(context.Background(), &career.Burst{ID: "b2", Name: "burst 2", EventIDs: []string{"e2"}})
+		burstRepo.Create(context.Background(), fixtures.Burst("b2", "e2"))
 		//nolint:errcheck // Test setup - error handling not relevant.
-		burstRepo.Create(context.Background(), &career.Burst{ID: "b3", Name: "burst 3", EventIDs: []string{"e3"}})
+		burstRepo.Create(context.Background(), fixtures.Burst("b3", "e3"))
 		//nolint:errcheck // Test setup - error handling not relevant.
-		factRepo.Create(context.Background(), &career.Fact{ID: "f1", Text: "fact 1", CompetencyCategories: []string{"leadership"}, RoleFit: "staff", AudienceRelevance: []string{"peer"}, SourceEventID: "e1"})
+		factRepo.Create(context.Background(), fixtures.FactWithCategories("f1", "fact 1", "e1", []string{"leadership"}, []string{"peer"}))
 		//nolint:errcheck // Test setup - error handling not relevant.
-		factRepo.Create(context.Background(), &career.Fact{ID: "f2", Text: "fact 2", CompetencyCategories: []string{"technical"}, RoleFit: "staff", AudienceRelevance: []string{"peer"}, SourceEventID: "e2"})
+		factRepo.Create(context.Background(), fixtures.FactWithCategories("f2", "fact 2", "e2", []string{"technical"}, []string{"peer"}))
 		//nolint:errcheck // Test setup - error handling not relevant.
-		factRepo.Create(context.Background(), &career.Fact{ID: "f3", Text: "fact 3", CompetencyCategories: []string{"communication"}, RoleFit: "staff", AudienceRelevance: []string{"peer"}, SourceEventID: "e3"})
+		factRepo.Create(context.Background(), fixtures.FactWithCategories("f3", "fact 3", "e3", []string{"communication"}, []string{"peer"}))
 		log := logger.DefaultLogger()
 		bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
 		model = app.NewModel(cliService, svc, bootstrapResult)

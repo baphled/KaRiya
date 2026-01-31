@@ -206,7 +206,7 @@ var _ = Describe("SkillFormScreen", func() {
 			data.SubmitConfirmed = true
 
 			// Create new skill from form data
-			newSkill := &career.Skill{}
+			newSkill := fixtures.SkillWith("", "", "", "")
 			forms.ApplySkillFormData(newSkill, data)
 
 			Expect(newSkill.Name).To(Equal("Go"))

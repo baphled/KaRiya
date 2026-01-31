@@ -6,6 +6,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/intents/factmanagement"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 var _ = Describe("Result", func() {
@@ -23,7 +24,7 @@ var _ = Describe("Result", func() {
 		})
 
 		It("should store fact", func() {
-			fact := &career.Fact{ID: "fact-1", Text: "Test fact"}
+			fact := fixtures.FactWith("fact-1", "Test fact")
 			result := &factmanagement.Result{
 				Fact: fact,
 			}
@@ -32,8 +33,8 @@ var _ = Describe("Result", func() {
 
 		It("should store facts list", func() {
 			facts := []*career.Fact{
-				{ID: "fact-1", Text: "Fact 1"},
-				{ID: "fact-2", Text: "Fact 2"},
+				fixtures.FactWith("fact-1", "Fact 1"),
+				fixtures.FactWith("fact-2", "Fact 2"),
 			}
 			result := &factmanagement.Result{
 				Facts: facts,
@@ -91,7 +92,7 @@ var _ = Describe("Result", func() {
 
 	Describe("Complete Result", func() {
 		It("should contain all fields for a complete operation", func() {
-			fact := &career.Fact{ID: "fact-1", Text: "Test fact"}
+			fact := fixtures.FactWith("fact-1", "Test fact")
 			facts := []*career.Fact{fact}
 			result := &factmanagement.Result{
 				Action:         "created",

@@ -5,7 +5,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/baphled/kariya/internal/cli/intents/skillsmanagement"
-	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 var _ = Describe("Result", func() {
@@ -19,10 +19,7 @@ var _ = Describe("Result", func() {
 			})
 
 			It("should have a Skill field for the affected skill", func() {
-				skill := &career.Skill{
-					ID:   "skill-1",
-					Name: "Go Programming",
-				}
+				skill := fixtures.SkillWith("skill-1", "Go Programming", "backend", "advanced")
 				result := &skillsmanagement.Result{
 					Skill: skill,
 				}
