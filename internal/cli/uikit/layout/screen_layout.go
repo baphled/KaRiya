@@ -161,13 +161,14 @@ func (sl *ScreenLayout) WithTheme(theme themes.Theme) *ScreenLayout {
 func (sl *ScreenLayout) buildHeaderParts(theme themes.Theme) []string {
 	var parts []string
 
-	// Add logo section
 	if sl.ShowLogo && sl.Logo != nil {
-		parts = append(parts, "", "") // 2 blank lines before logo
+		for range sl.LogoSpacing {
+			parts = append(parts, "")
+		}
 		sl.Logo.SetWidth(sl.TerminalInfo.Width)
 		logoOutput := sl.Logo.ViewStatic()
 		parts = append(parts, logoOutput)
-		parts = append(parts, "") // Blank line after logo
+		parts = append(parts, "")
 	}
 
 	// Add header section (breadcrumbs or title/subtitle)

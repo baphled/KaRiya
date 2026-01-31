@@ -52,7 +52,7 @@ var _ = Describe("ScreenLayout Pinned Layout", func() {
 	})
 
 	Describe("Logo at Top (Top Pinned)", func() {
-		It("should render logo at line 2 with 2 blank lines before it", func() {
+		It("should render logo at line 0 when LogoSpacing is 0", func() {
 			logo := NewMockLogo("LOGO")
 			view := layout.NewScreenLayout(termInfo).
 				WithLogo(logo, 0).
@@ -63,26 +63,23 @@ var _ = Describe("ScreenLayout Pinned Layout", func() {
 			rendered := view.Render()
 			lines := strings.Split(stripAnsi(rendered), "\n")
 
-			// Lines 0 and 1 should be blank, logo at line 2
-			Expect(strings.TrimSpace(lines[0])).To(BeEmpty())
-			Expect(strings.TrimSpace(lines[1])).To(BeEmpty())
-			Expect(strings.TrimSpace(lines[2])).To(ContainSubstring("LOGO"))
+			Expect(strings.TrimSpace(lines[0])).To(ContainSubstring("LOGO"))
 		})
 
-		It("should have consistent spacing before logo regardless of LogoSpacing param", func() {
+		It("should respect LogoSpacing parameter for blank lines before logo", func() {
 			logo := NewMockLogo("LOGO")
 			view := layout.NewScreenLayout(termInfo).
-				WithLogo(logo, 5). // LogoSpacing doesn't affect pre-logo spacing
+				WithLogo(logo, 5).
 				WithTheme(theme).
 				WithContent("Content")
 
 			rendered := view.Render()
 			lines := strings.Split(stripAnsi(rendered), "\n")
 
-			// Still 2 blank lines before logo
-			Expect(strings.TrimSpace(lines[0])).To(BeEmpty())
-			Expect(strings.TrimSpace(lines[1])).To(BeEmpty())
-			Expect(strings.TrimSpace(lines[2])).To(ContainSubstring("LOGO"))
+			for i := 0; i < 5; i++ {
+				Expect(strings.TrimSpace(lines[i])).To(BeEmpty(), "line %d should be blank (spacing=5)", i)
+			}
+			Expect(strings.TrimSpace(lines[5])).To(ContainSubstring("LOGO"))
 		})
 	})
 
