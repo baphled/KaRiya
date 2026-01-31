@@ -106,7 +106,7 @@ func (m *OnboardingWizardModal) Update(msg tea.Msg) tea.Cmd {
 		m.width = msg.Width
 		m.height = msg.Height
 		m.form.SetDimensions(calcOnboardingModalWidth(m.width), m.height)
-		return nil
+		return m.form.Init()
 	}
 
 	cmd := m.wizard.Update(msg)

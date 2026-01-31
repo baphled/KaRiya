@@ -38,7 +38,6 @@ type CVConfigWizardModal struct {
 	formData *forms.CVConfigFormData
 	data     *CVConfigData
 
-	currentStep    int
 	width          int
 	height         int
 	extractedTechs []ExtractedTechnology
@@ -87,7 +86,6 @@ func NewCVConfigWizardModal(width, height int) *CVConfigWizardModal {
 func NewCVConfigWizardModalWithProfiles(width, height int, profiles []ProfileOption) *CVConfigWizardModal {
 	modal := &CVConfigWizardModal{
 		data:           &CVConfigData{},
-		currentStep:    0,
 		width:          width,
 		height:         height,
 		profileOptions: profiles,
@@ -162,16 +160,15 @@ func (m *CVConfigWizardModal) Update(msg tea.Msg) tea.Cmd {
 			return nil
 
 		case "esc":
-			if m.form == nil || m.currentStep == 0 {
+			if m.form == nil || m.form.CurrentStep() == 0 {
 				m.wizard.Hide()
 				return nil
 			}
-			if m.currentStep > 0 {
-				m.currentStep--
-				if m.currentStep == 1 && !m.techsAvailable {
-					m.currentStep = 0
-				}
+			newStep := m.form.CurrentStep() - 1
+			if newStep == 1 && !m.techsAvailable {
+				newStep = 0
 			}
+			m.form.SetCurrentStep(newStep)
 		}
 
 	case tea.WindowSizeMsg:
@@ -184,31 +181,23 @@ func (m *CVConfigWizardModal) Update(msg tea.Msg) tea.Cmd {
 		return m.form.Init()
 	}
 
-	if m.form != nil {
-		wasCompleted := m.form.IsCompleted()
+	wasCompleted := m.form.IsCompleted()
 
-		cmd := m.form.Update(msg)
+	cmd := m.wizard.Update(msg)
 
-		if !wasCompleted && !m.form.IsCompleted() {
-			if keyMsg, ok := msg.(tea.KeyMsg); ok {
-				if keyMsg.String() == "enter" && m.currentStep < 2 {
-					m.currentStep++
-
-					if m.currentStep == 1 && !m.techsAvailable {
-						m.currentStep = 2
-					}
+	if !wasCompleted && !m.form.IsCompleted() {
+		if keyMsg, ok := msg.(tea.KeyMsg); ok {
+			if keyMsg.String() == "enter" && m.form.CurrentStep() < 2 {
+				newStep := m.form.CurrentStep() + 1
+				if newStep == 1 && !m.techsAvailable {
+					newStep = 2
 				}
+				m.form.SetCurrentStep(newStep)
 			}
 		}
-
-		if m.form.IsCompleted() {
-			m.wizard.Complete()
-		}
-
-		return cmd
 	}
 
-	return nil
+	return cmd
 }
 
 // View renders the wizard modal.
@@ -258,7 +247,7 @@ func (m *CVConfigWizardModal) buildFooter() string {
 		primitives.SelectBadge(th),
 	}
 
-	if m.currentStep > 0 {
+	if m.form.CurrentStep() > 0 {
 		badges = append(badges, primitives.BackBadge(th))
 	} else {
 		badges = append(badges, primitives.CancelBadge(th))
@@ -277,7 +266,6 @@ func (m *CVConfigWizardModal) Show() {
 // Reset resets the wizard state while preserving the entered data.
 func (m *CVConfigWizardModal) Reset() {
 	m.wizard.Reset()
-	m.currentStep = 0
 
 	m.buildForm()
 	m.wizard.SetForm(m.form)
@@ -311,10 +299,7 @@ func (m *CVConfigWizardModal) GetConfigData() *CVConfigData {
 
 // GetCurrentStep returns the current step index (0-based).
 func (m *CVConfigWizardModal) GetCurrentStep() int {
-	if m.form == nil {
-		return 0
-	}
-	return m.currentStep
+	return m.wizard.CurrentStep()
 }
 
 // GetStepCount returns the total number of steps.

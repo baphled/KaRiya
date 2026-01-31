@@ -563,6 +563,50 @@ var _ = Describe("CVConfigWizardModal", func() {
 		})
 	})
 
+	Describe("WizardBehavior Delegation", func() {
+		BeforeEach(func() {
+			profiles := []components.ProfileOption{
+				{ID: "profile-1", Name: "Senior Go Engineer"},
+				{ID: "profile-2", Name: "Tech Lead"},
+			}
+			modal = components.NewCVConfigWizardModalWithProfiles(120, 40, profiles)
+			modal.Init()
+		})
+
+		It("should synchronize step tracking with adapter after window resize", func() {
+			modal.SetProfileID("profile-1")
+			modal.SetAudience("hiring_manager")
+			modal.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+			Expect(modal.GetCurrentStep()).To(BeNumerically(">", 0))
+
+			modal.Update(tea.WindowSizeMsg{Width: 100, Height: 30})
+
+			Expect(modal.GetCurrentStep()).To(Equal(0))
+		})
+
+		It("should synchronize step tracking with adapter after SetExtractedTechnologies", func() {
+			modal.SetProfileID("profile-1")
+			modal.SetAudience("hiring_manager")
+			modal.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+			Expect(modal.GetCurrentStep()).To(BeNumerically(">", 0))
+
+			techs := []components.ExtractedTechnology{
+				{Name: "Go", Category: "Language"},
+			}
+			modal.SetExtractedTechnologies(techs)
+
+			Expect(modal.GetCurrentStep()).To(Equal(0))
+		})
+
+		It("should return init command from WindowSizeMsg handler", func() {
+			cmd := modal.Update(tea.WindowSizeMsg{Width: 100, Height: 30})
+
+			Expect(cmd).NotTo(BeNil())
+		})
+	})
+
 	Describe("Form Navigation Selection Persistence", func() {
 		It("should return the profile selected via keyboard navigation in GetConfigData", func() {
 			profiles := []components.ProfileOption{
