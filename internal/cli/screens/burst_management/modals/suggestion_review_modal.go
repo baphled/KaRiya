@@ -318,50 +318,69 @@ func (m *SuggestionReviewModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc":
+		switch msg.Type {
+		case tea.KeyEsc:
 			m.action = SuggestionActionCancel
 			m.visible = false
 			return m, nil
 
-		case "j", "down":
+		case tea.KeyDown:
 			m.handleNavigation("down")
 			return m, nil
 
-		case "k", "up":
+		case tea.KeyUp:
 			m.handleNavigation("up")
 			return m, nil
 
-		case "pgdown", "n":
+		case tea.KeyPgDown:
 			m.handleNavigation("pgdn")
 			return m, nil
 
-		case "pgup", "p":
+		case tea.KeyPgUp:
 			m.handleNavigation("pgup")
 			return m, nil
 
-		case "a":
-			m.action = SuggestionActionAccept
-			m.handleAccept()
-
-			if !m.HasSuggestions() {
-				m.visible = false
-			}
-			return m, nil
-
-		case "r":
-			m.action = SuggestionActionReject
-			m.removeCurrentSuggestion()
-
-			if !m.HasSuggestions() {
-				m.visible = false
-			}
-			return m, nil
-
-		case "enter":
+		case tea.KeyEnter:
 			m.action = SuggestionActionViewEvents
 			m.visible = false
 			return m, nil
+
+		case tea.KeyRunes:
+			switch msg.String() {
+			case "j":
+				m.handleNavigation("down")
+				return m, nil
+
+			case "k":
+				m.handleNavigation("up")
+				return m, nil
+
+			case "n":
+				m.handleNavigation("pgdn")
+				return m, nil
+
+			case "p":
+				m.handleNavigation("pgup")
+				return m, nil
+
+			case "a":
+				m.action = SuggestionActionAccept
+				m.handleAccept()
+
+				if !m.HasSuggestions() {
+					m.visible = false
+				}
+				return m, nil
+
+			case "r":
+				m.action = SuggestionActionReject
+				m.removeCurrentSuggestion()
+
+				if !m.HasSuggestions() {
+					m.visible = false
+				}
+				return m, nil
+			}
 		}
 	}
 
