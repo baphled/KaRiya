@@ -597,7 +597,7 @@ func (tb *TableBehavior[T]) Render() string {
 	tableView := tb.table.View()
 	parts := []string{tableView}
 
-	if tb.showPagination {
+	if tb.showPagination && !tb.useViewport {
 		parts = append(parts, "", tb.RenderPaginationInfo())
 	}
 
@@ -681,30 +681,34 @@ func (tb *TableBehavior[T]) refreshDisplayItems() {
 }
 
 // updateTableRows syncs the bubbles/table model with current page.
+// When viewport is enabled, all items are rendered (viewport handles scrolling).
+// When viewport is disabled, items are paginated.
 func (tb *TableBehavior[T]) updateTableRows() {
 	if len(tb.displayItems) == 0 {
 		tb.table.SetRows([]table.Row{})
 		return
 	}
 
-	// Calculate current page
-	page := tb.selectedIndex / tb.pageSize
-	start := page * tb.pageSize
-	end := start + tb.pageSize
-	if end > len(tb.displayItems) {
+	var start, end int
+	if tb.useViewport {
+		start = 0
 		end = len(tb.displayItems)
+	} else {
+		page := tb.selectedIndex / tb.pageSize
+		start = page * tb.pageSize
+		end = start + tb.pageSize
+		if end > len(tb.displayItems) {
+			end = len(tb.displayItems)
+		}
 	}
 
-	// Get items for this page
 	pageItems := tb.displayItems[start:end]
 
-	// Generate rows with selection indicator
 	rows := make([]table.Row, len(pageItems))
 	for i, item := range pageItems {
 		realIdx := start + i
 		cells := tb.rowFormatter(item, realIdx)
 
-		// Add selection indicator to first column
 		if realIdx == tb.selectedIndex {
 			cells[0] = tb.navHandler.FormatRowText(realIdx, cells[0])
 		} else {
@@ -716,7 +720,6 @@ func (tb *TableBehavior[T]) updateTableRows() {
 
 	tb.table.SetRows(rows)
 
-	// Set cursor to relative position within page
 	relativeCursor := tb.selectedIndex - start
 	if relativeCursor < 0 {
 		relativeCursor = 0
