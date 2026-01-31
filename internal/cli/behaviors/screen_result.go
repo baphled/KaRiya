@@ -96,12 +96,21 @@ type ScreenResultDispatcher struct {
 	handler ScreenResultHandler
 }
 
-// NewScreenResultDispatcher creates a new dispatcher for the given handler.
+// NewScreenResultDispatcher wires a ScreenResultHandler into the dispatch pipeline.
 //
 // Usage:
 //
 //	dispatcher := NewScreenResultDispatcher(i) // where i implements ScreenResultHandler
 //	return dispatcher.Dispatch(result)
+//
+// Expected:
+//   - handler must be non-nil and implement ScreenResultHandler.
+//
+// Returns:
+//   - A configured ScreenResultDispatcher ready to dispatch results.
+//
+// Side effects:
+//   - None.
 func NewScreenResultDispatcher(handler ScreenResultHandler) *ScreenResultDispatcher {
 	return &ScreenResultDispatcher{
 		handler: handler,
@@ -120,6 +129,13 @@ func NewScreenResultDispatcher(handler ScreenResultHandler) *ScreenResultDispatc
 //   - SubmitResult → HandleSubmit
 //   - ErrorResult → HandleError
 //   - Unknown types → nil (safe fallback)
+//
+// Expected:
+//   - result may be nil, in which case nil is returned.
+//   - The dispatcher must have been created with a non-nil handler.
+//
+// Side effects:
+//   - Delegates to the handler, which may mutate intent state.
 func (d *ScreenResultDispatcher) Dispatch(result screens.ScreenResult) tea.Cmd {
 	if result == nil {
 		return nil

@@ -32,8 +32,17 @@ type FilterBehavior interface {
 	RefreshData() tea.Cmd
 }
 
-// SearchableText returns true if text contains the search query (case-insensitive).
-// Returns true if query is empty (no filter applied).
+// SearchableText performs case-insensitive substring matching for search filtering.
+//
+// Expected:
+//   - text is the content to search within.
+//   - query is the search term; empty string matches everything.
+//
+// Returns:
+//   - True if query is empty or text contains query (case-insensitive).
+//
+// Side effects:
+//   - None.
 //
 // Example:
 //
@@ -47,10 +56,20 @@ func SearchableText(text, query string) bool {
 	return strings.Contains(strings.ToLower(text), strings.ToLower(query))
 }
 
-// SearchableFields returns true if ANY field matches the search query (case-insensitive).
-// Returns true if query is empty (no filter applied).
+// SearchableFields checks whether any of the provided fields match a search query
+// using case-insensitive substring matching.
 //
 // This is the recommended pattern for search implementation across all intents.
+//
+// Expected:
+//   - query is the search term; empty string matches everything.
+//   - fields are the strings to search within.
+//
+// Returns:
+//   - True if query is empty or any field contains query (case-insensitive).
+//
+// Side effects:
+//   - None.
 //
 // Example:
 //
@@ -104,6 +123,12 @@ const (
 )
 
 // NewFilterStack creates an empty filter stack.
+//
+// Returns:
+//   - A pointer to a FilterStack with no layers.
+//
+// Side effects:
+//   - None.
 func NewFilterStack() *FilterStack {
 	return &FilterStack{
 		Layers: []FilterLayer{},
@@ -111,13 +136,24 @@ func NewFilterStack() *FilterStack {
 }
 
 // Push adds a filter layer to the stack (most recent).
+//
+// Expected:
+//   - layer must be one of the defined FilterLayer constants (FilterLayerSearch, FilterLayerCategory, etc.).
+//
+// Side effects:
+//   - Prepends layer to the front of the Layers slice.
 func (s *FilterStack) Push(layer FilterLayer) {
 	// Add to front (FIFO - first in, first out when clearing)
 	s.Layers = append([]FilterLayer{layer}, s.Layers...)
 }
 
-// Pop removes and returns the most recent filter layer.
-// Returns empty string if stack is empty.
+// Pop removes the most recently pushed filter layer for FIFO clearing.
+//
+// Returns:
+//   - The most recently pushed FilterLayer, or empty string if stack is empty.
+//
+// Side effects:
+//   - Removes the first element from the Layers slice.
 func (s *FilterStack) Pop() FilterLayer {
 	if len(s.Layers) == 0 {
 		return ""
@@ -127,12 +163,21 @@ func (s *FilterStack) Pop() FilterLayer {
 	return layer
 }
 
-// IsEmpty returns true if no filters are active.
+// IsEmpty checks whether any filter layers remain in the stack.
+//
+// Returns:
+//   - True if the Layers slice has no elements.
+//
+// Side effects:
+//   - None.
 func (s *FilterStack) IsEmpty() bool {
 	return len(s.Layers) == 0
 }
 
 // Clear removes all filter layers.
+//
+// Side effects:
+//   - Replaces the Layers slice with an empty slice.
 func (s *FilterStack) Clear() {
 	s.Layers = []FilterLayer{}
 }
