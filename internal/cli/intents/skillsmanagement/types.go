@@ -56,47 +56,83 @@ type Intent struct {
 	modalRegistry *intents.ModalRegistry
 }
 
-// SetContext sets the intent context.
+// SetContext replaces the intent's context, allowing reconfiguration of repositories and filters.
+//
+// Expected: ctx should be a valid, fully populated IntentContext.
+//
+// Side effects: replaces the current context reference on the intent.
 func (i *Intent) SetContext(ctx *IntentContext) {
 	i.context = ctx
 }
 
-// GetContext returns the intent context.
+// GetContext provides access to the intent's configuration and repository dependencies.
+//
+// Returns: the current IntentContext, or nil if not yet set.
+//
+// Side effects: None.
 func (i *Intent) GetContext() *IntentContext {
 	return i.context
 }
 
-// SetState sets the current state.
+// SetState transitions the intent to a new state in the workflow state machine.
+//
+// Expected: state must be a valid State constant defined in constants.go.
+//
+// Side effects: updates the intent's current state.
 func (i *Intent) SetState(state State) {
 	i.state = state
 }
 
-// GetState returns the current state.
+// GetState exposes the current workflow state for testing and screen orchestration decisions.
+//
+// Returns: the current State value of the intent.
+//
+// Side effects: None.
 func (i *Intent) GetState() State {
 	return i.state
 }
 
-// SetActive sets whether the intent is active.
+// SetActive controls whether the intent processes messages and renders views.
+//
+// Expected: active is true to enable processing, false to deactivate.
+//
+// Side effects: updates the intent's active flag.
 func (i *Intent) SetActive(active bool) {
 	i.active = active
 }
 
-// IsActive returns whether the intent is active.
+// IsActive indicates whether the intent is currently processing messages and rendering.
+//
+// Returns: true if the intent is active and accepting updates.
+//
+// Side effects: None.
 func (i *Intent) IsActive() bool {
 	return i.active
 }
 
-// GetSkills returns the current skills list.
+// GetSkills provides access to the loaded skills for testing and screen rendering.
+//
+// Returns: the current slice of skills held by the intent.
+//
+// Side effects: None.
 func (i *Intent) GetSkills() []*domain.Skill {
 	return i.skills
 }
 
-// GetSelectedSkill returns the currently selected skill.
+// GetSelectedSkill provides access to the skill currently highlighted in the table for detail views and actions.
+//
+// Returns: the selected skill, or nil if no skill is selected.
+//
+// Side effects: None.
 func (i *Intent) GetSelectedSkill() *domain.Skill {
 	return i.selectedSkill
 }
 
-// GetSelectedIndex returns the current selection index.
+// GetSelectedIndex provides the zero-based position of the highlighted skill in the table for navigation state.
+//
+// Returns: the index of the currently selected skill in the skills slice.
+//
+// Side effects: None.
 func (i *Intent) GetSelectedIndex() int {
 	return i.selectedIndex
 }

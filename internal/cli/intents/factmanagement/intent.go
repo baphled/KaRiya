@@ -10,7 +10,13 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// NewIntent creates a new FactManagement intent.
+// NewIntent constructs a fully wired FactManagement intent with table behavior and default state.
+//
+// Expected: ctx must be non-nil and pass Validate. Passing a nil ctx will cause a nil-pointer panic.
+//
+// Returns: the initialised intent and nil error on success, or nil and an error if context validation fails.
+//
+// Side effects: None.
 func NewIntent(ctx *IntentContext) (*Intent, error) {
 	if err := ctx.Validate(); err != nil {
 		return nil, err
@@ -62,7 +68,11 @@ func factRowFormatter(fact *domain.Fact, _ int) []string {
 	return []string{text, strength, categories}
 }
 
-// Init initializes the intent.
+// Init activates the intent, applies theming, and loads facts from the repository for initial display.
+//
+// Returns: tea.Quit if fact loading fails, or nil on success.
+//
+// Side effects: Sets active to true, applies theme to table behavior, loads facts into context, and populates the table. On failure, populates the result with an error status.
 func (i *Intent) Init() tea.Cmd {
 	// Apply theme to TableBehavior if available.
 	if theme := i.Theme(); theme != nil {
@@ -91,7 +101,13 @@ func (i *Intent) Init() tea.Cmd {
 	return nil
 }
 
-// Update processes messages.
+// Update dispatches incoming messages to the handler for the current intent state.
+//
+// Expected: msg must be a valid tea.Msg. The intent should be active before receiving updates.
+//
+// Returns: a tea.Cmd if the handler produces one, or nil.
+//
+// Side effects: Delegates to state-specific handlers which may mutate intent and context state.
 func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 	// Handle state-specific updates.
 	switch i.state {
@@ -112,7 +128,11 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 	return nil
 }
 
-// View renders the intent.
+// View composes the full visual output for the current intent state, including breadcrumbs, content, and help.
+//
+// Returns: the rendered string for terminal display, or an inactive message if the intent has not been initialised.
+//
+// Side effects: May set an error on BaseIntent when form validation errors are present.
 func (i *Intent) View() string {
 	if !i.active {
 		return "FactManagement intent is not active"
@@ -141,7 +161,11 @@ func (i *Intent) View() string {
 	return view.Render()
 }
 
-// Result returns the intent result.
+// Result provides the outcome of the intent lifecycle for the router to inspect after completion.
+//
+// Returns: the intent result with status and optional error, or nil if the intent has not completed.
+//
+// Side effects: None.
 func (i *Intent) Result() *intents.IntentResult[interface{}] {
 	if i.result == nil {
 		return nil
@@ -154,23 +178,39 @@ func (i *Intent) Result() *intents.IntentResult[interface{}] {
 
 // ListNavigator interface implementation.
 
-// GetTotalItems returns the total number of items.
+// GetTotalItems reports the size of the full fact collection for pagination calculations.
+//
+// Returns: the number of facts currently held in the context.
+//
+// Side effects: None.
 func (i *Intent) GetTotalItems() int {
 	return len(i.context.Facts)
 }
 
-// GetSelectedIndex returns the currently selected index.
+// GetSelectedIndex provides the zero-based index of the currently highlighted fact in the list.
+//
+// Returns: the selected index, or -1 if no fact is selected.
+//
+// Side effects: None.
 func (i *Intent) GetSelectedIndex() int {
 	return i.context.SelectedFactIndex
 }
 
-// SetSelectedIndex sets the selected index.
+// SetSelectedIndex moves the selection cursor to the given index, synchronising both table behavior and context.
+//
+// Expected: idx must be a valid zero-based index within the total items range.
+//
+// Side effects: Updates the table behavior selection and syncs the context selection state.
 func (i *Intent) SetSelectedIndex(idx int) {
 	i.tableBehavior.SetSelectedIndex(idx)
 	i.syncTableSelection()
 }
 
-// GetPageSize returns the page size.
+// GetPageSize provides the fixed number of facts displayed per page for the ListNavigator contract.
+//
+// Returns: the page size (15).
+//
+// Side effects: None.
 func (i *Intent) GetPageSize() int {
 	return 15
 }

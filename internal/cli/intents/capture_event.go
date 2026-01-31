@@ -45,7 +45,19 @@ type CaptureEventContext struct {
 	CareerService *careerservice.Service
 }
 
-// Validate ensures the context is complete.
+// Validate ensures the context carries the minimum data needed to start
+// the event capture workflow.
+//
+// Expected:
+//   - c must be non-nil.
+//   - c.CaptureStrategy must be a non-empty string.
+//
+// Returns:
+//   - Nil when all preconditions are met.
+//   - An IntentResult-based error when CaptureStrategy is empty.
+//
+// Side effects:
+//   - Initialises c.Metadata to an empty map when it is nil.
 func (c *CaptureEventContext) Validate() error {
 	if c.CaptureStrategy == "" {
 		return NewFailedResult[*CaptureEventContext](

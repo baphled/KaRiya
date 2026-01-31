@@ -124,17 +124,38 @@ type ModalEditResult[T any] struct {
 	Changes  map[string]interface{}
 }
 
-// HasChanges returns true if any fields were modified.
+// HasChanges checks whether the edit produced any field modifications.
+//
+// Returns:
+//   - True if the Changes map is non-empty.
+//
+// Side effects:
+//   - None.
 func (m *ModalEditResult[T]) HasChanges() bool {
 	return len(m.Changes) > 0
 }
 
-// WasAccepted returns true if the user confirmed the changes.
+// WasAccepted checks whether the user confirmed the edit rather than cancelling.
+//
+// Returns:
+//   - True if the user confirmed the edit.
+//
+// Side effects:
+//   - None.
 func (m *ModalEditResult[T]) WasAccepted() bool {
 	return m.Accepted
 }
 
-// GetChange returns the new value for a specific field, or nil if not changed.
+// GetChange looks up a single field's new value from the edit result.
+//
+// Expected:
+//   - fieldName should match a key in the Changes map.
+//
+// Returns:
+//   - The new value for the field, or nil if the field was not changed.
+//
+// Side effects:
+//   - None.
 func (m *ModalEditResult[T]) GetChange(fieldName string) interface{} {
 	if m.Changes == nil {
 		return nil
@@ -143,6 +164,18 @@ func (m *ModalEditResult[T]) GetChange(fieldName string) interface{} {
 }
 
 // NewModalEditResult creates a ModalEditResult with the given original and modified values.
+//
+// Expected:
+//   - original is the value before editing.
+//   - modified is the value after editing.
+//   - accepted indicates whether the user confirmed the edit.
+//   - changes maps field names to their new values; nil is treated as an empty map.
+//
+// Returns:
+//   - A populated ModalEditResult with the provided values.
+//
+// Side effects:
+//   - None.
 func NewModalEditResult[T any](original, modified T, accepted bool, changes map[string]interface{}) *ModalEditResult[T] {
 	if changes == nil {
 		changes = make(map[string]interface{})
@@ -156,6 +189,15 @@ func NewModalEditResult[T any](original, modified T, accepted bool, changes map[
 }
 
 // NewCancelledModalEditResult creates a ModalEditResult indicating the user cancelled the edit.
+//
+// Expected:
+//   - original is the value before the cancelled edit.
+//
+// Returns:
+//   - A ModalEditResult with Accepted set to false and Modified equal to Original.
+//
+// Side effects:
+//   - None.
 func NewCancelledModalEditResult[T any](original T) *ModalEditResult[T] {
 	return &ModalEditResult[T]{
 		Original: original,
@@ -252,6 +294,12 @@ type BaseIntent struct {
 }
 
 // NewBaseIntent creates a new BaseIntent with default terminal configuration.
+//
+// Returns:
+//   - A BaseIntent initialized with default terminal info, config, logo spacing, and help modal.
+//
+// Side effects:
+//   - None.
 func NewBaseIntent() *BaseIntent {
 	return &BaseIntent{
 		terminalInfo:   terminal.NewInfo(),
@@ -261,17 +309,35 @@ func NewBaseIntent() *BaseIntent {
 	}
 }
 
-// UpdateTerminalInfo updates the terminal information.
+// UpdateTerminalInfo refreshes the cached terminal dimensions after a resize event.
+//
+// Expected:
+//   - info must be non-nil with valid Width and Height for proper rendering.
+//
+// Side effects:
+//   - Replaces the stored terminal info on the BaseIntent.
 func (b *BaseIntent) UpdateTerminalInfo(info *terminal.Info) {
 	b.terminalInfo = info
 }
 
-// GetTerminalInfo returns the current terminal information.
+// GetTerminalInfo provides access to the current terminal dimensions and capabilities.
+//
+// Returns:
+//   - The current terminal.Info instance.
+//
+// Side effects:
+//   - None.
 func (b *BaseIntent) GetTerminalInfo() *terminal.Info {
 	return b.terminalInfo
 }
 
-// GetMinimumSize returns the default minimum terminal size.
+// GetMinimumSize reports the minimum terminal dimensions required for rendering.
+//
+// Returns:
+//   - width and height from the terminal config's MinWidth and MinHeight.
+//
+// Side effects:
+//   - None.
 func (b *BaseIntent) GetMinimumSize() (width, height int) {
 	return b.terminalConfig.MinWidth, b.terminalConfig.MinHeight
 }
@@ -279,6 +345,12 @@ func (b *BaseIntent) GetMinimumSize() (width, height int) {
 // GetModalDimensions returns terminal dimensions for modal sizing.
 // If terminal info is not available, returns sensible defaults (120x40).
 // This eliminates the repeated dimension extraction pattern in modal opening methods.
+//
+// Returns:
+//   - width and height suitable for modal sizing, defaulting to 120x40 when terminal info is unavailable.
+//
+// Side effects:
+//   - None.
 func (b *BaseIntent) GetModalDimensions() (width, height int) {
 	if b.terminalInfo != nil && b.terminalInfo.Width > 0 && b.terminalInfo.Height > 0 {
 		return b.terminalInfo.Width, b.terminalInfo.Height
@@ -286,37 +358,79 @@ func (b *BaseIntent) GetModalDimensions() (width, height int) {
 	return 120, 40
 }
 
-// SetLogo sets the shared logo instance (accepts any LogoModel implementation).
+// SetLogo configures the logo component used in view rendering.
+//
+// Expected:
+//   - logo is a LogoModel implementation, or nil to clear.
+//
+// Side effects:
+//   - Replaces the stored logo on the BaseIntent.
 func (b *BaseIntent) SetLogo(logo LogoModel) {
 	b.logo = logo
 }
 
-// GetLogo returns the logo instance.
+// GetLogo provides access to the shared logo component for rendering.
+//
+// Returns:
+//   - The current LogoModel, or nil if not set.
+//
+// Side effects:
+//   - None.
 func (b *BaseIntent) GetLogo() LogoModel {
 	return b.logo
 }
 
-// SetLogoSpacing sets the spacing before the logo.
+// SetLogoSpacing configures the vertical padding above the logo.
+//
+// Expected:
+//   - spacing must be non-negative.
+//
+// Side effects:
+//   - Updates the stored logo spacing on the BaseIntent.
 func (b *BaseIntent) SetLogoSpacing(spacing int) {
 	b.logoSpacing = spacing
 }
 
-// GetLogoSpacing returns the spacing before the logo.
+// GetLogoSpacing reports the number of blank lines rendered before the logo.
+//
+// Returns:
+//   - The number of spacing lines before the logo.
+//
+// Side effects:
+//   - None.
 func (b *BaseIntent) GetLogoSpacing() int {
 	return b.logoSpacing
 }
 
-// SetThemeManager sets the theme manager for the intent.
+// SetThemeManager configures the theme provider used for style resolution.
+//
+// Expected:
+//   - tm is the ThemeManager to use, or nil to clear.
+//
+// Side effects:
+//   - Replaces the stored theme manager on the BaseIntent.
 func (b *BaseIntent) SetThemeManager(tm *themes.ThemeManager) {
 	b.themeManager = tm
 }
 
-// GetThemeManager returns the theme manager.
+// GetThemeManager provides access to the theme manager for style resolution.
+//
+// Returns:
+//   - The current ThemeManager, or nil if not set.
+//
+// Side effects:
+//   - None.
 func (b *BaseIntent) GetThemeManager() *themes.ThemeManager {
 	return b.themeManager
 }
 
-// Theme returns the currently active theme, or nil if no theme manager is set.
+// Theme resolves the currently active theme from the theme manager.
+//
+// Returns:
+//   - The active Theme from the theme manager, or nil when no manager is configured.
+//
+// Side effects:
+//   - None.
 func (b *BaseIntent) Theme() themes.Theme {
 	if b.themeManager == nil {
 		return nil
@@ -324,67 +438,130 @@ func (b *BaseIntent) Theme() themes.Theme {
 	return b.themeManager.Active()
 }
 
-// SetLoading sets the loading state with a message.
+// SetLoading activates the loading overlay to indicate an async operation is in progress.
+//
+// Expected:
+//   - message must be non-empty to provide user feedback.
+//
+// Side effects:
+//   - Enables the loading state and stores the loading message.
 func (b *BaseIntent) SetLoading(message string) {
 	b.isLoading = true
 	b.loadingMessage = message
 }
 
-// ClearLoading clears the loading state.
+// ClearLoading deactivates the loading overlay when the async operation completes.
+//
+// Side effects:
+//   - Disables the loading state and clears the loading message.
 func (b *BaseIntent) ClearLoading() {
 	b.isLoading = false
 	b.loadingMessage = ""
 }
 
-// IsLoading returns whether the intent is in loading state.
+// IsLoading checks whether an async operation is currently in progress.
+//
+// Returns:
+//   - True if loading is currently active.
+//
+// Side effects:
+//   - None.
 func (b *BaseIntent) IsLoading() bool {
 	return b.isLoading
 }
 
-// GetLoadingMessage returns the current loading message.
+// GetLoadingMessage provides the text describing the current async operation.
+//
+// Returns:
+//   - The loading message, or an empty string if not loading.
+//
+// Side effects:
+//   - None.
 func (b *BaseIntent) GetLoadingMessage() string {
 	return b.loadingMessage
 }
 
-// SetError sets the error state.
+// SetError activates the error overlay to display a failure to the user.
+//
+// Expected:
+//   - err is the error to store, or nil to clear.
+//
+// Side effects:
+//   - Replaces the stored error state on the BaseIntent.
 func (b *BaseIntent) SetError(err error) {
 	b.errorState = err
 }
 
-// ClearError clears the error state.
+// ClearError dismisses the error overlay.
+//
+// Side effects:
+//   - Sets the error state to nil.
 func (b *BaseIntent) ClearError() {
 	b.errorState = nil
 }
 
-// GetError returns the current error state.
+// GetError provides access to the most recent error for display or handling.
+//
+// Returns:
+//   - The current error, or nil if no error is set.
+//
+// Side effects:
+//   - None.
 func (b *BaseIntent) GetError() error {
 	return b.errorState
 }
 
-// HasError returns whether the intent has an error.
+// HasError checks whether an unresolved error exists.
+//
+// Returns:
+//   - True if the error state is non-nil.
+//
+// Side effects:
+//   - None.
 func (b *BaseIntent) HasError() bool {
 	return b.errorState != nil
 }
 
-// SetSuccess sets a success message with timestamp.
+// SetSuccess activates a timed success notification that auto-dismisses after 3 seconds.
+//
+// Expected:
+//   - message must be non-empty to provide user feedback.
+//
+// Side effects:
+//   - Stores the message and records the current time for auto-dismiss.
 func (b *BaseIntent) SetSuccess(message string) {
 	b.successMessage = message
 	b.successTime = time.Now()
 }
 
-// ClearSuccess clears the success state.
+// ClearSuccess dismisses the success notification immediately.
+//
+// Side effects:
+//   - Clears the success message and resets the timestamp.
 func (b *BaseIntent) ClearSuccess() {
 	b.successMessage = ""
 	b.successTime = time.Time{}
 }
 
-// GetSuccessMessage returns the current success message.
+// GetSuccessMessage provides the text from the most recent successful operation.
+//
+// Returns:
+//   - The success message, or an empty string if not set.
+//
+// Side effects:
+//   - None.
 func (b *BaseIntent) GetSuccessMessage() string {
 	return b.successMessage
 }
 
 // ShouldShowSuccess returns true if success message should be displayed.
 // Success messages are shown for 3 seconds after being set.
+//
+// Returns:
+//   - True if a success message exists and fewer than 3 seconds have elapsed since it was set.
+//
+// Side effects:
+//   - None.
 func (b *BaseIntent) ShouldShowSuccess() bool {
 	if b.successMessage == "" {
 		return false
@@ -392,7 +569,15 @@ func (b *BaseIntent) ShouldShowSuccess() bool {
 	return time.Since(b.successTime) < 3*time.Second
 }
 
-// SetProgress sets the progress state with title, message, and value (0.0 to 1.0).
+// SetProgress activates the progress overlay to show the status of a multi-step operation.
+//
+// Expected:
+//   - title is the progress bar title.
+//   - message describes the current progress step.
+//   - value is the completion fraction between 0.0 and 1.0.
+//
+// Side effects:
+//   - Enables progress tracking and stores the title, message, and value.
 func (b *BaseIntent) SetProgress(title, message string, value float64) {
 	b.progressEnabled = true
 	b.progressTitle = title
@@ -400,7 +585,10 @@ func (b *BaseIntent) SetProgress(title, message string, value float64) {
 	b.progressValue = value
 }
 
-// ClearProgress clears the progress state.
+// ClearProgress deactivates the progress overlay.
+//
+// Side effects:
+//   - Disables progress tracking and resets all progress fields to zero values.
 func (b *BaseIntent) ClearProgress() {
 	b.progressEnabled = false
 	b.progressTitle = ""
@@ -408,17 +596,32 @@ func (b *BaseIntent) ClearProgress() {
 	b.progressValue = 0.0
 }
 
-// IsProgressEnabled returns whether progress tracking is enabled.
+// IsProgressEnabled checks whether a progress operation is currently running.
+//
+// Returns:
+//   - True if progress tracking is currently active.
+//
+// Side effects:
+//   - None.
 func (b *BaseIntent) IsProgressEnabled() bool {
 	return b.progressEnabled
 }
 
-// GetProgress returns the current progress state.
+// GetProgress provides the title, description, and completion fraction of the active operation.
+//
+// Returns:
+//   - title, message, and value representing the current progress.
+//
+// Side effects:
+//   - None.
 func (b *BaseIntent) GetProgress() (title, message string, value float64) {
 	return b.progressTitle, b.progressMessage, b.progressValue
 }
 
 // ShowHelp shows the help modal.
+//
+// Side effects:
+//   - Updates the help modal size from terminal info and makes it visible.
 func (b *BaseIntent) ShowHelp() {
 	if b.helpModal != nil {
 		if b.terminalInfo != nil && b.terminalInfo.IsValid {
@@ -429,6 +632,9 @@ func (b *BaseIntent) ShowHelp() {
 }
 
 // HideHelp hides the help modal.
+//
+// Side effects:
+//   - Hides the help modal if it exists.
 func (b *BaseIntent) HideHelp() {
 	if b.helpModal != nil {
 		b.helpModal.Hide()
@@ -436,6 +642,9 @@ func (b *BaseIntent) HideHelp() {
 }
 
 // ToggleHelp toggles the help modal visibility.
+//
+// Side effects:
+//   - Updates the help modal size from terminal info and toggles its visibility.
 func (b *BaseIntent) ToggleHelp() {
 	if b.helpModal != nil {
 		if b.terminalInfo != nil && b.terminalInfo.IsValid {
@@ -445,7 +654,13 @@ func (b *BaseIntent) ToggleHelp() {
 	}
 }
 
-// IsHelpVisible returns whether the help modal is currently visible.
+// IsHelpVisible checks whether the help overlay is currently displayed.
+//
+// Returns:
+//   - True if the help modal exists and is visible.
+//
+// Side effects:
+//   - None.
 func (b *BaseIntent) IsHelpVisible() bool {
 	if b.helpModal != nil {
 		return b.helpModal.IsVisible()
@@ -453,12 +668,24 @@ func (b *BaseIntent) IsHelpVisible() bool {
 	return false
 }
 
-// GetHelpModal returns the help modal instance.
+// GetHelpModal provides access to the help modal for direct configuration.
+//
+// Returns:
+//   - The HelpModal instance, or nil if not initialized.
+//
+// Side effects:
+//   - None.
 func (b *BaseIntent) GetHelpModal() *feedback.HelpModal {
 	return b.helpModal
 }
 
-// SetHelpKeyMap sets the keymap for the help modal.
+// SetHelpKeyMap configures the keyboard shortcuts displayed in the help overlay.
+//
+// Expected:
+//   - keyMap should implement ShortHelp and FullHelp methods; otherwise the call is a no-op.
+//
+// Side effects:
+//   - Configures the help modal's key bindings if the keyMap satisfies the expected interface.
 func (b *BaseIntent) SetHelpKeyMap(keyMap interface{}) {
 	if b.helpModal != nil {
 		if km, ok := keyMap.(interface {
@@ -472,12 +699,27 @@ func (b *BaseIntent) SetHelpKeyMap(keyMap interface{}) {
 
 // CreateView creates a standardized view with logo and automatic state modals.
 // This is a convenience wrapper around CreateStandardView.
+//
+// Returns:
+//   - A ScreenLayout configured with the intent's logo and state modals.
+//
+// Side effects:
+//   - Delegates to CreateStandardView, which reads state from the BaseIntent.
 func (b *BaseIntent) CreateView() *layout.ScreenLayout {
 	return CreateStandardView(b)
 }
 
 // CreateViewWithBreadcrumbs creates a standardized view with breadcrumb navigation.
 // This is a convenience wrapper around CreateStandardViewWithBreadcrumbs.
+//
+// Expected:
+//   - crumbs are the breadcrumb segments to display in the header.
+//
+// Returns:
+//   - A ScreenLayout configured with breadcrumbs, logo, and state modals.
+//
+// Side effects:
+//   - Delegates to CreateStandardViewWithBreadcrumbs, which reads state from the BaseIntent.
 func (b *BaseIntent) CreateViewWithBreadcrumbs(crumbs ...string) *layout.ScreenLayout {
 	return CreateStandardViewWithBreadcrumbs(b, crumbs...)
 }

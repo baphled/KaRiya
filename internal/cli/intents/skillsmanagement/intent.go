@@ -17,7 +17,13 @@ var _ behaviors.FilterBehavior = (*Intent)(nil)
 // Ensure Intent implements ScreenResultHandler interface.
 var _ behaviors.ScreenResultHandler = (*Intent)(nil)
 
-// NewIntent creates a new ManageSkills intent.
+// NewIntent constructs a fully configured ManageSkills intent with table behavior and modal registry.
+//
+// Expected: ctx must pass Validate with a non-nil Ctx and SkillRepository.
+//
+// Returns: the initialized intent in StateList, or an error if context validation fails.
+//
+// Side effects: allocates a BaseIntent, ThemeManager, TableBehavior, and ModalRegistry.
 func NewIntent(ctx *IntentContext) (*Intent, error) {
 	if err := ctx.Validate(); err != nil {
 		return nil, err
@@ -54,12 +60,20 @@ func NewIntent(ctx *IntentContext) (*Intent, error) {
 	return intent, nil
 }
 
-// GetTableBehavior returns the table behavior for skills.
+// GetTableBehavior provides access to the underlying table behavior for testing and screen integration.
+//
+// Returns: the TableBehavior instance managing the skills list.
+//
+// Side effects: None.
 func (i *Intent) GetTableBehavior() *behaviors.TableBehavior[*domain.Skill] {
 	return i.tableBehavior
 }
 
-// Init initializes the intent and loads skills.
+// Init activates the intent, applies theming, creates the list screen, and triggers async skill loading.
+//
+// Returns: a tea.Cmd that asynchronously loads skills from the repository.
+//
+// Side effects: sets the intent to active, applies theme to TableBehavior, creates and transitions to the list screen.
 func (i *Intent) Init() tea.Cmd {
 	i.active = true
 
@@ -88,7 +102,13 @@ func (i *Intent) Init() tea.Cmd {
 	}
 }
 
-// Update handles messages and state transitions.
+// Update processes incoming messages through a 3-tier priority system: global keys, modals, then screen delegation.
+//
+// Expected: msg is a valid tea.Msg; the intent should be active.
+//
+// Returns: a tea.Cmd representing the next action, or nil if no action is needed.
+//
+// Side effects: may transition state, update modals, or delegate to the active screen.
 func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 	if !i.active {
 		return nil
@@ -172,7 +192,11 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 	return nil
 }
 
-// View renders the current state.
+// View renders the active screen with any visible modal overlays applied.
+//
+// Returns: the rendered string for the current intent state, or an empty string if inactive.
+//
+// Side effects: None.
 func (i *Intent) View() string {
 	if !i.active {
 		return ""
@@ -212,7 +236,11 @@ func (i *Intent) renderListView(screen *skills.SkillsListScreen) string {
 	return i.modalRegistry.RenderOverlay(baseView)
 }
 
-// Result returns the final result of the intent.
+// Result provides the final outcome of the intent for the caller to inspect after completion.
+//
+// Returns: the intent result with status and data, or nil if the intent has not completed.
+//
+// Side effects: None.
 func (i *Intent) Result() *intents.IntentResult[interface{}] {
 	if i.result == nil {
 		return nil
@@ -225,7 +253,9 @@ func (i *Intent) Result() *intents.IntentResult[interface{}] {
 	}
 }
 
-// SetCancelled marks the intent as cancelled.
+// SetCancelled terminates the intent with a cancelled status, preventing further updates.
+//
+// Side effects: sets the result to Cancelled status and deactivates the intent.
 func (i *Intent) SetCancelled() {
 	i.result = &intents.IntentResult[*Result]{
 		Status: intents.Cancelled,
@@ -238,7 +268,11 @@ func (i *Intent) SetCancelled() {
 
 // FilterBehavior interface implementation.
 
-// HasActiveFilters returns true if any non-default filters are active.
+// HasActiveFilters checks whether the current filter state differs from the default, enabling UI indicators.
+//
+// Returns: true if any category, level, event count, search, or sort filter is set.
+//
+// Side effects: None.
 func (i *Intent) HasActiveFilters() bool {
 	if i.context == nil || i.context.Filters == nil {
 		return false
@@ -246,32 +280,52 @@ func (i *Intent) HasActiveFilters() bool {
 	return i.context.Filters.HasActiveFilters()
 }
 
-// ClearFilters resets filters in FIFO order.
+// ClearFilters progressively resets the most recently applied filter in FIFO order.
+//
+// Side effects: modifies the context Filters, clearing search first, then category/level, then sort.
 func (i *Intent) ClearFilters() {
 	if i.context != nil && i.context.Filters != nil {
 		i.context.Filters.Clear()
 	}
 }
 
-// ApplyFilters applies current filter state to the data.
+// ApplyFilters satisfies the FilterBehavior interface; actual filtering is handled during skill loading.
+//
+// Side effects: None.
 func (i *Intent) ApplyFilters() {
 	// Filters are applied when loading skills.
 }
 
-// RefreshData reloads/refreshes the filtered data.
+// RefreshData triggers an asynchronous reload of the skills list with current filters applied.
+//
+// Returns: a tea.Cmd that fetches skills from the repository.
+//
+// Side effects: initiates an async repository call that will produce a SkillsLoadedMsg.
 func (i *Intent) RefreshData() tea.Cmd {
 	return i.reloadSkills()
 }
 
 // ScreenResultHandler interface implementation.
 
-// HandleCancel handles cancel results from screens.
+// HandleCancel processes a screen cancellation by returning the intent to the list state.
+//
+// Expected: result is a valid CancelResult from an active screen.
+//
+// Returns: nil; no follow-up command is needed.
+//
+// Side effects: transitions the intent state back to StateList.
 func (i *Intent) HandleCancel(_ *screens.CancelResult) tea.Cmd {
 	i.state = StateList
 	return nil
 }
 
-// HandleNavigate handles navigation results from screens.
+// HandleNavigate dispatches navigation actions such as view, edit, and delete from screen results.
+//
+// Expected: result contains ResultData castable to map[string]interface{} with action-specific keys.
+//
+// Returns: a tea.Cmd for the dispatched action, or nil if the data format is unexpected.
+//
+// Side effects: may open modals or trigger state transitions depending on the navigation action.
 func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 	if actionData, ok := result.ResultData.(map[string]interface{}); ok {
 		return i.handleNavigateData(actionData)
@@ -279,12 +333,24 @@ func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 	return nil
 }
 
-// HandleSubmit handles submit results from screens.
+// HandleSubmit processes submission results from screens; currently a no-op for this intent.
+//
+// Expected: result is a valid SubmitResult from an active screen.
+//
+// Returns: nil; no follow-up command is needed.
+//
+// Side effects: None.
 func (i *Intent) HandleSubmit(_ *screens.SubmitResult) tea.Cmd {
 	return nil
 }
 
-// HandleError handles error results from screens.
+// HandleError processes error results from screens; currently a no-op for this intent.
+//
+// Expected: result is a valid ErrorResult from an active screen.
+//
+// Returns: nil; no follow-up command is needed.
+//
+// Side effects: None.
 func (i *Intent) HandleError(_ *screens.ErrorResult) tea.Cmd {
 	return nil
 }
