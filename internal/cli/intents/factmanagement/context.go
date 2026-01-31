@@ -84,7 +84,13 @@ type IntentContext struct {
 	Context context.Context
 }
 
-// NewIntentContext creates a new context with default values.
+// NewIntentContext initialises a FactManagement context with sensible defaults for pagination, sorting, and filtering.
+//
+// Expected: ctx must be non-nil. factRepo may be nil for offline/test usage, but repository operations will fail.
+//
+// Returns: a fully initialised IntentContext ready for use by the intent.
+//
+// Side effects: None.
 func NewIntentContext(ctx context.Context, factRepo careerrepo.FactRepository) *IntentContext {
 	return &IntentContext{
 		Facts:             make([]*domain.Fact, 0),
@@ -104,7 +110,11 @@ func NewIntentContext(ctx context.Context, factRepo careerrepo.FactRepository) *
 	}
 }
 
-// Validate ensures the context is complete.
+// Validate ensures all required collection fields are initialised, replacing nil maps and slices with empty defaults.
+//
+// Returns: always nil; provided for interface compliance and future extension.
+//
+// Side effects: Mutates nil collection fields (Facts, FormErrors, ExpandedRows) to empty non-nil values.
 func (c *IntentContext) Validate() error {
 	if c.Facts == nil {
 		c.Facts = make([]*domain.Fact, 0)
@@ -118,7 +128,11 @@ func (c *IntentContext) Validate() error {
 	return nil
 }
 
-// LoadFacts loads facts from the repository.
+// LoadFacts fetches all facts from the repository and resets pagination and selection state.
+//
+// Returns: ErrServiceNotAvailable if FactRepository is nil, or any repository error encountered during the query.
+//
+// Side effects: Replaces Facts, TotalFacts, CurrentPage, SelectedFactIndex, and SelectedFact with fresh values.
 func (c *IntentContext) LoadFacts() error {
 	if c.FactRepository == nil {
 		return ErrServiceNotAvailable
@@ -140,7 +154,11 @@ func (c *IntentContext) LoadFacts() error {
 	return nil
 }
 
-// GetPageFacts returns the facts for the current page.
+// GetPageFacts provides the slice of facts visible on the current page, bounded by PageSize.
+//
+// Returns: the facts for the current page, or an empty slice if the page is out of range or Facts is empty.
+//
+// Side effects: None.
 func (c *IntentContext) GetPageFacts() []*domain.Fact {
 	if len(c.Facts) == 0 {
 		return make([]*domain.Fact, 0)
@@ -156,7 +174,11 @@ func (c *IntentContext) GetPageFacts() []*domain.Fact {
 	return c.Facts[start:end]
 }
 
-// SelectFact selects a fact by index within the current page.
+// SelectFact updates the current selection to the fact at the given page-relative index.
+//
+// Expected: index must be a valid zero-based offset within the current page bounds. Out-of-range values are silently ignored.
+//
+// Side effects: Updates SelectedFact and SelectedFactIndex when the index is valid.
 func (c *IntentContext) SelectFact(index int) {
 	pageFacts := c.GetPageFacts()
 	if index >= 0 && index < len(pageFacts) {
@@ -165,27 +187,47 @@ func (c *IntentContext) SelectFact(index int) {
 	}
 }
 
-// GetSelectedFact returns the currently selected fact.
+// GetSelectedFact provides access to the currently highlighted fact for detail views and actions.
+//
+// Returns: the selected fact, or nil if no fact is selected.
+//
+// Side effects: None.
 func (c *IntentContext) GetSelectedFact() *domain.Fact {
 	return c.SelectedFact
 }
 
-// ClearFormErrors clears all form validation errors.
+// ClearFormErrors resets the validation error state, typically called when entering or re-entering a form.
+//
+// Side effects: Replaces FormErrors with a new empty map.
 func (c *IntentContext) ClearFormErrors() {
 	c.FormErrors = make(map[string]string)
 }
 
-// SetFormError sets a validation error for a field.
+// SetFormError records a validation error message against a specific form field for display to the user.
+//
+// Expected: field must be a non-empty field identifier. message must describe the validation failure.
+//
+// Side effects: Inserts or overwrites the entry for field in FormErrors.
 func (c *IntentContext) SetFormError(field, message string) {
 	c.FormErrors[field] = message
 }
 
-// HasFormErrors returns true if there are validation errors.
+// HasFormErrors indicates whether any validation errors exist, used to gate form submission.
+//
+// Returns: true when one or more field errors are present.
+//
+// Side effects: None.
 func (c *IntentContext) HasFormErrors() bool {
 	return len(c.FormErrors) > 0
 }
 
-// CreateFact creates a new fact.
+// CreateFact validates and persists a new fact, then appends it to the in-memory collection.
+//
+// Expected: fact must be non-nil and pass domain validation. FactRepository must be set.
+//
+// Returns: ErrServiceNotAvailable if FactRepository is nil, or any validation/repository error.
+//
+// Side effects: On success, appends to Facts and updates TotalFacts. Persists the fact via the repository.
 func (c *IntentContext) CreateFact(fact *domain.Fact) error {
 	if c.FactRepository == nil {
 		return ErrServiceNotAvailable
@@ -201,7 +243,13 @@ func (c *IntentContext) CreateFact(fact *domain.Fact) error {
 	return nil
 }
 
-// UpdateFact updates an existing fact.
+// UpdateFact validates and persists changes to an existing fact, then updates the in-memory collection.
+//
+// Expected: fact must be non-nil with a valid ID matching an existing fact. FactRepository must be set.
+//
+// Returns: ErrServiceNotAvailable if FactRepository is nil, or any validation/repository error.
+//
+// Side effects: On success, replaces the matching entry in Facts and persists via the repository.
 func (c *IntentContext) UpdateFact(fact *domain.Fact) error {
 	if c.FactRepository == nil {
 		return ErrServiceNotAvailable
@@ -221,7 +269,13 @@ func (c *IntentContext) UpdateFact(fact *domain.Fact) error {
 	return nil
 }
 
-// DeleteFact deletes a fact by ID.
+// DeleteFact removes a fact from both the repository and the in-memory collection, then clears the selection.
+//
+// Expected: factID must be a non-empty string identifying an existing fact. FactRepository must be set.
+//
+// Returns: ErrServiceNotAvailable if FactRepository is nil, or any repository error.
+//
+// Side effects: Removes the fact from Facts, updates TotalFacts, resets SelectedFact and SelectedFactIndex. Deletes via the repository.
 func (c *IntentContext) DeleteFact(factID string) error {
 	if c.FactRepository == nil {
 		return ErrServiceNotAvailable
@@ -241,7 +295,9 @@ func (c *IntentContext) DeleteFact(factID string) error {
 	return nil
 }
 
-// StartNewFact prepares for creating a new fact.
+// StartNewFact initialises a blank editing fact with default timestamps for the creation workflow.
+//
+// Side effects: Populates EditingFact with an empty fact template, sets IsNewFact to true, and clears form errors.
 func (c *IntentContext) StartNewFact() {
 	c.EditingFact = &domain.Fact{
 		ID:                   "",
@@ -255,7 +311,11 @@ func (c *IntentContext) StartNewFact() {
 	c.ClearFormErrors()
 }
 
-// StartEditFact prepares for editing an existing fact.
+// StartEditFact creates a deep copy of the given fact for safe editing without mutating the original.
+//
+// Expected: fact must be non-nil.
+//
+// Side effects: Populates EditingFact with a copy of fact, sets IsNewFact to false, and clears form errors.
 func (c *IntentContext) StartEditFact(fact *domain.Fact) {
 	c.EditingFact = &domain.Fact{
 		ID:                   fact.ID,
@@ -273,14 +333,20 @@ func (c *IntentContext) StartEditFact(fact *domain.Fact) {
 	c.ClearFormErrors()
 }
 
-// CancelEdit cancels the current edit operation.
+// CancelEdit discards any in-progress fact editing and resets the form state.
+//
+// Side effects: Nils out EditingFact, sets IsNewFact to false, and clears form errors.
 func (c *IntentContext) CancelEdit() {
 	c.EditingFact = nil
 	c.IsNewFact = false
 	c.ClearFormErrors()
 }
 
-// SaveEdit saves the edited fact.
+// SaveEdit persists the current EditingFact, dispatching to CreateFact or UpdateFact based on IsNewFact.
+//
+// Returns: ErrInvalidState if EditingFact is nil, or any error from the underlying create/update operation.
+//
+// Side effects: Delegates to CreateFact or UpdateFact, which mutate Facts and persist via the repository.
 func (c *IntentContext) SaveEdit() error {
 	if c.EditingFact == nil {
 		return ErrInvalidState
@@ -291,7 +357,11 @@ func (c *IntentContext) SaveEdit() error {
 	return c.UpdateFact(c.EditingFact)
 }
 
-// ToggleRowExpansion toggles the expansion state of a row.
+// ToggleRowExpansion flips the expanded/collapsed state of a table row for detail visibility.
+//
+// Expected: rowIndex must be a valid zero-based row offset.
+//
+// Side effects: Adds or removes the rowIndex entry in ExpandedRows.
 func (c *IntentContext) ToggleRowExpansion(rowIndex int) {
 	if c.ExpandedRows[rowIndex] {
 		delete(c.ExpandedRows, rowIndex)
@@ -300,7 +370,13 @@ func (c *IntentContext) ToggleRowExpansion(rowIndex int) {
 	}
 }
 
-// IsRowExpanded returns whether a row is expanded.
+// IsRowExpanded checks whether a specific table row is in the expanded state.
+//
+// Expected: rowIndex must be a valid zero-based row offset.
+//
+// Returns: true if the row is expanded, false otherwise.
+//
+// Side effects: None.
 func (c *IntentContext) IsRowExpanded(rowIndex int) bool {
 	return c.ExpandedRows[rowIndex]
 }

@@ -40,7 +40,17 @@ func (i *Intent) handleScreenResult(result interface{}) tea.Cmd {
 	return behaviors.NewScreenResultDispatcher(i).Dispatch(screenResult)
 }
 
-// HandleCancel handles screen cancellation (back/escape).
+// HandleCancel processes screen cancellation by navigating back through the state hierarchy.
+//
+// Expected:
+//   - result must satisfy the ScreenResultHandler interface contract.
+//
+// Returns:
+//   - A tea.Cmd if further processing is needed, or nil when the cancellation is handled internally.
+//
+// Side effects:
+//   - Transitions the intent state toward StateList or marks the intent as cancelled.
+//   - May replace the active screen with a new BurstListScreen.
 //
 //nolint:revive // result parameter required by ScreenResultHandler interface
 func (i *Intent) HandleCancel(result *screens.CancelResult) tea.Cmd {
@@ -79,7 +89,16 @@ func (i *Intent) HandleCancel(result *screens.CancelResult) tea.Cmd {
 	}
 }
 
-// HandleNavigate handles screen navigation results.
+// HandleNavigate dispatches navigation results to the appropriate action or detail view.
+//
+// Expected:
+//   - result must be non-nil with ResultData containing either a map[string]interface{} for actions or a *career.Burst for detail viewing.
+//
+// Returns:
+//   - A tea.Cmd for async operations triggered by the navigation, or nil when no further action is needed.
+//
+// Side effects:
+//   - May update selectedBurst, change intent state, or open modals depending on the navigation data.
 func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 	// Handle action data (add, edit, delete, suggest).
 	if actionData, ok := result.ResultData.(map[string]interface{}); ok {
@@ -97,7 +116,17 @@ func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 	return nil
 }
 
-// HandleSubmit handles form submission results.
+// HandleSubmit processes form submission results from screens.
+// Currently a no-op as burst management does not use screen-level form submissions.
+//
+// Expected:
+//   - result must satisfy the ScreenResultHandler interface contract.
+//
+// Returns:
+//   - Always nil.
+//
+// Side effects:
+//   - None.
 //
 //nolint:revive // result parameter required by ScreenResultHandler interface
 func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
@@ -105,7 +134,16 @@ func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
 	return nil
 }
 
-// HandleError handles error results from screens.
+// HandleError captures screen-level errors and presents them to the user via an error modal.
+//
+// Expected:
+//   - result must be non-nil with a populated Err field.
+//
+// Returns:
+//   - Always nil; the error modal is displayed on the next render cycle.
+//
+// Side effects:
+//   - Stores the error in deleteError and creates a visible error modal overlay.
 func (i *Intent) HandleError(result *screens.ErrorResult) tea.Cmd {
 	// Store error and show error modal.
 	i.deleteError = result.Err

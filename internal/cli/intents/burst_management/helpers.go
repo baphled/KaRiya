@@ -209,7 +209,15 @@ func (i *Intent) removeBurstFromSlice(bursts []*career.Burst, id string) []*care
 	return result
 }
 
-// RefreshData reloads/refreshes the filtered data.
+// RefreshData reloads burst data from the repository and refreshes the list screen.
+//
+// Returns:
+//   - Always nil; screen transitions are handled internally.
+//
+// Side effects:
+//   - Reloads bursts from the repository via IntentContext.
+//   - Replaces filteredBursts with the reloaded data.
+//   - Transitions the active screen to a new BurstListScreen.
 func (i *Intent) RefreshData() tea.Cmd {
 	// Reload bursts from context if available.
 	if err := i.context.LoadBursts(); err != nil {
@@ -285,42 +293,91 @@ func (i *Intent) confirmBurst() tea.Cmd {
 	return i.extractFactsForBurst(i.selectedBurst)
 }
 
-// HasVisibleErrorModal returns true if the error modal is visible.
+// HasVisibleErrorModal checks whether an error modal is currently displayed.
+//
+// Returns:
+//   - True if the error modal reference is non-nil.
+//
+// Side effects:
+//   - None.
 func (i *Intent) HasVisibleErrorModal() bool {
 	return i.errorModal != nil
 }
 
-// HasVisibleDeleteModal returns true if the delete confirmation modal is visible.
+// HasVisibleDeleteModal checks whether the delete confirmation modal is currently displayed.
+//
+// Returns:
+//   - True if the delete modal exists and reports itself as visible.
+//
+// Side effects:
+//   - None.
 func (i *Intent) HasVisibleDeleteModal() bool {
 	return i.deleteModal != nil && i.deleteModal.IsVisible()
 }
 
-// HasVisibleConfirmModal returns true if the confirm burst modal is visible.
+// HasVisibleConfirmModal checks whether the burst confirmation modal is currently displayed.
+//
+// Returns:
+//   - True if the confirm modal exists and reports itself as visible.
+//
+// Side effects:
+//   - None.
 func (i *Intent) HasVisibleConfirmModal() bool {
 	return i.confirmModal != nil && i.confirmModal.IsVisible()
 }
 
-// HasVisibleEditModal returns true if the edit burst modal is visible.
+// HasVisibleEditModal checks whether the edit burst modal is currently displayed.
+//
+// Returns:
+//   - True if the edit modal exists and reports itself as visible.
+//
+// Side effects:
+//   - None.
 func (i *Intent) HasVisibleEditModal() bool {
 	return i.editModal != nil && i.editModal.IsVisible()
 }
 
-// ShowErrorModal creates and shows an error modal with the given title and message.
+// ShowErrorModal creates and activates an error modal overlay for the intent.
+//
+// Expected:
+//   - title must be a non-empty human-readable heading.
+//   - message must describe the error condition.
+//
+// Side effects:
+//   - Replaces any existing error modal on the intent.
 func (i *Intent) ShowErrorModal(title, message string) {
 	i.errorModal = feedback.NewErrorModal(title, message)
 }
 
-// GetTerminalDimensions returns current terminal dimensions (exported for testing).
+// GetTerminalDimensions exposes terminal dimensions for testing purposes.
+//
+// Returns:
+//   - width and height in columns and rows, with fallback defaults when terminal info is unavailable.
+//
+// Side effects:
+//   - None.
 func (i *Intent) GetTerminalDimensions() (width, height int) {
 	return i.getTerminalDimensions()
 }
 
-// GetStateName returns human-readable state name (exported for testing).
+// GetStateName exposes the human-readable name of the current intent state for testing purposes.
+//
+// Returns:
+//   - A display-friendly label for the current state, or "Unknown" for unrecognized states.
+//
+// Side effects:
+//   - None.
 func (i *Intent) GetStateName() string {
 	return i.getStateName()
 }
 
-// GetContextHelp returns context help string (exported for testing).
+// GetContextHelp exposes the themed keyboard shortcut help string for testing purposes.
+//
+// Returns:
+//   - A rendered help string with keyboard badges for the current state, or empty for states without help.
+//
+// Side effects:
+//   - None.
 func (i *Intent) GetContextHelp() string {
 	return i.getContextHelp()
 }
@@ -444,7 +501,10 @@ func (i *Intent) updateDetailModalRegistry() {
 	}
 }
 
-// RebuildModalRegistry creates a fresh modal registry with all current modals (exported for testing).
+// RebuildModalRegistry recreates the modal registry from the current modal state, exported for testing.
+//
+// Side effects:
+//   - Clears and repopulates the modal registry based on all active modals.
 func (i *Intent) RebuildModalRegistry() {
 	i.rebuildModalRegistry()
 }

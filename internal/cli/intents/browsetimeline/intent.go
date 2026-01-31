@@ -17,7 +17,17 @@ import (
 // Ensure Intent implements ScreenResultHandler interface.
 var _ behaviors.ScreenResultHandler = (*Intent)(nil)
 
-// NewIntent creates a new BrowseTimeline intent.
+// NewIntent creates a new BrowseTimeline intent with the given context,
+// initializing all internal state including filters, screens, and modal registry.
+//
+// Expected:
+//   - ctx must be non-nil and pass validation.
+//
+// Returns:
+//   - A fully initialized Intent ready for Init, or an error if validation fails.
+//
+// Side effects:
+//   - Allocates internal collections and a modal registry.
 func NewIntent(ctx *IntentContext) (*Intent, error) {
 	if err := ctx.Validate(); err != nil {
 		return nil, err
@@ -42,7 +52,14 @@ func NewIntent(ctx *IntentContext) (*Intent, error) {
 	return intent, nil
 }
 
-// Init is called when the intent is activated.
+// Init activates the intent by applying initial filters and transitioning
+// to the timeline list screen.
+//
+// Returns:
+//   - Always nil; screen transition is handled internally.
+//
+// Side effects:
+//   - Applies filters, sets the selected event, and transitions to the timeline screen.
 func (i *Intent) Init() tea.Cmd {
 	i.applyFilters()
 
@@ -55,7 +72,17 @@ func (i *Intent) Init() tea.Cmd {
 	return nil
 }
 
-// Update processes a message in the intent.
+// Update is the main message loop that delegates to modals, keyboard shortcuts,
+// or the active screen in priority order.
+//
+// Expected:
+//   - msg is a Bubble Tea message from the runtime.
+//
+// Returns:
+//   - A command to execute, or nil if the message was fully handled.
+//
+// Side effects:
+//   - May open or close modals, transition screens, or mark the intent inactive.
 func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 	if !i.active {
 		return nil
@@ -358,7 +385,13 @@ func (i *Intent) handleKeyShortcuts(keyMsg tea.KeyMsg) tea.Cmd {
 	return nil
 }
 
-// View renders the current state of the intent.
+// View renders the current state of the intent, including any visible modal overlays.
+//
+// Returns:
+//   - The rendered string for the active screen and overlays.
+//
+// Side effects:
+//   - None.
 func (i *Intent) View() string {
 	if i.activeScreen == nil {
 		return "No active screen"
@@ -391,7 +424,14 @@ func (i *Intent) renderTimelineView(screen *timeline.EventListScreen) string {
 	return i.modalRegistry.RenderOverlay(baseView)
 }
 
-// Result returns the intent result.
+// Result provides the outcome of the intent after it becomes inactive,
+// converting the typed result into a generic IntentResult.
+//
+// Returns:
+//   - The intent result containing status, data, and metadata, or nil if no result is set.
+//
+// Side effects:
+//   - None.
 func (i *Intent) Result() *intents.IntentResult[interface{}] {
 	if i.result == nil {
 		return nil

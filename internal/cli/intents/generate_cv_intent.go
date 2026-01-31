@@ -24,7 +24,12 @@ import (
 	"golang.org/x/text/language"
 )
 
-// GenerateCVIntent implements the Intent interface for generating CVs.
+// GenerateCVIntent orchestrates the multi-step CV generation workflow, managing
+// state transitions between profile selection, technology extraction, generation,
+// preview, and export phases.
+//
+// Side effects:
+//   - None at construction; state mutations occur through Update and Init.
 type GenerateCVIntent struct {
 	// Embed BaseIntent for terminal awareness, logo, and state management
 	*BaseIntent
@@ -60,7 +65,18 @@ type GenerateCVIntent struct {
 	wizardPreviewScreen screens.Screen
 }
 
-// NewGenerateCVIntent creates a new GenerateCV intent.
+// NewGenerateCVIntent constructs a GenerateCV intent initialised with the given
+// context, selecting a default profile when one is available.
+//
+// Expected:
+//   - context must pass Validate (non-nil, at least one profile and one event).
+//
+// Returns:
+//   - A ready-to-activate intent and nil error on success.
+//   - Nil intent and a validation error when context is invalid.
+//
+// Side effects:
+//   - None.
 func NewGenerateCVIntent(context *GenerateCVContext) (*GenerateCVIntent, error) {
 	if err := context.Validate(); err != nil {
 		return nil, err
@@ -95,7 +111,16 @@ func NewGenerateCVIntent(context *GenerateCVContext) (*GenerateCVIntent, error) 
 	}, nil
 }
 
-// Init is called when the intent is activated.
+// Init prepares the intent for its first render cycle, optionally bootstrapping
+// the wizard flow or screen-based architecture depending on feature flags.
+//
+// Returns:
+//   - A tea.Cmd to kick off asynchronous initialisation, or nil when none is needed.
+//
+// Side effects:
+//   - Sets the default profile on the internal model when one is provided in the context.
+//   - Creates and shows the wizard modal when the wizard flow is enabled.
+//   - Transitions to the initial screen when screen-based architecture is enabled.
 func (i *GenerateCVIntent) Init() tea.Cmd {
 	if i.context.DefaultProfile != nil {
 		i.state.selectedProfile = i.context.DefaultProfile
@@ -181,8 +206,17 @@ func (i *GenerateCVIntent) transitionToScreen(state GenerateCVState) {
 	}
 }
 
-// NewCVProfileSelectScreenFromIntent creates a CV profile select screen.
-// This avoids import cycle by creating SelectScreen directly here.
+// NewCVProfileSelectScreenFromIntent builds a profile selection screen populated
+// with the given CV profiles, avoiding an import cycle with the screens package.
+//
+// Expected:
+//   - profiles should contain at least one entry for a meaningful selection UI.
+//
+// Returns:
+//   - A Screen that renders a selectable list of CV profiles.
+//
+// Side effects:
+//   - None.
 func NewCVProfileSelectScreenFromIntent(profiles []*CVProfile) screens.Screen {
 	// Create item renderer for CV profiles
 	renderer := func(item *CVProfile) string {
@@ -247,7 +281,17 @@ func (i *GenerateCVIntent) getBorderColor() lipgloss.Color {
 	return i.getTheme().BorderColor()
 }
 
-// Update processes a message in the intent.
+// Update advances the intent state machine by processing a single Bubble Tea
+// message, delegating to the wizard flow, active screen, or legacy handlers.
+//
+// Expected:
+//   - msg must be a valid tea.Msg (key press, window resize, or async result).
+//
+// Returns:
+//   - A tea.Cmd for follow-up work (async generation, quit, etc.), or nil.
+//
+// Side effects:
+//   - Mutates internal state, active screens, and modal visibility.
 func (i *GenerateCVIntent) Update(msg tea.Msg) tea.Cmd {
 	if !i.active {
 		return nil
@@ -1606,7 +1650,14 @@ func (i *GenerateCVIntent) getContextHelp() string {
 	}
 }
 
-// View renders the intent's current state using StandardView.
+// View produces the terminal UI string for the intent's current state,
+// choosing between wizard, screen-based, or legacy rendering paths.
+//
+// Returns:
+//   - A fully composed string ready for terminal display.
+//
+// Side effects:
+//   - May update the preview viewport content as a rendering side-effect in legacy mode.
 func (i *GenerateCVIntent) View() string {
 	if !i.active {
 		return "GenerateCV intent is not active"
@@ -2299,21 +2350,22 @@ func (i *GenerateCVIntent) viewConfirm() string {
 	return i.getCardStyle().Render(content.String())
 }
 
-// EnableScreens enables the new screen-based architecture for this intent.
-// This is opt-in during Phase 2.2 migration to maintain backward compatibility.
-// Once all states are migrated and tests updated, this will become the default.
+// EnableScreens activates screen-based architecture for this intent, opting in
+// to the Phase 2.2 migration while maintaining backward compatibility.
 //
 // Usage:
 //
 //	intent.EnableScreens()
 //	intent.Init() // Initializes screens based on current state
+//
+// Side effects:
+//   - Sets the useScreens flag so subsequent Init/Update/View calls use screens.
 func (i *GenerateCVIntent) EnableScreens() {
 	i.useScreens = true
 }
 
-// EnableWizardFlow enables the wizard-based workflow for this intent.
-// This is opt-in during Phase 5 (Task 43) migration to maintain backward compatibility.
-// Once fully tested and validated, this will become the default.
+// EnableWizardFlow activates the simplified wizard-based workflow that reduces
+// the 17-state legacy flow to 5 modal-driven states.
 //
 // The wizard flow simplifies the CV generation workflow from 17 states to 5:
 //   - CVStateConfiguring: Configuration wizard modal (replaces 6 states)
@@ -2326,11 +2378,22 @@ func (i *GenerateCVIntent) EnableScreens() {
 //
 //	intent.EnableWizardFlow()
 //	intent.Init() // Initializes wizard modal
+//
+// Side effects:
+//   - Sets the useWizardFlow flag so subsequent Init/Update/View calls use the wizard path.
 func (i *GenerateCVIntent) EnableWizardFlow() {
 	i.useWizardFlow = true
 }
 
-// Result returns the final result of the intent.
+// Result retrieves the outcome of the intent after it becomes inactive,
+// wrapping the typed result into a generic IntentResult for the router.
+//
+// Returns:
+//   - A generic IntentResult containing the CV generation outcome, or nil
+//     when the intent has not yet completed or been cancelled.
+//
+// Side effects:
+//   - None.
 func (i *GenerateCVIntent) Result() *IntentResult[interface{}] {
 	if i.result == nil {
 		return nil

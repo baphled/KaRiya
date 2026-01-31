@@ -95,7 +95,14 @@ type CaptureEventIntent struct {
 	useScreens   bool
 }
 
-// NewCaptureEventIntent creates a new CaptureEvent intent.
+// NewCaptureEventIntent creates a fully initialized capture event intent ready for activation.
+//
+// Expected: context must pass Validate and contain a non-nil CLIEventService.
+//
+// Returns: the constructed intent and nil error on success, or nil and a
+// validation error if the context is invalid.
+//
+// Side effects: allocates internal form, review state, and result structures.
 func NewCaptureEventIntent(context *CaptureEventContext) (*CaptureEventIntent, error) {
 	if err := context.Validate(); err != nil {
 		return nil, err
@@ -127,14 +134,21 @@ func NewCaptureEventIntent(context *CaptureEventContext) (*CaptureEventIntent, e
 	}, nil
 }
 
-// DisableScreens disables the screens architecture for testing legacy flows.
-// This is primarily used in tests that need to test legacy message handling.
+// DisableScreens switches the intent to legacy message-based flow for testing.
+//
+// Side effects: clears the active screen reference and disables screen-based routing.
 func (i *CaptureEventIntent) DisableScreens() {
 	i.useScreens = false
 	i.activeScreen = nil
 }
 
-// Init is called when the intent is activated.
+// Init prepares the intent for its first update cycle after activation.
+//
+// Returns: a tea.Cmd to bootstrap the initial screen, or nil if no async
+// work is needed.
+//
+// Side effects: creates and configures the strategy selection screen when
+// screens are enabled, or initializes the legacy form for a new event.
 func (i *CaptureEventIntent) Init() tea.Cmd {
 	if i.useScreens {
 		breadcrumbs := []string{"Main Menu", "Capture Event"}
@@ -194,8 +208,16 @@ func (i *CaptureEventIntent) initializeFormForNew() tea.Cmd {
 	return func() tea.Msg { return nil }
 }
 
-// Update processes a message in the intent.
-// This is Bubble Tea's standard Update, constrained to intent-local state.
+// Update drives the intent state machine by dispatching incoming messages to the
+// current state handler or active screen.
+//
+// Expected: msg is a valid Bubble Tea message; the intent must be active.
+//
+// Returns: a tea.Cmd for any async follow-up work, or nil when no further
+// action is needed.
+//
+// Side effects: mutates intent state, transitions between workflow steps, and
+// may trigger form validation, event submission, or modal display.
 func (i *CaptureEventIntent) Update(msg tea.Msg) tea.Cmd {
 	if !i.active {
 		return nil
@@ -843,7 +865,12 @@ func (i *CaptureEventIntent) getContextHelp() string {
 	}
 }
 
-// View renders the intent's current state using StandardView.
+// View composes the visual representation of the current workflow step,
+// including any active modal overlays.
+//
+// Returns: the fully rendered string for the terminal.
+//
+// Side effects: None.
 func (i *CaptureEventIntent) View() string {
 	if !i.active {
 		return "CaptureEvent intent is not active"
@@ -1294,13 +1321,24 @@ func (i *CaptureEventIntent) rejectCurrentItem() {
 	}
 }
 
-// IsActive returns true if this intent is currently active.
+// IsActive reports whether the intent is still processing and has not reached
+// a terminal state.
+//
+// Returns: true while the intent awaits user input or submission; false after
+// completion, cancellation, or failure.
+//
+// Side effects: None.
 func (i *CaptureEventIntent) IsActive() bool {
 	return i.active
 }
 
-// GetResult returns the final result of the intent (if complete).
-// This is called by the intent router to check if the intent has completed.
+// GetResult provides the strongly-typed outcome for callers that know the
+// concrete result type.
+//
+// Returns: the intent result containing status and captured event data, or nil
+// if the intent is still active.
+//
+// Side effects: None.
 func (i *CaptureEventIntent) GetResult() *IntentResult[*CaptureEventResult] {
 	return i.result
 }
@@ -1323,19 +1361,24 @@ func (i *CaptureEventIntent) setFailed(code, message string, cause error) {
 	i.active = false
 }
 
-// GetState returns the current workflow step of the capture event intent.
+// GetState exposes the current workflow step for inspection by tests and the
+// intent router.
 //
-// The method takes no parameters beyond the receiver.
+// Returns: a string matching one of the CaptureState constants
+// ("choose_strategy", "form", "review", or "submit").
 //
-// Returns a string matching one of the CaptureState constants:
-// "choose_strategy", "form", "review", or "submit". Tests and the intent
-// router use this value to inspect which sub-flow screen the intent is
-// currently displaying.
+// Side effects: None.
 func (i *CaptureEventIntent) GetState() string {
 	return i.state.currentState
 }
 
-// GetForm returns the current form model instance (for test and debug)
+// GetForm exposes the underlying capture form model for test assertions and
+// debugging.
+//
+// Returns: the active CaptureForm instance, or nil if the receiver or its
+// state is nil.
+//
+// Side effects: None.
 func (i *CaptureEventIntent) GetForm() *models.CaptureForm {
 	if i == nil || i.state == nil {
 		return nil
@@ -1343,17 +1386,13 @@ func (i *CaptureEventIntent) GetForm() *models.CaptureForm {
 	return i.state.captureForm
 }
 
-// Result returns the intent's outcome as a type-erased IntentResult.
+// Result converts the strongly-typed outcome into a type-erased IntentResult
+// so the intent router can inspect completion without knowing the concrete type.
 //
-// The method takes no parameters beyond the receiver.
+// Returns: a type-erased IntentResult preserving Status, Data, Error, and
+// Metadata, or nil if the intent has not yet reached a terminal state.
 //
-// Returns nil if the intent is still active and has not yet completed,
-// been cancelled, or failed. Returns a non-nil *IntentResult[interface{}]
-// once the intent reaches a terminal state. The returned value is
-// converted from the strongly-typed IntentResult[*CaptureEventResult],
-// preserving the Status, Data, Error, and Metadata fields. The intent
-// router calls this method after every Update cycle to detect whether the
-// intent has finished.
+// Side effects: None.
 func (i *CaptureEventIntent) Result() *IntentResult[interface{}] {
 	if i.result == nil {
 		return nil
@@ -1375,9 +1414,15 @@ func (i *CaptureEventIntent) handleScreenResult(result screens.ScreenResult) tea
 	return behaviors.NewScreenResultDispatcher(i).Dispatch(result)
 }
 
-// HandleNavigate handles navigation actions from screens.
+// HandleNavigate routes screen navigation results to the appropriate state
+// transition, such as selecting a capture strategy or opening an editing modal.
 //
-// Implements ScreenResultHandler interface.
+// Expected: result.Data must be a string action name or a CaptureStrategy value.
+//
+// Returns: a tea.Cmd to initialize the target screen or modal, or nil on failure.
+//
+// Side effects: transitions the intent to a new state and configures the
+// corresponding screen or editing modal.
 func (i *CaptureEventIntent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 	data := result.Data()
 
@@ -1440,9 +1485,15 @@ func (i *CaptureEventIntent) HandleNavigate(result *screens.NavigateResult) tea.
 	return i.setFailedCmd("INVALID_NAVIGATION_DATA", fmt.Sprintf("Invalid navigation data type: %T", data), nil)
 }
 
-// HandleCancel handles cancellation from screens.
+// HandleCancel processes cancellation signals from screens by navigating back to
+// the previous workflow step or terminating the intent entirely.
 //
-// Implements ScreenResultHandler interface.
+// Expected: the intent must be in a cancellable state (strategy, form, or review).
+//
+// Returns: a tea.Cmd to initialize the previous screen, or nil when the intent
+// is cancelled outright.
+//
+// Side effects: transitions to the prior state or marks the intent as cancelled.
 func (i *CaptureEventIntent) HandleCancel(_ *screens.CancelResult) tea.Cmd {
 	switch i.state.currentState {
 	case CaptureStateChooseStrategy:
@@ -1467,9 +1518,17 @@ func (i *CaptureEventIntent) HandleCancel(_ *screens.CancelResult) tea.Cmd {
 	}
 }
 
-// HandleSubmit handles form/data submission from screens.
+// HandleSubmit processes submission results from screens, validating the data
+// and persisting the event through the career service.
 //
-// Implements ScreenResultHandler interface.
+// Expected: result.Data must match the expected type for the current state
+// (e.g., *career.Event for form state, map for review/submit states).
+//
+// Returns: a tea.Cmd batch to perform submission and display the loading modal,
+// or nil on terminal completion.
+//
+// Side effects: validates event data, triggers persistence via performSubmit,
+// and may mark the intent as completed or failed.
 func (i *CaptureEventIntent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
 	data := result.Data()
 
@@ -1539,9 +1598,15 @@ func (i *CaptureEventIntent) HandleSubmit(result *screens.SubmitResult) tea.Cmd 
 	}
 }
 
-// HandleError handles errors from screens.
+// HandleError translates screen-level errors into an intent failure, recording
+// the error details for display and diagnostics.
 //
-// Implements ScreenResultHandler interface.
+// Expected: result.Data should be a map with "error" and "message" keys, though
+// any data type is handled gracefully.
+//
+// Returns: nil; the intent transitions to a failed terminal state.
+//
+// Side effects: marks the intent as failed and deactivates it.
 func (i *CaptureEventIntent) HandleError(result *screens.ErrorResult) tea.Cmd {
 	data := result.Data()
 	if errorData, ok := data.(map[string]interface{}); ok {

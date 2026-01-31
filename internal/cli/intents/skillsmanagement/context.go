@@ -32,7 +32,11 @@ type Filters struct {
 	SortOrder  string
 }
 
-// HasActiveFilters returns true if any non-default filters are active.
+// HasActiveFilters checks whether any filter or sort criteria differ from the default empty state.
+//
+// Returns: true if any category, level, event count, search, or sort filter is set.
+//
+// Side effects: None.
 func (f *Filters) HasActiveFilters() bool {
 	if f == nil {
 		return false
@@ -44,8 +48,10 @@ func (f *Filters) HasActiveFilters() bool {
 		f.SortBy != ""
 }
 
-// Clear resets filters in FIFO order (most recent filter first).
-// Search is most recent (most specific), sort is least recent (most general).
+// Clear progressively removes the most recently applied filter layer in FIFO order.
+// Search is cleared first as the most specific, then category/level, then sort as the most general.
+//
+// Side effects: resets one filter layer per call, modifying the receiver's fields.
 func (f *Filters) Clear() {
 	if f == nil {
 		return
@@ -81,7 +87,13 @@ type IntentContext struct {
 	Filters *Filters
 }
 
-// NewIntentContext creates a new context with default values.
+// NewIntentContext constructs an IntentContext wired to the given repository with default empty filters.
+//
+// Expected: ctx must be a non-nil context.Context; skillRepo must be a non-nil SkillRepository.
+//
+// Returns: a fully initialized IntentContext ready for Validate and use by NewIntent.
+//
+// Side effects: None.
 func NewIntentContext(ctx context.Context, skillRepo career.SkillRepository) *IntentContext {
 	return &IntentContext{
 		Ctx:             ctx,
@@ -90,7 +102,11 @@ func NewIntentContext(ctx context.Context, skillRepo career.SkillRepository) *In
 	}
 }
 
-// Validate ensures the context is complete.
+// Validate ensures all required dependencies are present before the intent can be constructed.
+//
+// Returns: an error if Ctx or SkillRepository is nil, or nil on success.
+//
+// Side effects: initializes Filters to an empty default if it is nil.
 func (c *IntentContext) Validate() error {
 	if c.Ctx == nil {
 		return ErrContextNotAvailable
@@ -104,7 +120,11 @@ func (c *IntentContext) Validate() error {
 	return nil
 }
 
-// LoadSkills loads skills from the repository with current filters.
+// LoadSkills fetches skills from the repository, translating the current Filters into repository query parameters.
+//
+// Returns: the filtered list of skills, or an error if the repository call fails.
+//
+// Side effects: performs a repository read operation against the underlying data store.
 func (c *IntentContext) LoadSkills() ([]*domain.Skill, error) {
 	var repoFilters *career.SkillListFilters
 	if c.Filters != nil {
@@ -120,12 +140,22 @@ func (c *IntentContext) LoadSkills() ([]*domain.Skill, error) {
 	return c.SkillRepository.List(c.Ctx, repoFilters)
 }
 
-// GetEventCounts returns the event counts for all skills.
+// GetEventCounts retrieves the number of associated events per skill for display in the list view.
+//
+// Returns: a map of skill ID to event count, or an error if the repository call fails.
+//
+// Side effects: performs a repository read operation against the underlying data store.
 func (c *IntentContext) GetEventCounts() (map[string]int, error) {
 	return c.SkillRepository.GetEventCountsForSkills(c.Ctx)
 }
 
-// GetEventsForSkill returns the events associated with a specific skill.
+// GetEventsForSkill fetches the career events linked to a specific skill for the detail and events modals.
+//
+// Expected: skillID must be a non-empty string identifying an existing skill.
+//
+// Returns: the list of events associated with the skill, or an error if the repository call fails.
+//
+// Side effects: performs a repository read operation against the underlying data store.
 func (c *IntentContext) GetEventsForSkill(skillID string) ([]*domain.Event, error) {
 	return c.SkillRepository.GetEventsUsingSkill(c.Ctx, skillID)
 }

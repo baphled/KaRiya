@@ -7,7 +7,15 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// Init is called when the intent is activated.
+// Init bootstraps the intent by loading burst data and transitioning to the list screen.
+//
+// Returns:
+//   - Always nil; the initial screen transition is performed synchronously.
+//
+// Side effects:
+//   - Loads bursts from the repository into filteredBursts.
+//   - Sets the initial selectedBurst to the first burst if available.
+//   - Transitions the intent to StateList with a new BurstListScreen.
 func (i *Intent) Init() tea.Cmd {
 	// Load bursts from repository if available.
 	if err := i.context.LoadBursts(); err != nil {
@@ -27,7 +35,16 @@ func (i *Intent) Init() tea.Cmd {
 	return nil
 }
 
-// Update processes a message in the intent.
+// Update is the central message dispatcher for the intent, routing messages to modals, shortcuts, or the active screen.
+//
+// Expected:
+//   - msg must be a valid tea.Msg (keyboard input, async completion, or custom message).
+//
+// Returns:
+//   - A tea.Cmd for any async follow-up work, or nil when the message is fully handled.
+//
+// Side effects:
+//   - May mutate intent state, open/close modals, or transition screens depending on the message type.
 func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 	if !i.active {
 		return nil
@@ -75,7 +92,13 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 	return nil
 }
 
-// View renders the intent's current state.
+// View composes the visual output by rendering the active screen with breadcrumbs, help text, and any modal overlays.
+//
+// Returns:
+//   - A fully rendered string representing the current intent UI, including any visible modal overlay.
+//
+// Side effects:
+//   - Rebuilds the modal registry on each call to ensure overlay state is current.
 func (i *Intent) View() string {
 	if !i.active {
 		return "BurstManagement intent is not active"

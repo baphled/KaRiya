@@ -157,7 +157,20 @@ type GenerateCVContext struct {
 	PreviewScreenFactory func(cv *career.CVView) screens.Screen
 }
 
-// Validate checks if the context is valid.
+// Validate ensures the context carries the minimum data needed to start the
+// CV generation workflow.
+//
+// Expected:
+//   - ctx must be non-nil.
+//   - ctx.AvailableProfiles must contain at least one profile.
+//   - ctx.Events must contain at least one event.
+//
+// Returns:
+//   - Nil when all preconditions are met.
+//   - A descriptive error when any required field is missing or empty.
+//
+// Side effects:
+//   - None.
 func (ctx *GenerateCVContext) Validate() error {
 	if ctx == nil {
 		return errors.New("GenerateCVContext cannot be nil")
