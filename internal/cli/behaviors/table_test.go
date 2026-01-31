@@ -743,5 +743,33 @@ var _ = Describe("TableBehavior", func() {
 				Expect(rendered).NotTo(BeEmpty())
 			})
 		})
+
+		Describe("Viewport disables pagination", func() {
+			It("should show all items when viewport is enabled", func() {
+				manyItems := make([]*TestItem, 30)
+				for i := range manyItems {
+					manyItems[i] = &TestItem{Name: "Item", Status: "Active", Count: i}
+				}
+				table.PageSize(5)
+				table.SetItems(manyItems).SetHeight(10)
+
+				rendered := table.Render()
+				Expect(rendered).NotTo(ContainSubstring("Page"))
+			})
+
+			It("should render all rows not just current page when viewport is enabled", func() {
+				manyItems := make([]*TestItem, 20)
+				for i := range manyItems {
+					manyItems[i] = &TestItem{Name: "Item", Status: "Active", Count: i}
+				}
+				table.PageSize(5)
+				table.SetItems(manyItems).SetHeight(10)
+
+				table.SetSelectedIndex(10)
+				rendered := table.Render()
+				Expect(rendered).NotTo(BeEmpty())
+				Expect(table.GetSelectedIndex()).To(Equal(10))
+			})
+		})
 	})
 })

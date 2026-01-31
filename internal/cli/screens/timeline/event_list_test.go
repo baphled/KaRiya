@@ -2,6 +2,7 @@
 package timeline_test
 
 import (
+	"strings"
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/screens"
@@ -397,6 +398,26 @@ var _ = Describe("EventListScreen", func() {
 			theme := "test-theme"
 			screen.SetTheme(theme)
 			Expect(screen.Theme()).To(Equal(theme))
+		})
+	})
+
+	Describe("SetContentHeight", func() {
+		BeforeEach(func() {
+			screen = timeline.NewTimelineEventListScreen(events)
+			screen.SetTerminalInfo(140, 40)
+		})
+
+		It("should not stretch table to terminal width", func() {
+			screen.SetContentHeight(20)
+			content := screen.RenderContent()
+			lines := strings.Split(content, "\n")
+
+			for _, line := range lines {
+				if strings.TrimSpace(line) != "" {
+					Expect(len(line)).To(BeNumerically("<", 140),
+						"table content should be narrower than terminal width for centering")
+				}
+			}
 		})
 	})
 
