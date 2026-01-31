@@ -10,7 +10,10 @@ import (
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/intents/skillsmanagement"
 	"github.com/baphled/kariya/internal/cli/screens"
+	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/domain/career"
+	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
+	"github.com/baphled/kariya/internal/service/career/skillinference"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -288,6 +291,117 @@ var _ = Describe("Intent", func() {
 				Expect(intent.GetSelectedSkill()).NotTo(BeNil())
 				Expect(intent.GetSelectedSkill().ID).To(Equal("skill-3"))
 			})
+		})
+	})
+
+	Describe("SkillsCreatedMsg Handling", func() {
+		var intent *skillsmanagement.Intent
+
+		BeforeEach(func() {
+			intentCtx := skillsmanagement.NewIntentContext(ctx, mockRepo)
+			intent, _ = skillsmanagement.NewIntent(intentCtx)
+			_ = intent.Init()
+		})
+
+		Context("with inference service configured", func() {
+			var inferenceIntent *skillsmanagement.Intent
+
+			BeforeEach(func() {
+				eventRepo := careermemory.NewEventRepository()
+				skillInferenceService := skillinference.NewSkillInferenceService(mockRepo, eventRepo)
+
+				intentCtx := skillsmanagement.NewIntentContext(ctx, mockRepo)
+				intentCtx.EventRepository = eventRepo
+				intentCtx.SkillInferenceService = skillInferenceService
+
+				var err error
+				inferenceIntent, err = skillsmanagement.NewIntent(intentCtx)
+				Expect(err).NotTo(HaveOccurred())
+				inferenceIntent.Init()
+			})
+
+			It("should clear loading modal on success", func() {
+				inferenceIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}})
+				Expect(inferenceIntent.GetLoadingModal()).NotTo(BeNil())
+
+				inferenceIntent.Update(skillsmanagement.SkillsCreatedMsg{
+					Skills: []*career.Skill{{ID: "s1", Name: "Go"}},
+				})
+
+				Expect(inferenceIntent.GetLoadingModal()).To(BeNil())
+			})
+
+			It("should clear loading modal on error", func() {
+				inferenceIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}})
+				Expect(inferenceIntent.GetLoadingModal()).NotTo(BeNil())
+
+				inferenceIntent.Update(skillsmanagement.SkillsCreatedMsg{
+					Error: context.DeadlineExceeded,
+				})
+
+				Expect(inferenceIntent.GetLoadingModal()).To(BeNil())
+			})
+		})
+
+		It("should show success feedback modal with skill count", func() {
+			skills := []*career.Skill{
+				{ID: "s1", Name: "Go", Category: "Backend"},
+				{ID: "s2", Name: "PostgreSQL", Category: "Database"},
+			}
+
+			intent.Update(skillsmanagement.SkillsCreatedMsg{Skills: skills})
+
+			modal := intent.GetFeedbackModal()
+			Expect(modal).NotTo(BeNil())
+			Expect(modal.Type).To(Equal(feedback.ModalSuccess))
+			Expect(modal.Message).To(ContainSubstring("2 skill(s)"))
+		})
+
+		It("should show error feedback modal on failure", func() {
+			intent.Update(skillsmanagement.SkillsCreatedMsg{
+				Error: context.DeadlineExceeded,
+			})
+
+			modal := intent.GetFeedbackModal()
+			Expect(modal).NotTo(BeNil())
+			Expect(modal.Type).To(Equal(feedback.ModalError))
+			Expect(modal.Title).To(Equal("Skill Creation Failed"))
+		})
+
+		It("should transition to StateList on success", func() {
+			intent.SetState(skillsmanagement.StateInferringSkills)
+
+			intent.Update(skillsmanagement.SkillsCreatedMsg{
+				Skills: []*career.Skill{{ID: "s1", Name: "Go"}},
+			})
+
+			Expect(intent.GetState()).To(Equal(skillsmanagement.StateList))
+		})
+
+		It("should transition to StateList on error", func() {
+			intent.SetState(skillsmanagement.StateInferringSkills)
+
+			intent.Update(skillsmanagement.SkillsCreatedMsg{
+				Error: context.DeadlineExceeded,
+			})
+
+			Expect(intent.GetState()).To(Equal(skillsmanagement.StateList))
+		})
+
+		It("should return a refresh command on success", func() {
+			cmd := intent.Update(skillsmanagement.SkillsCreatedMsg{
+				Skills: []*career.Skill{{ID: "s1", Name: "Go"}},
+			})
+
+			Expect(cmd).NotTo(BeNil())
+		})
+
+		It("should return nil command on error", func() {
+			cmd := intent.Update(skillsmanagement.SkillsCreatedMsg{
+				Error: context.DeadlineExceeded,
+			})
+
+			Expect(cmd).To(BeNil())
 		})
 	})
 

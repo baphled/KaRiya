@@ -323,6 +323,11 @@ func (i *Intent) GetFeedbackModal() *feedback.Modal {
 	return i.feedbackModal
 }
 
+// GetLoadingModal returns the current loading modal for testing.
+func (i *Intent) GetLoadingModal() *feedback.Modal {
+	return i.loadingModal
+}
+
 // HasVisibleDeleteModal checks whether the delete confirmation modal is currently displayed.
 //
 // Returns:

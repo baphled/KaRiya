@@ -1,6 +1,7 @@
 package burst_management_test
 
 import (
+	"context"
 	"fmt"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -738,6 +739,85 @@ var _ = Describe("Helper Methods", func() {
 
 			viewed := intent.GetViewedBursts()
 			Expect(viewed).To(ContainElement(burst))
+		})
+	})
+
+	Describe("SkillsCreatedMsg handling", func() {
+		It("should clear loading modal on success", func() {
+			intent.Update(burst_management.BurstSuggestionsLoadedMsg{
+				Suggestions: []burstfact.BurstSuggestion{
+					{Name: "Test", EventIDs: []string{"e1"}, ConfidenceScore: 0.8},
+				},
+			})
+			Expect(intent.GetState()).To(Equal(burst_management.StateSuggestionReview))
+
+			intent.Update(burst_management.SkillsCreatedMsg{
+				Skills: []*career.Skill{{ID: "s1", Name: "Go"}},
+			})
+
+			Expect(intent.GetLoadingModal()).To(BeNil())
+		})
+
+		It("should clear loading modal on error", func() {
+			intent.Update(burst_management.SkillsCreatedMsg{
+				Error: context.DeadlineExceeded,
+			})
+
+			Expect(intent.GetLoadingModal()).To(BeNil())
+		})
+
+		It("should show success feedback modal with skill count", func() {
+			skills := []*career.Skill{
+				{ID: "s1", Name: "Go", Category: "Backend"},
+				{ID: "s2", Name: "PostgreSQL", Category: "Database"},
+				{ID: "s3", Name: "Docker", Category: "DevOps"},
+			}
+
+			intent.Update(burst_management.SkillsCreatedMsg{Skills: skills})
+
+			modal := intent.GetFeedbackModal()
+			Expect(modal).NotTo(BeNil())
+			Expect(modal.Type).To(Equal(feedback.ModalSuccess))
+			Expect(modal.Message).To(ContainSubstring("3 skill(s)"))
+		})
+
+		It("should show error feedback modal on failure", func() {
+			intent.Update(burst_management.SkillsCreatedMsg{
+				Error: fmt.Errorf("database connection lost"),
+			})
+
+			modal := intent.GetFeedbackModal()
+			Expect(modal).NotTo(BeNil())
+			Expect(modal.Type).To(Equal(feedback.ModalError))
+		})
+
+		It("should silently ignore cancelled operations", func() {
+			intent.Update(burst_management.SkillsCreatedMsg{
+				Error: context.Canceled,
+			})
+
+			Expect(intent.GetFeedbackModal()).To(BeNil())
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+		})
+
+		It("should transition to StateList on success", func() {
+			intent.SetState(burst_management.StateInferringSkills)
+
+			intent.Update(burst_management.SkillsCreatedMsg{
+				Skills: []*career.Skill{{ID: "s1", Name: "Go"}},
+			})
+
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+		})
+
+		It("should transition to StateList on error", func() {
+			intent.SetState(burst_management.StateInferringSkills)
+
+			intent.Update(burst_management.SkillsCreatedMsg{
+				Error: context.DeadlineExceeded,
+			})
+
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
 		})
 	})
 })

@@ -129,6 +129,11 @@ func (i *Intent) GetFeedbackModal() *feedback.Modal {
 	return i.feedbackModal
 }
 
+// GetLoadingModal returns the current loading modal for testing.
+func (i *Intent) GetLoadingModal() *feedback.Modal {
+	return i.loadingModal
+}
+
 // GetSkills provides access to the loaded skills for testing and screen rendering.
 //
 // Returns: the current slice of skills held by the intent.
