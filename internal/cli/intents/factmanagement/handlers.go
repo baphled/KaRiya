@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/baphled/kariya/internal/cli/intents"
-	"github.com/baphled/kariya/internal/domain/career"
+	factmodals "github.com/baphled/kariya/internal/cli/screens/facts/modals"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -58,9 +58,8 @@ func (i *Intent) handleListKeyActions(msg tea.KeyMsg) tea.Cmd {
 
 	case "n":
 		i.context.StartNewFact()
-		i.editModal = intents.NewEditFactModal(i.context.EditingFact)
+		i.editModal = factmodals.NewEditFactModal(i.context.EditingFact)
 		i.state = StateEditor
-		// Return form init command to properly initialize the huh form.
 		return i.editModal.Init()
 
 	case "e":
@@ -85,9 +84,8 @@ func (i *Intent) handleEditKeyInList() tea.Cmd {
 	i.syncTableSelection()
 	if i.context.SelectedFact != nil {
 		i.context.StartEditFact(i.context.SelectedFact)
-		i.editModal = intents.NewEditFactModal(i.context.EditingFact)
+		i.editModal = factmodals.NewEditFactModal(i.context.EditingFact)
 		i.state = StateEditor
-		// Return form init command to properly initialize the huh form.
 		return i.editModal.Init()
 	}
 	return nil
@@ -135,9 +133,8 @@ func (i *Intent) handleViewState(msg tea.Msg) tea.Cmd {
 	case "e":
 		if i.context.SelectedFact != nil {
 			i.context.StartEditFact(i.context.SelectedFact)
-			i.editModal = intents.NewEditFactModal(i.context.EditingFact)
+			i.editModal = factmodals.NewEditFactModal(i.context.EditingFact)
 			i.state = StateEditor
-			// Return form init command to properly initialize the huh form.
 			return i.editModal.Init()
 		}
 
@@ -213,7 +210,7 @@ func (i *Intent) cancelEditorAndReturn() {
 }
 
 // handleEditorModalResult handles the result from the editor modal.
-func (i *Intent) handleEditorModalResult(result *intents.ModalEditResult[*career.Fact]) {
+func (i *Intent) handleEditorModalResult(result *factmodals.EditResult) {
 	if result.Accepted {
 		i.applyEditorChanges(result)
 	}
@@ -231,7 +228,7 @@ func (i *Intent) handleEditorModalResult(result *intents.ModalEditResult[*career
 }
 
 // applyEditorChanges applies changes from the modal and saves the fact.
-func (i *Intent) applyEditorChanges(result *intents.ModalEditResult[*career.Fact]) {
+func (i *Intent) applyEditorChanges(result *factmodals.EditResult) {
 	// Apply changes from the modal to the editing fact.
 	i.context.EditingFact.Text = result.Modified.Text
 	i.context.EditingFact.CompetencyCategories = result.Modified.CompetencyCategories
