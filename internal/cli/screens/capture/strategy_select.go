@@ -21,7 +21,7 @@ import (
 // - Esc: Cancel and return to main menu
 //
 // Related:
-// - internal/cli/intents/capture_event.go (CaptureStrategy constants)
+// - internal/cli/intents/captureevent/constants.go (CaptureStrategy constants)
 // - internal/cli/screens/base/select_screen.go (SelectScreen[T])
 // - tasks/tasks-42-tui-architecture-refactor.md (Phase 1: CaptureEvent Migration).
 type StrategySelectScreen struct {

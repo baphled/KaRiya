@@ -1,0 +1,343 @@
+package captureevent
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/baphled/kariya/internal/cli/behaviors"
+	"github.com/baphled/kariya/internal/cli/intents"
+	"github.com/baphled/kariya/internal/cli/models"
+	"github.com/baphled/kariya/internal/cli/screens"
+	"github.com/baphled/kariya/internal/domain/career"
+	burstfact "github.com/baphled/kariya/internal/service/career/burstfact"
+	tea "github.com/charmbracelet/bubbletea"
+)
+
+// handleScreenResult dispatches a screen result to the appropriate handler method.
+//
+// Returns:
+//   - A tea.Cmd from the matched handler, or nil.
+func (i *Intent) handleScreenResult(result screens.ScreenResult) tea.Cmd {
+	return behaviors.NewScreenResultDispatcher(i).Dispatch(result)
+}
+
+// HandleNavigate processes navigation results from screens.
+//
+// Expected:
+//   - result.Data() is either a string action ("edit_metadata", "edit_bursts",
+//     "edit_facts") or a CaptureStrategy value.
+//
+// Returns:
+//   - A tea.Cmd to initialise the appropriate modal or screen.
+//   - nil and marks intent as failed if data type is unrecognised.
+//
+// Side effects:
+//   - Sets editing mode and creates modal instances for edit actions.
+//   - Transitions to the form screen for strategy selection.
+//
+// Implements behaviors.ScreenResultHandler.
+func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
+	data := result.Data()
+
+	if action, ok := data.(string); ok {
+		switch action {
+		case "edit_metadata":
+			if i.reviewState == nil || i.reviewState.Event == nil {
+				return i.setFailedCmd("NO_EVENT", "No event to edit", nil)
+			}
+			if i.context.CareerService == nil {
+				return i.setFailedCmd("NO_SERVICE", "Career service not available for metadata editing", nil)
+			}
+			i.reviewState.EditingMode = EditingModeMetadata
+			i.reviewState.metadataModal = models.NewMetadataEditorModelNew(
+				i.reviewState.Event,
+				i.context.CareerService,
+				i.context.CLIEventService,
+				context.Background(),
+				i.terminalDimensions(),
+			)
+			return i.reviewState.metadataModal.Init()
+
+		case "edit_bursts":
+			if i.context.CareerService == nil {
+				return i.setFailedCmd("NO_SERVICE", "Career service not available for burst editing", nil)
+			}
+			i.reviewState.EditingMode = EditingModeBursts
+			var suggestions []burstfact.BurstSuggestion
+			for _, b := range i.reviewState.InferredBursts {
+				suggestions = append(suggestions, burstfact.BurstSuggestion{
+					Name:        b.Name,
+					Description: b.Description,
+				})
+			}
+			i.reviewState.burstModal = models.NewBurstSuggestionModelNew(
+				i.context.CareerService,
+				suggestions,
+				context.Background(),
+			)
+			return i.reviewState.burstModal.Init()
+
+		case "edit_facts":
+			if i.context.CareerService == nil {
+				return i.setFailedCmd("NO_SERVICE", "Career service not available for fact editing", nil)
+			}
+			i.reviewState.EditingMode = EditingModeFacts
+			var fact *career.Fact
+			if len(i.reviewState.InferredFacts) > 0 {
+				fact = i.reviewState.InferredFacts[0]
+			} else {
+				fact = &career.Fact{Text: ""}
+			}
+			i.reviewState.factModal = models.NewFactEditorModelNew(
+				fact,
+				i.context.CareerService,
+				context.Background(),
+			)
+			return i.reviewState.factModal.Init()
+
+		default:
+			return i.setFailedCmd("INVALID_NAVIGATION", "Unknown navigation action: "+action, nil)
+		}
+	}
+
+	if strategy, ok := data.(CaptureStrategy); ok {
+		i.strategy = strategy
+		return i.transitionToFormScreen(strategy)
+	}
+
+	return i.setFailedCmd("INVALID_NAVIGATION_DATA", fmt.Sprintf("Invalid navigation data type: %T", data), nil)
+}
+
+// HandleCancel processes cancellation results from screens.
+//
+// Expected: the cancel result originates from the currently active screen.
+//
+// Returns:
+//   - nil after marking the intent cancelled (from StateChooseStrategy or
+//     StateForm with a previous event).
+//   - A tea.Cmd to transition back to the strategy or form screen.
+//
+// Side effects:
+//   - Marks the intent as cancelled when no back-navigation is possible.
+//   - Transitions to a prior state when cancellation acts as "go back".
+func (i *Intent) HandleCancel(_ *screens.CancelResult) tea.Cmd {
+	switch i.currentState {
+	case StateChooseStrategy:
+		i.setCancelled()
+		return nil
+
+	case StateForm:
+		if i.context.PreviousEvent != nil {
+			i.setCancelled()
+			return nil
+		}
+		return i.transitionToStrategyScreen()
+
+	case StateReview:
+		return i.transitionToFormScreen(i.strategy)
+
+	case StateSubmit:
+		return nil
+
+	default:
+		return i.setFailedCmd("INVALID_CANCEL_STATE", fmt.Sprintf("Cannot cancel from state: %s", i.currentState), nil)
+	}
+}
+
+// HandleSubmit processes form and data submission results from screens.
+//
+// Expected:
+//   - result.Data() is a *career.Event (StateForm), map[string]interface{} with
+//     "event", "bursts", "facts" keys (StateReview/StateSubmit).
+//
+// Returns:
+//   - A tea.Cmd to show the submit modal or nil on completion.
+//   - A failure command if the data type is unrecognised or validation fails.
+//
+// Side effects:
+//   - Initialises review state from form data.
+//   - Updates accepted bursts/facts from review data.
+//   - Completes the intent with final result on submit confirmation.
+//
+// Implements behaviors.ScreenResultHandler.
+func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
+	data := result.Data()
+
+	switch i.currentState {
+	case StateForm:
+		if event, ok := data.(*career.Event); ok {
+			if err := event.Validate(); err != nil {
+				return i.setFailedCmd("VALIDATION_ERROR", fmt.Sprintf("Event validation failed: %v", err), err)
+			}
+
+			i.reviewState = &ReviewInferredEventState{
+				Event:          event,
+				InferredBursts: make([]*career.Burst, 0),
+				InferredFacts:  make([]*career.Fact, 0),
+				AcceptedBursts: make([]*career.Burst, 0),
+				AcceptedFacts:  make([]*career.Fact, 0),
+				RejectedItems:  make(map[string]string),
+			}
+
+			return i.showSubmitModal()
+		}
+		return i.setFailedCmd("INVALID_FORM_DATA", fmt.Sprintf("Invalid form data type: %T", data), nil)
+
+	case StateReview:
+		if reviewData, ok := data.(map[string]interface{}); ok {
+			event, eventOK := reviewData["event"].(*career.Event)
+			if !eventOK {
+				return i.setFailedCmd("INVALID_REVIEW_DATA", "Review data missing valid event", nil)
+			}
+			bursts, _ := reviewData["bursts"].([]*career.Burst)
+			facts, _ := reviewData["facts"].([]*career.Fact)
+
+			i.reviewState.Event = event
+			i.reviewState.AcceptedBursts = bursts
+			i.reviewState.AcceptedFacts = facts
+
+			// Post-save review: event already persisted, just complete the intent.
+			if i.postSaveReview {
+				i.result = &intents.IntentResult[*Result]{
+					Status: intents.Completed,
+					Data: &Result{
+						Event:  event,
+						Bursts: bursts,
+						Facts:  facts,
+					},
+				}
+				i.active = false
+				return nil
+			}
+
+			return i.showSubmitModal()
+		}
+		return i.setFailedCmd("INVALID_REVIEW_DATA", fmt.Sprintf("Invalid review data type: %T", data), nil)
+
+	case StateSubmit:
+		if submitData, ok := data.(map[string]interface{}); ok {
+			event, eventOK := submitData["event"].(*career.Event)
+			if !eventOK {
+				return i.setFailedCmd("INVALID_SUBMIT_DATA", "Submit data missing valid event", nil)
+			}
+			bursts, _ := submitData["bursts"].([]*career.Burst)
+			facts, _ := submitData["facts"].([]*career.Fact)
+
+			i.result = &intents.IntentResult[*Result]{
+				Status: intents.Completed,
+				Data: &Result{
+					Event:  event,
+					Bursts: bursts,
+					Facts:  facts,
+				},
+			}
+			i.active = false
+			return nil
+		}
+		return i.setFailedCmd("INVALID_SUBMIT_DATA", fmt.Sprintf("Invalid submit data type: %T", data), nil)
+
+	default:
+		return i.setFailedCmd("INVALID_SUBMIT_STATE", fmt.Sprintf("Cannot submit from state: %s", i.currentState), nil)
+	}
+}
+
+// HandleError processes error results from screens.
+//
+// Expected:
+//   - result.Data() is a map[string]interface{} with "error" (error) and
+//     "message" (string) keys, or any value convertible to a string.
+//
+// Returns:
+//   - nil after marking the intent as failed.
+//
+// Side effects:
+//   - Marks the intent as failed with the extracted error details.
+//
+// Implements behaviors.ScreenResultHandler.
+func (i *Intent) HandleError(result *screens.ErrorResult) tea.Cmd {
+	data := result.Data()
+	if errorData, ok := data.(map[string]interface{}); ok {
+		err, _ := errorData["error"].(error)
+		msg, _ := errorData["message"].(string)
+		if msg == "" {
+			msg = "Unknown screen error"
+		}
+		return i.setFailedCmd("SCREEN_ERROR", msg, err)
+	}
+	return i.setFailedCmd("SCREEN_ERROR", "Unknown screen error", fmt.Errorf("%v", data))
+}
+
+// updateEditingModal handles messages when an editing modal is active in the
+// screens architecture path.
+//
+// Expected:
+//   - reviewState.EditingMode is not EditingModeNone.
+//   - The corresponding modal (metadataModal, burstModal, factModal) is non-nil.
+//
+// Returns:
+//   - nil on escape key (closes the modal).
+//   - A tea.Cmd from the active modal's Update method.
+//
+// Side effects:
+//   - Clears all modals and resets EditingMode to EditingModeNone on escape.
+//   - Updates the event from metadata modal on submission.
+//   - Resets editing state when a modal is submitted or cancelled.
+func (i *Intent) updateEditingModal(msg tea.Msg) tea.Cmd {
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		if keyMsg.Type == tea.KeyEsc {
+			i.reviewState.metadataModal = nil
+			i.reviewState.burstModal = nil
+			i.reviewState.factModal = nil
+			i.reviewState.EditingMode = EditingModeNone
+			return nil
+		}
+	}
+
+	switch i.reviewState.EditingMode {
+	case EditingModeMetadata:
+		if i.reviewState.metadataModal != nil {
+			modal, cmd := i.reviewState.metadataModal.Update(msg)
+			if typed, ok := modal.(*models.MetadataEditorModelNew); ok {
+				i.reviewState.metadataModal = typed
+			}
+
+			if i.reviewState.metadataModal.IsSubmitted() {
+				i.reviewState.Event = i.reviewState.metadataModal.GetEvent()
+				i.reviewState.metadataModal = nil
+				i.reviewState.EditingMode = EditingModeNone
+			} else if i.reviewState.metadataModal.IsCancelled() {
+				i.reviewState.metadataModal = nil
+				i.reviewState.EditingMode = EditingModeNone
+			}
+			return cmd
+		}
+
+	case EditingModeBursts:
+		if i.reviewState.burstModal != nil {
+			modal, cmd := i.reviewState.burstModal.Update(msg)
+			if typed, ok := modal.(*models.BurstSuggestionModelNew); ok {
+				i.reviewState.burstModal = typed
+			}
+			return cmd
+		}
+
+	case EditingModeFacts:
+		if i.reviewState.factModal != nil {
+			modal, cmd := i.reviewState.factModal.Update(msg)
+			if typed, ok := modal.(*models.FactEditorModelNew); ok {
+				i.reviewState.factModal = typed
+			}
+
+			if i.reviewState.factModal.IsSubmitted() {
+				i.reviewState.factModal = nil
+				i.reviewState.EditingMode = EditingModeNone
+			} else if i.reviewState.factModal.IsCancelled() {
+				i.reviewState.factModal = nil
+				i.reviewState.EditingMode = EditingModeNone
+			}
+			return cmd
+		}
+	}
+
+	return nil
+}

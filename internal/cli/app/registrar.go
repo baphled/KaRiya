@@ -6,6 +6,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/intents/browsetimeline"
 	burstmanagement "github.com/baphled/kariya/internal/cli/intents/burst_management"
+	"github.com/baphled/kariya/internal/cli/intents/captureevent"
 	"github.com/baphled/kariya/internal/cli/intents/factmanagement"
 	"github.com/baphled/kariya/internal/cli/intents/skillsmanagement"
 	"github.com/baphled/kariya/internal/cli/screens"
@@ -70,13 +71,13 @@ func (r *DefaultIntentRegistrar) registerCaptureEvent(router *intents.DefaultInt
 			r.config.Log.Error("Failed to create CaptureEvent intent: missing required services")
 			return nil
 		}
-		captureCtx := &intents.CaptureEventContext{
+		captureCtx := &captureevent.IntentContext{
 			CaptureStrategy: "manual",
 			Metadata:        make(map[string]string),
 			CLIEventService: r.config.CLIService,
 			CareerService:   r.config.CareerService,
 		}
-		intent, err := intents.NewCaptureEventIntent(captureCtx)
+		intent, err := captureevent.NewIntent(captureCtx)
 		if err != nil {
 			r.config.Log.Error("Failed to create CaptureEvent intent: %v", err)
 			return nil

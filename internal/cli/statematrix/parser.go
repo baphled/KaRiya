@@ -95,15 +95,62 @@ func ParseScreenFile(filename string) ComponentInfo {
 	return component
 }
 
+// packageDisplayNames maps concatenated Go package names (no underscores)
+// to their proper display names. Go package naming convention (ST1003)
+// requires lowercase without underscores, but display names need
+// word boundaries for readability in generated documentation.
+var packageDisplayNames = map[string]string{
+	"browsetimeline":   "BrowseTimeline",
+	"captureevent":     "CaptureEvent",
+	"factmanagement":   "FactManagement",
+	"skillsmanagement": "SkillsManagement",
+}
+
 // extractIntentName derives the intent name from the filename.
+//
+// Supports both flat structure (browse_timeline.go -> BrowseTimeline)
+// and subdirectory structure (captureevent/constants.go -> CaptureEvent).
+// For subdirectory files (constants.go, intent.go, etc.), the parent
+// directory name is used instead of the filename.
 func extractIntentName(filename string) string {
 	base := filepath.Base(filename)
-	// Remove _intent.go or .go suffix
-	name := strings.TrimSuffix(base, "_intent.go")
-	name = strings.TrimSuffix(name, ".go")
-	// Convert snake_case to TitleCase
+
+	if isStandardSubdirectoryFile(base) {
+		if resolved, ok := resolveSubdirectoryName(filename); ok {
+			return resolved
+		}
+	} else {
+		base = strings.TrimSuffix(base, "_intent.go")
+		base = strings.TrimSuffix(base, ".go")
+	}
+
+	return snakeToTitle(base)
+}
+
+func isStandardSubdirectoryFile(base string) bool {
+	standardFiles := map[string]bool{
+		"intent.go": true, "constants.go": true, "context.go": true,
+		"result.go": true, "messages.go": true, "types.go": true,
+		"handlers.go": true, "helpers.go": true, "interfaces.go": true,
+		"filters.go": true,
+	}
+	return standardFiles[base]
+}
+
+func resolveSubdirectoryName(filename string) (string, bool) {
+	dir := filepath.Base(filepath.Dir(filename))
+	if dir == "." || dir == "intents" {
+		return "", false
+	}
+	if displayName, ok := packageDisplayNames[dir]; ok {
+		return displayName, true
+	}
+	return snakeToTitle(dir), true
+}
+
+func snakeToTitle(s string) string {
 	caser := cases.Title(language.English)
-	parts := strings.Split(name, "_")
+	parts := strings.Split(s, "_")
 	for i := range parts {
 		parts[i] = caser.String(parts[i])
 	}

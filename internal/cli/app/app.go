@@ -5,6 +5,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/bootstrap"
 	"github.com/baphled/kariya/internal/cli/intents"
+	"github.com/baphled/kariya/internal/cli/intents/captureevent"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/terminal"
 	"github.com/baphled/kariya/internal/cli/themes"
@@ -242,7 +243,7 @@ func (m *Model) handleDefaultMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // handleEditEventRequest handles cross-intent navigation for editing events.
 func (m *Model) handleEditEventRequest(editMsg intents.RequestEditEventMsg) (tea.Model, tea.Cmd) {
-	captureCtx := &intents.CaptureEventContext{
+	captureCtx := &captureevent.IntentContext{
 		CaptureStrategy: "manual",
 		PreviousEvent:   editMsg.Event,
 		Metadata:        make(map[string]string),
@@ -252,7 +253,7 @@ func (m *Model) handleEditEventRequest(editMsg intents.RequestEditEventMsg) (tea
 
 	// #nosec G104 -- RegisterIntent only errors on duplicate registration which cannot happen here
 	m.intentRouter.RegisterIntent("capture_event_edit", func() intents.Intent {
-		intent, err := intents.NewCaptureEventIntent(captureCtx)
+		intent, err := captureevent.NewIntent(captureCtx)
 		if err != nil {
 			m.logger.Error("Failed to create CaptureEvent intent for editing: %v", err)
 			return nil

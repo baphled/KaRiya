@@ -12,6 +12,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/app"
 	"github.com/baphled/kariya/internal/cli/bootstrap"
 	"github.com/baphled/kariya/internal/cli/intents"
+	"github.com/baphled/kariya/internal/cli/intents/captureevent"
 	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/config"
@@ -755,20 +756,20 @@ func (e *TestEnv) processCmdResult(msg tea.Msg) {
 		// Recursively execute any returned command
 		e.executeCmd(nextCmd)
 
-	case intents.SubmitCompleteMsg, intents.SubmitErrorMsg:
+	case captureevent.SubmitCompleteMsg, captureevent.SubmitErrorMsg:
 		// Submit completion - essential for submit → complete state transition
 		modelInterface, nextCmd := e.Model.Update(msg)
 		e.Model = modelInterface.(*app.Model)
 		// For SubmitCompleteMsg, immediately send DismissModalMsg to skip the 2s timer
-		if _, ok := msg.(intents.SubmitCompleteMsg); ok {
+		if _, ok := msg.(captureevent.SubmitCompleteMsg); ok {
 			// Skip the tea.Tick timer by directly sending DismissModalMsg
-			modelInterface, nextCmd = e.Model.Update(intents.DismissModalMsg{})
+			modelInterface, nextCmd = e.Model.Update(captureevent.DismissModalMsg{})
 			e.Model = modelInterface.(*app.Model)
 		}
 		// Recursively execute any returned command
 		e.executeCmd(nextCmd)
 
-	case intents.DismissModalMsg:
+	case captureevent.DismissModalMsg:
 		// Modal dismissal - essential for success modal → enrichment review transition
 		modelInterface, nextCmd := e.Model.Update(msg)
 		e.Model = modelInterface.(*app.Model)

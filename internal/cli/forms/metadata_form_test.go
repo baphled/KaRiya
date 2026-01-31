@@ -158,4 +158,99 @@ var _ = Describe("MetadataForm", func() {
 			Expect(form).NotTo(BeNil())
 		})
 	})
+
+	Describe("Height-aware metadata forms", func() {
+		It("should create a height-constrained form via NewMetadataEditorFormWithHeight", func() {
+			availableTags := []string{"go", "python", "testing"}
+			availableCategories := []string{"technical", "leadership"}
+			availableSkills := []*career.Skill{}
+
+			form := forms.NewMetadataEditorFormWithHeight(
+				testEvent, availableTags, availableCategories, availableSkills, 20,
+			)
+
+			Expect(form).NotTo(BeNil())
+		})
+
+		It("should create a height-constrained form with data via NewMetadataEditorFormWithDataAndHeight", func() {
+			data := &forms.MetadataFormData{
+				Date:       "2024-01-15",
+				Company:    "Height Test Co",
+				Project:    "Viewport Test",
+				Tags:       []string{"tag1"},
+				Categories: []string{"cat1"},
+			}
+
+			availableTags := []string{"tag1", "tag2", "tag3"}
+			availableCategories := []string{"cat1", "cat2"}
+			availableSkills := []*career.Skill{}
+
+			form := forms.NewMetadataEditorFormWithDataAndHeight(
+				data, availableTags, availableCategories, availableSkills, 20,
+			)
+
+			Expect(form).NotTo(BeNil())
+		})
+
+		It("should create a dimension-constrained form with fixed confirm", func() {
+			data := &forms.MetadataFormData{
+				Date:       "2024-01-15",
+				Company:    "Dimension Co",
+				Project:    "Modal Project",
+				Tags:       []string{"tag1"},
+				Categories: []string{"cat1"},
+			}
+
+			availableTags := []string{"tag1", "tag2", "tag3"}
+			availableCategories := []string{"cat1", "cat2"}
+			availableSkills := []*career.Skill{}
+
+			form := forms.NewMetadataEditorFormWithDataAndDimensions(
+				data, forms.MetadataFormConfig{
+					AvailableTags:       availableTags,
+					AvailableCategories: availableCategories,
+					AvailableSkills:     availableSkills,
+					Width:               74,
+					Height:              20,
+				},
+			)
+
+			Expect(form).NotTo(BeNil())
+		})
+
+		It("should use DefaultFormHeight to calculate appropriate height", func() {
+			height := forms.DefaultFormHeight(40)
+			Expect(height).To(BeNumerically(">=", 10))
+			Expect(height).To(BeNumerically("<=", 30))
+		})
+
+		It("should enforce minimum height for small terminals", func() {
+			height := forms.DefaultFormHeight(15)
+			Expect(height).To(BeNumerically(">=", 10))
+		})
+	})
+
+	Describe("Modal form dimensions", func() {
+		It("should calculate ModalFormHeight with proper overhead", func() {
+			// A 40-line terminal should give reasonable modal form height.
+			height := forms.ModalFormHeight(40)
+			Expect(height).To(BeNumerically(">=", 12))
+			Expect(height).To(Equal(40 - 21))
+		})
+
+		It("should enforce minimum ModalFormHeight for small terminals", func() {
+			height := forms.ModalFormHeight(20)
+			Expect(height).To(BeNumerically(">=", 12))
+		})
+
+		It("should calculate ModalFormWidth from modal width", func() {
+			width := forms.ModalFormWidth(80)
+			Expect(width).To(Equal(74))
+		})
+
+		It("should enforce minimum ModalFormWidth", func() {
+			width := forms.ModalFormWidth(20)
+			Expect(width).To(BeNumerically(">=", 30))
+		})
+	})
 })

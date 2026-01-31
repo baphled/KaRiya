@@ -86,14 +86,126 @@ var _ = Describe("EventReviewScreen", func() {
 			Expect(view).To(ContainSubstring("Implemented authentication system"))
 		})
 
+		It("should display event date", func() {
+			view := screen.View()
+			Expect(view).To(ContainSubstring(testEvent.Date.Format("2006-01-02")))
+		})
+
+		It("should display event company", func() {
+			view := screen.View()
+			Expect(view).To(ContainSubstring("TechCorp"))
+		})
+
+		It("should display event project", func() {
+			view := screen.View()
+			Expect(view).To(ContainSubstring("Auth Service"))
+		})
+
 		It("should display bursts", func() {
 			view := screen.View()
 			Expect(view).To(ContainSubstring("OAuth2 Integration"))
 		})
 
+		It("should display burst descriptions", func() {
+			view := screen.View()
+			Expect(view).To(ContainSubstring("OAuth2 with multiple providers"))
+		})
+
 		It("should display facts", func() {
 			view := screen.View()
 			Expect(view).To(ContainSubstring("Reduced login time"))
+		})
+
+		It("should display title using UIKit primitives", func() {
+			view := screen.View()
+			Expect(view).To(ContainSubstring("Review Enrichment Results"))
+		})
+
+		It("should display section headers using UIKit primitives", func() {
+			view := screen.View()
+			Expect(view).To(ContainSubstring("Event Details"))
+			Expect(view).To(ContainSubstring("Inferred Bursts"))
+			Expect(view).To(ContainSubstring("Inferred Facts"))
+		})
+
+		Context("with nil event", func() {
+			It("should show no event data message", func() {
+				screen = capture.NewEventReviewScreen(breadcrumbs, nil, testBursts, testFacts)
+				view := screen.View()
+				Expect(view).To(ContainSubstring("No event data"))
+			})
+		})
+
+		Context("with empty bursts", func() {
+			It("should show no bursts detected message", func() {
+				screen = capture.NewEventReviewScreen(breadcrumbs, testEvent, nil, testFacts)
+				view := screen.View()
+				Expect(view).To(ContainSubstring("No bursts detected"))
+			})
+		})
+
+		Context("with empty facts", func() {
+			It("should show no facts detected message", func() {
+				screen = capture.NewEventReviewScreen(breadcrumbs, testEvent, testBursts, nil)
+				view := screen.View()
+				Expect(view).To(ContainSubstring("No facts detected"))
+			})
+		})
+
+		Context("with event missing optional fields", func() {
+			It("should omit company when empty", func() {
+				noCompanyEvent := &career.Event{
+					ID:   "evt-2",
+					Text: "Simple event",
+					Date: testEvent.Date,
+				}
+				screen = capture.NewEventReviewScreen(breadcrumbs, noCompanyEvent, nil, nil)
+				view := screen.View()
+				Expect(view).To(ContainSubstring("Simple event"))
+				Expect(view).NotTo(ContainSubstring("Company"))
+			})
+		})
+	})
+
+	Describe("Footer Rendering", func() {
+		It("should show confirm badge", func() {
+			view := screen.View()
+			Expect(view).To(ContainSubstring("Enter"))
+			Expect(view).To(ContainSubstring("Confirm"))
+		})
+
+		It("should show edit metadata badge", func() {
+			view := screen.View()
+			Expect(view).To(ContainSubstring("Edit metadata"))
+		})
+
+		It("should show edit bursts badge when bursts exist", func() {
+			view := screen.View()
+			Expect(view).To(ContainSubstring("Edit bursts"))
+		})
+
+		It("should show edit facts badge when facts exist", func() {
+			view := screen.View()
+			Expect(view).To(ContainSubstring("Edit facts"))
+		})
+
+		It("should hide edit bursts badge when no bursts", func() {
+			screen = capture.NewEventReviewScreen(breadcrumbs, testEvent, nil, testFacts)
+			view := screen.View()
+			Expect(view).NotTo(ContainSubstring("Edit bursts"))
+		})
+
+		It("should hide edit facts badge when no facts", func() {
+			screen = capture.NewEventReviewScreen(breadcrumbs, testEvent, testBursts, nil)
+			view := screen.View()
+			Expect(view).NotTo(ContainSubstring("Edit facts"))
+		})
+
+		It("should show back and quit badges", func() {
+			view := screen.View()
+			Expect(view).To(ContainSubstring("Esc"))
+			Expect(view).To(ContainSubstring("Back"))
+			Expect(view).To(ContainSubstring("Quit"))
 		})
 	})
 

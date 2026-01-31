@@ -48,7 +48,7 @@ var _ = Describe("MetadataEditorModelNew", func() {
 			UpdatedAt:  time.Now(),
 		}
 
-		model = models.NewMetadataEditorModelNew(event, service, cliService, ctx)
+		model = models.NewMetadataEditorModelNew(event, service, cliService, ctx, nil)
 	})
 
 	Describe("NewMetadataEditorModelNew", func() {
