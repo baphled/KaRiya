@@ -61,6 +61,8 @@ func NewMetadataEditorFormWithDataAndHeight(
 // NewMetadataEditorFormWithDataAndDimensions creates a dimension-constrained metadata form.
 // When height > 0, the form fields scroll with the submit button always visible.
 // When width > 0, the form content is constrained to that width.
+//
+//nolint:revive // argument-limit: public entry point consolidating all form parameters.
 func NewMetadataEditorFormWithDataAndDimensions(
 	data *MetadataFormData, availableTags, availableCategories []string, availableSkills []*career.Skill,
 	width, height int,
@@ -73,6 +75,8 @@ func NewMetadataEditorFormWithDataAndDimensions(
 // When height > 0, the form uses NewFormWithFixedConfirm so the submit
 // button remains visible while the fields group scrolls independently.
 // When height <= 0, all fields (including confirm) go in a single group.
+//
+//nolint:revive // argument-limit: internal builder mirrors public API parameters.
 func buildMetadataForm(
 	data *MetadataFormData, availableTags, availableCategories []string, availableSkills []*career.Skill,
 	width, height int,

@@ -115,32 +115,42 @@ var packageDisplayNames = map[string]string{
 func extractIntentName(filename string) string {
 	base := filepath.Base(filename)
 
-	// For subdirectory structure, use the parent directory name when the
-	// filename is a standard subdirectory file (intent.go, constants.go, etc.).
+	if isStandardSubdirectoryFile(base) {
+		if resolved, ok := resolveSubdirectoryName(filename); ok {
+			return resolved
+		}
+	} else {
+		base = strings.TrimSuffix(base, "_intent.go")
+		base = strings.TrimSuffix(base, ".go")
+	}
+
+	return snakeToTitle(base)
+}
+
+func isStandardSubdirectoryFile(base string) bool {
 	standardFiles := map[string]bool{
 		"intent.go": true, "constants.go": true, "context.go": true,
 		"result.go": true, "messages.go": true, "types.go": true,
 		"handlers.go": true, "helpers.go": true, "interfaces.go": true,
 		"filters.go": true,
 	}
-	if standardFiles[base] {
-		dir := filepath.Base(filepath.Dir(filename))
-		if dir != "." && dir != "intents" {
-			// Check known package display names for concatenated names.
-			if displayName, ok := packageDisplayNames[dir]; ok {
-				return displayName
-			}
-			base = dir
-		}
-	} else {
-		// Remove _intent.go or .go suffix for flat files.
-		base = strings.TrimSuffix(base, "_intent.go")
-		base = strings.TrimSuffix(base, ".go")
-	}
+	return standardFiles[base]
+}
 
-	// Convert snake_case to TitleCase.
+func resolveSubdirectoryName(filename string) (string, bool) {
+	dir := filepath.Base(filepath.Dir(filename))
+	if dir == "." || dir == "intents" {
+		return "", false
+	}
+	if displayName, ok := packageDisplayNames[dir]; ok {
+		return displayName, true
+	}
+	return snakeToTitle(dir), true
+}
+
+func snakeToTitle(s string) string {
 	caser := cases.Title(language.English)
-	parts := strings.Split(base, "_")
+	parts := strings.Split(s, "_")
 	for i := range parts {
 		parts[i] = caser.String(parts[i])
 	}

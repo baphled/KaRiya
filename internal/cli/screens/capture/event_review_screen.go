@@ -204,7 +204,7 @@ func (s *EventReviewScreen) renderBursts(th theme.Theme) string {
 		b.WriteString(primitives.Body(fmt.Sprintf("  %d. %s", i+1, burst.Name), th).Render())
 		b.WriteString("\n")
 		if burst.Description != "" {
-			b.WriteString(primitives.Muted(fmt.Sprintf("     %s", burst.Description), th).Render())
+			b.WriteString(primitives.Muted("     "+burst.Description, th).Render())
 			b.WriteString("\n")
 		}
 	}

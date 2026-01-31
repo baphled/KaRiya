@@ -110,6 +110,8 @@ type ReviewInferredEventState struct {
 //
 // Returns:
 //   - true if the intent has not yet completed, cancelled, or failed.
+//
+// Side effects: None.
 func (i *Intent) IsActive() bool {
 	return i.active
 }
@@ -119,6 +121,8 @@ func (i *Intent) IsActive() bool {
 // Returns:
 //   - The IntentResult containing status, data, and error information.
 //   - nil if the intent is still active.
+//
+// Side effects: None.
 func (i *Intent) GetResult() *intents.IntentResult[*Result] {
 	return i.result
 }
@@ -127,6 +131,8 @@ func (i *Intent) GetResult() *intents.IntentResult[*Result] {
 //
 // Returns:
 //   - The State value cast to string (e.g. "choose_strategy", "form").
+//
+// Side effects: None.
 func (i *Intent) GetState() string {
 	return string(i.currentState)
 }
@@ -135,6 +141,8 @@ func (i *Intent) GetState() string {
 //
 // Returns:
 //   - The CaptureForm, or nil if the intent is nil.
+//
+// Side effects: None.
 func (i *Intent) GetForm() *models.CaptureForm {
 	if i == nil {
 		return nil
@@ -157,6 +165,8 @@ func (i *Intent) SetStateForTesting(state State) {
 //
 // Returns:
 //   - The ReviewInferredEventState, or nil if the intent is nil.
+//
+// Side effects: None.
 func (i *Intent) GetReviewState() *ReviewInferredEventState {
 	return i.reviewState
 }

@@ -71,7 +71,7 @@ func BenchmarkIntentRouterActivation(b *testing.B) {
 	router := NewDefaultIntentRouter()
 	//nolint:errcheck // Benchmark setup - error handling not relevant.
 	router.RegisterIntent("test", func() Intent {
-		intent, _ := NewConfigureSystemIntent(context.Background())
+		intent, _ := NewConfigureSystemIntent(b.Context())
 		return intent
 	})
 

@@ -180,8 +180,7 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 // Returns:
 //   - A string containing the full terminal output for the current frame.
 //
-// View delegates to the active screen and overlays any visible modal
-// (submit progress/result or editing form).
+// Side effects: None.
 func (i *Intent) View() string {
 	if !i.active {
 		return "CaptureEvent intent is not active"
@@ -220,6 +219,8 @@ func (i *Intent) View() string {
 // Returns:
 //   - An IntentResult[interface{}] wrapping the typed result, or nil if
 //     the intent has not yet completed.
+//
+// Side effects: None.
 func (i *Intent) Result() *intents.IntentResult[interface{}] {
 	if i.result == nil {
 		return nil

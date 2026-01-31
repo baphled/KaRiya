@@ -110,6 +110,8 @@ func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 
 // HandleCancel processes cancellation results from screens.
 //
+// Expected: the cancel result originates from the currently active screen.
+//
 // Returns:
 //   - nil after marking the intent cancelled (from StateChooseStrategy or
 //     StateForm with a previous event).
@@ -118,8 +120,6 @@ func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 // Side effects:
 //   - Marks the intent as cancelled when no back-navigation is possible.
 //   - Transitions to a prior state when cancellation acts as "go back".
-//
-// Implements behaviors.ScreenResultHandler.
 func (i *Intent) HandleCancel(_ *screens.CancelResult) tea.Cmd {
 	switch i.currentState {
 	case StateChooseStrategy:
