@@ -53,6 +53,16 @@ type WizardBehavior[T any] struct {
 
 // NewWizardBehavior creates a new wizard behavior wrapping the given form and data.
 // The wizard starts visible and in an incomplete state.
+//
+// Expected:
+//   - form must be a non-nil WizardForm implementation.
+//   - data must be a non-nil pointer to the wizard's data struct.
+//
+// Returns:
+//   - A fully initialized WizardBehavior ready for use.
+//
+// Side effects:
+//   - None.
 func NewWizardBehavior[T any](form WizardForm, data *T) *WizardBehavior[T] {
 	return &WizardBehavior[T]{
 		form:    form,
@@ -61,7 +71,13 @@ func NewWizardBehavior[T any](form WizardForm, data *T) *WizardBehavior[T] {
 	}
 }
 
-// Init initializes the wizard's form. Returns nil if the wizard is not visible.
+// Init initializes the wizard's form.
+//
+// Returns:
+//   - A tea.Cmd from the form's Init, or nil if the wizard is not visible.
+//
+// Side effects:
+//   - Delegates to the form's Init method.
 func (w *WizardBehavior[T]) Init() tea.Cmd {
 	if !w.visible {
 		return nil
@@ -70,7 +86,15 @@ func (w *WizardBehavior[T]) Init() tea.Cmd {
 }
 
 // Update delegates the message to the form and checks for completion/abort.
-// Returns nil without processing if the wizard is not visible.
+//
+// Expected:
+//   - msg is any tea.Msg to forward to the form.
+//
+// Returns:
+//   - A tea.Cmd from the form's Update, or nil if not visible.
+//
+// Side effects:
+//   - Sets completed/cancelled flags and hides wizard when form finishes.
 func (w *WizardBehavior[T]) Update(msg tea.Msg) tea.Cmd {
 	if !w.visible {
 		return nil
@@ -92,6 +116,12 @@ func (w *WizardBehavior[T]) Update(msg tea.Msg) tea.Cmd {
 }
 
 // View returns the form's view, or empty string if the wizard is not visible.
+//
+// Returns:
+//   - The form's rendered view string, or empty string if hidden.
+//
+// Side effects:
+//   - None.
 func (w *WizardBehavior[T]) View() string {
 	if !w.visible {
 		return ""
@@ -100,73 +130,142 @@ func (w *WizardBehavior[T]) View() string {
 }
 
 // Data returns the wizard's data pointer.
+//
+// Returns:
+//   - A pointer to the wizard's data struct.
+//
+// Side effects:
+//   - None.
 func (w *WizardBehavior[T]) Data() *T {
 	return w.data
 }
 
 // Form returns the current WizardForm.
+//
+// Returns:
+//   - The current WizardForm implementation.
+//
+// Side effects:
+//   - None.
 func (w *WizardBehavior[T]) Form() WizardForm {
 	return w.form
 }
 
 // SetForm replaces the current form with a new one.
+//
+// Expected:
+//   - form must be a non-nil WizardForm implementation.
+//
+// Side effects:
+//   - Replaces the internal form reference.
 func (w *WizardBehavior[T]) SetForm(form WizardForm) {
 	w.form = form
 }
 
 // IsVisible returns whether the wizard is currently visible.
+//
+// Returns:
+//   - true if the wizard is visible, false otherwise.
+//
+// Side effects:
+//   - None.
 func (w *WizardBehavior[T]) IsVisible() bool {
 	return w.visible
 }
 
 // IsCompleted returns whether the wizard finished successfully.
+//
+// Returns:
+//   - true if the wizard completed, false otherwise.
+//
+// Side effects:
+//   - None.
 func (w *WizardBehavior[T]) IsCompleted() bool {
 	return w.completed
 }
 
 // IsCancelled returns whether the wizard was cancelled.
+//
+// Returns:
+//   - true if the wizard was cancelled, false otherwise.
+//
+// Side effects:
+//   - None.
 func (w *WizardBehavior[T]) IsCancelled() bool {
 	return w.cancelled
 }
 
 // IsSkipped returns whether the wizard was skipped.
+//
+// Returns:
+//   - true if the wizard was skipped, false otherwise.
+//
+// Side effects:
+//   - None.
 func (w *WizardBehavior[T]) IsSkipped() bool {
 	return w.skipped
 }
 
 // CurrentStep returns the form's current step index (0-based).
+//
+// Returns:
+//   - The current step index from the form.
+//
+// Side effects:
+//   - None.
 func (w *WizardBehavior[T]) CurrentStep() int {
 	return w.form.CurrentStep()
 }
 
 // TotalSteps returns the form's total number of steps.
+//
+// Returns:
+//   - The total step count from the form.
+//
+// Side effects:
+//   - None.
 func (w *WizardBehavior[T]) TotalSteps() int {
 	return w.form.TotalSteps()
 }
 
 // Show makes the wizard visible.
+//
+// Side effects:
+//   - Sets visible to true.
 func (w *WizardBehavior[T]) Show() {
 	w.visible = true
 }
 
 // Hide makes the wizard invisible.
+//
+// Side effects:
+//   - Sets visible to false.
 func (w *WizardBehavior[T]) Hide() {
 	w.visible = false
 }
 
 // Complete marks the wizard as completed and hides it.
+//
+// Side effects:
+//   - Sets completed to true and visible to false.
 func (w *WizardBehavior[T]) Complete() {
 	w.completed = true
 	w.visible = false
 }
 
 // Cancel marks the wizard as cancelled and hides it.
+//
+// Side effects:
+//   - Sets cancelled to true and visible to false.
 func (w *WizardBehavior[T]) Cancel() {
 	w.cancelled = true
 	w.visible = false
 }
 
 // Skip marks the wizard as skipped and completed, then hides it.
+//
+// Side effects:
+//   - Sets skipped and completed to true, visible to false.
 func (w *WizardBehavior[T]) Skip() {
 	w.skipped = true
 	w.completed = true
@@ -174,6 +273,9 @@ func (w *WizardBehavior[T]) Skip() {
 }
 
 // Reset clears completion, cancellation, and skip flags, and shows the wizard.
+//
+// Side effects:
+//   - Resets completed, cancelled, skipped to false and visible to true.
 func (w *WizardBehavior[T]) Reset() {
 	w.completed = false
 	w.cancelled = false
