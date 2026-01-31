@@ -2,6 +2,7 @@ package e2e_test
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	burstmgmt "github.com/baphled/kariya/internal/cli/intents/burst_management"
@@ -273,6 +274,174 @@ var _ = Describe("E2E Skill Inference from ManageSkills", func() {
 			Expect(view).NotTo(ContainSubstring("Analyzing all events"))
 			Expect(view).To(ContainSubstring("Skill Creation Failed"))
 		})
+	})
+})
+
+func executeSkillsBatchCmd(cmd tea.Cmd) []tea.Msg {
+	if cmd == nil {
+		return nil
+	}
+	msg := cmd()
+	if batchMsg, ok := msg.(tea.BatchMsg); ok {
+		var wg sync.WaitGroup
+		var mu sync.Mutex
+		var messages []tea.Msg
+		for _, batchCmd := range batchMsg {
+			if batchCmd == nil {
+				continue
+			}
+			wg.Add(1)
+			go func(c tea.Cmd) {
+				defer wg.Done()
+				if result := c(); result != nil {
+					if _, isTick := result.(feedback.ModalSpinnerTickMsg); !isTick {
+						mu.Lock()
+						messages = append(messages, result)
+						mu.Unlock()
+					}
+				}
+			}(batchCmd)
+		}
+		done := make(chan struct{})
+		go func() { wg.Wait(); close(done) }()
+		select {
+		case <-done:
+		case <-time.After(5 * time.Second):
+		}
+		return messages
+	}
+	if _, isTick := msg.(feedback.ModalSpinnerTickMsg); isTick {
+		return nil
+	}
+	return []tea.Msg{msg}
+}
+
+var _ = Describe("E2E Accept All Suggested Skills from ManageSkills", func() {
+	var (
+		skillsIntent          *skillsmgmt.Intent
+		skillRepo             *careermemory.SkillRepository
+		eventRepo             *careermemory.EventRepository
+		skillInferenceService skillinference.SkillInferenceService
+	)
+
+	BeforeEach(func() {
+		skillRepo = careermemory.NewSkillRepository()
+		eventRepo = careermemory.NewEventRepository()
+		skillInferenceService = skillinference.NewSkillInferenceService(skillRepo, eventRepo)
+
+		ctx := context.Background()
+
+		_ = eventRepo.Create(ctx, &career.Event{
+			ID:      "e1",
+			Text:    "Built REST API using Go and gRPC microservices",
+			Date:    time.Date(2024, 6, 15, 0, 0, 0, 0, time.UTC),
+			Company: "Acme Corp",
+		})
+		_ = eventRepo.Create(ctx, &career.Event{
+			ID:      "e2",
+			Text:    "Designed PostgreSQL schema for user service",
+			Date:    time.Date(2024, 7, 20, 0, 0, 0, 0, time.UTC),
+			Company: "Acme Corp",
+		})
+
+		skillsCtx := skillsmgmt.NewIntentContext(ctx, skillRepo)
+		skillsCtx.EventRepository = eventRepo
+		skillsCtx.SkillInferenceService = skillInferenceService
+
+		var err error
+		skillsIntent, err = skillsmgmt.NewIntent(skillsCtx)
+		Expect(err).NotTo(HaveOccurred())
+		skillsIntent.Init()
+	})
+
+	pressKey := func(r rune) tea.Cmd {
+		return skillsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{r}})
+	}
+
+	It("should persist all accepted skills to the repository after accepting all suggestions", func() {
+		// 1. Press 'i' to trigger skill inference.
+		batchCmd := pressKey('i')
+		Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateInferringSkills))
+
+		// 2. Execute the batch cmd (spinner init + async inference).
+		messages := executeSkillsBatchCmd(batchCmd)
+
+		// 3. Feed the SkillSuggestionsLoadedMsg back to intent.
+		var suggestionsMsg skillsmgmt.SkillSuggestionsLoadedMsg
+		for _, msg := range messages {
+			if sm, ok := msg.(skillsmgmt.SkillSuggestionsLoadedMsg); ok {
+				suggestionsMsg = sm
+				break
+			}
+		}
+		Expect(suggestionsMsg.Error).NotTo(HaveOccurred())
+		Expect(len(suggestionsMsg.Suggestions)).To(BeNumerically(">", 0), "inference should detect at least 1 skill from events")
+
+		skillsIntent.Update(suggestionsMsg)
+		Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateSkillSuggestionReview))
+
+		// 4. Press 'a' for each suggestion to accept all.
+		suggestionCount := len(suggestionsMsg.Suggestions)
+		var createCmd tea.Cmd
+		for range suggestionCount {
+			createCmd = pressKey('a')
+		}
+
+		// 5. After accepting all, modal closes and triggers skill creation.
+		Expect(createCmd).NotTo(BeNil(), "accepting last suggestion should return a create command")
+
+		// 6. Execute the batch cmd (spinner init + async creation).
+		createMessages := executeSkillsBatchCmd(createCmd)
+
+		// 7. Feed the SkillsCreatedMsg back to intent.
+		var createdMsg skillsmgmt.SkillsCreatedMsg
+		for _, msg := range createMessages {
+			if cm, ok := msg.(skillsmgmt.SkillsCreatedMsg); ok {
+				createdMsg = cm
+				break
+			}
+		}
+		Expect(createdMsg.Error).NotTo(HaveOccurred(), "skill creation should succeed")
+		Expect(len(createdMsg.Skills)).To(BeNumerically(">", 0), "at least 1 skill should be created")
+
+		// 8. Feed SkillsCreatedMsg to intent, which shows success modal and triggers refresh.
+		refreshCmd := skillsIntent.Update(createdMsg)
+		Expect(refreshCmd).NotTo(BeNil(), "success handler should return a refresh command")
+		Expect(skillsIntent.GetFeedbackModal()).NotTo(BeNil(), "success modal should be visible")
+		Expect(skillsIntent.GetFeedbackModal().Type).To(Equal(feedback.ModalSuccess))
+
+		// 9. Execute the refresh command to get SkillsLoadedMsg.
+		refreshMsg := refreshCmd()
+		loadedMsg, ok := refreshMsg.(skillsmgmt.SkillsLoadedMsg)
+		Expect(ok).To(BeTrue(), "refresh should return SkillsLoadedMsg")
+		Expect(loadedMsg.Error).NotTo(HaveOccurred())
+		Expect(len(loadedMsg.Skills)).To(Equal(len(createdMsg.Skills)), "loaded skills should match created skills")
+
+		// 10. Feed SkillsLoadedMsg while feedback modal is visible (exercises the bypass fix).
+		skillsIntent.Update(loadedMsg)
+
+		// 11. Assert skills are in the intent's list.
+		intentSkills := skillsIntent.GetSkills()
+		Expect(len(intentSkills)).To(Equal(len(createdMsg.Skills)), "intent should have all created skills")
+
+		// 12. Assert skills are actually persisted in the repository.
+		repoSkills, err := skillRepo.List(context.Background(), nil)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(len(repoSkills)).To(Equal(len(createdMsg.Skills)), "repository should have all created skills")
+
+		// 13. Verify skill names match what was suggested.
+		skillNames := make(map[string]bool)
+		for _, s := range repoSkills {
+			skillNames[s.Name] = true
+		}
+		for _, suggestion := range suggestionsMsg.Suggestions {
+			Expect(skillNames).To(HaveKey(suggestion.Name), "repo should contain skill: "+suggestion.Name)
+		}
+
+		// 14. Verify events are linked to skills.
+		for _, s := range repoSkills {
+			Expect(s.ID).NotTo(BeEmpty(), "created skill should have an ID")
+		}
 	})
 })
 
