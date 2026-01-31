@@ -1,12 +1,12 @@
 package components
 
 import (
+	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/uikit/containers"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/cli/uikit/theme"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -33,18 +33,12 @@ import (
 //	    // Use config to generate CV
 //	}
 type CVConfigWizardModal struct {
-	form *huh.Form
-	// formData holds the form state that is directly bound to huh form fields via pointers.
-	// Changes made through keyboard navigation and other interactions update this field automatically.
-	// Use syncFromFormData() to sync formData to data before reading configuration values.
+	wizard   *behaviors.WizardBehavior[CVConfigData]
+	form     *forms.WizardFormAdapter
 	formData *forms.CVConfigFormData
-	// data is the canonical configuration struct used outside the form.
-	// It must be synced from formData via syncFromFormData() before reading.
-	data           *CVConfigData
+	data     *CVConfigData
+
 	currentStep    int
-	visible        bool
-	completed      bool
-	skipped        bool
 	width          int
 	height         int
 	extractedTechs []ExtractedTechnology
@@ -92,11 +86,8 @@ func NewCVConfigWizardModal(width, height int) *CVConfigWizardModal {
 // NewCVConfigWizardModalWithProfiles creates a wizard modal with profile options.
 func NewCVConfigWizardModalWithProfiles(width, height int, profiles []ProfileOption) *CVConfigWizardModal {
 	modal := &CVConfigWizardModal{
-		data: &CVConfigData{
-			// No defaults on init - only set when skipping
-		},
+		data:           &CVConfigData{},
 		currentStep:    0,
-		visible:        true,
 		width:          width,
 		height:         height,
 		profileOptions: profiles,
@@ -104,25 +95,19 @@ func NewCVConfigWizardModalWithProfiles(width, height int, profiles []ProfileOpt
 	}
 
 	modal.buildForm()
+
+	wizard := behaviors.NewWizardBehavior[CVConfigData](modal.form, modal.data)
+	modal.wizard = wizard
+
 	return modal
 }
 
 // buildForm creates the huh form with 3 steps (groups).
 func (m *CVConfigWizardModal) buildForm() {
-	// Sync current form state before rebuilding to preserve selections
-	// Safe to call even when formData is nil (first call)
 	m.syncFromFormData()
 
-	// Calculate modal dimensions
-	modalWidth := m.width - 20
-	if modalWidth > 80 {
-		modalWidth = 80
-	}
-	if modalWidth < 50 {
-		modalWidth = 50
-	}
+	modalWidth := calcCVModalWidth(m.width)
 
-	// Convert component types to forms package types
 	formProfileOpts := make([]forms.ProfileOption, len(m.profileOptions))
 	for i, opt := range m.profileOptions {
 		formProfileOpts[i] = forms.ProfileOption{ID: opt.ID, Name: opt.Name}
@@ -133,10 +118,8 @@ func (m *CVConfigWizardModal) buildForm() {
 		formTechs[i] = forms.ExtractedTechnology{Name: tech.Name}
 	}
 
-	// Determine if specialist mode (single-select) based on TechFocus
 	singleTechSelect := m.data.TechFocus == "specialist"
 
-	// Store formData as field so huh pointer bindings persist
 	m.formData = &forms.CVConfigFormData{
 		ProfileID:    m.data.ProfileID,
 		Audience:     m.data.Audience,
@@ -149,7 +132,8 @@ func (m *CVConfigWizardModal) buildForm() {
 		CVLength:     m.data.CVLength,
 	}
 
-	m.form = forms.NewCVConfigForm(m.formData, formProfileOpts, formTechs, modalWidth, 0, singleTechSelect)
+	huhForm := forms.NewCVConfigForm(m.formData, formProfileOpts, formTechs, modalWidth, 0, singleTechSelect)
+	m.form = forms.NewWizardFormAdapter(huhForm, 3)
 }
 
 // Init initializes the wizard modal and its form.
@@ -162,71 +146,54 @@ func (m *CVConfigWizardModal) Init() tea.Cmd {
 
 // Update handles messages for the wizard modal.
 func (m *CVConfigWizardModal) Update(msg tea.Msg) tea.Cmd {
-	if !m.visible {
+	if !m.wizard.IsVisible() {
 		return nil
 	}
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+s": // Skip shortcut (only ctrl+s, not plain 's')
+		case "ctrl+s":
 			if !m.HasRequiredFields() {
-				// Don't skip if required fields missing - return early WITHOUT updating form
 				return nil
 			}
-			// Apply defaults for any empty fields
 			m.applyDefaults()
-			m.completed = true
-			m.skipped = true
-			m.visible = false
+			m.wizard.Skip()
 			return nil
 
 		case "esc":
-			// If form is nil or at first step, cancel wizard (close modal)
 			if m.form == nil || m.currentStep == 0 {
-				m.visible = false
+				m.wizard.Hide()
 				return nil
 			}
-			// Go back a step in the wizard
 			if m.currentStep > 0 {
 				m.currentStep--
-				// Skip TECH step backwards if techs not available
 				if m.currentStep == 1 && !m.techsAvailable {
 					m.currentStep = 0
 				}
 			}
-			// Pass Esc to form so it can navigate back between groups
-			// Don't return here - let form handle it below
 		}
 
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		// Rebuild form with new dimensions
 		m.buildForm()
+		if m.wizard != nil {
+			m.wizard.SetForm(m.form)
+		}
 		return m.form.Init()
 	}
 
-	// Update form
 	if m.form != nil {
-		// Track form state before update
-		prevState := m.form.State
+		wasCompleted := m.form.IsCompleted()
 
-		form, cmd := m.form.Update(msg)
-		if f, ok := form.(*huh.Form); ok {
-			m.form = f
-		}
+		cmd := m.form.Update(msg)
 
-		// Track step progression based on state changes
-		// When form progresses, increment step counter
-		if prevState == huh.StateNormal && m.form.State == huh.StateNormal {
-			// Form might have advanced to next group on Enter
-			// We detect this by checking if we're getting key messages
+		if !wasCompleted && !m.form.IsCompleted() {
 			if keyMsg, ok := msg.(tea.KeyMsg); ok {
 				if keyMsg.String() == "enter" && m.currentStep < 2 {
 					m.currentStep++
 
-					// Skip TECH step if no techs available
 					if m.currentStep == 1 && !m.techsAvailable {
 						m.currentStep = 2
 					}
@@ -234,10 +201,8 @@ func (m *CVConfigWizardModal) Update(msg tea.Msg) tea.Cmd {
 			}
 		}
 
-		// Check if form completed
-		if m.form.State == huh.StateCompleted {
-			m.completed = true
-			m.visible = false
+		if m.form.IsCompleted() {
+			m.wizard.Complete()
 		}
 
 		return cmd
@@ -248,7 +213,7 @@ func (m *CVConfigWizardModal) Update(msg tea.Msg) tea.Cmd {
 
 // View renders the wizard modal.
 func (m *CVConfigWizardModal) View() string {
-	if !m.visible {
+	if !m.wizard.IsVisible() {
 		return ""
 	}
 
@@ -256,46 +221,31 @@ func (m *CVConfigWizardModal) View() string {
 		return ""
 	}
 
-	// Calculate modal dimensions for border
-	modalWidth := m.width - 20
-	if modalWidth > 80 {
-		modalWidth = 80
-	}
-	if modalWidth < 50 {
-		modalWidth = 50
-	}
+	modalWidth := calcCVModalWidth(m.width)
 
 	modalHeight := m.height - 10
 	if modalHeight < 20 {
 		modalHeight = 20
 	}
 
-	// Use default theme for colors
 	th := theme.Default()
 
-	// Add main title using UIKit Text with centering
 	title := primitives.Title("CV Configuration", th).
 		Width(modalWidth - 4).
 		Center().
 		Render()
 
-	// Render form
 	formView := m.form.View()
-
-	// Create footer with keyboard shortcuts
 	footer := m.buildFooter()
-
-	// Combine title, form and footer
 	content := lipgloss.JoinVertical(lipgloss.Left, title, "", formView, "", footer)
 
-	// Wrap in styled container with solid background using UIKit Box
 	return containers.NewBox(th).
 		Content(content).
 		Width(modalWidth).
 		MaxHeight(modalHeight).
 		Padding(1).
 		Background(th.BackgroundColor()).
-		Variant(containers.BoxInfo). // Use accent color border
+		Variant(containers.BoxInfo).
 		Render()
 }
 
@@ -321,67 +271,55 @@ func (m *CVConfigWizardModal) buildFooter() string {
 
 // Show makes the modal visible.
 func (m *CVConfigWizardModal) Show() {
-	m.visible = true
+	m.wizard.Show()
 }
 
 // Reset resets the wizard state while preserving the entered data.
-// This is used when navigating back to the wizard from a later state
-// (e.g., from CV preview). The form is rebuilt with the existing data
-// so users see their previous selections.
 func (m *CVConfigWizardModal) Reset() {
-	// Reset state flags but keep data
-	m.completed = false
-	m.skipped = false
+	m.wizard.Reset()
 	m.currentStep = 0
-	m.visible = true
 
-	// Rebuild form with existing data - this creates a fresh form
-	// but populates it with the previously entered values
 	m.buildForm()
+	m.wizard.SetForm(m.form)
 }
 
 // Hide makes the modal invisible.
 func (m *CVConfigWizardModal) Hide() {
-	m.visible = false
+	m.wizard.Hide()
 }
 
 // IsVisible returns whether the modal is currently visible.
 func (m *CVConfigWizardModal) IsVisible() bool {
-	return m.visible
+	return m.wizard.IsVisible()
 }
 
 // IsCompleted returns whether the wizard has been completed.
 func (m *CVConfigWizardModal) IsCompleted() bool {
-	return m.completed
+	return m.wizard.IsCompleted()
 }
 
 // IsSkipped returns whether the wizard was skipped (Ctrl+S).
 func (m *CVConfigWizardModal) IsSkipped() bool {
-	return m.skipped
+	return m.wizard.IsSkipped()
 }
 
 // GetConfigData returns the collected configuration data.
-// It syncs from formData first to ensure we return the latest form state.
 func (m *CVConfigWizardModal) GetConfigData() *CVConfigData {
 	m.syncFromFormData()
 	return m.data
 }
 
 // GetCurrentStep returns the current step index (0-based).
-// Note: This tracks the form's internal step progression.
 func (m *CVConfigWizardModal) GetCurrentStep() int {
 	if m.form == nil {
 		return 0
 	}
-
-	// huh.Form doesn't expose current group index directly,
-	// so we track it manually based on Update() calls
 	return m.currentStep
 }
 
 // GetStepCount returns the total number of steps.
 func (m *CVConfigWizardModal) GetStepCount() int {
-	return 3 // WHO, TECH, FORMAT
+	return 3
 }
 
 // AreTechsAvailable returns whether extracted technologies are available.
@@ -399,6 +337,9 @@ func (m *CVConfigWizardModal) SetExtractedTechnologies(techs []ExtractedTechnolo
 	m.extractedTechs = techs
 	m.techsAvailable = len(techs) > 0
 	m.buildForm()
+	if m.wizard != nil {
+		m.wizard.SetForm(m.form)
+	}
 }
 
 // GetProfileOptions returns the available profile options.
@@ -481,13 +422,11 @@ func (m *CVConfigWizardModal) SetCVLength(length string) {
 // Complete marks the wizard as completed.
 func (m *CVConfigWizardModal) Complete() {
 	if m.HasRequiredFields() {
-		m.completed = true
-		m.visible = false
+		m.wizard.Complete()
 	}
 }
 
 // HasRequiredFields checks if all required fields are filled.
-// It syncs from formData first to ensure we check the latest form state.
 func (m *CVConfigWizardModal) HasRequiredFields() bool {
 	m.syncFromFormData()
 	return m.data.ProfileID != ""
@@ -498,9 +437,6 @@ func (m *CVConfigWizardModal) GetDimensions() (width, height int) {
 	return m.width, m.height
 }
 
-// syncFromFormData copies values from formData to data.
-// This ensures m.data reflects the latest form state after keyboard navigation.
-// Call this before reading from m.data in any method.
 func (m *CVConfigWizardModal) syncFromFormData() {
 	if m.formData == nil {
 		return
@@ -516,10 +452,7 @@ func (m *CVConfigWizardModal) syncFromFormData() {
 	m.data.CVLength = m.formData.CVLength
 }
 
-// applyDefaults sets default values for any empty configuration fields.
-// This is called when the user skips the wizard.
 func (m *CVConfigWizardModal) applyDefaults() {
-	// Sync from formData first to get latest form state
 	m.syncFromFormData()
 
 	if m.data.Audience == "" {
@@ -546,4 +479,15 @@ func (m *CVConfigWizardModal) applyDefaults() {
 			m.formData.CVLength = "2_page"
 		}
 	}
+}
+
+func calcCVModalWidth(terminalWidth int) int {
+	modalWidth := terminalWidth - 20
+	if modalWidth > 80 {
+		modalWidth = 80
+	}
+	if modalWidth < 50 {
+		modalWidth = 50
+	}
+	return modalWidth
 }
