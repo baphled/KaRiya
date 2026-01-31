@@ -6,55 +6,9 @@ import (
 	"testing"
 
 	"github.com/baphled/kariya/internal/domain/career"
-	tea "github.com/charmbracelet/bubbletea"
 )
 
-// BenchmarkCaptureEventInit benchmarks CaptureEvent intent initialization
-func BenchmarkCaptureEventInit(b *testing.B) {
-	ctx := &CaptureEventContext{
-		CaptureStrategy: "manual",
-		PreviousEvent:   nil,
-		Metadata:        make(map[string]string),
-	}
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		intent, _ := NewCaptureEventIntent(ctx)
-		_ = intent.Init()
-	}
-}
-
-// BenchmarkCaptureEventView benchmarks CaptureEvent intent view rendering
-func BenchmarkCaptureEventView(b *testing.B) {
-	ctx := &CaptureEventContext{
-		CaptureStrategy: "manual",
-		PreviousEvent:   nil,
-		Metadata:        make(map[string]string),
-	}
-	intent, _ := NewCaptureEventIntent(ctx)
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_ = intent.View()
-	}
-}
-
-// BenchmarkCaptureEventUpdate benchmarks CaptureEvent intent message handling
-func BenchmarkCaptureEventUpdate(b *testing.B) {
-	ctx := &CaptureEventContext{
-		CaptureStrategy: "manual",
-		PreviousEvent:   nil,
-		Metadata:        make(map[string]string),
-	}
-	intent, _ := NewCaptureEventIntent(ctx)
-
-	msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}}
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_ = intent.Update(msg)
-	}
-}
+// CaptureEvent benchmarks have been moved to internal/cli/intents/captureevent/benchmarks_test.go
 
 // BrowseTimeline benchmarks have been moved to internal/cli/intents/browsetimeline/benchmarks_test.go
 
@@ -117,12 +71,7 @@ func BenchmarkIntentRouterActivation(b *testing.B) {
 	router := NewDefaultIntentRouter()
 	//nolint:errcheck // Benchmark setup - error handling not relevant.
 	router.RegisterIntent("test", func() Intent {
-		ctx := &CaptureEventContext{
-			CaptureStrategy: "manual",
-			PreviousEvent:   nil,
-			Metadata:        make(map[string]string),
-		}
-		intent, _ := NewCaptureEventIntent(ctx)
+		intent, _ := NewConfigureSystemIntent(b.Context())
 		return intent
 	})
 

@@ -1,6 +1,9 @@
 package capture_test
 
 import (
+	"errors"
+
+	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/capture"
 	"github.com/baphled/kariya/internal/cli/service"
@@ -141,10 +144,62 @@ var _ = Describe("EventFormScreen", func() {
 		})
 
 		It("should delegate to CaptureForm's View", func() {
-			// CaptureForm handles actual rendering
-			// Screen just wraps it
 			view := screen.View()
 			Expect(view).NotTo(BeEmpty())
+		})
+	})
+
+	Describe("Footer Rendering", func() {
+		It("should show next field badge", func() {
+			view := screen.View()
+			Expect(view).To(ContainSubstring("Tab"))
+			Expect(view).To(ContainSubstring("Next field"))
+		})
+
+		It("should show submit badge", func() {
+			view := screen.View()
+			Expect(view).To(ContainSubstring("Ctrl+S"))
+			Expect(view).To(ContainSubstring("Submit"))
+		})
+
+		It("should show cancel badge", func() {
+			view := screen.View()
+			Expect(view).To(ContainSubstring("Esc"))
+			Expect(view).To(ContainSubstring("Cancel"))
+		})
+
+		It("should show quit badge", func() {
+			view := screen.View()
+			Expect(view).To(ContainSubstring("Quit"))
+		})
+	})
+
+	Describe("Form Submission Messages", func() {
+		It("should return ErrorResult when SubmitMsg has error", func() {
+			submitErr := errors.New("form validation failed")
+			_, result := screen.Update(models.SubmitMsg{
+				Event: nil,
+				Err:   submitErr,
+			})
+			Expect(result).NotTo(BeNil())
+			Expect(result.Type()).To(Equal(screens.ResultError))
+			errorResult := result.(*screens.ErrorResult)
+			Expect(errorResult.Err).To(Equal(submitErr))
+		})
+
+		It("should return SubmitResult when SubmitMsg succeeds", func() {
+			testEvent := &career.Event{
+				Text:    "Test event submission",
+				Company: "ACME",
+			}
+			_, result := screen.Update(models.SubmitMsg{
+				Event: testEvent,
+				Err:   nil,
+			})
+			Expect(result).NotTo(BeNil())
+			Expect(result.Type()).To(Equal(screens.ResultSubmit))
+			submitResult := result.(*screens.SubmitResult)
+			Expect(submitResult.Data()).To(Equal(testEvent))
 		})
 	})
 

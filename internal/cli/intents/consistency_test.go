@@ -22,23 +22,7 @@ func testStandardViewConsistency(intentName, view string) {
 }
 
 var _ = Describe("StandardView Consistency", func() {
-	Describe("CaptureEvent", func() {
-		It("should use StandardView patterns", func() {
-			ctx := &CaptureEventContext{
-				CaptureStrategy: "manual",
-				PreviousEvent:   nil,
-				Metadata:        make(map[string]string),
-			}
-
-			intent, err := NewCaptureEventIntent(ctx)
-			Expect(err).NotTo(HaveOccurred())
-
-			intent.Init()
-			view := intent.View()
-
-			testStandardViewConsistency("CaptureEvent", view)
-		})
-	})
+	// CaptureEvent consistency tests are in internal/cli/intents/captureevent/
 
 	// BrowseTimeline consistency tests are in internal/cli/intents/browsetimeline/
 
@@ -105,17 +89,7 @@ var _ = Describe("All Intents Initialization", func() {
 			Expect(len(strings.TrimSpace(view))).To(BeNumerically(">=", 10),
 				"%s view is too short", name)
 		},
-		Entry("CaptureEvent",
-			"CaptureEvent",
-			func() (interface{}, error) {
-				return NewCaptureEventIntent(&CaptureEventContext{
-					CaptureStrategy: "manual",
-					Metadata:        make(map[string]string),
-				})
-			},
-			func(i interface{}) { _ = i.(*CaptureEventIntent).Init() }, //nolint:errcheck // Init returns tea.Cmd which is intentionally discarded in tests
-			func(i interface{}) string { return i.(*CaptureEventIntent).View() },
-		),
+		// CaptureEvent Entry is in internal/cli/intents/captureevent/
 		// BrowseTimeline Entry is in internal/cli/intents/browsetimeline/
 		Entry("GenerateCV",
 			"GenerateCV",

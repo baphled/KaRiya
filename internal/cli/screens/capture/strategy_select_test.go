@@ -22,7 +22,7 @@ func TestCaptureScreens(t *testing.T) {
 //
 // Related:
 // - tasks/tasks-42-tui-architecture-refactor.md (Phase 1: CaptureEvent Migration)
-// - internal/cli/intents/capture_event.go (CaptureStrategy constants)
+// - internal/cli/intents/captureevent/constants.go (CaptureStrategy constants)
 // - internal/cli/screens/base/select_screen.go (SelectScreen[T])
 
 var _ = Describe("StrategySelectScreen", func() {

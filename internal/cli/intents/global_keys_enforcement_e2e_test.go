@@ -224,12 +224,7 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 					})
 				}),
 				// BrowseTimeline moved to browse_timeline subpackage - has own tests
-				Entry("CaptureEvent", "CaptureEvent", func() (Intent, error) {
-					return NewCaptureEventIntent(&CaptureEventContext{
-						CaptureStrategy: "manual",
-						Metadata:        make(map[string]string),
-					})
-				}),
+				// CaptureEvent moved to captureevent subpackage - has own tests
 			)
 		})
 
@@ -262,12 +257,7 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 					})
 				}),
 				// BrowseTimeline moved to browse_timeline subpackage - has own tests
-				Entry("CaptureEvent", "CaptureEvent", func() (Intent, error) {
-					return NewCaptureEventIntent(&CaptureEventContext{
-						CaptureStrategy: "manual",
-						Metadata:        make(map[string]string),
-					})
-				}),
+				// CaptureEvent moved to captureevent subpackage - has own tests
 			)
 		})
 
@@ -279,12 +269,10 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 
 					intent.Init()
 
-					// Get BaseIntent to check help state
+					// Get BaseIntent to check help state.
 					var baseIntent *BaseIntent
 					switch i := intent.(type) {
 					case *GenerateCVIntent:
-						baseIntent = i.BaseIntent
-					case *CaptureEventIntent:
 						baseIntent = i.BaseIntent
 					}
 
@@ -311,12 +299,7 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 					})
 				}),
 				// BrowseTimeline moved to browse_timeline subpackage - has own tests
-				Entry("CaptureEvent", "CaptureEvent", func() (Intent, error) {
-					return NewCaptureEventIntent(&CaptureEventContext{
-						CaptureStrategy: "manual",
-						Metadata:        make(map[string]string),
-					})
-				}),
+				// CaptureEvent moved to captureevent subpackage - has own tests
 			)
 		})
 	})
@@ -330,60 +313,11 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 	// =========================================================================
 
 	Describe("Context-Aware Navigation", func() {
+		// CaptureEvent Edit vs New tests moved to captureevent subpackage.
+		// See: internal/cli/intents/captureevent/global_keys_test.go
 
-		Context("CaptureEvent - Edit vs New", func() {
-			It("should cancel when editing existing event (PreviousEvent != nil)", func() {
-				existingEvent := &career.Event{
-					ID:   uuid.New().String(),
-					Text: "Existing event",
-					Date: time.Now(),
-				}
-
-				ctx := &CaptureEventContext{
-					CaptureStrategy: "manual",
-					PreviousEvent:   existingEvent, // Edit mode
-					Metadata:        make(map[string]string),
-				}
-
-				intent, err := NewCaptureEventIntent(ctx)
-				Expect(err).NotTo(HaveOccurred())
-				intent.Init()
-
-				// Transition to form state
-				intent.state.currentState = CaptureStateForm
-
-				// Press escape - should cancel (return to caller like BrowseTimeline)
-				intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
-
-				result := intent.Result()
-				Expect(result).NotTo(BeNil())
-				Expect(result.Status).To(Equal(Cancelled))
-			})
-
-			It("should go back when creating new event (PreviousEvent == nil)", func() {
-				ctx := &CaptureEventContext{
-					CaptureStrategy: "manual",
-					PreviousEvent:   nil, // New event mode
-					Metadata:        make(map[string]string),
-				}
-
-				intent, err := NewCaptureEventIntent(ctx)
-				Expect(err).NotTo(HaveOccurred())
-				intent.Init()
-
-				// Transition to form state
-				intent.state.currentState = CaptureStateForm
-
-				// Press escape - should go back to strategy selection
-				intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
-
-				Expect(intent.state.currentState).To(Equal(CaptureStateChooseStrategy))
-				Expect(intent.Result()).To(BeNil()) // Still active
-			})
-		})
-
-		// FactManagement moved to fact_management subpackage - has own tests
-		// See: internal/cli/intents/fact_management/intent_test.go
+		// FactManagement moved to factmanagement subpackage - has own tests.
+		// See: internal/cli/intents/factmanagement/intent_test.go
 	})
 
 	// =========================================================================

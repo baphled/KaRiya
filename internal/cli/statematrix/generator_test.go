@@ -323,20 +323,20 @@ var _ = Describe("Scanner", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(files).ToNot(BeEmpty())
 
-			// Should find intent files - supports both flat structure (capture_event.go)
-			// and subdirectory structure (browsetimeline/intent.go)
+			// Should find intent files in subdirectory structures.
 			foundCaptureEvent := false
 			foundBrowseTimeline := false
 			for _, file := range files {
-				if filepath.Base(file) == "capture_event.go" {
+				// captureevent uses subdirectory structure: captureevent/constants.go
+				if strings.Contains(file, "captureevent") && filepath.Base(file) == "constants.go" {
 					foundCaptureEvent = true
 				}
-				// Check for subdirectory structure: browsetimeline/intent.go
+				// browsetimeline uses subdirectory structure: browsetimeline/intent.go
 				if strings.Contains(file, "browsetimeline") && filepath.Base(file) == "intent.go" {
 					foundBrowseTimeline = true
 				}
 			}
-			Expect(foundCaptureEvent).To(BeTrue(), "Should find capture_event.go")
+			Expect(foundCaptureEvent).To(BeTrue(), "Should find captureevent/constants.go (subdirectory structure)")
 			Expect(foundBrowseTimeline).To(BeTrue(), "Should find browsetimeline/intent.go (subdirectory structure)")
 		})
 
@@ -450,8 +450,8 @@ var _ = Describe("Parser", func() {
 	})
 
 	Describe("ParseIntentFile", func() {
-		It("should parse intent states from capture_event.go", func() {
-			file := filepath.Join(projectRoot, "internal", "cli", "intents", "capture_event.go")
+		It("should parse intent states from captureevent subdirectory", func() {
+			file := filepath.Join(projectRoot, "internal", "cli", "intents", "captureevent", "constants.go")
 			component := statematrix.ParseIntentFile(file)
 
 			Expect(component.Name).To(Equal("CaptureEvent"))
@@ -459,21 +459,21 @@ var _ = Describe("Parser", func() {
 			Expect(component.StateCount).To(BeNumerically(">", 0))
 			Expect(component.States).ToNot(BeEmpty())
 
-			// Check for known states
+			// Check for known states (subdirectory uses unprefixed constants).
 			stateNames := make([]string, len(component.States))
 			for i, state := range component.States {
 				stateNames[i] = state.Constant
 			}
-			Expect(stateNames).To(ContainElement("CaptureStateChooseStrategy"))
+			Expect(stateNames).To(ContainElement("StateChooseStrategy"))
 		})
 
 		It("should classify state types correctly", func() {
-			file := filepath.Join(projectRoot, "internal", "cli", "intents", "capture_event.go")
+			file := filepath.Join(projectRoot, "internal", "cli", "intents", "captureevent", "constants.go")
 			component := statematrix.ParseIntentFile(file)
 
-			// CaptureStateChooseStrategy should be ROOT
+			// StateChooseStrategy should be ROOT.
 			for _, state := range component.States {
-				if state.Constant == "CaptureStateChooseStrategy" {
+				if state.Constant == "StateChooseStrategy" {
 					Expect(state.Type).To(Equal("ROOT"))
 					Expect(state.EscapeBehavior).To(ContainSubstring("Cancel intent"))
 				}
@@ -481,8 +481,8 @@ var _ = Describe("Parser", func() {
 		})
 
 		It("should handle files with no states", func() {
-			// Use a file that doesn't have state constants
-			file := filepath.Join(projectRoot, "internal", "cli", "styles", "styles.go")
+			// Use a file that doesn't have state constants.
+			file := filepath.Join(projectRoot, "internal", "cli", "intents", "captureevent", "result.go")
 			component := statematrix.ParseIntentFile(file)
 
 			// Should return empty component or handle gracefully

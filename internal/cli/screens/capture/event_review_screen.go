@@ -6,9 +6,12 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/base"
+	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
+	"github.com/baphled/kariya/internal/cli/uikit/theme"
+	"github.com/baphled/kariya/internal/cli/uikit/widgets"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 // EventReviewScreen displays captured event details with inferred bursts and facts.
@@ -31,21 +34,21 @@ import (
 // - Esc: Cancel and return to form
 //
 // Related:
-// - internal/cli/intents/capture_event.go (ReviewInferredEventState)
+// - internal/cli/intents/captureevent/types.go (ReviewInferredEventState)
 // - tasks/tasks-42-tui-architecture-refactor.md (Phase 1: CaptureEvent Migration).
 type EventReviewScreen struct {
 	*base.Screen
 
-	// event being reviewed
+	// event being reviewed.
 	event *career.Event
 
-	// bursts inferred from event
+	// bursts inferred from event.
 	bursts []*career.Burst
 
-	// facts inferred from event
+	// facts inferred from event.
 	facts []*career.Fact
 
-	// breadcrumbs for the view header
+	// breadcrumbs for the view header.
 	breadcrumbs []string
 }
 
@@ -76,21 +79,18 @@ func NewEventReviewScreen(
 // Update implements the Screen interface.
 //
 // Handles:
-// - Enter → returns SubmitResult with event, bursts, facts
-// - e/b/f → returns NavigateResult with edit action
-// - Esc → returns CancelResult
-// - WindowSizeMsg → updates dimensions.
+// - Enter -> returns SubmitResult with event, bursts, facts
+// - e/b/f -> returns NavigateResult with edit action
+// - Esc -> returns CancelResult
+// - WindowSizeMsg -> updates dimensions.
 func (s *EventReviewScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
-	// Handle window size via Screen
 	if cmd := s.Screen.HandleWindowSizeMsg(msg); cmd != nil {
 		return cmd, nil
 	}
 
-	// Handle key messages
 	if keyMsg, ok := msg.(tea.KeyMsg); ok {
-		switch keyMsg.String() {
-		case "enter":
-			// Confirm review - return SubmitResult with all data
+		switch keyMsg.Type {
+		case tea.KeyEnter:
 			return nil, &screens.SubmitResult{
 				FormData: map[string]interface{}{
 					"event":  s.event,
@@ -99,27 +99,33 @@ func (s *EventReviewScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) 
 				},
 			}
 
-		case "e":
-			// Navigate to edit metadata
-			return nil, &screens.NavigateResult{
-				ResultData: "edit_metadata",
-			}
-
-		case "b":
-			// Navigate to edit bursts
-			return nil, &screens.NavigateResult{
-				ResultData: "edit_bursts",
-			}
-
-		case "f":
-			// Navigate to edit facts
-			return nil, &screens.NavigateResult{
-				ResultData: "edit_facts",
-			}
-
-		case "esc":
-			// Cancel and return to form
+		case tea.KeyEsc:
 			return nil, &screens.CancelResult{}
+
+		case tea.KeyRunes:
+			return s.handleRuneKey(keyMsg)
+		}
+	}
+
+	return nil, nil
+}
+
+// handleRuneKey dispatches single-character key presses to edit actions.
+func (s *EventReviewScreen) handleRuneKey(keyMsg tea.KeyMsg) (tea.Cmd, screens.ScreenResult) {
+	switch keyMsg.String() {
+	case "e":
+		return nil, &screens.NavigateResult{
+			ResultData: "edit_metadata",
+		}
+
+	case "b":
+		return nil, &screens.NavigateResult{
+			ResultData: "edit_bursts",
+		}
+
+	case "f":
+		return nil, &screens.NavigateResult{
+			ResultData: "edit_facts",
 		}
 	}
 
@@ -128,7 +134,8 @@ func (s *EventReviewScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) 
 
 // View implements the Screen interface.
 //
-// Renders the review screen with event details, bursts, and facts.
+// Renders the review screen with event details, bursts, and facts
+// using UIKit components for consistent theming.
 func (s *EventReviewScreen) View() string {
 	content := s.renderContent()
 	footer := s.renderFooter()
@@ -136,160 +143,140 @@ func (s *EventReviewScreen) View() string {
 	return s.CreateView(s.breadcrumbs, content, footer)
 }
 
-// renderContent renders the event details with bursts and facts.
+// renderContent renders the event details with bursts and facts
+// using the UIKit DetailView widget and primitives.
 func (s *EventReviewScreen) renderContent() string {
-	var b strings.Builder
+	th := s.resolveTheme()
 
-	b.WriteString("\n")
+	var parts []string
 
-	// Title with themed styling
-	title := "Review Enrichment Results"
-	theme := s.Theme()
-	if theme != nil {
-		// Use card style for consistent theming
-		cardStyle := s.getCardStyle()
-		b.WriteString(cardStyle.Render(title) + "\n\n")
-	} else {
-		// Fallback: plain text
-		b.WriteString(title + "\n")
-		b.WriteString("═════════════════════\n\n")
+	// Title.
+	parts = append(parts, primitives.Title("Review Enrichment Results", th).
+		MarginBottom(1).
+		Render())
+
+	// Event details section.
+	parts = append(parts, s.renderEventDetails(th))
+
+	// Inferred bursts section.
+	parts = append(parts, s.renderBursts(th))
+
+	// Inferred facts section.
+	parts = append(parts, s.renderFacts(th))
+
+	return primitives.JoinVertical(primitives.AlignLeft, parts...)
+}
+
+// renderEventDetails renders the event metadata using a DetailView widget.
+func (s *EventReviewScreen) renderEventDetails(th theme.Theme) string {
+	dv := widgets.NewDetailView(th).
+		Title("Event Details")
+
+	if s.event == nil {
+		dv.Field("Status", "No event data")
+		return dv.Render()
 	}
 
-	// Event details
-	s.renderEventDetails(&b)
+	dv.Field("Text", s.event.Text).
+		Field("Date", s.event.Date.Format("2006-01-02")).
+		FieldIf("Company", s.event.Company).
+		FieldIf("Project", s.event.Project)
+
+	return dv.Render()
+}
+
+// renderBursts renders the inferred bursts list using UIKit primitives.
+func (s *EventReviewScreen) renderBursts(th theme.Theme) string {
+	var b strings.Builder
+
+	b.WriteString(primitives.Subtitle("Inferred Bursts", th).
+		MarginTop(1).
+		Render())
 	b.WriteString("\n")
 
-	// Inferred bursts
-	s.renderBursts(&b)
-	b.WriteString("\n")
+	if len(s.bursts) == 0 {
+		b.WriteString(primitives.Muted("  No bursts detected", th).Render())
+		b.WriteString("\n")
+		return b.String()
+	}
 
-	// Inferred facts
-	s.renderFacts(&b)
+	for i, burst := range s.bursts {
+		b.WriteString(primitives.Body(fmt.Sprintf("  %d. %s", i+1, burst.Name), th).Render())
+		b.WriteString("\n")
+		if burst.Description != "" {
+			b.WriteString(primitives.Muted("     "+burst.Description, th).Render())
+			b.WriteString("\n")
+		}
+	}
 
 	return b.String()
 }
 
-// getCardStyle returns a themed card style for content sections.
-func (s *EventReviewScreen) getCardStyle() lipgloss.Style {
-	theme := s.Theme()
-	if theme != nil {
-		// Try to cast to Theme interface
-		if t, ok := theme.(interface {
-			PrimaryColor() lipgloss.Color
-			BorderColor() lipgloss.Color
-		}); ok {
-			return lipgloss.NewStyle().
-				Foreground(t.PrimaryColor()).
-				Bold(true)
-		}
-	}
-	return lipgloss.NewStyle()
-}
+// renderFacts renders the inferred facts list using UIKit primitives.
+func (s *EventReviewScreen) renderFacts(th theme.Theme) string {
+	var b strings.Builder
 
-// renderEventDetails renders the event metadata.
-func (s *EventReviewScreen) renderEventDetails(b *strings.Builder) {
-	sectionStyle := s.getSectionHeaderStyle()
-	dimStyle := s.getDimStyle()
-
-	b.WriteString(sectionStyle.Render("Event Details:") + "\n")
-	b.WriteString(dimStyle.Render("─────────────") + "\n")
-
-	if s.event == nil {
-		b.WriteString("  No event data\n")
-		return
-	}
-
-	fmt.Fprintf(b, "  %s\n", s.event.Text)
-	fmt.Fprintf(b, "  Date: %s\n", s.event.Date.Format("2006-01-02"))
-
-	if s.event.Company != "" {
-		fmt.Fprintf(b, "  Company: %s\n", s.event.Company)
-	}
-	if s.event.Project != "" {
-		fmt.Fprintf(b, "  Project: %s\n", s.event.Project)
-	}
-}
-
-// getSectionHeaderStyle returns a themed style for section headers.
-func (s *EventReviewScreen) getSectionHeaderStyle() lipgloss.Style {
-	theme := s.Theme()
-	if theme != nil {
-		if t, ok := theme.(interface{ SecondaryColor() lipgloss.Color }); ok {
-			return lipgloss.NewStyle().
-				Foreground(t.SecondaryColor()).
-				Bold(true)
-		}
-	}
-	return lipgloss.NewStyle()
-}
-
-// getDimStyle returns a themed style for dimmed text.
-func (s *EventReviewScreen) getDimStyle() lipgloss.Style {
-	theme := s.Theme()
-	if theme != nil {
-		if t, ok := theme.(interface{ MutedColor() lipgloss.Color }); ok {
-			return lipgloss.NewStyle().
-				Foreground(t.MutedColor())
-		}
-	}
-	return lipgloss.NewStyle()
-}
-
-// renderBursts renders the inferred bursts list.
-func (s *EventReviewScreen) renderBursts(b *strings.Builder) {
-	sectionStyle := s.getSectionHeaderStyle()
-	dimStyle := s.getDimStyle()
-
-	b.WriteString(sectionStyle.Render("Inferred Bursts:") + "\n")
-	b.WriteString(dimStyle.Render("────────────────") + "\n")
-
-	if len(s.bursts) == 0 {
-		b.WriteString(dimStyle.Render("  No bursts detected") + "\n")
-		return
-	}
-
-	for i, burst := range s.bursts {
-		fmt.Fprintf(b, "  %d. %s\n", i+1, burst.Name)
-		if burst.Description != "" {
-			fmt.Fprintf(b, "     %s\n", burst.Description)
-		}
-	}
-}
-
-// renderFacts renders the inferred facts list.
-func (s *EventReviewScreen) renderFacts(b *strings.Builder) {
-	sectionStyle := s.getSectionHeaderStyle()
-	dimStyle := s.getDimStyle()
-
-	b.WriteString(sectionStyle.Render("Inferred Facts:") + "\n")
-	b.WriteString(dimStyle.Render("───────────────") + "\n")
+	b.WriteString(primitives.Subtitle("Inferred Facts", th).
+		MarginTop(1).
+		Render())
+	b.WriteString("\n")
 
 	if len(s.facts) == 0 {
-		b.WriteString(dimStyle.Render("  No facts detected") + "\n")
-		return
+		b.WriteString(primitives.Muted("  No facts detected", th).Render())
+		b.WriteString("\n")
+		return b.String()
 	}
 
 	for i, fact := range s.facts {
-		fmt.Fprintf(b, "  %d. %s\n", i+1, fact.Text)
+		b.WriteString(primitives.Body(fmt.Sprintf("  %d. %s", i+1, fact.Text), th).Render())
+		b.WriteString("\n")
 	}
+
+	return b.String()
 }
 
-// renderFooter renders footer with action shortcuts.
+// renderFooter renders footer with action shortcuts using UIKit badge primitives.
 // Only shows applicable actions based on available data.
 func (s *EventReviewScreen) renderFooter() string {
-	actions := []string{"Enter: Confirm", "e: Edit metadata"}
+	th := s.resolveThemesTheme()
 
-	// Only show burst editing if bursts exist
+	badges := []*primitives.Badge{
+		primitives.ConfirmBadge(th),
+		primitives.HelpKeyBadge("e", "Edit metadata", th),
+	}
+
 	if len(s.bursts) > 0 {
-		actions = append(actions, "b: Edit bursts")
+		badges = append(badges, primitives.HelpKeyBadge("b", "Edit bursts", th))
 	}
 
-	// Only show fact editing if facts exist
 	if len(s.facts) > 0 {
-		actions = append(actions, "f: Edit facts")
+		badges = append(badges, primitives.HelpKeyBadge("f", "Edit facts", th))
 	}
 
-	actions = append(actions, "Esc: Back", "q: Quit")
+	badges = append(badges,
+		primitives.BackBadge(th),
+		primitives.QuitBadge(th),
+	)
 
-	return strings.Join(actions, "  ")
+	return primitives.RenderHelpFooter(th, badges...)
+}
+
+// resolveTheme returns the screen's theme or a default if none is set.
+func (s *EventReviewScreen) resolveTheme() theme.Theme {
+	if screenTheme := s.Theme(); screenTheme != nil {
+		if th, ok := screenTheme.(theme.Theme); ok {
+			return th
+		}
+	}
+	return theme.Default()
+}
+
+// resolveThemesTheme returns the screen's theme as themes.Theme for badge rendering.
+func (s *EventReviewScreen) resolveThemesTheme() themes.Theme {
+	if screenTheme := s.Theme(); screenTheme != nil {
+		if th, ok := screenTheme.(themes.Theme); ok {
+			return th
+		}
+	}
+	return themes.NewDefaultTheme()
 }
