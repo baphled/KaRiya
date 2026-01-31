@@ -95,6 +95,12 @@ var _ = Describe("OnboardingWizardModal", func() {
 				_ = cmd
 				Expect(modal.IsVisible()).To(BeTrue())
 			})
+
+			It("should return form init command after dimension change", func() {
+				cmd := modal.Update(tea.WindowSizeMsg{Width: 100, Height: 30})
+
+				Expect(cmd).NotTo(BeNil())
+			})
 		})
 
 		Context("escape key", func() {
