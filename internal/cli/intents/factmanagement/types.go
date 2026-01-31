@@ -4,6 +4,7 @@ package factmanagement
 import (
 	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/intents"
+	factmodals "github.com/baphled/kariya/internal/cli/screens/facts/modals"
 	domain "github.com/baphled/kariya/internal/domain/career"
 )
 
@@ -23,5 +24,5 @@ type Intent struct {
 	tableBehavior *behaviors.TableBehavior[*domain.Fact]
 
 	// Edit modal for creating/editing facts.
-	editModal *intents.EditFactModal
+	editModal *factmodals.EditFactModal
 }

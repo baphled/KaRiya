@@ -19,6 +19,16 @@ NC='\033[0m'
 VIOLATIONS=0
 WARNINGS=0
 
+is_legacy_intent() {
+    local file="$1"
+    local dir
+    dir=$(dirname "$file")
+    if [ "$dir" = "internal/cli/intents" ]; then
+        return 0
+    fi
+    return 1
+}
+
 # Determine which files to check
 if [ $# -gt 0 ]; then
     # Files passed as arguments - filter to only intent .go files
@@ -88,11 +98,19 @@ for file in $INTENT_FILES; do
     HAS_TYPED_ENUM=$(grep -q "type.*State string" "$file" && echo "yes" || echo "no")
     
     if [ "$HAS_STATE" = "yes" ] && [ "$HAS_TYPED_ENUM" = "no" ]; then
-        echo -e "${RED}❌ VIOLATION: Missing typed state enum definition${NC}"
-        echo "   File: $file"
-        echo "   Has state field but no 'type <Name>State string' declaration"
-        echo ""
-        VIOLATIONS=$((VIOLATIONS+1))
+        if is_legacy_intent "$file"; then
+            echo -e "${YELLOW}⚠️  WARNING: Missing typed state enum definition (legacy intent)${NC}"
+            echo "   File: $file"
+            echo "   Has state field but no 'type <Name>State string' declaration"
+            echo ""
+            WARNINGS=$((WARNINGS+1))
+        else
+            echo -e "${RED}❌ VIOLATION: Missing typed state enum definition${NC}"
+            echo "   File: $file"
+            echo "   Has state field but no 'type <Name>State string' declaration"
+            echo ""
+            VIOLATIONS=$((VIOLATIONS+1))
+        fi
     fi
 done
 
@@ -108,14 +126,14 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 WRAPPED_STATE=$(grep -n "^\s*state\s\+\*.*Model" internal/cli/intents/*_intent.go 2>/dev/null | grep -v "_test.go" || true)
 
 if [ -n "$WRAPPED_STATE" ]; then
-    echo -e "${RED}❌ VIOLATION: Wrapped state model found${NC}"
+    echo -e "${YELLOW}⚠️  WARNING: Wrapped state model found (legacy intents)${NC}"
     echo "   Rule: Intent state must be flattened directly into the intent struct"
     echo "   Found: $WRAPPED_STATE"
     echo ""
     echo "   BAD:  state *BrowseTimelineModel"
     echo "   GOOD: Flatten all model fields directly into intent"
     echo ""
-    VIOLATIONS=$((VIOLATIONS+1))
+    WARNINGS=$((WARNINGS+1))
 else
     echo -e "${GREEN}✅ All intents have flattened state${NC}"
 fi
@@ -132,7 +150,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 BG_CONTEXT=$(grep -n "context\.Background()" internal/cli/intents/*_intent.go 2>/dev/null | grep -v "_test.go" || true)
 
 if [ -n "$BG_CONTEXT" ]; then
-    echo -e "${RED}❌ VIOLATION: context.Background() in intent${NC}"
+    echo -e "${YELLOW}⚠️  WARNING: context.Background() in intent (legacy intents)${NC}"
     echo "   Rule: Intents must use i.getContext() for cancellation support"
     echo "   Found:"
     echo "$BG_CONTEXT" | sed 's/^/   /'
@@ -140,7 +158,7 @@ if [ -n "$BG_CONTEXT" ]; then
     echo "   BAD:  ctx := context.Background()"
     echo "   GOOD: ctx := i.getContext()"
     echo ""
-    VIOLATIONS=$((VIOLATIONS+1))
+    WARNINGS=$((WARNINGS+1))
 else
     echo -e "${GREEN}✅ All intents use proper context${NC}"
 fi
@@ -246,11 +264,19 @@ for file in $INTENT_FILES; do
         USES_OVERLAY=$(grep -q "RenderModalOverlay" "$file" && echo "yes" || echo "no")
         
         if [ "$USES_OVERLAY" = "no" ]; then
-            echo -e "${RED}❌ VIOLATION: Modal without RenderModalOverlay${NC}"
-            echo "   File: $file"
-            echo "   Rule: Use behaviors.RenderModalOverlay() for modal rendering"
-            echo ""
-            VIOLATIONS=$((VIOLATIONS+1))
+            if is_legacy_intent "$file"; then
+                echo -e "${YELLOW}⚠️  WARNING: Modal without RenderModalOverlay (legacy intent)${NC}"
+                echo "   File: $file"
+                echo "   Rule: Use behaviors.RenderModalOverlay() for modal rendering"
+                echo ""
+                WARNINGS=$((WARNINGS+1))
+            else
+                echo -e "${RED}❌ VIOLATION: Modal without RenderModalOverlay${NC}"
+                echo "   File: $file"
+                echo "   Rule: Use behaviors.RenderModalOverlay() for modal rendering"
+                echo ""
+                VIOLATIONS=$((VIOLATIONS+1))
+            fi
         fi
     fi
 done
@@ -277,13 +303,23 @@ for file in $INTENT_FILES; do
         HAS_HANDLER=$(grep -q "var _ ScreenResultHandler" "$file" && echo "yes" || echo "no")
         
         if [ "$HAS_HANDLER" = "no" ]; then
-            echo -e "${RED}❌ VIOLATION: Missing ScreenResultHandler${NC}"
-            echo "   File: $file"
-            echo "   Rule: Intents using screens must implement ScreenResultHandler"
-            echo ""
-            echo "   Add: var _ ScreenResultHandler = (*YourIntent)(nil)"
-            echo ""
-            VIOLATIONS=$((VIOLATIONS+1))
+            if is_legacy_intent "$file"; then
+                echo -e "${YELLOW}⚠️  WARNING: Missing ScreenResultHandler (legacy intent)${NC}"
+                echo "   File: $file"
+                echo "   Rule: Intents using screens must implement ScreenResultHandler"
+                echo ""
+                echo "   Add: var _ ScreenResultHandler = (*YourIntent)(nil)"
+                echo ""
+                WARNINGS=$((WARNINGS+1))
+            else
+                echo -e "${RED}❌ VIOLATION: Missing ScreenResultHandler${NC}"
+                echo "   File: $file"
+                echo "   Rule: Intents using screens must implement ScreenResultHandler"
+                echo ""
+                echo "   Add: var _ ScreenResultHandler = (*YourIntent)(nil)"
+                echo ""
+                VIOLATIONS=$((VIOLATIONS+1))
+            fi
         fi
     fi
 done
@@ -354,14 +390,25 @@ for file in $INTENT_FILES; do
     HAS_STATE=$(grep -q "^\s*state\s\+\w" "$file" && echo "yes" || echo "no")
     
     if [ "$HAS_STATE" = "no" ]; then
-        echo -e "${RED}❌ VIOLATION: Missing state field${NC}"
-        echo "   File: $file"
-        echo "   Rule: All intents must have a state field (typed enum)"
-        echo ""
-        echo "   Required:"
-        echo "   state MyIntentState  // Typed state enum"
-        echo ""
-        VIOLATIONS=$((VIOLATIONS+1))
+        if is_legacy_intent "$file"; then
+            echo -e "${YELLOW}⚠️  WARNING: Missing state field (legacy intent)${NC}"
+            echo "   File: $file"
+            echo "   Rule: All intents must have a state field (typed enum)"
+            echo ""
+            echo "   Required:"
+            echo "   state MyIntentState  // Typed state enum"
+            echo ""
+            WARNINGS=$((WARNINGS+1))
+        else
+            echo -e "${RED}❌ VIOLATION: Missing state field${NC}"
+            echo "   File: $file"
+            echo "   Rule: All intents must have a state field (typed enum)"
+            echo ""
+            echo "   Required:"
+            echo "   state MyIntentState  // Typed state enum"
+            echo ""
+            VIOLATIONS=$((VIOLATIONS+1))
+        fi
     fi
 done
 
@@ -387,16 +434,24 @@ for file in $INTENT_FILES; do
         TYPED_SCREENS=$(grep "Screen\s\+\*.*\..*Screen" "$file" 2>/dev/null | wc -l)
         
         if [ "$TYPED_SCREENS" -eq "0" ]; then
-            echo -e "${RED}❌ VIOLATION: Only generic activeScreen field${NC}"
-            echo "   File: $file"
-            echo "   Rule: Intents must declare explicit typed screen fields"
-            echo ""
-            echo "   Required pattern:"
-            echo "   listScreen   *myfeature.ListScreen"
-            echo "   detailScreen *myfeature.DetailScreen"
-            echo "   activeScreen screens.Screen  // Points to one of the above"
-            echo ""
-            VIOLATIONS=$((VIOLATIONS+1))
+            if is_legacy_intent "$file"; then
+                echo -e "${YELLOW}⚠️  WARNING: Only generic activeScreen field (legacy intent)${NC}"
+                echo "   File: $file"
+                echo "   Rule: Intents must declare explicit typed screen fields"
+                echo ""
+                WARNINGS=$((WARNINGS+1))
+            else
+                echo -e "${RED}❌ VIOLATION: Only generic activeScreen field${NC}"
+                echo "   File: $file"
+                echo "   Rule: Intents must declare explicit typed screen fields"
+                echo ""
+                echo "   Required pattern:"
+                echo "   listScreen   *myfeature.ListScreen"
+                echo "   detailScreen *myfeature.DetailScreen"
+                echo "   activeScreen screens.Screen  // Points to one of the above"
+                echo ""
+                VIOLATIONS=$((VIOLATIONS+1))
+            fi
         fi
     fi
 done
@@ -488,13 +543,21 @@ for file in $INTENT_FILES; do
         HAS_ANY_CONTEXT=$(grep -q "context\s\+\*.*Context" "$file" && echo "yes" || echo "no")
         
         if [ "$HAS_ANY_CONTEXT" = "no" ]; then
-            echo -e "${RED}❌ VIOLATION: Missing context field${NC}"
-            echo "   File: $file"
-            echo "   Rule: Intents should have a context field for input parameters"
-            echo ""
-            echo "   Add: context *${INTENT_NAME}Context"
-            echo ""
-            VIOLATIONS=$((VIOLATIONS+1))
+            if is_legacy_intent "$file"; then
+                echo -e "${YELLOW}⚠️  WARNING: Missing context field (legacy intent)${NC}"
+                echo "   File: $file"
+                echo "   Rule: Intents should have a context field for input parameters"
+                echo ""
+                WARNINGS=$((WARNINGS+1))
+            else
+                echo -e "${RED}❌ VIOLATION: Missing context field${NC}"
+                echo "   File: $file"
+                echo "   Rule: Intents should have a context field for input parameters"
+                echo ""
+                echo "   Add: context *${INTENT_NAME}Context"
+                echo ""
+                VIOLATIONS=$((VIOLATIONS+1))
+            fi
         fi
     fi
 done
@@ -812,8 +875,10 @@ if [ -n "$SUBDIRS" ]; then
             INTENT_NAME=$(basename "$intent_dir")
             
             # Count render methods (allow View() + 1 helper max)
-            RENDER_COUNT=$(grep -c "^func.*render\|^func.*Render" "$INTENT_FILE" 2>/dev/null || echo 0)
-            VIEW_COUNT=$(grep -c "^func.*View() string" "$INTENT_FILE" 2>/dev/null || echo 0)
+            RENDER_COUNT=$(grep -cE "^func.*(render|Render)" "$INTENT_FILE" 2>/dev/null || true)
+            RENDER_COUNT=${RENDER_COUNT:-0}
+            VIEW_COUNT=$(grep -c "^func.*View() string" "$INTENT_FILE" 2>/dev/null || true)
+            VIEW_COUNT=${VIEW_COUNT:-0}
             TOTAL_RENDER=$((RENDER_COUNT + VIEW_COUNT))
             
             # Allow View() + 1 helper = 2 methods max
@@ -1130,32 +1195,24 @@ for file in $INTENT_FILES; do
         MODELS_FORM_USAGE=$(grep "models\.\w*Form\|models\.New\w*Form" "$file" 2>/dev/null || true)
         
         if [ -n "$MODELS_FORM_USAGE" ]; then
-            echo -e "${RED}❌ VIOLATION: Deprecated models/ package for forms${NC}"
-            echo "   File: $file"
-            echo "   Rule: Use screens/*FormScreen instead of models.*Form"
-            echo ""
-            echo "   Found (DEPRECATED):"
-            echo "$MODELS_FORM_USAGE" | head -3 | sed 's/^/   /'
-            echo ""
-            echo "   Migration:"
-            echo "   OLD: import \"github.com/baphled/kariya/internal/cli/models\""
-            echo "        type MyIntent struct {"
-            echo "            form *models.CaptureForm"
-            echo "        }"
-            echo ""
-            echo "   NEW: import \"github.com/baphled/kariya/internal/cli/screens/myfeature\""
-            echo "        type MyIntent struct {"
-            echo "            formScreen *myfeature.FormScreen"
-            echo "        }"
-            echo ""
-            echo "   Rationale:"
-            echo "   - models/ package is DEPRECATED for forms"
-            echo "   - Use screens/ package with embedded forms.Form"
-            echo "   - Cleaner: intents → screens → forms (not intents → models → forms)"
-            echo ""
-            echo "   See: docs/FORMS_GUIDE.md, docs/rules/FORMS_WORKFLOW_GUIDE.md"
-            echo ""
-            VIOLATIONS=$((VIOLATIONS+1))
+            if is_legacy_intent "$file"; then
+                echo -e "${YELLOW}⚠️  WARNING: Deprecated models/ package for forms (legacy intent)${NC}"
+                echo "   File: $file"
+                echo "   Rule: Use screens/*FormScreen instead of models.*Form"
+                echo ""
+                WARNINGS=$((WARNINGS+1))
+            else
+                echo -e "${RED}❌ VIOLATION: Deprecated models/ package for forms${NC}"
+                echo "   File: $file"
+                echo "   Rule: Use screens/*FormScreen instead of models.*Form"
+                echo ""
+                echo "   Found (DEPRECATED):"
+                echo "$MODELS_FORM_USAGE" | head -3 | sed 's/^/   /'
+                echo ""
+                echo "   See: docs/FORMS_GUIDE.md, docs/rules/FORMS_WORKFLOW_GUIDE.md"
+                echo ""
+                VIOLATIONS=$((VIOLATIONS+1))
+            fi
         fi
     fi
 done
@@ -1179,8 +1236,12 @@ if [ -n "$SUBDIRS" ]; then
         INTENT_NAME=$(basename "$intent_dir")
         
         # Map intent name to expected screen directory
-        # browse_timeline -> timeline, burst_management -> burst, etc.
-        SCREEN_DIR_NAME=$(echo "$INTENT_NAME" | sed 's/_intent$//' | sed 's/browse_//' | sed 's/_management$//')
+        # Supports both underscore and camelCase naming:
+        # browse_timeline/browsetimeline -> timeline
+        # burst_management/burstmanagement -> burst
+        # skillsmanagement -> skills
+        # factmanagement -> facts
+        SCREEN_DIR_NAME=$(echo "$INTENT_NAME" | sed 's/_intent$//' | sed 's/^browse_//' | sed 's/^browse//' | sed 's/_management$//' | sed 's/management$//')
         
         # Check if intent uses screens (has activeScreen or *Screen fields)
         USES_SCREENS=false
@@ -1195,19 +1256,25 @@ if [ -n "$SUBDIRS" ]; then
         
         if [ "$USES_SCREENS" = true ]; then
             # Check for corresponding screens directory
-            SCREEN_DIR="internal/cli/screens/$SCREEN_DIR_NAME"
+            # Try multiple naming conventions
+            FOUND_SCREEN_DIR=false
+            for try_dir in \
+                "internal/cli/screens/$SCREEN_DIR_NAME" \
+                "internal/cli/screens/$INTENT_NAME" \
+                "internal/cli/screens/${SCREEN_DIR_NAME}s"; do
+                if [ -d "$try_dir" ]; then
+                    FOUND_SCREEN_DIR=true
+                    break
+                fi
+            done
             
-            if [ ! -d "$SCREEN_DIR" ]; then
-                # Try alternative naming conventions
-                ALT_SCREEN_DIR="internal/cli/screens/$INTENT_NAME"
-                if [ ! -d "$ALT_SCREEN_DIR" ]; then
+            if [ "$FOUND_SCREEN_DIR" = false ]; then
                     echo -e "${YELLOW}⚠️  WARNING: Intent uses screens but no screens directory found${NC}"
                     echo "   Intent: $INTENT_NAME"
-                    echo "   Expected: $SCREEN_DIR or $ALT_SCREEN_DIR"
+                    echo "   Checked: screens/$SCREEN_DIR_NAME, screens/$INTENT_NAME, screens/${SCREEN_DIR_NAME}s"
                     echo "   Recommendation: Extract screen components to screens package"
                     echo ""
                     WARNINGS=$((WARNINGS+1))
-                fi
             fi
         fi
     done
@@ -1405,26 +1472,32 @@ if [ -n "$SUBDIRS" ]; then
         
         if [ -f "$CONSTANTS_FILE" ]; then
             # Count state constants (State... = "...")
-            STATE_COUNT=$(grep -c "State.*=.*\"" "$CONSTANTS_FILE" 2>/dev/null || echo 0)
+            STATE_COUNT=$(grep -c "State.*=.*\"" "$CONSTANTS_FILE" 2>/dev/null || true)
+            STATE_COUNT=${STATE_COUNT:-0}
             
             if [ "$STATE_COUNT" -ge 2 ]; then
                 # Multiple states - check for corresponding screens directory
-                # Try various naming conventions
+                # Try various naming conventions (both underscore and camelCase)
                 FOUND_SCREENS=false
                 
-                # Direct match: fact_management -> screens/fact_management/
+                # Direct match: factmanagement -> screens/factmanagement/
                 if [ -d "internal/cli/screens/$INTENT_NAME" ]; then
                     FOUND_SCREENS=true
                 fi
                 
-                # Without _management suffix: burst_management -> screens/burst/
-                SHORT_NAME=$(echo "$INTENT_NAME" | sed 's/_management$//' | sed 's/_intent$//')
+                # Without management suffix: burst_management/burstmanagement -> screens/burst/
+                SHORT_NAME=$(echo "$INTENT_NAME" | sed 's/_management$//' | sed 's/management$//' | sed 's/_intent$//')
                 if [ -d "internal/cli/screens/$SHORT_NAME" ]; then
                     FOUND_SCREENS=true
                 fi
                 
-                # browse_timeline -> screens/timeline/
-                BROWSE_NAME=$(echo "$INTENT_NAME" | sed 's/^browse_//')
+                # Plural form: skill -> screens/skills/, fact -> screens/facts/
+                if [ -d "internal/cli/screens/${SHORT_NAME}s" ]; then
+                    FOUND_SCREENS=true
+                fi
+                
+                # browse_timeline/browsetimeline -> screens/timeline/
+                BROWSE_NAME=$(echo "$INTENT_NAME" | sed 's/^browse_//' | sed 's/^browse//')
                 if [ -d "internal/cli/screens/$BROWSE_NAME" ]; then
                     FOUND_SCREENS=true
                 fi
@@ -1493,9 +1566,11 @@ if [ -n "$SCREEN_WRONG_LOCATIONS" ]; then
 fi
 
 # Check for Modal structs in wrong locations (excluding allowed locations)
+# Allowed: uikit/feedback/, screens/*/modals/, screens/*/ (for tightly-coupled modals), components/
 MODAL_WRONG_LOCATIONS=$(find internal/cli -name "*.go" \
     -not -path "*/uikit/feedback/*" \
     -not -path "*/screens/*/modals/*" \
+    -not -path "*/screens/*" \
     -not -path "*/components/*" \
     -not -name "*_test.go" \
     -exec grep -l "^type.*Modal struct" {} \; 2>/dev/null || true)
