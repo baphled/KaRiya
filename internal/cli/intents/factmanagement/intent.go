@@ -72,7 +72,9 @@ func factRowFormatter(fact *domain.Fact, _ int) []string {
 //
 // Returns: tea.Quit if fact loading fails, or nil on success.
 //
-// Side effects: Sets active to true, applies theme to table behavior, loads facts into context, and populates the table. On failure, populates the result with an error status.
+// Side effects: Sets active to true, applies theme to table behavior,
+// loads facts into context, and populates the table. On failure,
+// populates the result with an error status.
 func (i *Intent) Init() tea.Cmd {
 	// Apply theme to TableBehavior if available.
 	if theme := i.Theme(); theme != nil {

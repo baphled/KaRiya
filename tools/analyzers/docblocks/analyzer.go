@@ -38,7 +38,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 			}
 		}
 	}
-	return nil, nil
+	return nil, nil //nolint:nilnil // go/analysis framework requires (interface{}, error) return
 }
 
 func checkFuncDecl(pass *analysis.Pass, fn *ast.FuncDecl) {
