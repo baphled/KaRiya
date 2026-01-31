@@ -38,28 +38,26 @@ var _ = Describe("TechnologyKeywords", func() {
 			}
 		})
 
-		It("should have valid categories from CommonSkillCategories", func() {
+		It("should only use canonical categories from constants.AllSkillCategories", func() {
 			keywords := technology.GetTechnologyKeywords()
 			validCategories := map[string]bool{
-				"backend":       true,
-				"frontend":      true,
-				"database":      true,
-				"devops":        true,
-				"cloud":         true,
-				"mobile":        true,
-				"tooling":       true,
-				"testing":       true,
-				"build":         true,
-				"ml":            true,
-				"data":          true,
-				"monitoring":    true,
-				"documentation": true,
-				"os":            true,
+				"backend":    true,
+				"frontend":   true,
+				"database":   true,
+				"devops":     true,
+				"cloud":      true,
+				"mobile":     true,
+				"tooling":    true,
+				"testing":    true,
+				"ml":         true,
+				"data":       true,
+				"monitoring": true,
+				"other":      true,
 			}
 
 			for _, kw := range keywords {
 				if !validCategories[kw.Category] {
-					Fail("Invalid category \"" + kw.Category + "\" for keyword \"" + kw.Keyword + "\"")
+					Fail("Invalid category \"" + kw.Category + "\" for keyword \"" + kw.Keyword + "\". Must use canonical categories.")
 				}
 			}
 		})
@@ -190,16 +188,16 @@ var _ = Describe("TechnologyKeywords", func() {
 				"Expected at least 10 testing keywords, got %d", count)
 		})
 
-		It("should have build tool keywords", func() {
+		It("should have tooling keywords including build tools and documentation", func() {
 			keywords := technology.GetTechnologyKeywords()
 			count := 0
 			for _, kw := range keywords {
-				if kw.Category == "build" {
+				if kw.Category == "tooling" {
 					count++
 				}
 			}
-			Expect(count).To(BeNumerically(">=", 10),
-				"Expected at least 10 build tool keywords, got %d", count)
+			Expect(count).To(BeNumerically(">=", 30),
+				"Expected at least 30 tooling keywords (includes build tools and docs), got %d", count)
 		})
 
 		It("should have ML/data keywords", func() {
@@ -224,6 +222,42 @@ var _ = Describe("TechnologyKeywords", func() {
 			}
 			Expect(count).To(BeNumerically(">=", 5),
 				"Expected at least 5 monitoring keywords, got %d", count)
+		})
+	})
+
+	Describe("GetCategoryForSkillName", func() {
+		It("should return correct category for known canonical skill names", func() {
+			Expect(technology.GetCategoryForSkillName("Go")).To(Equal("backend"))
+			Expect(technology.GetCategoryForSkillName("PostgreSQL")).To(Equal("database"))
+			Expect(technology.GetCategoryForSkillName("Docker")).To(Equal("devops"))
+			Expect(technology.GetCategoryForSkillName("React")).To(Equal("frontend"))
+			Expect(technology.GetCategoryForSkillName("AWS")).To(Equal("cloud"))
+			Expect(technology.GetCategoryForSkillName("Jest")).To(Equal("testing"))
+			Expect(technology.GetCategoryForSkillName("Git")).To(Equal("tooling"))
+			Expect(technology.GetCategoryForSkillName("TensorFlow")).To(Equal("ml"))
+			Expect(technology.GetCategoryForSkillName("Apache Spark")).To(Equal("data"))
+			Expect(technology.GetCategoryForSkillName("Splunk")).To(Equal("monitoring"))
+			Expect(technology.GetCategoryForSkillName("iOS")).To(Equal("mobile"))
+		})
+
+		It("should match case-insensitively", func() {
+			Expect(technology.GetCategoryForSkillName("go")).To(Equal("backend"))
+			Expect(technology.GetCategoryForSkillName("POSTGRESQL")).To(Equal("database"))
+			Expect(technology.GetCategoryForSkillName("docker")).To(Equal("devops"))
+			Expect(technology.GetCategoryForSkillName("react")).To(Equal("frontend"))
+		})
+
+		It("should match keywords as well as canonical names", func() {
+			Expect(technology.GetCategoryForSkillName("golang")).To(Equal("backend"))
+			Expect(technology.GetCategoryForSkillName("postgres")).To(Equal("database"))
+			Expect(technology.GetCategoryForSkillName("k8s")).To(Equal("devops"))
+			Expect(technology.GetCategoryForSkillName("nodejs")).To(Equal("backend"))
+		})
+
+		It("should return empty string for unknown skill names", func() {
+			Expect(technology.GetCategoryForSkillName("UnknownTechnology")).To(BeEmpty())
+			Expect(technology.GetCategoryForSkillName("FooBar")).To(BeEmpty())
+			Expect(technology.GetCategoryForSkillName("")).To(BeEmpty())
 		})
 	})
 

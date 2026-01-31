@@ -372,5 +372,64 @@ var _ = Describe("EventRepository", func() {
 			Expect(retrieved.Skills).To(HaveLen(1))
 			Expect(retrieved.Skills).To(ContainElement("skill-1"))
 		})
+
+		It("should sync with SkillRepository so GetSkillsForEvent works", func() {
+			skillRepo := NewSkillRepository()
+			skillRepo.SetEventRepository(repo)
+			repo.SetSkillRepository(skillRepo)
+
+			event := &career.Event{
+				ID:   "event-1",
+				Text: "Built Go microservice",
+				Date: time.Now(),
+			}
+			err := repo.Create(ctx, event)
+			Expect(err).To(BeNil())
+
+			skill := &career.Skill{
+				ID:       "skill-1",
+				Name:     "Go",
+				Category: "backend",
+			}
+			err = skillRepo.Create(ctx, skill)
+			Expect(err).To(BeNil())
+
+			err = repo.LinkSkill(ctx, "event-1", "skill-1")
+			Expect(err).To(BeNil())
+
+			skills, err := skillRepo.GetSkillsForEvent(ctx, "event-1")
+			Expect(err).To(BeNil())
+			Expect(skills).To(HaveLen(1))
+			Expect(skills[0].Name).To(Equal("Go"))
+		})
+
+		It("should not duplicate SkillRepository association on repeated LinkSkill", func() {
+			skillRepo := NewSkillRepository()
+			skillRepo.SetEventRepository(repo)
+			repo.SetSkillRepository(skillRepo)
+
+			event := &career.Event{
+				ID:   "event-1",
+				Text: "Built Go microservice",
+				Date: time.Now(),
+			}
+			err := repo.Create(ctx, event)
+			Expect(err).To(BeNil())
+
+			skill := &career.Skill{
+				ID:       "skill-1",
+				Name:     "Go",
+				Category: "backend",
+			}
+			err = skillRepo.Create(ctx, skill)
+			Expect(err).To(BeNil())
+
+			repo.LinkSkill(ctx, "event-1", "skill-1")
+			repo.LinkSkill(ctx, "event-1", "skill-1")
+
+			skills, err := skillRepo.GetSkillsForEvent(ctx, "event-1")
+			Expect(err).To(BeNil())
+			Expect(skills).To(HaveLen(1))
+		})
 	})
 })

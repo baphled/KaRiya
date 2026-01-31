@@ -1,12 +1,14 @@
 package technology
 
+import "strings"
+
 // TechnologyKeyword maps a search keyword to its canonical skill.
 // Keywords are lowercase for case-insensitive matching.
 // Skills use canonical names for display (e.g., "Go", "PostgreSQL").
 type TechnologyKeyword struct {
 	Keyword  string // Lowercase search term for matching (e.g., "golang")
 	Skill    string // Canonical skill name for display (e.g., "Go")
-	Category string // Skill category: backend, frontend, database, devops, cloud, mobile, tooling, testing, build, ml, data, monitoring, documentation, os
+	Category string // Skill category: backend, frontend, database, devops, cloud, mobile, tooling, testing, ml, data, monitoring, other
 }
 
 // technologyKeywords is the master dictionary organized by category.
@@ -212,18 +214,18 @@ var technologyKeywords = []TechnologyKeyword{
 	// ========================================
 	// BUILD TOOLS & PACKAGE MANAGERS (12)
 	// ========================================
-	{"maven", "Maven", "build"},
-	{"gradle", "Gradle", "build"},
-	{"make", "Make", "build"},
-	{"bazel", "Bazel", "build"},
-	{"npm", "npm", "build"},
-	{"yarn", "Yarn", "build"},
-	{"pnpm", "pnpm", "build"},
-	{"pip", "pip", "build"},
-	{"poetry", "Poetry", "build"},
-	{"bundler", "Bundler", "build"},
-	{"cargo", "Cargo", "build"},
-	{"cmake", "CMake", "build"},
+	{"maven", "Maven", "tooling"},
+	{"gradle", "Gradle", "tooling"},
+	{"make", "Make", "tooling"},
+	{"bazel", "Bazel", "tooling"},
+	{"npm", "npm", "tooling"},
+	{"yarn", "Yarn", "tooling"},
+	{"pnpm", "pnpm", "tooling"},
+	{"pip", "pip", "tooling"},
+	{"poetry", "Poetry", "tooling"},
+	{"bundler", "Bundler", "tooling"},
+	{"cargo", "Cargo", "tooling"},
+	{"cmake", "CMake", "tooling"},
 
 	// ========================================
 	// MACHINE LEARNING & DATA SCIENCE (10)
@@ -266,23 +268,23 @@ var technologyKeywords = []TechnologyKeyword{
 	// ========================================
 	// DOCUMENTATION TOOLS (6)
 	// ========================================
-	{"swagger", "Swagger", "documentation"},
-	{"openapi", "OpenAPI", "documentation"},
-	{"redoc", "Redoc", "documentation"},
-	{"docusaurus", "Docusaurus", "documentation"},
-	{"mkdocs", "MkDocs", "documentation"},
-	{"sphinx", "Sphinx", "documentation"},
+	{"swagger", "Swagger", "tooling"},
+	{"openapi", "OpenAPI", "tooling"},
+	{"redoc", "Redoc", "tooling"},
+	{"docusaurus", "Docusaurus", "tooling"},
+	{"mkdocs", "MkDocs", "tooling"},
+	{"sphinx", "Sphinx", "tooling"},
 
 	// ========================================
 	// OPERATING SYSTEMS (7)
 	// ========================================
-	{"linux", "Linux", "os"},
-	{"unix", "Unix", "os"},
-	{"ubuntu", "Ubuntu", "os"},
-	{"debian", "Debian", "os"},
-	{"centos", "CentOS", "os"},
-	{"macos", "macOS", "os"},
-	{"windows server", "Windows Server", "os"},
+	{"linux", "Linux", "devops"},
+	{"unix", "Unix", "devops"},
+	{"ubuntu", "Ubuntu", "devops"},
+	{"debian", "Debian", "devops"},
+	{"centos", "CentOS", "devops"},
+	{"macos", "macOS", "devops"},
+	{"windows server", "Windows Server", "devops"},
 
 	// ========================================
 	// MODERN RUNTIMES & FRAMEWORKS (8)
@@ -311,6 +313,25 @@ func GetKeywordMap() map[string]TechnologyKeyword {
 		keywordMap[kw.Keyword] = kw
 	}
 	return keywordMap
+}
+
+// GetCategoryForSkillName returns the category for a skill name by matching
+// against both canonical skill names and keywords (case-insensitive).
+// Returns empty string if no match found.
+func GetCategoryForSkillName(name string) string {
+	if name == "" {
+		return ""
+	}
+
+	lower := strings.ToLower(name)
+
+	for _, kw := range technologyKeywords {
+		if strings.ToLower(kw.Skill) == lower || kw.Keyword == lower {
+			return kw.Category
+		}
+	}
+
+	return ""
 }
 
 // GetAllSkillNames returns unique canonical skill names.

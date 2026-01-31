@@ -3,6 +3,7 @@ package cv
 import (
 	"strings"
 
+	"github.com/baphled/kariya/internal/constants"
 	"github.com/baphled/kariya/internal/domain/career"
 )
 
@@ -96,7 +97,7 @@ func (s *ProfileInferenceService) InferCoreStrengths(
 	}
 
 	// Add skill-based strength if we have backend skills
-	if s.hasExpertiseIn(skills, "backend") {
+	if s.hasExpertiseIn(skills, string(constants.SkillCategoryBackend)) {
 		strengths = append(strengths, "Backend and systems engineering expertise")
 	}
 
@@ -195,11 +196,14 @@ func (s *ProfileInferenceService) InferTechnologies(
 
 	for _, skill := range skills {
 		switch skill.Category {
-		case "backend":
+		case string(constants.SkillCategoryBackend):
 			languages = append(languages, skill.Name)
-		case "frontend":
+		case string(constants.SkillCategoryFrontend):
 			frontend = append(frontend, skill.Name)
-		case "database", "devops", "cloud", "tooling":
+		case string(constants.SkillCategoryDatabase),
+			string(constants.SkillCategoryDevOps),
+			string(constants.SkillCategoryCloud),
+			string(constants.SkillCategoryTooling):
 			systems = append(systems, skill.Name)
 		}
 	}
@@ -299,7 +303,7 @@ func (s *ProfileInferenceService) hasCollaborationIndicators(
 func (s *ProfileInferenceService) hasLanguageDiversity(skills []*career.Skill) bool {
 	backendCount := 0
 	for _, skill := range skills {
-		if skill.Category == "backend" {
+		if skill.Category == string(constants.SkillCategoryBackend) {
 			backendCount++
 		}
 	}

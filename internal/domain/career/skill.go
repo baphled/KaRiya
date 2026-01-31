@@ -63,14 +63,14 @@ func (s *Skill) validateName() error {
 	return nil
 }
 
-// validateCategory ensures category is not empty and within length constraints.
+// validateCategory ensures category is not empty and is a recognised value.
 func (s *Skill) validateCategory() error {
 	trimmedCategory := strings.TrimSpace(s.Category)
 	if trimmedCategory == "" {
 		return errors.New("category cannot be empty")
 	}
-	if len(trimmedCategory) > 50 {
-		return errors.New("category cannot exceed 50 characters")
+	if !constants.IsValidSkillCategory(trimmedCategory) {
+		return errors.New("category must be one of: backend, frontend, devops, database, cloud, mobile, tooling, testing, data, ml, monitoring, other")
 	}
 	return nil
 }

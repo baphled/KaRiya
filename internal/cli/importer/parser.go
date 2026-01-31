@@ -11,6 +11,7 @@ import (
 	"github.com/baphled/kariya/internal/constants"
 	"github.com/baphled/kariya/internal/domain/career"
 	repo "github.com/baphled/kariya/internal/repository/career"
+	"github.com/baphled/kariya/internal/service/career/technology"
 )
 
 // ParsedRow represents a single CSV row with its parsed data and validation status.
@@ -304,16 +305,19 @@ func (p *CSVParser) parseRow(rowNumber int, rawData map[string]string, _ map[str
 				continue
 			}
 
-			// Try to find existing skill by name (case-sensitive)
+			// Try to find existing skill by name (case-insensitive)
 			existingSkill, err := p.skillRepository.GetByName(p.ctx, skillName)
 			if err == nil && existingSkill != nil {
 				// Skill exists - use its ID
 				event.Skills = append(event.Skills, existingSkill.ID)
 			} else {
-				// Skill not found - create new one with category "other"
+				category := technology.GetCategoryForSkillName(skillName)
+				if category == "" {
+					category = string(constants.SkillCategoryOther)
+				}
 				newSkill := &career.Skill{
 					Name:     skillName,
-					Category: "other",
+					Category: category,
 				}
 				if err := p.skillRepository.Create(p.ctx, newSkill); err != nil {
 					// If creation fails, add validation error but continue

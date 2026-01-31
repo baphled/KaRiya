@@ -17,8 +17,9 @@ var _ career_repo.EventRepository = (*EventRepository)(nil)
 // EventRepository provides an in-memory implementation of the EventRepository interface.
 // This is primarily useful for testing and development.
 type EventRepository struct {
-	events map[string]*career.Event
-	mu     sync.RWMutex
+	events    map[string]*career.Event
+	skillRepo *SkillRepository
+	mu        sync.RWMutex
 }
 
 // NewEventRepository creates a new in-memory event repository.
@@ -26,6 +27,13 @@ func NewEventRepository() *EventRepository {
 	return &EventRepository{
 		events: make(map[string]*career.Event),
 	}
+}
+
+// SetSkillRepository sets the skill repository for cross-repository association sync.
+func (r *EventRepository) SetSkillRepository(repo *SkillRepository) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.skillRepo = repo
 }
 
 // Create adds a new career event to the in-memory store.
@@ -168,23 +176,32 @@ func (r *EventRepository) Count(_ context.Context, filters career_repo.EventList
 // LinkSkill creates an association between an event and a skill.
 func (r *EventRepository) LinkSkill(_ context.Context, eventID string, skillID string) error {
 	r.mu.Lock()
-	defer r.mu.Unlock()
 
 	event, exists := r.events[eventID]
 	if !exists {
+		r.mu.Unlock()
 		return career_repo.ErrEventNotFound
 	}
 
-	// Check if skill is already linked (prevent duplicates)
+	alreadyLinked := false
 	for _, existingSkillID := range event.Skills {
 		if existingSkillID == skillID {
-			return nil
+			alreadyLinked = true
+			break
 		}
 	}
 
-	// Add skill to event
-	event.Skills = append(event.Skills, skillID)
-	event.UpdatedAt = time.Now()
+	if !alreadyLinked {
+		event.Skills = append(event.Skills, skillID)
+		event.UpdatedAt = time.Now()
+	}
+
+	skillRepo := r.skillRepo
+	r.mu.Unlock()
+
+	if skillRepo != nil {
+		skillRepo.AssociateSkillWithEvent(skillID, eventID)
+	}
 
 	return nil
 }

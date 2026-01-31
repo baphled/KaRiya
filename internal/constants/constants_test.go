@@ -202,10 +202,10 @@ var _ = Describe("Constants", func() {
 	})
 
 	Describe("SkillCategory", func() {
-		Describe("SuggestedSkillCategories", func() {
-			It("returns all suggested skill categories including mobile", func() {
-				categories := constants.SuggestedSkillCategories()
-				Expect(categories).To(HaveLen(8))
+		Describe("AllSkillCategories", func() {
+			It("returns all 12 defined skill categories", func() {
+				categories := constants.AllSkillCategories()
+				Expect(categories).To(HaveLen(12))
 				Expect(categories).To(ContainElements(
 					constants.SkillCategoryBackend,
 					constants.SkillCategoryFrontend,
@@ -214,13 +214,62 @@ var _ = Describe("Constants", func() {
 					constants.SkillCategoryCloud,
 					constants.SkillCategoryMobile,
 					constants.SkillCategoryTooling,
+					constants.SkillCategoryTesting,
+					constants.SkillCategoryData,
+					constants.SkillCategoryML,
+					constants.SkillCategoryMonitoring,
 					constants.SkillCategoryOther,
 				))
 			})
+		})
 
-			It("includes mobile category (fixes discrepancy)", func() {
+		Describe("SuggestedSkillCategories", func() {
+			It("returns all skill categories for form dropdowns", func() {
 				categories := constants.SuggestedSkillCategories()
-				Expect(categories).To(ContainElement(constants.SkillCategoryMobile))
+				Expect(categories).To(HaveLen(12))
+				Expect(categories).To(ContainElements(
+					constants.SkillCategoryBackend,
+					constants.SkillCategoryFrontend,
+					constants.SkillCategoryDevOps,
+					constants.SkillCategoryDatabase,
+					constants.SkillCategoryCloud,
+					constants.SkillCategoryMobile,
+					constants.SkillCategoryTooling,
+					constants.SkillCategoryTesting,
+					constants.SkillCategoryData,
+					constants.SkillCategoryML,
+					constants.SkillCategoryMonitoring,
+					constants.SkillCategoryOther,
+				))
+			})
+		})
+
+		Describe("IsValidSkillCategory", func() {
+			It("returns true for all canonical skill categories", func() {
+				Expect(constants.IsValidSkillCategory("backend")).To(BeTrue())
+				Expect(constants.IsValidSkillCategory("frontend")).To(BeTrue())
+				Expect(constants.IsValidSkillCategory("devops")).To(BeTrue())
+				Expect(constants.IsValidSkillCategory("database")).To(BeTrue())
+				Expect(constants.IsValidSkillCategory("cloud")).To(BeTrue())
+				Expect(constants.IsValidSkillCategory("mobile")).To(BeTrue())
+				Expect(constants.IsValidSkillCategory("tooling")).To(BeTrue())
+				Expect(constants.IsValidSkillCategory("testing")).To(BeTrue())
+				Expect(constants.IsValidSkillCategory("data")).To(BeTrue())
+				Expect(constants.IsValidSkillCategory("ml")).To(BeTrue())
+				Expect(constants.IsValidSkillCategory("monitoring")).To(BeTrue())
+				Expect(constants.IsValidSkillCategory("other")).To(BeTrue())
+			})
+
+			It("returns false for invalid categories", func() {
+				Expect(constants.IsValidSkillCategory("invalid")).To(BeFalse())
+				Expect(constants.IsValidSkillCategory("")).To(BeFalse())
+				Expect(constants.IsValidSkillCategory("BACKEND")).To(BeFalse())
+			})
+
+			It("returns false for categories that were merged into existing ones", func() {
+				Expect(constants.IsValidSkillCategory("build")).To(BeFalse())
+				Expect(constants.IsValidSkillCategory("documentation")).To(BeFalse())
+				Expect(constants.IsValidSkillCategory("os")).To(BeFalse())
 			})
 		})
 	})
