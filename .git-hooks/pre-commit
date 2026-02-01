@@ -207,8 +207,11 @@ if [ "$SKIP_PATTERN_CHECK" != "1" ]; then
         if [ -n "$STAGED_GO" ]; then
             echo "Running strict pattern checks..."
             if ! bash scripts/check-patterns-strict.sh 2>/dev/null; then
-                echo -e "${YELLOW}⚠️  Pattern violations found. Run 'make check-patterns' for details.${NC}"
-                # Don't block - just warn
+                echo -e "${RED}❌ ERROR: Pattern violations found${NC}"
+                echo ""
+                echo "Run 'make check-patterns' for details."
+                echo "To skip: SKIP_PATTERN_CHECK=1 git commit"
+                exit 1
             fi
         fi
     fi

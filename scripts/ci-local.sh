@@ -65,6 +65,12 @@ if ! command -v gosec &> /dev/null; then
     go install github.com/securego/gosec/v2/cmd/gosec@latest
 fi
 
+# Check and install golangci-lint
+if ! command -v golangci-lint &> /dev/null; then
+    echo "Installing golangci-lint..."
+    curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.64.8
+fi
+
 # Check npm dependencies
 if [ ! -d "node_modules" ]; then
     echo "Installing npm dependencies..."
@@ -129,6 +135,24 @@ run_check "Build Windows AMD64" \
 # ============================================
 run_check "Gosec Security Scanner" \
     "gosec -no-fail -fmt text ./..."
+
+# ============================================
+# 7. GOLANGCI-LINT (comprehensive static analysis)
+# ============================================
+run_check "Golangci-lint" \
+    "golangci-lint run --timeout=5m"
+
+# ============================================
+# 8. DOCBLOCKS (structured doc comment enforcement)
+# ============================================
+run_check "Docblocks Analyzer" \
+    "go build -o ./bin/docblocks ./cmd/docblocks && go vet -vettool=./bin/docblocks ./internal/cli/behaviors/... ./internal/cli/intents/... ./tools/analyzers/docblocks/..."
+
+# ============================================
+# 9. INTENT ARCHITECTURE (architectural compliance)
+# ============================================
+run_check "Intent Architecture" \
+    "bash scripts/check-intent-architecture.sh"
 
 # ============================================
 # SUMMARY
