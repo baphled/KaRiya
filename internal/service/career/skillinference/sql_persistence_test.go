@@ -8,10 +8,10 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careersql "github.com/baphled/kariya/internal/repository/career/sql"
 	"github.com/baphled/kariya/internal/service/career/skillinference"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 var _ = Describe("Skill Persistence (SQL-backed)", func() {
@@ -43,16 +43,10 @@ var _ = Describe("Skill Persistence (SQL-backed)", func() {
 		Context("when creating new skills", func() {
 			It("should persist skills to the SQL database", func() {
 				testTime := time.Date(2024, 6, 15, 0, 0, 0, 0, time.UTC)
-				event1 := &career.Event{
-					ID:   "event-1",
-					Text: "Built REST API using Go",
-					Date: testTime,
-				}
-				event2 := &career.Event{
-					ID:   "event-2",
-					Text: "Designed PostgreSQL schema",
-					Date: testTime.Add(24 * time.Hour),
-				}
+				event1 := fixtures.EventWith("event-1", "Built REST API using Go", "", "")
+				event1.Date = testTime
+				event2 := fixtures.EventWith("event-2", "Designed PostgreSQL schema", "", "")
+				event2.Date = testTime.Add(24 * time.Hour)
 
 				Expect(repos.Event.Create(ctx, event1)).To(Succeed())
 				Expect(repos.Event.Create(ctx, event2)).To(Succeed())
@@ -100,17 +94,11 @@ var _ = Describe("Skill Persistence (SQL-backed)", func() {
 		Context("when skill already exists with different case", func() {
 			It("should reuse the existing skill instead of creating a duplicate", func() {
 				testTime := time.Date(2024, 6, 15, 0, 0, 0, 0, time.UTC)
-				event1 := &career.Event{
-					ID:   "event-1",
-					Text: "Built API with Go",
-					Date: testTime,
-				}
+				event1 := fixtures.EventWith("event-1", "Built API with Go", "", "")
+				event1.Date = testTime
 				Expect(repos.Event.Create(ctx, event1)).To(Succeed())
 
-				existingSkill := &career.Skill{
-					Name:     "go",
-					Category: "Backend",
-				}
+				existingSkill := fixtures.SkillWith("", "go", "Backend", "intermediate")
 				Expect(repos.Skill.Create(ctx, existingSkill)).To(Succeed())
 
 				suggestions := []skillinference.SkillSuggestion{
@@ -138,10 +126,7 @@ var _ = Describe("Skill Persistence (SQL-backed)", func() {
 
 		Context("when looking up existing skills by name", func() {
 			It("should find skill regardless of case", func() {
-				existingSkill := &career.Skill{
-					Name:     "Go",
-					Category: "Backend",
-				}
+				existingSkill := fixtures.SkillWith("", "Go", "Backend", "intermediate")
 				Expect(repos.Skill.Create(ctx, existingSkill)).To(Succeed())
 
 				found, err := repos.Skill.GetByName(ctx, "go")

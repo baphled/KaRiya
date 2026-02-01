@@ -127,66 +127,41 @@ var _ = Describe("ProfileInferenceService", func() {
 
 		Context("when facts indicate soft skill competencies", func() {
 			It("should infer communication strength", func() {
-				facts = []*career.Fact{{
-					ID:                   "fact-1",
-					Text:                 "Presented quarterly results to stakeholders",
-					CompetencyCategories: []string{"communication"},
-					RoleFit:              career.RoleFitStaff,
-					AudienceRelevance:    []string{"peer"},
-					SourceEventID:        "ev-1",
-				}}
+				facts = []*career.Fact{
+					fixtures.FactForValidation("fact-1", "Presented quarterly results to stakeholders", career.RoleFitStaff, []string{"communication"}, []string{"peer"}, "ev-1"),
+				}
 				strengths := service.InferCoreStrengths(events, facts, skills)
 				Expect(strengths).To(ContainElement(ContainSubstring("communication")))
 			})
 
 			It("should infer collaboration strength", func() {
-				facts = []*career.Fact{{
-					ID:                   "fact-1",
-					Text:                 "Worked with cross-functional teams",
-					CompetencyCategories: []string{"collaboration"},
-					RoleFit:              career.RoleFitStaff,
-					AudienceRelevance:    []string{"peer"},
-					SourceEventID:        "ev-1",
-				}}
+				facts = []*career.Fact{
+					fixtures.FactForValidation("fact-1", "Worked with cross-functional teams", career.RoleFitStaff, []string{"collaboration"}, []string{"peer"}, "ev-1"),
+				}
 				strengths := service.InferCoreStrengths(events, facts, skills)
 				Expect(strengths).To(ContainElement(ContainSubstring("collaboration")))
 			})
 
 			It("should infer problem-solving strength", func() {
-				facts = []*career.Fact{{
-					ID:                   "fact-1",
-					Text:                 "Debugged complex production issues",
-					CompetencyCategories: []string{"problem-solving"},
-					RoleFit:              career.RoleFitSeniorIC,
-					AudienceRelevance:    []string{"peer"},
-					SourceEventID:        "ev-1",
-				}}
+				facts = []*career.Fact{
+					fixtures.FactForValidation("fact-1", "Debugged complex production issues", career.RoleFitSeniorIC, []string{"problem-solving"}, []string{"peer"}, "ev-1"),
+				}
 				strengths := service.InferCoreStrengths(events, facts, skills)
 				Expect(strengths).To(ContainElement(ContainSubstring("problem-solving")))
 			})
 
 			It("should infer project-management strength", func() {
-				facts = []*career.Fact{{
-					ID:                   "fact-1",
-					Text:                 "Planned sprint milestones and delivery schedule",
-					CompetencyCategories: []string{"project-management"},
-					RoleFit:              career.RoleFitEM,
-					AudienceRelevance:    []string{"hiring_manager"},
-					SourceEventID:        "ev-1",
-				}}
+				facts = []*career.Fact{
+					fixtures.FactForValidation("fact-1", "Planned sprint milestones and delivery schedule", career.RoleFitEM, []string{"project-management"}, []string{"hiring_manager"}, "ev-1"),
+				}
 				strengths := service.InferCoreStrengths(events, facts, skills)
 				Expect(strengths).To(ContainElement(ContainSubstring("planning")))
 			})
 
 			It("should infer architecture strength", func() {
-				facts = []*career.Fact{{
-					ID:                   "fact-1",
-					Text:                 "Designed scalable distributed system architecture",
-					CompetencyCategories: []string{"architecture"},
-					RoleFit:              career.RoleFitPrincipal,
-					AudienceRelevance:    []string{"peer"},
-					SourceEventID:        "ev-1",
-				}}
+				facts = []*career.Fact{
+					fixtures.FactForValidation("fact-1", "Designed scalable distributed system architecture", career.RoleFitPrincipal, []string{"architecture"}, []string{"peer"}, "ev-1"),
+				}
 				strengths := service.InferCoreStrengths(events, facts, skills)
 				Expect(strengths).To(ContainElement(ContainSubstring("architecture")))
 			})

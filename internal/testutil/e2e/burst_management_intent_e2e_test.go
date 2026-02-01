@@ -219,35 +219,28 @@ var _ = Describe("BurstManagement E2E Workflow Tests", func() {
 
 	BeforeEach(func() {
 		// Create test bursts
-		bursts = []*career.Burst{
-			{
-				ID:          "burst-1",
-				Name:        "Backend Development at TechCorp",
-				Description: "Built scalable microservices architecture",
-				EventIDs:    []string{"event-1", "event-2"},
-				Confirmed:   true,
-				CreatedAt:   time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-				UpdatedAt:   time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-			},
-			{
-				ID:          "burst-2",
-				Name:        "DevOps Implementation",
-				Description: "Migrated infrastructure to Kubernetes",
-				EventIDs:    []string{"event-3"},
-				Confirmed:   false,
-				CreatedAt:   time.Date(2023, 6, 15, 0, 0, 0, 0, time.UTC),
-				UpdatedAt:   time.Date(2023, 6, 15, 0, 0, 0, 0, time.UTC),
-			},
-			{
-				ID:          "burst-3",
-				Name:        "Frontend Modernization",
-				Description: "Migrated from jQuery to React",
-				EventIDs:    []string{"event-4", "event-5", "event-6"},
-				Confirmed:   true,
-				CreatedAt:   time.Date(2023, 3, 10, 0, 0, 0, 0, time.UTC),
-				UpdatedAt:   time.Date(2023, 3, 10, 0, 0, 0, 0, time.UTC),
-			},
-		}
+		burst1 := fixtures.Burst("burst-1", "event-1", "event-2")
+		burst1.Name = "Backend Development at TechCorp"
+		burst1.Description = "Built scalable microservices architecture"
+		burst1.Confirmed = true
+		burst1.CreatedAt = time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
+		burst1.UpdatedAt = time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
+
+		burst2 := fixtures.Burst("burst-2", "event-3", "event-4")
+		burst2.Name = "DevOps Implementation"
+		burst2.Description = "Migrated infrastructure to Kubernetes"
+		burst2.Confirmed = false
+		burst2.CreatedAt = time.Date(2023, 6, 15, 0, 0, 0, 0, time.UTC)
+		burst2.UpdatedAt = time.Date(2023, 6, 15, 0, 0, 0, 0, time.UTC)
+
+		burst3 := fixtures.Burst("burst-3", "event-4", "event-5", "event-6")
+		burst3.Name = "Frontend Modernization"
+		burst3.Description = "Migrated from jQuery to React"
+		burst3.Confirmed = true
+		burst3.CreatedAt = time.Date(2023, 3, 10, 0, 0, 0, 0, time.UTC)
+		burst3.UpdatedAt = time.Date(2023, 3, 10, 0, 0, 0, 0, time.UTC)
+
+		bursts = []*career.Burst{burst1, burst2, burst3}
 
 		// Create context (without repository/service for navigation tests)
 		ctx = &burst_management.IntentContext{
@@ -874,13 +867,17 @@ var _ = Describe("Burst Suggestion Integration E2E", func() {
 		now := time.Now()
 
 		// Create test events.
-		events = []*career.Event{
-			{ID: "e1", Text: "Led backend project", Date: now.AddDate(0, -1, 0), Company: "TechCorp", Project: "Platform"},
-			{ID: "e2", Text: "Built microservices", Date: now.AddDate(0, -2, 0), Company: "TechCorp", Project: "Platform"},
-			{ID: "e3", Text: "Frontend redesign", Date: now.AddDate(0, -3, 0), Company: "TechCorp", Project: "UI"},
-			{ID: "e4", Text: "React migration", Date: now.AddDate(0, -4, 0), Company: "TechCorp", Project: "UI"},
-			{ID: "e5", Text: "DevOps setup", Date: now.AddDate(0, -5, 0), Company: "TechCorp", Project: "Infra"},
-		}
+		e1 := fixtures.EventWith("e1", "Led backend project", "TechCorp", "Platform")
+		e1.Date = now.AddDate(0, -1, 0)
+		e2 := fixtures.EventWith("e2", "Built microservices", "TechCorp", "Platform")
+		e2.Date = now.AddDate(0, -2, 0)
+		e3 := fixtures.EventWith("e3", "Frontend redesign", "TechCorp", "UI")
+		e3.Date = now.AddDate(0, -3, 0)
+		e4 := fixtures.EventWith("e4", "React migration", "TechCorp", "UI")
+		e4.Date = now.AddDate(0, -4, 0)
+		e5 := fixtures.EventWith("e5", "DevOps setup", "TechCorp", "Infra")
+		e5.Date = now.AddDate(0, -5, 0)
+		events = []*career.Event{e1, e2, e3, e4, e5}
 
 		// Create suggestions (each must have at least 2 events for validation).
 		suggestions = []burstfact.BurstSuggestion{
@@ -909,8 +906,8 @@ var _ = Describe("Burst Suggestion Integration E2E", func() {
 			SetEvents(events).
 			SetSuggestions(suggestions).
 			SetExtractedFacts([]career.Fact{
-				{ID: "f1", Text: "Built scalable API"},
-				{ID: "f2", Text: "Improved response time by 40%"},
+				*fixtures.FactWith("f1", "Built scalable API"),
+				*fixtures.FactWith("f2", "Improved response time by 40%"),
 			})
 
 		// Create burst repository.

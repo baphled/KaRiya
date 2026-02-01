@@ -5,6 +5,7 @@ import (
 
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/service/career/skillinference"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -62,18 +63,8 @@ var _ = Describe("SkillInferenceService Interface", func() {
 	BeforeEach(func() {
 		ctx = context.Background()
 		events = []*career.Event{
-			{
-				ID:      "event-1",
-				Text:    "Built API using Go and PostgreSQL",
-				Company: "TechCorp",
-				Project: "Backend Migration",
-			},
-			{
-				ID:      "event-2",
-				Text:    "Deployed services to Kubernetes cluster",
-				Company: "TechCorp",
-				Project: "DevOps Platform",
-			},
+			fixtures.EventWith("event-1", "Built API using Go and PostgreSQL", "TechCorp", "Backend Migration"),
+			fixtures.EventWith("event-2", "Deployed services to Kubernetes cluster", "TechCorp", "DevOps Platform"),
 		}
 	})
 
@@ -101,11 +92,7 @@ var _ = Describe("SkillInferenceService Interface", func() {
 		})
 
 		It("should implement InferSkillsFromBurst", func() {
-			burst := &career.Burst{
-				ID:       "burst-1",
-				Name:     "Backend Migration",
-				EventIDs: []string{"event-1"},
-			}
+			burst := fixtures.Burst("burst-1", "event-1", "event-2")
 
 			result, err := mockService.InferSkillsFromBurst(ctx, burst, events)
 
@@ -144,7 +131,7 @@ var _ = Describe("SkillInferenceService Interface", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result).NotTo(BeNil())
 
-			burst := &career.Burst{ID: "burst-1"}
+			burst := fixtures.Burst("burst-1")
 			result, err = mockService.InferSkillsFromBurst(ctx, burst, events)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result).NotTo(BeNil())

@@ -9,6 +9,7 @@ import (
 
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/service/career/skillinference"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 // Integration test showing the complete workflow:
@@ -41,30 +42,16 @@ var _ = Describe("Skill Inference Integration", func() {
 		ctx = context.Background()
 
 		// Simulate a confirmed burst with events
-		testBurst = &career.Burst{
-			ID:          "burst-1",
-			Name:        "Microservices Migration",
-			Description: "Migrated monolith to microservices",
-			EventIDs:    []string{"event-1", "event-2", "event-3"},
-		}
+		testBurst = fixtures.Burst("burst-1", "event-1", "event-2", "event-3")
 
 		testEvents = []*career.Event{
-			{
-				ID:   "event-1",
-				Text: "Built API gateway with Go and integrated with PostgreSQL database",
-				Date: time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),
-			},
-			{
-				ID:   "event-2",
-				Text: "Deployed services to Kubernetes using Docker containers",
-				Date: time.Date(2024, 1, 20, 0, 0, 0, 0, time.UTC),
-			},
-			{
-				ID:   "event-3",
-				Text: "Implemented service mesh with Istio for traffic management",
-				Date: time.Date(2024, 1, 25, 0, 0, 0, 0, time.UTC),
-			},
+			fixtures.EventWith("event-1", "Built API gateway with Go and integrated with PostgreSQL database", "", ""),
+			fixtures.EventWith("event-2", "Deployed services to Kubernetes using Docker containers", "", ""),
+			fixtures.EventWith("event-3", "Implemented service mesh with Istio for traffic management", "", ""),
 		}
+		testEvents[0].Date = time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
+		testEvents[1].Date = time.Date(2024, 1, 20, 0, 0, 0, 0, time.UTC)
+		testEvents[2].Date = time.Date(2024, 1, 25, 0, 0, 0, 0, time.UTC)
 
 		// Add events to mock repo
 		for _, event := range testEvents {
@@ -143,12 +130,8 @@ var _ = Describe("Skill Inference Integration", func() {
 
 		It("should include existing skills in suggestions and report them in ExistingSkillNames", func() {
 			existingTime := time.Date(2023, 12, 1, 0, 0, 0, 0, time.UTC)
-			existingSkill := &career.Skill{
-				ID:       "skill-existing",
-				Name:     "Go",
-				Category: "Backend",
-				LastUsed: &existingTime,
-			}
+			existingSkill := fixtures.SkillWith("skill-existing", "Go", "Backend", "intermediate")
+			existingSkill.LastUsed = &existingTime
 			skillRepo.skills["go"] = existingSkill
 			skillRepo.skillsByID["skill-existing"] = existingSkill
 
@@ -167,21 +150,13 @@ var _ = Describe("Skill Inference Integration", func() {
 		It("should report existing skill names while keeping them in suggestions", func() {
 			existingTime := time.Date(2023, 12, 1, 0, 0, 0, 0, time.UTC)
 
-			goSkill := &career.Skill{
-				ID:       "skill-go",
-				Name:     "Go",
-				Category: "Backend",
-				LastUsed: &existingTime,
-			}
+			goSkill := fixtures.SkillWith("skill-go", "Go", "Backend", "intermediate")
+			goSkill.LastUsed = &existingTime
 			skillRepo.skills["go"] = goSkill
 			skillRepo.skillsByID["skill-go"] = goSkill
 
-			pgSkill := &career.Skill{
-				ID:       "skill-pg",
-				Name:     "PostgreSQL",
-				Category: "Database",
-				LastUsed: &existingTime,
-			}
+			pgSkill := fixtures.SkillWith("skill-pg", "PostgreSQL", "Database", "intermediate")
+			pgSkill.LastUsed = &existingTime
 			skillRepo.skills["postgresql"] = pgSkill
 			skillRepo.skillsByID["skill-pg"] = pgSkill
 

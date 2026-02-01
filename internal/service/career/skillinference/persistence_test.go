@@ -13,6 +13,7 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 	career_repo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/service/career/skillinference"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 var _ = Describe("Skill Persistence", func() {
@@ -59,8 +60,12 @@ var _ = Describe("Skill Persistence", func() {
 				}
 
 				// Add events to mock repo
-				eventRepo.events["event-1"] = &career.Event{ID: "event-1", Date: testTime}
-				eventRepo.events["event-2"] = &career.Event{ID: "event-2", Date: testTime.Add(24 * time.Hour)}
+				event1 := fixtures.Event("event-1")
+				event1.Date = testTime
+				eventRepo.events["event-1"] = event1
+				event2 := fixtures.Event("event-2")
+				event2.Date = testTime.Add(24 * time.Hour)
+				eventRepo.events["event-2"] = event2
 			})
 
 			It("should create skills from suggestions", func() {
@@ -135,12 +140,8 @@ var _ = Describe("Skill Persistence", func() {
 				existingTime = testTime.Add(-7 * 24 * time.Hour) // 1 week ago
 
 				// Pre-create a skill
-				existingSkill := &career.Skill{
-					ID:       "skill-1",
-					Name:     "Go",
-					Category: "Backend",
-					LastUsed: &existingTime,
-				}
+				existingSkill := fixtures.SkillWith("skill-1", "Go", "Backend", "intermediate")
+				existingSkill.LastUsed = &existingTime
 				skillRepo.skills["go"] = existingSkill
 				skillRepo.skillsByID["skill-1"] = existingSkill
 
@@ -153,7 +154,9 @@ var _ = Describe("Skill Persistence", func() {
 					},
 				}
 
-				eventRepo.events["event-1"] = &career.Event{ID: "event-1", Date: testTime}
+				event1 := fixtures.Event("event-1")
+				event1.Date = testTime
+				eventRepo.events["event-1"] = event1
 			})
 
 			It("should reuse existing skill (case-insensitive)", func() {
@@ -189,11 +192,7 @@ var _ = Describe("Skill Persistence", func() {
 
 		Context("when skill exists with different case", func() {
 			BeforeEach(func() {
-				existingSkill := &career.Skill{
-					ID:       "skill-1",
-					Name:     "go", // Lowercase
-					Category: "Backend",
-				}
+				existingSkill := fixtures.SkillWith("skill-1", "go", "Backend", "intermediate")
 				skillRepo.skills["go"] = existingSkill
 				skillRepo.skillsByID["skill-1"] = existingSkill
 
@@ -205,7 +204,9 @@ var _ = Describe("Skill Persistence", func() {
 					},
 				}
 
-				eventRepo.events["event-1"] = &career.Event{ID: "event-1", Date: testTime}
+				event1 := fixtures.Event("event-1")
+				event1.Date = testTime
+				eventRepo.events["event-1"] = event1
 			})
 
 			It("should match existing skill case-insensitively", func() {
@@ -234,8 +235,12 @@ var _ = Describe("Skill Persistence", func() {
 					},
 				}
 
-				eventRepo.events["event-1"] = &career.Event{ID: "event-1", Date: testTime}
-				eventRepo.events["event-2"] = &career.Event{ID: "event-2", Date: testTime.Add(24 * time.Hour)}
+				event1 := fixtures.Event("event-1")
+				event1.Date = testTime
+				eventRepo.events["event-1"] = event1
+				event2 := fixtures.Event("event-2")
+				event2.Date = testTime.Add(24 * time.Hour)
+				eventRepo.events["event-2"] = event2
 			})
 
 			It("should deduplicate suggestions", func() {
@@ -285,8 +290,12 @@ var _ = Describe("Skill Persistence", func() {
 					},
 				}
 
-				eventRepo.events["event-1"] = &career.Event{ID: "event-1", Date: testTime}
-				eventRepo.events["event-2"] = &career.Event{ID: "event-2", Date: testTime.Add(24 * time.Hour)}
+				event1 := fixtures.Event("event-1")
+				event1.Date = testTime
+				eventRepo.events["event-1"] = event1
+				event2 := fixtures.Event("event-2")
+				event2.Date = testTime.Add(24 * time.Hour)
+				eventRepo.events["event-2"] = event2
 			})
 
 			It("should create new skills successfully", func() {
@@ -320,7 +329,7 @@ var _ = Describe("Skill Persistence", func() {
 			})
 
 			It("should handle mix of existing and new skills", func() {
-				existingSkill := &career.Skill{ID: "existing-1", Name: "Go", Category: "Backend"}
+				existingSkill := fixtures.SkillWith("existing-1", "Go", "Backend", "intermediate")
 				skillRepo.skills["go"] = existingSkill
 				skillRepo.skillsByID["existing-1"] = existingSkill
 
@@ -367,7 +376,9 @@ var _ = Describe("Skill Persistence", func() {
 				suggestions = []skillinference.SkillSuggestion{
 					{Name: "Go", Category: "Backend", EventIDs: []string{"event-1"}},
 				}
-				eventRepo.events["event-1"] = &career.Event{ID: "event-1", Date: testTime}
+				event1 := fixtures.Event("event-1")
+				event1.Date = testTime
+				eventRepo.events["event-1"] = event1
 			})
 
 			It("should return error when skill creation fails", func() {
@@ -383,7 +394,7 @@ var _ = Describe("Skill Persistence", func() {
 				skillRepo.updateError = errors.New("update failed")
 
 				// Pre-create skill to trigger update path
-				existingSkill := &career.Skill{ID: "skill-1", Name: "Go", Category: "Backend"}
+				existingSkill := fixtures.SkillWith("skill-1", "Go", "Backend", "intermediate")
 				skillRepo.skills["go"] = existingSkill
 				skillRepo.skillsByID["skill-1"] = existingSkill
 

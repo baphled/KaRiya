@@ -2,7 +2,6 @@ package skillinference_test
 
 import (
 	"context"
-	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/service/career/skillinference"
@@ -25,8 +24,8 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 	Describe("Word Boundary Detection", func() {
 		It("should detect 'go' as a keyword", func() {
 			events := []*career.Event{
-			fixtures.EventWith("event-1", "Built API using Go", "", ""),
-		}
+				fixtures.EventWith("event-1", "Built API using Go", "", ""),
+			}
 
 			result, err := service.InferSkillsFromEvents(ctx, events)
 
@@ -37,8 +36,8 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 
 		It("should NOT match 'go' in 'goal'", func() {
 			events := []*career.Event{
-			fixtures.EventWith("event-1", "Our goal was to improve performance", "", ""),
-		}
+				fixtures.EventWith("event-1", "Our goal was to improve performance", "", ""),
+			}
 
 			result, err := service.InferSkillsFromEvents(ctx, events)
 
@@ -50,8 +49,8 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 
 		It("should NOT match 'go' in 'going'", func() {
 			events := []*career.Event{
-			fixtures.EventWith("event-1", "We are going to deploy tomorrow", "", ""),
-		}
+				fixtures.EventWith("event-1", "We are going to deploy tomorrow", "", ""),
+			}
 
 			result, err := service.InferSkillsFromEvents(ctx, events)
 
@@ -62,8 +61,8 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 
 		It("should match 'go' with punctuation", func() {
 			events := []*career.Event{
-			fixtures.EventWith("event-1", "Built with Go, PostgreSQL, and Docker", "", ""),
-		}
+				fixtures.EventWith("event-1", "Built with Go, PostgreSQL, and Docker", "", ""),
+			}
 
 			result, err := service.InferSkillsFromEvents(ctx, events)
 
@@ -80,8 +79,8 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 	Describe("Case-Insensitive Matching", func() {
 		It("should match 'Go' (uppercase)", func() {
 			events := []*career.Event{
-			fixtures.EventWith("event-1", "Built API with Go", "", ""),
-		}
+				fixtures.EventWith("event-1", "Built API with Go", "", ""),
+			}
 
 			result, err := service.InferSkillsFromEvents(ctx, events)
 
@@ -92,8 +91,8 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 
 		It("should match 'go' (lowercase)", func() {
 			events := []*career.Event{
-			fixtures.EventWith("event-1", "Wrote microservices in go", "", ""),
-		}
+				fixtures.EventWith("event-1", "Wrote microservices in go", "", ""),
+			}
 
 			result, err := service.InferSkillsFromEvents(ctx, events)
 
@@ -104,8 +103,8 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 
 		It("should match 'GO' (all caps)", func() {
 			events := []*career.Event{
-			fixtures.EventWith("event-1", "Migrated to GO from Java", "", ""),
-		}
+				fixtures.EventWith("event-1", "Migrated to GO from Java", "", ""),
+			}
 
 			result, err := service.InferSkillsFromEvents(ctx, events)
 
@@ -118,8 +117,8 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 	Describe("Context Extraction", func() {
 		It("should extract context around keyword", func() {
 			events := []*career.Event{
-			fixtures.EventWith("event-1", "Built a scalable API using Go and gRPC for microservices architecture", "", ""),
-		}
+				fixtures.EventWith("event-1", "Built a scalable API using Go and gRPC for microservices architecture", "", ""),
+			}
 
 			result, err := service.InferSkillsFromEvents(ctx, events)
 
@@ -133,11 +132,7 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 		It("should limit context to ~80 chars", func() {
 			longText := "This is a very long event description that goes on and on with lots of details about how we built an amazing API using Go and gRPC for a distributed microservices architecture that handles millions of requests per day"
 			events := []*career.Event{
-				{
-					ID:   "event-1",
-					Text: longText,
-					Date: time.Now(),
-				},
+				fixtures.EventWith("event-1", longText, "", ""),
 			}
 
 			result, err := service.InferSkillsFromEvents(ctx, events)
@@ -154,8 +149,8 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 
 		It("should add ellipsis when truncated", func() {
 			events := []*career.Event{
-			fixtures.EventWith("event-1", "First part of text before keyword and then we used Go for the implementation and then lots more text after", "", ""),
-		}
+				fixtures.EventWith("event-1", "First part of text before keyword and then we used Go for the implementation and then lots more text after", "", ""),
+			}
 
 			result, err := service.InferSkillsFromEvents(ctx, events)
 
@@ -227,8 +222,8 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 	Describe("Alias Support", func() {
 		It("should detect 'golang' and return 'Go'", func() {
 			events := []*career.Event{
-			fixtures.EventWith("event-1", "Built services with golang", "", ""),
-		}
+				fixtures.EventWith("event-1", "Built services with golang", "", ""),
+			}
 
 			result, err := service.InferSkillsFromEvents(ctx, events)
 
@@ -256,8 +251,8 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 
 		It("should detect 'k8s' and return 'Kubernetes'", func() {
 			events := []*career.Event{
-			fixtures.EventWith("event-1", "Deployed to k8s cluster", "", ""),
-		}
+				fixtures.EventWith("event-1", "Deployed to k8s cluster", "", ""),
+			}
 
 			result, err := service.InferSkillsFromEvents(ctx, events)
 
@@ -270,8 +265,8 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 	Describe("Empty Results", func() {
 		It("should return empty slice when no keywords found", func() {
 			events := []*career.Event{
-			fixtures.EventWith("event-1", "Had a meeting about the project", "", ""),
-		}
+				fixtures.EventWith("event-1", "Had a meeting about the project", "", ""),
+			}
 
 			result, err := service.InferSkillsFromEvents(ctx, events)
 
@@ -299,8 +294,8 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 	Describe("Multiple Technologies", func() {
 		It("should detect multiple technologies in one event", func() {
 			events := []*career.Event{
-			fixtures.EventWith("event-1", "Built API with Go, PostgreSQL, and deployed to Kubernetes", "", ""),
-		}
+				fixtures.EventWith("event-1", "Built API with Go, PostgreSQL, and deployed to Kubernetes", "", ""),
+			}
 
 			result, err := service.InferSkillsFromEvents(ctx, events)
 
@@ -315,8 +310,8 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 
 		It("should assign correct categories", func() {
 			events := []*career.Event{
-			fixtures.EventWith("event-1", "Built API with Go, PostgreSQL, and React", "", ""),
-		}
+				fixtures.EventWith("event-1", "Built API with Go, PostgreSQL, and React", "", ""),
+			}
 
 			result, err := service.InferSkillsFromEvents(ctx, events)
 
@@ -338,25 +333,6 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 })
 
 // Helper functions for tests
-
-func filterByName(suggestions []skillinference.SkillSuggestion, name string) []skillinference.SkillSuggestion { //nolint:unparam // test helper intentionally called with fixed values
-	var result []skillinference.SkillSuggestion
-	for _, s := range suggestions {
-		if s.Name == name {
-			result = append(result, s)
-		}
-	}
-	return result
-}
-
-func findByName(suggestions []skillinference.SkillSuggestion, name string) *skillinference.SkillSuggestion {
-	for i, s := range suggestions {
-		if s.Name == name {
-			return &suggestions[i]
-		}
-	}
-	return nil
-}
 
 func extractNames(suggestions []skillinference.SkillSuggestion) []string {
 	var names []string
