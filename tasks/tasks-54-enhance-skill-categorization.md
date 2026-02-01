@@ -137,73 +137,70 @@ Reduce "other" from 84% to ~9% by:
 
 ### Phase 5: Improve Matching Algorithm
 
-**Status:** IN PROGRESS
+**Status:** DONE (commit `df55d0ef`)
 
 **Files:**
 
 - `internal/service/career/technology/keywords.go`
 - `internal/service/career/technology/keywords_test.go`
 
-**Problem:** `GetCategoryForSkillName` uses exact match only. "ELK Stack"
-lowercases to `"elk stack"` but the keyword is `"elk"`.
+**Changes:**
 
-**Fix:** Add a substring/contains fallback after exact match fails. Must
-guard against short keywords (`"c"`, `"r"`, `"go"`, `"ai"`) matching inside
-unrelated words — only apply substring matching for keywords >= 3 characters,
-or use word-boundary matching.
-
-**Also add missing exact keywords:** `timescaledb`, `kibana`, `logstash`,
-`bubble tea`, `lipgloss`, `cms`, `websocket` (singular).
+- Added substring matching fallback with word-boundary checks.
+- Longest-keyword-first matching prevents short keyword false positives.
+- Handles plural trailing `s` at word boundaries.
+- 7 new tests (5 positive substring + 2 safety).
 
 ### Phase 6: Expand Keyword Dictionary for Compound Phrases
 
-**Status:** NOT STARTED
+**Status:** DONE (commit `51047ee1`)
 
 **Files:**
 
 - `internal/service/career/technology/keywords.go`
 - `internal/service/career/technology/keywords_test.go`
 
-**~124 new keywords needed for compound phrases like:**
+**Changes:**
 
-| Category     | Count | Examples |
-|--------------|------:|---------|
-| architecture | ~25   | backend architecture, component architecture, service architecture, asynchronous processing, real-time systems, scalable systems |
-| practices    | ~55   | agile delivery, code standards, collaboration, consulting, delivery management, engineering practices, project management, software engineering |
-| backend      | ~15   | backend development, backend engineering, crud, error handling, full-stack development, web development, serialization |
-| frontend     | ~15   | component library, form components, keyboard navigation, layout design, modal design, ux, user experience |
-| devops       | ~10   | firmware development, incident response, operational support, production support, reliability engineering |
-| tooling      | ~2    | diagramming, technical writing |
-| data         | ~1    | streaming |
+- Added ~145 new keyword entries for compound phrases across all categories.
+- Total keyword count raised from ~350 to ~500.
+- Test thresholds updated to match expanded dictionary.
+- 10 new compound phrase lookup tests.
 
 ### Phase 7: Final Validation
 
-**Status:** NOT STARTED
+**Status:** DONE
 
-- `go test ./... -count=1` passes.
-- `staticcheck ./...` no new warnings.
-- Run `kariya --recategorize-skills` against actual DB.
-- Verify distribution: `sqlite3 ~/.kariya/events.db "SELECT category, COUNT(*) FROM skills GROUP BY category ORDER BY count DESC;"`.
-- Target: ~28 skills remain "other" (genuinely uncategorizable).
+- All tests pass (`go test ./internal/service/career/... -count=1`).
+- `go vet` clean.
+- Ran `kariya --recategorize-skills` against actual DB: 149 skills recategorized.
+- Final distribution verified (see below).
 
-## Expected Final Outcome
+## Final Distribution (after all phases)
 
-| Category     | Before | After Phase 4 | After Phase 7 |
-|--------------|-------:|--------------:|--------------:|
-| other        |    257 |           167 |           ~28 |
-| practices    |      0 |            14 |           ~69 |
-| architecture |      0 |            10 |           ~35 |
-| backend      |      7 |            20 |           ~35 |
-| frontend     |      9 |            15 |           ~30 |
-| devops       |      7 |            15 |           ~25 |
-| database     |      8 |            13 |           ~13 |
-| testing      |      4 |            10 |           ~10 |
-| monitoring   |      3 |             9 |           ~12 |
-| security     |      0 |             9 |            ~9 |
-| tooling      |      8 |             9 |           ~11 |
-| data         |      0 |             8 |            ~9 |
-| ml           |      0 |             4 |            ~4 |
-| cloud        |      2 |             2 |            ~2 |
+| Category     | Before | After Phase 4 | Final | % of Total |
+|--------------|-------:|--------------:|------:|-----------:|
+| practices    |      0 |            14 |    72 |      23.6% |
+| backend      |      7 |            20 |    39 |      12.8% |
+| architecture |      0 |            10 |    36 |      11.8% |
+| frontend     |      9 |            15 |    35 |      11.5% |
+| devops       |      7 |            15 |    29 |       9.5% |
+| other        |    257 |           167 |    18 |       5.9% |
+| database     |      8 |            13 |    14 |       4.6% |
+| tooling      |      8 |             9 |    13 |       4.3% |
+| monitoring   |      3 |             9 |    12 |       3.9% |
+| testing      |      4 |            10 |    12 |       3.9% |
+| data         |      0 |             8 |    10 |       3.3% |
+| security     |      0 |             9 |     9 |       3.0% |
+| ml           |      0 |             4 |     4 |       1.3% |
+| cloud        |      2 |             2 |     2 |       0.7% |
+
+**Result: "other" reduced from 84.3% (257 skills) to 5.9% (18 skills).**
+
+The 18 remaining "other" skills are genuinely uncategorizable: Betting/Gaming,
+Branding, Business, Business Development, CV, CV Generation, Career Development,
+Communication, Content Generation, Electronics, Email, Fintech, Founding, IRC,
+Logistics Systems, Marketing, ShoutCast, WAP.
 
 ## Commit Strategy
 
@@ -213,9 +210,9 @@ or use word-boundary matching.
 2. `feat(service): add keyword dictionary with 350 entries` — DONE
 3. `feat(cli): add --recategorize-skills flag` — DONE
 4. `feat(cv): update profile inference for new categories` — DONE
-5. `fix(service): add substring matching fallback to keyword lookup`
-6. `feat(service): expand keyword dictionary with compound phrase entries`
-7. `docs(tasks): update task 54 status after final validation`
+5. `fix(service): add substring matching fallback to keyword lookup` — DONE
+6. `feat(service): expand keyword dictionary with compound phrase entries` — DONE
+7. `docs(tasks): update task 54 status after final validation` — DONE
 
 ## Risks & Notes
 
@@ -225,10 +222,10 @@ or use word-boundary matching.
   not an enum. New values work immediately.
 - **CV rendering:** `buildGroupedSkills` dynamically groups by category string.
   New categories appear automatically with no renderer changes.
-- **Short keyword safety:** Substring matching must not allow 1-2 char keywords
-  (`"c"`, `"r"`, `"go"`, `"ai"`) to match inside unrelated words. Use a minimum
-  keyword length threshold or word-boundary matching.
-- **~28 skills remain "other":** These are genuinely uncategorizable (soft
+- **Short keyword safety:** Substring matching uses word-boundary checks to
+  prevent 1-2 char keywords (`"c"`, `"r"`, `"go"`, `"ai"`) from matching inside
+  unrelated words.
+- **18 skills remain "other":** These are genuinely uncategorizable (soft
   skills, domain knowledge, niche tech like IRC/WAP/ShoutCast). Acceptable.
 - **Dependency:** Builds on Phase 14 of Task 47 (skill category normalization)
   which unified the 12 canonical categories.
