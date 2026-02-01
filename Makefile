@@ -2,7 +2,7 @@
 
 # Run all tests in verbose mode (race detection in CI only)
 test:
-	ginkgo -v ./...
+	ginkgo -v --skip-package=testdata ./...
 
 # Run a specific test suite
 test-suite:
@@ -14,7 +14,7 @@ test-suite:
 
 # Run tests with race detection (slow - use sparingly)
 test-race:
-	ginkgo -v --race ./...
+	ginkgo -v --race --skip-package=testdata ./...
 
 # Run a specific test
 individual-test:
@@ -22,7 +22,7 @@ individual-test:
 		echo "Please specify a test using TEST=path/to/test/file/TestName"; \
 		exit 1; \
 	fi
-	ginkgo -v -focus="$(TEST)" ./...
+	ginkgo -v --skip-package=testdata -focus="$(TEST)" ./...
 
 coverage:
 	@bash scripts/test-coverage.sh
