@@ -2,9 +2,9 @@ package intents
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
@@ -18,28 +18,9 @@ var _ = Describe("GenerateCVIntent", func() {
 	)
 
 	BeforeEach(func() {
-		// Create test events.
 		events := []*career.Event{
-			{
-				ID:         "event1",
-				Text:       "Implemented feature X",
-				Date:       time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
-				Company:    "Company A",
-				CreatedAt:  time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
-				UpdatedAt:  time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
-				Tags:       []string{"go", "backend"},
-				Categories: []string{"technical"},
-			},
-			{
-				ID:         "event2",
-				Text:       "Led team on project Y",
-				Date:       time.Date(2025, 1, 2, 0, 0, 0, 0, time.UTC),
-				Company:    "Company B",
-				CreatedAt:  time.Date(2025, 1, 2, 0, 0, 0, 0, time.UTC),
-				UpdatedAt:  time.Date(2025, 1, 2, 0, 0, 0, 0, time.UTC),
-				Tags:       []string{"leadership"},
-				Categories: []string{"management"},
-			},
+			fixtures.EventWith("event1", "Implemented feature X", "Company A", ""),
+			fixtures.EventWith("event2", "Led team on project Y", "Company B", ""),
 		}
 
 		// Create test profiles.
@@ -194,15 +175,7 @@ var _ = Describe("GenerateCVIntent", func() {
 		BeforeEach(func() {
 			intent.Init()
 			intent.state.currentState = GenerateCVStatePreview
-			intent.state.generatedCV = &career.CVView{
-				ID:               "cv_123",
-				Name:             "Senior IC",
-				TargetRole:       "senior_ic",
-				TargetAudience:   "hiring_manager",
-				GeneratedAt:      time.Now(),
-				SourceEventCount: 2,
-				SourceFactCount:  0,
-			}
+			intent.state.generatedCV = fixtures.CVViewWith("cv_123", "Senior IC", "senior_ic", "hiring_manager")
 		})
 
 		It("should transition to review on e key", func() {
@@ -231,15 +204,7 @@ var _ = Describe("GenerateCVIntent", func() {
 		BeforeEach(func() {
 			intent.Init()
 			intent.state.currentState = GenerateCVStateReview
-			intent.state.generatedCV = &career.CVView{
-				ID:               "cv_123",
-				Name:             "Senior IC",
-				TargetRole:       "senior_ic",
-				TargetAudience:   "hiring_manager",
-				GeneratedAt:      time.Now(),
-				SourceEventCount: 2,
-				SourceFactCount:  0,
-			}
+			intent.state.generatedCV = fixtures.CVViewWith("cv_123", "Senior IC", "senior_ic", "hiring_manager")
 		})
 
 		It("should transition to confirm on enter", func() {
@@ -263,15 +228,7 @@ var _ = Describe("GenerateCVIntent", func() {
 		BeforeEach(func() {
 			intent.Init()
 			intent.state.currentState = GenerateCVStateConfirm
-			intent.state.generatedCV = &career.CVView{
-				ID:               "cv_123",
-				Name:             "Senior IC",
-				TargetRole:       "senior_ic",
-				TargetAudience:   "hiring_manager",
-				GeneratedAt:      time.Now(),
-				SourceEventCount: 2,
-				SourceFactCount:  0,
-			}
+			intent.state.generatedCV = fixtures.CVViewWith("cv_123", "Senior IC", "senior_ic", "hiring_manager")
 		})
 
 		It("should complete on y key", func() {
@@ -353,16 +310,9 @@ var _ = Describe("GenerateCVIntent", func() {
 
 		It("should render preview view", func() {
 			intent.state.currentState = GenerateCVStatePreview
-			intent.state.generatedCV = &career.CVView{
-				ID:               "cv_123",
-				Name:             "Senior IC",
-				TargetRole:       "senior_ic",
-				TargetAudience:   "hiring_manager",
-				GeneratedAt:      time.Now(),
-				SourceEventCount: 2,
-				SourceFactCount:  0,
-				Sections:         []*career.CVSection{},
-			}
+			cv := fixtures.CVViewWith("cv_123", "Senior IC", "senior_ic", "hiring_manager")
+			cv.Sections = []*career.CVSection{}
+			intent.state.generatedCV = cv
 			// Initialize viewport for preview
 			intent.state.previewViewport = viewport.New(80, 20)
 			view := intent.View()
@@ -372,15 +322,7 @@ var _ = Describe("GenerateCVIntent", func() {
 
 		It("should render review view", func() {
 			intent.state.currentState = GenerateCVStateReview
-			intent.state.generatedCV = &career.CVView{
-				ID:               "cv_123",
-				Name:             "Senior IC",
-				TargetRole:       "senior_ic",
-				TargetAudience:   "hiring_manager",
-				GeneratedAt:      time.Now(),
-				SourceEventCount: 2,
-				SourceFactCount:  0,
-			}
+			intent.state.generatedCV = fixtures.CVViewWith("cv_123", "Senior IC", "senior_ic", "hiring_manager")
 			view := intent.View()
 			Expect(view).NotTo(BeEmpty())
 			Expect(view).To(ContainSubstring("Review & Edit CV"))
@@ -388,15 +330,7 @@ var _ = Describe("GenerateCVIntent", func() {
 
 		It("should render confirm view", func() {
 			intent.state.currentState = GenerateCVStateConfirm
-			intent.state.generatedCV = &career.CVView{
-				ID:               "cv_123",
-				Name:             "Senior IC",
-				TargetRole:       "senior_ic",
-				TargetAudience:   "hiring_manager",
-				GeneratedAt:      time.Now(),
-				SourceEventCount: 2,
-				SourceFactCount:  0,
-			}
+			intent.state.generatedCV = fixtures.CVViewWith("cv_123", "Senior IC", "senior_ic", "hiring_manager")
 			view := intent.View()
 			Expect(view).NotTo(BeEmpty())
 			Expect(view).To(ContainSubstring("Confirm CV Generation"))
@@ -412,15 +346,7 @@ var _ = Describe("GenerateCVIntent", func() {
 		It("should return completed result after completion", func() {
 			intent.Init()
 			intent.state.currentState = GenerateCVStateConfirm
-			intent.state.generatedCV = &career.CVView{
-				ID:               "cv_123",
-				Name:             "Senior IC",
-				TargetRole:       "senior_ic",
-				TargetAudience:   "hiring_manager",
-				GeneratedAt:      time.Now(),
-				SourceEventCount: 2,
-				SourceFactCount:  0,
-			}
+			intent.state.generatedCV = fixtures.CVViewWith("cv_123", "Senior IC", "senior_ic", "hiring_manager")
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
 			result := intent.Result()
@@ -431,15 +357,7 @@ var _ = Describe("GenerateCVIntent", func() {
 		It("should include generated CV in result data", func() {
 			intent.Init()
 			intent.state.currentState = GenerateCVStateConfirm
-			intent.state.generatedCV = &career.CVView{
-				ID:               "cv_123",
-				Name:             "Senior IC",
-				TargetRole:       "senior_ic",
-				TargetAudience:   "hiring_manager",
-				GeneratedAt:      time.Now(),
-				SourceEventCount: 2,
-				SourceFactCount:  0,
-			}
+			intent.state.generatedCV = fixtures.CVViewWith("cv_123", "Senior IC", "senior_ic", "hiring_manager")
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
 			result := intent.Result()
@@ -451,15 +369,7 @@ var _ = Describe("GenerateCVIntent", func() {
 		It("should include selected profile in result data", func() {
 			intent.Init()
 			intent.state.currentState = GenerateCVStateConfirm
-			intent.state.generatedCV = &career.CVView{
-				ID:               "cv_123",
-				Name:             "Senior IC",
-				TargetRole:       "senior_ic",
-				TargetAudience:   "hiring_manager",
-				GeneratedAt:      time.Now(),
-				SourceEventCount: 2,
-				SourceFactCount:  0,
-			}
+			intent.state.generatedCV = fixtures.CVViewWith("cv_123", "Senior IC", "senior_ic", "hiring_manager")
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
 			result := intent.Result()
@@ -471,15 +381,7 @@ var _ = Describe("GenerateCVIntent", func() {
 		It("should include metadata in result", func() {
 			intent.Init()
 			intent.state.currentState = GenerateCVStateConfirm
-			intent.state.generatedCV = &career.CVView{
-				ID:               "cv_123",
-				Name:             "Senior IC",
-				TargetRole:       "senior_ic",
-				TargetAudience:   "hiring_manager",
-				GeneratedAt:      time.Now(),
-				SourceEventCount: 2,
-				SourceFactCount:  0,
-			}
+			intent.state.generatedCV = fixtures.CVViewWith("cv_123", "Senior IC", "senior_ic", "hiring_manager")
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
 			result := intent.Result()

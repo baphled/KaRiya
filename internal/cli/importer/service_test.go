@@ -5,9 +5,9 @@ import (
 	"context"
 
 	"github.com/baphled/kariya/internal/cli/importer"
-	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	careerservice "github.com/baphled/kariya/internal/service/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -156,7 +156,7 @@ Optimized cloud infrastructure performance,2024-01-25,Technical,technical,CloudM
 			Expect(result.SuccessCount).To(Equal(3))
 
 			// Bursts must have been detected from these clustered events.
-			allBursts, err := burstRepo.List(ctx, careerrepo.BurstListFilters{})
+			allBursts, err := burstRepo.List(ctx, *fixtures.BurstListFilters())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(allBursts).NotTo(BeEmpty(),
 				"clustered events with same project/company should produce at least one burst")
@@ -170,7 +170,7 @@ Optimized cloud infrastructure performance,2024-01-25,Technical,technical,CloudM
 			}
 
 			// Every fact whose event belongs to a burst must have SourceBurstID set.
-			allFacts, err := factRepo.List(ctx, careerrepo.FactListFilters{})
+			allFacts, err := factRepo.List(ctx, *fixtures.FactListFilters())
 			Expect(err).NotTo(HaveOccurred())
 
 			for _, fact := range allFacts {

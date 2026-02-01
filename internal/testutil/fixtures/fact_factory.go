@@ -103,8 +103,11 @@ func FactFromBurst(id, sourceBurstID string) *career.Fact {
 // Facts creates n facts with sequential IDs, linked to the provided events.
 func Facts(n int, events []*career.Event) []*career.Fact {
 	facts := make([]*career.Fact, n)
-	for i := 0; i < n; i++ {
-		fact := FactFactory.MustCreate().(*career.Fact)
+	for i := range n {
+		fact, ok := FactFactory.MustCreate().(*career.Fact)
+		if !ok {
+			continue
+		}
 		// Link to actual events if provided
 		if len(events) > 0 {
 			fact.SourceEventID = events[i%len(events)].ID
@@ -140,5 +143,35 @@ func FactWithCategories(id, text, sourceEventID string, categories, audienceRele
 		SourceEventID:        sourceEventID,
 		CreatedAt:            now,
 		UpdatedAt:            now,
+	}
+}
+
+// FactForValidation creates a fully-populated Fact suitable for validation tests.
+// All required fields are set with specified values, allowing targeted field overrides after creation.
+func FactForValidation(id, text string, roleFit career.RoleFit, categories, audienceRelevance []string, sourceEventID string) *career.Fact {
+	now := time.Now()
+	return &career.Fact{
+		ID:                   id,
+		Text:                 text,
+		CompetencyCategories: categories,
+		RoleFit:              roleFit,
+		AudienceRelevance:    audienceRelevance,
+		StrengthSignal:       "leadership capability",
+		SourceEventID:        sourceEventID,
+		CreatedAt:            now,
+		UpdatedAt:            now,
+	}
+}
+
+// FactForSave creates a Fact without an ID, suitable for SaveFact tests.
+// The service will assign the ID upon saving.
+func FactForSave(text string, categories []string, roleFit career.RoleFit, audienceRelevance []string, sourceEventID string) *career.Fact {
+	return &career.Fact{
+		Text:                 text,
+		CompetencyCategories: categories,
+		RoleFit:              roleFit,
+		AudienceRelevance:    audienceRelevance,
+		StrengthSignal:       "technical",
+		SourceEventID:        sourceEventID,
 	}
 }

@@ -3,6 +3,7 @@ package modals_test
 import (
 	"github.com/baphled/kariya/internal/cli/screens/skills/modals"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -15,14 +16,8 @@ var _ = Describe("AddEditModal", func() {
 	)
 
 	BeforeEach(func() {
-		years := 5
-		skill = &career.Skill{
-			ID:        "skill-1",
-			Name:      "Go Programming",
-			Category:  "backend",
-			Level:     "Expert",
-			YearsUsed: &years,
-		}
+		skill = fixtures.SkillWithYears("skill-1", "Go Programming", "backend", 5)
+		skill.Level = "Expert"
 	})
 
 	Describe("NewAddEditModal (Add mode)", func() {

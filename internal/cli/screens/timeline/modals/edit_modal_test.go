@@ -8,6 +8,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/screens/timeline/modals"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -18,17 +19,12 @@ var _ = Describe("EditModal", func() {
 	)
 
 	BeforeEach(func() {
-		event = &career.Event{
-			ID:         "test-event-id",
-			Text:       "Original event text",
-			Date:       time.Date(2024, 3, 15, 0, 0, 0, 0, time.UTC),
-			Company:    "Test Company",
-			Project:    "Test Project",
-			Tags:       []string{"tag1", "tag2"},
-			Categories: []string{"category1"},
-			CreatedAt:  time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-			UpdatedAt:  time.Date(2024, 2, 1, 0, 0, 0, 0, time.UTC),
-		}
+		event = fixtures.EventWith("test-event-id", "Original event text", "Test Company", "Test Project")
+		event.Date = time.Date(2024, 3, 15, 0, 0, 0, 0, time.UTC)
+		event.Tags = []string{"tag1", "tag2"}
+		event.Categories = []string{"category1"}
+		event.CreatedAt = time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
+		event.UpdatedAt = time.Date(2024, 2, 1, 0, 0, 0, 0, time.UTC)
 	})
 
 	Describe("NewEditModal", func() {

@@ -8,18 +8,17 @@ import (
 	careerRepo "github.com/baphled/kariya/internal/repository/career"
 	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	"github.com/baphled/kariya/internal/service/career/technology"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Extractor", func() {
 	var (
-		extractor  *technology.Extractor
-		skillRepo  careerRepo.SkillRepository
-		eventRepo  careerRepo.EventRepository
-		ctx        context.Context
-		testSkills []*career.Skill
-		testEvents []*career.Event
+		extractor *technology.Extractor
+		skillRepo careerRepo.SkillRepository
+		eventRepo careerRepo.EventRepository
+		ctx       context.Context
 	)
 
 	BeforeEach(func() {
@@ -29,86 +28,36 @@ var _ = Describe("Extractor", func() {
 		skillRepo = careermemory.NewSkillRepository()
 		eventRepo = careermemory.NewEventRepository()
 
-		// Create test skills
-		now := time.Now()
-		testSkills = []*career.Skill{
-			{
-				ID:        "skill-1",
-				Name:      "Ruby",
-				Category:  "backend",
-				Level:     "expert",
-				CreatedAt: now,
-				UpdatedAt: now,
-			},
-			{
-				ID:        "skill-2",
-				Name:      "PostgreSQL",
-				Category:  "database",
-				Level:     "advanced",
-				CreatedAt: now,
-				UpdatedAt: now,
-			},
-			{
-				ID:        "skill-3",
-				Name:      "React",
-				Category:  "frontend",
-				Level:     "intermediate",
-				CreatedAt: now,
-				UpdatedAt: now,
-			},
-		}
+		skill1 := fixtures.SkillWith("skill-1", "Ruby", "backend", "expert")
+		skill2 := fixtures.SkillWith("skill-2", "PostgreSQL", "database", "advanced")
+		skill3 := fixtures.SkillWith("skill-3", "React", "frontend", "intermediate")
 
-		// Create test events (using correct Event fields)
-		testEvents = []*career.Event{
-			{
-				ID:        "event-1",
-				Text:      "Backend Developer at Company A - Worked with Ruby and PostgreSQL",
-				Company:   "Company A",
-				Date:      time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
-				Skills:    []string{"skill-1", "skill-2"}, // Skill IDs
-				Tags:      []string{"project"},
-				CreatedAt: now,
-				UpdatedAt: now,
-			},
-			{
-				ID:        "event-2",
-				Text:      "Senior Backend Developer at Company A - Continued Ruby work",
-				Company:   "Company A",
-				Date:      time.Date(2023, 6, 1, 0, 0, 0, 0, time.UTC),
-				Skills:    []string{"skill-1"},
-				Tags:      []string{"project"},
-				CreatedAt: now,
-				UpdatedAt: now,
-			},
-			{
-				ID:        "event-3",
-				Text:      "Fullstack Developer at Company B - Worked with React and Ruby",
-				Company:   "Company B",
-				Date:      time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-				Skills:    []string{"skill-1", "skill-3"},
-				Tags:      []string{"project"},
-				CreatedAt: now,
-				UpdatedAt: now,
-			},
-			{
-				ID:        "event-4",
-				Text:      "Project without skills - Legacy event",
-				Company:   "Company C",
-				Date:      time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC),
-				Skills:    []string{}, // No skills
-				Tags:      []string{"project"},
-				CreatedAt: now,
-				UpdatedAt: now,
-			},
-		}
+		event1 := fixtures.EventWith("event-1", "Backend Developer at Company A - Worked with Ruby and PostgreSQL", "Company A", "")
+		event1.Date = time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC)
+		event1.Skills = []string{"skill-1", "skill-2"}
+		event1.Tags = []string{"project"}
 
-		// Populate repositories
-		for _, skill := range testSkills {
+		event2 := fixtures.EventWith("event-2", "Senior Backend Developer at Company A - Continued Ruby work", "Company A", "")
+		event2.Date = time.Date(2023, 6, 1, 0, 0, 0, 0, time.UTC)
+		event2.Skills = []string{"skill-1"}
+		event2.Tags = []string{"project"}
+
+		event3 := fixtures.EventWith("event-3", "Fullstack Developer at Company B - Worked with React and Ruby", "Company B", "")
+		event3.Date = time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
+		event3.Skills = []string{"skill-1", "skill-3"}
+		event3.Tags = []string{"project"}
+
+		event4 := fixtures.EventWith("event-4", "Project without skills - Legacy event", "Company C", "")
+		event4.Date = time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)
+		event4.Skills = []string{}
+		event4.Tags = []string{"project"}
+
+		for _, skill := range []*career.Skill{skill1, skill2, skill3} {
 			err := skillRepo.Create(ctx, skill)
 			Expect(err).NotTo(HaveOccurred())
 		}
 
-		for _, event := range testEvents {
+		for _, event := range []*career.Event{event1, event2, event3, event4} {
 			err := eventRepo.Create(ctx, event)
 			Expect(err).NotTo(HaveOccurred())
 		}

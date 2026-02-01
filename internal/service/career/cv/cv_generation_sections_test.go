@@ -39,12 +39,7 @@ var _ = Describe("CVGenerationService - Sections Should Be Populated", func() {
 		fact.AudienceRelevance = []string{"hiring_manager"}
 		facts := []*career.Fact{fact}
 
-		config := &career.CVConfig{
-			Name:           "test-cv",
-			TargetRole:     "staff",
-			TargetAudience: "hiring_manager",
-			EventFilters:   make(map[string]interface{}),
-		}
+		config := fixtures.CVConfigWithFilters("test-cv", make(map[string]interface{}))
 
 		// Create repositories that return test data
 		eventRepo := &TestEventRepository{events: events}

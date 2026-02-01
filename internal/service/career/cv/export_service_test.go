@@ -7,11 +7,11 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 )
@@ -50,39 +50,15 @@ var _ = ginkgo.Describe("ExportService", func() {
 
 	ginkgo.Describe("ExportToText", func() {
 		ginkgo.It("should export CV to plain text format", func() {
-			cv := &career.CVView{
-				ID:               "cv-1",
-				Name:             "Senior Software Engineer CV",
-				TargetRole:       "Staff Engineer",
-				TargetAudience:   "hiring_manager",
-				GeneratedAt:      time.Now(),
-				SourceEventCount: 10,
-				SourceFactCount:  5,
-			}
+			cv := fixtures.CVViewWith("cv-1", "Senior Software Engineer CV", "Staff Engineer", "hiring_manager")
 
-			bullet := &career.CVBullet{
-				ID:              "bullet-1",
-				SectionID:       "section-1",
-				Text:            "Led team of 5 engineers to deliver critical feature",
-				SourceEventIDs:  []string{"event-1"},
-				SourceFactIDs:   []string{"fact-1"},
-				Rank:            0.9,
-				InclusionReason: "ownership",
-				Confidence:      0.95,
-			}
+			bullet := fixtures.CVBulletWithSources("bullet-1", "section-1", "Led team of 5 engineers to deliver critical feature", []string{"event-1"}, []string{"fact-1"})
+			bullet.Rank = 0.9
+			bullet.Confidence = 0.95
 
-			section := &career.CVSection{
-				ID:          "section-1",
-				CVViewID:    "cv-1",
-				SectionType: "experience",
-				Title:       "Experience",
-				Order:       1,
-				Content: []*career.SectionContentGroup{
-					{
-						Header:  "Acme Corp",
-						Bullets: []*career.CVBullet{bullet},
-					},
-				},
+			section := fixtures.CVSectionWith("section-1", "cv-1", "experience", "Experience", 1)
+			section.Content = []*career.SectionContentGroup{
+				fixtures.ContentGroupWithBullets("Acme Corp", []*career.CVBullet{bullet}),
 			}
 
 			sections := []*career.CVSection{section}
@@ -100,24 +76,12 @@ var _ = ginkgo.Describe("ExportService", func() {
 		})
 
 		ginkgo.It("should handle empty sections", func() {
-			cv := &career.CVView{
-				ID:               "cv-1",
-				Name:             "Test CV",
-				TargetRole:       "Engineer",
-				TargetAudience:   "hiring_manager",
-				GeneratedAt:      time.Now(),
-				SourceEventCount: 0,
-				SourceFactCount:  0,
-			}
+			cv := fixtures.CVViewWith("cv-1", "Test CV", "Engineer", "hiring_manager")
+			cv.SourceEventCount = 0
+			cv.SourceFactCount = 0
 
-			section := &career.CVSection{
-				ID:          "section-1",
-				CVViewID:    "cv-1",
-				SectionType: "experience",
-				Title:       "Experience",
-				Order:       1,
-				Content:     []*career.SectionContentGroup{},
-			}
+			section := fixtures.CVSectionWith("section-1", "cv-1", "experience", "Experience", 1)
+			section.Content = []*career.SectionContentGroup{}
 
 			sections := []*career.CVSection{section}
 			bullets := map[string][]*career.CVBullet{}
@@ -136,39 +100,15 @@ var _ = ginkgo.Describe("ExportService", func() {
 
 	ginkgo.Describe("ExportToMarkdown", func() {
 		ginkgo.It("should export CV to markdown format", func() {
-			cv := &career.CVView{
-				ID:               "cv-1",
-				Name:             "Senior Software Engineer CV",
-				TargetRole:       "Staff Engineer",
-				TargetAudience:   "hiring_manager",
-				GeneratedAt:      time.Now(),
-				SourceEventCount: 10,
-				SourceFactCount:  5,
-			}
+			cv := fixtures.CVViewWith("cv-1", "Senior Software Engineer CV", "Staff Engineer", "hiring_manager")
 
-			bullet := &career.CVBullet{
-				ID:              "bullet-1",
-				SectionID:       "section-1",
-				Text:            "Led team of 5 engineers to deliver critical feature",
-				SourceEventIDs:  []string{"event-1"},
-				SourceFactIDs:   []string{"fact-1"},
-				Rank:            0.9,
-				InclusionReason: "ownership",
-				Confidence:      0.95,
-			}
+			bullet := fixtures.CVBulletWithSources("bullet-1", "section-1", "Led team of 5 engineers to deliver critical feature", []string{"event-1"}, []string{"fact-1"})
+			bullet.Rank = 0.9
+			bullet.Confidence = 0.95
 
-			section := &career.CVSection{
-				ID:          "section-1",
-				CVViewID:    "cv-1",
-				SectionType: "experience",
-				Title:       "Experience",
-				Order:       1,
-				Content: []*career.SectionContentGroup{
-					{
-						Header:  "Acme Corp",
-						Bullets: []*career.CVBullet{bullet},
-					},
-				},
+			section := fixtures.CVSectionWith("section-1", "cv-1", "experience", "Experience", 1)
+			section.Content = []*career.SectionContentGroup{
+				fixtures.ContentGroupWithBullets("Acme Corp", []*career.CVBullet{bullet}),
 			}
 
 			sections := []*career.CVSection{section}
@@ -186,15 +126,9 @@ var _ = ginkgo.Describe("ExportService", func() {
 		})
 
 		ginkgo.It("should include metadata as comments", func() {
-			cv := &career.CVView{
-				ID:               "cv-1",
-				Name:             "Test CV",
-				TargetRole:       "Engineer",
-				TargetAudience:   "recruiter",
-				GeneratedAt:      time.Now(),
-				SourceEventCount: 5,
-				SourceFactCount:  2,
-			}
+			cv := fixtures.CVViewWith("cv-1", "Test CV", "Engineer", "recruiter")
+			cv.SourceEventCount = 5
+			cv.SourceFactCount = 2
 
 			markdown, err := service.ExportToMarkdown(ctx, cv, []*career.CVSection{}, map[string][]*career.CVBullet{})
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
@@ -211,39 +145,15 @@ var _ = ginkgo.Describe("ExportService", func() {
 
 	ginkgo.Describe("ExportToYAML", func() {
 		ginkgo.It("should export CV to YAML format", func() {
-			cv := &career.CVView{
-				ID:               "cv-1",
-				Name:             "Senior Software Engineer CV",
-				TargetRole:       "Staff Engineer",
-				TargetAudience:   "hiring_manager",
-				GeneratedAt:      time.Now(),
-				SourceEventCount: 10,
-				SourceFactCount:  5,
-			}
+			cv := fixtures.CVViewWith("cv-1", "Senior Software Engineer CV", "Staff Engineer", "hiring_manager")
 
-			bullet := &career.CVBullet{
-				ID:              "bullet-1",
-				SectionID:       "section-1",
-				Text:            "Led team of 5 engineers to deliver critical feature",
-				SourceEventIDs:  []string{"event-1"},
-				SourceFactIDs:   []string{"fact-1"},
-				Rank:            0.9,
-				InclusionReason: "ownership",
-				Confidence:      0.95,
-			}
+			bullet := fixtures.CVBulletWithSources("bullet-1", "section-1", "Led team of 5 engineers to deliver critical feature", []string{"event-1"}, []string{"fact-1"})
+			bullet.Rank = 0.9
+			bullet.Confidence = 0.95
 
-			section := &career.CVSection{
-				ID:          "section-1",
-				CVViewID:    "cv-1",
-				SectionType: "experience",
-				Title:       "Experience",
-				Order:       1,
-				Content: []*career.SectionContentGroup{
-					{
-						Header:  "Acme Corp",
-						Bullets: []*career.CVBullet{bullet},
-					},
-				},
+			section := fixtures.CVSectionWith("section-1", "cv-1", "experience", "Experience", 1)
+			section.Content = []*career.SectionContentGroup{
+				fixtures.ContentGroupWithBullets("Acme Corp", []*career.CVBullet{bullet}),
 			}
 
 			sections := []*career.CVSection{section}
@@ -455,61 +365,26 @@ var _ = ginkgo.Describe("ExportService", func() {
 		)
 
 		ginkgo.BeforeEach(func() {
-			cv = &career.CVView{
-				ID:               "cv-1",
-				Name:             "Senior Software Engineer CV",
-				TargetRole:       "senior_ic",
-				TargetAudience:   "hiring_manager",
-				GeneratedAt:      time.Now(),
-				SourceEventCount: 10,
-				SourceFactCount:  5,
+			cv = fixtures.CVViewWith("cv-1", "Senior Software Engineer CV", "senior_ic", "hiring_manager")
+
+			bullet1 := fixtures.CVBulletWith("bullet-1", "section-exp", "Led migration to microservices architecture")
+			bullet1.Rank = 0.9
+			bullet1.Confidence = 0.85
+
+			bullet2 := fixtures.CVBulletWith("bullet-2", "section-exp", "Implemented CI/CD pipeline")
+			bullet2.SourceEventIDs = []string{"event-2"}
+			bullet2.Rank = 0.7
+			bullet2.InclusionReason = "execution"
+			bullet2.Confidence = 0.70
+
+			summarySection := fixtures.CVSectionWithSummary("section-summary", "cv-1", "Experienced software engineer with 10+ years in backend development.")
+
+			expSection := fixtures.CVSectionWith("section-exp", "cv-1", "experience", "Experience", 1)
+			expSection.Content = []*career.SectionContentGroup{
+				fixtures.ContentGroupFull("TechCorp", "Jan 2020", "Present", []*career.CVBullet{bullet1, bullet2}),
 			}
 
-			bullet1 := &career.CVBullet{
-				ID:              "bullet-1",
-				SectionID:       "section-exp",
-				Text:            "Led migration to microservices architecture",
-				SourceEventIDs:  []string{"event-1"},
-				Rank:            0.9,
-				InclusionReason: "ownership",
-				Confidence:      0.85,
-			}
-
-			bullet2 := &career.CVBullet{
-				ID:              "bullet-2",
-				SectionID:       "section-exp",
-				Text:            "Implemented CI/CD pipeline",
-				SourceEventIDs:  []string{"event-2"},
-				Rank:            0.7,
-				InclusionReason: "execution",
-				Confidence:      0.70, // Below narrative threshold
-			}
-
-			sections = []*career.CVSection{
-				{
-					ID:          "section-summary",
-					CVViewID:    "cv-1",
-					SectionType: "summary",
-					Title:       "Summary",
-					Order:       0,
-					Summary:     "Experienced software engineer with 10+ years in backend development.",
-				},
-				{
-					ID:          "section-exp",
-					CVViewID:    "cv-1",
-					SectionType: "experience",
-					Title:       "Experience",
-					Order:       1,
-					Content: []*career.SectionContentGroup{
-						{
-							Header:    "TechCorp",
-							StartDate: "Jan 2020",
-							EndDate:   "Present",
-							Bullets:   []*career.CVBullet{bullet1, bullet2},
-						},
-					},
-				},
-			}
+			sections = []*career.CVSection{summarySection, expSection}
 
 			bullets = map[string][]*career.CVBullet{
 				"section-exp": {bullet1, bullet2},
@@ -612,35 +487,18 @@ var _ = ginkgo.Describe("ExportService", func() {
 		)
 
 		ginkgo.BeforeEach(func() {
-			cv = &career.CVView{
-				ID:               "cv-1",
-				Name:             "Test CV",
-				TargetRole:       "senior_ic",
-				TargetAudience:   "hiring_manager",
-				GeneratedAt:      time.Now(),
-				SourceEventCount: 5,
-				SourceFactCount:  3,
+			cv = fixtures.CVViewWith("cv-1", "Test CV", "senior_ic", "hiring_manager")
+			cv.SourceEventCount = 5
+			cv.SourceFactCount = 3
+
+			highConfBullet := fixtures.CVBulletWith("", "section-1", "High confidence achievement")
+
+			expSection := fixtures.CVSectionWith("section-1", "cv-1", "experience", "Experience", 1)
+			expSection.Content = []*career.SectionContentGroup{
+				fixtures.ContentGroupFull("Company XYZ", "Jan 2020", "Present", []*career.CVBullet{highConfBullet}),
 			}
 
-			sections = []*career.CVSection{
-				{
-					ID:          "section-1",
-					CVViewID:    "cv-1",
-					SectionType: "experience",
-					Title:       "Experience",
-					Order:       1,
-					Content: []*career.SectionContentGroup{
-						{
-							Header:    "Company XYZ",
-							StartDate: "Jan 2020",
-							EndDate:   "Present",
-							Bullets: []*career.CVBullet{
-								{Text: "High confidence achievement", Confidence: 0.9},
-							},
-						},
-					},
-				},
-			}
+			sections = []*career.CVSection{expSection}
 
 			bullets = make(map[string][]*career.CVBullet)
 		})

@@ -6,20 +6,15 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 var _ = Describe("FactForm", func() {
 	var testFact *career.Fact
 
 	BeforeEach(func() {
-		testFact = &career.Fact{
-			ID:                   "fact-123",
-			Text:                 "Led migration of monolith to microservices",
-			CompetencyCategories: []string{"technical", "leadership"},
-			RoleFit:              career.RoleFitStaff,
-			AudienceRelevance:    []string{"hiring_manager", "peer"},
-			StrengthSignal:       "leadership",
-		}
+		testFact = fixtures.FactWithCategories("fact-123", "Led migration of monolith to microservices", "", []string{"technical", "leadership"}, []string{"hiring_manager", "peer"})
+		testFact.StrengthSignal = "leadership"
 	})
 
 	Describe("NewFactEditorForm", func() {
@@ -41,9 +36,8 @@ var _ = Describe("FactForm", func() {
 		})
 
 		It("should apply data to fact", func() {
-			newFact := &career.Fact{
-				StrengthSignal: "existing_signal", // Pre-existing signal
-			}
+			newFact := fixtures.FactWith("", "")
+			newFact.StrengthSignal = "existing_signal"
 			data := &forms.FactFormData{
 				Text:                 "Improved system performance by 50%",
 				CompetencyCategories: []string{"technical", "product"},
@@ -63,7 +57,7 @@ var _ = Describe("FactForm", func() {
 		})
 
 		It("should handle empty competency categories", func() {
-			newFact := &career.Fact{}
+			newFact := fixtures.FactWith("", "")
 			data := &forms.FactFormData{
 				Text:                 "Sample fact text here",
 				CompetencyCategories: []string{},
@@ -79,14 +73,9 @@ var _ = Describe("FactForm", func() {
 		})
 
 		It("should handle nil slices from fact", func() {
-			factWithNilSlices := &career.Fact{
-				ID:                   "fact-456",
-				Text:                 "Some fact",
-				CompetencyCategories: nil,
-				RoleFit:              career.RoleFitStaff,
-				AudienceRelevance:    nil,
-				StrengthSignal:       "technical expertise",
-			}
+			factWithNilSlices := fixtures.FactWith("fact-456", "Some fact")
+			factWithNilSlices.RoleFit = career.RoleFitStaff
+			factWithNilSlices.StrengthSignal = "technical expertise"
 
 			data := forms.GetFactFormData(factWithNilSlices)
 

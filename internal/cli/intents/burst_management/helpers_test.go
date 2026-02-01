@@ -11,6 +11,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/service/career/burstfact"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -23,7 +24,7 @@ var _ = Describe("Helper Methods", func() {
 		// Create intent context.
 		ctx = &burst_management.IntentContext{
 			Bursts: []*career.Burst{
-				{ID: "burst-1", Name: "Test Burst"},
+				fixtures.Burst("burst-1"),
 			},
 		}
 		ctx.Validate()
@@ -83,7 +84,7 @@ var _ = Describe("Helper Methods", func() {
 
 		It("should register delete modal when present", func() {
 			// Create delete modal.
-			burst := &career.Burst{ID: "burst-1", Name: "Test Burst"}
+			burst := fixtures.Burst("burst-1")
 			confirmModal := feedback.NewConfirmModal(
 				"Delete Burst?",
 				"Are you sure you want to delete '"+burst.Name+"'?",
@@ -264,7 +265,7 @@ var _ = Describe("Helper Methods", func() {
 	Describe("RefreshData", func() {
 		It("should reload bursts from context", func() {
 			// Modify context bursts.
-			ctx.Bursts = append(ctx.Bursts, &career.Burst{ID: "burst-2", Name: "New Burst"})
+			ctx.Bursts = append(ctx.Bursts, fixtures.Burst("burst-2"))
 
 			// Refresh data.
 			cmd := intent.RefreshData()
@@ -468,7 +469,7 @@ var _ = Describe("Helper Methods", func() {
 
 			// Simulate fact extraction completing.
 			extractMsg := burst_management.FactExtractionCompleteMsg{
-				Facts: []*career.Fact{{ID: "f1", Text: "Extracted fact"}},
+				Facts: []*career.Fact{fixtures.FactWith("f1", "Extracted fact")},
 				Error: nil,
 			}
 			intent.Update(extractMsg)
@@ -489,7 +490,7 @@ var _ = Describe("Helper Methods", func() {
 			intent.SetSelectedBurst(nil)
 
 			msg := burst_management.FactExtractionCompleteMsg{
-				Facts: []*career.Fact{{ID: "f1", Text: "Test fact"}},
+				Facts: []*career.Fact{fixtures.FactWith("f1", "Test fact")},
 				Error: nil,
 			}
 
@@ -502,7 +503,7 @@ var _ = Describe("Helper Methods", func() {
 			intent.SetSelectedBurst(nil)
 
 			msg := burst_management.FactExtractionCompleteMsg{
-				Facts: []*career.Fact{{ID: "f1", Text: "Test fact"}},
+				Facts: []*career.Fact{fixtures.FactWith("f1", "Test fact")},
 				Error: nil,
 			}
 
@@ -598,8 +599,8 @@ var _ = Describe("Helper Methods", func() {
 			intent.SetSelectedBurst(ctx.Bursts[0])
 
 			events := []*career.Event{
-				{ID: "e1", Text: "Event 1"},
-				{ID: "e2", Text: "Event 2"},
+				fixtures.EventWith("e1", "Event 1", "", ""),
+				fixtures.EventWith("e2", "Event 2", "", ""),
 			}
 
 			msg := burst_management.BurstEventsLoadedMsg{
@@ -631,7 +632,7 @@ var _ = Describe("Helper Methods", func() {
 			intent.SetSelectedBurst(nil)
 
 			msg := burst_management.BurstEventsLoadedMsg{
-				Events: []*career.Event{{ID: "e1"}},
+				Events: []*career.Event{fixtures.Event("e1")},
 				Error:  nil,
 			}
 
@@ -647,8 +648,8 @@ var _ = Describe("Helper Methods", func() {
 			intent.SetSelectedBurst(ctx.Bursts[0])
 
 			facts := []*career.Fact{
-				{ID: "f1", Text: "Fact 1"},
-				{ID: "f2", Text: "Fact 2"},
+				fixtures.FactWith("f1", "Fact 1"),
+				fixtures.FactWith("f2", "Fact 2"),
 			}
 
 			msg := burst_management.BurstFactsLoadedMsg{
@@ -680,7 +681,7 @@ var _ = Describe("Helper Methods", func() {
 			intent.SetSelectedBurst(nil)
 
 			msg := burst_management.BurstFactsLoadedMsg{
-				Facts: []*career.Fact{{ID: "f1"}},
+				Facts: []*career.Fact{fixtures.FactWith("f1", "Test fact f1")},
 				Error: nil,
 			}
 

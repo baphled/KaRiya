@@ -1,8 +1,10 @@
 package captureevent_test
 
 import (
-	ce "github.com/baphled/kariya/internal/cli/intents/captureevent"
 	"github.com/baphled/kariya/internal/domain/career"
+
+	ce "github.com/baphled/kariya/internal/cli/intents/captureevent"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -10,9 +12,9 @@ import (
 var _ = Describe("Result", func() {
 	Describe("Construction", func() {
 		It("should create a result with all fields", func() {
-			event := &career.Event{Text: "test event"}
-			bursts := []*career.Burst{{Name: "burst-1"}}
-			facts := []*career.Fact{{Text: "fact-1"}}
+			event := fixtures.EventWith("", "test event", "", "")
+			bursts := []*career.Burst{fixtures.Burst("burst-1")}
+			facts := []*career.Fact{fixtures.FactWith("fact-1", "fact-1")}
 			accepted := map[string]bool{"burst-1": true}
 			rejected := map[string]string{"fact-2": "not relevant"}
 

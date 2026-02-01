@@ -9,6 +9,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens/timeline/modals"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -20,16 +21,11 @@ var _ = Describe("EventDetailModal", func() {
 	)
 
 	BeforeEach(func() {
-		event = &career.Event{
-			ID:         "test-event-id",
-			Text:       "Event description text",
-			Date:       time.Date(2024, 3, 15, 0, 0, 0, 0, time.UTC),
-			Company:    "Test Company",
-			Project:    "Test Project",
-			Tags:       []string{"tag1", "tag2"},
-			Categories: []string{"category1"},
-			Skills:     []string{"skill1"},
-		}
+		event = fixtures.EventWith("test-event-id", "Event description text", "Test Company", "Test Project")
+		event.Date = time.Date(2024, 3, 15, 0, 0, 0, 0, time.UTC)
+		event.Tags = []string{"tag1", "tag2"}
+		event.Categories = []string{"category1"}
+		event.Skills = []string{"skill1"}
 		theme = themes.NewDefaultTheme()
 	})
 
@@ -162,11 +158,8 @@ var _ = Describe("EventDetailModal", func() {
 	Describe("SetEvent", func() {
 		It("updates the displayed event", func() {
 			modal = modals.NewEventDetailModal(event, theme)
-			newEvent := &career.Event{
-				ID:   "new-id",
-				Text: "New event text",
-				Date: time.Now(),
-			}
+			newEvent := fixtures.Event("new-id")
+			newEvent.Text = "New event text"
 
 			modal.SetEvent(newEvent)
 
@@ -197,21 +190,10 @@ var _ = Describe("SkillsDetailModal", func() {
 	BeforeEach(func() {
 		eventID = "test-event-id"
 		years := 5
-		skills = []*career.Skill{
-			{
-				ID:        "skill-1",
-				Name:      "Go",
-				Category:  "Programming",
-				Level:     "Expert",
-				YearsUsed: &years,
-			},
-			{
-				ID:       "skill-2",
-				Name:     "Docker",
-				Category: "DevOps",
-				Level:    "Intermediate",
-			},
-		}
+		goSkill := fixtures.SkillWith("skill-1", "Go", "Programming", "Expert")
+		goSkill.YearsUsed = &years
+		dockerSkill := fixtures.SkillWith("skill-2", "Docker", "DevOps", "Intermediate")
+		skills = []*career.Skill{goSkill, dockerSkill}
 		theme = themes.NewDefaultTheme()
 	})
 
@@ -324,7 +306,7 @@ var _ = Describe("SkillsDetailModal", func() {
 		It("updates the displayed skills", func() {
 			modal = modals.NewSkillsDetailModal(eventID, skills, theme)
 			newSkills := []*career.Skill{
-				{ID: "new-1", Name: "Python"},
+				fixtures.SkillWith("new-1", "Python", "backend", "intermediate"),
 			}
 
 			modal.SetSkills(newSkills)

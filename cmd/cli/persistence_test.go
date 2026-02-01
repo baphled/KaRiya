@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/service"
-	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careersql "github.com/baphled/kariya/internal/repository/career/sql"
 	careerservice "github.com/baphled/kariya/internal/service/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -48,7 +48,7 @@ var _ = Describe("Data Persistence", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			// Verify event was persisted to database
-			events, err := svc.ListEvents(ctx, careerrepo.EventListFilters{})
+			events, err := svc.ListEvents(ctx, *fixtures.EventListFilters())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(events).To(HaveLen(1), "Event should be persisted to database")
 			Expect(events[0].Text).To(Equal(eventText))
@@ -85,7 +85,7 @@ var _ = Describe("Data Persistence", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			// Verify event was saved in first instance
-			events1, err := svc1.ListEvents(ctx, careerrepo.EventListFilters{})
+			events1, err := svc1.ListEvents(ctx, *fixtures.EventListFilters())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(events1).To(HaveLen(1))
 
@@ -102,7 +102,7 @@ var _ = Describe("Data Persistence", func() {
 			svc2 := careerservice.NewService(repos2.Event)
 
 			// Verify event persists across instances
-			events2, err := svc2.ListEvents(ctx, careerrepo.EventListFilters{})
+			events2, err := svc2.ListEvents(ctx, *fixtures.EventListFilters())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(events2).To(HaveLen(1), "Event should persist across database connections")
 			Expect(events2[0].Text).To(Equal(eventText))
@@ -137,7 +137,7 @@ var _ = Describe("Data Persistence", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			// Verify persistence
-			events, err := svc.ListEvents(ctx, careerrepo.EventListFilters{})
+			events, err := svc.ListEvents(ctx, *fixtures.EventListFilters())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(events).To(HaveLen(1))
 		})

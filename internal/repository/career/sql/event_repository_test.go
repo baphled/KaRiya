@@ -8,6 +8,7 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 	career_repo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/repository/models"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"gorm.io/driver/sqlite"
@@ -52,11 +53,7 @@ var _ = Describe("Event Repository", func() {
 
 	Describe("Create", func() {
 		It("creates an event with generated ID", func() {
-			event := &career.Event{
-				Text:    "Implemented feature X",
-				Date:    time.Now(),
-				Company: "TechCo",
-			}
+			event := fixtures.EventWith("", "Implemented feature X", "TechCo", "")
 
 			err := repo.Create(ctx, event)
 
@@ -67,12 +64,7 @@ var _ = Describe("Event Repository", func() {
 		})
 
 		It("creates an event with provided ID", func() {
-			event := &career.Event{
-				ID:      "custom-id",
-				Text:    "Fixed bug Y",
-				Date:    time.Now(),
-				Company: "TechCo",
-			}
+			event := fixtures.EventWith("custom-id", "Fixed bug Y", "TechCo", "")
 
 			err := repo.Create(ctx, event)
 
@@ -81,12 +73,9 @@ var _ = Describe("Event Repository", func() {
 		})
 
 		It("stores tags and categories", func() {
-			event := &career.Event{
-				Text:       "Led project",
-				Date:       time.Now(),
-				Tags:       []string{"leadership", "project-management"},
-				Categories: []string{"management", "technical"},
-			}
+			event := fixtures.EventWith("", "Led project", "", "")
+			event.Tags = []string{"leadership", "project-management"}
+			event.Categories = []string{"management", "technical"}
 
 			Expect(repo.Create(ctx, event)).To(Succeed())
 
@@ -97,18 +86,14 @@ var _ = Describe("Event Repository", func() {
 		})
 
 		It("saves skill associations", func() {
-			// Create skills first.
 			skillRepo := NewSkillRepository(db)
-			skill1 := &career.Skill{Name: "Go", Category: "backend"}
-			skill2 := &career.Skill{Name: "Docker", Category: "devops"}
+			skill1 := fixtures.SkillWith("", "Go", "backend", "")
+			skill2 := fixtures.SkillWith("", "Docker", "devops", "")
 			Expect(skillRepo.Create(ctx, skill1)).To(Succeed())
 			Expect(skillRepo.Create(ctx, skill2)).To(Succeed())
 
-			event := &career.Event{
-				Text:   "Built microservice",
-				Date:   time.Now(),
-				Skills: []string{skill1.ID, skill2.ID},
-			}
+			event := fixtures.EventWith("", "Built microservice", "", "")
+			event.Skills = []string{skill1.ID, skill2.ID}
 
 			Expect(repo.Create(ctx, event)).To(Succeed())
 
@@ -120,12 +105,7 @@ var _ = Describe("Event Repository", func() {
 
 	Describe("GetByID", func() {
 		It("returns the event", func() {
-			event := &career.Event{
-				Text:    "Did something",
-				Date:    time.Now(),
-				Company: "Corp",
-				Project: "Alpha",
-			}
+			event := fixtures.EventWith("", "Did something", "Corp", "Alpha")
 			Expect(repo.Create(ctx, event)).To(Succeed())
 
 			found, err := repo.GetByID(ctx, event.ID)
@@ -145,7 +125,7 @@ var _ = Describe("Event Repository", func() {
 
 	Describe("Update", func() {
 		It("updates the event", func() {
-			event := &career.Event{Text: "Original", Date: time.Now()}
+			event := fixtures.EventWith("", "Original", "", "")
 			Expect(repo.Create(ctx, event)).To(Succeed())
 			originalUpdatedAt := event.UpdatedAt
 
@@ -162,19 +142,15 @@ var _ = Describe("Event Repository", func() {
 
 		It("updates skill associations", func() {
 			skillRepo := NewSkillRepository(db)
-			skill1 := &career.Skill{Name: "Go", Category: "backend"}
-			skill2 := &career.Skill{Name: "Python", Category: "backend"}
+			skill1 := fixtures.SkillWith("", "Go", "backend", "")
+			skill2 := fixtures.SkillWith("", "Python", "backend", "")
 			Expect(skillRepo.Create(ctx, skill1)).To(Succeed())
 			Expect(skillRepo.Create(ctx, skill2)).To(Succeed())
 
-			event := &career.Event{
-				Text:   "Work",
-				Date:   time.Now(),
-				Skills: []string{skill1.ID},
-			}
+			event := fixtures.EventWith("", "Work", "", "")
+			event.Skills = []string{skill1.ID}
 			Expect(repo.Create(ctx, event)).To(Succeed())
 
-			// Update to different skill.
 			event.Skills = []string{skill2.ID}
 			Expect(repo.Update(ctx, event)).To(Succeed())
 
@@ -183,7 +159,7 @@ var _ = Describe("Event Repository", func() {
 		})
 
 		It("returns ErrEventNotFound for missing event", func() {
-			event := &career.Event{ID: "nonexistent", Text: "Test", Date: time.Now()}
+			event := fixtures.EventWith("nonexistent", "Test", "", "")
 
 			err := repo.Update(ctx, event)
 
@@ -193,7 +169,7 @@ var _ = Describe("Event Repository", func() {
 
 	Describe("Delete", func() {
 		It("deletes the event", func() {
-			event := &career.Event{Text: "To delete", Date: time.Now()}
+			event := fixtures.EventWith("", "To delete", "", "")
 			Expect(repo.Create(ctx, event)).To(Succeed())
 
 			err := repo.Delete(ctx, event.ID)
@@ -214,41 +190,44 @@ var _ = Describe("Event Repository", func() {
 	Describe("List", func() {
 		BeforeEach(func() {
 			now := time.Now()
-			events := []*career.Event{
-				{Text: "Event 1", Date: now.AddDate(0, 0, -2), Tags: []string{"tag1"}},
-				{Text: "Event 2", Date: now.AddDate(0, 0, -1), Tags: []string{"tag2"}},
-				{Text: "Event 3", Date: now, Tags: []string{"tag1", "tag2"}},
-			}
-			for _, e := range events {
+			e1 := fixtures.EventWith("", "Event 1", "", "")
+			e1.Date = now.AddDate(0, 0, -2)
+			e1.Tags = []string{"tag1"}
+			e2 := fixtures.EventWith("", "Event 2", "", "")
+			e2.Date = now.AddDate(0, 0, -1)
+			e2.Tags = []string{"tag2"}
+			e3 := fixtures.EventWith("", "Event 3", "", "")
+			e3.Date = now
+			e3.Tags = []string{"tag1", "tag2"}
+			for _, e := range []*career.Event{e1, e2, e3} {
 				Expect(repo.Create(ctx, e)).To(Succeed())
 			}
 		})
 
 		It("returns all events without filters", func() {
-			events, err := repo.List(ctx, career_repo.EventListFilters{})
+			events, err := repo.List(ctx, *fixtures.EventListFilters())
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(events).To(HaveLen(3))
 		})
 
 		It("filters by tag", func() {
-			events, err := repo.List(ctx, career_repo.EventListFilters{Tags: []string{"tag1"}})
+			events, err := repo.List(ctx, *fixtures.EventListFiltersWithTags([]string{"tag1"}))
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(events).To(HaveLen(2))
 		})
 
 		It("filters by date range", func() {
-			// Use start of yesterday to ensure Event 2 and Event 3 are included.
 			start := time.Now().AddDate(0, 0, -1).Truncate(24 * time.Hour)
-			events, err := repo.List(ctx, career_repo.EventListFilters{StartDate: &start})
+			events, err := repo.List(ctx, *fixtures.EventListFiltersWithDateRange(&start, nil))
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(events).To(HaveLen(2))
 		})
 
 		It("sorts by date ascending", func() {
-			events, err := repo.List(ctx, career_repo.EventListFilters{SortBy: "date", SortOrder: "asc"})
+			events, err := repo.List(ctx, *fixtures.EventListFiltersWithSort("date", "asc"))
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(events[0].Text).To(Equal("Event 1"))
@@ -256,7 +235,7 @@ var _ = Describe("Event Repository", func() {
 		})
 
 		It("sorts by date descending", func() {
-			events, err := repo.List(ctx, career_repo.EventListFilters{SortBy: "date", SortOrder: "desc"})
+			events, err := repo.List(ctx, *fixtures.EventListFiltersWithSort("date", "desc"))
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(events[0].Text).To(Equal("Event 3"))
@@ -264,7 +243,7 @@ var _ = Describe("Event Repository", func() {
 		})
 
 		It("applies pagination", func() {
-			events, err := repo.List(ctx, career_repo.EventListFilters{Limit: 2, Offset: 1})
+			events, err := repo.List(ctx, *fixtures.EventListFiltersWithLimit(1, 2))
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(events).To(HaveLen(2))
@@ -274,25 +253,29 @@ var _ = Describe("Event Repository", func() {
 	Describe("Count", func() {
 		BeforeEach(func() {
 			now := time.Now()
-			events := []*career.Event{
-				{Text: "Event 1", Date: now, Tags: []string{"tag1"}},
-				{Text: "Event 2", Date: now, Tags: []string{"tag2"}},
-				{Text: "Event 3", Date: now, Tags: []string{"tag1"}},
-			}
-			for _, e := range events {
+			e1 := fixtures.EventWith("", "Event 1", "", "")
+			e1.Date = now
+			e1.Tags = []string{"tag1"}
+			e2 := fixtures.EventWith("", "Event 2", "", "")
+			e2.Date = now
+			e2.Tags = []string{"tag2"}
+			e3 := fixtures.EventWith("", "Event 3", "", "")
+			e3.Date = now
+			e3.Tags = []string{"tag1"}
+			for _, e := range []*career.Event{e1, e2, e3} {
 				Expect(repo.Create(ctx, e)).To(Succeed())
 			}
 		})
 
 		It("counts all events", func() {
-			count, err := repo.Count(ctx, career_repo.EventListFilters{})
+			count, err := repo.Count(ctx, *fixtures.EventListFilters())
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(count).To(Equal(3))
 		})
 
 		It("counts with tag filter", func() {
-			count, err := repo.Count(ctx, career_repo.EventListFilters{Tags: []string{"tag1"}})
+			count, err := repo.Count(ctx, *fixtures.EventListFiltersWithTags([]string{"tag1"}))
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(count).To(Equal(2))

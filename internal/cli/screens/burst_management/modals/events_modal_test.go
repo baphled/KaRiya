@@ -9,6 +9,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens/burst_management/modals"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -24,29 +25,19 @@ var _ = Describe("BurstEventsModal", func() {
 	BeforeEach(func() {
 		burstID = "test-burst-id"
 		burstName = "Backend Development"
-		events = []*career.Event{
-			{
-				ID:      "e1",
-				Text:    "Built microservices architecture",
-				Date:    time.Date(2024, 3, 15, 0, 0, 0, 0, time.UTC),
-				Company: "TechCorp",
-				Tags:    []string{"backend", "architecture"},
-			},
-			{
-				ID:      "e2",
-				Text:    "Implemented API gateway",
-				Date:    time.Date(2024, 3, 20, 0, 0, 0, 0, time.UTC),
-				Company: "TechCorp",
-				Tags:    []string{"backend", "api"},
-			},
-			{
-				ID:      "e3",
-				Text:    "Optimized database queries",
-				Date:    time.Date(2024, 3, 25, 0, 0, 0, 0, time.UTC),
-				Company: "TechCorp",
-				Tags:    []string{"database", "performance"},
-			},
-		}
+		e1 := fixtures.EventWith("e1", "Built microservices architecture", "TechCorp", "")
+		e1.Date = time.Date(2024, 3, 15, 0, 0, 0, 0, time.UTC)
+		e1.Tags = []string{"backend", "architecture"}
+
+		e2 := fixtures.EventWith("e2", "Implemented API gateway", "TechCorp", "")
+		e2.Date = time.Date(2024, 3, 20, 0, 0, 0, 0, time.UTC)
+		e2.Tags = []string{"backend", "api"}
+
+		e3 := fixtures.EventWith("e3", "Optimized database queries", "TechCorp", "")
+		e3.Date = time.Date(2024, 3, 25, 0, 0, 0, 0, time.UTC)
+		e3.Tags = []string{"database", "performance"}
+
+		events = []*career.Event{e1, e2, e3}
 		theme = themes.NewDefaultTheme()
 	})
 
@@ -228,10 +219,11 @@ var _ = Describe("BurstEventsModal", func() {
 	Describe("SetEvents", func() {
 		It("updates the displayed events", func() {
 			modal = modals.NewBurstEventsModal(burstID, burstName, events, theme)
-			newEvents := []*career.Event{
-				{ID: "new-1", Text: "New event one", Date: time.Now()},
-				{ID: "new-2", Text: "New event two", Date: time.Now()},
-			}
+			ne1 := fixtures.Event("new-1")
+			ne1.Text = "New event one"
+			ne2 := fixtures.Event("new-2")
+			ne2.Text = "New event two"
+			newEvents := []*career.Event{ne1, ne2}
 
 			modal.SetEvents(newEvents)
 			modal.Show()
@@ -249,9 +241,9 @@ var _ = Describe("BurstEventsModal", func() {
 			Expect(view).To(ContainSubstring("3"))
 
 			// Update to 1 event.
-			modal.SetEvents([]*career.Event{
-				{ID: "single", Text: "Single event", Date: time.Now()},
-			})
+			se := fixtures.Event("single")
+			se.Text = "Single event"
+			modal.SetEvents([]*career.Event{se})
 			view = modal.View()
 			Expect(view).To(ContainSubstring("1"))
 		})

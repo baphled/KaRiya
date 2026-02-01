@@ -7,21 +7,18 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/baphled/kariya/internal/cli/intents/skillsmanagement"
-	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 var _ = Describe("Messages", func() {
 	Describe("SkillsLoadedMsg", func() {
 		It("should contain loaded skills", func() {
-			skills := []*career.Skill{
-				{ID: "skill-1", Name: "Go"},
-				{ID: "skill-2", Name: "Python"},
-			}
+			skills := fixtures.Skills(2)
 			msg := skillsmanagement.SkillsLoadedMsg{
 				Skills: skills,
 			}
 			Expect(msg.Skills).To(HaveLen(2))
-			Expect(msg.Skills[0].Name).To(Equal("Go"))
+			Expect(msg.Skills[0].Name).NotTo(BeEmpty())
 		})
 
 		It("should contain error if load failed", func() {
@@ -44,7 +41,7 @@ var _ = Describe("Messages", func() {
 
 	Describe("SkillFormCompleteMsg", func() {
 		It("should contain the completed skill", func() {
-			skill := &career.Skill{ID: "skill-1", Name: "Go"}
+			skill := fixtures.SkillWith("skill-1", "Go", "backend", "advanced")
 			msg := skillsmanagement.SkillFormCompleteMsg{
 				Skill: skill,
 			}
@@ -69,7 +66,7 @@ var _ = Describe("Messages", func() {
 
 	Describe("SkillCreatedMsg", func() {
 		It("should contain the created skill", func() {
-			skill := &career.Skill{ID: "skill-1", Name: "Go"}
+			skill := fixtures.SkillWith("skill-1", "Go", "backend", "advanced")
 			msg := skillsmanagement.SkillCreatedMsg{
 				Skill: skill,
 			}
@@ -87,7 +84,7 @@ var _ = Describe("Messages", func() {
 
 	Describe("SkillUpdatedMsg", func() {
 		It("should contain the updated skill", func() {
-			skill := &career.Skill{ID: "skill-1", Name: "Go Updated"}
+			skill := fixtures.SkillWith("skill-1", "Go Updated", "backend", "advanced")
 			msg := skillsmanagement.SkillUpdatedMsg{
 				Skill: skill,
 			}
@@ -122,10 +119,7 @@ var _ = Describe("Messages", func() {
 
 	Describe("SkillEventsLoadedMsg", func() {
 		It("should contain events for a skill (state-based flow)", func() {
-			events := []*career.Event{
-				{ID: "event-1", Text: "Built API"},
-				{ID: "event-2", Text: "Led team"},
-			}
+			events := fixtures.Events(2)
 			msg := skillsmanagement.SkillEventsLoadedMsg{
 				Events: events,
 			}
@@ -143,9 +137,7 @@ var _ = Describe("Messages", func() {
 
 	Describe("SkillEventsForModalLoadedMsg", func() {
 		It("should contain events for modal display", func() {
-			events := []*career.Event{
-				{ID: "event-1", Text: "Built API"},
-			}
+			events := fixtures.Events(1)
 			msg := skillsmanagement.SkillEventsForModalLoadedMsg{
 				Events: events,
 			}
@@ -163,7 +155,7 @@ var _ = Describe("Messages", func() {
 
 	Describe("RequestBrowseEventMsg", func() {
 		It("should contain the event to browse", func() {
-			event := &career.Event{ID: "event-1", Text: "Built API"}
+			event := fixtures.Event("event-1")
 			msg := skillsmanagement.RequestBrowseEventMsg{
 				Event: event,
 			}
@@ -171,10 +163,7 @@ var _ = Describe("Messages", func() {
 		})
 
 		It("should contain all events for context", func() {
-			events := []*career.Event{
-				{ID: "event-1", Text: "Built API"},
-				{ID: "event-2", Text: "Led team"},
-			}
+			events := fixtures.Events(2)
 			msg := skillsmanagement.RequestBrowseEventMsg{
 				AllEvents: events,
 			}

@@ -9,6 +9,7 @@ import (
 
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/service/career/cv"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 var _ = Describe("ProfileInferenceService", func() {
@@ -29,22 +30,15 @@ var _ = Describe("ProfileInferenceService", func() {
 	Describe("InferCoreStrengths", func() {
 		Context("when events have technical categories", func() {
 			BeforeEach(func() {
-				events = []*career.Event{
-					{
-						ID:         "ev-1",
-						Text:       "Led migration of monolith to microservices",
-						Date:       time.Now().AddDate(-1, 0, 0),
-						Categories: []string{"technical"},
-						Tags:       []string{"architecture", "leadership"},
-					},
-					{
-						ID:         "ev-2",
-						Text:       "Designed and implemented distributed caching layer",
-						Date:       time.Now().AddDate(0, -6, 0),
-						Categories: []string{"technical"},
-						Tags:       []string{"technical"},
-					},
-				}
+				ev1 := fixtures.EventWithCategories("ev-1", "Led migration of monolith to microservices", []string{"technical"})
+				ev1.Date = time.Now().AddDate(-1, 0, 0)
+				ev1.Tags = []string{"architecture", "leadership"}
+
+				ev2 := fixtures.EventWithCategories("ev-2", "Designed and implemented distributed caching layer", []string{"technical"})
+				ev2.Date = time.Now().AddDate(0, -6, 0)
+				ev2.Tags = []string{"technical"}
+
+				events = []*career.Event{ev1, ev2}
 			})
 
 			It("should infer technical-related core strengths", func() {
@@ -56,22 +50,15 @@ var _ = Describe("ProfileInferenceService", func() {
 
 		Context("when events have leadership categories", func() {
 			BeforeEach(func() {
-				events = []*career.Event{
-					{
-						ID:         "ev-1",
-						Text:       "Mentored 5 junior engineers to senior level",
-						Date:       time.Now().AddDate(-1, 0, 0),
-						Categories: []string{"leadership", "mentoring"},
-						Tags:       []string{"leadership", "mentoring"},
-					},
-					{
-						ID:         "ev-2",
-						Text:       "Led cross-functional team of 8 engineers",
-						Date:       time.Now().AddDate(0, -3, 0),
-						Categories: []string{"leadership"},
-						Tags:       []string{"leadership"},
-					},
-				}
+				ev1 := fixtures.EventWithCategories("ev-1", "Mentored 5 junior engineers to senior level", []string{"leadership", "mentoring"})
+				ev1.Date = time.Now().AddDate(-1, 0, 0)
+				ev1.Tags = []string{"leadership", "mentoring"}
+
+				ev2 := fixtures.EventWithCategories("ev-2", "Led cross-functional team of 8 engineers", []string{"leadership"})
+				ev2.Date = time.Now().AddDate(0, -3, 0)
+				ev2.Tags = []string{"leadership"}
+
+				events = []*career.Event{ev1, ev2}
 			})
 
 			It("should infer leadership-related core strengths", func() {
@@ -83,24 +70,12 @@ var _ = Describe("ProfileInferenceService", func() {
 
 		Context("when facts indicate consulting competencies", func() {
 			BeforeEach(func() {
-				facts = []*career.Fact{
-					{
-						ID:                   "fact-1",
-						Text:                 "Delivered architecture review for enterprise client",
-						CompetencyCategories: []string{"consulting"},
-						RoleFit:              career.RoleFitStaff,
-						AudienceRelevance:    []string{"hiring_manager"},
-						SourceEventID:        "ev-1",
-					},
-					{
-						ID:                   "fact-2",
-						Text:                 "Led technical due diligence for acquisition",
-						CompetencyCategories: []string{"consulting", "technical"},
-						RoleFit:              career.RoleFitPrincipal,
-						AudienceRelevance:    []string{"hiring_manager"},
-						SourceEventID:        "ev-2",
-					},
-				}
+				fact1 := fixtures.FactWithCategories("fact-1", "Delivered architecture review for enterprise client", "ev-1", []string{"consulting"}, []string{"hiring_manager"})
+
+				fact2 := fixtures.FactWithCategories("fact-2", "Led technical due diligence for acquisition", "ev-2", []string{"consulting", "technical"}, []string{"hiring_manager"})
+				fact2.RoleFit = career.RoleFitPrincipal
+
+				facts = []*career.Fact{fact1, fact2}
 			})
 
 			It("should infer consulting-related core strengths", func() {
@@ -113,9 +88,9 @@ var _ = Describe("ProfileInferenceService", func() {
 		Context("when skills indicate technology expertise", func() {
 			BeforeEach(func() {
 				skills = []*career.Skill{
-					{ID: "skill-1", Name: "Go", Category: "backend", Level: "expert"},
-					{ID: "skill-2", Name: "Kubernetes", Category: "devops", Level: "advanced"},
-					{ID: "skill-3", Name: "PostgreSQL", Category: "database", Level: "advanced"},
+					fixtures.SkillWith("skill-1", "Go", "backend", "expert"),
+					fixtures.SkillWith("skill-2", "Kubernetes", "devops", "advanced"),
+					fixtures.SkillWith("skill-3", "PostgreSQL", "database", "advanced"),
 				}
 			})
 
@@ -154,15 +129,11 @@ var _ = Describe("ProfileInferenceService", func() {
 	Describe("InferValuePropositions", func() {
 		Context("when events show cross-functional work", func() {
 			BeforeEach(func() {
-				events = []*career.Event{
-					{
-						ID:         "ev-1",
-						Text:       "Collaborated with product, design, and engineering teams",
-						Date:       time.Now().AddDate(-1, 0, 0),
-						Categories: []string{"leadership", "product"},
-						Tags:       []string{"leadership"},
-					},
-				}
+				ev1 := fixtures.EventWithCategories("ev-1", "Collaborated with product, design, and engineering teams", []string{"leadership", "product"})
+				ev1.Date = time.Now().AddDate(-1, 0, 0)
+				ev1.Tags = []string{"leadership"}
+
+				events = []*career.Event{ev1}
 			})
 
 			It("should infer collaboration-related value propositions", func() {
@@ -175,14 +146,7 @@ var _ = Describe("ProfileInferenceService", func() {
 		Context("when facts show mentoring competencies", func() {
 			BeforeEach(func() {
 				facts = []*career.Fact{
-					{
-						ID:                   "fact-1",
-						Text:                 "Established engineering onboarding program",
-						CompetencyCategories: []string{"mentoring"},
-						RoleFit:              career.RoleFitStaff,
-						AudienceRelevance:    []string{"hiring_manager"},
-						SourceEventID:        "ev-1",
-					},
+					fixtures.FactWithCategories("fact-1", "Established engineering onboarding program", "ev-1", []string{"mentoring"}, []string{"hiring_manager"}),
 				}
 			})
 
@@ -196,10 +160,10 @@ var _ = Describe("ProfileInferenceService", func() {
 		Context("when skills show diverse technology stack", func() {
 			BeforeEach(func() {
 				skills = []*career.Skill{
-					{ID: "skill-1", Name: "Ruby", Category: "backend", Level: "expert"},
-					{ID: "skill-2", Name: "Go", Category: "backend", Level: "advanced"},
-					{ID: "skill-3", Name: "Python", Category: "backend", Level: "intermediate"},
-					{ID: "skill-4", Name: "React", Category: "frontend", Level: "intermediate"},
+					fixtures.SkillWith("skill-1", "Ruby", "backend", "expert"),
+					fixtures.SkillWith("skill-2", "Go", "backend", "advanced"),
+					fixtures.SkillWith("skill-3", "Python", "backend", "intermediate"),
+					fixtures.SkillWith("skill-4", "React", "frontend", "intermediate"),
 				}
 			})
 
@@ -234,10 +198,10 @@ var _ = Describe("ProfileInferenceService", func() {
 		Context("when skills are provided", func() {
 			BeforeEach(func() {
 				skills = []*career.Skill{
-					{ID: "skill-1", Name: "Go", Category: "backend"},
-					{ID: "skill-2", Name: "Ruby", Category: "backend"},
-					{ID: "skill-3", Name: "React", Category: "frontend"},
-					{ID: "skill-4", Name: "PostgreSQL", Category: "database"},
+					fixtures.SkillWith("skill-1", "Go", "backend", ""),
+					fixtures.SkillWith("skill-2", "Ruby", "backend", ""),
+					fixtures.SkillWith("skill-3", "React", "frontend", ""),
+					fixtures.SkillWith("skill-4", "PostgreSQL", "database", ""),
 				}
 			})
 

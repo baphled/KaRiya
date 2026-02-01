@@ -11,6 +11,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/intents/skillsmanagement"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 // MockSkillRepository implements SkillRepository for testing.
@@ -332,12 +333,7 @@ var _ = Describe("Context", func() {
 			var testSkill *career.Skill
 
 			BeforeEach(func() {
-				testSkill = &career.Skill{
-					ID:       "skill-1",
-					Name:     "Go Programming",
-					Category: "Programming",
-					Level:    "advanced",
-				}
+				testSkill = fixtures.SkillWith("skill-1", "Go Programming", "Programming", "advanced")
 			})
 
 			Context("with valid repository", func() {
@@ -383,9 +379,7 @@ var _ = Describe("Context", func() {
 
 		Describe("GetEventsForSkill", func() {
 			It("should return events for a specific skill", func() {
-				events := []*career.Event{
-					{ID: "event-1", Text: "Built API"},
-				}
+				events := fixtures.Events(1)
 				mockRepo.eventsBySkill["skill-1"] = events
 				intentCtx := skillsmanagement.NewIntentContext(ctx, mockRepo)
 				result, err := intentCtx.GetEventsForSkill("skill-1")

@@ -9,6 +9,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens/timeline/modals"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 var _ = Describe("Helpers", func() {
@@ -51,16 +52,11 @@ var _ = Describe("Helpers", func() {
 		})
 
 		It("renders event with all fields", func() {
-			event := &career.Event{
-				ID:         "test-id",
-				Text:       "Test event description",
-				Date:       time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),
-				Company:    "Test Company",
-				Project:    "Test Project",
-				Tags:       []string{"tag1", "tag2"},
-				Categories: []string{"category1"},
-				Skills:     []string{"skill1", "skill2", "skill3"},
-			}
+			event := fixtures.EventWith("test-id", "Test event description", "Test Company", "Test Project")
+			event.Date = time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
+			event.Tags = []string{"tag1", "tag2"}
+			event.Categories = []string{"category1"}
+			event.Skills = []string{"skill1", "skill2", "skill3"}
 
 			result := modals.RenderEventDetailContent(event, theme)
 
@@ -75,11 +71,9 @@ var _ = Describe("Helpers", func() {
 		})
 
 		It("renders event with minimal fields", func() {
-			event := &career.Event{
-				ID:   "test-id",
-				Text: "Minimal event",
-				Date: time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),
-			}
+			event := fixtures.Event("test-id")
+			event.Text = "Minimal event"
+			event.Date = time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
 
 			result := modals.RenderEventDetailContent(event, theme)
 
@@ -91,13 +85,7 @@ var _ = Describe("Helpers", func() {
 		})
 
 		It("omits empty company and project", func() {
-			event := &career.Event{
-				ID:      "test-id",
-				Text:    "Event text",
-				Date:    time.Now(),
-				Company: "",
-				Project: "",
-			}
+			event := fixtures.EventWith("test-id", "Event text", "", "")
 
 			result := modals.RenderEventDetailContent(event, theme)
 
@@ -120,16 +108,10 @@ var _ = Describe("Helpers", func() {
 		})
 
 		It("renders single skill", func() {
+			skill := fixtures.SkillWith("skill-1", "Go", "Programming", "Expert")
 			years := 3
-			skills := []*career.Skill{
-				{
-					ID:        "skill-1",
-					Name:      "Go",
-					Category:  "Programming",
-					Level:     "Expert",
-					YearsUsed: &years,
-				},
-			}
+			skill.YearsUsed = &years
+			skills := []*career.Skill{skill}
 
 			result := modals.RenderSkillsContent(skills, theme)
 
@@ -141,13 +123,10 @@ var _ = Describe("Helpers", func() {
 
 		It("renders single year correctly", func() {
 			years := 1
-			skills := []*career.Skill{
-				{
-					ID:        "skill-1",
-					Name:      "Rust",
-					YearsUsed: &years,
-				},
-			}
+			skill := fixtures.Skill("skill-1")
+			skill.Name = "Rust"
+			skill.YearsUsed = &years
+			skills := []*career.Skill{skill}
 
 			result := modals.RenderSkillsContent(skills, theme)
 
@@ -157,9 +136,9 @@ var _ = Describe("Helpers", func() {
 
 		It("renders multiple skills", func() {
 			skills := []*career.Skill{
-				{ID: "1", Name: "Go", Category: "Backend"},
-				{ID: "2", Name: "React", Category: "Frontend"},
-				{ID: "3", Name: "PostgreSQL", Category: "Database"},
+				fixtures.SkillWith("1", "Go", "Backend", "intermediate"),
+				fixtures.SkillWith("2", "React", "Frontend", "intermediate"),
+				fixtures.SkillWith("3", "PostgreSQL", "Database", "intermediate"),
 			}
 
 			result := modals.RenderSkillsContent(skills, theme)
@@ -170,11 +149,11 @@ var _ = Describe("Helpers", func() {
 		})
 
 		It("skips nil skills in slice", func() {
-			skills := []*career.Skill{
-				{ID: "1", Name: "Go"},
-				nil,
-				{ID: "2", Name: "Python"},
-			}
+			s1 := fixtures.Skill("1")
+			s1.Name = "Go"
+			s2 := fixtures.Skill("2")
+			s2.Name = "Python"
+			skills := []*career.Skill{s1, nil, s2}
 
 			result := modals.RenderSkillsContent(skills, theme)
 
@@ -183,15 +162,9 @@ var _ = Describe("Helpers", func() {
 		})
 
 		It("handles skill with nil years", func() {
-			skills := []*career.Skill{
-				{
-					ID:        "skill-1",
-					Name:      "Docker",
-					Category:  "DevOps",
-					Level:     "Intermediate",
-					YearsUsed: nil,
-				},
-			}
+			skill := fixtures.SkillWith("skill-1", "Docker", "DevOps", "Intermediate")
+			skill.YearsUsed = nil
+			skills := []*career.Skill{skill}
 
 			result := modals.RenderSkillsContent(skills, theme)
 
@@ -201,13 +174,10 @@ var _ = Describe("Helpers", func() {
 
 		It("handles skill with zero years", func() {
 			years := 0
-			skills := []*career.Skill{
-				{
-					ID:        "skill-1",
-					Name:      "Kubernetes",
-					YearsUsed: &years,
-				},
-			}
+			skill := fixtures.Skill("skill-1")
+			skill.Name = "Kubernetes"
+			skill.YearsUsed = &years
+			skills := []*career.Skill{skill}
 
 			result := modals.RenderSkillsContent(skills, theme)
 

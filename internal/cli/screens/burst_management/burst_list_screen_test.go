@@ -10,6 +10,7 @@ import (
 	burst_management "github.com/baphled/kariya/internal/cli/screens/burst_management"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -21,24 +22,17 @@ var _ = Describe("BurstListScreen", func() {
 
 	BeforeEach(func() {
 		now := time.Now()
-		bursts = []*career.Burst{
-			{
-				ID:          "burst-1",
-				Name:        "First Achievement Period",
-				Description: "Led major platform migration",
-				Confirmed:   true,
-				EventIDs:    []string{"e1", "e2", "e3"},
-				CreatedAt:   now,
-			},
-			{
-				ID:          "burst-2",
-				Name:        "Team Leadership Growth",
-				Description: "Grew team from 3 to 12 engineers",
-				Confirmed:   false,
-				EventIDs:    []string{"e4", "e5"},
-				CreatedAt:   now.Add(-24 * time.Hour),
-			},
-		}
+		b1 := fixtures.BurstConfirmed("burst-1", "e1", "e2", "e3")
+		b1.Name = "First Achievement Period"
+		b1.Description = "Led major platform migration"
+		b1.CreatedAt = now
+
+		b2 := fixtures.Burst("burst-2", "e4", "e5")
+		b2.Name = "Team Leadership Growth"
+		b2.Description = "Grew team from 3 to 12 engineers"
+		b2.CreatedAt = now.Add(-24 * time.Hour)
+
+		bursts = []*career.Burst{b1, b2}
 	})
 
 	Describe("NewBurstListScreen", func() {

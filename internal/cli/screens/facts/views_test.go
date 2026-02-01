@@ -5,6 +5,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/screens/facts"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -13,15 +14,13 @@ var _ = Describe("View Renderers", func() {
 	var testFact *career.Fact
 
 	BeforeEach(func() {
-		testFact = &career.Fact{
-			ID:                   "fact-123",
-			Text:                 "Experienced in Go development",
-			CompetencyCategories: []string{"Backend", "Go"},
-			StrengthSignal:       "strong",
-			RoleFit:              "senior",
-			AudienceRelevance:    []string{"technical"},
-			CreatedAt:            time.Date(2025, 1, 15, 10, 30, 0, 0, time.UTC),
-		}
+		testFact = fixtures.Fact("fact-123", "")
+		testFact.Text = "Experienced in Go development"
+		testFact.CompetencyCategories = []string{"Backend", "Go"}
+		testFact.StrengthSignal = "strong"
+		testFact.RoleFit = "senior"
+		testFact.AudienceRelevance = []string{"technical"}
+		testFact.CreatedAt = time.Date(2025, 1, 15, 10, 30, 0, 0, time.UTC)
 	})
 
 	Describe("RenderFactDetail", func() {

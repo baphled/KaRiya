@@ -3,7 +3,6 @@ package factmanagement_test
 import (
 	"context"
 	"errors"
-	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -11,6 +10,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/intents/factmanagement"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -31,17 +31,10 @@ var _ = Describe("FactManagement E2E", func() {
 	)
 
 	createTestFact := func(id, text string) *career.Fact {
-		return &career.Fact{
-			ID:                   id,
-			Text:                 text,
-			CompetencyCategories: []string{"technical"},
-			StrengthSignal:       "high",
-			RoleFit:              "senior_ic",
-			AudienceRelevance:    []string{"hiring_manager"},
-			SourceEventID:        "event-1",
-			CreatedAt:            time.Now(),
-			UpdatedAt:            time.Now(),
-		}
+		fact := fixtures.Fact(id, "event-1")
+		fact.Text = text
+		fact.RoleFit = "senior_ic"
+		return fact
 	}
 
 	BeforeEach(func() {
@@ -625,39 +618,26 @@ var _ = Describe("FactManagement E2E", func() {
 		Describe("CreateFact", func() {
 			It("should return error when repository is nil", func() {
 				intentCtx := factmanagement.NewIntentContext(ctx, nil)
-				err := intentCtx.CreateFact(&career.Fact{
-					ID:   "test-fact",
-					Text: "Test fact text",
-				})
+				err := intentCtx.CreateFact(fixtures.FactWith("test-fact", "Test fact text"))
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("service not available"))
 			})
 
 			It("should return error when fact validation fails", func() {
 				intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
-				// Empty fact should fail validation.
-				err := intentCtx.CreateFact(&career.Fact{})
+				err := intentCtx.CreateFact(fixtures.FactWith("", ""))
 				Expect(err).To(HaveOccurred())
 			})
 
 			It("should add fact to list on successful create", func() {
 				intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
-				// Load facts to initialize context state.
 				err := intentCtx.LoadFacts()
 				Expect(err).NotTo(HaveOccurred())
 				initialCount := len(intentCtx.Facts)
 
-				newFact := &career.Fact{
-					ID:                   "new-fact-1",
-					Text:                 "New fact for testing",
-					CompetencyCategories: []string{"technical"},
-					StrengthSignal:       "high",
-					RoleFit:              "senior_ic",
-					AudienceRelevance:    []string{"hiring_manager"},
-					SourceEventID:        "event-1",
-					CreatedAt:            time.Now(),
-					UpdatedAt:            time.Now(),
-				}
+				newFact := fixtures.Fact("new-fact-1", "event-1")
+				newFact.Text = "New fact for testing"
+				newFact.RoleFit = "senior_ic"
 				err = intentCtx.CreateFact(newFact)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(len(intentCtx.Facts)).To(Equal(initialCount + 1))
@@ -668,17 +648,9 @@ var _ = Describe("FactManagement E2E", func() {
 				mockRepo.createErr = errors.New("database error")
 				intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
 
-				newFact := &career.Fact{
-					ID:                   "new-fact-2",
-					Text:                 "Another fact",
-					CompetencyCategories: []string{"leadership"},
-					StrengthSignal:       "medium",
-					RoleFit:              "staff",
-					AudienceRelevance:    []string{"recruiter"},
-					SourceEventID:        "event-2",
-					CreatedAt:            time.Now(),
-					UpdatedAt:            time.Now(),
-				}
+				newFact := fixtures.FactWithCategories("new-fact-2", "Another fact", "event-2", []string{"leadership"}, []string{"recruiter"})
+				newFact.StrengthSignal = "medium"
+				newFact.RoleFit = "staff"
 				err := intentCtx.CreateFact(newFact)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("database error"))
@@ -697,18 +669,14 @@ var _ = Describe("FactManagement E2E", func() {
 
 			It("should return error when repository is nil", func() {
 				intentCtx := factmanagement.NewIntentContext(ctx, nil)
-				err := intentCtx.UpdateFact(&career.Fact{
-					ID:   "fact-1",
-					Text: "Updated text",
-				})
+				err := intentCtx.UpdateFact(fixtures.FactWith("fact-1", "Updated text"))
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("service not available"))
 			})
 
 			It("should return error when fact validation fails", func() {
 				intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
-				// Empty text should fail validation.
-				err := intentCtx.UpdateFact(&career.Fact{ID: "fact-1", Text: ""})
+				err := intentCtx.UpdateFact(fixtures.FactWith("fact-1", ""))
 				Expect(err).To(HaveOccurred())
 			})
 
@@ -717,17 +685,8 @@ var _ = Describe("FactManagement E2E", func() {
 				err := intentCtx.LoadFacts()
 				Expect(err).NotTo(HaveOccurred())
 
-				updatedFact := &career.Fact{
-					ID:                   "fact-1",
-					Text:                 "Updated text",
-					CompetencyCategories: []string{"leadership"},
-					StrengthSignal:       "high",
-					RoleFit:              "senior_ic",
-					AudienceRelevance:    []string{"hiring_manager"},
-					SourceEventID:        "event-1",
-					CreatedAt:            time.Now(),
-					UpdatedAt:            time.Now(),
-				}
+				updatedFact := fixtures.FactWithCategories("fact-1", "Updated text", "event-1", []string{"leadership"}, []string{"hiring_manager"})
+				updatedFact.RoleFit = "senior_ic"
 				err = intentCtx.UpdateFact(updatedFact)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -745,17 +704,8 @@ var _ = Describe("FactManagement E2E", func() {
 				err := intentCtx.LoadFacts()
 				Expect(err).NotTo(HaveOccurred())
 
-				updatedFact := &career.Fact{
-					ID:                   "fact-1",
-					Text:                 "Updated text",
-					CompetencyCategories: []string{"technical"},
-					StrengthSignal:       "high",
-					RoleFit:              "staff",
-					AudienceRelevance:    []string{"recruiter"},
-					SourceEventID:        "event-1",
-					CreatedAt:            time.Now(),
-					UpdatedAt:            time.Now(),
-				}
+				updatedFact := fixtures.FactWithCategories("fact-1", "Updated text", "event-1", []string{"technical"}, []string{"recruiter"})
+				updatedFact.RoleFit = "staff"
 				err = intentCtx.UpdateFact(updatedFact)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("update failed"))
@@ -954,20 +904,10 @@ var _ = Describe("FactManagement E2E", func() {
 
 	Describe("Truncate Function", func() {
 		BeforeEach(func() {
-			// Create a fact with very long text.
-			mockRepo.facts = []*career.Fact{
-				{
-					ID:                   "fact-long",
-					Text:                 "This is a very long fact text that should be truncated when displayed in the table view because it exceeds the maximum length allowed for display purposes",
-					CompetencyCategories: []string{"technical"},
-					StrengthSignal:       "high",
-					RoleFit:              "senior_ic",
-					AudienceRelevance:    []string{"hiring_manager"},
-					SourceEventID:        "event-1",
-					CreatedAt:            time.Now(),
-					UpdatedAt:            time.Now(),
-				},
-			}
+			longFact := fixtures.Fact("fact-long", "event-1")
+			longFact.Text = "This is a very long fact text that should be truncated when displayed in the table view because it exceeds the maximum length allowed for display purposes"
+			longFact.RoleFit = "senior_ic"
+			mockRepo.facts = []*career.Fact{longFact}
 			intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
 			var err error
 			intent, err = factmanagement.NewIntent(intentCtx)

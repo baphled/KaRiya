@@ -2,7 +2,6 @@ package burst_management_test
 
 import (
 	"errors"
-	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -10,6 +9,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/intents/burst_management"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/service/career/burstfact"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 var (
@@ -19,10 +19,7 @@ var (
 var _ = Describe("Messages", func() {
 	Describe("BurstSelectedMsg", func() {
 		It("should store the selected burst", func() {
-			burst := &career.Burst{
-				ID:   "burst-1",
-				Name: "Q1 2024 Backend Work",
-			}
+			burst := fixtures.Burst("burst-1")
 			msg := burst_management.BurstSelectedMsg{
 				Burst: burst,
 				Index: 0,
@@ -33,7 +30,7 @@ var _ = Describe("Messages", func() {
 
 		It("should store the selection index", func() {
 			msg := burst_management.BurstSelectedMsg{
-				Burst: &career.Burst{ID: "burst-1"},
+				Burst: fixtures.Burst("burst-1"),
 				Index: 3,
 			}
 			Expect(msg.Index).To(Equal(3))
@@ -51,8 +48,8 @@ var _ = Describe("Messages", func() {
 	Describe("BurstEventsLoadedMsg", func() {
 		It("should store loaded events", func() {
 			events := []*career.Event{
-				{ID: "event-1", Text: "Event 1"},
-				{ID: "event-2", Text: "Event 2"},
+				fixtures.EventWith("event-1", "Event 1", "", ""),
+				fixtures.EventWith("event-2", "Event 2", "", ""),
 			}
 			msg := burst_management.BurstEventsLoadedMsg{
 				Events: events,
@@ -75,8 +72,8 @@ var _ = Describe("Messages", func() {
 	Describe("BurstFactsLoadedMsg", func() {
 		It("should store loaded facts", func() {
 			facts := []*career.Fact{
-				{ID: "fact-1", Text: "Fact 1"},
-				{ID: "fact-2", Text: "Fact 2"},
+				fixtures.FactWith("fact-1", "Fact 1"),
+				fixtures.FactWith("fact-2", "Fact 2"),
 			}
 			msg := burst_management.BurstFactsLoadedMsg{
 				Facts: facts,
@@ -98,10 +95,8 @@ var _ = Describe("Messages", func() {
 
 	Describe("BurstEditCompleteMsg", func() {
 		It("should store edited burst on success", func() {
-			burst := &career.Burst{
-				ID:   "burst-1",
-				Name: "Updated Burst",
-			}
+			burst := fixtures.Burst("burst-1")
+			burst.Name = "Updated Burst"
 			msg := burst_management.BurstEditCompleteMsg{
 				Burst:     burst,
 				Cancelled: false,
@@ -152,13 +147,7 @@ var _ = Describe("Messages", func() {
 
 	Describe("BurstConfirmedMsg", func() {
 		It("should store confirmed burst", func() {
-			now := time.Now()
-			burst := &career.Burst{
-				ID:          "burst-1",
-				Name:        "Confirmed Burst",
-				Confirmed:   true,
-				ConfirmedAt: &now,
-			}
+			burst := fixtures.BurstConfirmed("burst-1")
 			msg := burst_management.BurstConfirmedMsg{
 				Burst: burst,
 				Error: nil,
@@ -179,8 +168,8 @@ var _ = Describe("Messages", func() {
 	Describe("FactExtractionCompleteMsg", func() {
 		It("should store extracted facts", func() {
 			facts := []*career.Fact{
-				{ID: "fact-1", Text: "Extracted fact 1"},
-				{ID: "fact-2", Text: "Extracted fact 2"},
+				fixtures.FactWith("fact-1", "Extracted fact 1"),
+				fixtures.FactWith("fact-2", "Extracted fact 2"),
 			}
 			msg := burst_management.FactExtractionCompleteMsg{
 				Facts: facts,

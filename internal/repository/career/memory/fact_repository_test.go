@@ -190,50 +190,41 @@ var _ = Describe("FactRepository", func() {
 		})
 
 		It("should list all facts with no filters", func() {
-			facts, err := repository.List(ctx, career_repo.FactListFilters{})
+			facts, err := repository.List(ctx, *fixtures.FactListFilters())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(facts).To(HaveLen(3))
 		})
 
 		It("should filter facts by competency category", func() {
-			filters := career_repo.FactListFilters{
-				CompetencyCategory: "mentoring",
-			}
+			filters := fixtures.FactListFiltersWithCategory("mentoring")
 
-			facts, err := repository.List(ctx, filters)
+			facts, err := repository.List(ctx, *filters)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(facts).To(HaveLen(1))
 			Expect(facts[0].CompetencyCategories).To(ContainElement("mentoring"))
 		})
 
 		It("should filter facts by role fit", func() {
-			filters := career_repo.FactListFilters{
-				RoleFit: string(career.RoleFitEM),
-			}
+			filters := fixtures.FactListFiltersWithRole(string(career.RoleFitEM))
 
-			facts, err := repository.List(ctx, filters)
+			facts, err := repository.List(ctx, *filters)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(facts).To(HaveLen(1))
 			Expect(facts[0].RoleFit).To(Equal(career.RoleFitEM))
 		})
 
 		It("should filter facts by audience relevance", func() {
-			filters := career_repo.FactListFilters{
-				AudienceRelevance: "peer",
-			}
+			filters := fixtures.FactListFiltersWithAudience("peer")
 
-			facts, err := repository.List(ctx, filters)
+			facts, err := repository.List(ctx, *filters)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(facts).To(HaveLen(2)) // Two facts have "peer" audience
 		})
 
 		It("should sort facts by creation date descending", func() {
-			filters := career_repo.FactListFilters{
-				SortBy:    "created_at",
-				SortOrder: "desc",
-			}
+			filters := fixtures.FactListFiltersWithSort("created_at", "desc")
 
-			facts, err := repository.List(ctx, filters)
+			facts, err := repository.List(ctx, *filters)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(facts).To(HaveLen(3))
 			// Most recent first
@@ -243,32 +234,25 @@ var _ = Describe("FactRepository", func() {
 		})
 
 		It("should apply pagination with limit", func() {
-			filters := career_repo.FactListFilters{
-				Limit: 2,
-			}
+			filters := fixtures.FactListFiltersWithLimit(0, 2)
 
-			facts, err := repository.List(ctx, filters)
+			facts, err := repository.List(ctx, *filters)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(facts).To(HaveLen(2))
 		})
 
 		It("should apply pagination with offset", func() {
-			filters := career_repo.FactListFilters{
-				Offset: 1,
-			}
+			filters := fixtures.FactListFiltersWithLimit(1, 0)
 
-			facts, err := repository.List(ctx, filters)
+			facts, err := repository.List(ctx, *filters)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(facts).To(HaveLen(2))
 		})
 
 		It("should apply pagination with both limit and offset", func() {
-			filters := career_repo.FactListFilters{
-				Offset: 1,
-				Limit:  1,
-			}
+			filters := fixtures.FactListFiltersWithLimit(1, 1)
 
-			facts, err := repository.List(ctx, filters)
+			facts, err := repository.List(ctx, *filters)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(facts).To(HaveLen(1))
 		})
@@ -296,37 +280,31 @@ var _ = Describe("FactRepository", func() {
 		})
 
 		It("should count all facts with no filters", func() {
-			count, err := repository.Count(ctx, career_repo.FactListFilters{})
+			count, err := repository.Count(ctx, *fixtures.FactListFilters())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(count).To(Equal(3))
 		})
 
 		It("should count facts matching competency filter", func() {
-			filters := career_repo.FactListFilters{
-				CompetencyCategory: "technical",
-			}
+			filters := fixtures.FactListFiltersWithCategory("technical")
 
-			count, err := repository.Count(ctx, filters)
+			count, err := repository.Count(ctx, *filters)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(count).To(Equal(2))
 		})
 
 		It("should count facts matching role fit filter", func() {
-			filters := career_repo.FactListFilters{
-				RoleFit: string(career.RoleFitEM),
-			}
+			filters := fixtures.FactListFiltersWithRole(string(career.RoleFitEM))
 
-			count, err := repository.Count(ctx, filters)
+			count, err := repository.Count(ctx, *filters)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(count).To(Equal(1))
 		})
 
 		It("should return zero for no matches", func() {
-			filters := career_repo.FactListFilters{
-				CompetencyCategory: "non-existent",
-			}
+			filters := fixtures.FactListFiltersWithCategory("non-existent")
 
-			count, err := repository.Count(ctx, filters)
+			count, err := repository.Count(ctx, *filters)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(count).To(Equal(0))
 		})

@@ -1,10 +1,8 @@
 package captureevent
 
 import (
-	"time"
-
 	"github.com/baphled/kariya/internal/cli/intents"
-	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
@@ -72,11 +70,7 @@ var _ = Describe("CaptureEvent Global Keys Enforcement", func() {
 
 	Context("Edit vs New - Context-Aware Navigation", func() {
 		It("should cancel when editing existing event (PreviousEvent != nil)", func() {
-			existingEvent := &career.Event{
-				ID:   uuid.New().String(),
-				Text: "Existing event",
-				Date: time.Now(),
-			}
+			existingEvent := fixtures.EventWith(uuid.New().String(), "Existing event", "", "")
 
 			ctx := &IntentContext{
 				CaptureStrategy: "manual",

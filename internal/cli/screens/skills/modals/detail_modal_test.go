@@ -4,6 +4,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens/skills/modals"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -18,13 +19,8 @@ var _ = Describe("DetailModal", func() {
 
 	BeforeEach(func() {
 		years := 5
-		skill = &career.Skill{
-			ID:        "skill-1",
-			Name:      "Go Programming",
-			Category:  "Programming Languages",
-			Level:     "Expert",
-			YearsUsed: &years,
-		}
+		skill = fixtures.SkillWith("skill-1", "Go Programming", "Programming Languages", "Expert")
+		skill.YearsUsed = &years
 		theme = themes.NewDefaultTheme()
 	})
 
@@ -182,12 +178,7 @@ var _ = Describe("DetailModal", func() {
 
 		Context("with nil years used", func() {
 			BeforeEach(func() {
-				skillWithoutYears := &career.Skill{
-					ID:       "skill-2",
-					Name:     "Python",
-					Category: "Languages",
-					Level:    "Intermediate",
-				}
+				skillWithoutYears := fixtures.SkillWith("skill-2", "Python", "Languages", "Intermediate")
 				modal = modals.NewDetailModal(skillWithoutYears, theme, 5, nil)
 				modal.SetDimensions(120, 40)
 				modal.Show()
@@ -243,12 +234,7 @@ var _ = Describe("DetailModal", func() {
 		})
 
 		It("updates the skill being displayed", func() {
-			newSkill := &career.Skill{
-				ID:       "skill-new",
-				Name:     "Rust",
-				Category: "Systems",
-				Level:    "Beginner",
-			}
+			newSkill := fixtures.SkillWith("skill-new", "Rust", "Systems", "Beginner")
 			modal.SetSkill(newSkill, 3, nil)
 			modal.Show()
 

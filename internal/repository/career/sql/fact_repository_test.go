@@ -8,6 +8,7 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 	career_repo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/repository/models"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"gorm.io/driver/sqlite"
@@ -45,12 +46,8 @@ var _ = Describe("Fact Repository", func() {
 
 	Describe("Create", func() {
 		It("creates a fact with generated ID", func() {
-			fact := &career.Fact{
-				Text:                 "Led team of 5 engineers",
-				CompetencyCategories: []string{"leadership"},
-				RoleFit:              career.RoleFitSeniorIC,
-				AudienceRelevance:    []string{"technical"},
-			}
+			fact := fixtures.FactWithCategories("", "Led team of 5 engineers", "", []string{"leadership"}, []string{"technical"})
+			fact.RoleFit = career.RoleFitSeniorIC
 
 			err := repo.Create(ctx, fact)
 
@@ -60,13 +57,8 @@ var _ = Describe("Fact Repository", func() {
 		})
 
 		It("creates a fact with provided ID", func() {
-			fact := &career.Fact{
-				ID:                   "custom-id",
-				Text:                 "Built microservice",
-				CompetencyCategories: []string{"technical"},
-				RoleFit:              career.RoleFitSeniorIC,
-				AudienceRelevance:    []string{"engineering"},
-			}
+			fact := fixtures.FactWithCategories("custom-id", "Built microservice", "", []string{"technical"}, []string{"engineering"})
+			fact.RoleFit = career.RoleFitSeniorIC
 
 			err := repo.Create(ctx, fact)
 
@@ -77,12 +69,8 @@ var _ = Describe("Fact Repository", func() {
 
 	Describe("GetByID", func() {
 		It("returns the fact", func() {
-			fact := &career.Fact{
-				Text:                 "Test fact",
-				CompetencyCategories: []string{"cat1"},
-				RoleFit:              career.RoleFitSeniorIC,
-				AudienceRelevance:    []string{"aud1"},
-			}
+			fact := fixtures.FactWithCategories("", "Test fact", "", []string{"cat1"}, []string{"aud1"})
+			fact.RoleFit = career.RoleFitSeniorIC
 			Expect(repo.Create(ctx, fact)).To(Succeed())
 
 			found, err := repo.GetByID(ctx, fact.ID)
@@ -101,12 +89,8 @@ var _ = Describe("Fact Repository", func() {
 
 	Describe("Update", func() {
 		It("updates the fact", func() {
-			fact := &career.Fact{
-				Text:                 "Original",
-				CompetencyCategories: []string{"cat"},
-				RoleFit:              career.RoleFitSeniorIC,
-				AudienceRelevance:    []string{"aud"},
-			}
+			fact := fixtures.FactWithCategories("", "Original", "", []string{"cat"}, []string{"aud"})
+			fact.RoleFit = career.RoleFitSeniorIC
 			Expect(repo.Create(ctx, fact)).To(Succeed())
 
 			fact.Text = "Updated"
@@ -119,13 +103,8 @@ var _ = Describe("Fact Repository", func() {
 		})
 
 		It("returns ErrFactNotFound for missing fact", func() {
-			fact := &career.Fact{
-				ID:                   "nonexistent",
-				Text:                 "Test",
-				CompetencyCategories: []string{"cat"},
-				RoleFit:              career.RoleFitSeniorIC,
-				AudienceRelevance:    []string{"aud"},
-			}
+			fact := fixtures.FactWithCategories("nonexistent", "Test", "", []string{"cat"}, []string{"aud"})
+			fact.RoleFit = career.RoleFitSeniorIC
 
 			err := repo.Update(ctx, fact)
 
@@ -135,12 +114,8 @@ var _ = Describe("Fact Repository", func() {
 
 	Describe("Delete", func() {
 		It("deletes the fact", func() {
-			fact := &career.Fact{
-				Text:                 "To delete",
-				CompetencyCategories: []string{"cat"},
-				RoleFit:              career.RoleFitSeniorIC,
-				AudienceRelevance:    []string{"aud"},
-			}
+			fact := fixtures.FactWithCategories("", "To delete", "", []string{"cat"}, []string{"aud"})
+			fact.RoleFit = career.RoleFitSeniorIC
 			Expect(repo.Create(ctx, fact)).To(Succeed())
 
 			err := repo.Delete(ctx, fact.ID)
@@ -160,33 +135,34 @@ var _ = Describe("Fact Repository", func() {
 
 	Describe("List", func() {
 		BeforeEach(func() {
-			facts := []*career.Fact{
-				{Text: "Fact 1", CompetencyCategories: []string{"leadership"}, RoleFit: career.RoleFitSeniorIC, AudienceRelevance: []string{"technical"}},
-				{Text: "Fact 2", CompetencyCategories: []string{"technical"}, RoleFit: career.RoleFitEM, AudienceRelevance: []string{"hr"}},
-				{Text: "Fact 3", CompetencyCategories: []string{"leadership", "technical"}, RoleFit: career.RoleFitSeniorIC, AudienceRelevance: []string{"technical", "hr"}},
-			}
-			for _, f := range facts {
+			f1 := fixtures.FactWithCategories("", "Fact 1", "", []string{"leadership"}, []string{"technical"})
+			f1.RoleFit = career.RoleFitSeniorIC
+			f2 := fixtures.FactWithCategories("", "Fact 2", "", []string{"technical"}, []string{"hr"})
+			f2.RoleFit = career.RoleFitEM
+			f3 := fixtures.FactWithCategories("", "Fact 3", "", []string{"leadership", "technical"}, []string{"technical", "hr"})
+			f3.RoleFit = career.RoleFitSeniorIC
+			for _, f := range []*career.Fact{f1, f2, f3} {
 				Expect(repo.Create(ctx, f)).To(Succeed())
 				time.Sleep(10 * time.Millisecond) // Ensure different timestamps.
 			}
 		})
 
 		It("returns all facts without filters", func() {
-			facts, err := repo.List(ctx, career_repo.FactListFilters{})
+			facts, err := repo.List(ctx, *fixtures.FactListFilters())
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(facts).To(HaveLen(3))
 		})
 
 		It("filters by competency category", func() {
-			facts, err := repo.List(ctx, career_repo.FactListFilters{CompetencyCategory: "leadership"})
+			facts, err := repo.List(ctx, *fixtures.FactListFiltersWithCategory("leadership"))
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(facts).To(HaveLen(2))
 		})
 
 		It("filters by role fit", func() {
-			facts, err := repo.List(ctx, career_repo.FactListFilters{RoleFit: string(career.RoleFitEM)})
+			facts, err := repo.List(ctx, *fixtures.FactListFiltersWithRole(string(career.RoleFitEM)))
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(facts).To(HaveLen(1))
@@ -194,21 +170,21 @@ var _ = Describe("Fact Repository", func() {
 		})
 
 		It("sorts by created_at descending by default", func() {
-			facts, err := repo.List(ctx, career_repo.FactListFilters{})
+			facts, err := repo.List(ctx, *fixtures.FactListFilters())
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(facts[0].Text).To(Equal("Fact 3")) // Most recent first.
 		})
 
 		It("sorts by text ascending", func() {
-			facts, err := repo.List(ctx, career_repo.FactListFilters{SortBy: "text", SortOrder: "asc"})
+			facts, err := repo.List(ctx, *fixtures.FactListFiltersWithSort("text", "asc"))
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(facts[0].Text).To(Equal("Fact 1"))
 		})
 
 		It("applies pagination", func() {
-			facts, err := repo.List(ctx, career_repo.FactListFilters{Limit: 2})
+			facts, err := repo.List(ctx, *fixtures.FactListFiltersWithLimit(0, 2))
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(facts).To(HaveLen(2))
@@ -217,24 +193,24 @@ var _ = Describe("Fact Repository", func() {
 
 	Describe("Count", func() {
 		BeforeEach(func() {
-			facts := []*career.Fact{
-				{Text: "Fact 1", CompetencyCategories: []string{"leadership"}, RoleFit: career.RoleFitSeniorIC, AudienceRelevance: []string{"a"}},
-				{Text: "Fact 2", CompetencyCategories: []string{"technical"}, RoleFit: career.RoleFitSeniorIC, AudienceRelevance: []string{"b"}},
-			}
-			for _, f := range facts {
+			f1 := fixtures.FactWithCategories("", "Fact 1", "", []string{"leadership"}, []string{"a"})
+			f1.RoleFit = career.RoleFitSeniorIC
+			f2 := fixtures.FactWithCategories("", "Fact 2", "", []string{"technical"}, []string{"b"})
+			f2.RoleFit = career.RoleFitSeniorIC
+			for _, f := range []*career.Fact{f1, f2} {
 				Expect(repo.Create(ctx, f)).To(Succeed())
 			}
 		})
 
 		It("counts all facts", func() {
-			count, err := repo.Count(ctx, career_repo.FactListFilters{})
+			count, err := repo.Count(ctx, *fixtures.FactListFilters())
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(count).To(Equal(2))
 		})
 
 		It("counts with filters", func() {
-			count, err := repo.Count(ctx, career_repo.FactListFilters{CompetencyCategory: "leadership"})
+			count, err := repo.Count(ctx, *fixtures.FactListFiltersWithCategory("leadership"))
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(count).To(Equal(1))
@@ -243,9 +219,12 @@ var _ = Describe("Fact Repository", func() {
 
 	Describe("GetBySourceEventID", func() {
 		It("returns facts for event", func() {
-			fact1 := &career.Fact{Text: "F1", SourceEventID: "event-1", CompetencyCategories: []string{"a"}, RoleFit: career.RoleFitSeniorIC, AudienceRelevance: []string{"b"}}
-			fact2 := &career.Fact{Text: "F2", SourceEventID: "event-1", CompetencyCategories: []string{"a"}, RoleFit: career.RoleFitSeniorIC, AudienceRelevance: []string{"b"}}
-			fact3 := &career.Fact{Text: "F3", SourceEventID: "event-2", CompetencyCategories: []string{"a"}, RoleFit: career.RoleFitSeniorIC, AudienceRelevance: []string{"b"}}
+			fact1 := fixtures.Fact("", "event-1")
+			fact1.Text = "F1"
+			fact2 := fixtures.Fact("", "event-1")
+			fact2.Text = "F2"
+			fact3 := fixtures.Fact("", "event-2")
+			fact3.Text = "F3"
 			Expect(repo.Create(ctx, fact1)).To(Succeed())
 			Expect(repo.Create(ctx, fact2)).To(Succeed())
 			Expect(repo.Create(ctx, fact3)).To(Succeed())
@@ -259,8 +238,10 @@ var _ = Describe("Fact Repository", func() {
 
 	Describe("GetBySourceBurstID", func() {
 		It("returns facts for burst", func() {
-			fact1 := &career.Fact{Text: "F1", SourceBurstID: "burst-1", CompetencyCategories: []string{"a"}, RoleFit: career.RoleFitSeniorIC, AudienceRelevance: []string{"b"}}
-			fact2 := &career.Fact{Text: "F2", SourceBurstID: "burst-2", CompetencyCategories: []string{"a"}, RoleFit: career.RoleFitSeniorIC, AudienceRelevance: []string{"b"}}
+			fact1 := fixtures.FactFromBurst("", "burst-1")
+			fact1.Text = "F1"
+			fact2 := fixtures.FactFromBurst("", "burst-2")
+			fact2.Text = "F2"
 			Expect(repo.Create(ctx, fact1)).To(Succeed())
 			Expect(repo.Create(ctx, fact2)).To(Succeed())
 

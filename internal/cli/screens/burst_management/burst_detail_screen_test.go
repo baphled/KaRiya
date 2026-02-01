@@ -6,6 +6,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens"
 	burstscreens "github.com/baphled/kariya/internal/cli/screens/burst_management"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -18,15 +19,11 @@ var _ = Describe("BurstDetailScreen", func() {
 	)
 
 	BeforeEach(func() {
-		burst = &career.Burst{
-			ID:          "burst-1",
-			Name:        "Senior Backend Engineer Career Growth",
-			Description: "Progressed from mid-level to senior backend engineer, focusing on system architecture and team leadership.",
-			EventIDs:    []string{"event-1", "event-2", "event-3"},
-			Confirmed:   false,
-			CreatedAt:   time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
-			UpdatedAt:   time.Date(2024, 1, 20, 14, 45, 0, 0, time.UTC),
-		}
+		burst = fixtures.Burst("burst-1", "event-1", "event-2", "event-3")
+		burst.Name = "Senior Backend Engineer Career Growth"
+		burst.Description = "Progressed from mid-level to senior backend engineer, focusing on system architecture and team leadership."
+		burst.CreatedAt = time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC)
+		burst.UpdatedAt = time.Date(2024, 1, 20, 14, 45, 0, 0, time.UTC)
 	})
 
 	Describe("Construction", func() {

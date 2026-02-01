@@ -7,6 +7,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens/burst_management/modals"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -22,29 +23,22 @@ var _ = Describe("BurstFactsModal", func() {
 	BeforeEach(func() {
 		burstID = "test-burst-id"
 		burstName = "Backend Development"
-		facts = []*career.Fact{
-			{
-				ID:                   "f1",
-				Text:                 "Designed scalable microservices architecture",
-				CompetencyCategories: []string{"architecture", "system design"},
-				StrengthSignal:       "strong",
-				SourceBurstID:        burstID,
-			},
-			{
-				ID:                   "f2",
-				Text:                 "Improved API response time by 40%",
-				CompetencyCategories: []string{"performance"},
-				StrengthSignal:       "strong",
-				SourceBurstID:        burstID,
-			},
-			{
-				ID:                   "f3",
-				Text:                 "Mentored junior developers on best practices",
-				CompetencyCategories: []string{"mentoring"},
-				StrengthSignal:       "moderate",
-				SourceBurstID:        burstID,
-			},
-		}
+		f1 := fixtures.FactFromBurst("f1", burstID)
+		f1.Text = "Designed scalable microservices architecture"
+		f1.CompetencyCategories = []string{"architecture", "system design"}
+		f1.StrengthSignal = "strong"
+
+		f2 := fixtures.FactFromBurst("f2", burstID)
+		f2.Text = "Improved API response time by 40%"
+		f2.CompetencyCategories = []string{"performance"}
+		f2.StrengthSignal = "strong"
+
+		f3 := fixtures.FactFromBurst("f3", burstID)
+		f3.Text = "Mentored junior developers on best practices"
+		f3.CompetencyCategories = []string{"mentoring"}
+		f3.StrengthSignal = "moderate"
+
+		facts = []*career.Fact{f1, f2, f3}
 		theme = themes.NewDefaultTheme()
 	})
 
@@ -235,10 +229,11 @@ var _ = Describe("BurstFactsModal", func() {
 	Describe("SetFacts", func() {
 		It("updates the displayed facts", func() {
 			modal = modals.NewBurstFactsModal(burstID, burstName, facts, theme)
-			newFacts := []*career.Fact{
-				{ID: "new-1", Text: "New fact one", SourceBurstID: burstID},
-				{ID: "new-2", Text: "New fact two", SourceBurstID: burstID},
-			}
+			nf1 := fixtures.FactFromBurst("new-1", burstID)
+			nf1.Text = "New fact one"
+			nf2 := fixtures.FactFromBurst("new-2", burstID)
+			nf2.Text = "New fact two"
+			newFacts := []*career.Fact{nf1, nf2}
 
 			modal.SetFacts(newFacts)
 			modal.Show()
@@ -256,9 +251,9 @@ var _ = Describe("BurstFactsModal", func() {
 			Expect(view).To(ContainSubstring("3"))
 
 			// Update to 1 fact.
-			modal.SetFacts([]*career.Fact{
-				{ID: "single", Text: "Single fact", SourceBurstID: burstID},
-			})
+			sf := fixtures.FactFromBurst("single", burstID)
+			sf.Text = "Single fact"
+			modal.SetFacts([]*career.Fact{sf})
 			view = modal.View()
 			Expect(view).To(ContainSubstring("1"))
 		})
@@ -276,14 +271,11 @@ var _ = Describe("BurstFactsModal", func() {
 
 	Describe("Facts with optional fields", func() {
 		It("renders fact without categories", func() {
-			factWithoutCategories := []*career.Fact{
-				{
-					ID:             "f-no-cat",
-					Text:           "Fact without categories",
-					StrengthSignal: "moderate",
-					SourceBurstID:  burstID,
-				},
-			}
+			fnc := fixtures.FactFromBurst("f-no-cat", burstID)
+			fnc.Text = "Fact without categories"
+			fnc.CompetencyCategories = nil
+			fnc.StrengthSignal = "moderate"
+			factWithoutCategories := []*career.Fact{fnc}
 			modal = modals.NewBurstFactsModal(burstID, burstName, factWithoutCategories, theme)
 			modal.Show()
 
@@ -293,14 +285,11 @@ var _ = Describe("BurstFactsModal", func() {
 		})
 
 		It("renders fact without strength signal", func() {
-			factWithoutStrength := []*career.Fact{
-				{
-					ID:                   "f-no-str",
-					Text:                 "Fact without strength",
-					CompetencyCategories: []string{"delivery"},
-					SourceBurstID:        burstID,
-				},
-			}
+			fns := fixtures.FactFromBurst("f-no-str", burstID)
+			fns.Text = "Fact without strength"
+			fns.CompetencyCategories = []string{"delivery"}
+			fns.StrengthSignal = ""
+			factWithoutStrength := []*career.Fact{fns}
 			modal = modals.NewBurstFactsModal(burstID, burstName, factWithoutStrength, theme)
 			modal.Show()
 

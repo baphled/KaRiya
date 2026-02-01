@@ -3,6 +3,7 @@ package modals_test
 import (
 	"github.com/baphled/kariya/internal/cli/screens/facts/modals"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -14,10 +15,7 @@ var _ = Describe("EditFactModal", func() {
 	)
 
 	BeforeEach(func() {
-		fact = &career.Fact{
-			ID:   "fact-1",
-			Text: "Test fact text",
-		}
+		fact = fixtures.FactWith("fact-1", "Test fact text")
 		modal = modals.NewEditFactModal(fact)
 	})
 

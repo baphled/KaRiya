@@ -12,10 +12,10 @@ import (
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/uikit/display"
 	"github.com/baphled/kariya/internal/config"
-	career "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
 	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	careerservice "github.com/baphled/kariya/internal/service/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -45,20 +45,9 @@ var _ = Describe("App Unit Tests", func() {
 
 		// Pre-populate repositories to avoid nil panics.
 		//nolint:errcheck // Test setup - error handling not relevant.
-		burstRepo.Create(ctx, &career.Burst{
-			ID:       "b1",
-			Name:     "dummy",
-			EventIDs: []string{"e1", "e2"},
-		})
+		burstRepo.Create(ctx, fixtures.Burst("b1", "e1", "e2"))
 		//nolint:errcheck // Test setup - error handling not relevant.
-		factRepo.Create(ctx, &career.Fact{
-			ID:                   "f1",
-			Text:                 "dummy",
-			CompetencyCategories: []string{"leadership"},
-			RoleFit:              "staff",
-			AudienceRelevance:    []string{"peer"},
-			SourceEventID:        "e1",
-		})
+		factRepo.Create(ctx, fixtures.FactWithCategories("f1", "dummy", "e1", []string{"leadership"}, []string{"peer"}))
 
 		// Create bootstrap result (skipping onboarding for tests)
 		log := logger.DefaultLogger()
@@ -420,10 +409,7 @@ var _ = Describe("App Unit Tests", func() {
 	Describe("handleEditEventRequest", func() {
 		It("should handle RequestEditEventMsg and transition to intent state", func() {
 			// Create an event to edit.
-			event := &career.Event{
-				ID:   "test-event-1",
-				Text: "Test Event Description",
-			}
+			event := fixtures.EventWith("test-event-1", "Test Event Description", "", "")
 
 			// Send RequestEditEventMsg via Update (handleDefaultMsg routes it).
 			msg := intents.RequestEditEventMsg{Event: event}
@@ -438,10 +424,7 @@ var _ = Describe("App Unit Tests", func() {
 
 		It("should activate capture_event_edit intent with event context", func() {
 			// Create an event with specific details.
-			event := &career.Event{
-				ID:   "edit-event-1",
-				Text: "Event to Edit",
-			}
+			event := fixtures.EventWith("edit-event-1", "Event to Edit", "", "")
 
 			// Send RequestEditEventMsg.
 			msg := intents.RequestEditEventMsg{Event: event}
@@ -1200,10 +1183,7 @@ var _ = Describe("IntentRegistrar DI Tests", func() {
 			model := app.NewModel(cliService, svc, bootstrapResult)
 
 			// Create a test event.
-			testEvent := &career.Event{
-				ID:   "edit-test-event",
-				Text: "Test event for editing",
-			}
+			testEvent := fixtures.EventWith("edit-test-event", "Test event for editing", "", "")
 
 			// First request - should succeed.
 			msg1 := intents.RequestEditEventMsg{Event: testEvent}

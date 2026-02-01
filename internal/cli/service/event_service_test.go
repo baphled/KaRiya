@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	careerservice "github.com/baphled/kariya/internal/service/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -67,15 +67,12 @@ var _ = Describe("CLI Event Service", func() {
 			ctx := context.Background()
 
 			// Create a test event directly via repository
-			event := &career.Event{
-				Text: "Test event",
-				Date: time.Now(),
-			}
+			event := fixtures.Event("test-list-1")
 			err := repo.Create(ctx, event)
 			Expect(err).To(BeNil())
 
 			// List events using CLI service
-			filters := &careerrepo.EventListFilters{}
+			filters := fixtures.EventListFilters()
 			events, err := cliEventService.ListEvents(ctx, filters)
 
 			// Assertions
@@ -89,10 +86,7 @@ var _ = Describe("CLI Event Service", func() {
 			ctx := context.Background()
 
 			// Create a test event
-			event := &career.Event{
-				Text: "Completed important milestone",
-				Date: time.Now(),
-			}
+			event := fixtures.EventWith("", "Completed important milestone", "", "")
 			err := careerSvc.CaptureEvent(ctx, event, careerservice.ManualEntry)
 			Expect(err).To(BeNil())
 			eventID := event.ID
@@ -126,24 +120,15 @@ var _ = Describe("UpdateEventMetadata", func() {
 
 	It("should update event metadata without changing text or date", func() {
 		// Create an event
-		originalEvent := &career.Event{
-			ID:   "test-event-1",
-			Text: "Original text",
-			Date: time.Now().Add(-24 * time.Hour),
-		}
+		originalEvent := fixtures.EventWith("test-event-1", "Original text", "", "")
+		originalEvent.Date = time.Now().Add(-24 * time.Hour)
 		err := repo.Create(ctx, originalEvent)
 		Expect(err).To(BeNil())
 
 		// Update metadata
-		updatedEvent := &career.Event{
-			ID:         "test-event-1",
-			Text:       "This should be ignored",
-			Date:       time.Now(), // This should be ignored
-			Company:    "NewCompany",
-			Project:    "NewProject",
-			Tags:       []string{"technical", "leadership"},
-			Categories: []string{"Technical"},
-		}
+		updatedEvent := fixtures.EventWith("test-event-1", "This should be ignored", "NewCompany", "NewProject")
+		updatedEvent.Tags = []string{"technical", "leadership"}
+		updatedEvent.Categories = []string{"Technical"}
 
 		err = cliSvc.UpdateEventMetadata(ctx, updatedEvent)
 		Expect(err).To(BeNil())
@@ -167,21 +152,14 @@ var _ = Describe("UpdateEventMetadata", func() {
 	})
 
 	It("should return error when event ID is empty", func() {
-		event := &career.Event{
-			ID:      "",
-			Text:    "Test",
-			Company: "Company",
-		}
+		event := fixtures.EventWith("", "Test", "Company", "")
 		err := cliSvc.UpdateEventMetadata(ctx, event)
 		Expect(err).NotTo(BeNil())
 		Expect(err.Error()).To(ContainSubstring("event ID cannot be empty"))
 	})
 
 	It("should return error when event does not exist", func() {
-		event := &career.Event{
-			ID:      "non-existent",
-			Company: "Company",
-		}
+		event := fixtures.EventWith("non-existent", "", "Company", "")
 		err := cliSvc.UpdateEventMetadata(ctx, event)
 		Expect(err).NotTo(BeNil())
 	})

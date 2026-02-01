@@ -138,9 +138,7 @@ var _ = Describe("EventRepository", func() {
 				Expect(err).NotTo(HaveOccurred())
 			}
 
-			events, err := repo.List(ctx, career_repo.EventListFilters{
-				Limit: 10,
-			})
+			events, err := repo.List(ctx, *fixtures.EventListFiltersWithLimit(0, 10))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(events).To(HaveLen(5))
 		})
@@ -159,10 +157,9 @@ var _ = Describe("EventRepository", func() {
 			err = repo.Create(ctx, event2)
 			Expect(err).NotTo(HaveOccurred())
 
-			events, err := repo.List(ctx, career_repo.EventListFilters{
-				Tags:  []string{"project"},
-				Limit: 10,
-			})
+			filter := fixtures.EventListFiltersWithTags([]string{"project"})
+			filter.Limit = 10
+			events, err := repo.List(ctx, *filter)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(events).To(HaveLen(1))
 			Expect(events[0].Tags[0]).To(Equal("project"))
@@ -171,21 +168,17 @@ var _ = Describe("EventRepository", func() {
 		It("should filter events by date range", func() {
 			baseDate := time.Now()
 			for i := 0; i < 10; i++ {
-				event := &career.Event{
-					Text:    fmt.Sprintf("Event %d", i),
-					Date:    baseDate.AddDate(0, 0, -i*30),
-					Tags:    []string{"project"},
-					Company: "Test Company",
-				}
+				event := fixtures.EventWith("", fmt.Sprintf("Event %d", i), "Test Company", "")
+				event.Date = baseDate.AddDate(0, 0, -i*30)
+				event.Tags = []string{"project"}
 				err := repo.Create(ctx, event)
 				Expect(err).NotTo(HaveOccurred())
 			}
 
 			oneMonthAgo := baseDate.AddDate(0, 0, -30)
-			events, err := repo.List(ctx, career_repo.EventListFilters{
-				StartDate: &oneMonthAgo,
-				Limit:     10,
-			})
+			filter := fixtures.EventListFiltersWithDateRange(&oneMonthAgo, nil)
+			filter.Limit = 10
+			events, err := repo.List(ctx, *filter)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(events)).To(BeNumerically(">", 0))
 			Expect(len(events)).To(BeNumerically("<=", 10))
@@ -201,7 +194,7 @@ var _ = Describe("EventRepository", func() {
 				Expect(err).NotTo(HaveOccurred())
 			}
 
-			count, err := repo.Count(ctx, career_repo.EventListFilters{})
+			count, err := repo.Count(ctx, *fixtures.EventListFilters())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(count).To(Equal(5))
 		})
@@ -220,9 +213,7 @@ var _ = Describe("EventRepository", func() {
 			err = repo.Create(ctx, event2)
 			Expect(err).NotTo(HaveOccurred())
 
-			count, err := repo.Count(ctx, career_repo.EventListFilters{
-				Tags: []string{"project"},
-			})
+			count, err := repo.Count(ctx, *fixtures.EventListFiltersWithTags([]string{"project"}))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(count).To(Equal(1))
 		})
@@ -230,13 +221,9 @@ var _ = Describe("EventRepository", func() {
 
 	Describe("Company and Project Fields", func() {
 		It("should persist both fields correctly", func() {
-			event := &career.Event{
-				Text:    "Developed new microservice architecture",
-				Date:    time.Now().Add(-24 * time.Hour),
-				Company: "TechCorp Inc.",
-				Project: "Platform Modernization",
-				Tags:    []string{"technical"},
-			}
+			event := fixtures.EventWith("", "Developed new microservice architecture", "TechCorp Inc.", "Platform Modernization")
+			event.Date = time.Now().Add(-24 * time.Hour)
+			event.Tags = []string{"technical"}
 
 			err := repo.Create(ctx, event)
 			Expect(err).NotTo(HaveOccurred())
@@ -248,13 +235,9 @@ var _ = Describe("EventRepository", func() {
 		})
 
 		It("should handle empty company and project", func() {
-			event := &career.Event{
-				Text:    "Simple event without company or project",
-				Date:    time.Now().Add(-24 * time.Hour),
-				Company: "",
-				Project: "",
-				Tags:    []string{"technical"},
-			}
+			event := fixtures.EventWith("", "Simple event without company or project", "", "")
+			event.Date = time.Now().Add(-24 * time.Hour)
+			event.Tags = []string{"technical"}
 
 			err := repo.Create(ctx, event)
 			Expect(err).NotTo(HaveOccurred())
@@ -266,13 +249,9 @@ var _ = Describe("EventRepository", func() {
 		})
 
 		It("should update company and project correctly", func() {
-			event := &career.Event{
-				Text:    "Initial event",
-				Date:    time.Now().Add(-24 * time.Hour),
-				Company: "OldCorp",
-				Project: "Old Project",
-				Tags:    []string{"technical"},
-			}
+			event := fixtures.EventWith("", "Initial event", "OldCorp", "Old Project")
+			event.Date = time.Now().Add(-24 * time.Hour)
+			event.Tags = []string{"technical"}
 
 			err := repo.Create(ctx, event)
 			Expect(err).NotTo(HaveOccurred())
@@ -289,33 +268,21 @@ var _ = Describe("EventRepository", func() {
 		})
 
 		It("should list events with company and project", func() {
-			events := []*career.Event{
-				{
-					Text:    "Event 1",
-					Date:    time.Now().Add(-48 * time.Hour),
-					Company: "Company A",
-					Project: "Project Alpha",
-					Tags:    []string{"technical"},
-				},
-				{
-					Text:    "Event 2",
-					Date:    time.Now().Add(-24 * time.Hour),
-					Company: "Company B",
-					Project: "Project Beta",
-					Tags:    []string{"leadership"},
-				},
-			}
+			e1 := fixtures.EventWith("", "Event 1", "Company A", "Project Alpha")
+			e1.Date = time.Now().Add(-48 * time.Hour)
+			e1.Tags = []string{"technical"}
+			e2 := fixtures.EventWith("", "Event 2", "Company B", "Project Beta")
+			e2.Date = time.Now().Add(-24 * time.Hour)
+			e2.Tags = []string{"leadership"}
 
-			for _, e := range events {
+			for _, e := range []*career.Event{e1, e2} {
 				err := repo.Create(ctx, e)
 				Expect(err).NotTo(HaveOccurred())
 			}
 
-			listed, err := repo.List(ctx, career_repo.EventListFilters{
-				Limit:     10,
-				SortBy:    "date",
-				SortOrder: "desc",
-			})
+			filter := fixtures.EventListFiltersWithSort("date", "desc")
+			filter.Limit = 10
+			listed, err := repo.List(ctx, *filter)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(listed).To(HaveLen(2))
 			Expect(listed[0].Company).To(Equal("Company B"))
@@ -338,12 +305,9 @@ var _ = Describe("EventRepository", func() {
 				go func() {
 					defer wg.Done()
 
-					event := &career.Event{
-						Text:    fmt.Sprintf("Test Event %d", rand.Intn(10000)),
-						Date:    time.Now().Add(time.Duration(rand.Intn(365)) * -24 * time.Hour),
-						Tags:    []string{"project"},
-						Company: "Test Company",
-					}
+					event := fixtures.EventWith("", fmt.Sprintf("Test Event %d", rand.Intn(10000)), "Test Company", "")
+					event.Date = time.Now().Add(time.Duration(rand.Intn(365)) * -24 * time.Hour)
+					event.Tags = []string{"project"}
 					err := repo.Create(ctx, event)
 
 					mu.Lock()
@@ -357,7 +321,7 @@ var _ = Describe("EventRepository", func() {
 
 			wg.Wait()
 
-			count, err := repo.Count(ctx, career_repo.EventListFilters{})
+			count, err := repo.Count(ctx, *fixtures.EventListFilters())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(count).To(Equal(len(createdEvents)))
 		})

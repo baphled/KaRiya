@@ -6,6 +6,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/intents/burst_management"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 var _ = Describe("Result", func() {
@@ -23,10 +24,7 @@ var _ = Describe("Result", func() {
 		})
 
 		It("should store selected burst", func() {
-			burst := &career.Burst{
-				ID:   "burst-1",
-				Name: "Q1 Backend Work",
-			}
+			burst := fixtures.Burst("burst-1")
 			result := &burst_management.Result{
 				Burst: burst,
 			}
@@ -36,8 +34,8 @@ var _ = Describe("Result", func() {
 
 		It("should store all bursts", func() {
 			bursts := []*career.Burst{
-				{ID: "burst-1", Name: "Burst 1"},
-				{ID: "burst-2", Name: "Burst 2"},
+				fixtures.Burst("burst-1"),
+				fixtures.Burst("burst-2"),
 			}
 			result := &burst_management.Result{
 				Bursts: bursts,
@@ -47,8 +45,8 @@ var _ = Describe("Result", func() {
 
 		It("should store viewed bursts", func() {
 			viewedBursts := []*career.Burst{
-				{ID: "burst-1", Name: "Viewed 1"},
-				{ID: "burst-2", Name: "Viewed 2"},
+				fixtures.Burst("burst-1"),
+				fixtures.Burst("burst-2"),
 			}
 			result := &burst_management.Result{
 				ViewedBursts: viewedBursts,
@@ -107,13 +105,13 @@ var _ = Describe("Result", func() {
 
 	Describe("Complete Result", func() {
 		It("should store all fields together", func() {
-			burst := &career.Burst{ID: "selected", Name: "Selected Burst"}
+			burst := fixtures.Burst("selected")
 			bursts := []*career.Burst{
-				{ID: "burst-1", Name: "Burst 1"},
-				{ID: "burst-2", Name: "Burst 2"},
+				fixtures.Burst("burst-1"),
+				fixtures.Burst("burst-2"),
 			}
 			viewedBursts := []*career.Burst{
-				{ID: "burst-1", Name: "Burst 1"},
+				fixtures.Burst("burst-1"),
 			}
 
 			result := &burst_management.Result{

@@ -6,6 +6,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/screens/timeline/modals"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -17,8 +18,8 @@ var _ = Describe("SortModal", func() {
 
 	BeforeEach(func() {
 		events = []*career.Event{
-			{ID: "1", Text: "Event 1", Company: "Company A"},
-			{ID: "2", Text: "Event 2", Company: "Company B"},
+			fixtures.EventWith("1", "Event 1", "Company A", ""),
+			fixtures.EventWith("2", "Event 2", "Company B", ""),
 		}
 	})
 

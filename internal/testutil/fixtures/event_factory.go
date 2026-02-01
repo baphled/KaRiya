@@ -109,8 +109,12 @@ func EventWith(id, text, company, project string) *career.Event {
 // Events creates n events with sequential IDs (event-1, event-2, etc.)
 func Events(n int) []*career.Event {
 	events := make([]*career.Event, n)
-	for i := 0; i < n; i++ {
-		events[i] = EventFactory.MustCreate().(*career.Event)
+	for i := range n {
+		event, ok := EventFactory.MustCreate().(*career.Event)
+		if !ok {
+			continue
+		}
+		events[i] = event
 	}
 	return events
 }
@@ -129,8 +133,12 @@ func EventValWith(id, text, company, project string) career.Event {
 // EventVals creates n events as values with sequential IDs.
 func EventVals(n int) []career.Event {
 	events := make([]career.Event, n)
-	for i := 0; i < n; i++ {
-		events[i] = *EventFactory.MustCreate().(*career.Event)
+	for i := range n {
+		event, ok := EventFactory.MustCreate().(*career.Event)
+		if !ok {
+			continue
+		}
+		events[i] = *event
 	}
 	return events
 }

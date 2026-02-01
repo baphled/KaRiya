@@ -3,6 +3,7 @@ package modals_test
 import (
 	"github.com/baphled/kariya/internal/cli/screens/skills/modals"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -15,34 +16,18 @@ var _ = Describe("SortModal", func() {
 	)
 
 	BeforeEach(func() {
-		// Create test skills
 		years1 := 5
 		years2 := 3
 		years3 := 4
 
-		skills = []*career.Skill{
-			{
-				ID:        "skill-1",
-				Name:      "Go",
-				Category:  "backend",
-				Level:     "expert",
-				YearsUsed: &years1,
-			},
-			{
-				ID:        "skill-2",
-				Name:      "React",
-				Category:  "frontend",
-				Level:     "intermediate",
-				YearsUsed: &years2,
-			},
-			{
-				ID:        "skill-3",
-				Name:      "Docker",
-				Category:  "devops",
-				Level:     "advanced",
-				YearsUsed: &years3,
-			},
-		}
+		s1 := fixtures.SkillWith("skill-1", "Go", "backend", "expert")
+		s1.YearsUsed = &years1
+		s2 := fixtures.SkillWith("skill-2", "React", "frontend", "intermediate")
+		s2.YearsUsed = &years2
+		s3 := fixtures.SkillWith("skill-3", "Docker", "devops", "advanced")
+		s3.YearsUsed = &years3
+
+		skills = []*career.Skill{s1, s2, s3}
 
 		current = &modals.SortConfig{
 			SortBy:    "name",

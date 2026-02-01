@@ -11,6 +11,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/intents/factmanagement"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 // MockFactRepository implements FactRepository for testing.
@@ -179,14 +180,8 @@ var _ = Describe("Context", func() {
 			var testFact *career.Fact
 
 			BeforeEach(func() {
-				testFact = &career.Fact{
-					ID:                   "fact-1",
-					Text:                 "Test fact",
-					CompetencyCategories: []string{"technical"},
-					StrengthSignal:       "high",
-					CreatedAt:            time.Now(),
-					UpdatedAt:            time.Now(),
-				}
+				testFact = fixtures.Fact("fact-1", "event-1")
+				testFact.Text = "Test fact"
 			})
 
 			Context("with nil repository", func() {
@@ -251,10 +246,7 @@ var _ = Describe("Context", func() {
 			BeforeEach(func() {
 				testFacts = make([]*career.Fact, 25)
 				for i := 0; i < 25; i++ {
-					testFacts[i] = &career.Fact{
-						ID:   "fact-" + string(rune('a'+i)),
-						Text: "Test fact " + string(rune('a'+i)),
-					}
+					testFacts[i] = fixtures.FactWith("fact-"+string(rune('a'+i)), "Test fact "+string(rune('a'+i)))
 				}
 			})
 
@@ -331,14 +323,8 @@ var _ = Describe("Context", func() {
 			)
 
 			BeforeEach(func() {
-				testFact = &career.Fact{
-					ID:                   "fact-1",
-					Text:                 "Test fact",
-					CompetencyCategories: []string{"technical"},
-					StrengthSignal:       "high",
-					CreatedAt:            time.Now(),
-					UpdatedAt:            time.Now(),
-				}
+				testFact = fixtures.Fact("fact-1", "event-1")
+				testFact.Text = "Test fact"
 				mockRepo.facts = []*career.Fact{testFact}
 				intentCtx = factmanagement.NewIntentContext(ctx, mockRepo)
 			})
@@ -430,10 +416,7 @@ var _ = Describe("Context", func() {
 			)
 
 			BeforeEach(func() {
-				testFact = &career.Fact{
-					ID:   "fact-1",
-					Text: "Test fact",
-				}
+				testFact = fixtures.FactWith("fact-1", "Test fact")
 				mockRepo.facts = []*career.Fact{testFact}
 				intentCtx = factmanagement.NewIntentContext(ctx, mockRepo)
 				_ = intentCtx.LoadFacts() //nolint:errcheck // test setup
@@ -473,8 +456,8 @@ var _ = Describe("Context", func() {
 
 			BeforeEach(func() {
 				testFacts = []*career.Fact{
-					{ID: "fact-1", Text: "First fact"},
-					{ID: "fact-2", Text: "Second fact"},
+					fixtures.FactWith("fact-1", "First fact"),
+					fixtures.FactWith("fact-2", "Second fact"),
 				}
 				mockRepo.facts = testFacts
 				intentCtx = factmanagement.NewIntentContext(ctx, mockRepo)

@@ -11,6 +11,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/intents/skillsmanagement"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -91,8 +92,8 @@ var _ = Describe("Intent", func() {
 		Context("when skills are loaded successfully", func() {
 			BeforeEach(func() {
 				mockRepo.skills = []*career.Skill{
-					{ID: "skill-1", Name: "Go", Category: "Programming"},
-					{ID: "skill-2", Name: "Python", Category: "Programming"},
+					fixtures.SkillWith("skill-1", "Go", "Programming", "advanced"),
+					fixtures.SkillWith("skill-2", "Python", "Programming", "advanced"),
 				}
 			})
 
@@ -131,7 +132,7 @@ var _ = Describe("Intent", func() {
 		Context("when receiving SkillsLoadedMsg", func() {
 			It("should update skills list", func() {
 				skills := []*career.Skill{
-					{ID: "skill-1", Name: "Go"},
+					fixtures.SkillWith("skill-1", "Go", "backend", "advanced"),
 				}
 				msg := skillsmanagement.SkillsLoadedMsg{Skills: skills}
 				_ = intent.Update(msg)
@@ -221,11 +222,10 @@ var _ = Describe("Intent", func() {
 			)
 
 			BeforeEach(func() {
-				// Setup 3 skills so index mismatch is detectable.
 				allSkills = []*career.Skill{
-					{ID: "skill-1", Name: "Go", Category: "Programming"},
-					{ID: "skill-2", Name: "Python", Category: "Programming"},
-					{ID: "skill-3", Name: "Rust", Category: "Programming"},
+					fixtures.SkillWith("skill-1", "Go", "Programming", "advanced"),
+					fixtures.SkillWith("skill-2", "Python", "Programming", "advanced"),
+					fixtures.SkillWith("skill-3", "Rust", "Programming", "advanced"),
 				}
 				mockRepo.skills = allSkills
 

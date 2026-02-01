@@ -9,6 +9,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens/skills/modals"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -22,13 +23,8 @@ var _ = Describe("EventsModal", func() {
 
 	BeforeEach(func() {
 		theme = themes.NewDefaultTheme()
-		testEvent = &career.Event{
-			ID:      "event-1",
-			Text:    "Implemented new feature",
-			Date:    time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),
-			Company: "Test Corp",
-			Project: "Project Alpha",
-		}
+		testEvent = fixtures.EventWith("event-1", "Implemented new feature", "Test Corp", "Project Alpha")
+		testEvent.Date = time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
 		events = []*career.Event{testEvent}
 		modal = modals.NewEventsModal("skill-1", "Go Programming", events, theme)
 	})
@@ -147,11 +143,9 @@ var _ = Describe("EventsModal", func() {
 		})
 
 		It("truncates long event text", func() {
-			longEvent := &career.Event{
-				ID:   "event-long",
-				Text: "This is a very long event description that should be truncated when displayed in the modal to prevent layout issues",
-				Date: time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),
-			}
+			longEvent := fixtures.Event("event-long")
+			longEvent.Text = "This is a very long event description that should be truncated when displayed in the modal to prevent layout issues"
+			longEvent.Date = time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
 			longModal := modals.NewEventsModal("skill-1", "Go", []*career.Event{longEvent}, theme)
 			longModal.SetDimensions(60, 24) // Small width to force truncation
 			longModal.Show()
@@ -164,11 +158,16 @@ var _ = Describe("EventsModal", func() {
 		var multiEventModal *modals.EventsModal
 
 		BeforeEach(func() {
-			events := []*career.Event{
-				{ID: "event-1", Text: "First event", Date: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)},
-				{ID: "event-2", Text: "Second event", Date: time.Date(2024, 1, 2, 0, 0, 0, 0, time.UTC)},
-				{ID: "event-3", Text: "Third event", Date: time.Date(2024, 1, 3, 0, 0, 0, 0, time.UTC)},
-			}
+			e1 := fixtures.Event("event-1")
+			e1.Text = "First event"
+			e1.Date = time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
+			e2 := fixtures.Event("event-2")
+			e2.Text = "Second event"
+			e2.Date = time.Date(2024, 1, 2, 0, 0, 0, 0, time.UTC)
+			e3 := fixtures.Event("event-3")
+			e3.Text = "Third event"
+			e3.Date = time.Date(2024, 1, 3, 0, 0, 0, 0, time.UTC)
+			events := []*career.Event{e1, e2, e3}
 			multiEventModal = modals.NewEventsModal("skill-1", "Go", events, theme)
 			multiEventModal.Show()
 		})
@@ -309,9 +308,9 @@ var _ = Describe("EventsModal", func() {
 
 	Describe("SetEvents", func() {
 		It("updates events list", func() {
-			newEvents := []*career.Event{
-				{ID: "new-1", Text: "New event", Date: time.Now()},
-			}
+			newEvent := fixtures.Event("new-1")
+			newEvent.Text = "New event"
+			newEvents := []*career.Event{newEvent}
 			modal.SetEvents(newEvents)
 			modal.Show()
 			view := modal.View()
@@ -322,9 +321,9 @@ var _ = Describe("EventsModal", func() {
 			modal.Show()
 			modal.Update(tea.KeyMsg{Type: tea.KeyDown})
 
-			modal.SetEvents([]*career.Event{
-				{ID: "new-1", Text: "New event"},
-			})
+			resetEvent := fixtures.Event("new-1")
+			resetEvent.Text = "New event"
+			modal.SetEvents([]*career.Event{resetEvent})
 			Expect(modal.GetSelectedIndex()).To(Equal(0))
 		})
 
@@ -363,11 +362,11 @@ var _ = Describe("EventsModal", func() {
 
 	Describe("Handles nil events in list", func() {
 		It("skips nil events when rendering", func() {
-			eventsWithNil := []*career.Event{
-				{ID: "event-1", Text: "First event", Date: time.Now()},
-				nil,
-				{ID: "event-3", Text: "Third event", Date: time.Now()},
-			}
+			ev1 := fixtures.Event("event-1")
+			ev1.Text = "First event"
+			ev3 := fixtures.Event("event-3")
+			ev3.Text = "Third event"
+			eventsWithNil := []*career.Event{ev1, nil, ev3}
 			nilModal := modals.NewEventsModal("skill-1", "Go", eventsWithNil, theme)
 			nilModal.Show()
 			view := nilModal.View()
@@ -378,11 +377,8 @@ var _ = Describe("EventsModal", func() {
 
 	Describe("Handles events with missing optional fields", func() {
 		It("renders event without company", func() {
-			event := &career.Event{
-				ID:   "event-1",
-				Text: "Event without company",
-				Date: time.Now(),
-			}
+			event := fixtures.Event("event-1")
+			event.Text = "Event without company"
 			simpleModal := modals.NewEventsModal("skill-1", "Go", []*career.Event{event}, theme)
 			simpleModal.Show()
 			view := simpleModal.View()
@@ -390,12 +386,7 @@ var _ = Describe("EventsModal", func() {
 		})
 
 		It("renders event without project", func() {
-			event := &career.Event{
-				ID:      "event-1",
-				Text:    "Event without project",
-				Date:    time.Now(),
-				Company: "Company",
-			}
+			event := fixtures.EventWith("event-1", "Event without project", "Company", "")
 			simpleModal := modals.NewEventsModal("skill-1", "Go", []*career.Event{event}, theme)
 			simpleModal.Show()
 			view := simpleModal.View()
@@ -404,10 +395,9 @@ var _ = Describe("EventsModal", func() {
 		})
 
 		It("renders event with zero date", func() {
-			event := &career.Event{
-				ID:   "event-1",
-				Text: "Event without date",
-			}
+			event := fixtures.Event("event-1")
+			event.Text = "Event without date"
+			event.Date = time.Time{}
 			simpleModal := modals.NewEventsModal("skill-1", "Go", []*career.Event{event}, theme)
 			simpleModal.Show()
 			view := simpleModal.View()
@@ -415,11 +405,8 @@ var _ = Describe("EventsModal", func() {
 		})
 
 		It("shows placeholder for empty text", func() {
-			event := &career.Event{
-				ID:   "event-1",
-				Text: "",
-				Date: time.Now(),
-			}
+			event := fixtures.Event("event-1")
+			event.Text = ""
 			simpleModal := modals.NewEventsModal("skill-1", "Go", []*career.Event{event}, theme)
 			simpleModal.Show()
 			view := simpleModal.View()

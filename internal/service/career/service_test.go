@@ -10,6 +10,7 @@ import (
 
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/repository/career/mocks"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 var _ = Describe("Career Service", func() {
@@ -29,12 +30,9 @@ var _ = Describe("Career Service", func() {
 		var testEvent *career.Event
 
 		BeforeEach(func() {
-			testEvent = &career.Event{
-				Text:    "Developed a high-performance backend service",
-				Date:    time.Now().AddDate(0, 0, -10),
-				Tags:    []string{"technical", "project"},
-				Company: "Test Company",
-			}
+			testEvent = fixtures.EventWith("", "Developed a high-performance backend service", "Test Company", "")
+			testEvent.Date = time.Now().AddDate(0, 0, -10)
+			testEvent.Tags = []string{"technical", "project"}
 		})
 
 		Context("with valid event and TimelineJournaling mode", func() {
@@ -220,23 +218,15 @@ var _ = Describe("Career Service", func() {
 		var existingEvent *career.Event
 
 		BeforeEach(func() {
-			existingEvent = &career.Event{
-				ID:        "existing-id",
-				Text:      "Original event text",
-				Date:      time.Now().AddDate(0, 0, -10),
-				Tags:      []string{"technical"},
-				Company:   "Original Company",
-				CreatedAt: time.Now().AddDate(0, 0, -5),
-				UpdatedAt: time.Now().AddDate(0, 0, -5),
-			}
+			existingEvent = fixtures.EventWith("existing-id", "Original event text", "Original Company", "")
+			existingEvent.Date = time.Now().AddDate(0, 0, -10)
+			existingEvent.Tags = []string{"technical"}
+			existingEvent.CreatedAt = time.Now().AddDate(0, 0, -5)
+			existingEvent.UpdatedAt = time.Now().AddDate(0, 0, -5)
 
-			testEvent = &career.Event{
-				ID:      "existing-id",
-				Text:    "Updated event text",
-				Date:    time.Now().AddDate(0, 0, -10),
-				Tags:    []string{"leadership"},
-				Company: "New Company",
-			}
+			testEvent = fixtures.EventWith("existing-id", "Updated event text", "New Company", "")
+			testEvent.Date = time.Now().AddDate(0, 0, -10)
+			testEvent.Tags = []string{"leadership"}
 		})
 
 		Context("with valid event", func() {
@@ -371,15 +361,11 @@ var _ = Describe("Career Service", func() {
 		var testEvent *career.Event
 
 		BeforeEach(func() {
-			testEvent = &career.Event{
-				ID:        "event-id-123",
-				Text:      "Test event",
-				Date:      time.Now().AddDate(0, 0, -10),
-				Tags:      []string{"technical"},
-				Company:   "Test Company",
-				CreatedAt: time.Now().AddDate(0, 0, -5),
-				UpdatedAt: time.Now().AddDate(0, 0, -5),
-			}
+			testEvent = fixtures.EventWith("event-id-123", "Test event", "Test Company", "")
+			testEvent.Date = time.Now().AddDate(0, 0, -10)
+			testEvent.Tags = []string{"technical"}
+			testEvent.CreatedAt = time.Now().AddDate(0, 0, -5)
+			testEvent.UpdatedAt = time.Now().AddDate(0, 0, -5)
 		})
 
 		Context("when event exists", func() {
@@ -442,23 +428,16 @@ var _ = Describe("Career Service", func() {
 		var testEvents []*career.Event
 
 		BeforeEach(func() {
-			testEvents = []*career.Event{
-				{
-					ID:   "event-1",
-					Text: "Technical event",
-					Tags: []string{"technical"},
-				},
-				{
-					ID:   "event-2",
-					Text: "Leadership event",
-					Tags: []string{"leadership"},
-				},
-				{
-					ID:   "event-3",
-					Text: "Project event",
-					Tags: []string{"project"},
-				},
-			}
+			e1 := fixtures.Event("event-1")
+			e1.Text = "Technical event"
+			e1.Tags = []string{"technical"}
+			e2 := fixtures.Event("event-2")
+			e2.Text = "Leadership event"
+			e2.Tags = []string{"leadership"}
+			e3 := fixtures.Event("event-3")
+			e3.Text = "Project event"
+			e3.Tags = []string{"project"}
+			testEvents = []*career.Event{e1, e2, e3}
 		})
 
 		Context("with no filters", func() {
@@ -643,10 +622,8 @@ var _ = Describe("Career Service", func() {
 		Context("when capturing events", func() {
 			It("should set CreatedAt and UpdatedAt to same time", func() {
 				mockRepo.SetCreateBehavior(nil)
-				testEvent := &career.Event{
-					Text: "Test event",
-					Date: time.Now().AddDate(0, 0, -5),
-				}
+				testEvent := fixtures.EventWith("", "Test event", "", "")
+				testEvent.Date = time.Now().AddDate(0, 0, -5)
 
 				beforeCapture := time.Now()
 				err := service.CaptureEvent(ctx, testEvent, ManualEntry)
@@ -661,21 +638,15 @@ var _ = Describe("Career Service", func() {
 
 		Context("when updating events", func() {
 			It("should preserve CreatedAt but update UpdatedAt", func() {
-				existingEvent := &career.Event{
-					ID:        "event-id",
-					Text:      "Original",
-					Date:      time.Now().AddDate(0, 0, -10),
-					CreatedAt: time.Now().AddDate(0, 0, -5),
-					UpdatedAt: time.Now().AddDate(0, 0, -5),
-				}
+				existingEvent := fixtures.EventWith("event-id", "Original", "", "")
+				existingEvent.Date = time.Now().AddDate(0, 0, -10)
+				existingEvent.CreatedAt = time.Now().AddDate(0, 0, -5)
+				existingEvent.UpdatedAt = time.Now().AddDate(0, 0, -5)
 				mockRepo.SetGetByIDBehavior(existingEvent, nil)
 				mockRepo.SetUpdateBehavior(nil)
 
-				updateEvent := &career.Event{
-					ID:   "event-id",
-					Text: "Updated",
-					Date: time.Now().AddDate(0, 0, -10),
-				}
+				updateEvent := fixtures.EventWith("event-id", "Updated", "", "")
+				updateEvent.Date = time.Now().AddDate(0, 0, -10)
 
 				originalCreatedAt := existingEvent.CreatedAt
 				time.Sleep(10 * time.Millisecond)
@@ -693,20 +664,16 @@ var _ = Describe("Career Service", func() {
 		Context("TimelineJournaling mode", func() {
 			It("should accept events within 30 days", func() {
 				mockRepo.SetCreateBehavior(nil)
-				event := &career.Event{
-					Text: "Recent event",
-					Date: time.Now().AddDate(0, 0, -15),
-				}
+				event := fixtures.EventWith("", "Recent event", "", "")
+				event.Date = time.Now().AddDate(0, 0, -15)
 
 				err := service.CaptureEvent(ctx, event, TimelineJournaling)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("should reject events older than 30 days", func() {
-				event := &career.Event{
-					Text: "Old event",
-					Date: time.Now().AddDate(0, 0, -40),
-				}
+				event := fixtures.EventWith("", "Old event", "", "")
+				event.Date = time.Now().AddDate(0, 0, -40)
 
 				err := service.CaptureEvent(ctx, event, TimelineJournaling)
 				Expect(err).To(HaveOccurred())
@@ -717,10 +684,8 @@ var _ = Describe("Career Service", func() {
 		Context("CVBackfill mode", func() {
 			It("should accept very old events", func() {
 				mockRepo.SetCreateBehavior(nil)
-				event := &career.Event{
-					Text: "Very old event",
-					Date: time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC),
-				}
+				event := fixtures.EventWith("", "Very old event", "", "")
+				event.Date = time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
 
 				err := service.CaptureEvent(ctx, event, CVBackfill)
 				Expect(err).NotTo(HaveOccurred())
@@ -730,10 +695,8 @@ var _ = Describe("Career Service", func() {
 		Context("ManualEntry mode", func() {
 			It("should accept any valid date", func() {
 				mockRepo.SetCreateBehavior(nil)
-				event := &career.Event{
-					Text: "Event from any time",
-					Date: time.Date(1990, 6, 15, 0, 0, 0, 0, time.UTC),
-				}
+				event := fixtures.EventWith("", "Event from any time", "", "")
+				event.Date = time.Date(1990, 6, 15, 0, 0, 0, 0, time.UTC)
 
 				err := service.CaptureEvent(ctx, event, ManualEntry)
 				Expect(err).NotTo(HaveOccurred())

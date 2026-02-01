@@ -11,7 +11,7 @@ mkdir -p "$COVERAGE_DIR"
 export GOCOVERDIR="$COVERAGE_DIR"
 
 # Run Ginkgo tests with coverage
-ginkgo -v --race --covermode=atomic --coverprofile="$COVERAGE_DIR/coverage.out" ./...
+ginkgo -v --race --covermode=atomic --coverprofile="$COVERAGE_DIR/coverage.out" --skip-package=testdata ./...
 
 # Generate HTML coverage report
 go tool cover -html="$COVERAGE_DIR/coverage.out" -o "$COVERAGE_DIR/coverage.html"
