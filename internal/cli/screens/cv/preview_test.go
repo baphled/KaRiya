@@ -9,6 +9,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens/cv"
 	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 var _ = Describe("CVPreviewScreen", func() {
@@ -19,63 +20,38 @@ var _ = Describe("CVPreviewScreen", func() {
 	)
 
 	BeforeEach(func() {
-		sections = []*career.CVSection{
-			{
-				Title:       "Professional Summary",
-				SectionType: "summary",
-				Summary:     "Experienced software engineer with expertise in distributed systems.",
-			},
-			{
-				Title: "Professional Experience",
-				Content: []*career.SectionContentGroup{
-					{
-						Header:    "Senior Engineer at TechCorp",
-						StartDate: "2020-01",
-						EndDate:   "Present",
-						Bullets: []*career.CVBullet{
-							{Text: "Led development of microservices architecture"},
-							{Text: "Mentored team of 5 junior engineers"},
-							{Text: "Reduced deployment time by 60%"},
-						},
-					},
-					{
-						Header:    "Software Engineer at StartupCo",
-						StartDate: "2018-01",
-						EndDate:   "2019-12",
-						Bullets: []*career.CVBullet{
-							{Text: "Built core payment processing system"},
-							{Text: "Implemented real-time notifications"},
-						},
-					},
-				},
-			},
-			{
-				Title: "Technical Skills",
-				Content: []*career.SectionContentGroup{
-					{
-						Header: "Languages",
-						Bullets: []*career.CVBullet{
-							{Text: "Go, Python, TypeScript, Java"},
-						},
-					},
-					{
-						Header: "Frameworks",
-						Bullets: []*career.CVBullet{
-							{Text: "React, Vue, Django, Spring Boot"},
-						},
-					},
-				},
-			},
-		}
+		summarySection := fixtures.CVSectionWithSummary("section-1", "cv-1", "Experienced software engineer with expertise in distributed systems.")
+		summarySection.Title = "Professional Summary"
 
-		testCV = &career.CVView{
-			Name:             "Test CV",
-			TargetRole:       "Senior Engineer",
-			TargetAudience:   "Hiring Manager",
-			Sections:         sections,
-			SourceEventCount: 10,
-			SourceFactCount:  25,
-		}
+		experienceSection := fixtures.CVSectionWithContent("section-2", "cv-1", []*career.SectionContentGroup{
+			fixtures.ContentGroupFull("Senior Engineer at TechCorp", "2020-01", "Present", []*career.CVBullet{
+				fixtures.CVBulletWith("b-1", "section-2", "Led development of microservices architecture"),
+				fixtures.CVBulletWith("b-2", "section-2", "Mentored team of 5 junior engineers"),
+				fixtures.CVBulletWith("b-3", "section-2", "Reduced deployment time by 60%"),
+			}),
+			fixtures.ContentGroupFull("Software Engineer at StartupCo", "2018-01", "2019-12", []*career.CVBullet{
+				fixtures.CVBulletWith("b-4", "section-2", "Built core payment processing system"),
+				fixtures.CVBulletWith("b-5", "section-2", "Implemented real-time notifications"),
+			}),
+		})
+		experienceSection.Title = "Professional Experience"
+
+		skillsSection := fixtures.CVSectionWithContent("section-3", "cv-1", []*career.SectionContentGroup{
+			fixtures.ContentGroupWithBullets("Languages", []*career.CVBullet{
+				fixtures.CVBulletWith("b-6", "section-3", "Go, Python, TypeScript, Java"),
+			}),
+			fixtures.ContentGroupWithBullets("Frameworks", []*career.CVBullet{
+				fixtures.CVBulletWith("b-7", "section-3", "React, Vue, Django, Spring Boot"),
+			}),
+		})
+		skillsSection.Title = "Technical Skills"
+
+		sections = []*career.CVSection{summarySection, experienceSection, skillsSection}
+
+		testCV = fixtures.CVViewWith("cv-1", "Test CV", "Senior Engineer", "Hiring Manager")
+		testCV.Sections = sections
+		testCV.SourceEventCount = 10
+		testCV.SourceFactCount = 25
 
 		screen = cv.NewCVPreviewScreen(testCV)
 		// Initialize with a larger window size to ensure all content is visible
@@ -304,25 +280,18 @@ var _ = Describe("CVPreviewScreen", func() {
 		})
 
 		It("should display scroll percentage when content is scrollable", func() {
-			// Create a CV with lots of content to ensure scrolling
-			longCV := &career.CVView{
-				Name:     "Long CV",
-				Sections: make([]*career.CVSection, 10),
-			}
+			longCV := fixtures.CVViewWith("cv-long", "Long CV", "staff", "hiring_manager")
+			longCV.Sections = make([]*career.CVSection, 10)
 			for i := 0; i < 10; i++ {
-				longCV.Sections[i] = &career.CVSection{
-					Title: "Section " + string(rune('A'+i)),
-					Content: []*career.SectionContentGroup{
-						{
-							Header: "Group",
-							Bullets: []*career.CVBullet{
-								{Text: "Bullet 1"},
-								{Text: "Bullet 2"},
-								{Text: "Bullet 3"},
-							},
-						},
-					},
-				}
+				sectionID := "section-long-" + string(rune('A'+i))
+				longCV.Sections[i] = fixtures.CVSectionWithContent(sectionID, "cv-long", []*career.SectionContentGroup{
+					fixtures.ContentGroupWithBullets("Group", []*career.CVBullet{
+						fixtures.CVBulletWith("bl-1-"+sectionID, sectionID, "Bullet 1"),
+						fixtures.CVBulletWith("bl-2-"+sectionID, sectionID, "Bullet 2"),
+						fixtures.CVBulletWith("bl-3-"+sectionID, sectionID, "Bullet 3"),
+					}),
+				})
+				longCV.Sections[i].Title = "Section " + string(rune('A'+i))
 			}
 			longScreen := cv.NewCVPreviewScreen(longCV)
 			longScreen.Update(tea.WindowSizeMsg{Width: 80, Height: 10}) // Small viewport
@@ -349,12 +318,8 @@ var _ = Describe("CVPreviewScreen", func() {
 
 		Context("CV with no sections", func() {
 			It("should handle CV with no sections", func() {
-				emptyCV := &career.CVView{
-					Name:           "Empty CV",
-					TargetRole:     "Engineer",
-					TargetAudience: "Manager",
-					Sections:       []*career.CVSection{},
-				}
+				emptyCV := fixtures.CVViewWith("cv-empty", "Empty CV", "Engineer", "Manager")
+				emptyCV.Sections = []*career.CVSection{}
 				emptyScreen := cv.NewCVPreviewScreen(emptyCV)
 				emptyScreen.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
 
@@ -371,22 +336,15 @@ var _ = Describe("CVPreviewScreen", func() {
 			})
 
 			It("should display same date correctly", func() {
-				singleDateCV := &career.CVView{
-					Name: "Single Date CV",
-					Sections: []*career.CVSection{
-						{
-							Title: "Experience",
-							Content: []*career.SectionContentGroup{
-								{
-									Header:    "Event",
-									StartDate: "2020-06",
-									EndDate:   "2020-06",
-									Bullets:   []*career.CVBullet{{Text: "Did something"}},
-								},
-							},
-						},
-					},
+				singleDateCV := fixtures.CVViewWith("cv-single", "Single Date CV", "staff", "hiring_manager")
+				singleDateCV.Sections = []*career.CVSection{
+					fixtures.CVSectionWithContent("section-sd", "cv-single", []*career.SectionContentGroup{
+						fixtures.ContentGroupFull("Event", "2020-06", "2020-06", []*career.CVBullet{
+							fixtures.CVBulletWith("bl-sd", "section-sd", "Did something"),
+						}),
+					}),
 				}
+				singleDateCV.Sections[0].Title = "Experience"
 				s := cv.NewCVPreviewScreen(singleDateCV)
 				s.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
 

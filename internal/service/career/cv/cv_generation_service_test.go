@@ -8,6 +8,7 @@ import (
 	career "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -26,12 +27,8 @@ var _ = Describe("DefaultCVGenerationService", func() {
 
 	Describe("GenerateCV", func() {
 		It("should generate CV from saved configuration by name", func() {
-			config := &career.CVConfig{
-				Name:           "test-cv",
-				TargetRole:     "principal",
-				TargetAudience: "hiring_manager",
-				EventFilters:   make(map[string]interface{}),
-			}
+			config := fixtures.CVConfigWith("test-cv", "principal", "hiring_manager")
+			config.EventFilters = make(map[string]interface{})
 
 			configManager := NewMockConfigManager()
 			configManager.configs["test-cv"] = config
@@ -71,15 +68,8 @@ var _ = Describe("DefaultCVGenerationService", func() {
 		})
 
 		It("should handle context cancellation", func() {
-			config := &career.CVConfig{
-				Name:           "test-cv",
-				TargetRole:     "principal",
-				TargetAudience: "hiring_manager",
-				EventFilters:   make(map[string]interface{}),
-			}
-
-			configManager := NewMockConfigManager()
-			configManager.configs["test-cv"] = config
+			config := fixtures.CVConfigWith("test-cv", "principal", "hiring_manager")
+			config.EventFilters = make(map[string]interface{})
 
 			cancelCtx, cancel := context.WithCancel(context.Background())
 			cancel()
@@ -87,7 +77,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 			service := NewCVGenerationService(
 				NewEmptyRepository(),
 				NewEmptyFactRepository(),
-				configManager,
+				NewMockConfigManager(),
 				NewEmptyBulletGenerator(),
 				NewMockDataProcessingService(),
 				NewEmptySectionBuilder(),
@@ -115,10 +105,9 @@ var _ = Describe("DefaultCVGenerationService", func() {
 		})
 
 		It("should require valid target role", func() {
-			config := &career.CVConfig{
-				Name: "test-cv",
-				// Missing TargetRole
-			}
+			config := fixtures.CVConfig("test-cv")
+			config.TargetRole = ""
+			config.TargetAudience = ""
 
 			service := NewCVGenerationService(
 				nil,
@@ -134,11 +123,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 		})
 
 		It("should require at least one target audience", func() {
-			config := &career.CVConfig{
-				Name:       "test-cv",
-				TargetRole: "principal",
-				// Missing TargetAudience
-			}
+			config := fixtures.CVConfigWith("test-cv", "principal", "")
 
 			service := NewCVGenerationService(
 				nil,
@@ -154,12 +139,8 @@ var _ = Describe("DefaultCVGenerationService", func() {
 		})
 
 		It("should generate CV with valid configuration", func() {
-			config := &career.CVConfig{
-				Name:           "test-cv",
-				TargetRole:     "principal",
-				TargetAudience: "hiring_manager",
-				EventFilters:   make(map[string]interface{}),
-			}
+			config := fixtures.CVConfigWith("test-cv", "principal", "hiring_manager")
+			config.EventFilters = make(map[string]interface{})
 
 			service := NewCVGenerationService(
 				NewEmptyRepository(),
@@ -179,12 +160,8 @@ var _ = Describe("DefaultCVGenerationService", func() {
 		})
 
 		It("should set generated timestamp", func() {
-			config := &career.CVConfig{
-				Name:           "test-cv",
-				TargetRole:     "principal",
-				TargetAudience: "hiring_manager",
-				EventFilters:   make(map[string]interface{}),
-			}
+			config := fixtures.CVConfigWith("test-cv", "principal", "hiring_manager")
+			config.EventFilters = make(map[string]interface{})
 
 			service := NewCVGenerationService(
 				NewEmptyRepository(),
@@ -206,12 +183,8 @@ var _ = Describe("DefaultCVGenerationService", func() {
 		})
 
 		It("should handle context cancellation", func() {
-			config := &career.CVConfig{
-				Name:           "test-cv",
-				TargetRole:     "principal",
-				TargetAudience: "hiring_manager",
-				EventFilters:   make(map[string]interface{}),
-			}
+			config := fixtures.CVConfigWith("test-cv", "principal", "hiring_manager")
+			config.EventFilters = make(map[string]interface{})
 
 			cancelCtx, cancel := context.WithCancel(context.Background())
 			cancel()
@@ -231,12 +204,8 @@ var _ = Describe("DefaultCVGenerationService", func() {
 		})
 
 		It("should generate unique CV IDs", func() {
-			config := &career.CVConfig{
-				Name:           "test-cv",
-				TargetRole:     "principal",
-				TargetAudience: "hiring_manager",
-				EventFilters:   make(map[string]interface{}),
-			}
+			config := fixtures.CVConfigWith("test-cv", "principal", "hiring_manager")
+			config.EventFilters = make(map[string]interface{})
 
 			service := NewCVGenerationService(
 				NewEmptyRepository(),
@@ -258,12 +227,8 @@ var _ = Describe("DefaultCVGenerationService", func() {
 		})
 
 		It("should support single target audience", func() {
-			config := &career.CVConfig{
-				Name:           "test-cv",
-				TargetRole:     "principal",
-				TargetAudience: "hiring_manager",
-				EventFilters:   make(map[string]interface{}),
-			}
+			config := fixtures.CVConfigWith("test-cv", "principal", "hiring_manager")
+			config.EventFilters = make(map[string]interface{})
 
 			service := NewCVGenerationService(
 				NewEmptyRepository(),
@@ -281,12 +246,8 @@ var _ = Describe("DefaultCVGenerationService", func() {
 		})
 
 		It("should track source event and fact counts", func() {
-			config := &career.CVConfig{
-				Name:           "test-cv",
-				TargetRole:     "principal",
-				TargetAudience: "hiring_manager",
-				EventFilters:   make(map[string]interface{}),
-			}
+			config := fixtures.CVConfigWith("test-cv", "principal", "hiring_manager")
+			config.EventFilters = make(map[string]interface{})
 
 			service := NewCVGenerationService(
 				NewCountingRepository(5),
@@ -310,12 +271,8 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				"tags":      []string{"leadership", "technical"},
 			}
 
-			config := &career.CVConfig{
-				Name:           "test-cv",
-				TargetRole:     "principal",
-				TargetAudience: "hiring_manager",
-				EventFilters:   filters,
-			}
+			config := fixtures.CVConfigWith("test-cv", "principal", "hiring_manager")
+			config.EventFilters = filters
 
 			service := NewCVGenerationService(
 				NewEmptyRepository(),
@@ -336,12 +293,8 @@ var _ = Describe("DefaultCVGenerationService", func() {
 			validRoles := []string{"principal", "staff", "em", "senior_ic"}
 
 			for _, role := range validRoles {
-				config := &career.CVConfig{
-					Name:           "test-cv",
-					TargetRole:     role,
-					TargetAudience: "hiring_manager",
-					EventFilters:   make(map[string]interface{}),
-				}
+				config := fixtures.CVConfigWith("test-cv", role, "hiring_manager")
+				config.EventFilters = make(map[string]interface{})
 
 				service := NewCVGenerationService(
 					NewEmptyRepository(),
@@ -360,12 +313,8 @@ var _ = Describe("DefaultCVGenerationService", func() {
 		})
 
 		It("should return ephemeral CVs (not persisted)", func() {
-			config := &career.CVConfig{
-				Name:           "test-cv",
-				TargetRole:     "principal",
-				TargetAudience: "hiring_manager",
-				EventFilters:   make(map[string]interface{}),
-			}
+			config := fixtures.CVConfigWith("test-cv", "principal", "hiring_manager")
+			config.EventFilters = make(map[string]interface{})
 
 			service := NewCVGenerationService(
 				NewEmptyRepository(),
@@ -389,12 +338,8 @@ var _ = Describe("DefaultCVGenerationService", func() {
 
 	Describe("Edge Cases", func() {
 		It("should handle empty event repository gracefully", func() {
-			config := &career.CVConfig{
-				Name:           "test-cv",
-				TargetRole:     "principal",
-				TargetAudience: "hiring_manager",
-				EventFilters:   make(map[string]interface{}),
-			}
+			config := fixtures.CVConfigWith("test-cv", "principal", "hiring_manager")
+			config.EventFilters = make(map[string]interface{})
 
 			service := NewCVGenerationService(
 				NewEmptyRepository(),
@@ -412,12 +357,8 @@ var _ = Describe("DefaultCVGenerationService", func() {
 		})
 
 		It("should handle empty fact repository gracefully", func() {
-			config := &career.CVConfig{
-				Name:           "test-cv",
-				TargetRole:     "principal",
-				TargetAudience: "hiring_manager",
-				EventFilters:   make(map[string]interface{}),
-			}
+			config := fixtures.CVConfigWith("test-cv", "principal", "hiring_manager")
+			config.EventFilters = make(map[string]interface{})
 
 			service := NewCVGenerationService(
 				NewEmptyRepository(),
@@ -435,12 +376,8 @@ var _ = Describe("DefaultCVGenerationService", func() {
 		})
 
 		It("should handle nil event filters", func() {
-			config := &career.CVConfig{
-				Name:           "test-cv",
-				TargetRole:     "principal",
-				TargetAudience: "hiring_manager",
-				EventFilters:   nil,
-			}
+			config := fixtures.CVConfigWith("test-cv", "principal", "hiring_manager")
+			config.EventFilters = nil
 
 			service := NewCVGenerationService(
 				NewEmptyRepository(),
@@ -478,24 +415,11 @@ var _ = Describe("DefaultCVGenerationService", func() {
 		Describe("GenerateCVFromConfig with achievements", func() {
 			It("should extract achievements from events", func() {
 				mockDataProcessor := NewMockDataProcessingService()
-				config := &career.CVConfig{
-					Name:           "test-cv",
-					TargetRole:     "principal",
-					TargetAudience: "hiring_manager",
-					EventFilters:   make(map[string]interface{}),
-				}
+				config := fixtures.CVConfigWith("test-cv", "principal", "hiring_manager")
+				config.EventFilters = make(map[string]interface{})
 
-				// Create test events
-				event1 := &career.Event{
-					ID:   uuid.New().String(),
-					Text: "Led API improvements, reducing latency by 40%",
-					Date: time.Now(),
-				}
-				event2 := &career.Event{
-					ID:   uuid.New().String(),
-					Text: "Mentored 5 junior engineers",
-					Date: time.Now(),
-				}
+				event1 := fixtures.EventWith(uuid.New().String(), "Led API improvements, reducing latency by 40%", "", "")
+				event2 := fixtures.EventWith(uuid.New().String(), "Mentored 5 junior engineers", "", "")
 
 				// Create repository that returns test events
 				eventRepo := NewMockEventRepository([]*career.Event{event1, event2})
@@ -531,18 +455,10 @@ var _ = Describe("DefaultCVGenerationService", func() {
 					},
 				}
 
-				config := &career.CVConfig{
-					Name:           "test-cv",
-					TargetRole:     "principal",
-					TargetAudience: "hiring_manager",
-					EventFilters:   make(map[string]interface{}),
-				}
+				config := fixtures.CVConfigWith("test-cv", "principal", "hiring_manager")
+				config.EventFilters = make(map[string]interface{})
 
-				event := &career.Event{
-					ID:   uuid.New().String(),
-					Text: "Test event",
-					Date: time.Now(),
-				}
+				event := fixtures.EventWith(uuid.New().String(), "Test event", "", "")
 
 				eventRepo := NewMockEventRepository([]*career.Event{event})
 
@@ -559,7 +475,6 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				_, err := service.GenerateCVFromConfig(ctx, config)
 				Expect(err).NotTo(HaveOccurred())
 
-				// Verify achievements were passed to BulletGenerator (not nil)
 				Expect(mockBulletGen.ReceivedAchievements).NotTo(BeNil())
 				Expect(len(mockBulletGen.ReceivedAchievements)).To(BeNumerically(">", 0))
 			})
@@ -568,18 +483,10 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				mockDataProcessor := NewMockDataProcessingService()
 				mockDataProcessor.ShouldReturnError = true
 
-				config := &career.CVConfig{
-					Name:           "test-cv",
-					TargetRole:     "principal",
-					TargetAudience: "hiring_manager",
-					EventFilters:   make(map[string]interface{}),
-				}
+				config := fixtures.CVConfigWith("test-cv", "principal", "hiring_manager")
+				config.EventFilters = make(map[string]interface{})
 
-				event := &career.Event{
-					ID:   uuid.New().String(),
-					Text: "Test event",
-					Date: time.Now(),
-				}
+				event := fixtures.EventWith(uuid.New().String(), "Test event", "", "")
 
 				eventRepo := NewMockEventRepository([]*career.Event{event})
 
@@ -688,11 +595,7 @@ func NewCountingRepository(count int) *CountingRepository {
 func (r *CountingRepository) List(ctx context.Context, filters careerrepo.EventListFilters) ([]*career.Event, error) {
 	events := make([]*career.Event, r.count)
 	for i := 0; i < r.count; i++ {
-		events[i] = &career.Event{
-			ID:   uuid.New().String(),
-			Text: "Sample event",
-			Date: time.Now(),
-		}
+		events[i] = fixtures.EventWith(uuid.New().String(), "Sample event", "", "")
 	}
 	return events, nil
 }
@@ -766,10 +669,7 @@ func NewCountingFactRepository(count int) *CountingFactRepository {
 func (r *CountingFactRepository) List(ctx context.Context, filters careerrepo.FactListFilters) ([]*career.Fact, error) {
 	facts := make([]*career.Fact, r.count)
 	for i := 0; i < r.count; i++ {
-		facts[i] = &career.Fact{
-			ID:   uuid.New().String(),
-			Text: "Sample fact",
-		}
+		facts[i] = fixtures.FactWith(uuid.New().String(), "Sample fact")
 	}
 	return facts, nil
 }

@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/baphled/kariya/internal/cli/intents/burst_management"
-	careerrepo "github.com/baphled/kariya/internal/repository/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	"github.com/baphled/kariya/internal/testutil/mocks"
 )
 
@@ -41,7 +41,7 @@ var _ = Describe("Interfaces", func() {
 				mock := mocks.NewBurstServiceMock()
 				var service burst_management.BurstService = mock
 
-				events, err := service.ListEvents(context.TODO(), careerrepo.EventListFilters{})
+				events, err := service.ListEvents(context.TODO(), *fixtures.EventListFilters())
 				Expect(err).NotTo(HaveOccurred())
 				Expect(events).NotTo(BeNil())
 			})

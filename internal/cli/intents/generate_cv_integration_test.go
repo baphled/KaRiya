@@ -8,6 +8,7 @@ import (
 	career "github.com/baphled/kariya/internal/domain/career"
 	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	careerservice "github.com/baphled/kariya/internal/service/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -57,57 +58,21 @@ var _ = Describe("GenerateCV Intent Integration", func() {
 			},
 		}
 
-		// Create test events
-		testEvents = []*career.Event{
-			{
-				ID:         "event_1",
-				Text:       "Led team standup meetings and improved communication across the team",
-				Date:       time.Date(2025, 12, 15, 0, 0, 0, 0, time.UTC),
-				Company:    "Acme Corp",
-				Project:    "Project Alpha",
-				Tags:       []string{"leadership", "communication"},
-				Categories: []string{"team_management"},
-				CreatedAt:  time.Now(),
-				UpdatedAt:  time.Now(),
-			},
-			{
-				ID:         "event_2",
-				Text:       "Implemented new code review process that reduced review time",
-				Date:       time.Date(2025, 12, 10, 0, 0, 0, 0, time.UTC),
-				Company:    "Acme Corp",
-				Project:    "Project Alpha",
-				Tags:       []string{"engineering", "process"},
-				Categories: []string{"technical_excellence"},
-				CreatedAt:  time.Now(),
-				UpdatedAt:  time.Now(),
-			},
-		}
+		evt1 := fixtures.EventWith("event_1", "Led team standup meetings and improved communication across the team", "Acme Corp", "Project Alpha")
+		evt1.Date = time.Date(2025, 12, 15, 0, 0, 0, 0, time.UTC)
+		evt1.Tags = []string{"leadership", "communication"}
+		evt1.Categories = []string{"team_management"}
+		evt2 := fixtures.EventWith("event_2", "Implemented new code review process that reduced review time", "Acme Corp", "Project Alpha")
+		evt2.Date = time.Date(2025, 12, 10, 0, 0, 0, 0, time.UTC)
+		evt2.Tags = []string{"engineering", "process"}
+		evt2.Categories = []string{"technical_excellence"}
+		testEvents = []*career.Event{evt1, evt2}
 
-		// Create test facts
-		testFacts = []*career.Fact{
-			{
-				ID:                   "fact_1",
-				Text:                 "Improved team velocity by 30%",
-				CompetencyCategories: []string{"leadership", "impact"},
-				RoleFit:              "staff",
-				AudienceRelevance:    []string{"hiring_manager", "peer"},
-				StrengthSignal:       "high",
-				SourceEventID:        "event_1",
-				CreatedAt:            time.Now(),
-				UpdatedAt:            time.Now(),
-			},
-			{
-				ID:                   "fact_2",
-				Text:                 "Reduced code review time by 40%",
-				CompetencyCategories: []string{"technical", "impact"},
-				RoleFit:              "principal",
-				AudienceRelevance:    []string{"recruiter", "peer"},
-				StrengthSignal:       "high",
-				SourceEventID:        "event_2",
-				CreatedAt:            time.Now(),
-				UpdatedAt:            time.Now(),
-			},
-		}
+		fact1 := fixtures.FactWithCategories("fact_1", "Improved team velocity by 30%", "event_1", []string{"leadership", "impact"}, []string{"hiring_manager", "peer"})
+		fact1.RoleFit = "staff"
+		fact2 := fixtures.FactWithCategories("fact_2", "Reduced code review time by 40%", "event_2", []string{"technical", "impact"}, []string{"recruiter", "peer"})
+		fact2.RoleFit = "principal"
+		testFacts = []*career.Fact{fact1, fact2}
 
 		// Create the GenerateCV context
 		ctx = &intents.GenerateCVContext{

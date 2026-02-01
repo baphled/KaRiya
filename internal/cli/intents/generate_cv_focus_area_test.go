@@ -2,7 +2,6 @@ package intents
 
 import (
 	"context"
-	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
@@ -13,6 +12,7 @@ import (
 	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	"github.com/baphled/kariya/internal/service/career/cv"
 	"github.com/baphled/kariya/internal/service/career/technology"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 var _ = Describe("GenerateCV Focus Area Selection", func() {
@@ -42,14 +42,7 @@ var _ = Describe("GenerateCV Focus Area Selection", func() {
 				},
 			},
 			Events: []*career.Event{
-				{
-					ID:        "event-1",
-					Text:      "Test event",
-					Date:      time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
-					Company:   "Test Co",
-					CreatedAt: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
-					UpdatedAt: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
-				},
+				fixtures.EventWith("event-1", "Test event", "Test Co", ""),
 			},
 			Facts:           []*career.Fact{},
 			SkillRepository: skillRepo,

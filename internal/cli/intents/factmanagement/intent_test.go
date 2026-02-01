@@ -12,6 +12,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/intents/factmanagement"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -106,17 +107,9 @@ var _ = Describe("Intent", func() {
 	BeforeEach(func() {
 		ctx = context.Background()
 		mockRepo = NewIntentMockFactRepository()
-		testFact = &career.Fact{
-			ID:                   "fact-1",
-			Text:                 "Test fact about technical skills",
-			CompetencyCategories: []string{"technical"},
-			StrengthSignal:       "high",
-			RoleFit:              "senior_ic",
-			AudienceRelevance:    []string{"hiring_manager"},
-			SourceEventID:        "event-1",
-			CreatedAt:            time.Now(),
-			UpdatedAt:            time.Now(),
-		}
+		testFact = fixtures.Fact("fact-1", "event-1")
+		testFact.Text = "Test fact about technical skills"
+		testFact.RoleFit = "senior_ic"
 		mockRepo.facts = []*career.Fact{testFact}
 	})
 
@@ -235,16 +228,11 @@ var _ = Describe("Intent", func() {
 
 	Describe("Navigation", func() {
 		BeforeEach(func() {
-			// Add more facts for navigation testing.
 			for i := 0; i < 5; i++ {
-				mockRepo.facts = append(mockRepo.facts, &career.Fact{
-					ID:                   "fact-" + string(rune('a'+i)),
-					Text:                 "Fact " + string(rune('a'+i)),
-					CompetencyCategories: []string{"technical"},
-					RoleFit:              "senior_ic",
-					AudienceRelevance:    []string{"hiring_manager"},
-					SourceEventID:        "event-1",
-				})
+				f := fixtures.Fact("fact-"+string(rune('a'+i)), "event-1")
+				f.Text = "Fact " + string(rune('a'+i))
+				f.RoleFit = "senior_ic"
+				mockRepo.facts = append(mockRepo.facts, f)
 			}
 			intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
 			var err error

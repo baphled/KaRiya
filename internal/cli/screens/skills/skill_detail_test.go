@@ -6,6 +6,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/skills"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -20,16 +21,11 @@ var _ = Describe("SkillDetailScreen", func() {
 	BeforeEach(func() {
 		yearsUsed := 5
 		lastUsed := time.Date(2025, 12, 31, 0, 0, 0, 0, time.UTC)
-		skill = &career.Skill{
-			ID:        "skill-1",
-			Name:      "Kubernetes",
-			Category:  "devops",
-			Level:     "advanced",
-			YearsUsed: &yearsUsed,
-			LastUsed:  &lastUsed,
-			CreatedAt: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
-			UpdatedAt: time.Date(2025, 12, 31, 0, 0, 0, 0, time.UTC),
-		}
+		skill = fixtures.SkillWith("skill-1", "Kubernetes", "devops", "advanced")
+		skill.YearsUsed = &yearsUsed
+		skill.LastUsed = &lastUsed
+		skill.CreatedAt = time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
+		skill.UpdatedAt = time.Date(2025, 12, 31, 0, 0, 0, 0, time.UTC)
 	})
 
 	Describe("Construction", func() {
@@ -132,11 +128,7 @@ var _ = Describe("SkillDetailScreen", func() {
 		})
 
 		It("should handle skill without optional fields", func() {
-			minimalSkill := &career.Skill{
-				ID:       "skill-2",
-				Name:     "Python",
-				Category: "backend",
-			}
+			minimalSkill := fixtures.SkillWith("skill-2", "Python", "backend", "")
 			screen = skills.NewSkillDetailScreen(minimalSkill)
 			view := screen.View()
 
@@ -193,11 +185,7 @@ var _ = Describe("SkillDetailScreen", func() {
 		})
 
 		It("should handle long skill names", func() {
-			longSkill := &career.Skill{
-				ID:       "skill-3",
-				Name:     "Very Long Skill Name That Might Wrap Or Be Truncated",
-				Category: "backend",
-			}
+			longSkill := fixtures.SkillWith("skill-3", "Very Long Skill Name That Might Wrap Or Be Truncated", "backend", "")
 			screen := skills.NewSkillDetailScreen(longSkill)
 			view := screen.View()
 

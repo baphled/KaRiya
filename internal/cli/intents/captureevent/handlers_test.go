@@ -2,12 +2,12 @@ package captureevent_test
 
 import (
 	"errors"
-	"time"
 
 	"github.com/baphled/kariya/internal/cli/intents"
 	ce "github.com/baphled/kariya/internal/cli/intents/captureevent"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -46,10 +46,7 @@ var _ = Describe("Handlers", func() {
 			BeforeEach(func() {
 				// Put intent in review state with an event.
 				intent.SetStateForTesting(ce.StateReview)
-				intent.GetReviewState().Event = &career.Event{
-					Text: "test event",
-					Date: time.Now(),
-				}
+				intent.GetReviewState().Event = fixtures.EventWith("", "test event", "", "")
 			})
 
 			It("should fail gracefully for edit_metadata when CareerService is nil", func() {
@@ -131,7 +128,7 @@ var _ = Describe("Handlers", func() {
 			It("should cancel the intent", func() {
 				ctx := &ce.IntentContext{
 					CaptureStrategy: "quick",
-					PreviousEvent:   &career.Event{Text: "existing"},
+					PreviousEvent:   fixtures.EventWith("", "existing", "", ""),
 				}
 				editIntent, err := ce.NewIntent(ctx)
 				Expect(err).NotTo(HaveOccurred())
@@ -194,10 +191,7 @@ var _ = Describe("Handlers", func() {
 			})
 
 			It("should not panic", func() {
-				event := &career.Event{
-					Text: "Test event",
-					Date: time.Now(),
-				}
+				event := fixtures.EventWith("", "Test event", "", "")
 				Expect(func() {
 					intent.HandleSubmit(&screens.SubmitResult{
 						FormData: event,
@@ -226,10 +220,7 @@ var _ = Describe("Handlers", func() {
 			var event *career.Event
 
 			BeforeEach(func() {
-				event = &career.Event{
-					Text: "Reviewed event",
-					Date: time.Now(),
-				}
+				event = fixtures.EventWith("", "Reviewed event", "", "")
 				intent.SetStateForTesting(ce.StateReview)
 				intent.GetReviewState().Event = event
 			})
@@ -257,10 +248,7 @@ var _ = Describe("Handlers", func() {
 			var event *career.Event
 
 			BeforeEach(func() {
-				event = &career.Event{
-					Text: "Submit event",
-					Date: time.Now(),
-				}
+				event = fixtures.EventWith("", "Submit event", "", "")
 				intent.SetStateForTesting(ce.StateSubmit)
 				intent.GetReviewState().Event = event
 			})

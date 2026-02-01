@@ -81,18 +81,10 @@ var _ = Describe("BulletGenerator", func() {
 		Context("when filtering facts by audience relevance", func() {
 			It("should include facts relevant to hiring_manager audience", func() {
 				facts := []*career.Fact{
-					{
-						ID:                "fact1",
-						Text:              "Delivered 40% cost reduction through system optimization",
-						AudienceRelevance: []string{"hiring_manager"},
-						SourceEventID:     "event1",
-					},
-					{
-						ID:                "fact2",
-						Text:              "Implemented complex distributed caching algorithm",
-						AudienceRelevance: []string{"peer"},
-						SourceEventID:     "event2",
-					},
+					fixtures.FactWithCategories("fact1", "Delivered 40% cost reduction through system optimization", "event1",
+						[]string{"technical"}, []string{"hiring_manager"}),
+					fixtures.FactWithCategories("fact2", "Implemented complex distributed caching algorithm", "event2",
+						[]string{"technical"}, []string{"peer"}),
 				}
 
 				bullets, err := generator.GenerateBullets(ctx, []*career.Event{}, facts, nil, "principal", "hiring_manager")
@@ -105,18 +97,10 @@ var _ = Describe("BulletGenerator", func() {
 
 			It("should include facts relevant to recruiter audience", func() {
 				facts := []*career.Fact{
-					{
-						ID:                "fact1",
-						Text:              "Senior engineer with expertise in Go, Ruby, and Python",
-						AudienceRelevance: []string{"recruiter"},
-						SourceEventID:     "event1",
-					},
-					{
-						ID:                "fact2",
-						Text:              "Deep expertise in consensus algorithms and CAP theorem",
-						AudienceRelevance: []string{"peer"},
-						SourceEventID:     "event2",
-					},
+					fixtures.FactWithCategories("fact1", "Senior engineer with expertise in Go, Ruby, and Python", "event1",
+						[]string{"technical"}, []string{"recruiter"}),
+					fixtures.FactWithCategories("fact2", "Deep expertise in consensus algorithms and CAP theorem", "event2",
+						[]string{"technical"}, []string{"peer"}),
 				}
 
 				bullets, err := generator.GenerateBullets(ctx, []*career.Event{}, facts, nil, "principal", "recruiter")
@@ -128,18 +112,10 @@ var _ = Describe("BulletGenerator", func() {
 
 			It("should include facts relevant to peer audience", func() {
 				facts := []*career.Fact{
-					{
-						ID:                "fact1",
-						Text:              "Designed novel approach to distributed consensus using Raft",
-						AudienceRelevance: []string{"peer"},
-						SourceEventID:     "event1",
-					},
-					{
-						ID:                "fact2",
-						Text:              "Reduced operational costs by 30%",
-						AudienceRelevance: []string{"hiring_manager"},
-						SourceEventID:     "event2",
-					},
+					fixtures.FactWithCategories("fact1", "Designed novel approach to distributed consensus using Raft", "event1",
+						[]string{"technical"}, []string{"peer"}),
+					fixtures.FactWithCategories("fact2", "Reduced operational costs by 30%", "event2",
+						[]string{"technical"}, []string{"hiring_manager"}),
 				}
 
 				bullets, err := generator.GenerateBullets(ctx, []*career.Event{}, facts, nil, "principal", "peer")
@@ -151,18 +127,10 @@ var _ = Describe("BulletGenerator", func() {
 
 			It("should return all facts when audience is empty", func() {
 				facts := []*career.Fact{
-					{
-						ID:                "fact1",
-						Text:              "Business impact achievement",
-						AudienceRelevance: []string{"hiring_manager"},
-						SourceEventID:     "event1",
-					},
-					{
-						ID:                "fact2",
-						Text:              "Technical depth achievement",
-						AudienceRelevance: []string{"peer"},
-						SourceEventID:     "event2",
-					},
+					fixtures.FactWithCategories("fact1", "Business impact achievement", "event1",
+						[]string{"technical"}, []string{"hiring_manager"}),
+					fixtures.FactWithCategories("fact2", "Technical depth achievement", "event2",
+						[]string{"technical"}, []string{"peer"}),
 				}
 
 				bullets, err := generator.GenerateBullets(ctx, []*career.Event{}, facts, nil, "principal", "")
@@ -173,12 +141,8 @@ var _ = Describe("BulletGenerator", func() {
 
 			It("should exclude facts not relevant to selected audience", func() {
 				facts := []*career.Fact{
-					{
-						ID:                "fact1",
-						Text:              "Technical implementation detail for peers",
-						AudienceRelevance: []string{"peer"},
-						SourceEventID:     "event1",
-					},
+					fixtures.FactWithCategories("fact1", "Technical implementation detail for peers", "event1",
+						[]string{"technical"}, []string{"peer"}),
 				}
 
 				bullets, err := generator.GenerateBullets(ctx, []*career.Event{}, facts, nil, "principal", "hiring_manager")
@@ -189,12 +153,8 @@ var _ = Describe("BulletGenerator", func() {
 
 			It("should include facts with multiple audience relevance", func() {
 				facts := []*career.Fact{
-					{
-						ID:                "fact1",
-						Text:              "Led migration that reduced costs and improved architecture",
-						AudienceRelevance: []string{"hiring_manager", "peer"},
-						SourceEventID:     "event1",
-					},
+					fixtures.FactWithCategories("fact1", "Led migration that reduced costs and improved architecture", "event1",
+						[]string{"technical"}, []string{"hiring_manager", "peer"}),
 				}
 
 				// Should be included for hiring_manager

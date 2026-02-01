@@ -10,9 +10,10 @@
 # 5. Code formatting (Go files only)
 # 6. Build success (Go files only)
 # 7. Static analysis - go vet (Go files only)
-# 8. Golangci-lint on changed packages (Go files only)
-# 9. TDD compliance check (Go files only)
-# 10. Strict pattern checks (Go files only)
+# 8. Fixture usage check - noinlinecareer analyzer (Go files only, cached)
+# 9. Golangci-lint on changed packages (Go files only)
+# 10. TDD compliance check (Go files only)
+# 11. Strict pattern checks (Go files only)
 #
 # Full test suite and race detection should be run via:
 #   make check-compliance
@@ -152,6 +153,21 @@ if ! go vet ./... > /dev/null 2>&1; then
     go vet ./...
     exit 1
 fi
+
+# Fixture usage check (uses cached binary - fast)
+echo "Checking fixture usage..."
+if ! make check-fixtures > /dev/null 2>&1; then
+    echo -e "${RED}❌ ERROR: Fixture usage violations found${NC}"
+    echo ""
+    echo "Test files must use fixture factories from internal/testutil/fixtures/"
+    echo "instead of inline career.* struct literals."
+    echo ""
+    make check-fixtures 2>&1 | grep "inline career" | head -5
+    echo ""
+    echo "Fix by using fixtures.NewEvent(), fixtures.NewBurst(), etc."
+    exit 1
+fi
+echo -e "${GREEN}✅ Fixture usage check passed${NC}"
 
 # Golangci-lint on changed packages (catches depguard, lll, nilnil, etc.)
 if command -v golangci-lint > /dev/null 2>&1; then

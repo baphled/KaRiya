@@ -4,8 +4,8 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/app"
-	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/testutil/e2e"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -108,14 +108,9 @@ var _ = Describe("E2E Generate CV Empty State (BUG-004)", func() {
 		BeforeEach(func() {
 			env = e2e.GetSharedEnv(GinkgoT())
 
-			// Add a real career event
-			env.AddEvent(&career.Event{
-				ID:      "event-real-1",
-				Text:    "Led team of 5 engineers on microservices migration project",
-				Date:    time.Now().AddDate(0, -1, 0), // 1 month ago
-				Company: "Test Company",
-				Project: "Migration Project",
-			})
+			event := fixtures.EventWith("event-real-1", "Led team of 5 engineers on microservices migration project", "Test Company", "Migration Project")
+			event.Date = time.Now().AddDate(0, -1, 0)
+			env.AddEvent(event)
 
 			// Verify event was added
 			Expect(env.GetEvents()).To(HaveLen(1), "Should have 1 event after setup")

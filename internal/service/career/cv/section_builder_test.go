@@ -32,15 +32,9 @@ var _ = Describe("DefaultSectionBuilder", func() {
 	})
 
 	It("should create experience section from bullets", func() {
-		bullets := []*career.CVBullet{
-			{
-				ID:             "bullet1",
-				Text:           "Implemented authentication system",
-				SourceEventIDs: []string{"event1"},
-				SourceFactIDs:  []string{},
-				Rank:           0.9,
-			},
-		}
+		bullet1 := fixtures.CVBulletWithSources("bullet1", "", "Implemented authentication system", []string{"event1"}, []string{})
+		bullet1.Rank = 0.9
+		bullets := []*career.CVBullet{bullet1}
 
 		event := fixtures.EventWith("event1", "Implemented authentication system", "TechCorp", "")
 		events := []*career.Event{event}
@@ -67,12 +61,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 
 	It("should create skills section from event skills (Phase 11 - Task 40)", func() {
 		bullets := []*career.CVBullet{
-			{
-				ID:             "bullet1",
-				Text:           "Built API",
-				SourceEventIDs: []string{"event1"},
-				Rank:           0.8,
-			},
+			fixtures.CVBulletWithSources("bullet1", "", "Built API", []string{"event1"}, nil),
 		}
 
 		event := fixtures.Event("event1")
@@ -109,13 +98,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 
 	It("should not create skills section without fact-based bullets", func() {
 		bullets := []*career.CVBullet{
-			{
-				ID:             "bullet1",
-				Text:           "Implemented feature",
-				SourceEventIDs: []string{"event1"},
-				SourceFactIDs:  []string{},
-				Rank:           0.8,
-			},
+			fixtures.CVBulletWithSources("bullet1", "", "Implemented feature", []string{"event1"}, []string{}),
 		}
 
 		event := fixtures.EventWith("event1", "Implemented feature", "TechCorp", "")
@@ -131,15 +114,9 @@ var _ = Describe("DefaultSectionBuilder", func() {
 	})
 
 	It("should create summary section for principal role", func() {
-		bullets := []*career.CVBullet{
-			{
-				ID:             "bullet1",
-				Text:           "Led architecture implementation",
-				SourceEventIDs: []string{"event1"},
-				SourceFactIDs:  []string{},
-				Rank:           0.9,
-			},
-		}
+		bullet1 := fixtures.CVBulletWithSources("bullet1", "", "Led architecture implementation", []string{"event1"}, []string{})
+		bullet1.Rank = 0.9
+		bullets := []*career.CVBullet{bullet1}
 
 		event := fixtures.EventWith("event1", "Led architecture implementation", "TechCorp", "")
 		events := []*career.Event{event}
@@ -163,13 +140,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 
 	It("should not create summary section for junior roles", func() {
 		bullets := []*career.CVBullet{
-			{
-				ID:             "bullet1",
-				Text:           "Implemented feature",
-				SourceEventIDs: []string{"event1"},
-				SourceFactIDs:  []string{},
-				Rank:           0.8,
-			},
+			fixtures.CVBulletWithSources("bullet1", "", "Implemented feature", []string{"event1"}, []string{}),
 		}
 
 		event := fixtures.EventWith("event1", "Implemented feature", "TechCorp", "")
@@ -186,13 +157,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 
 	It("should order sections correctly", func() {
 		bullets := []*career.CVBullet{
-			{
-				ID:             "bullet1",
-				Text:           "Implemented feature",
-				SourceEventIDs: []string{"event1"},
-				SourceFactIDs:  []string{"fact1"},
-				Rank:           0.8,
-			},
+			fixtures.CVBulletWithSources("bullet1", "", "Implemented feature", []string{"event1"}, []string{"fact1"}),
 		}
 
 		event := fixtures.EventWith("event1", "Implemented feature", "TechCorp", "")
@@ -212,21 +177,11 @@ var _ = Describe("DefaultSectionBuilder", func() {
 	})
 
 	It("should group bullets by company", func() {
+		bullet2 := fixtures.CVBulletWithSources("bullet2", "", "Feature B", []string{"event2"}, []string{})
+		bullet2.Rank = 0.7
 		bullets := []*career.CVBullet{
-			{
-				ID:             "bullet1",
-				Text:           "Feature A",
-				SourceEventIDs: []string{"event1"},
-				SourceFactIDs:  []string{},
-				Rank:           0.8,
-			},
-			{
-				ID:             "bullet2",
-				Text:           "Feature B",
-				SourceEventIDs: []string{"event2"},
-				SourceFactIDs:  []string{},
-				Rank:           0.7,
-			},
+			fixtures.CVBulletWithSources("bullet1", "", "Feature A", []string{"event1"}, []string{}),
+			bullet2,
 		}
 
 		event1 := fixtures.EventWith("event1", "Feature A", "CompanyA", "")
@@ -262,12 +217,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 
 	It("should handle context cancellation", func() {
 		bullets := []*career.CVBullet{
-			{
-				ID:             "bullet1",
-				Text:           "Feature",
-				SourceEventIDs: []string{"event1"},
-				Rank:           0.8,
-			},
+			fixtures.CVBulletWithSources("bullet1", "", "Feature", []string{"event1"}, nil),
 		}
 
 		cancelCtx, cancel := context.WithCancel(context.Background())
@@ -279,12 +229,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 
 	It("should handle events with no company", func() {
 		bullets := []*career.CVBullet{
-			{
-				ID:             "bullet1",
-				Text:           "Feature",
-				SourceEventIDs: []string{"event1"},
-				Rank:           0.8,
-			},
+			fixtures.CVBulletWithSources("bullet1", "", "Feature", []string{"event1"}, nil),
 		}
 
 		event := fixtures.EventWith("event1", "Feature", "", "MyProject") // Has project instead of company
@@ -309,21 +254,11 @@ var _ = Describe("DefaultSectionBuilder", func() {
 	})
 
 	It("should generate unique section IDs", func() {
+		bullet2 := fixtures.CVBulletWithSources("bullet2", "", "Feature B", []string{}, []string{"fact1"})
+		bullet2.Rank = 0.7
 		bullets := []*career.CVBullet{
-			{
-				ID:             "bullet1",
-				Text:           "Feature A",
-				SourceEventIDs: []string{"event1"},
-				SourceFactIDs:  []string{},
-				Rank:           0.8,
-			},
-			{
-				ID:             "bullet2",
-				Text:           "Feature B",
-				SourceEventIDs: []string{},
-				SourceFactIDs:  []string{"fact1"},
-				Rank:           0.7,
-			},
+			fixtures.CVBulletWithSources("bullet1", "", "Feature A", []string{"event1"}, []string{}),
+			bullet2,
 		}
 
 		event := fixtures.EventWith("event1", "Feature A", "TechCorp", "")
@@ -360,10 +295,14 @@ var _ = Describe("DefaultSectionBuilder", func() {
 			events := []*career.Event{eventA1, eventB, eventA2}
 
 			// Bullets for each event
+			bulletB := fixtures.CVBulletWithSources("bullet-b", "", "Achievement at B", []string{"b1"}, nil)
+			bulletB.Rank = 0.7
+			bulletA2 := fixtures.CVBulletWithSources("bullet-a2", "", "Achievement at A (second)", []string{"a2"}, nil)
+			bulletA2.Rank = 0.9
 			bullets := []*career.CVBullet{
-				{ID: "bullet-a1", Text: "Achievement at A (first)", SourceEventIDs: []string{"a1"}, Rank: 0.8},
-				{ID: "bullet-b", Text: "Achievement at B", SourceEventIDs: []string{"b1"}, Rank: 0.7},
-				{ID: "bullet-a2", Text: "Achievement at A (second)", SourceEventIDs: []string{"a2"}, Rank: 0.9},
+				fixtures.CVBulletWithSources("bullet-a1", "", "Achievement at A (first)", []string{"a1"}, nil),
+				bulletB,
+				bulletA2,
 			}
 
 			sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "senior_ic", nil)
@@ -406,10 +345,14 @@ var _ = Describe("DefaultSectionBuilder", func() {
 
 			events := []*career.Event{eventA1, eventF, eventA2}
 
+			bulletB2 := fixtures.CVBulletWithSources("b2", "", "Freelance", []string{"f1"}, nil)
+			bulletB2.Rank = 0.7
+			bulletB3 := fixtures.CVBulletWithSources("b3", "", "Work 2", []string{"a2"}, nil)
+			bulletB3.Rank = 0.9
 			bullets := []*career.CVBullet{
-				{ID: "b1", Text: "Work 1", SourceEventIDs: []string{"a1"}, Rank: 0.8},
-				{ID: "b2", Text: "Freelance", SourceEventIDs: []string{"f1"}, Rank: 0.7},
-				{ID: "b3", Text: "Work 2", SourceEventIDs: []string{"a2"}, Rank: 0.9},
+				fixtures.CVBulletWithSources("b1", "", "Work 1", []string{"a1"}, nil),
+				bulletB2,
+				bulletB3,
 			}
 
 			sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "senior_ic", nil)
@@ -439,9 +382,11 @@ var _ = Describe("DefaultSectionBuilder", func() {
 
 			events := []*career.Event{eventOld, eventNew}
 
+			bulletB2 := fixtures.CVBulletWithSources("b2", "", "New achievement", []string{"new"}, nil)
+			bulletB2.Rank = 0.9
 			bullets := []*career.CVBullet{
-				{ID: "b1", Text: "Old achievement", SourceEventIDs: []string{"old"}, Rank: 0.8},
-				{ID: "b2", Text: "New achievement", SourceEventIDs: []string{"new"}, Rank: 0.9},
+				fixtures.CVBulletWithSources("b1", "", "Old achievement", []string{"old"}, nil),
+				bulletB2,
 			}
 
 			sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "senior_ic", nil)
@@ -485,12 +430,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 			events := []*career.Event{beisEvent1, beisEvent2, wafEvent}
 
 			// Bullet references all three events (cross-company SourceEventIDs from BUG-013).
-			bullet := &career.CVBullet{
-				ID:             "bullet-cross",
-				Text:           "Cross-company bullet",
-				SourceEventIDs: []string{"beis1", "beis2", "waf1"},
-				Rank:           0.8,
-			}
+			bullet := fixtures.CVBulletWithSources("bullet-cross", "", "Cross-company bullet", []string{"beis1", "beis2", "waf1"}, nil)
 			bullets := []*career.CVBullet{bullet}
 
 			sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "senior_ic", nil)
@@ -536,12 +476,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 
 			events := []*career.Event{eventA1, eventA2, eventA3, eventB, eventC}
 
-			bullet := &career.CVBullet{
-				ID:             "bullet-multi",
-				Text:           "Multi-company bullet",
-				SourceEventIDs: []string{"a1", "a2", "a3", "b1", "c1"},
-				Rank:           0.8,
-			}
+			bullet := fixtures.CVBulletWithSources("bullet-multi", "", "Multi-company bullet", []string{"a1", "a2", "a3", "b1", "c1"}, nil)
 			bullets := []*career.CVBullet{bullet}
 
 			sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "senior_ic", nil)
@@ -577,12 +512,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 
 			events := []*career.Event{event1, event2}
 
-			bullet := &career.CVBullet{
-				ID:             "bullet-single",
-				Text:           "Single-company bullet",
-				SourceEventIDs: []string{"e1", "e2"},
-				Rank:           0.8,
-			}
+			bullet := fixtures.CVBulletWithSources("bullet-single", "", "Single-company bullet", []string{"e1", "e2"}, nil)
 			bullets := []*career.CVBullet{bullet}
 
 			sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "senior_ic", nil)

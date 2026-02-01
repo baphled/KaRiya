@@ -8,6 +8,7 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 	career_repo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/repository/models"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"gorm.io/driver/sqlite"
@@ -16,7 +17,6 @@ import (
 )
 
 func setupTestDB() *gorm.DB {
-	// Use existing modernc.org/sqlite driver with GORM.
 	sqlDB, err := stdsql.Open("sqlite", ":memory:")
 	Expect(err).NotTo(HaveOccurred())
 
@@ -53,10 +53,7 @@ var _ = Describe("Skill Repository", func() {
 
 	Describe("Create", func() {
 		It("creates a skill with generated ID", func() {
-			skill := &career.Skill{
-				Name:     "Go",
-				Category: "backend",
-			}
+			skill := fixtures.SkillWith("", "Go", "backend", "")
 
 			err := repo.Create(ctx, skill)
 
@@ -67,11 +64,7 @@ var _ = Describe("Skill Repository", func() {
 		})
 
 		It("creates a skill with provided ID", func() {
-			skill := &career.Skill{
-				ID:       "custom-id",
-				Name:     "Ruby",
-				Category: "backend",
-			}
+			skill := fixtures.SkillWith("custom-id", "Ruby", "backend", "")
 
 			err := repo.Create(ctx, skill)
 
@@ -80,8 +73,8 @@ var _ = Describe("Skill Repository", func() {
 		})
 
 		It("fails on duplicate name", func() {
-			skill1 := &career.Skill{Name: "Go", Category: "backend"}
-			skill2 := &career.Skill{Name: "Go", Category: "frontend"}
+			skill1 := fixtures.SkillWith("", "Go", "backend", "")
+			skill2 := fixtures.SkillWith("", "Go", "frontend", "")
 
 			Expect(repo.Create(ctx, skill1)).To(Succeed())
 
@@ -92,7 +85,7 @@ var _ = Describe("Skill Repository", func() {
 
 	Describe("GetByID", func() {
 		It("returns the skill", func() {
-			skill := &career.Skill{Name: "Go", Category: "backend", Level: "expert"}
+			skill := fixtures.SkillWith("", "Go", "backend", "expert")
 			Expect(repo.Create(ctx, skill)).To(Succeed())
 
 			found, err := repo.GetByID(ctx, skill.ID)
@@ -112,7 +105,7 @@ var _ = Describe("Skill Repository", func() {
 
 	Describe("GetByName", func() {
 		It("returns the skill", func() {
-			skill := &career.Skill{Name: "Go", Category: "backend"}
+			skill := fixtures.SkillWith("", "Go", "backend", "")
 			Expect(repo.Create(ctx, skill)).To(Succeed())
 
 			found, err := repo.GetByName(ctx, "Go")
@@ -130,7 +123,7 @@ var _ = Describe("Skill Repository", func() {
 
 	Describe("Update", func() {
 		It("updates the skill", func() {
-			skill := &career.Skill{Name: "Go", Category: "backend", Level: "beginner"}
+			skill := fixtures.SkillWith("", "Go", "backend", "beginner")
 			Expect(repo.Create(ctx, skill)).To(Succeed())
 			originalUpdatedAt := skill.UpdatedAt
 
@@ -146,7 +139,7 @@ var _ = Describe("Skill Repository", func() {
 		})
 
 		It("returns ErrSkillNotFound for missing skill", func() {
-			skill := &career.Skill{ID: "nonexistent", Name: "Go", Category: "backend"}
+			skill := fixtures.SkillWith("nonexistent", "Go", "backend", "")
 
 			err := repo.Update(ctx, skill)
 
@@ -156,7 +149,7 @@ var _ = Describe("Skill Repository", func() {
 
 	Describe("Delete", func() {
 		It("deletes the skill", func() {
-			skill := &career.Skill{Name: "Go", Category: "backend"}
+			skill := fixtures.SkillWith("", "Go", "backend", "")
 			Expect(repo.Create(ctx, skill)).To(Succeed())
 
 			err := repo.Delete(ctx, skill.ID)
@@ -177,11 +170,11 @@ var _ = Describe("Skill Repository", func() {
 	Describe("List", func() {
 		BeforeEach(func() {
 			skills := []*career.Skill{
-				{Name: "Go", Category: "backend", Level: "expert"},
-				{Name: "Ruby", Category: "backend", Level: "intermediate"},
-				{Name: "React", Category: "frontend", Level: "advanced"},
-				{Name: "Vue", Category: "frontend", Level: "beginner"},
-				{Name: "Kubernetes", Category: "devops", Level: "advanced"},
+				fixtures.SkillWith("", "Go", "backend", "expert"),
+				fixtures.SkillWith("", "Ruby", "backend", "intermediate"),
+				fixtures.SkillWith("", "React", "frontend", "advanced"),
+				fixtures.SkillWith("", "Vue", "frontend", "beginner"),
+				fixtures.SkillWith("", "Kubernetes", "devops", "advanced"),
 			}
 			for _, s := range skills {
 				Expect(repo.Create(ctx, s)).To(Succeed())
@@ -196,7 +189,7 @@ var _ = Describe("Skill Repository", func() {
 		})
 
 		It("filters by category", func() {
-			skills, err := repo.List(ctx, &career_repo.SkillListFilters{Category: "backend"})
+			skills, err := repo.List(ctx, fixtures.SkillListFiltersWithCategory("backend"))
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(skills).To(HaveLen(2))
@@ -206,7 +199,7 @@ var _ = Describe("Skill Repository", func() {
 		})
 
 		It("filters by level", func() {
-			skills, err := repo.List(ctx, &career_repo.SkillListFilters{Level: "advanced"})
+			skills, err := repo.List(ctx, fixtures.SkillListFiltersWithLevel("advanced"))
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(skills).To(HaveLen(2))
@@ -224,7 +217,7 @@ var _ = Describe("Skill Repository", func() {
 		})
 
 		It("sorts by name descending", func() {
-			skills, err := repo.List(ctx, &career_repo.SkillListFilters{SortBy: "name", SortOrder: "desc"})
+			skills, err := repo.List(ctx, fixtures.SkillListFiltersWithSort("name", "desc"))
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(skills[0].Name).To(Equal("Vue"))
@@ -232,7 +225,7 @@ var _ = Describe("Skill Repository", func() {
 		})
 
 		It("sorts by category", func() {
-			skills, err := repo.List(ctx, &career_repo.SkillListFilters{SortBy: "category"})
+			skills, err := repo.List(ctx, fixtures.SkillListFiltersWithSort("category", ""))
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(skills[0].Category).To(Equal("backend"))
@@ -240,7 +233,7 @@ var _ = Describe("Skill Repository", func() {
 		})
 
 		It("applies pagination with limit", func() {
-			skills, err := repo.List(ctx, &career_repo.SkillListFilters{Limit: 2})
+			skills, err := repo.List(ctx, fixtures.SkillListFiltersWithLimit(0, 2))
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(skills).To(HaveLen(2))
@@ -248,7 +241,7 @@ var _ = Describe("Skill Repository", func() {
 
 		It("applies pagination with offset", func() {
 			allSkills, _ := repo.List(ctx, nil)
-			skills, err := repo.List(ctx, &career_repo.SkillListFilters{Limit: 2, Offset: 2})
+			skills, err := repo.List(ctx, fixtures.SkillListFiltersWithLimit(2, 2))
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(skills).To(HaveLen(2))
@@ -259,9 +252,9 @@ var _ = Describe("Skill Repository", func() {
 	Describe("Count", func() {
 		BeforeEach(func() {
 			skills := []*career.Skill{
-				{Name: "Go", Category: "backend"},
-				{Name: "Ruby", Category: "backend"},
-				{Name: "React", Category: "frontend"},
+				fixtures.SkillWith("", "Go", "backend", ""),
+				fixtures.SkillWith("", "Ruby", "backend", ""),
+				fixtures.SkillWith("", "React", "frontend", ""),
 			}
 			for _, s := range skills {
 				Expect(repo.Create(ctx, s)).To(Succeed())
@@ -276,7 +269,7 @@ var _ = Describe("Skill Repository", func() {
 		})
 
 		It("counts with filters", func() {
-			count, err := repo.Count(ctx, &career_repo.SkillListFilters{Category: "backend"})
+			count, err := repo.Count(ctx, fixtures.SkillListFiltersWithCategory("backend"))
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(count).To(Equal(2))
@@ -287,7 +280,7 @@ var _ = Describe("Skill Repository", func() {
 		var skill *career.Skill
 
 		BeforeEach(func() {
-			skill = &career.Skill{Name: "Go", Category: "backend"}
+			skill = fixtures.SkillWith("", "Go", "backend", "")
 			Expect(repo.Create(ctx, skill)).To(Succeed())
 
 			event := &models.Event{ID: "event-1", Text: "Test", Date: time.Now(), CreatedAt: time.Now(), UpdatedAt: time.Now()}
@@ -324,8 +317,8 @@ var _ = Describe("Skill Repository", func() {
 
 	Describe("Filter by MinEvents", func() {
 		BeforeEach(func() {
-			skill1 := &career.Skill{Name: "Go", Category: "backend"}
-			skill2 := &career.Skill{Name: "Ruby", Category: "backend"}
+			skill1 := fixtures.SkillWith("", "Go", "backend", "")
+			skill2 := fixtures.SkillWith("", "Ruby", "backend", "")
 			Expect(repo.Create(ctx, skill1)).To(Succeed())
 			Expect(repo.Create(ctx, skill2)).To(Succeed())
 
@@ -343,7 +336,7 @@ var _ = Describe("Skill Repository", func() {
 		})
 
 		It("filters by minimum event count", func() {
-			skills, err := repo.List(ctx, &career_repo.SkillListFilters{MinEvents: 2})
+			skills, err := repo.List(ctx, fixtures.SkillListFiltersWithMinEvents(2))
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(skills).To(HaveLen(1))

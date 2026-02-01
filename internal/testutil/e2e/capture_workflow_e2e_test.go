@@ -2,37 +2,46 @@ package e2e_test
 
 import (
 	"strings"
-	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/testutil/e2e"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
+// CaptureEvent E2E Workflow Tests
+//
+// These tests validate the complete CaptureEvent workflow as implemented in
+// the screens architecture:
+//
+//	Choose Strategy -> Form -> Submit (with loading modal) -> Enrichment Review -> Complete
+//
+// NOTE: The screens architecture differs from the original PRD workflow:
+// - PRD: Form -> Pre-Save Review -> Submit -> Enrichment -> Enrichment Review
+// - Screens: Form -> Submit (direct) -> Enrichment Review
+//
+// The screens implementation skips the pre-save review step and goes directly
+// to submit with a loading modal overlay.
+//
+// These tests use SubmitEvent() to bypass huh form keystroke simulation issues.
+// The huh library requires command chaining that doesn't work well in E2E tests.
+
 // createCaptureTestEvent creates a test event with the given text and date.
 func createCaptureTestEvent(text string) *career.Event {
-	return &career.Event{
-		Text:      text,
-		Date:      time.Now(),
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-	}
+	evt := fixtures.EventWith("", text, "", "")
+	evt.ID = ""
+	return evt
 }
 
 // createCaptureTestEventWithDetails creates a test event with full metadata.
 func createCaptureTestEventWithDetails(text, company, project string, tags, categories []string) *career.Event {
-	return &career.Event{
-		Text:       text,
-		Date:       time.Now(),
-		Company:    company,
-		Project:    project,
-		Tags:       tags,
-		Categories: categories,
-		CreatedAt:  time.Now(),
-		UpdatedAt:  time.Now(),
-	}
+	evt := fixtures.EventWith("", text, company, project)
+	evt.ID = ""
+	evt.Tags = tags
+	evt.Categories = categories
+	return evt
 }
 
 // isAtMainMenu checks if the view is showing the main menu (not just breadcrumb containing "Main Menu").

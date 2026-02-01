@@ -2,11 +2,10 @@ package career
 
 import (
 	"context"
-	"time"
 
-	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -27,24 +26,15 @@ var _ = Describe("Career Service - Missing Coverage", func() {
 	Describe("DeleteBurst", func() {
 		var (
 			burstRepo *careermemory.BurstRepository
-			testBurst *career.Burst
+			testBurst = fixtures.Burst("burst-test-1", "event-1", "event-2")
 		)
 
 		BeforeEach(func() {
 			burstRepo = careermemory.NewBurstRepository()
 			service.SetBurstRepository(burstRepo)
 
-			// Create a test burst
-			now := time.Now()
-			testBurst = &career.Burst{
-				ID:          "burst-test-1",
-				Name:        "Test Burst",
-				Description: "A test burst for deletion",
-				EventIDs:    []string{"event-1", "event-2"},
-				Confirmed:   false,
-				CreatedAt:   now,
-				UpdatedAt:   now,
-			}
+			testBurst = fixtures.Burst("burst-test-1", "event-1", "event-2")
+			testBurst.Description = "A test burst for deletion"
 
 			err := burstRepo.Create(ctx, testBurst)
 			Expect(err).NotTo(HaveOccurred())
@@ -88,17 +78,9 @@ var _ = Describe("Career Service - Missing Coverage", func() {
 		})
 
 		It("should not affect other bursts when deleting one", func() {
-			// Create another burst
-			now := time.Now()
-			burst2 := &career.Burst{
-				ID:          "burst-test-2",
-				Name:        "Second Burst",
-				Description: "Another burst",
-				EventIDs:    []string{"event-3", "event-4"}, // Need at least 2 events
-				Confirmed:   false,
-				CreatedAt:   now,
-				UpdatedAt:   now,
-			}
+			burst2 := fixtures.Burst("burst-test-2", "event-3", "event-4")
+			burst2.Name = "Second Burst"
+			burst2.Description = "Another burst"
 			err := burstRepo.Create(ctx, burst2)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -130,15 +112,7 @@ var _ = Describe("Career Service - Missing Coverage", func() {
 		It("should allow using returned repository for operations", func() {
 			eventRepo := service.GetEventRepository()
 
-			// Create an event using returned repository
-			event := &career.Event{
-				ID:        "test-event-1",
-				Text:      "Test event via GetEventRepository",
-				Date:      time.Now(),
-				Company:   "TestCo",
-				CreatedAt: time.Now(),
-				UpdatedAt: time.Now(),
-			}
+			event := fixtures.EventWith("test-event-1", "Test event via GetEventRepository", "TestCo", "")
 
 			err := eventRepo.Create(ctx, event)
 			Expect(err).NotTo(HaveOccurred())

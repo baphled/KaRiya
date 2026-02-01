@@ -1,12 +1,11 @@
 package captureevent_test
 
 import (
-	"time"
-
 	"github.com/baphled/kariya/internal/cli/intents"
 	ce "github.com/baphled/kariya/internal/cli/intents/captureevent"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -200,10 +199,7 @@ var _ = Describe("Intent", func() {
 
 		Context("after submit completion", func() {
 			It("should return completed result with event data", func() {
-				event := &career.Event{
-					Text: "Test event",
-					Date: time.Now(),
-				}
+				event := fixtures.EventWith("", "Test event", "", "")
 
 				// Transition to review state with data.
 				intent.SetStateForTesting(ce.StateSubmit)

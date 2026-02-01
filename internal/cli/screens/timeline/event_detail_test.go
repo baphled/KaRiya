@@ -8,6 +8,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens/timeline"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -20,16 +21,11 @@ var _ = Describe("EventDetailScreen", func() {
 	)
 
 	BeforeEach(func() {
-		event = &career.Event{
-			ID:         "event-1",
-			Date:       time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-			Text:       "Backend Developer at TechCorp - Built scalable APIs using Go and PostgreSQL",
-			Company:    "TechCorp",
-			Project:    "API Platform",
-			Tags:       []string{"backend", "api", "golang"},
-			Categories: []string{"development", "architecture"},
-			Skills:     []string{"skill-1", "skill-2"},
-		}
+		event = fixtures.EventWith("event-1", "Backend Developer at TechCorp - Built scalable APIs using Go and PostgreSQL", "TechCorp", "API Platform")
+		event.Date = time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
+		event.Tags = []string{"backend", "api", "golang"}
+		event.Categories = []string{"development", "architecture"}
+		event.Skills = []string{"skill-1", "skill-2"}
 	})
 
 	Describe("Construction", func() {

@@ -8,6 +8,7 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
 	"github.com/baphled/kariya/internal/service/career/cv"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -24,14 +25,8 @@ var _ = Describe("CV Structure Export", func() {
 		log = logger.New(io.Discard, logger.InfoLevel)
 		service = cv.NewExportService(log)
 		ctx = context.Background()
-		cvView = &career.CVView{
-			ID:               "cv-1",
-			Name:             "Test User",
-			TargetRole:       "principal",
-			TargetAudience:   "hiring_manager",
-			SourceEventCount: 10,
-			SourceFactCount:  25,
-		}
+		cvView = fixtures.CVViewWith("cv-1", "Test User", "principal", "hiring_manager")
+		cvView.SourceFactCount = 25
 	})
 
 	Describe("Consulting Structure", func() {
@@ -41,48 +36,37 @@ var _ = Describe("CV Structure Export", func() {
 		)
 
 		BeforeEach(func() {
-			sections = []*career.CVSection{
-				{
-					ID:          "summary",
-					SectionType: "summary",
-					Title:       "Summary",
-					Summary:     "Experienced consulting engineer with expertise in system modernization.",
-				},
-				{
-					ID:          "exp-1",
-					SectionType: "experience",
-					Title:       "Client Engagements",
-					Content: []*career.SectionContentGroup{
-						{
-							Header:    "Acme Corp",
-							StartDate: "Jan 2022",
-							EndDate:   "Jan 2024",
-						},
-					},
-				},
-				{
-					ID:          "exp-2",
-					SectionType: "experience",
-					Title:       "Client Engagements",
-					Content: []*career.SectionContentGroup{
-						{
-							Header:    "TechStart Inc",
-							StartDate: "Jan 2020",
-							EndDate:   "Jan 2022",
-						},
-					},
-				},
+			exp1Section := fixtures.CVSectionWith("exp-1", "", "experience", "Client Engagements", 0)
+			exp1Section.Content = []*career.SectionContentGroup{
+				fixtures.ContentGroupWith("Acme Corp", "Jan 2022", "Jan 2024"),
 			}
 
+			exp2Section := fixtures.CVSectionWith("exp-2", "", "experience", "Client Engagements", 0)
+			exp2Section.Content = []*career.SectionContentGroup{
+				fixtures.ContentGroupWith("TechStart Inc", "Jan 2020", "Jan 2022"),
+			}
+
+			sections = []*career.CVSection{
+				fixtures.CVSectionWithSummary("summary", "", "Experienced consulting engineer with expertise in system modernization."),
+				exp1Section,
+				exp2Section,
+			}
+
+			b1 := fixtures.CVBulletWith("b1", "exp-1", "Led system modernization project reducing technical debt by 40%")
+			b1.Confidence = 0.85
+
+			b2 := fixtures.CVBulletWith("b2", "exp-1", "Delivered architecture roadmap adopted by client")
+			b2.Confidence = 0.80
+
+			b3 := fixtures.CVBulletWith("b3", "exp-2", "Conducted rapid technology assessment for startup")
+			b3.Confidence = 0.75
+
+			b4 := fixtures.CVBulletWith("b4", "exp-2", "Implemented CI/CD pipeline reducing deployment time")
+			b4.Confidence = 0.70
+
 			bullets = map[string][]*career.CVBullet{
-				"exp-1": {
-					{ID: "b1", Text: "Led system modernization project reducing technical debt by 40%", Confidence: 0.85},
-					{ID: "b2", Text: "Delivered architecture roadmap adopted by client", Confidence: 0.80},
-				},
-				"exp-2": {
-					{ID: "b3", Text: "Conducted rapid technology assessment for startup", Confidence: 0.75},
-					{ID: "b4", Text: "Implemented CI/CD pipeline reducing deployment time", Confidence: 0.70},
-				},
+				"exp-1": {b1, b2},
+				"exp-2": {b3, b4},
 			}
 		})
 
@@ -163,39 +147,42 @@ var _ = Describe("CV Structure Export", func() {
 		)
 
 		BeforeEach(func() {
-			sections = []*career.CVSection{
-				{
-					ID:          "summary",
-					SectionType: "summary",
-					Title:       "Summary",
-					Summary:     "Senior engineer specializing in distributed systems.",
-				},
-				{
-					ID:          "exp-1",
-					SectionType: "experience",
-					Title:       "Experience",
-					Content: []*career.SectionContentGroup{
-						{
-							Header:    "BigTech Co",
-							StartDate: "Jan 2020",
-							EndDate:   "Present",
-						},
-					},
-				},
+			expSection := fixtures.CVSectionWith("exp-1", "", "experience", "Experience", 0)
+			expSection.Content = []*career.SectionContentGroup{
+				fixtures.ContentGroupWith("BigTech Co", "Jan 2020", "Present"),
 			}
 
-			// Create bullets with varying confidence for highlights selection
+			sections = []*career.CVSection{
+				fixtures.CVSectionWithSummary("summary", "", "Senior engineer specializing in distributed systems."),
+				expSection,
+			}
+
+			b1 := fixtures.CVBulletWith("b1", "exp-1", "Designed distributed caching system serving 1M requests/sec")
+			b1.Confidence = 0.95
+
+			b2 := fixtures.CVBulletWith("b2", "exp-1", "Led team of 8 engineers on platform modernization")
+			b2.Confidence = 0.90
+
+			b3 := fixtures.CVBulletWith("b3", "exp-1", "Reduced infrastructure costs by 35%")
+			b3.Confidence = 0.88
+
+			b4 := fixtures.CVBulletWith("b4", "exp-1", "Implemented event-driven architecture")
+			b4.Confidence = 0.85
+
+			b5 := fixtures.CVBulletWith("b5", "exp-1", "Mentored 5 junior engineers")
+			b5.Confidence = 0.82
+
+			b6 := fixtures.CVBulletWith("b6", "exp-1", "Improved API response time by 60%")
+			b6.Confidence = 0.80
+
+			b7 := fixtures.CVBulletWith("b7", "exp-1", "Lower priority achievement")
+			b7.Confidence = 0.65
+
+			b8 := fixtures.CVBulletWith("b8", "exp-1", "Another lower priority item")
+			b8.Confidence = 0.60
+
 			bullets = map[string][]*career.CVBullet{
-				"exp-1": {
-					{ID: "b1", Text: "Designed distributed caching system serving 1M requests/sec", Confidence: 0.95},
-					{ID: "b2", Text: "Led team of 8 engineers on platform modernization", Confidence: 0.90},
-					{ID: "b3", Text: "Reduced infrastructure costs by 35%", Confidence: 0.88},
-					{ID: "b4", Text: "Implemented event-driven architecture", Confidence: 0.85},
-					{ID: "b5", Text: "Mentored 5 junior engineers", Confidence: 0.82},
-					{ID: "b6", Text: "Improved API response time by 60%", Confidence: 0.80},
-					{ID: "b7", Text: "Lower priority achievement", Confidence: 0.65},
-					{ID: "b8", Text: "Another lower priority item", Confidence: 0.60},
-				},
+				"exp-1": {b1, b2, b3, b4, b5, b6, b7, b8},
 			}
 		})
 
@@ -301,7 +288,7 @@ var _ = Describe("CV Structure Export", func() {
 
 		BeforeEach(func() {
 			sections = []*career.CVSection{
-				{ID: "summary", SectionType: "summary", Summary: "Test summary"},
+				fixtures.CVSectionWithSummary("summary", "", "Test summary"),
 			}
 			bullets = map[string][]*career.CVBullet{}
 		})

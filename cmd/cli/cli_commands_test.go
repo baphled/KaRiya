@@ -5,9 +5,9 @@ import (
 	"context"
 	"time"
 
-	career "github.com/baphled/kariya/internal/domain/career"
 	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	careerservice "github.com/baphled/kariya/internal/service/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -48,14 +48,10 @@ var _ = Describe("CLI Command Handlers", func() {
 				// Create clustered events that will trigger burst detection
 				baseDate := time.Now().AddDate(0, 0, -30)
 				for i := 0; i < 5; i++ {
-					err := repo.Create(ctx, &career.Event{
-						ID:      "evt" + string(rune('1'+i)),
-						Text:    "Cloud migration task",
-						Date:    baseDate.AddDate(0, 0, i),
-						Company: "TechCorp",
-						Project: "CloudMigration",
-						Tags:    []string{"technical", "project"},
-					})
+					evt := fixtures.EventWith("evt"+string(rune('1'+i)), "Cloud migration task", "TechCorp", "CloudMigration")
+					evt.Date = baseDate.AddDate(0, 0, i)
+					evt.Tags = []string{"technical", "project"}
+					err := repo.Create(ctx, evt)
 					Expect(err).ToNot(HaveOccurred())
 				}
 			})
@@ -96,13 +92,10 @@ var _ = Describe("CLI Command Handlers", func() {
 		Context("when events exist", func() {
 			BeforeEach(func() {
 				// Create events with factual content
-				err := repo.Create(ctx, &career.Event{
-					ID:      "e1",
-					Text:    "Led a team of 5 engineers to deliver microservices architecture",
-					Date:    time.Now().AddDate(0, 0, -10),
-					Company: "TechCorp",
-					Tags:    []string{"leadership", "technical"},
-				})
+				evt := fixtures.EventWith("e1", "Led a team of 5 engineers to deliver microservices architecture", "TechCorp", "")
+				evt.Date = time.Now().AddDate(0, 0, -10)
+				evt.Tags = []string{"leadership", "technical"}
+				err := repo.Create(ctx, evt)
 				Expect(err).ToNot(HaveOccurred())
 			})
 
@@ -149,13 +142,10 @@ var _ = Describe("CLI Command Handlers", func() {
 		Context("when bursts exist", func() {
 			BeforeEach(func() {
 				// Create sample burst
-				err := burstRepo.Create(ctx, &career.Burst{
-					ID:          "b1",
-					Name:        "Cloud Migration Sprint",
-					Description: "Complete cloud infrastructure migration",
-					EventIDs:    []string{"e1", "e2", "e3"},
-					CreatedAt:   time.Now().AddDate(0, 0, -10),
-				})
+				b := fixtures.Burst("b1", "e1", "e2", "e3")
+				b.Name = "Cloud Migration Sprint"
+				b.Description = "Complete cloud infrastructure migration"
+				err := burstRepo.Create(ctx, b)
 				Expect(err).ToNot(HaveOccurred())
 			})
 
@@ -217,15 +207,8 @@ var _ = Describe("CLI Command Handlers", func() {
 		Context("when facts exist", func() {
 			BeforeEach(func() {
 				// Create sample fact
-				err := factRepo.Create(ctx, &career.Fact{
-					ID:                   "f1",
-					Text:                 "Led team of 5 engineers in microservices migration",
-					SourceEventID:        "e1",
-					CompetencyCategories: []string{"leadership", "technical"},
-					RoleFit:              "staff",
-					AudienceRelevance:    []string{"peer", "hiring_manager"},
-					CreatedAt:            time.Now().AddDate(0, 0, -10),
-				})
+				f := fixtures.FactWithCategories("f1", "Led team of 5 engineers in microservices migration", "e1", []string{"leadership", "technical"}, []string{"peer", "hiring_manager"})
+				err := factRepo.Create(ctx, f)
 				Expect(err).ToNot(HaveOccurred())
 			})
 

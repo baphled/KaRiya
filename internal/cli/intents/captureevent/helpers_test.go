@@ -2,11 +2,11 @@ package captureevent
 
 import (
 	"errors"
-	"time"
 
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/terminal"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -84,7 +84,7 @@ var _ = Describe("Helper Methods", func() {
 	Describe("showSubmitModal", func() {
 		BeforeEach(func() {
 			intent.reviewState = &ReviewInferredEventState{
-				Event:          &career.Event{Text: "test"},
+				Event:          fixtures.EventWith("", "test", "", ""),
 				AcceptedBursts: make([]*career.Burst, 0),
 				AcceptedFacts:  make([]*career.Fact, 0),
 			}
@@ -152,7 +152,7 @@ var _ = Describe("Helper Methods", func() {
 		Context("when EditingMode is Metadata without CareerService", func() {
 			It("should panic when CareerService is nil", func() {
 				intent.reviewState = &ReviewInferredEventState{
-					Event:       &career.Event{Text: "test"},
+					Event:       fixtures.EventWith("", "test", "", ""),
 					EditingMode: EditingModeMetadata,
 				}
 				// MetadataEditorModelNew immediately calls CareerService.GetSkillRepository(),
@@ -269,10 +269,7 @@ var _ = Describe("Helper Methods", func() {
 		Context("when CareerService is nil", func() {
 			It("should return SubmitErrorMsg for nil career service", func() {
 				intent.reviewState = &ReviewInferredEventState{
-					Event: &career.Event{
-						Text: "Valid event text for testing purposes",
-						Date: time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),
-					},
+					Event:         fixtures.EventWith("", "Valid event text for testing purposes", "", ""),
 					AcceptedFacts: make([]*career.Fact, 0),
 				}
 				intent.context.CareerService = nil

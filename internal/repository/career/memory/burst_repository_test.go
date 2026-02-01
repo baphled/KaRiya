@@ -165,18 +165,15 @@ var _ = Describe("BurstRepository", func() {
 		})
 
 		It("should list all bursts with no filters", func() {
-			bursts, err := repository.List(ctx, career_repo.BurstListFilters{})
+			bursts, err := repository.List(ctx, *fixtures.BurstListFilters())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(bursts).To(HaveLen(3))
 		})
 
 		It("should sort bursts by name ascending", func() {
-			filters := career_repo.BurstListFilters{
-				SortBy:    "name",
-				SortOrder: "asc",
-			}
+			filters := fixtures.BurstListFiltersWithSort("name", "asc")
 
-			bursts, err := repository.List(ctx, filters)
+			bursts, err := repository.List(ctx, *filters)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(bursts).To(HaveLen(3))
 			Expect(bursts[0].Name).To(Equal("Platform Migration"))
@@ -185,12 +182,9 @@ var _ = Describe("BurstRepository", func() {
 		})
 
 		It("should sort bursts by name descending", func() {
-			filters := career_repo.BurstListFilters{
-				SortBy:    "name",
-				SortOrder: "desc",
-			}
+			filters := fixtures.BurstListFiltersWithSort("name", "desc")
 
-			bursts, err := repository.List(ctx, filters)
+			bursts, err := repository.List(ctx, *filters)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(bursts).To(HaveLen(3))
 			Expect(bursts[0].Name).To(Equal("Team Leadership"))
@@ -199,12 +193,9 @@ var _ = Describe("BurstRepository", func() {
 		})
 
 		It("should sort bursts by event count descending", func() {
-			filters := career_repo.BurstListFilters{
-				SortBy:    "event_count",
-				SortOrder: "desc",
-			}
+			filters := fixtures.BurstListFiltersWithSort("event_count", "desc")
 
-			bursts, err := repository.List(ctx, filters)
+			bursts, err := repository.List(ctx, *filters)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(bursts).To(HaveLen(3))
 			Expect(bursts[0].EventIDs).To(HaveLen(3)) // Team Leadership
@@ -213,39 +204,30 @@ var _ = Describe("BurstRepository", func() {
 		})
 
 		It("should apply pagination with limit", func() {
-			filters := career_repo.BurstListFilters{
-				Limit:     2,
-				SortBy:    "name",
-				SortOrder: "asc",
-			}
+			filters := fixtures.BurstListFiltersWithSort("name", "asc")
+			filters.Limit = 2
 
-			bursts, err := repository.List(ctx, filters)
+			bursts, err := repository.List(ctx, *filters)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(bursts).To(HaveLen(2))
 		})
 
 		It("should apply pagination with offset", func() {
-			filters := career_repo.BurstListFilters{
-				Offset:    1,
-				SortBy:    "name",
-				SortOrder: "asc",
-			}
+			filters := fixtures.BurstListFiltersWithSort("name", "asc")
+			filters.Offset = 1
 
-			bursts, err := repository.List(ctx, filters)
+			bursts, err := repository.List(ctx, *filters)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(bursts).To(HaveLen(2))
 			Expect(bursts[0].Name).To(Equal("Product Launch"))
 		})
 
 		It("should apply pagination with both limit and offset", func() {
-			filters := career_repo.BurstListFilters{
-				Offset:    1,
-				Limit:     1,
-				SortBy:    "name",
-				SortOrder: "asc",
-			}
+			filters := fixtures.BurstListFiltersWithSort("name", "asc")
+			filters.Offset = 1
+			filters.Limit = 1
 
-			bursts, err := repository.List(ctx, filters)
+			bursts, err := repository.List(ctx, *filters)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(bursts).To(HaveLen(1))
 			Expect(bursts[0].Name).To(Equal("Product Launch"))
@@ -264,7 +246,7 @@ var _ = Describe("BurstRepository", func() {
 		})
 
 		It("should count all bursts with no filters", func() {
-			count, err := repository.Count(ctx, career_repo.BurstListFilters{})
+			count, err := repository.Count(ctx, *fixtures.BurstListFilters())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(count).To(Equal(3))
 		})

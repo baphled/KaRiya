@@ -68,17 +68,14 @@ var _ = Describe("CV Generation Integration Tests", func() {
 		}
 	})
 
-	// Helper function to seed test events
 	seedTestEvents := func(count int, category string) []*career.Event {
 		events := make([]*career.Event, count)
 		for i := 0; i < count; i++ {
-			event := &career.Event{
-				Text:       "Test event for " + category,
-				Date:       time.Now().AddDate(0, 0, -i),
-				Tags:       []string{category, "project"},
-				Company:    "Test Company",
-				Categories: []string{category},
-			}
+			eventID := fmt.Sprintf("%s-seed-%d", category, i)
+			event := fixtures.EventWith(eventID, "Test event for "+category, "Test Company", "")
+			event.Date = time.Now().AddDate(0, 0, -i)
+			event.Tags = []string{category, "project"}
+			event.Categories = []string{category}
 			err := repos.Event.Create(ctx, event)
 			Expect(err).NotTo(HaveOccurred())
 			events[i] = event
@@ -92,15 +89,11 @@ var _ = Describe("CV Generation Integration Tests", func() {
 			seedTestEvents(5, "technical")
 			seedTestEvents(3, "product")
 
-			// Create a test CV configuration
-			config := &career.CVConfig{
-				Name:           "test-senior-ic",
-				TargetRole:     "senior_ic",
-				TargetAudience: "recruiter",
-				EventFilters: map[string]interface{}{
-					"categories": []string{"technical", "product"},
-				},
-			}
+			config := fixtures.CVConfigWithFilters("test-senior-ic", map[string]interface{}{
+				"categories": []string{"technical", "product"},
+			})
+			config.TargetRole = "senior_ic"
+			config.TargetAudience = "recruiter"
 
 			// Generate CV
 			cv, err := cvGenService.GenerateCVFromConfig(ctx, config)
@@ -122,15 +115,11 @@ var _ = Describe("CV Generation Integration Tests", func() {
 			seedTestEvents(5, "technical")
 			seedTestEvents(3, "leadership")
 
-			// Create a test CV configuration with single audience
-			config := &career.CVConfig{
-				Name:           "test-principal",
-				TargetRole:     "principal",
-				TargetAudience: "hiring_manager",
-				EventFilters: map[string]interface{}{
-					"categories": []string{"technical", "achievement", "leadership"},
-				},
-			}
+			config := fixtures.CVConfigWithFilters("test-principal", map[string]interface{}{
+				"categories": []string{"technical", "achievement", "leadership"},
+			})
+			config.TargetRole = "principal"
+			config.TargetAudience = "hiring_manager"
 
 			// Generate CV
 			cv, err := cvGenService.GenerateCVFromConfig(ctx, config)
@@ -148,17 +137,13 @@ var _ = Describe("CV Generation Integration Tests", func() {
 			seedTestEvents(2, "leadership")
 
 			// Retrieve all events first
-			allEvents, err := repos.Event.List(ctx, careerrepo.EventListFilters{})
+			allEvents, err := repos.Event.List(ctx, *fixtures.EventListFilters())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(allEvents)).To(Equal(7))
 
-			// Create a test CV configuration with no filters
-			config := &career.CVConfig{
-				Name:           "test-no-filters",
-				TargetRole:     "senior_ic",
-				TargetAudience: "recruiter",
-				EventFilters:   make(map[string]interface{}),
-			}
+			config := fixtures.CVConfigWithFilters("test-no-filters", make(map[string]interface{}))
+			config.TargetRole = "senior_ic"
+			config.TargetAudience = "recruiter"
 
 			// Generate CV
 			cv, err := cvGenService.GenerateCVFromConfig(ctx, config)
@@ -170,15 +155,11 @@ var _ = Describe("CV Generation Integration Tests", func() {
 			// Seed test data
 			seedTestEvents(3, "leadership")
 
-			// Create a test CV configuration
-			config := &career.CVConfig{
-				Name:           "test-metadata",
-				TargetRole:     "principal",
-				TargetAudience: "hiring_manager",
-				EventFilters: map[string]interface{}{
-					"categories": []string{"leadership"},
-				},
-			}
+			config := fixtures.CVConfigWithFilters("test-metadata", map[string]interface{}{
+				"categories": []string{"leadership"},
+			})
+			config.TargetRole = "principal"
+			config.TargetAudience = "hiring_manager"
 
 			beforeTime := time.Now()
 
@@ -203,15 +184,11 @@ var _ = Describe("CV Generation Integration Tests", func() {
 			seedTestEvents(3, "product")
 			seedTestEvents(2, "leadership")
 
-			// Create a test CV configuration with category filters
-			config := &career.CVConfig{
-				Name:           "test-technical-only",
-				TargetRole:     "senior_ic",
-				TargetAudience: "recruiter",
-				EventFilters: map[string]interface{}{
-					"categories": []string{"technical"},
-				},
-			}
+			config := fixtures.CVConfigWithFilters("test-technical-only", map[string]interface{}{
+				"categories": []string{"technical"},
+			})
+			config.TargetRole = "senior_ic"
+			config.TargetAudience = "recruiter"
 
 			// Generate CV
 			cv, err := cvGenService.GenerateCVFromConfig(ctx, config)
@@ -223,13 +200,9 @@ var _ = Describe("CV Generation Integration Tests", func() {
 			// Seed some test data (needed for valid case comparison)
 			seedTestEvents(2, "technical")
 
-			// Create an invalid configuration (missing target role)
-			invalidConfig := &career.CVConfig{
-				Name:           "test-invalid",
-				TargetRole:     "", // Invalid: empty target role
-				TargetAudience: "recruiter",
-				EventFilters:   make(map[string]interface{}),
-			}
+			invalidConfig := fixtures.CVConfigWithFilters("test-invalid", make(map[string]interface{}))
+			invalidConfig.TargetRole = ""
+			invalidConfig.TargetAudience = "recruiter"
 
 			// Generation should fail
 			_, err := cvGenService.GenerateCVFromConfig(ctx, invalidConfig)
@@ -239,12 +212,9 @@ var _ = Describe("CV Generation Integration Tests", func() {
 		It("should handle empty database gracefully", func() {
 			// Don't seed any data - database is empty
 
-			config := &career.CVConfig{
-				Name:           "test-empty-db",
-				TargetRole:     "senior_ic",
-				TargetAudience: "recruiter",
-				EventFilters:   make(map[string]interface{}),
-			}
+			config := fixtures.CVConfigWithFilters("test-empty-db", make(map[string]interface{}))
+			config.TargetRole = "senior_ic"
+			config.TargetAudience = "recruiter"
 
 			// Generate CV - should still work but with empty content
 			cv, err := cvGenService.GenerateCVFromConfig(ctx, config)
@@ -261,12 +231,9 @@ var _ = Describe("CV Generation Integration Tests", func() {
 			audiences := []string{"recruiter", "hiring_manager", "peer"}
 
 			for _, audience := range audiences {
-				config := &career.CVConfig{
-					Name:           "test-" + audience,
-					TargetRole:     "senior_ic",
-					TargetAudience: audience,
-					EventFilters:   make(map[string]interface{}),
-				}
+				config := fixtures.CVConfigWithFilters("test-"+audience, make(map[string]interface{}))
+				config.TargetRole = "senior_ic"
+				config.TargetAudience = audience
 
 				cv, err := cvGenService.GenerateCVFromConfig(ctx, config)
 				Expect(err).NotTo(HaveOccurred())
@@ -338,17 +305,11 @@ var _ = Describe("CV Generation Integration Tests", func() {
 			seedMultiCompanyEvents(companies, 10)
 
 			// Verify all events were created
-			allEvents, err := repos.Event.List(ctx, careerrepo.EventListFilters{})
+			allEvents, err := repos.Event.List(ctx, *fixtures.EventListFilters())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(allEvents)).To(Equal(50))
 
-			// Generate CV with staff role (was previously capped at 40 bullets)
-			config := &career.CVConfig{
-				Name:           "bug-003-test",
-				TargetRole:     "staff",
-				TargetAudience: "hiring_manager",
-				EventFilters:   make(map[string]interface{}),
-			}
+			config := fixtures.CVConfigWithFilters("bug-003-test", make(map[string]interface{}))
 
 			cv, err := cvGenService.GenerateCVFromConfig(ctx, config)
 			Expect(err).NotTo(HaveOccurred())
@@ -380,13 +341,9 @@ var _ = Describe("CV Generation Integration Tests", func() {
 			// Seed 15 events per company
 			seedMultiCompanyEvents(companies, 15)
 
-			// Generate CV
-			config := &career.CVConfig{
-				Name:           "bug-003-stress-test",
-				TargetRole:     "principal",
-				TargetAudience: "recruiter",
-				EventFilters:   make(map[string]interface{}),
-			}
+			config := fixtures.CVConfigWithFilters("bug-003-stress-test", make(map[string]interface{}))
+			config.TargetRole = "principal"
+			config.TargetAudience = "recruiter"
 
 			cv, err := cvGenService.GenerateCVFromConfig(ctx, config)
 			Expect(err).NotTo(HaveOccurred())
@@ -407,12 +364,9 @@ var _ = Describe("CV Generation Integration Tests", func() {
 			// Seed 20 events per company
 			seedMultiCompanyEvents(companies, 20)
 
-			config := &career.CVConfig{
-				Name:           "bug-003-caps-test",
-				TargetRole:     "senior_ic",
-				TargetAudience: "peer",
-				EventFilters:   make(map[string]interface{}),
-			}
+			config := fixtures.CVConfigWithFilters("bug-003-caps-test", make(map[string]interface{}))
+			config.TargetRole = "senior_ic"
+			config.TargetAudience = "peer"
 
 			cv, err := cvGenService.GenerateCVFromConfig(ctx, config)
 			Expect(err).NotTo(HaveOccurred())

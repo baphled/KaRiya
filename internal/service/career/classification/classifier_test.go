@@ -4,7 +4,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 var _ = Describe("Classifier", func() {
@@ -17,10 +17,8 @@ var _ = Describe("Classifier", func() {
 	Context("Classification", func() {
 		DescribeTable("Event Classification",
 			func(eventText string, tags []string, expectedCategory CompetencyCategory, expectedMulti []CompetencyCategory) {
-				event := &career.Event{
-					Text: eventText,
-					Tags: tags,
-				}
+				event := fixtures.EventWith("", eventText, "", "")
+				event.Tags = tags
 
 				// Single classification
 				category := classifier.Classify(event)
@@ -75,9 +73,7 @@ var _ = Describe("Classifier", func() {
 		)
 
 		It("Should have default technical classification", func() {
-			defaultEvent := &career.Event{
-				Text: "Some generic event description",
-			}
+			defaultEvent := fixtures.EventWith("", "Some generic event description", "", "")
 
 			// Single classification should default to technical
 			defaultCategory := classifier.Classify(defaultEvent)

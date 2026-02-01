@@ -7,6 +7,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/intents/burst_management"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 var _ = Describe("Types", func() {
@@ -62,8 +63,8 @@ var _ = Describe("Types", func() {
 
 			It("should initialize with context bursts", func() {
 				bursts := []*career.Burst{
-					{ID: "burst-1", Name: "Burst 1"},
-					{ID: "burst-2", Name: "Burst 2"},
+					fixtures.Burst("burst-1"),
+					fixtures.Burst("burst-2"),
 				}
 				ctx := &burst_management.IntentContext{
 					Bursts: bursts,
@@ -107,9 +108,9 @@ var _ = Describe("Types", func() {
 
 			BeforeEach(func() {
 				bursts = []*career.Burst{
-					{ID: "burst-1", Name: "Burst 1"},
-					{ID: "burst-2", Name: "Burst 2"},
-					{ID: "burst-3", Name: "Burst 3"},
+					fixtures.Burst("burst-1"),
+					fixtures.Burst("burst-2"),
+					fixtures.Burst("burst-3"),
 				}
 				ctx := &burst_management.IntentContext{
 					Bursts: bursts,
@@ -164,7 +165,7 @@ var _ = Describe("Types", func() {
 			})
 
 			It("should allow setting result", func() {
-				burst := &career.Burst{ID: "burst-1", Name: "Selected"}
+				burst := fixtures.Burst("burst-1")
 				intent.SetCompleted(burst)
 				result := intent.Result()
 				Expect(result).NotTo(BeNil())

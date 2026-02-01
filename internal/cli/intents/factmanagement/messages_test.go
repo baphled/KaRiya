@@ -8,12 +8,13 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/intents/factmanagement"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 var _ = Describe("Messages", func() {
 	Describe("FactSelectedMsg", func() {
 		It("should store fact and index", func() {
-			fact := &career.Fact{ID: "fact-1", Text: "Test fact"}
+			fact := fixtures.FactWith("fact-1", "Test fact")
 			msg := factmanagement.FactSelectedMsg{
 				Fact:  fact,
 				Index: 5,
@@ -34,7 +35,7 @@ var _ = Describe("Messages", func() {
 
 	Describe("FactSavedMsg", func() {
 		It("should store fact and metadata", func() {
-			fact := &career.Fact{ID: "fact-1", Text: "Test fact"}
+			fact := fixtures.FactWith("fact-1", "Test fact")
 			msg := factmanagement.FactSavedMsg{
 				Fact:    fact,
 				IsNew:   true,
@@ -46,7 +47,7 @@ var _ = Describe("Messages", func() {
 		})
 
 		It("should indicate update when not new", func() {
-			fact := &career.Fact{ID: "fact-1", Text: "Updated fact"}
+			fact := fixtures.FactWith("fact-1", "Updated fact")
 			msg := factmanagement.FactSavedMsg{
 				Fact:    fact,
 				IsNew:   false,
@@ -68,8 +69,8 @@ var _ = Describe("Messages", func() {
 	Describe("FactsLoadedMsg", func() {
 		It("should store facts and total count", func() {
 			facts := []*career.Fact{
-				{ID: "fact-1", Text: "Fact 1"},
-				{ID: "fact-2", Text: "Fact 2"},
+				fixtures.FactWith("fact-1", "Fact 1"),
+				fixtures.FactWith("fact-2", "Fact 2"),
 			}
 			msg := factmanagement.FactsLoadedMsg{
 				Facts: facts,

@@ -8,6 +8,7 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 	career_repo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/repository/models"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"gorm.io/driver/sqlite"
@@ -45,11 +46,9 @@ var _ = Describe("Burst Repository", func() {
 
 	Describe("Create", func() {
 		It("creates a burst with generated ID", func() {
-			burst := &career.Burst{
-				Name:        "Q4 Project Burst",
-				Description: "Events from Q4 project",
-				EventIDs:    []string{"event-1", "event-2"},
-			}
+			burst := fixtures.Burst("", "event-1", "event-2")
+			burst.Name = "Q4 Project Burst"
+			burst.Description = "Events from Q4 project"
 
 			err := repo.Create(ctx, burst)
 
@@ -59,11 +58,7 @@ var _ = Describe("Burst Repository", func() {
 		})
 
 		It("creates a burst with provided ID", func() {
-			burst := &career.Burst{
-				ID:       "custom-id",
-				Name:     "Test Burst",
-				EventIDs: []string{"event-1"},
-			}
+			burst := fixtures.Burst("custom-id", "event-1")
 
 			err := repo.Create(ctx, burst)
 
@@ -74,11 +69,9 @@ var _ = Describe("Burst Repository", func() {
 
 	Describe("GetByID", func() {
 		It("returns the burst", func() {
-			burst := &career.Burst{
-				Name:        "Test Burst",
-				Description: "Test desc",
-				EventIDs:    []string{"e1", "e2"},
-			}
+			burst := fixtures.Burst("", "e1", "e2")
+			burst.Name = "Test Burst"
+			burst.Description = "Test desc"
 			Expect(repo.Create(ctx, burst)).To(Succeed())
 
 			found, err := repo.GetByID(ctx, burst.ID)
@@ -97,10 +90,8 @@ var _ = Describe("Burst Repository", func() {
 
 	Describe("Update", func() {
 		It("updates the burst", func() {
-			burst := &career.Burst{
-				Name:     "Original",
-				EventIDs: []string{"e1"},
-			}
+			burst := fixtures.Burst("", "e1")
+			burst.Name = "Original"
 			Expect(repo.Create(ctx, burst)).To(Succeed())
 
 			burst.Name = "Updated"
@@ -115,11 +106,7 @@ var _ = Describe("Burst Repository", func() {
 		})
 
 		It("returns ErrBurstNotFound for missing burst", func() {
-			burst := &career.Burst{
-				ID:       "nonexistent",
-				Name:     "Test",
-				EventIDs: []string{"e1"},
-			}
+			burst := fixtures.Burst("nonexistent", "e1")
 
 			err := repo.Update(ctx, burst)
 
@@ -129,10 +116,8 @@ var _ = Describe("Burst Repository", func() {
 
 	Describe("Delete", func() {
 		It("deletes the burst", func() {
-			burst := &career.Burst{
-				Name:     "To delete",
-				EventIDs: []string{"e1"},
-			}
+			burst := fixtures.Burst("", "e1")
+			burst.Name = "To delete"
 			Expect(repo.Create(ctx, burst)).To(Succeed())
 
 			err := repo.Delete(ctx, burst.ID)
@@ -152,40 +137,41 @@ var _ = Describe("Burst Repository", func() {
 
 	Describe("List", func() {
 		BeforeEach(func() {
-			bursts := []*career.Burst{
-				{Name: "Burst A", EventIDs: []string{"e1"}},
-				{Name: "Burst B", EventIDs: []string{"e1", "e2"}},
-				{Name: "Burst C", EventIDs: []string{"e1", "e2", "e3"}},
-			}
-			for _, b := range bursts {
+			b1 := fixtures.Burst("", "e1")
+			b1.Name = "Burst A"
+			b2 := fixtures.Burst("", "e1", "e2")
+			b2.Name = "Burst B"
+			b3 := fixtures.Burst("", "e1", "e2", "e3")
+			b3.Name = "Burst C"
+			for _, b := range []*career.Burst{b1, b2, b3} {
 				Expect(repo.Create(ctx, b)).To(Succeed())
 				time.Sleep(10 * time.Millisecond) // Ensure different timestamps.
 			}
 		})
 
 		It("returns all bursts without filters", func() {
-			bursts, err := repo.List(ctx, career_repo.BurstListFilters{})
+			bursts, err := repo.List(ctx, *fixtures.BurstListFilters())
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(bursts).To(HaveLen(3))
 		})
 
 		It("sorts by created_at descending by default", func() {
-			bursts, err := repo.List(ctx, career_repo.BurstListFilters{})
+			bursts, err := repo.List(ctx, *fixtures.BurstListFilters())
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(bursts[0].Name).To(Equal("Burst C")) // Most recent first.
 		})
 
 		It("sorts by name ascending", func() {
-			bursts, err := repo.List(ctx, career_repo.BurstListFilters{SortBy: "name", SortOrder: "asc"})
+			bursts, err := repo.List(ctx, *fixtures.BurstListFiltersWithSort("name", "asc"))
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(bursts[0].Name).To(Equal("Burst A"))
 		})
 
 		It("applies pagination", func() {
-			bursts, err := repo.List(ctx, career_repo.BurstListFilters{Limit: 2})
+			bursts, err := repo.List(ctx, *fixtures.BurstListFiltersWithLimit(0, 2))
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(bursts).To(HaveLen(2))
@@ -194,17 +180,17 @@ var _ = Describe("Burst Repository", func() {
 
 	Describe("Count", func() {
 		BeforeEach(func() {
-			bursts := []*career.Burst{
-				{Name: "Burst 1", EventIDs: []string{"e1"}},
-				{Name: "Burst 2", EventIDs: []string{"e2"}},
-			}
-			for _, b := range bursts {
+			b1 := fixtures.Burst("", "e1")
+			b1.Name = "Burst 1"
+			b2 := fixtures.Burst("", "e2")
+			b2.Name = "Burst 2"
+			for _, b := range []*career.Burst{b1, b2} {
 				Expect(repo.Create(ctx, b)).To(Succeed())
 			}
 		})
 
 		It("counts all bursts", func() {
-			count, err := repo.Count(ctx, career_repo.BurstListFilters{})
+			count, err := repo.Count(ctx, *fixtures.BurstListFilters())
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(count).To(Equal(2))
@@ -213,13 +199,8 @@ var _ = Describe("Burst Repository", func() {
 
 	Describe("Confirmed bursts", func() {
 		It("stores and retrieves confirmed status", func() {
-			now := time.Now()
-			burst := &career.Burst{
-				Name:        "Confirmed Burst",
-				EventIDs:    []string{"e1"},
-				Confirmed:   true,
-				ConfirmedAt: &now,
-			}
+			burst := fixtures.BurstConfirmed("", "e1")
+			burst.Name = "Confirmed Burst"
 			Expect(repo.Create(ctx, burst)).To(Succeed())
 
 			found, err := repo.GetByID(ctx, burst.ID)

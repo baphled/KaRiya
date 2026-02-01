@@ -1,13 +1,12 @@
 package modals_test
 
 import (
-	"time"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/baphled/kariya/internal/cli/screens/timeline/modals"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -18,32 +17,13 @@ var _ = Describe("FilterModal", func() {
 	)
 
 	BeforeEach(func() {
-		events = []*career.Event{
-			{
-				ID:         "1",
-				Text:       "Event 1",
-				Date:       time.Now(),
-				Company:    "Company A",
-				Project:    "Project X",
-				Categories: []string{"Development", "Backend"},
-			},
-			{
-				ID:         "2",
-				Text:       "Event 2",
-				Date:       time.Now(),
-				Company:    "Company B",
-				Project:    "Project Y",
-				Categories: []string{"Testing"},
-			},
-			{
-				ID:         "3",
-				Text:       "Event 3",
-				Date:       time.Now(),
-				Company:    "Company A",
-				Project:    "Project Z",
-				Categories: []string{"Development", "Frontend"},
-			},
-		}
+		e1 := fixtures.EventWith("1", "Event 1", "Company A", "Project X")
+		e1.Categories = []string{"Development", "Backend"}
+		e2 := fixtures.EventWith("2", "Event 2", "Company B", "Project Y")
+		e2.Categories = []string{"Testing"}
+		e3 := fixtures.EventWith("3", "Event 3", "Company A", "Project Z")
+		e3.Categories = []string{"Development", "Frontend"}
+		events = []*career.Event{e1, e2, e3}
 	})
 
 	Describe("NewFilterModal", func() {
@@ -81,7 +61,7 @@ var _ = Describe("FilterModal", func() {
 
 		It("handles events with empty company and project", func() {
 			eventsWithEmpty := []*career.Event{
-				{ID: "1", Text: "Event", Company: "", Project: ""},
+				fixtures.EventWith("1", "Event", "", ""),
 			}
 			modal = modals.NewFilterModal(eventsWithEmpty, nil, 80, 24)
 

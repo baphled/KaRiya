@@ -6,6 +6,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -18,16 +19,11 @@ var _ = Describe("EventDetailCard", func() {
 
 	BeforeEach(func() {
 		testTheme = themes.NewDefaultTheme()
-		testEvent = &career.Event{
-			ID:         "test-123",
-			Text:       "Implemented new feature for the product",
-			Date:       time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),
-			Company:    "Acme Corp",
-			Project:    "Project Alpha",
-			Tags:       []string{"go", "backend", "api"},
-			Categories: []string{"development", "feature"},
-			Skills:     []string{"skill-1", "skill-2"},
-		}
+		testEvent = fixtures.EventWith("test-123", "Implemented new feature for the product", "Acme Corp", "Project Alpha")
+		testEvent.Date = time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
+		testEvent.Tags = []string{"go", "backend", "api"}
+		testEvent.Categories = []string{"development", "feature"}
+		testEvent.Skills = []string{"skill-1", "skill-2"}
 	})
 
 	Describe("Construction", func() {

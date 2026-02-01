@@ -3,6 +3,7 @@ package selectors_test
 import (
 	"github.com/baphled/kariya/internal/cli/uikit/selectors"
 	domain "github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -191,12 +192,12 @@ var _ = Describe("Selectors E2E", func() {
 
 		BeforeEach(func() {
 			availableSkills = []*domain.Skill{
-				{ID: "sk-go", Name: "Go", Category: "backend"},
-				{ID: "sk-react", Name: "React", Category: "frontend"},
-				{ID: "sk-postgres", Name: "PostgreSQL", Category: "database"},
-				{ID: "sk-k8s", Name: "Kubernetes", Category: "devops"},
-				{ID: "sk-docker", Name: "Docker", Category: "devops"},
-				{ID: "sk-aws", Name: "AWS", Category: "cloud"},
+				fixtures.SkillWith("sk-go", "Go", "backend", ""),
+				fixtures.SkillWith("sk-react", "React", "frontend", ""),
+				fixtures.SkillWith("sk-postgres", "PostgreSQL", "database", ""),
+				fixtures.SkillWith("sk-k8s", "Kubernetes", "devops", ""),
+				fixtures.SkillWith("sk-docker", "Docker", "devops", ""),
+				fixtures.SkillWith("sk-aws", "AWS", "cloud", ""),
 			}
 			selector = selectors.NewSkillSelector(availableSkills)
 		})
@@ -387,8 +388,8 @@ var _ = Describe("Selectors E2E", func() {
 			tagSelector := selectors.NewTagSelector()
 			categorySelector := selectors.NewCategorySelector()
 			skillSelector := selectors.NewSkillSelector([]*domain.Skill{
-				{ID: "sk-go", Name: "Go", Category: "backend"},
-				{ID: "sk-k8s", Name: "Kubernetes", Category: "devops"},
+				fixtures.SkillWith("sk-go", "Go", "backend", ""),
+				fixtures.SkillWith("sk-k8s", "Kubernetes", "devops", ""),
 			})
 
 			// User fills out event form.

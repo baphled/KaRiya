@@ -10,6 +10,9 @@ on:
       - 'internal/cli/uikit/**'
       - 'internal/cli/models/**'
       - 'internal/cli/forms/**'
+      - 'internal/**/*_test.go'
+      - 'internal/testutil/**'
+      - 'tools/analyzers/noinlinecareer/**'
   push:
     branches:
       - next
@@ -17,6 +20,8 @@ on:
     paths:
       - 'internal/cli/intents/**'
       - 'internal/cli/screens/**'
+      - 'internal/**/*_test.go'
+      - 'internal/testutil/**'
 
 env:
   GO_VERSION: '1.25'
@@ -143,6 +148,22 @@ jobs:
       - name: Run docblocks analyzer
         run: make check-docblocks
 
+  fixture-usage:
+    name: Fixture Usage Enforcement
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Run fixture usage analyzer
+        run: make check-fixtures
+
   pattern-compliance:
     name: Pattern Compliance
     runs-on: ubuntu-latest
@@ -156,7 +177,7 @@ jobs:
   report:
     name: Architecture Report
     runs-on: ubuntu-latest
-    needs: [intent-architecture, golangci-lint, docblocks, pattern-compliance]
+    needs: [intent-architecture, golangci-lint, docblocks, fixture-usage, pattern-compliance]
     if: always()
     steps:
       - name: Architecture Validation Summary
@@ -168,6 +189,7 @@ jobs:
           echo "Intent Architecture: ${{ needs.intent-architecture.result }}"
           echo "Golangci-lint:       ${{ needs.golangci-lint.result }}"
           echo "Docblocks:           ${{ needs.docblocks.result }}"
+          echo "Fixture Usage:       ${{ needs.fixture-usage.result }}"
           echo "Pattern Compliance:  ${{ needs.pattern-compliance.result }}"
           echo ""
           
@@ -177,6 +199,7 @@ jobs:
           # until legacy intents are migrated.
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             if [ "${{ needs.golangci-lint.result }}" != "success" ] || \
+               [ "${{ needs.fixture-usage.result }}" != "success" ] || \
                [ "${{ needs.pattern-compliance.result }}" != "success" ]; then
               echo "❌ Architecture validation FAILED"
               echo ""
@@ -193,6 +216,7 @@ jobs:
             # For pushes, all checks must pass
             if [ "${{ needs.intent-architecture.result }}" != "success" ] || \
                [ "${{ needs.golangci-lint.result }}" != "success" ] || \
+               [ "${{ needs.fixture-usage.result }}" != "success" ] || \
                [ "${{ needs.pattern-compliance.result }}" != "success" ]; then
               echo "❌ Architecture validation FAILED"
               echo ""

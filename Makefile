@@ -1,8 +1,8 @@
-.PHONY: test test-race coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance check-docblocks check-patterns check-patterns-quiet check-patterns-strict check-intent-architecture check-intent-architecture-files golangci-lint install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ai-commit ci-local ci-install-tools gosec session-start session-end session-reset check-session verify-hooks tdd-check tdd-red tdd-green tdd-refactor tdd-document pre-task what-to-use generate-diagrams generate-state-matrix generate-docs diagrams new-feature new-bug new-intent
+.PHONY: test test-race coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance check-docblocks check-fixtures check-patterns check-patterns-quiet check-patterns-strict check-intent-architecture check-intent-architecture-files golangci-lint install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ai-commit ci-local ci-install-tools gosec session-start session-end session-reset check-session verify-hooks tdd-check tdd-red tdd-green tdd-refactor tdd-document pre-task what-to-use generate-diagrams generate-state-matrix generate-docs diagrams new-feature new-bug new-intent
 
 # Run all tests in verbose mode (race detection in CI only)
 test:
-	ginkgo -v ./...
+	ginkgo -v --skip-package=testdata ./...
 
 # Run a specific test suite
 test-suite:
@@ -14,7 +14,7 @@ test-suite:
 
 # Run tests with race detection (slow - use sparingly)
 test-race:
-	ginkgo -v --race ./...
+	ginkgo -v --race --skip-package=testdata ./...
 
 # Run a specific test
 individual-test:
@@ -22,7 +22,7 @@ individual-test:
 		echo "Please specify a test using TEST=path/to/test/file/TestName"; \
 		exit 1; \
 	fi
-	ginkgo -v -focus="$(TEST)" ./...
+	ginkgo -v --skip-package=testdata -focus="$(TEST)" ./...
 
 coverage:
 	@bash scripts/test-coverage.sh
@@ -79,8 +79,22 @@ check-docblocks:
 	@go vet -vettool=./bin/docblocks ./internal/cli/behaviors/... ./internal/cli/intents/... ./tools/analyzers/docblocks/...
 	@echo "✅ Docblocks: all checks passed."
 
+# Check fixture usage enforcement (no inline career.* structs in test files)
+# Build noinlinecareer analyzer only when source changes (cached build)
+bin/noinlinecareer: cmd/noinlinecareer/main.go tools/analyzers/noinlinecareer/analyzer.go
+	@echo "Building noinlinecareer analyzer..."
+	@mkdir -p bin
+	@go build -o ./bin/noinlinecareer ./cmd/noinlinecareer
+	@echo "✅ Analyzer binary built."
+
+# Check fixture usage (fast - uses cached binary)
+check-fixtures: bin/noinlinecareer
+	@echo "Running fixture usage analyzer..."
+	@go vet -vettool=./bin/noinlinecareer ./...
+	@echo "✅ Fixture usage: all checks passed."
+
 # Check full project compliance (all rules)
-check-compliance: staticcheck check-intent-architecture check-docblocks
+check-compliance: staticcheck check-intent-architecture check-docblocks check-fixtures
 	@bash scripts/check-compliance.sh
 
 # Install all CI tools locally
