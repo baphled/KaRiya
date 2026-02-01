@@ -150,18 +150,9 @@ func (s *DefaultSkillInferenceService) detectSkillsInText(
 	lowerText := strings.ToLower(text)
 	detected := []*SkillSuggestion{}
 
-	// Check each keyword in dictionary
 	for keyword, tech := range s.keywordMap {
-		// Use word boundary regex to avoid partial matches
-		// e.g., "goal" won't match "go", "going" won't match "go"
-		pattern := `\b` + regexp.QuoteMeta(keyword) + `\b`
-		re := regexp.MustCompile(pattern)
-
-		if re.MatchString(lowerText) {
-			// Extract context (up to 80 chars around match)
+		if s.keywordMatchesWithWordBoundary(lowerText, keyword) {
 			contextSnippet := s.extractContext(text, keyword)
-
-			// Calculate confidence based on usage patterns
 			confidence := s.calculateConfidence(text, keyword)
 
 			detected = append(detected, &SkillSuggestion{
@@ -177,6 +168,14 @@ func (s *DefaultSkillInferenceService) detectSkillsInText(
 	return detected
 }
 
+// keywordMatchesWithWordBoundary checks if keyword exists in text with word boundaries.
+// This prevents partial matches (e.g., "goal" won't match "go", "going" won't match "go").
+func (s *DefaultSkillInferenceService) keywordMatchesWithWordBoundary(text, keyword string) bool {
+	pattern := `\b` + regexp.QuoteMeta(keyword) + `\b`
+	re := regexp.MustCompile(pattern)
+	return re.MatchString(text)
+}
+
 // extractContext extracts a snippet of text around the keyword.
 // Returns ~80 characters total (40 before + keyword + 40 after).
 // Adds ellipsis (...) when truncated.
@@ -188,23 +187,11 @@ func (s *DefaultSkillInferenceService) extractContext(text string, keyword strin
 		return ""
 	}
 
-	// Extract 40 chars before and after keyword
-	start := keywordIndex - 40
-	if start < 0 {
-		start = 0
-	}
+	start := max(0, keywordIndex-40)
+	end := min(len(text), keywordIndex+len(keyword)+40)
 
-	end := keywordIndex + len(keyword) + 40
-	if end > len(text) {
-		end = len(text)
-	}
+	context := strings.TrimSpace(text[start:end])
 
-	context := text[start:end]
-
-	// Trim to complete words (don't cut mid-word)
-	context = strings.TrimSpace(context)
-
-	// Add ellipsis if truncated
 	if start > 0 {
 		context = "..." + context
 	}
@@ -236,8 +223,6 @@ func (s *DefaultSkillInferenceService) extractContext(text string, keyword strin
 func (s *DefaultSkillInferenceService) calculateConfidence(text string, keyword string) float64 {
 	lowerText := strings.ToLower(text)
 
-	// High confidence patterns (0.95)
-	// Check for action verbs + keyword in flexible positions
 	if s.containsPattern(lowerText, []string{"built", "with", keyword}) ||
 		s.containsPattern(lowerText, []string{"built", "using", keyword}) ||
 		s.containsPattern(lowerText, []string{"developed", "in", keyword}) ||
@@ -253,7 +238,6 @@ func (s *DefaultSkillInferenceService) calculateConfidence(text string, keyword 
 		return 0.95
 	}
 
-	// Medium confidence patterns (0.75)
 	if s.containsPattern(lowerText, []string{"worked", "with", keyword}) ||
 		s.containsPattern(lowerText, []string{"working", "with", keyword}) ||
 		s.containsPattern(lowerText, []string{"experience", "with", keyword}) ||
@@ -266,7 +250,6 @@ func (s *DefaultSkillInferenceService) calculateConfidence(text string, keyword 
 		return 0.75
 	}
 
-	// Low confidence - simple presence (0.5)
 	return 0.5
 }
 
@@ -316,7 +299,6 @@ func (s *DefaultSkillInferenceService) CreateSkillsFromSuggestions(
 	ctx context.Context,
 	suggestions []SkillSuggestion,
 ) ([]*career.Skill, error) {
-	// Check context cancellation
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
@@ -325,18 +307,15 @@ func (s *DefaultSkillInferenceService) CreateSkillsFromSuggestions(
 		return []*career.Skill{}, nil
 	}
 
-	// Deduplicate suggestions by canonical name (case-insensitive)
 	dedupedSuggestions := s.dedupeSuggestions(suggestions)
 
 	var skills []*career.Skill
 
 	for _, suggestion := range dedupedSuggestions {
-		// Check context cancellation
 		if ctx.Err() != nil {
 			return nil, ctx.Err()
 		}
 
-		// Find most recent event date for LastUsed
 		lastUsed, err := s.getMostRecentEventDate(ctx, suggestion.EventIDs)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get event dates for skill %s: %w", suggestion.Name, err)
@@ -350,7 +329,6 @@ func (s *DefaultSkillInferenceService) CreateSkillsFromSuggestions(
 		var skill *career.Skill
 
 		if existingSkill != nil {
-			// Update existing skill
 			existingSkill.LastUsed = lastUsed
 
 			if err := s.skillRepo.Update(ctx, existingSkill); err != nil {
@@ -359,7 +337,6 @@ func (s *DefaultSkillInferenceService) CreateSkillsFromSuggestions(
 
 			skill = existingSkill
 		} else {
-			// Create new skill
 			newSkill := &career.Skill{
 				Name:      suggestion.Name,
 				Category:  suggestion.Category,
@@ -375,7 +352,6 @@ func (s *DefaultSkillInferenceService) CreateSkillsFromSuggestions(
 			skill = newSkill
 		}
 
-		// Link skill to events
 		for _, eventID := range suggestion.EventIDs {
 			if err := s.eventRepo.LinkSkill(ctx, eventID, skill.ID); err != nil {
 				return nil, fmt.Errorf("failed to link skill %s to event %s: %w", skill.Name, eventID, err)
@@ -398,11 +374,9 @@ func (s *DefaultSkillInferenceService) dedupeSuggestions(suggestions []SkillSugg
 
 		existing, exists := suggestionMap[key]
 		if !exists {
-			// First occurrence - create new entry
-			suggestionCopy := suggestion // Copy to avoid mutation
+			suggestionCopy := suggestion
 			suggestionMap[key] = &suggestionCopy
 		} else {
-			// Merge event IDs (dedupe using map)
 			eventIDSet := make(map[string]bool)
 			for _, id := range existing.EventIDs {
 				eventIDSet[id] = true

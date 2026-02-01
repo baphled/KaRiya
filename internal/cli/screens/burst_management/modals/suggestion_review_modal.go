@@ -55,12 +55,10 @@ const (
 // This modal is generic and supports both burst suggestions and skill suggestions
 // via type switching (see NewSuggestionReviewModal for burst, NewSkillSuggestionModal for skills).
 type SuggestionReviewModal struct {
-	// Type-specific tables
 	burstTable *behaviors.TableBehavior[burstfact.BurstSuggestion]
 	skillTable *behaviors.TableBehavior[skillinference.SkillSuggestion]
 
-	// Polymorphic storage (type determined by suggestionType)
-	suggestionType string // "burst" or "skill"
+	suggestionType string
 
 	// Type-specific suggestion slices
 	burstSuggestions []burstfact.BurstSuggestion
