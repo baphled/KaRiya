@@ -204,15 +204,17 @@ Logistics Systems, Marketing, ShoutCast, WAP.
 
 ## Commit Strategy
 
-7 atomic commits:
+9 atomic commits:
 
 1. `feat(domain): add architecture, security, practices skill categories` — DONE
 2. `feat(service): add keyword dictionary with 350 entries` — DONE
 3. `feat(cli): add --recategorize-skills flag` — DONE
 4. `feat(cv): update profile inference for new categories` — DONE
 5. `fix(service): add substring matching fallback to keyword lookup` — DONE
-6. `feat(service): expand keyword dictionary with compound phrase entries` — DONE
-7. `docs(tasks): update task 54 status after final validation` — DONE
+6. `docs(tasks): add task 54 spec` — DONE
+7. `feat(service): expand keyword dictionary with compound phrase entries` — DONE
+8. `docs(tasks): update task 54 status after final validation` — DONE
+9. `fix(service): address PR review feedback on keyword safety and matching` — DONE
 
 ## Risks & Notes
 

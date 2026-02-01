@@ -70,7 +70,6 @@ var Keywords = []Entry{
 	{Keyword: "fastapi", Skill: "FastAPI", Category: "backend"},
 	{Keyword: ".net", Skill: ".NET", Category: "backend"},
 	{Keyword: "dotnet", Skill: ".NET", Category: "backend"},
-	{Keyword: "swift", Skill: "Swift", Category: "backend"},
 	{Keyword: "objective-c", Skill: "Objective-C", Category: "backend"},
 	{Keyword: "groovy", Skill: "Groovy", Category: "backend"},
 	{Keyword: "lua", Skill: "Lua", Category: "backend"},
@@ -223,6 +222,7 @@ var Keywords = []Entry{
 	{Keyword: "couchdb", Skill: "CouchDB", Category: "database"},
 	{Keyword: "oracle", Skill: "Oracle DB", Category: "database"},
 	{Keyword: "nosql", Skill: "NoSQL", Category: "database"},
+	{Keyword: "database design", Skill: "Database Design", Category: "database"},
 	{Keyword: "database migrations", Skill: "Database Migrations", Category: "database"},
 	{Keyword: "database optimization", Skill: "Database Optimization", Category: "database"},
 	{Keyword: "database performance", Skill: "Database Performance", Category: "database"},
@@ -251,6 +251,7 @@ var Keywords = []Entry{
 	{Keyword: "android", Skill: "Android", Category: "mobile"},
 	{Keyword: "xamarin", Skill: "Xamarin", Category: "mobile"},
 	{Keyword: "ionic", Skill: "Ionic", Category: "mobile"},
+	{Keyword: "swift", Skill: "Swift", Category: "mobile"},
 
 	// --- tooling ---
 	{Keyword: "git", Skill: "Git", Category: "tooling"},
@@ -317,6 +318,7 @@ var Keywords = []Entry{
 	{Keyword: "code coverage", Skill: "Code Coverage", Category: "testing"},
 	{Keyword: "quality assurance", Skill: "Quality Assurance", Category: "testing"},
 	{Keyword: "load testing", Skill: "Load Testing", Category: "testing"},
+	{Keyword: "performance testing", Skill: "Performance Testing", Category: "testing"},
 	{Keyword: "test automation", Skill: "Test Automation", Category: "testing"},
 	{Keyword: "cucumber", Skill: "Cucumber", Category: "testing"},
 	{Keyword: "playwright", Skill: "Playwright", Category: "testing"},
@@ -493,7 +495,6 @@ var Keywords = []Entry{
 	{Keyword: "mentoring", Skill: "Mentoring", Category: "practices"},
 	{Keyword: "stakeholder management", Skill: "Stakeholder Management", Category: "practices"},
 	{Keyword: "agile delivery", Skill: "Agile Delivery", Category: "practices"},
-	{Keyword: "analysis", Skill: "Analysis", Category: "practices"},
 	{Keyword: "application maintenance", Skill: "Application Maintenance", Category: "practices"},
 	{Keyword: "client collaboration", Skill: "Client Collaboration", Category: "practices"},
 	{Keyword: "client work", Skill: "Client Work", Category: "practices"},
@@ -521,10 +522,8 @@ var Keywords = []Entry{
 	{Keyword: "onboarding", Skill: "Onboarding", Category: "practices"},
 	{Keyword: "operational alignment", Skill: "Operational Alignment", Category: "practices"},
 	{Keyword: "optimization", Skill: "Optimization", Category: "practices"},
-	{Keyword: "performance", Skill: "Performance", Category: "practices"},
 	{Keyword: "performance engineering", Skill: "Performance Engineering", Category: "practices"},
 	{Keyword: "presentation", Skill: "Presentation", Category: "practices"},
-	{Keyword: "process", Skill: "Process", Category: "practices"},
 	{Keyword: "product development", Skill: "Product Development", Category: "practices"},
 	{Keyword: "product engineering", Skill: "Product Engineering", Category: "practices"},
 	{Keyword: "product management", Skill: "Product Management", Category: "practices"},
@@ -532,9 +531,7 @@ var Keywords = []Entry{
 	{Keyword: "project delivery", Skill: "Project Delivery", Category: "practices"},
 	{Keyword: "project handover", Skill: "Project Handover", Category: "practices"},
 	{Keyword: "project management", Skill: "Project Management", Category: "practices"},
-	{Keyword: "quality", Skill: "Quality", Category: "practices"},
 	{Keyword: "remote collaboration", Skill: "Remote Collaboration", Category: "practices"},
-	{Keyword: "review", Skill: "Review", Category: "practices"},
 	{Keyword: "software craft", Skill: "Software Craft", Category: "practices"},
 	{Keyword: "software engineering", Skill: "Software Engineering", Category: "practices"},
 	{Keyword: "stakeholder collaboration", Skill: "Stakeholder Collaboration", Category: "practices"},
@@ -545,9 +542,6 @@ var Keywords = []Entry{
 	{Keyword: "time management", Skill: "Time Management", Category: "practices"},
 	{Keyword: "training", Skill: "Training", Category: "practices"},
 	{Keyword: "workflow design", Skill: "Workflow Design", Category: "practices"},
-	{Keyword: "design", Skill: "Design", Category: "practices"},
-	{Keyword: "product", Skill: "Product", Category: "practices"},
-	{Keyword: "foundation", Skill: "Foundation", Category: "practices"},
 }
 
 // keywordIndex is a pre-built map from lowercase keyword to category for
@@ -596,18 +590,25 @@ func GetCategoryForSkillName(name string) string {
 // word boundaries on both sides. A word boundary is the start/end of the
 // string, any non-alphanumeric character, or a trailing plural "s".
 func containsKeywordAtBoundary(text, keyword string) bool {
-	idx := strings.Index(text, keyword)
-	if idx < 0 {
-		return false
+	offset := 0
+	for {
+		idx := strings.Index(text[offset:], keyword)
+		if idx < 0 {
+			return false
+		}
+		idx += offset
+
+		leftOK := idx == 0 || !isAlphanumeric(rune(text[idx-1]))
+		endPos := idx + len(keyword)
+		rightOK := endPos == len(text) ||
+			!isAlphanumeric(rune(text[endPos])) ||
+			(text[endPos] == 's' && (endPos+1 == len(text) || !isAlphanumeric(rune(text[endPos+1]))))
+
+		if leftOK && rightOK {
+			return true
+		}
+		offset = idx + 1
 	}
-
-	leftOK := idx == 0 || !isAlphanumeric(rune(text[idx-1]))
-	endPos := idx + len(keyword)
-	rightOK := endPos == len(text) ||
-		!isAlphanumeric(rune(text[endPos])) ||
-		(text[endPos] == 's' && (endPos+1 == len(text) || !isAlphanumeric(rune(text[endPos+1]))))
-
-	return leftOK && rightOK
 }
 
 func isAlphanumeric(r rune) bool {

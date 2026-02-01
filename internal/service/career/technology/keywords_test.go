@@ -359,6 +359,54 @@ var _ = Describe("Keywords", func() {
 			It("should still prefer exact match over substring match", func() {
 				Expect(technology.GetCategoryForSkillName("Docker")).To(Equal("devops"))
 			})
+
+			It("should match keyword at second occurrence when first fails boundary", func() {
+				Expect(technology.GetCategoryForSkillName("norest rest")).To(Equal("backend"))
+			})
+		})
+
+		Context("short keyword safety for ai", func() {
+			It("should not false-match ai inside Maintaining", func() {
+				Expect(technology.GetCategoryForSkillName("Maintaining")).To(BeEmpty())
+			})
+
+			It("should not false-match ai inside Email", func() {
+				Expect(technology.GetCategoryForSkillName("Email")).To(BeEmpty())
+			})
+
+			It("should match AI as standalone skill", func() {
+				Expect(technology.GetCategoryForSkillName("AI")).To(Equal("ml"))
+			})
+		})
+
+		Context("short keyword safety for r", func() {
+			It("should match R as standalone skill", func() {
+				Expect(technology.GetCategoryForSkillName("R")).To(Equal("backend"))
+			})
+
+			It("should not false-match r inside Career Development", func() {
+				Expect(technology.GetCategoryForSkillName("Career Development")).To(BeEmpty())
+			})
+		})
+
+		Context("broad keyword priority", func() {
+			It("should categorize Database Design as database not practices", func() {
+				Expect(technology.GetCategoryForSkillName("Database Design")).NotTo(Equal("practices"))
+			})
+
+			It("should categorize Performance Testing as testing not practices", func() {
+				Expect(technology.GetCategoryForSkillName("Performance Testing")).To(Equal("testing"))
+			})
+
+			It("should categorize Data Processing as data not practices", func() {
+				Expect(technology.GetCategoryForSkillName("Data Processing")).To(Equal("data"))
+			})
+		})
+
+		Context("Swift category", func() {
+			It("should categorize Swift as mobile", func() {
+				Expect(technology.GetCategoryForSkillName("Swift")).To(Equal("mobile"))
+			})
 		})
 	})
 })
