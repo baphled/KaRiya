@@ -972,6 +972,53 @@ func (e *TestEnv) GetFacts() []*career.Fact {
 	return facts
 }
 
+// GetSkills returns all skills from the database.
+func (e *TestEnv) GetSkills() []*career.Skill {
+	e.T.Helper()
+
+	skillRepo := e.Service.GetSkillRepository()
+	if skillRepo == nil {
+		e.T.Fatal("skill repository not set")
+	}
+
+	skills, err := skillRepo.List(e.Ctx, nil)
+	if err != nil {
+		e.T.Fatalf("failed to get skills: %v", err)
+	}
+
+	return skills
+}
+
+// AssertSkillCount verifies the number of skills in the database.
+func (e *TestEnv) AssertSkillCount(expected int) *TestEnv {
+	e.T.Helper()
+
+	skills := e.GetSkills()
+
+	if len(skills) != expected {
+		e.T.Errorf("expected %d skills, got %d", expected, len(skills))
+	}
+
+	return e
+}
+
+// AddSkill creates a skill in the database.
+func (e *TestEnv) AddSkill(skill *career.Skill) *TestEnv {
+	e.T.Helper()
+
+	skillRepo := e.Service.GetSkillRepository()
+	if skillRepo == nil {
+		e.T.Fatal("skill repository not set")
+	}
+
+	err := skillRepo.Create(e.Ctx, skill)
+	if err != nil {
+		e.T.Fatalf("failed to create skill: %v", err)
+	}
+
+	return e
+}
+
 // ============================================================================
 // Session Simulation
 // ============================================================================

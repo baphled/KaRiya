@@ -324,25 +324,35 @@ const (
 	// SkillCategoryTooling groups developer productivity tools such as
 	// editors, linters, profilers, build systems, and version control.
 	SkillCategoryTooling SkillCategory = "tooling"
-	// SkillCategoryTesting groups testing frameworks and quality assurance
-	// tools such as Jest, Pytest, Selenium, Cypress, and Ginkgo.
+	// SkillCategoryTesting groups quality assurance technologies such as
+	// test frameworks, assertion libraries, and code coverage tools.
 	SkillCategoryTesting SkillCategory = "testing"
 	// SkillCategoryData groups data engineering technologies such as
-	// Apache Spark, Airflow, Snowflake, dbt, and ETL pipelines.
+	// ETL pipelines, analytics platforms, and business intelligence tools.
 	SkillCategoryData SkillCategory = "data"
-	// SkillCategoryML groups machine learning and AI technologies such as
-	// TensorFlow, PyTorch, scikit-learn, and OpenAI integrations.
+	// SkillCategoryML groups machine learning and artificial intelligence
+	// technologies such as TensorFlow, PyTorch, and LLM tooling.
 	SkillCategoryML SkillCategory = "ml"
-	// SkillCategoryMonitoring groups observability and monitoring tools
-	// such as Prometheus, Grafana, Splunk, Sentry, and PagerDuty.
+	// SkillCategoryMonitoring groups observability technologies such as
+	// Prometheus, Grafana, ELK stack, and alerting systems.
 	SkillCategoryMonitoring SkillCategory = "monitoring"
+	// SkillCategoryArchitecture groups system design patterns and
+	// architectural concepts such as microservices, DDD, and CQRS.
+	SkillCategoryArchitecture SkillCategory = "architecture"
+	// SkillCategorySecurity groups security and compliance technologies
+	// such as OAuth, TLS, encryption, and access control systems.
+	SkillCategorySecurity SkillCategory = "security"
+	// SkillCategoryPractices groups engineering methodologies and practices
+	// such as Agile, TDD, code review, and incident management.
+	SkillCategoryPractices SkillCategory = "practices"
 	// SkillCategoryOther is a catch-all for skills that do not fit neatly
 	// into the predefined categories above.
 	SkillCategoryOther SkillCategory = "other"
 )
 
 // AllSkillCategories returns every defined SkillCategory value in declaration
-// order. Use this for validation checks and exhaustive iterations.
+// order. The returned slice is the single source of truth for all valid skill
+// categories and is used for validation, form dropdowns, and test assertions.
 func AllSkillCategories() []SkillCategory {
 	return []SkillCategory{
 		SkillCategoryBackend,
@@ -356,6 +366,9 @@ func AllSkillCategories() []SkillCategory {
 		SkillCategoryData,
 		SkillCategoryML,
 		SkillCategoryMonitoring,
+		SkillCategoryArchitecture,
+		SkillCategorySecurity,
+		SkillCategoryPractices,
 		SkillCategoryOther,
 	}
 }
@@ -379,6 +392,19 @@ func IsValidSkillCategory(s string) bool {
 	return false
 }
 
+// SkillCategoryStrings returns a string slice of all skill category values
+// in the same order as AllSkillCategories. This is useful for building
+// dynamic error messages and validation feedback.
+func SkillCategoryStrings() []string {
+	cats := AllSkillCategories()
+	result := make([]string, len(cats))
+	for i, c := range cats {
+		result[i] = string(c)
+	}
+	return result
+}
+
+>>>>>>> 49bc64e4 (feat(domain): add architecture, security, practices skill categories)
 // SectionType identifies the kind of content block within a generated CV. The
 // CV renderer uses it to apply the correct layout, ordering, and formatting
 // rules for each block.
