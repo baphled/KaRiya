@@ -2,22 +2,27 @@
 // keyword-based categorization for career technologies.
 package technology
 
-import "strings"
+import (
+	"context"
+	"strings"
 
-// TechnologyKeyword maps a lowercase search keyword to a display-friendly
-// skill name and its canonical category. The keyword is used for
-// case-insensitive matching against user-entered skill names.
-type TechnologyKeyword struct {
+	careerRepo "github.com/baphled/kariya/internal/repository/career"
+)
+
+// Entry maps a lowercase search keyword to a display-friendly skill name
+// and its canonical category. The keyword is used for case-insensitive
+// matching against user-entered skill names.
+type Entry struct {
 	Keyword  string
 	Skill    string
 	Category string
 }
 
-// TechnologyKeywords is the canonical keyword dictionary mapping technology
-// names to their skill categories. Each entry has a lowercase keyword for
-// matching, a display-friendly skill name, and a category from
+// Keywords is the canonical keyword dictionary mapping technology names to
+// their skill categories. Each entry has a lowercase keyword for matching,
+// a display-friendly skill name, and a category from
 // constants.AllSkillCategories().
-var TechnologyKeywords = []TechnologyKeyword{
+var Keywords = []Entry{
 
 	// --- backend (35) ---
 	{Keyword: "go", Skill: "Go", Category: "backend"},
@@ -403,8 +408,8 @@ var TechnologyKeywords = []TechnologyKeyword{
 var keywordIndex map[string]string
 
 func init() {
-	keywordIndex = make(map[string]string, len(TechnologyKeywords))
-	for _, kw := range TechnologyKeywords {
+	keywordIndex = make(map[string]string, len(Keywords))
+	for _, kw := range Keywords {
 		keywordIndex[kw.Keyword] = kw.Category
 	}
 }
@@ -418,4 +423,52 @@ func GetCategoryForSkillName(name string) string {
 		return cat
 	}
 	return ""
+}
+
+// RecategorizeResult summarises the outcome of a bulk skill recategorization.
+type RecategorizeResult struct {
+	Total      int
+	Updated    int
+	Skipped    int
+	NoMatch    int
+	ByCategory map[string]int
+}
+
+// RecategorizeSkills iterates over all skills in the repository and updates
+// their category when the keyword dictionary provides a better match than
+// the current value. Skills that already have the correct category or have
+// no keyword match are left unchanged.
+func RecategorizeSkills(ctx context.Context, repo careerRepo.SkillRepository) (*RecategorizeResult, error) {
+	skills, err := repo.List(ctx, &careerRepo.SkillListFilters{})
+	if err != nil {
+		return nil, err
+	}
+
+	result := &RecategorizeResult{
+		Total:      len(skills),
+		ByCategory: make(map[string]int),
+	}
+
+	for _, skill := range skills {
+		newCategory := GetCategoryForSkillName(skill.Name)
+		if newCategory == "" {
+			result.NoMatch++
+			continue
+		}
+
+		if skill.Category == newCategory {
+			result.Skipped++
+			continue
+		}
+
+		skill.Category = newCategory
+		if err := repo.Update(ctx, skill); err != nil {
+			return nil, err
+		}
+
+		result.Updated++
+		result.ByCategory[newCategory]++
+	}
+
+	return result, nil
 }

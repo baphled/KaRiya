@@ -278,4 +278,29 @@ Mentored junior engineers on best practices,2025-12-22,TechCorp,Training,mentori
 			}
 		})
 	})
+
+	Context("Recategorize Skills Flag", func() {
+		It("should show --recategorize-skills flag in help", func() {
+			var buf, errBuf bytes.Buffer
+			run([]string{"--help"}, &buf, &errBuf)
+
+			Expect(buf.String()).To(ContainSubstring("--recategorize-skills"))
+			Expect(buf.String()).To(ContainSubstring("Re-categorize existing skills"))
+		})
+
+		It("should handle --recategorize-skills with empty database", func() {
+			var buf, errBuf bytes.Buffer
+			exitCode := run([]string{"--in-memory", "--recategorize-skills"}, &buf, &errBuf)
+
+			Expect(exitCode).To(Equal(0))
+			Expect(buf.String()).To(ContainSubstring("Recategorized 0 skills"))
+		})
+
+		It("should show recategorize example in help", func() {
+			var buf, errBuf bytes.Buffer
+			run([]string{"--help"}, &buf, &errBuf)
+
+			Expect(buf.String()).To(ContainSubstring("kariya --recategorize-skills"))
+		})
+	})
 })
