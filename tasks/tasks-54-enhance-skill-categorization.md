@@ -7,7 +7,7 @@ dictionary in `keywords.go` only covers ~224 exact technology tool/framework
 names. Imported skills include practices, architectural patterns, security
 concepts, and engineering methodologies that have no keyword entries.
 
-### Current Distribution
+### Original Distribution (before any work)
 
 | Category   | Count | % of Total |
 |------------|------:|----------:|
@@ -24,20 +24,59 @@ concepts, and engineering methodologies that have no keyword entries.
 | data       |     0 |      0.0% |
 | ml         |     0 |      0.0% |
 
+### Post-Phase 1-4 Distribution (after first recategorization run)
+
+| Category     | Count | % of Total |
+|--------------|------:|----------:|
+| other        |   167 |     54.8% |
+| backend      |    20 |      6.6% |
+| devops       |    15 |      4.9% |
+| frontend     |    15 |      4.9% |
+| practices    |    14 |      4.6% |
+| database     |    13 |      4.3% |
+| architecture |    10 |      3.3% |
+| testing      |    10 |      3.3% |
+| monitoring   |     9 |      3.0% |
+| security     |     9 |      3.0% |
+| tooling      |     9 |      3.0% |
+| data         |     8 |      2.6% |
+| ml           |     4 |      1.3% |
+| cloud        |     2 |      0.7% |
+
+**167 skills remain "other".** Analysis reveals two root causes:
+
+1. **Exact-match-only algorithm** — `GetCategoryForSkillName` requires the
+   entire skill name to match a keyword exactly after lowercasing. "ELK Stack"
+   does not match keyword `"elk"`, "Code Reviews" does not match `"code review"`.
+2. **Missing keywords for compound phrases** — Skills like "Backend Development",
+   "Service Architecture", "Component Library" are multi-word phrases absent
+   from the dictionary.
+
+### Breakdown of 167 Remaining "Other" Skills
+
+| Bucket | Count | Fix Required |
+|--------|------:|--------------|
+| Exact match exists, missed due to bug | 6 | Add missing keywords (`timescaledb`, `kibana`, `logstash`) |
+| Substring match would work | 9 | Improve matching algorithm (contains fallback) |
+| Need new keywords | 124 | Add ~124 keyword entries for compound phrases |
+| Genuinely uncategorizable | 28 | Correct — remain as "other" |
+
 ## Goal
 
-Reduce "other" from 84% to ~28% by:
+Reduce "other" from 84% to ~9% by:
 
 1. Adding 3 new `SkillCategory` constants: `architecture`, `security`,
    `practices`.
-2. Expanding the keyword dictionary with ~130 new entries.
+2. Expanding the keyword dictionary with ~350 entries (initial) + ~130 more.
 3. Adding a `--recategorize-skills` CLI flag to update existing DB skills.
+4. Improving the matching algorithm with substring/contains fallback.
+5. Adding ~124 new compound-phrase keyword entries.
 
 ## Phases
 
 ### Phase 1: New SkillCategory Constants
 
-**Status:** NOT STARTED
+**Status:** DONE (commit `49bc64e4`)
 
 **Files:**
 
@@ -46,16 +85,77 @@ Reduce "other" from 84% to ~28% by:
 
 **Changes:**
 
-- Add `SkillCategoryArchitecture SkillCategory = "architecture"`.
-- Add `SkillCategorySecurity SkillCategory = "security"`.
-- Add `SkillCategoryPractices SkillCategory = "practices"`.
-- Update `AllSkillCategories()` to return 15 (currently 12).
-- `IsValidSkillCategory()` works automatically via `AllSkillCategories`.
+- Added `SkillCategoryArchitecture`, `SkillCategorySecurity`, `SkillCategoryPractices`.
+- Added `AllSkillCategories()`, `IsValidSkillCategory()`, `SkillCategoryStrings()`.
+- Total categories: 15 (was 8).
 
-**No other files need changes.** Domain validation in `skill.go` already calls
-`constants.IsValidSkillCategory()`.
+### Phase 2: Initial Keyword Dictionary
 
-### Phase 2: Expand Keyword Dictionary
+**Status:** DONE (commit `05fa5227`)
+
+**Files:**
+
+- `internal/service/career/technology/keywords.go`
+- `internal/service/career/technology/keywords_test.go`
+
+**Changes:**
+
+- Created `Entry` struct, `Keywords` slice (350 entries), `GetCategoryForSkillName()`.
+- OAuth moved from `tooling` to `security`.
+- 44 tests covering dictionary structure, coverage per category, lookup behavior.
+
+### Phase 3: Recategorization CLI Flag
+
+**Status:** DONE (commit `6a16ca04`)
+
+**Files:**
+
+- `cmd/cli/main.go`
+- `cmd/cli/main_test.go`
+- `internal/service/career/technology/keywords.go` (added `RecategorizeSkills`)
+
+**Changes:**
+
+- Added `RecategorizeResult` struct and `RecategorizeSkills(ctx, repo)` function.
+- Added `--recategorize-skills` CLI flag with summary output.
+- 6 unit tests + 3 CLI tests.
+
+### Phase 4: Update CV Profile Inference
+
+**Status:** DONE (commit `eabaaf94`)
+
+**Files:**
+
+- `internal/service/career/cv/profile_inference.go`
+- `internal/service/career/cv/profile_inference_test.go`
+
+**Changes:**
+
+- Routed `architecture` and `security` to Systems bucket in `InferTechnologies()`.
+- Added expertise checks for architecture and security in `InferCoreStrengths()`.
+- 4 new tests.
+
+### Phase 5: Improve Matching Algorithm
+
+**Status:** IN PROGRESS
+
+**Files:**
+
+- `internal/service/career/technology/keywords.go`
+- `internal/service/career/technology/keywords_test.go`
+
+**Problem:** `GetCategoryForSkillName` uses exact match only. "ELK Stack"
+lowercases to `"elk stack"` but the keyword is `"elk"`.
+
+**Fix:** Add a substring/contains fallback after exact match fails. Must
+guard against short keywords (`"c"`, `"r"`, `"go"`, `"ai"`) matching inside
+unrelated words — only apply substring matching for keywords >= 3 characters,
+or use word-boundary matching.
+
+**Also add missing exact keywords:** `timescaledb`, `kibana`, `logstash`,
+`bubble tea`, `lipgloss`, `cms`, `websocket` (singular).
+
+### Phase 6: Expand Keyword Dictionary for Compound Phrases
 
 **Status:** NOT STARTED
 
@@ -64,105 +164,58 @@ Reduce "other" from 84% to ~28% by:
 - `internal/service/career/technology/keywords.go`
 - `internal/service/career/technology/keywords_test.go`
 
-**New keyword sections (~130 entries):**
+**~124 new keywords needed for compound phrases like:**
 
-| Category       | Count | Examples                                                     |
-|----------------|------:|--------------------------------------------------------------|
-| architecture   |   ~30 | microservices, soa, domain-driven design, distributed systems, system design, scalability, dependency injection, state machine |
-| security       |   ~12 | security, authentication, tls, pki, pci, saml, active directory, compliance, encryption |
-| practices      |   ~30 | agile, tdd, bdd, code review, pair programming, refactoring, code quality, debugging, performance optimization, feature flags |
-| backend        |   ~15 | c, c++, coffeescript, zend, wordpress, sidekiq, ajax, soap, api, api design, websockets |
-| frontend       |    ~8 | backbonejs, responsive design, accessibility, storybook, seo, design systems, visual design |
-| devops         |   ~10 | deployment, infrastructure, server management, system administration, shell, cron, git flow, git hooks, operations, networking |
-| database       |    ~6 | nosql, database migrations, database optimization, database performance, data modeling, data integrity |
-| testing        |    ~8 | ginkgo, gomega, e2e testing, automated testing, testing, code coverage, quality assurance |
-| monitoring     |    ~7 | logging, structured logging, alerting, metrics, observability, monitoring, elk |
-| data           |    ~7 | etl, data processing, data export, data platforms, analytics, business intelligence, reporting |
-| ml             |    ~4 | ai, generative ai, llms, prompt engineering |
-| tooling        |    ~6 | documentation, technical documentation, markdown, xml, json, csv |
+| Category     | Count | Examples |
+|--------------|------:|---------|
+| architecture | ~25   | backend architecture, component architecture, service architecture, asynchronous processing, real-time systems, scalable systems |
+| practices    | ~55   | agile delivery, code standards, collaboration, consulting, delivery management, engineering practices, project management, software engineering |
+| backend      | ~15   | backend development, backend engineering, crud, error handling, full-stack development, web development, serialization |
+| frontend     | ~15   | component library, form components, keyboard navigation, layout design, modal design, ux, user experience |
+| devops       | ~10   | firmware development, incident response, operational support, production support, reliability engineering |
+| tooling      | ~2    | diagramming, technical writing |
+| data         | ~1    | streaming |
 
-**Decision:** Move OAuth from `tooling` to `security` (authentication protocol).
-
-### Phase 3: Recategorization CLI Flag
-
-**Status:** NOT STARTED
-
-**Files:**
-
-- `cmd/cli/main.go`
-- `cmd/cli/main_test.go`
-- `internal/service/career/technology/keywords.go` (add `RecategorizeSkills`)
-
-**CLI usage:**
-
-```
-kariya --recategorize-skills                    # Default DB
-kariya --recategorize-skills --db ./events.db   # Custom DB
-```
-
-**Logic for `RecategorizeSkills(ctx, repo)`:**
-
-1. Load all skills via `repo.List(ctx, nil)`.
-2. For each skill call `GetCategoryForSkillName(skill.Name)`.
-3. If result is non-empty AND differs from current category, update via
-   `repo.Update(ctx, skill)`.
-4. Print summary: `Recategorized N skills (X backend, Y architecture, ...)`.
-5. Skip skills where `GetCategoryForSkillName` returns empty (no match).
-
-Exits after recategorization (does not launch TUI).
-
-### Phase 4: Update CV Profile Inference
-
-**Status:** NOT STARTED
-
-**Files:**
-
-- `internal/service/career/cv/profile_inference.go`
-
-Add awareness of new categories in the skill categorization switch:
-
-- `architecture` counts toward technical/backend weight.
-- `security` counts toward technical weight.
-- `practices` counts toward general technical weight.
-
-### Phase 5: Validation & Cleanup
+### Phase 7: Final Validation
 
 **Status:** NOT STARTED
 
 - `go test ./... -count=1` passes.
 - `staticcheck ./...` no new warnings.
-- `make check-compliance` passes (minus pre-existing violations).
 - Run `kariya --recategorize-skills` against actual DB.
-- Verify: `sqlite3 ~/.kariya/events.db "SELECT category, COUNT(*) FROM skills GROUP BY category ORDER BY count DESC;"`.
+- Verify distribution: `sqlite3 ~/.kariya/events.db "SELECT category, COUNT(*) FROM skills GROUP BY category ORDER BY count DESC;"`.
+- Target: ~28 skills remain "other" (genuinely uncategorizable).
 
-## Expected Outcome
+## Expected Final Outcome
 
-| Category        | Before | After |
-|-----------------|-------:|------:|
-| other           |    257 |   ~85 |
-| practices (new) |      0 |   ~34 |
-| architecture (new) |   0 |   ~30 |
-| backend         |      7 |   ~22 |
-| frontend        |      9 |   ~17 |
-| devops          |      7 |   ~17 |
-| database        |      8 |   ~14 |
-| tooling         |      8 |   ~13 |
-| testing         |      4 |   ~12 |
-| security (new)  |      0 |   ~10 |
-| monitoring      |      3 |   ~10 |
-| data            |      0 |    ~7 |
-| ml              |      0 |    ~4 |
-| cloud           |      2 |    ~3 |
+| Category     | Before | After Phase 4 | After Phase 7 |
+|--------------|-------:|--------------:|--------------:|
+| other        |    257 |           167 |           ~28 |
+| practices    |      0 |            14 |           ~69 |
+| architecture |      0 |            10 |           ~35 |
+| backend      |      7 |            20 |           ~35 |
+| frontend     |      9 |            15 |           ~30 |
+| devops       |      7 |            15 |           ~25 |
+| database     |      8 |            13 |           ~13 |
+| testing      |      4 |            10 |           ~10 |
+| monitoring   |      3 |             9 |           ~12 |
+| security     |      0 |             9 |            ~9 |
+| tooling      |      8 |             9 |           ~11 |
+| data         |      0 |             8 |            ~9 |
+| ml           |      0 |             4 |            ~4 |
+| cloud        |      2 |             2 |            ~2 |
 
 ## Commit Strategy
 
-4-5 atomic commits:
+7 atomic commits:
 
-1. `feat(constants): add architecture, security, practices skill categories`
-2. `feat(technology): expand keyword dictionary with ~130 entries`
-3. `feat(cli): add --recategorize-skills flag for existing skill migration`
-4. `feat(cv): update profile inference for new skill categories`
-5. `test: validate full recategorization flow`
+1. `feat(domain): add architecture, security, practices skill categories` — DONE
+2. `feat(service): add keyword dictionary with 350 entries` — DONE
+3. `feat(cli): add --recategorize-skills flag` — DONE
+4. `feat(cv): update profile inference for new categories` — DONE
+5. `fix(service): add substring matching fallback to keyword lookup`
+6. `feat(service): expand keyword dictionary with compound phrase entries`
+7. `docs(tasks): update task 54 status after final validation`
 
 ## Risks & Notes
 
@@ -172,7 +225,10 @@ Add awareness of new categories in the skill categorization switch:
   not an enum. New values work immediately.
 - **CV rendering:** `buildGroupedSkills` dynamically groups by category string.
   New categories appear automatically with no renderer changes.
-- **~85 skills remain "other":** These are genuinely uncategorizable (soft
+- **Short keyword safety:** Substring matching must not allow 1-2 char keywords
+  (`"c"`, `"r"`, `"go"`, `"ai"`) to match inside unrelated words. Use a minimum
+  keyword length threshold or word-boundary matching.
+- **~28 skills remain "other":** These are genuinely uncategorizable (soft
   skills, domain knowledge, niche tech like IRC/WAP/ShoutCast). Acceptable.
 - **Dependency:** Builds on Phase 14 of Task 47 (skill category normalization)
   which unified the 12 canonical categories.

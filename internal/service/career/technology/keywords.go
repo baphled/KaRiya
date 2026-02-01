@@ -4,7 +4,9 @@ package technology
 
 import (
 	"context"
+	"sort"
 	"strings"
+	"unicode"
 
 	careerRepo "github.com/baphled/kariya/internal/repository/career"
 )
@@ -407,22 +409,64 @@ var Keywords = []Entry{
 // constant-time lookups. It is built once at package init.
 var keywordIndex map[string]string
 
+// substringKeywords holds keywords sorted by length descending for substring
+// matching. Longer keywords are checked first so that more specific matches
+// take priority (e.g. "event-driven" before "event").
+var substringKeywords []string
+
 func init() {
 	keywordIndex = make(map[string]string, len(Keywords))
 	for _, kw := range Keywords {
 		keywordIndex[kw.Keyword] = kw.Category
 	}
+
+	substringKeywords = make([]string, 0, len(keywordIndex))
+	for kw := range keywordIndex {
+		substringKeywords = append(substringKeywords, kw)
+	}
+	sort.Slice(substringKeywords, func(i, j int) bool {
+		return len(substringKeywords[i]) > len(substringKeywords[j])
+	})
 }
 
 // GetCategoryForSkillName performs a case-insensitive lookup of the given
-// skill name against the keyword dictionary. It returns the matching
-// category string, or an empty string if no match is found.
+// skill name against the keyword dictionary. It first tries an exact match,
+// then falls back to substring matching with word-boundary checks.
 func GetCategoryForSkillName(name string) string {
 	lower := strings.ToLower(name)
 	if cat, ok := keywordIndex[lower]; ok {
 		return cat
 	}
+
+	for _, kw := range substringKeywords {
+		if containsKeywordAtBoundary(lower, kw) {
+			return keywordIndex[kw]
+		}
+	}
+
 	return ""
+}
+
+// containsKeywordAtBoundary checks whether keyword appears in text with
+// word boundaries on both sides. A word boundary is the start/end of the
+// string, any non-alphanumeric character, or a trailing plural "s".
+func containsKeywordAtBoundary(text, keyword string) bool {
+	idx := strings.Index(text, keyword)
+	if idx < 0 {
+		return false
+	}
+
+	leftOK := idx == 0 || !isAlphanumeric(rune(text[idx-1]))
+	endPos := idx + len(keyword)
+	rightOK := endPos == len(text) ||
+		!isAlphanumeric(rune(text[endPos])) ||
+		(text[endPos] == 's' && (endPos+1 == len(text) || !isAlphanumeric(rune(text[endPos+1]))))
+
+	return leftOK && rightOK
+}
+
+func isAlphanumeric(r rune) bool {
+	return unicode.IsLetter(r) || unicode.IsDigit(r)
 }
 
 // RecategorizeResult summarises the outcome of a bulk skill recategorization.

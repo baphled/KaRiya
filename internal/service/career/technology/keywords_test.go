@@ -255,5 +255,37 @@ var _ = Describe("Keywords", func() {
 		It("should return cloud for AWS", func() {
 			Expect(technology.GetCategoryForSkillName("AWS")).To(Equal("cloud"))
 		})
+
+		Context("substring matching fallback", func() {
+			It("should match when keyword is a substring of skill name", func() {
+				Expect(technology.GetCategoryForSkillName("ELK Stack")).To(Equal("monitoring"))
+			})
+
+			It("should match plural/suffix variants", func() {
+				Expect(technology.GetCategoryForSkillName("Code Reviews")).To(Equal("practices"))
+			})
+
+			It("should match keyword prefix in compound names", func() {
+				Expect(technology.GetCategoryForSkillName("Zend Framework")).To(Equal("backend"))
+			})
+
+			It("should match compound skill names with existing keywords", func() {
+				Expect(technology.GetCategoryForSkillName("REST API")).To(Equal("backend"))
+			})
+
+			It("should match hyphenated compound names", func() {
+				Expect(technology.GetCategoryForSkillName("Event-driven Architecture")).To(Equal("architecture"))
+			})
+
+			It("should not false-match short keywords inside unrelated words", func() {
+				Expect(technology.GetCategoryForSkillName("Communication")).To(BeEmpty())
+				Expect(technology.GetCategoryForSkillName("Logistics Systems")).To(BeEmpty())
+				Expect(technology.GetCategoryForSkillName("Career Development")).To(BeEmpty())
+			})
+
+			It("should still prefer exact match over substring match", func() {
+				Expect(technology.GetCategoryForSkillName("Docker")).To(Equal("devops"))
+			})
+		})
 	})
 })
