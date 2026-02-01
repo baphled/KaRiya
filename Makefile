@@ -80,9 +80,16 @@ check-docblocks:
 	@echo "✅ Docblocks: all checks passed."
 
 # Check fixture usage enforcement (no inline career.* structs in test files)
-check-fixtures:
-	@echo "Running fixture usage analyzer..."
+# Build noinlinecareer analyzer only when source changes (cached build)
+bin/noinlinecareer: cmd/noinlinecareer/main.go tools/analyzers/noinlinecareer/analyzer.go
+	@echo "Building noinlinecareer analyzer..."
+	@mkdir -p bin
 	@go build -o ./bin/noinlinecareer ./cmd/noinlinecareer
+	@echo "✅ Analyzer binary built."
+
+# Check fixture usage (fast - uses cached binary)
+check-fixtures: bin/noinlinecareer
+	@echo "Running fixture usage analyzer..."
 	@go vet -vettool=./bin/noinlinecareer ./...
 	@echo "✅ Fixture usage: all checks passed."
 
