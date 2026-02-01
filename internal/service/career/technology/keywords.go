@@ -5,7 +5,7 @@ import "strings"
 // TechnologyKeyword maps a search keyword to its canonical skill.
 // Keywords are lowercase for case-insensitive matching.
 // Skills use canonical names for display (e.g., "Go", "PostgreSQL").
-type TechnologyKeyword struct {
+type TechnologyKeyword struct { //nolint:revive // renaming would break all consumers of this type
 	Keyword  string // Lowercase search term for matching (e.g., "golang")
 	Skill    string // Canonical skill name for display (e.g., "Go")
 	Category string // Skill category: backend, frontend, database, devops, cloud, mobile, tooling, testing, ml, data, monitoring, other
@@ -326,7 +326,7 @@ func GetCategoryForSkillName(name string) string {
 	lower := strings.ToLower(name)
 
 	for _, kw := range technologyKeywords {
-		if strings.ToLower(kw.Skill) == lower || kw.Keyword == lower {
+		if strings.EqualFold(kw.Skill, lower) || kw.Keyword == lower {
 			return kw.Category
 		}
 	}

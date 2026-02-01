@@ -60,38 +60,11 @@ func (s *DefaultSkillInferenceService) InferSkillsFromEvents(
 		return &InferenceResult{Suggestions: []SkillSuggestion{}}, nil
 	}
 
-	suggestionMap := make(map[string]*SkillSuggestion)
+	suggestionMap := s.buildSuggestionMap(events)
 
-	for _, event := range events {
-		detectedSkills := s.detectSkillsInText(event.Text, event.ID)
-
-		for _, detected := range detectedSkills {
-			if existing, found := suggestionMap[detected.Name]; found {
-				existing.EventIDs = append(existing.EventIDs, detected.EventIDs...)
-				existing.Contexts = append(existing.Contexts, detected.Contexts...)
-
-				if detected.Confidence > existing.Confidence {
-					existing.Confidence = detected.Confidence
-				}
-
-				if len(existing.Contexts) > 3 {
-					existing.Contexts = existing.Contexts[:3]
-				}
-			} else {
-				suggestionMap[detected.Name] = detected
-			}
-		}
-	}
-
-	var existingNames []string
-
-	if s.skillRepo != nil {
-		for name := range suggestionMap {
-			existing, _ := s.skillRepo.GetByName(ctx, name)
-			if existing != nil {
-				existingNames = append(existingNames, name)
-			}
-		}
+	existingNames, err := s.findExistingSkillNames(ctx, suggestionMap)
+	if err != nil {
+		return nil, err
 	}
 
 	suggestions := make([]SkillSuggestion, 0, len(suggestionMap))
@@ -103,6 +76,63 @@ func (s *DefaultSkillInferenceService) InferSkillsFromEvents(
 		Suggestions:        suggestions,
 		ExistingSkillNames: existingNames,
 	}, nil
+}
+
+func (s *DefaultSkillInferenceService) buildSuggestionMap(events []*career.Event) map[string]*SkillSuggestion {
+	suggestionMap := make(map[string]*SkillSuggestion)
+
+	for _, event := range events {
+		detectedSkills := s.detectSkillsInText(event.Text, event.ID)
+
+		for _, detected := range detectedSkills {
+			s.mergeSuggestion(suggestionMap, detected)
+		}
+	}
+
+	return suggestionMap
+}
+
+func (s *DefaultSkillInferenceService) mergeSuggestion(suggestionMap map[string]*SkillSuggestion, detected *SkillSuggestion) {
+	existing, found := suggestionMap[detected.Name]
+	if !found {
+		suggestionMap[detected.Name] = detected
+		return
+	}
+
+	existing.EventIDs = append(existing.EventIDs, detected.EventIDs...)
+	existing.Contexts = append(existing.Contexts, detected.Contexts...)
+
+	if detected.Confidence > existing.Confidence {
+		existing.Confidence = detected.Confidence
+	}
+
+	if len(existing.Contexts) > 3 {
+		existing.Contexts = existing.Contexts[:3]
+	}
+}
+
+func (s *DefaultSkillInferenceService) findExistingSkillNames(
+	ctx context.Context,
+	suggestionMap map[string]*SkillSuggestion,
+) ([]string, error) {
+	if s.skillRepo == nil {
+		return nil, nil
+	}
+
+	var existingNames []string
+
+	for name := range suggestionMap {
+		existing, err := s.skillRepo.GetByName(ctx, name)
+		if err != nil && !errors.Is(err, career_repo.ErrSkillNotFound) {
+			return nil, fmt.Errorf("failed to check existing skill %s: %w", name, err)
+		}
+
+		if existing != nil {
+			existingNames = append(existingNames, name)
+		}
+	}
+
+	return existingNames, nil
 }
 
 // InferSkillsFromBurst analyzes events within a specific burst.
@@ -142,7 +172,7 @@ func (s *DefaultSkillInferenceService) InferSkillsFromBurst(
 // 1. Convert text to lowercase for matching
 // 2. For each keyword in dictionary, check word boundary match
 // 3. If match found, extract context and create suggestion
-// 4. Return all detected skills (deduplication happens in caller)
+// 4. Return all detected skills (deduplication happens in caller).
 func (s *DefaultSkillInferenceService) detectSkillsInText(
 	text string,
 	eventID string,
@@ -190,16 +220,16 @@ func (s *DefaultSkillInferenceService) extractContext(text string, keyword strin
 	start := max(0, keywordIndex-40)
 	end := min(len(text), keywordIndex+len(keyword)+40)
 
-	context := strings.TrimSpace(text[start:end])
+	snippet := strings.TrimSpace(text[start:end])
 
 	if start > 0 {
-		context = "..." + context
+		snippet = "..." + snippet
 	}
 	if end < len(text) {
-		context = context + "..."
+		snippet += "..."
 	}
 
-	return context
+	return snippet
 }
 
 // calculateConfidence scores skill detection based on usage patterns in text.
@@ -219,26 +249,50 @@ func (s *DefaultSkillInferenceService) extractContext(text string, keyword strin
 //   - keyword + ("project"|"system"|"application"|"service")
 //   - ("migrated to"|"integrated") + keyword
 //
-// Low Confidence (0.5): Simple keyword presence without context
+// Low Confidence (0.5): Simple keyword presence without context.
 func (s *DefaultSkillInferenceService) calculateConfidence(text string, keyword string) float64 {
 	lowerText := strings.ToLower(text)
 
-	if s.containsPattern(lowerText, []string{"built", "with", keyword}) ||
+	if s.matchesHighConfidencePattern(lowerText, keyword) {
+		return 0.95
+	}
+
+	if s.matchesMediumConfidencePattern(lowerText, keyword) {
+		return 0.75
+	}
+
+	return 0.5
+}
+
+func (s *DefaultSkillInferenceService) matchesHighConfidencePattern(lowerText, keyword string) bool {
+	return s.matchesActiveUsagePattern(lowerText, keyword) ||
+		s.matchesDirectUsagePattern(lowerText, keyword) ||
+		s.matchesExpertisePattern(lowerText, keyword)
+}
+
+func (s *DefaultSkillInferenceService) matchesActiveUsagePattern(lowerText, keyword string) bool {
+	return s.containsPattern(lowerText, []string{"built", "with", keyword}) ||
 		s.containsPattern(lowerText, []string{"built", "using", keyword}) ||
 		s.containsPattern(lowerText, []string{"developed", "in", keyword}) ||
 		s.containsPattern(lowerText, []string{"developed", "using", keyword}) ||
 		s.containsPattern(lowerText, []string{"implemented", "in", keyword}) ||
-		s.containsPattern(lowerText, []string{"implemented", "using", keyword}) ||
-		strings.Contains(lowerText, "wrote "+keyword) ||
+		s.containsPattern(lowerText, []string{"implemented", "using", keyword})
+}
+
+func (s *DefaultSkillInferenceService) matchesDirectUsagePattern(lowerText, keyword string) bool {
+	return strings.Contains(lowerText, "wrote "+keyword) ||
 		strings.Contains(lowerText, "using "+keyword) ||
 		strings.Contains(lowerText, keyword+" developer") ||
-		strings.Contains(lowerText, keyword+" engineer") ||
-		s.containsPattern(lowerText, []string{"expert", "in", keyword}) ||
-		s.containsPattern(lowerText, []string{"proficient", "in", keyword}) {
-		return 0.95
-	}
+		strings.Contains(lowerText, keyword+" engineer")
+}
 
-	if s.containsPattern(lowerText, []string{"worked", "with", keyword}) ||
+func (s *DefaultSkillInferenceService) matchesExpertisePattern(lowerText, keyword string) bool {
+	return s.containsPattern(lowerText, []string{"expert", "in", keyword}) ||
+		s.containsPattern(lowerText, []string{"proficient", "in", keyword})
+}
+
+func (s *DefaultSkillInferenceService) matchesMediumConfidencePattern(lowerText, keyword string) bool {
+	return s.containsPattern(lowerText, []string{"worked", "with", keyword}) ||
 		s.containsPattern(lowerText, []string{"working", "with", keyword}) ||
 		s.containsPattern(lowerText, []string{"experience", "with", keyword}) ||
 		strings.Contains(lowerText, keyword+" project") ||
@@ -246,17 +300,13 @@ func (s *DefaultSkillInferenceService) calculateConfidence(text string, keyword 
 		strings.Contains(lowerText, keyword+" application") ||
 		strings.Contains(lowerText, keyword+" service") ||
 		strings.Contains(lowerText, "migrated to "+keyword) ||
-		strings.Contains(lowerText, "integrated "+keyword) {
-		return 0.75
-	}
-
-	return 0.5
+		strings.Contains(lowerText, "integrated "+keyword)
 }
 
 // containsPattern checks if text contains all words in the pattern (in order, with reasonable proximity).
 // Words must appear within maxWordsApart (default 3) of each other to match.
 // Example: containsPattern("built API with Go", ["built", "with", "go"]) returns true
-// Example: containsPattern("built API with PostgreSQL after working with Go", ["built", "with", "go"]) returns false (too far apart)
+// Example: containsPattern("built API with PostgreSQL after working with Go", ["built", "with", "go"]) returns false (too far apart).
 func (s *DefaultSkillInferenceService) containsPattern(text string, words []string) bool {
 	const maxWordsApart = 3 // Maximum number of words allowed between pattern words
 
@@ -321,52 +371,81 @@ func (s *DefaultSkillInferenceService) CreateSkillsFromSuggestions(
 			return nil, ctx.Err()
 		}
 
-		lastUsed, err := s.getMostRecentEventDate(ctx, suggestion.EventIDs)
+		skill, err := s.persistSuggestion(ctx, suggestion)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get event dates for skill %s: %w", suggestion.Name, err)
+			return nil, err
 		}
 
-		existingSkill, err := s.skillRepo.GetByName(ctx, suggestion.Name)
-		if err != nil && !errors.Is(err, career_repo.ErrSkillNotFound) {
-			return nil, fmt.Errorf("failed to check existing skill %s: %w", suggestion.Name, err)
-		}
-
-		var skill *career.Skill
-
-		if existingSkill != nil {
-			existingSkill.LastUsed = lastUsed
-
-			if err := s.skillRepo.Update(ctx, existingSkill); err != nil {
-				return nil, fmt.Errorf("failed to update skill %s: %w", suggestion.Name, err)
-			}
-
-			skill = existingSkill
-		} else {
-			newSkill := &career.Skill{
-				Name:      suggestion.Name,
-				Category:  suggestion.Category,
-				LastUsed:  lastUsed,
-				CreatedAt: time.Now(),
-				UpdatedAt: time.Now(),
-			}
-
-			if err := s.skillRepo.Create(ctx, newSkill); err != nil {
-				return nil, fmt.Errorf("failed to create skill %s: %w", suggestion.Name, err)
-			}
-
-			skill = newSkill
-		}
-
-		for _, eventID := range suggestion.EventIDs {
-			if err := s.eventRepo.LinkSkill(ctx, eventID, skill.ID); err != nil {
-				return nil, fmt.Errorf("failed to link skill %s to event %s: %w", skill.Name, eventID, err)
-			}
+		if err := s.linkSkillToEvents(ctx, skill, suggestion.EventIDs); err != nil {
+			return nil, err
 		}
 
 		skills = append(skills, skill)
 	}
 
 	return skills, nil
+}
+
+func (s *DefaultSkillInferenceService) persistSuggestion(ctx context.Context, suggestion SkillSuggestion) (*career.Skill, error) {
+	lastUsed, err := s.getMostRecentEventDate(ctx, suggestion.EventIDs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get event dates for skill %s: %w", suggestion.Name, err)
+	}
+
+	existingSkill, err := s.skillRepo.GetByName(ctx, suggestion.Name)
+	if err != nil && !errors.Is(err, career_repo.ErrSkillNotFound) {
+		return nil, fmt.Errorf("failed to check existing skill %s: %w", suggestion.Name, err)
+	}
+
+	if existingSkill != nil {
+		return s.updateExistingSkill(ctx, existingSkill, lastUsed)
+	}
+
+	return s.createNewSkill(ctx, suggestion, lastUsed)
+}
+
+func (s *DefaultSkillInferenceService) updateExistingSkill(
+	ctx context.Context,
+	skill *career.Skill,
+	lastUsed *time.Time,
+) (*career.Skill, error) {
+	skill.LastUsed = lastUsed
+
+	if err := s.skillRepo.Update(ctx, skill); err != nil {
+		return nil, fmt.Errorf("failed to update skill %s: %w", skill.Name, err)
+	}
+
+	return skill, nil
+}
+
+func (s *DefaultSkillInferenceService) createNewSkill(
+	ctx context.Context,
+	suggestion SkillSuggestion,
+	lastUsed *time.Time,
+) (*career.Skill, error) {
+	newSkill := &career.Skill{
+		Name:      suggestion.Name,
+		Category:  suggestion.Category,
+		LastUsed:  lastUsed,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	if err := s.skillRepo.Create(ctx, newSkill); err != nil {
+		return nil, fmt.Errorf("failed to create skill %s: %w", suggestion.Name, err)
+	}
+
+	return newSkill, nil
+}
+
+func (s *DefaultSkillInferenceService) linkSkillToEvents(ctx context.Context, skill *career.Skill, eventIDs []string) error {
+	for _, eventID := range eventIDs {
+		if err := s.eventRepo.LinkSkill(ctx, eventID, skill.ID); err != nil {
+			return fmt.Errorf("failed to link skill %s to event %s: %w", skill.Name, eventID, err)
+		}
+	}
+
+	return nil
 }
 
 // dedupeSuggestions merges suggestions with the same name (case-insensitive).
@@ -416,7 +495,7 @@ func (s *DefaultSkillInferenceService) dedupeSuggestions(suggestions []SkillSugg
 // Returns pointer to time (matching Skill.LastUsed type).
 func (s *DefaultSkillInferenceService) getMostRecentEventDate(ctx context.Context, eventIDs []string) (*time.Time, error) {
 	if len(eventIDs) == 0 {
-		return nil, nil
+		return nil, nil //nolint:nilnil // nil time pointer is semantically correct: no events means no last-used date
 	}
 
 	var mostRecent time.Time

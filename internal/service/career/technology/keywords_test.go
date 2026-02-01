@@ -84,7 +84,7 @@ var _ = Describe("TechnologyKeywords", func() {
 			keywords := technology.GetTechnologyKeywords()
 			keywordMap := technology.GetKeywordMap()
 
-			Expect(len(keywordMap)).To(Equal(len(keywords)),
+			Expect(keywordMap).To(HaveLen(len(keywords)),
 				"Map should have same count as slice")
 		})
 

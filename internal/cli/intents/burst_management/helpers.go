@@ -267,12 +267,11 @@ func (i *Intent) RefreshData() tea.Cmd {
 }
 
 // loadBurstEvents loads career events for the given burst.
-func (i *Intent) loadBurstEvents(burst *career.Burst) []*career.Event {
+func (i *Intent) loadBurstEvents(ctx context.Context, burst *career.Burst) []*career.Event {
 	if burst == nil || i.context.Service == nil {
 		return []*career.Event{}
 	}
 
-	ctx := i.getContext()
 	events := make([]*career.Event, 0, len(burst.EventIDs))
 
 	for _, eventID := range burst.EventIDs {
@@ -477,7 +476,7 @@ func (i *Intent) GetContextHelp() string {
 }
 
 // showBurstDetailModal creates and shows the burst detail modal.
-// Note: viewedBursts tracking is handled by HandleNavigate, not here.
+// The viewedBursts tracking is handled by HandleNavigate, not here.
 func (i *Intent) showBurstDetailModal(burst *career.Burst) tea.Cmd {
 	i.selectedBurst = burst
 	width, height := i.getTerminalDimensions()
@@ -843,7 +842,7 @@ func (i *Intent) createBurstDetectionCmd(
 
 		if len(eventIDs) == 0 {
 			return BurstSuggestionsLoadedMsg{
-				Error: fmt.Errorf("no unassigned events available for burst detection"),
+				Error: errors.New("no unassigned events available for burst detection"),
 			}
 		}
 
@@ -986,7 +985,7 @@ func (i *Intent) saveAndExtractBurstWithResult(suggestion burstfact.BurstSuggest
 func (i *Intent) extractFactsForBurst(burst *career.Burst) tea.Cmd {
 	if burst == nil {
 		return func() tea.Msg {
-			return FactExtractionCompleteMsg{Error: fmt.Errorf("no burst provided")}
+			return FactExtractionCompleteMsg{Error: errors.New("no burst provided")}
 		}
 	}
 
@@ -1043,7 +1042,7 @@ func (i *Intent) extractFactsForBurst(burst *career.Burst) tea.Cmd {
 func (i *Intent) inferSkillsFromBurst(burst *career.Burst) tea.Cmd {
 	if burst == nil {
 		return func() tea.Msg {
-			return SkillSuggestionsErrorMsg{Err: fmt.Errorf("no burst provided")}
+			return SkillSuggestionsErrorMsg{Err: errors.New("no burst provided")}
 		}
 	}
 
@@ -1065,13 +1064,12 @@ func (i *Intent) inferSkillsFromBurst(burst *career.Burst) tea.Cmd {
 		}
 
 		if service == nil {
-			return SkillSuggestionsErrorMsg{Err: fmt.Errorf("skill inference service not available")}
+			return SkillSuggestionsErrorMsg{Err: errors.New("skill inference service not available")}
 		}
 
-		// Load events for this burst.
-		events := i.loadBurstEvents(burst)
+		events := i.loadBurstEvents(ctx, burst)
 		if len(events) == 0 {
-			return SkillSuggestionsErrorMsg{Err: fmt.Errorf("no events found for burst")}
+			return SkillSuggestionsErrorMsg{Err: errors.New("no events found for burst")}
 		}
 
 		if ctx.Err() != nil {

@@ -4,7 +4,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
@@ -89,10 +88,8 @@ var _ = Describe("Classifier", func() {
 	Context("Soft Skill Classification", func() {
 		DescribeTable("Soft Skill Event Classification",
 			func(eventText string, tags []string, expectedCategory CompetencyCategory) {
-				event := &career.Event{
-					Text: eventText,
-					Tags: tags,
-				}
+				event := fixtures.EventWith("", eventText, "", "")
+				event.Tags = tags
 
 				category := classifier.Classify(event)
 				Expect(category).To(Equal(expectedCategory))
@@ -126,10 +123,8 @@ var _ = Describe("Classifier", func() {
 
 		DescribeTable("Soft Skill Keyword Detection",
 			func(eventText string, expectedCategory CompetencyCategory) {
-				event := &career.Event{
-					Text: eventText,
-					Tags: []string{},
-				}
+				event := fixtures.EventWith("", eventText, "", "")
+				event.Tags = []string{}
 
 				category := classifier.Classify(event)
 				Expect(category).To(Equal(expectedCategory))

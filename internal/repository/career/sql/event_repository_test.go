@@ -284,21 +284,17 @@ var _ = Describe("Event Repository", func() {
 
 	Describe("LinkSkill", func() {
 		It("should link a skill to an event", func() {
-			event := &career.Event{
-				ID:   "event-1",
-				Text: "Test event",
-				Date: time.Now(),
-			}
+			event := fixtures.EventWith("event-1", "Test event", "", "")
 			err := repo.Create(ctx, event)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 
 			// Link a skill to the event
 			err = repo.LinkSkill(ctx, "event-1", "skill-1")
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 
 			// Verify the skill was linked
 			retrieved, err := repo.GetByID(ctx, "event-1")
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(retrieved.Skills).To(ContainElement("skill-1"))
 		})
 
@@ -308,22 +304,18 @@ var _ = Describe("Event Repository", func() {
 		})
 
 		It("should not duplicate skill if already linked", func() {
-			event := &career.Event{
-				ID:     "event-1",
-				Text:   "Test event",
-				Date:   time.Now(),
-				Skills: []string{"skill-1"},
-			}
+			event := fixtures.EventWith("event-1", "Test event", "", "")
+			event.Skills = []string{"skill-1"}
 			err := repo.Create(ctx, event)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 
 			// Try to link the same skill again
 			err = repo.LinkSkill(ctx, "event-1", "skill-1")
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 
 			// Verify skill appears only once
 			retrieved, err := repo.GetByID(ctx, "event-1")
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(retrieved.Skills).To(HaveLen(1))
 			Expect(retrieved.Skills).To(ContainElement("skill-1"))
 		})

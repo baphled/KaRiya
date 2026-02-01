@@ -38,7 +38,7 @@ type InferenceResult struct {
 //
 //	// Review result.Suggestions in UI, show result.ExistingSkillNames as info
 //	skills, err := service.CreateSkillsFromSuggestions(ctx, acceptedSuggestions)
-type SkillInferenceService interface {
+type SkillInferenceService interface { //nolint:revive // renaming would break all consumers of this interface
 	// InferSkillsFromEvents analyzes all events for technology mentions.
 	// Returns an InferenceResult containing new skill suggestions and
 	// names of skills that already exist in the repository.

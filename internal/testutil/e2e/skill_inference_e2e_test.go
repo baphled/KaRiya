@@ -285,37 +285,44 @@ func executeSkillsBatchCmd(cmd tea.Cmd) []tea.Msg {
 	}
 	msg := cmd()
 	if batchMsg, ok := msg.(tea.BatchMsg); ok {
-		var wg sync.WaitGroup
-		var mu sync.Mutex
-		var messages []tea.Msg
-		for _, batchCmd := range batchMsg {
-			if batchCmd == nil {
-				continue
-			}
-			wg.Add(1)
-			go func(c tea.Cmd) {
-				defer wg.Done()
-				if result := c(); result != nil {
-					if _, isTick := result.(feedback.ModalSpinnerTickMsg); !isTick {
-						mu.Lock()
-						messages = append(messages, result)
-						mu.Unlock()
-					}
-				}
-			}(batchCmd)
-		}
-		done := make(chan struct{})
-		go func() { wg.Wait(); close(done) }()
-		select {
-		case <-done:
-		case <-time.After(5 * time.Second):
-		}
-		return messages
+		return executeBatchMessages(batchMsg)
 	}
 	if _, isTick := msg.(feedback.ModalSpinnerTickMsg); isTick {
 		return nil
 	}
 	return []tea.Msg{msg}
+}
+
+func executeBatchMessages(batchMsg tea.BatchMsg) []tea.Msg {
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	var messages []tea.Msg
+	for _, batchCmd := range batchMsg {
+		if batchCmd == nil {
+			continue
+		}
+		wg.Add(1)
+		go func(c tea.Cmd) {
+			defer wg.Done()
+			result := c()
+			if result == nil {
+				return
+			}
+			if _, isTick := result.(feedback.ModalSpinnerTickMsg); isTick {
+				return
+			}
+			mu.Lock()
+			messages = append(messages, result)
+			mu.Unlock()
+		}(batchCmd)
+	}
+	done := make(chan struct{})
+	go func() { wg.Wait(); close(done) }()
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+	}
+	return messages
 }
 
 var _ = Describe("E2E Accept All Suggested Skills from ManageSkills", func() {
@@ -379,7 +386,7 @@ var _ = Describe("E2E Accept All Suggested Skills from ManageSkills", func() {
 			}
 		}
 		Expect(suggestionsMsg.Error).NotTo(HaveOccurred())
-		Expect(len(suggestionsMsg.Suggestions)).To(BeNumerically(">", 0), "inference should detect at least 1 skill from events")
+		Expect(suggestionsMsg.Suggestions).ToNot(BeEmpty(), "inference should detect at least 1 skill from events")
 
 		skillsIntent.Update(suggestionsMsg)
 		Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateSkillSuggestionReview))
@@ -406,7 +413,7 @@ var _ = Describe("E2E Accept All Suggested Skills from ManageSkills", func() {
 			}
 		}
 		Expect(createdMsg.Error).NotTo(HaveOccurred(), "skill creation should succeed")
-		Expect(len(createdMsg.Skills)).To(BeNumerically(">", 0), "at least 1 skill should be created")
+		Expect(createdMsg.Skills).ToNot(BeEmpty(), "at least 1 skill should be created")
 
 		// 8. Feed SkillsCreatedMsg to intent, which shows success modal and triggers refresh.
 		refreshCmd := skillsIntent.Update(createdMsg)
@@ -419,19 +426,19 @@ var _ = Describe("E2E Accept All Suggested Skills from ManageSkills", func() {
 		loadedMsg, ok := refreshMsg.(skillsmgmt.SkillsLoadedMsg)
 		Expect(ok).To(BeTrue(), "refresh should return SkillsLoadedMsg")
 		Expect(loadedMsg.Error).NotTo(HaveOccurred())
-		Expect(len(loadedMsg.Skills)).To(Equal(len(createdMsg.Skills)), "loaded skills should match created skills")
+		Expect(loadedMsg.Skills).To(HaveLen(len(createdMsg.Skills)), "loaded skills should match created skills")
 
 		// 10. Feed SkillsLoadedMsg while feedback modal is visible (exercises the bypass fix).
 		skillsIntent.Update(loadedMsg)
 
 		// 11. Assert skills are in the intent's list.
 		intentSkills := skillsIntent.GetSkills()
-		Expect(len(intentSkills)).To(Equal(len(createdMsg.Skills)), "intent should have all created skills")
+		Expect(intentSkills).To(HaveLen(len(createdMsg.Skills)), "intent should have all created skills")
 
 		// 12. Assert skills are actually persisted in the repository.
 		repoSkills, err := skillRepo.List(context.Background(), nil)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(len(repoSkills)).To(Equal(len(createdMsg.Skills)), "repository should have all created skills")
+		Expect(repoSkills).To(HaveLen(len(createdMsg.Skills)), "repository should have all created skills")
 
 		// 13. Verify skill names match what was suggested.
 		skillNames := make(map[string]bool)

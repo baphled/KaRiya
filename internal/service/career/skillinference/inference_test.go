@@ -155,7 +155,7 @@ var _ = Describe("SkillInferenceService Interface", func() {
 
 		It("should return error as second return value", func() {
 			result, err := mockService.InferSkillsFromEvents(ctx, nil)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(result).NotTo(BeNil())
 		})
 	})

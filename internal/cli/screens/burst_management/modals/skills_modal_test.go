@@ -7,6 +7,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens/burst_management/modals"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -23,24 +24,9 @@ var _ = Describe("BurstSkillsModal", func() {
 		burstID = "test-burst-id"
 		burstName = "Backend Development"
 		skills = []*career.Skill{
-			{
-				ID:       "s1",
-				Name:     "Go",
-				Category: "Programming Languages",
-				Level:    "advanced",
-			},
-			{
-				ID:       "s2",
-				Name:     "Docker",
-				Category: "DevOps",
-				Level:    "intermediate",
-			},
-			{
-				ID:       "s3",
-				Name:     "PostgreSQL",
-				Category: "Databases",
-				Level:    "advanced",
-			},
+			fixtures.SkillWith("s1", "Go", "Programming Languages", "advanced"),
+			fixtures.SkillWith("s2", "Docker", "DevOps", "intermediate"),
+			fixtures.SkillWith("s3", "PostgreSQL", "Databases", "advanced"),
 		}
 		theme = themes.NewDefaultTheme()
 	})
@@ -232,8 +218,8 @@ var _ = Describe("BurstSkillsModal", func() {
 		It("updates the displayed skills", func() {
 			modal = modals.NewBurstSkillsModal(burstID, burstName, skills, theme)
 			newSkills := []*career.Skill{
-				{ID: "new-1", Name: "Rust", Category: "Programming Languages", Level: "beginner"},
-				{ID: "new-2", Name: "Kubernetes", Category: "DevOps", Level: "intermediate"},
+				fixtures.SkillWith("new-1", "Rust", "Programming Languages", "beginner"),
+				fixtures.SkillWith("new-2", "Kubernetes", "DevOps", "intermediate"),
 			}
 
 			modal.SetSkills(newSkills)
@@ -251,7 +237,7 @@ var _ = Describe("BurstSkillsModal", func() {
 			Expect(view).To(ContainSubstring("3"))
 
 			modal.SetSkills([]*career.Skill{
-				{ID: "single", Name: "Python", Category: "Programming Languages"},
+				fixtures.SkillWith("single", "Python", "Programming Languages", ""),
 			})
 			view = modal.View()
 			Expect(view).To(ContainSubstring("1"))
@@ -271,11 +257,7 @@ var _ = Describe("BurstSkillsModal", func() {
 	Describe("Skills with optional fields", func() {
 		It("renders skill without category", func() {
 			skillsWithoutCategory := []*career.Skill{
-				{
-					ID:    "s-no-cat",
-					Name:  "Skill without category",
-					Level: "intermediate",
-				},
+				fixtures.SkillWith("s-no-cat", "Skill without category", "", "intermediate"),
 			}
 			modal = modals.NewBurstSkillsModal(burstID, burstName, skillsWithoutCategory, theme)
 			modal.Show()
@@ -287,11 +269,7 @@ var _ = Describe("BurstSkillsModal", func() {
 
 		It("renders skill without level", func() {
 			skillsWithoutLevel := []*career.Skill{
-				{
-					ID:       "s-no-lvl",
-					Name:     "Skill without level",
-					Category: "General",
-				},
+				fixtures.SkillWith("s-no-lvl", "Skill without level", "General", ""),
 			}
 			modal = modals.NewBurstSkillsModal(burstID, burstName, skillsWithoutLevel, theme)
 			modal.Show()

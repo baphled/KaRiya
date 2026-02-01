@@ -203,7 +203,7 @@ func (i *Intent) handleActionData(actionData map[string]interface{}) tea.Cmd {
 			i.selectedBurst = burst
 			i.state = StateDetailEvents
 			// Load events for this burst.
-			i.burstEvents = i.loadBurstEvents(burst)
+			i.burstEvents = i.loadBurstEvents(i.getContext(), burst)
 			// Use timeline.EventListScreen to display burst events.
 			i.transitionToScreen(timeline.NewTimelineEventListScreen(i.burstEvents))
 		}

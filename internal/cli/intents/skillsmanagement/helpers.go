@@ -1,6 +1,7 @@
 package skillsmanagement
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -510,7 +511,7 @@ func (i *Intent) inferSkillsFromAllEvents() tea.Cmd {
 
 		if len(events) == 0 {
 			return SkillSuggestionsLoadedMsg{
-				Error: fmt.Errorf("no events available for skill analysis"),
+				Error: errors.New("no events available for skill analysis"),
 			}
 		}
 

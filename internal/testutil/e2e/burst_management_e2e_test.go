@@ -655,7 +655,7 @@ var _ = Describe("E2E Skill Suggestion Acceptance from Burst (SQL-backed)", func
 
 		repoSkills, err := env.SkillRepo.List(context.Background(), nil)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(len(repoSkills)).To(Equal(2),
+		Expect(repoSkills).To(HaveLen(2),
 			"SQL database should have 2 skills after accepting all suggestions")
 
 		skillNames := make(map[string]bool)

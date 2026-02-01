@@ -3,12 +3,11 @@ package memory
 
 import (
 	"context"
-	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 var _ = Describe("SkillRepository", func() {
@@ -28,11 +27,7 @@ var _ = Describe("SkillRepository", func() {
 
 	Describe("GetSkillsForEvent", func() {
 		It("returns empty list when no skills are associated", func() {
-			event := &career.Event{
-				ID:   "event-1",
-				Text: "Some event",
-				Date: time.Now(),
-			}
+			event := fixtures.Event("event-1")
 			eventRepo.Create(ctx, event)
 
 			skills, err := skillRepo.GetSkillsForEvent(ctx, "event-1")
@@ -49,25 +44,11 @@ var _ = Describe("SkillRepository", func() {
 		})
 
 		It("returns skills linked via EventRepository.LinkSkill", func() {
-			event := &career.Event{
-				ID:   "event-1",
-				Text: "Built Go microservice with Docker",
-				Date: time.Now(),
-			}
+			event := fixtures.EventWith("event-1", "Built Go microservice with Docker", "", "")
 			eventRepo.Create(ctx, event)
 
-			goSkill := &career.Skill{
-				ID:       "skill-go",
-				Name:     "Go",
-				Category: "backend",
-				Level:    "advanced",
-			}
-			dockerSkill := &career.Skill{
-				ID:       "skill-docker",
-				Name:     "Docker",
-				Category: "devops",
-				Level:    "intermediate",
-			}
+			goSkill := fixtures.SkillWith("skill-go", "Go", "backend", "advanced")
+			dockerSkill := fixtures.SkillWith("skill-docker", "Docker", "devops", "intermediate")
 			skillRepo.Create(ctx, goSkill)
 			skillRepo.Create(ctx, dockerSkill)
 
@@ -85,13 +66,13 @@ var _ = Describe("SkillRepository", func() {
 		})
 
 		It("returns skills for correct event only", func() {
-			event1 := &career.Event{ID: "event-1", Text: "Go work", Date: time.Now()}
-			event2 := &career.Event{ID: "event-2", Text: "Python work", Date: time.Now()}
+			event1 := fixtures.EventWith("event-1", "Go work", "", "")
+			event2 := fixtures.EventWith("event-2", "Python work", "", "")
 			eventRepo.Create(ctx, event1)
 			eventRepo.Create(ctx, event2)
 
-			goSkill := &career.Skill{ID: "skill-go", Name: "Go", Category: "backend"}
-			pythonSkill := &career.Skill{ID: "skill-python", Name: "Python", Category: "backend"}
+			goSkill := fixtures.SkillWith("skill-go", "Go", "backend", "")
+			pythonSkill := fixtures.SkillWith("skill-python", "Python", "backend", "")
 			skillRepo.Create(ctx, goSkill)
 			skillRepo.Create(ctx, pythonSkill)
 
@@ -110,10 +91,10 @@ var _ = Describe("SkillRepository", func() {
 		})
 
 		It("does not return duplicate skills from repeated LinkSkill calls", func() {
-			event := &career.Event{ID: "event-1", Text: "Go work", Date: time.Now()}
+			event := fixtures.EventWith("event-1", "Go work", "", "")
 			eventRepo.Create(ctx, event)
 
-			goSkill := &career.Skill{ID: "skill-go", Name: "Go", Category: "backend"}
+			goSkill := fixtures.SkillWith("skill-go", "Go", "backend", "")
 			skillRepo.Create(ctx, goSkill)
 
 			eventRepo.LinkSkill(ctx, "event-1", "skill-go")
@@ -126,10 +107,10 @@ var _ = Describe("SkillRepository", func() {
 		})
 
 		It("works with AssociateSkillWithEvent as well", func() {
-			event := &career.Event{ID: "event-1", Text: "Go work", Date: time.Now()}
+			event := fixtures.EventWith("event-1", "Go work", "", "")
 			eventRepo.Create(ctx, event)
 
-			goSkill := &career.Skill{ID: "skill-go", Name: "Go", Category: "backend"}
+			goSkill := fixtures.SkillWith("skill-go", "Go", "backend", "")
 			skillRepo.Create(ctx, goSkill)
 
 			skillRepo.AssociateSkillWithEvent("skill-go", "event-1")

@@ -70,7 +70,9 @@ func (s *Skill) validateCategory() error {
 		return errors.New("category cannot be empty")
 	}
 	if !constants.IsValidSkillCategory(trimmedCategory) {
-		return errors.New("category must be one of: backend, frontend, devops, database, cloud, mobile, tooling, testing, data, ml, monitoring, other")
+		return errors.New(
+			"category must be one of: backend, frontend, devops, database, cloud, mobile, tooling, testing, data, ml, monitoring, other",
+		)
 	}
 	return nil
 }

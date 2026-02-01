@@ -225,8 +225,8 @@ var _ = Describe("Messages", func() {
 	Describe("SkillsCreatedMsg", func() {
 		It("should store created skills", func() {
 			skills := []*career.Skill{
-				{ID: "s1", Name: "Go"},
-				{ID: "s2", Name: "Docker"},
+				fixtures.SkillWith("s1", "Go", "backend", "intermediate"),
+				fixtures.SkillWith("s2", "Docker", "backend", "intermediate"),
 			}
 			msg := skillsmanagement.SkillsCreatedMsg{
 				Skills: skills,
@@ -249,7 +249,7 @@ var _ = Describe("Messages", func() {
 				Skills: []*career.Skill{},
 			}
 			Expect(msg.Skills).To(BeEmpty())
-			Expect(msg.Error).To(BeNil())
+			Expect(msg.Error).ToNot(HaveOccurred())
 		})
 	})
 })

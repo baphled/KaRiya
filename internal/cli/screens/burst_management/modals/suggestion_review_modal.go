@@ -157,7 +157,7 @@ func NewSkillSuggestionModal(suggestions []skillinference.SkillSuggestion, theme
 		return []string{
 			s.Name,
 			s.Category,
-			fmt.Sprintf("%d", len(s.EventIDs)),
+			strconv.Itoa(len(s.EventIDs)),
 			confidenceBar,
 		}
 	}
@@ -234,45 +234,57 @@ func (m *SuggestionReviewModal) buildSkillContent() string {
 		return "No skills detected"
 	}
 
-	theme := m.getTheme()
 	var content strings.Builder
 
 	content.WriteString(m.skillTable.Render())
 	content.WriteString("\n\n")
 
-	selected := m.skillTable.GetSelectedItem()
-	if selected != nil {
-		content.WriteString(primitives.NewText("Selected:", theme).Bold().Render())
-		content.WriteString(" " + selected.Name)
-
-		categoryBadge := primitives.NewBadge(selected.Category, theme).
-			Variant(primitives.BadgeTag).
-			Render()
-		content.WriteString(" " + categoryBadge + "\n")
-
-		if len(selected.Contexts) > 0 {
-			content.WriteString("\n")
-			content.WriteString(primitives.NewText("Usage Contexts:", theme).Bold().Render())
-			content.WriteString("\n")
-
-			maxContexts := 3
-			if len(selected.Contexts) < maxContexts {
-				maxContexts = len(selected.Contexts)
-			}
-
-			for i := 0; i < maxContexts; i++ {
-				ctx := selected.Contexts[i]
-				content.WriteString(fmt.Sprintf("  • %s\n", ctx))
-			}
-
-			if len(selected.Contexts) > 3 {
-				remaining := len(selected.Contexts) - 3
-				content.WriteString(fmt.Sprintf("  ... and %d more\n", remaining))
-			}
-		}
+	if selected := m.skillTable.GetSelectedItem(); selected != nil {
+		m.renderSelectedSkillDetail(&content, selected)
 	}
 
 	return content.String()
+}
+
+// renderSelectedSkillDetail writes the selected skill name, category badge, and usage contexts.
+func (m *SuggestionReviewModal) renderSelectedSkillDetail(content *strings.Builder, selected *skillinference.SkillSuggestion) {
+	theme := m.getTheme()
+
+	content.WriteString(primitives.NewText("Selected:", theme).Bold().Render())
+	content.WriteString(" " + selected.Name)
+
+	categoryBadge := primitives.NewBadge(selected.Category, theme).
+		Variant(primitives.BadgeTag).
+		Render()
+	content.WriteString(" " + categoryBadge + "\n")
+
+	m.renderUsageContexts(content, selected.Contexts)
+}
+
+// renderUsageContexts writes up to 3 usage contexts with an overflow indicator.
+func (m *SuggestionReviewModal) renderUsageContexts(content *strings.Builder, contexts []string) {
+	if len(contexts) == 0 {
+		return
+	}
+
+	theme := m.getTheme()
+	content.WriteString("\n")
+	content.WriteString(primitives.NewText("Usage Contexts:", theme).Bold().Render())
+	content.WriteString("\n")
+
+	maxContexts := 3
+	if len(contexts) < maxContexts {
+		maxContexts = len(contexts)
+	}
+
+	for i := range maxContexts {
+		fmt.Fprintf(content, "  • %s\n", contexts[i])
+	}
+
+	if len(contexts) > 3 {
+		remaining := len(contexts) - 3
+		fmt.Fprintf(content, "  ... and %d more\n", remaining)
+	}
 }
 
 // buildFooter builds the footer with help badges.

@@ -490,8 +490,8 @@ func (i *Intent) handleSkillSuggestionsLoaded(msg SkillSuggestionsLoadedMsg) tea
 	newSuggestions := filterNewSuggestions(msg.Suggestions, msg.ExistingSkillNames)
 	if len(newSuggestions) == 0 {
 		successModal := feedback.NewSuccessModal(
-			fmt.Sprintf("Detected skills already in your profile: %s",
-				strings.Join(msg.ExistingSkillNames, ", ")))
+			"Detected skills already in your profile: " +
+				strings.Join(msg.ExistingSkillNames, ", "))
 		successModal.Title = "All Skills Already Tracked"
 		i.feedbackModal = successModal
 		i.state = StateList
@@ -579,7 +579,7 @@ func (i *Intent) createSkillsFromSuggestions(suggestions []skillinference.SkillS
 
 	return func() tea.Msg {
 		if service == nil {
-			return SkillsCreatedMsg{Error: fmt.Errorf("skill inference service not available")}
+			return SkillsCreatedMsg{Error: errors.New("skill inference service not available")}
 		}
 
 		skills, err := service.CreateSkillsFromSuggestions(i.context.Ctx, suggestions)

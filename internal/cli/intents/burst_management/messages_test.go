@@ -311,7 +311,7 @@ var _ = Describe("Messages", func() {
 			}
 			Expect(msg.Skills).To(HaveLen(2))
 			Expect(msg.Skills[0].Name).To(Equal("Go"))
-			Expect(msg.Error).To(BeNil())
+			Expect(msg.Error).ToNot(HaveOccurred())
 		})
 
 		It("should store error when loading fails", func() {
@@ -337,7 +337,7 @@ var _ = Describe("Messages", func() {
 			Expect(msg.Suggestions).To(HaveLen(2))
 			Expect(msg.Suggestions[0].Name).To(Equal("Go"))
 			Expect(msg.Suggestions[0].Confidence).To(Equal(0.95))
-			Expect(msg.Error).To(BeNil())
+			Expect(msg.Error).ToNot(HaveOccurred())
 		})
 
 		It("should store existing skill names", func() {
@@ -380,15 +380,15 @@ var _ = Describe("Messages", func() {
 			msg := burst_management.SkillSuggestionsErrorMsg{
 				Err: nil,
 			}
-			Expect(msg.Err).To(BeNil())
+			Expect(msg.Err).ToNot(HaveOccurred())
 		})
 	})
 
 	Describe("SkillsCreatedMsg", func() {
 		It("should store created skills", func() {
 			skills := []*career.Skill{
-				{ID: "s1", Name: "Go"},
-				{ID: "s2", Name: "Docker"},
+				fixtures.SkillWith("s1", "Go", "backend", "intermediate"),
+				fixtures.SkillWith("s2", "Docker", "backend", "intermediate"),
 			}
 			msg := burst_management.SkillsCreatedMsg{
 				Skills: skills,
@@ -396,7 +396,7 @@ var _ = Describe("Messages", func() {
 			}
 			Expect(msg.Skills).To(HaveLen(2))
 			Expect(msg.Skills[0].Name).To(Equal("Go"))
-			Expect(msg.Error).To(BeNil())
+			Expect(msg.Error).ToNot(HaveOccurred())
 		})
 
 		It("should store error on creation failure", func() {
@@ -414,7 +414,7 @@ var _ = Describe("Messages", func() {
 				Error:  nil,
 			}
 			Expect(msg.Skills).To(BeEmpty())
-			Expect(msg.Error).To(BeNil())
+			Expect(msg.Error).ToNot(HaveOccurred())
 		})
 	})
 

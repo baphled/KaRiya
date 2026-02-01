@@ -422,7 +422,7 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 
 // Helper functions for tests
 
-func filterByName(suggestions []skillinference.SkillSuggestion, name string) []skillinference.SkillSuggestion {
+func filterByName(suggestions []skillinference.SkillSuggestion, name string) []skillinference.SkillSuggestion { //nolint:unparam // test helper intentionally called with fixed values
 	var result []skillinference.SkillSuggestion
 	for _, s := range suggestions {
 		if s.Name == name {

@@ -4,7 +4,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 var _ = Describe("Soft Skills Keyword Detection", func() {
@@ -17,7 +17,7 @@ var _ = Describe("Soft Skills Keyword Detection", func() {
 	Describe("Communication Keywords", func() {
 		DescribeTable("should detect communication competency",
 			func(text string) {
-				event := &career.Event{Text: text}
+				event := fixtures.EventWith("", text, "", "")
 				category := classifier.Classify(event)
 				Expect(category).To(Equal(CommunicationCompetency))
 			},
@@ -44,7 +44,7 @@ var _ = Describe("Soft Skills Keyword Detection", func() {
 	Describe("Collaboration Keywords", func() {
 		DescribeTable("should detect collaboration competency",
 			func(text string) {
-				event := &career.Event{Text: text}
+				event := fixtures.EventWith("", text, "", "")
 				category := classifier.Classify(event)
 				Expect(category).To(Equal(CollaborationCompetency))
 			},
@@ -71,7 +71,7 @@ var _ = Describe("Soft Skills Keyword Detection", func() {
 	Describe("Problem-Solving Keywords", func() {
 		DescribeTable("should detect problem-solving competency",
 			func(text string) {
-				event := &career.Event{Text: text}
+				event := fixtures.EventWith("", text, "", "")
 				category := classifier.Classify(event)
 				Expect(category).To(Equal(ProblemSolvingCompetency))
 			},
@@ -98,7 +98,7 @@ var _ = Describe("Soft Skills Keyword Detection", func() {
 	Describe("Project Management Keywords", func() {
 		DescribeTable("should detect project-management competency",
 			func(text string) {
-				event := &career.Event{Text: text}
+				event := fixtures.EventWith("", text, "", "")
 				category := classifier.Classify(event)
 				Expect(category).To(Equal(ProjectManagementCompetency))
 			},
@@ -125,7 +125,7 @@ var _ = Describe("Soft Skills Keyword Detection", func() {
 	Describe("Architecture Keywords", func() {
 		DescribeTable("should detect architecture competency",
 			func(text string) {
-				event := &career.Event{Text: text}
+				event := fixtures.EventWith("", text, "", "")
 				category := classifier.Classify(event)
 				Expect(category).To(Equal(ArchitectureCompetency))
 			},
@@ -152,7 +152,8 @@ var _ = Describe("Soft Skills Keyword Detection", func() {
 	Describe("Tag-Based Soft Skill Classification", func() {
 		DescribeTable("should classify by tag for all soft skill categories",
 			func(tag string, expected CompetencyCategory) {
-				event := &career.Event{Text: "Generic event text", Tags: []string{tag}}
+				event := fixtures.EventWith("", "Generic event text", "", "")
+				event.Tags = []string{tag}
 				Expect(classifier.Classify(event)).To(Equal(expected))
 			},
 			Entry("communication tag", "communication", CommunicationCompetency),
@@ -164,7 +165,8 @@ var _ = Describe("Soft Skills Keyword Detection", func() {
 
 		DescribeTable("should return multiple categories from ClassifyMulti with tag",
 			func(tag string, expected CompetencyCategory) {
-				event := &career.Event{Text: "Generic event text", Tags: []string{tag}}
+				event := fixtures.EventWith("", "Generic event text", "", "")
+				event.Tags = []string{tag}
 				categories := classifier.ClassifyMulti(event)
 				Expect(categories).To(ContainElement(expected))
 			},
@@ -178,17 +180,13 @@ var _ = Describe("Soft Skills Keyword Detection", func() {
 
 	Describe("Priority Order", func() {
 		It("should prioritize original categories over soft skills when both match", func() {
-			event := &career.Event{
-				Text: "Leading the strategy and guiding the team while communicating updates",
-			}
+			event := fixtures.EventWith("", "Leading the strategy and guiding the team while communicating updates", "", "")
 			category := classifier.Classify(event)
 			Expect(category).To(Equal(LeadershipCompetency))
 		})
 
 		It("should detect soft skills when no original category matches", func() {
-			event := &career.Event{
-				Text: "Communicated the brief and documented the update to clarify the report",
-			}
+			event := fixtures.EventWith("", "Communicated the brief and documented the update to clarify the report", "", "")
 			category := classifier.Classify(event)
 			Expect(category).To(Equal(CommunicationCompetency))
 		})

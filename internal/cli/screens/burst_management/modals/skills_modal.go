@@ -106,14 +106,14 @@ func renderSkillsContent(skills []*career.Skill, theme themes.Theme) string {
 		b.WriteString(fmt.Sprintf("%d. %s\n", idx+1, skill.Name))
 
 		if skill.Category != "" {
-			catText := fmt.Sprintf("   Category: %s", skill.Category)
+			catText := "   Category: " + skill.Category
 			b.WriteString(primitives.NewText(catText, theme).
 				Foreground(theme.SecondaryColor()).Render())
 			b.WriteString("\n")
 		}
 
 		if skill.Level != "" {
-			levelText := fmt.Sprintf("   Level: %s", skill.Level)
+			levelText := "   Level: " + skill.Level
 			b.WriteString(primitives.NewText(levelText, theme).
 				Foreground(theme.SecondaryColor()).Render())
 			b.WriteString("\n")

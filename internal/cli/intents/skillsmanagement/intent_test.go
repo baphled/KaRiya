@@ -325,7 +325,7 @@ var _ = Describe("Intent", func() {
 				Expect(inferenceIntent.GetLoadingModal()).NotTo(BeNil())
 
 				inferenceIntent.Update(skillsmanagement.SkillsCreatedMsg{
-					Skills: []*career.Skill{{ID: "s1", Name: "Go"}},
+					Skills: []*career.Skill{fixtures.SkillWith("s1", "Go", "backend", "intermediate")},
 				})
 
 				Expect(inferenceIntent.GetLoadingModal()).To(BeNil())
@@ -345,8 +345,8 @@ var _ = Describe("Intent", func() {
 
 		It("should show success feedback modal with skill count", func() {
 			skills := []*career.Skill{
-				{ID: "s1", Name: "Go", Category: "Backend"},
-				{ID: "s2", Name: "PostgreSQL", Category: "Database"},
+				fixtures.SkillWith("s1", "Go", "Backend", "intermediate"),
+				fixtures.SkillWith("s2", "PostgreSQL", "Database", "intermediate"),
 			}
 
 			intent.Update(skillsmanagement.SkillsCreatedMsg{Skills: skills})
@@ -372,7 +372,7 @@ var _ = Describe("Intent", func() {
 			intent.SetState(skillsmanagement.StateInferringSkills)
 
 			intent.Update(skillsmanagement.SkillsCreatedMsg{
-				Skills: []*career.Skill{{ID: "s1", Name: "Go"}},
+				Skills: []*career.Skill{fixtures.SkillWith("s1", "Go", "backend", "intermediate")},
 			})
 
 			Expect(intent.GetState()).To(Equal(skillsmanagement.StateList))
@@ -390,7 +390,7 @@ var _ = Describe("Intent", func() {
 
 		It("should return a refresh command on success", func() {
 			cmd := intent.Update(skillsmanagement.SkillsCreatedMsg{
-				Skills: []*career.Skill{{ID: "s1", Name: "Go"}},
+				Skills: []*career.Skill{fixtures.SkillWith("s1", "Go", "backend", "intermediate")},
 			})
 
 			Expect(cmd).NotTo(BeNil())
@@ -405,11 +405,11 @@ var _ = Describe("Intent", func() {
 		})
 
 		It("should process SkillsLoadedMsg even when feedback modal is visible", func() {
-			mockRepo.Create(ctx, &career.Skill{ID: "s1", Name: "Go", Category: "Backend"})
-			mockRepo.Create(ctx, &career.Skill{ID: "s2", Name: "PostgreSQL", Category: "Database"})
+			mockRepo.Create(ctx, fixtures.SkillWith("s1", "Go", "Backend", "intermediate"))
+			mockRepo.Create(ctx, fixtures.SkillWith("s2", "PostgreSQL", "Database", "intermediate"))
 
 			cmd := intent.Update(skillsmanagement.SkillsCreatedMsg{
-				Skills: []*career.Skill{{ID: "s1"}, {ID: "s2"}},
+				Skills: []*career.Skill{fixtures.Skill("s1"), fixtures.Skill("s2")},
 			})
 			Expect(cmd).NotTo(BeNil())
 			Expect(intent.GetFeedbackModal()).NotTo(BeNil())
