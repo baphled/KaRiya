@@ -353,6 +353,11 @@ func ViewFactsBadge(th theme.Theme) *Badge {
 	return HelpKeyBadge("f", "View Facts", th)
 }
 
+// ViewSkillsBadge returns a badge for viewing skills.
+func ViewSkillsBadge(th theme.Theme) *Badge {
+	return HelpKeyBadge("s", "View Skills", th)
+}
+
 // ConfirmActionBadge returns a badge for confirm action (c key).
 func ConfirmActionBadge(th theme.Theme) *Badge {
 	return HelpKeyBadge("c", "Confirm", th)
@@ -371,6 +376,11 @@ func RejectBadge(th theme.Theme) *Badge {
 // CloseBadge returns a badge for closing modals/views.
 func CloseBadge(th theme.Theme) *Badge {
 	return HelpKeyBadge("Enter/Esc", "Close", th)
+}
+
+// InferSkillsBadge returns a badge for inferring skills from burst events.
+func InferSkillsBadge(th theme.Theme) *Badge {
+	return HelpKeyBadge("i", "Infer Skills", th)
 }
 
 // =============================================================================

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/screens"
@@ -147,7 +148,7 @@ func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
 func (i *Intent) HandleError(result *screens.ErrorResult) tea.Cmd {
 	// Store error and show error modal.
 	i.deleteError = result.Err
-	i.errorModal = feedback.NewErrorModal("Operation Failed", result.Err.Error())
+	i.feedbackModal = feedback.NewErrorModal("Operation Failed", result.Err.Error())
 	return nil
 }
 
@@ -202,7 +203,7 @@ func (i *Intent) handleActionData(actionData map[string]interface{}) tea.Cmd {
 			i.selectedBurst = burst
 			i.state = StateDetailEvents
 			// Load events for this burst.
-			i.burstEvents = i.loadBurstEvents(burst)
+			i.burstEvents = i.loadBurstEvents(i.getContext(), burst)
 			// Use timeline.EventListScreen to display burst events.
 			i.transitionToScreen(timeline.NewTimelineEventListScreen(i.burstEvents))
 		}
@@ -251,7 +252,7 @@ func (i *Intent) handleActionData(actionData map[string]interface{}) tea.Cmd {
 // Returns a command (possibly noopCmd) if a modal consumed the message.
 func (i *Intent) handleModalUpdates(msg tea.Msg) tea.Cmd {
 	// Process modals in priority order - first match handles the message.
-	if cmd := i.handleErrorModalUpdate(msg); cmd != nil {
+	if cmd := i.handleFeedbackModalUpdate(msg); cmd != nil {
 		return cmd
 	}
 	if cmd := i.handleLoadingModalUpdate(msg); cmd != nil {
@@ -266,6 +267,12 @@ func (i *Intent) handleModalUpdates(msg tea.Msg) tea.Cmd {
 	if cmd := i.handleSuggestionModalUpdate(msg); cmd != nil {
 		return cmd
 	}
+	if cmd := i.handleSuggestionEventsModalUpdate(msg); cmd != nil {
+		return cmd
+	}
+	if cmd := i.handleSkillSuggestionModalUpdate(msg); cmd != nil {
+		return cmd
+	}
 	if cmd := i.handleDetailModalUpdate(msg); cmd != nil {
 		return cmd
 	}
@@ -275,19 +282,22 @@ func (i *Intent) handleModalUpdates(msg tea.Msg) tea.Cmd {
 	if cmd := i.handleFactsModalUpdate(msg); cmd != nil {
 		return cmd
 	}
+	if cmd := i.handleSkillsModalUpdate(msg); cmd != nil {
+		return cmd
+	}
 	if cmd := i.handleEditModalUpdate(msg); cmd != nil {
 		return cmd
 	}
 	return nil
 }
 
-// handleErrorModalUpdate handles error modal updates (highest priority).
-func (i *Intent) handleErrorModalUpdate(msg tea.Msg) tea.Cmd {
-	if i.errorModal == nil {
+// handleFeedbackModalUpdate handles feedback modal updates (highest priority).
+func (i *Intent) handleFeedbackModalUpdate(msg tea.Msg) tea.Cmd {
+	if i.feedbackModal == nil {
 		return nil
 	}
 	if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.Type == tea.KeyEsc {
-		i.errorModal = nil
+		i.feedbackModal = nil
 	}
 	return noopCmd
 }
@@ -325,6 +335,7 @@ func (i *Intent) cancelAsyncOperation() {
 	i.loadingModal = nil
 	i.suggestionsLoading = false
 	i.extractingFacts = false
+	i.inferringSkills = false
 	i.state = StateList
 }
 
@@ -459,6 +470,17 @@ func (i *Intent) handleDetailModalKeypress(keyMsg tea.KeyMsg) tea.Cmd {
 	case "c":
 		i.detailModal.Hide()
 		return i.showConfirmBurstModal()
+	case "s":
+		i.detailModal.Hide()
+		return i.showBurstSkillsModal()
+	case "i":
+		if i.selectedBurst != nil && !i.selectedBurst.Confirmed {
+			i.ShowWarningModal("Burst Not Confirmed", "Please confirm this burst before inferring skills.")
+			return noopCmd
+		}
+		i.detailModal.Hide()
+		i.inferredFromDetail = true
+		return i.startSkillInference()
 	}
 
 	if keyMsg.Type == tea.KeyEsc || keyMsg.Type == tea.KeyEnter {
@@ -500,6 +522,24 @@ func (i *Intent) handleEventsModalUpdate(msg tea.Msg) tea.Cmd {
 		}
 	}
 	_, cmd := i.eventsModal.Update(msg)
+	return cmd
+}
+
+// handleSkillsModalUpdate handles skills modal updates.
+func (i *Intent) handleSkillsModalUpdate(msg tea.Msg) tea.Cmd {
+	if i.skillsModal == nil || !i.skillsModal.IsVisible() {
+		return nil
+	}
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		if keyMsg.Type == tea.KeyEsc || keyMsg.Type == tea.KeyEnter {
+			i.skillsModal = nil
+			if i.selectedBurst != nil {
+				return i.showBurstDetailModal(i.selectedBurst)
+			}
+			return noopCmd
+		}
+	}
+	_, cmd := i.skillsModal.Update(msg)
 	return cmd
 }
 
@@ -574,7 +614,7 @@ func (i *Intent) handleFactExtractionComplete(msg FactExtractionCompleteMsg) tea
 			i.state = StateList
 			return nil
 		}
-		i.errorModal = feedback.NewErrorModal("Extraction Failed", msg.Error.Error())
+		i.feedbackModal = feedback.NewErrorModal("Extraction Failed", msg.Error.Error())
 		// Only transition to list if suggestion modal is not visible.
 		// User may still be reviewing remaining suggestions.
 		if i.suggestionModal == nil || !i.suggestionModal.IsVisible() {
@@ -589,6 +629,15 @@ func (i *Intent) handleFactExtractionComplete(msg FactExtractionCompleteMsg) tea
 	// do NOT change state or transition screens. Let user continue reviewing.
 	if i.suggestionModal != nil && i.suggestionModal.IsVisible() {
 		return nil
+	}
+
+	targetBurst := i.selectedBurst
+	if targetBurst == nil {
+		targetBurst = msg.Burst
+	}
+	if targetBurst != nil && targetBurst.Confirmed && len(msg.Facts) > 0 {
+		i.selectedBurst = targetBurst
+		return i.startSkillInference()
 	}
 
 	i.state = StateList
@@ -609,7 +658,7 @@ func (i *Intent) handleFactExtractionComplete(msg FactExtractionCompleteMsg) tea
 func (i *Intent) handleEditBurstMsg(msg EditBurstMsg) tea.Cmd {
 	if i.selectedBurst == nil || i.selectedBurst.ID != msg.BurstID {
 		// Burst mismatch or nil - show error.
-		i.errorModal = feedback.NewErrorModal("Edit Failed", "Burst not found")
+		i.feedbackModal = feedback.NewErrorModal("Edit Failed", "Burst not found")
 		i.state = StateDetail
 		return nil
 	}
@@ -642,7 +691,7 @@ func (i *Intent) handleEditBurstMsg(msg EditBurstMsg) tea.Cmd {
 			i.selectedBurst.Name = originalName
 			i.selectedBurst.Description = originalDescription
 			i.editError = err
-			i.errorModal = feedback.NewErrorModal("Update Failed", err.Error())
+			i.feedbackModal = feedback.NewErrorModal("Update Failed", err.Error())
 			return nil
 		}
 	}
@@ -660,6 +709,17 @@ func (i *Intent) handleBurstEventsLoaded(msg BurstEventsLoadedMsg) tea.Cmd {
 	i.eventsModal = burstmodals.NewBurstEventsModal(
 		i.selectedBurst.ID, i.selectedBurst.Name, msg.Events, i.Theme())
 	i.showModalWithDimensions(i.eventsModal)
+	return nil
+}
+
+// handleBurstSkillsLoaded handles the BurstSkillsLoadedMsg.
+func (i *Intent) handleBurstSkillsLoaded(msg BurstSkillsLoadedMsg) tea.Cmd {
+	if !i.handleLoadError(msg.Error, "Load Skills Failed") {
+		return nil
+	}
+	i.skillsModal = burstmodals.NewBurstSkillsModal(
+		i.selectedBurst.ID, i.selectedBurst.Name, msg.Skills, i.Theme())
+	i.showModalWithDimensions(i.skillsModal)
 	return nil
 }
 
@@ -702,8 +762,7 @@ func (i *Intent) handleBurstSuggestionsLoaded(msg BurstSuggestionsLoadedMsg) tea
 	}
 
 	if len(msg.Suggestions) == 0 {
-		// No suggestions found - show message and return to list.
-		i.ShowErrorModal("No Suggestions Found",
+		i.ShowWarningModal("No Suggestions Found",
 			"No suggestions were generated from your events. "+
 				"Try adding more events or adjusting detection settings.")
 		i.state = StateList
@@ -738,4 +797,169 @@ func (i *Intent) handleSuggestionReviewComplete(msg SuggestionReviewCompleteMsg)
 	i.transitionToScreen(burstscreens.NewBurstListScreen(i.filteredBursts))
 
 	return i.startFactExtractionForBursts(createdBursts)
+}
+
+// =============================================================================
+// Skill Inference Message Handlers
+// =============================================================================
+
+// handleSkillSuggestionsLoaded handles the SkillSuggestionsLoadedMsg.
+func (i *Intent) handleSkillSuggestionsLoaded(msg SkillSuggestionsLoadedMsg) tea.Cmd {
+	i.inferringSkills = false
+	i.loadingModal = nil
+
+	if msg.Error != nil {
+		// Silently ignore cancelled operations.
+		if errors.Is(msg.Error, context.Canceled) {
+			i.state = StateList
+			return nil
+		}
+		i.skillInferenceError = msg.Error
+		i.ShowErrorModal("Skill Inference Failed", msg.Error.Error())
+		i.state = StateList
+		return nil
+	}
+
+	if len(msg.Suggestions) == 0 {
+		i.ShowWarningModal("No Skills Detected",
+			"No skills were detected from the burst events. "+
+				"The events may not contain enough technical details.")
+		i.state = StateList
+		return nil
+	}
+
+	newSuggestions := filterNewSuggestions(msg.Suggestions, msg.ExistingSkillNames)
+	if len(newSuggestions) == 0 {
+		i.ShowSuccessModal("All Skills Already Tracked",
+			"Detected skills already in your profile: "+strings.Join(msg.ExistingSkillNames, ", "))
+		i.state = StateList
+		return nil
+	}
+
+	// Show skill suggestion modal with only new skills.
+	i.skillSuggestionModal = burstmodals.NewSkillSuggestionModal(newSuggestions, i.Theme())
+	width, height := i.getTerminalDimensions()
+	i.skillSuggestionModal.SetDimensions(width, height)
+	i.skillSuggestionModal.Show()
+	i.state = StateSkillSuggestionReview
+	return nil
+}
+
+// handleSkillSuggestionsError handles the SkillSuggestionsErrorMsg.
+func (i *Intent) handleSkillSuggestionsError(msg SkillSuggestionsErrorMsg) tea.Cmd {
+	i.inferringSkills = false
+	i.loadingModal = nil
+
+	// Silently ignore cancelled operations.
+	if errors.Is(msg.Err, context.Canceled) {
+		i.state = StateList
+		return nil
+	}
+
+	i.skillInferenceError = msg.Err
+	i.ShowErrorModal("Skill Inference Failed", msg.Err.Error())
+	i.state = StateList
+	return nil
+}
+
+// handleSkillsCreated handles the SkillsCreatedMsg.
+func (i *Intent) handleSkillsCreated(msg SkillsCreatedMsg) tea.Cmd {
+	i.loadingModal = nil
+
+	if msg.Error != nil {
+		// Silently ignore cancelled operations.
+		if errors.Is(msg.Error, context.Canceled) {
+			i.state = StateList
+			return nil
+		}
+		i.ShowErrorModal("Skill Creation Failed", msg.Error.Error())
+		i.state = StateList
+		return nil
+	}
+
+	successMsg := fmt.Sprintf("Successfully created %d skill(s)", len(msg.Skills))
+	i.ShowSuccessModal("Skills Created", successMsg)
+	i.state = StateList
+	return nil
+}
+
+// handleSkillSuggestionModalUpdate handles skill suggestion modal updates.
+func (i *Intent) handleSkillSuggestionModalUpdate(msg tea.Msg) tea.Cmd {
+	if i.skillSuggestionModal == nil || !i.skillSuggestionModal.IsVisible() {
+		return nil
+	}
+
+	if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.String() == "a" {
+		return i.handleSkillSuggestionAccept(msg)
+	}
+
+	_, cmd := i.skillSuggestionModal.Update(msg)
+
+	if !i.skillSuggestionModal.IsVisible() {
+		action := i.skillSuggestionModal.GetAction()
+
+		switch action {
+		case burstmodals.SuggestionActionReject:
+			if !i.skillSuggestionModal.IsVisible() {
+				i.skillSuggestionModal = nil
+				i.state = StateList
+			}
+			return cmd
+
+		case burstmodals.SuggestionActionViewEvents:
+			return i.openSuggestionEventsModal()
+
+		case burstmodals.SuggestionActionCancel:
+			i.skillSuggestionModal = nil
+			if i.inferredFromDetail && i.selectedBurst != nil {
+				i.inferredFromDetail = false
+				i.state = StateList
+				i.showBurstDetailModal(i.selectedBurst)
+				return noopCmd
+			}
+			i.inferredFromDetail = false
+			i.state = StateList
+			return noopCmd
+		}
+	}
+
+	return cmd
+}
+
+// handleSkillSuggestionAccept saves the accepted skill synchronously, mirroring burst acceptance.
+func (i *Intent) handleSkillSuggestionAccept(msg tea.Msg) tea.Cmd {
+	selected := i.skillSuggestionModal.GetCurrentSkill()
+	if selected == nil {
+		return noopCmd
+	}
+
+	i.saveSkillFromSuggestion(*selected)
+	i.skillSuggestionModal.Update(msg)
+
+	if !i.skillSuggestionModal.IsVisible() {
+		accepted := i.skillSuggestionModal.GetAcceptedSkills()
+		successMsg := fmt.Sprintf("Successfully created %d skill(s)", len(accepted))
+		i.ShowSuccessModal("Skills Created", successMsg)
+		i.skillSuggestionModal = nil
+		i.state = StateList
+	}
+	return noopCmd
+}
+
+// handleSuggestionEventsModalUpdate handles updates when the suggestion events modal is visible.
+func (i *Intent) handleSuggestionEventsModalUpdate(msg tea.Msg) tea.Cmd {
+	if i.suggestionEventsModal == nil || !i.suggestionEventsModal.IsVisible() {
+		return nil
+	}
+
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		if keyMsg.Type == tea.KeyEsc {
+			i.suggestionEventsModal = nil
+			i.skillSuggestionModal.Show()
+			return noopCmd
+		}
+	}
+
+	_, cmd := i.suggestionEventsModal.Update(msg)
+	return cmd
 }

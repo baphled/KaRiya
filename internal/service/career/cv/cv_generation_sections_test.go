@@ -114,6 +114,10 @@ func (r *TestEventRepository) Count(ctx context.Context, filters careerrepo.Even
 	return len(r.events), nil
 }
 
+func (r *TestEventRepository) LinkSkill(_ context.Context, _ string, _ string) error {
+	return nil
+}
+
 // TestFactRepository provides test facts
 type TestFactRepository struct {
 	facts []*career.Fact

@@ -597,7 +597,7 @@ func (tb *TableBehavior[T]) Render() string {
 	tableView := tb.table.View()
 	parts := []string{tableView}
 
-	if tb.showPagination && !tb.useViewport {
+	if tb.showPagination {
 		parts = append(parts, "", tb.RenderPaginationInfo())
 	}
 

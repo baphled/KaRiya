@@ -31,4 +31,10 @@ const (
 
 	// StateSort shows the sort menu.
 	StateSort State = "sort"
+
+	// StateInferringSkills shows loading while inferring skills from events.
+	StateInferringSkills State = "inferring_skills"
+
+	// StateSkillSuggestionReview shows skill suggestions for review.
+	StateSkillSuggestionReview State = "skill_suggestion_review"
 )

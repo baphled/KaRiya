@@ -7,6 +7,8 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/baphled/kariya/internal/cli/intents/skillsmanagement"
+	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/service/career/skillinference"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
@@ -175,6 +177,79 @@ var _ = Describe("Messages", func() {
 				SkillName: "Go Programming",
 			}
 			Expect(msg.SkillName).To(Equal("Go Programming"))
+		})
+	})
+
+	Describe("SkillSuggestionsLoadedMsg", func() {
+		It("should store skill suggestions", func() {
+			suggestions := []skillinference.SkillSuggestion{
+				{Name: "Go", Category: "backend", Confidence: 0.95},
+				{Name: "Docker", Category: "devops", Confidence: 0.85},
+			}
+			msg := skillsmanagement.SkillSuggestionsLoadedMsg{
+				Suggestions: suggestions,
+			}
+			Expect(msg.Suggestions).To(HaveLen(2))
+			Expect(msg.Suggestions[0].Name).To(Equal("Go"))
+			Expect(msg.Suggestions[0].Confidence).To(Equal(0.95))
+		})
+
+		It("should store existing skill names for filtering", func() {
+			msg := skillsmanagement.SkillSuggestionsLoadedMsg{
+				Suggestions:        []skillinference.SkillSuggestion{{Name: "Go", Category: "backend", Confidence: 0.9}},
+				ExistingSkillNames: []string{"Docker", "Kubernetes"},
+			}
+			Expect(msg.ExistingSkillNames).To(HaveLen(2))
+			Expect(msg.ExistingSkillNames).To(ContainElements("Docker", "Kubernetes"))
+		})
+
+		It("should store error on inference failure", func() {
+			err := errors.New("inference failed")
+			msg := skillsmanagement.SkillSuggestionsLoadedMsg{
+				Error: err,
+			}
+			Expect(msg.Suggestions).To(BeNil())
+			Expect(msg.Error).To(HaveOccurred())
+		})
+
+		It("should handle empty suggestions", func() {
+			msg := skillsmanagement.SkillSuggestionsLoadedMsg{
+				Suggestions:        []skillinference.SkillSuggestion{},
+				ExistingSkillNames: []string{},
+			}
+			Expect(msg.Suggestions).To(BeEmpty())
+			Expect(msg.ExistingSkillNames).To(BeEmpty())
+		})
+	})
+
+	Describe("SkillsCreatedMsg", func() {
+		It("should store created skills", func() {
+			skills := []*career.Skill{
+				fixtures.SkillWith("s1", "Go", "backend", "intermediate"),
+				fixtures.SkillWith("s2", "Docker", "backend", "intermediate"),
+			}
+			msg := skillsmanagement.SkillsCreatedMsg{
+				Skills: skills,
+			}
+			Expect(msg.Skills).To(HaveLen(2))
+			Expect(msg.Skills[0].Name).To(Equal("Go"))
+		})
+
+		It("should store error on creation failure", func() {
+			err := errors.New("create skills failed")
+			msg := skillsmanagement.SkillsCreatedMsg{
+				Error: err,
+			}
+			Expect(msg.Skills).To(BeNil())
+			Expect(msg.Error).To(HaveOccurred())
+		})
+
+		It("should handle empty skills list on success", func() {
+			msg := skillsmanagement.SkillsCreatedMsg{
+				Skills: []*career.Skill{},
+			}
+			Expect(msg.Skills).To(BeEmpty())
+			Expect(msg.Error).ToNot(HaveOccurred())
 		})
 	})
 })

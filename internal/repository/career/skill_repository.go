@@ -37,8 +37,8 @@ var (
 //     unique identifier string. Returns the matching *career.Skill and nil
 //     on success, or nil and ErrSkillNotFound when no record exists.
 //
-//   - GetByName looks up a skill by its exact, case-sensitive name. The name
-//     parameter is the display name to match. Returns the matching
+//   - GetByName looks up a skill by name using case-insensitive matching.
+//     The name parameter is the display name to match. Returns the matching
 //     *career.Skill and nil on success, or nil and ErrSkillNotFound when no
 //     record exists.
 //

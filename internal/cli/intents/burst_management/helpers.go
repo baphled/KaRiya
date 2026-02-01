@@ -3,7 +3,9 @@ package burst_management
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/behaviors"
@@ -11,13 +13,38 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens"
 	burstscreens "github.com/baphled/kariya/internal/cli/screens/burst_management"
 	burstmodals "github.com/baphled/kariya/internal/cli/screens/burst_management/modals"
+	skillmodals "github.com/baphled/kariya/internal/cli/screens/skills/modals"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/service/career/burstfact"
+	"github.com/baphled/kariya/internal/service/career/skillinference"
 	tea "github.com/charmbracelet/bubbletea"
 )
+
+// filterNewSuggestions removes suggestions whose names appear in existingNames.
+func filterNewSuggestions(
+	suggestions []skillinference.SkillSuggestion,
+	existingNames []string,
+) []skillinference.SkillSuggestion {
+	if len(existingNames) == 0 {
+		return suggestions
+	}
+
+	existingSet := make(map[string]bool, len(existingNames))
+	for _, name := range existingNames {
+		existingSet[strings.ToLower(name)] = true
+	}
+
+	filtered := make([]skillinference.SkillSuggestion, 0, len(suggestions))
+	for _, s := range suggestions {
+		if !existingSet[strings.ToLower(s.Name)] {
+			filtered = append(filtered, s)
+		}
+	}
+	return filtered
+}
 
 // getTerminalDimensions returns current terminal dimensions with fallback defaults.
 func (i *Intent) getTerminalDimensions() (width, height int) {
@@ -56,6 +83,10 @@ func (i *Intent) getStateName() string {
 		return "Suggesting Bursts"
 	case StateSuggestionReview:
 		return "Review Suggestion"
+	case StateInferringSkills:
+		return "Inferring Skills"
+	case StateSkillSuggestionReview:
+		return "Review Skills"
 	default:
 		return "Unknown"
 	}
@@ -149,7 +180,9 @@ func (i *Intent) hasVisibleModal() bool {
 func (i *Intent) hasVisibleContentModal() bool {
 	return (i.detailModal != nil && i.detailModal.IsVisible()) ||
 		(i.eventsModal != nil && i.eventsModal.IsVisible()) ||
-		(i.factsModal != nil && i.factsModal.IsVisible())
+		(i.factsModal != nil && i.factsModal.IsVisible()) ||
+		(i.skillsModal != nil && i.skillsModal.IsVisible()) ||
+		(i.suggestionEventsModal != nil && i.suggestionEventsModal.IsVisible())
 }
 
 // hasVisibleActionModal checks if action modals (edit, delete, confirm) are visible.
@@ -161,7 +194,7 @@ func (i *Intent) hasVisibleActionModal() bool {
 
 // hasVisibleFeedbackModal checks if feedback modals (error, loading) are active.
 func (i *Intent) hasVisibleFeedbackModal() bool {
-	return i.errorModal != nil || i.loadingModal != nil
+	return i.feedbackModal != nil || i.loadingModal != nil
 }
 
 // isLoadingAsync returns true if any async loading operation is in progress.
@@ -179,7 +212,7 @@ func (i *Intent) deleteBurst(burst *career.Burst) {
 	if i.context.BurstRepository != nil {
 		if err := i.context.BurstRepository.Delete(ctx, burst.ID); err != nil {
 			i.deleteError = err
-			i.errorModal = feedback.NewErrorModal("Delete Failed", err.Error())
+			i.feedbackModal = feedback.NewErrorModal("Delete Failed", err.Error())
 			i.deleteModal = nil
 			i.selectedBurst = nil
 			i.state = StateList
@@ -234,12 +267,11 @@ func (i *Intent) RefreshData() tea.Cmd {
 }
 
 // loadBurstEvents loads career events for the given burst.
-func (i *Intent) loadBurstEvents(burst *career.Burst) []*career.Event {
+func (i *Intent) loadBurstEvents(ctx context.Context, burst *career.Burst) []*career.Event {
 	if burst == nil || i.context.Service == nil {
 		return []*career.Event{}
 	}
 
-	ctx := i.getContext()
 	events := make([]*career.Event, 0, len(burst.EventIDs))
 
 	for _, eventID := range burst.EventIDs {
@@ -279,7 +311,7 @@ func (i *Intent) confirmBurst() tea.Cmd {
 		ctx := i.getContext()
 		if err := i.context.Service.ConfirmBurst(ctx, i.selectedBurst); err != nil {
 			i.confirmError = err
-			i.errorModal = feedback.NewErrorModal("Confirmation Failed", err.Error())
+			i.feedbackModal = feedback.NewErrorModal("Confirmation Failed", err.Error())
 			return nil
 		}
 	} else {
@@ -293,7 +325,20 @@ func (i *Intent) confirmBurst() tea.Cmd {
 	return i.extractFactsForBurst(i.selectedBurst)
 }
 
+// HasVisibleFeedbackModal returns true if the feedback modal is visible.
+//
+// Returns:
+//   - True if the feedback modal reference is non-nil.
+//
+// Side effects:
+//   - None.
+func (i *Intent) HasVisibleFeedbackModal() bool {
+	return i.feedbackModal != nil
+}
+
 // HasVisibleErrorModal checks whether an error modal is currently displayed.
+//
+// Deprecated: Use HasVisibleFeedbackModal instead.
 //
 // Returns:
 //   - True if the error modal reference is non-nil.
@@ -301,7 +346,29 @@ func (i *Intent) confirmBurst() tea.Cmd {
 // Side effects:
 //   - None.
 func (i *Intent) HasVisibleErrorModal() bool {
-	return i.errorModal != nil
+	return i.HasVisibleFeedbackModal()
+}
+
+// GetFeedbackModal returns the current feedback modal for testing.
+//
+// Returns:
+//   - The feedback modal instance or nil if none exists.
+//
+// Side effects:
+//   - None.
+func (i *Intent) GetFeedbackModal() *feedback.Modal {
+	return i.feedbackModal
+}
+
+// GetLoadingModal returns the current loading modal for testing.
+//
+// Returns:
+//   - The loading modal instance or nil if none exists.
+//
+// Side effects:
+//   - None.
+func (i *Intent) GetLoadingModal() *feedback.Modal {
+	return i.loadingModal
 }
 
 // HasVisibleDeleteModal checks whether the delete confirmation modal is currently displayed.
@@ -346,7 +413,33 @@ func (i *Intent) HasVisibleEditModal() bool {
 // Side effects:
 //   - Replaces any existing error modal on the intent.
 func (i *Intent) ShowErrorModal(title, message string) {
-	i.errorModal = feedback.NewErrorModal(title, message)
+	i.feedbackModal = feedback.NewErrorModal(title, message)
+}
+
+// ShowWarningModal creates and shows a warning modal with the given title and message.
+//
+// Expected:
+//   - title must be a non-empty string.
+//   - message must describe the warning condition.
+//
+// Side effects:
+//   - Replaces any existing feedback modal on the intent.
+func (i *Intent) ShowWarningModal(title, message string) {
+	i.feedbackModal = feedback.NewWarningModal(title, message)
+}
+
+// ShowSuccessModal creates and shows a success modal with the given message.
+//
+// Expected:
+//   - title must be a non-empty string.
+//   - message must describe the success condition.
+//
+// Side effects:
+//   - Replaces any existing feedback modal on the intent.
+func (i *Intent) ShowSuccessModal(title, message string) {
+	modal := feedback.NewSuccessModal(message)
+	modal.Title = title
+	i.feedbackModal = modal
 }
 
 // GetTerminalDimensions exposes terminal dimensions for testing purposes.
@@ -383,7 +476,7 @@ func (i *Intent) GetContextHelp() string {
 }
 
 // showBurstDetailModal creates and shows the burst detail modal.
-// Note: viewedBursts tracking is handled by HandleNavigate, not here.
+// The viewedBursts tracking is handled by HandleNavigate, not here.
 func (i *Intent) showBurstDetailModal(burst *career.Burst) tea.Cmd {
 	i.selectedBurst = burst
 	width, height := i.getTerminalDimensions()
@@ -422,6 +515,39 @@ func (i *Intent) showBurstEventsModal() tea.Cmd {
 			events = append(events, event)
 		}
 		return BurstEventsLoadedMsg{Events: events}
+	}
+}
+
+// showBurstSkillsModal loads and shows skills for the current burst.
+func (i *Intent) showBurstSkillsModal() tea.Cmd {
+	if i.selectedBurst == nil {
+		return nil
+	}
+
+	if i.context.SkillRepository == nil {
+		return func() tea.Msg {
+			return BurstSkillsLoadedMsg{Skills: []*career.Skill{}}
+		}
+	}
+
+	return func() tea.Msg {
+		ctx := i.getContext()
+		skillMap := make(map[string]*career.Skill)
+		for _, eventID := range i.selectedBurst.EventIDs {
+			skills, err := i.context.SkillRepository.GetSkillsForEvent(ctx, eventID)
+			if err != nil {
+				continue
+			}
+			for _, skill := range skills {
+				skillMap[skill.ID] = skill
+			}
+		}
+
+		dedupedSkills := make([]*career.Skill, 0, len(skillMap))
+		for _, skill := range skillMap {
+			dedupedSkills = append(dedupedSkills, skill)
+		}
+		return BurstSkillsLoadedMsg{Skills: dedupedSkills}
 	}
 }
 
@@ -499,6 +625,14 @@ func (i *Intent) updateDetailModalRegistry() {
 			i.factsModal.Update,
 		))
 	}
+
+	if i.skillsModal != nil && i.skillsModal.IsVisible() {
+		i.modalRegistry.Register(intents.NewViewModalAdapter(
+			i.skillsModal.IsVisible,
+			i.skillsModal.View,
+			i.skillsModal.Update,
+		))
+	}
 }
 
 // RebuildModalRegistry recreates the modal registry from the current modal state, exported for testing.
@@ -518,10 +652,10 @@ func (i *Intent) rebuildModalRegistry() {
 	i.modalRegistry.Clear()
 
 	// Register modals in priority order (highest priority first).
-	// Error modal has highest priority.
-	if i.errorModal != nil {
+	// Feedback modal has highest priority.
+	if i.feedbackModal != nil {
 		width, height := i.getTerminalDimensions()
-		i.modalRegistry.Register(intents.NewErrorModalAdapter(i.errorModal, width, height, i.Theme()))
+		i.modalRegistry.Register(intents.NewErrorModalAdapter(i.feedbackModal, width, height, i.Theme()))
 	}
 
 	// Loading modal (for StateExtractingFacts and StateSuggesting).
@@ -563,6 +697,24 @@ func (i *Intent) rebuildModalRegistry() {
 			i.suggestionModal.Update,
 		))
 	}
+
+	// Suggestion events modal (drill-down from skill suggestions).
+	if i.suggestionEventsModal != nil && i.suggestionEventsModal.IsVisible() {
+		i.modalRegistry.Register(intents.NewViewModalAdapter(
+			i.suggestionEventsModal.IsVisible,
+			i.suggestionEventsModal.View,
+			i.suggestionEventsModal.Update,
+		))
+	}
+
+	// Skill suggestion review modal.
+	if i.skillSuggestionModal != nil && i.skillSuggestionModal.IsVisible() {
+		i.modalRegistry.Register(intents.NewViewModalAdapter(
+			i.skillSuggestionModal.IsVisible,
+			i.skillSuggestionModal.View,
+			i.skillSuggestionModal.Update,
+		))
+	}
 }
 
 // modalWithDimensions is an interface for modals that support dimensions.
@@ -576,6 +728,50 @@ func (i *Intent) showModalWithDimensions(modal modalWithDimensions) {
 	width, height := i.getTerminalDimensions()
 	modal.SetDimensions(width, height)
 	modal.Show()
+}
+
+// openSuggestionEventsModal resolves event IDs from the currently selected skill suggestion
+// and opens an events modal to display them.
+func (i *Intent) openSuggestionEventsModal() tea.Cmd {
+	if i.skillSuggestionModal == nil {
+		return noopCmd
+	}
+
+	selected := i.skillSuggestionModal.GetCurrentSkill()
+	if selected == nil {
+		return noopCmd
+	}
+
+	events := i.resolveEventsByIDs(selected.EventIDs)
+
+	width, height := i.getTerminalDimensions()
+	i.suggestionEventsModal = skillmodals.NewEventsModal(
+		"suggestion",
+		selected.Name,
+		events,
+		i.Theme(),
+	)
+	i.suggestionEventsModal.SetDimensions(width, height)
+	i.suggestionEventsModal.Show()
+
+	return noopCmd
+}
+
+// resolveEventsByIDs resolves event IDs to Event objects using the burst service.
+func (i *Intent) resolveEventsByIDs(eventIDs []string) []*career.Event {
+	if i.context.Service == nil || len(eventIDs) == 0 {
+		return []*career.Event{}
+	}
+
+	ctx := i.getContext()
+	events := make([]*career.Event, 0, len(eventIDs))
+	for _, id := range eventIDs {
+		event, err := i.context.Service.GetEventByID(ctx, id)
+		if err == nil && event != nil {
+			events = append(events, event)
+		}
+	}
+	return events
 }
 
 // startBurstDetection loads all events and triggers AI burst detection.
@@ -594,6 +790,30 @@ func (i *Intent) startBurstDetection() tea.Cmd {
 	i.loadingModal = feedback.NewLoadingModal("Detecting burst patterns...", true).WithTheme(i.Theme())
 
 	asyncCmd := i.createBurstDetectionCmd(ctx, i.context.Service, i.context.Bursts)
+	return tea.Batch(asyncCmd, i.loadingModal.Init())
+}
+
+// startSkillInference triggers skill inference for the selected burst.
+func (i *Intent) startSkillInference() tea.Cmd {
+	if i.selectedBurst == nil {
+		i.ShowErrorModal("Inference Failed", "No burst selected")
+		i.state = StateList
+		return nil
+	}
+
+	if i.context.SkillInferenceService == nil {
+		i.ShowErrorModal("Inference Failed", "Skill inference service not available")
+		i.state = StateList
+		return nil
+	}
+
+	i.cancelPreviousOperation()
+
+	i.inferringSkills = true
+	i.state = StateInferringSkills
+	i.loadingModal = feedback.NewLoadingModal("Detecting skills from burst events...", true).WithTheme(i.Theme())
+
+	asyncCmd := i.inferSkillsFromBurst(i.selectedBurst)
 	return tea.Batch(asyncCmd, i.loadingModal.Init())
 }
 
@@ -622,7 +842,7 @@ func (i *Intent) createBurstDetectionCmd(
 
 		if len(eventIDs) == 0 {
 			return BurstSuggestionsLoadedMsg{
-				Error: fmt.Errorf("no unassigned events available for burst detection"),
+				Error: errors.New("no unassigned events available for burst detection"),
 			}
 		}
 
@@ -765,7 +985,7 @@ func (i *Intent) saveAndExtractBurstWithResult(suggestion burstfact.BurstSuggest
 func (i *Intent) extractFactsForBurst(burst *career.Burst) tea.Cmd {
 	if burst == nil {
 		return func() tea.Msg {
-			return FactExtractionCompleteMsg{Error: fmt.Errorf("no burst provided")}
+			return FactExtractionCompleteMsg{Error: errors.New("no burst provided")}
 		}
 	}
 
@@ -782,23 +1002,21 @@ func (i *Intent) extractFactsForBurst(burst *career.Burst) tea.Cmd {
 	service := i.context.Service
 
 	return func() tea.Msg {
-		// Check if cancelled before starting.
 		if ctx.Err() != nil {
-			return FactExtractionCompleteMsg{Error: ctx.Err()}
+			return FactExtractionCompleteMsg{Burst: burst, Error: ctx.Err()}
 		}
 
 		if service == nil {
-			return FactExtractionCompleteMsg{Error: fmt.Errorf("service not available")}
+			return FactExtractionCompleteMsg{Burst: burst, Error: errors.New("service not available")}
 		}
 
 		facts, err := service.ExtractFactsFromBurst(ctx, burst)
 		if err != nil {
-			return FactExtractionCompleteMsg{Error: err}
+			return FactExtractionCompleteMsg{Burst: burst, Error: err}
 		}
 
-		// Check if cancelled after extraction.
 		if ctx.Err() != nil {
-			return FactExtractionCompleteMsg{Error: ctx.Err()}
+			return FactExtractionCompleteMsg{Burst: burst, Error: ctx.Err()}
 		}
 
 		savedFacts := make([]*career.Fact, 0, len(facts))
@@ -806,9 +1024,8 @@ func (i *Intent) extractFactsForBurst(burst *career.Burst) tea.Cmd {
 			fact := &facts[idx]
 			fact.SourceBurstID = burst.ID
 
-			// Check if cancelled during save loop.
 			if ctx.Err() != nil {
-				return FactExtractionCompleteMsg{Error: ctx.Err()}
+				return FactExtractionCompleteMsg{Burst: burst, Error: ctx.Err()}
 			}
 
 			if err := service.SaveFact(ctx, fact); err != nil {
@@ -817,6 +1034,79 @@ func (i *Intent) extractFactsForBurst(burst *career.Burst) tea.Cmd {
 			savedFacts = append(savedFacts, fact)
 		}
 
-		return FactExtractionCompleteMsg{Facts: savedFacts}
+		return FactExtractionCompleteMsg{Facts: savedFacts, Burst: burst}
+	}
+}
+
+// inferSkillsFromBurst runs skill inference on burst events and returns suggestions.
+func (i *Intent) inferSkillsFromBurst(burst *career.Burst) tea.Cmd {
+	if burst == nil {
+		return func() tea.Msg {
+			return SkillSuggestionsErrorMsg{Err: errors.New("no burst provided")}
+		}
+	}
+
+	// Cancel any previous async operation.
+	if i.cancelFunc != nil {
+		i.cancelFunc()
+	}
+
+	// Create cancellable context for this operation.
+	ctx, cancel := context.WithCancel(context.Background())
+	i.cancelFunc = cancel
+
+	// Capture service reference to avoid race conditions.
+	service := i.context.SkillInferenceService
+
+	return func() tea.Msg {
+		if ctx.Err() != nil {
+			return SkillSuggestionsErrorMsg{Err: ctx.Err()}
+		}
+
+		if service == nil {
+			return SkillSuggestionsErrorMsg{Err: errors.New("skill inference service not available")}
+		}
+
+		events := i.loadBurstEvents(ctx, burst)
+		if len(events) == 0 {
+			return SkillSuggestionsErrorMsg{Err: errors.New("no events found for burst")}
+		}
+
+		if ctx.Err() != nil {
+			return SkillSuggestionsErrorMsg{Err: ctx.Err()}
+		}
+
+		result, err := service.InferSkillsFromEvents(ctx, events)
+		if err != nil {
+			return SkillSuggestionsErrorMsg{Err: fmt.Errorf("skill detection failed: %w", err)}
+		}
+
+		return SkillSuggestionsLoadedMsg{
+			Suggestions:        result.Suggestions,
+			ExistingSkillNames: result.ExistingSkillNames,
+		}
+	}
+}
+
+// saveSkillFromSuggestion persists a single accepted skill suggestion synchronously.
+// This mirrors saveAndExtractBurst: save immediately on each 'a' press.
+func (i *Intent) saveSkillFromSuggestion(suggestion skillinference.SkillSuggestion) {
+	service := i.context.SkillInferenceService
+	if service == nil {
+		i.ShowErrorModal("Skill Creation Failed", "skill inference service not available")
+		return
+	}
+
+	ctx := i.getContext()
+	if ctx.Err() != nil {
+		return
+	}
+
+	_, err := service.CreateSkillsFromSuggestions(ctx, []skillinference.SkillSuggestion{suggestion})
+	if err != nil {
+		if ctx.Err() != nil {
+			return
+		}
+		i.ShowErrorModal("Skill Creation Failed", fmt.Sprintf("Failed to create skill: %v", err))
 	}
 }

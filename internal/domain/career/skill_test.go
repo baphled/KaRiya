@@ -75,27 +75,40 @@ var _ = Describe("Skill", func() {
 				Expect(err.Error()).To(ContainSubstring("category cannot be empty"))
 			})
 
-			It("should fail when category exceeds 50 characters", func() {
-				longCategory := string(make([]byte, 51))
-				for i := range longCategory {
-					longCategory = string(append([]byte(longCategory[:i]), 'a'))
-				}
+			It("should fail when category is not a recognised value", func() {
 				skill := &Skill{
 					Name:     "Ruby",
-					Category: longCategory,
+					Category: "invalidcategory",
 				}
 				err := skill.Validate()
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("category cannot exceed 50 characters"))
+				Expect(err.Error()).To(ContainSubstring("category must be one of"))
 			})
 
-			It("should pass when category is valid", func() {
+			It("should fail when category uses wrong case", func() {
 				skill := &Skill{
 					Name:     "Ruby",
-					Category: "backend",
+					Category: "Backend",
 				}
 				err := skill.Validate()
-				Expect(err).NotTo(HaveOccurred())
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("category must be one of"))
+			})
+
+			It("should pass for all canonical skill categories", func() {
+				validCategories := []string{
+					"backend", "frontend", "devops", "database", "cloud",
+					"mobile", "tooling", "testing", "data", "ml",
+					"monitoring", "other",
+				}
+				for _, cat := range validCategories {
+					skill := &Skill{
+						Name:     "Ruby",
+						Category: cat,
+					}
+					err := skill.Validate()
+					Expect(err).NotTo(HaveOccurred())
+				}
 			})
 		})
 

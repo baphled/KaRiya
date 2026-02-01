@@ -1,6 +1,7 @@
 package burst_management_test
 
 import (
+	"context"
 	"fmt"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -11,6 +12,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/service/career/burstfact"
+	"github.com/baphled/kariya/internal/service/career/skillinference"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -738,6 +740,264 @@ var _ = Describe("Helper Methods", func() {
 
 			viewed := intent.GetViewedBursts()
 			Expect(viewed).To(ContainElement(burst))
+		})
+	})
+
+	Describe("SkillSuggestionsLoadedMsg filtering (filterNewSuggestions)", func() {
+		It("should show suggestion modal when no existing skills", func() {
+			intent.SetState(burst_management.StateInferringSkills)
+
+			msg := burst_management.SkillSuggestionsLoadedMsg{
+				Suggestions: []skillinference.SkillSuggestion{
+					{Name: "Go", Category: "backend", Confidence: 0.95},
+					{Name: "Docker", Category: "devops", Confidence: 0.85},
+				},
+				ExistingSkillNames: []string{},
+			}
+
+			intent.Update(msg)
+
+			Expect(intent.GetState()).To(Equal(burst_management.StateSkillSuggestionReview))
+		})
+
+		It("should show 'all tracked' modal when all suggestions are existing", func() {
+			intent.SetState(burst_management.StateInferringSkills)
+
+			msg := burst_management.SkillSuggestionsLoadedMsg{
+				Suggestions: []skillinference.SkillSuggestion{
+					{Name: "Go", Category: "backend", Confidence: 0.95},
+					{Name: "Docker", Category: "devops", Confidence: 0.85},
+				},
+				ExistingSkillNames: []string{"Go", "Docker"},
+			}
+
+			intent.Update(msg)
+
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+			modal := intent.GetFeedbackModal()
+			Expect(modal).NotTo(BeNil())
+			Expect(modal.Type).To(Equal(feedback.ModalSuccess))
+			Expect(modal.Message).To(ContainSubstring("Go"))
+			Expect(modal.Message).To(ContainSubstring("Docker"))
+		})
+
+		It("should filter existing and show only new suggestions", func() {
+			intent.SetState(burst_management.StateInferringSkills)
+
+			msg := burst_management.SkillSuggestionsLoadedMsg{
+				Suggestions: []skillinference.SkillSuggestion{
+					{Name: "Go", Category: "backend", Confidence: 0.95},
+					{Name: "Docker", Category: "devops", Confidence: 0.85},
+					{Name: "React", Category: "frontend", Confidence: 0.75},
+				},
+				ExistingSkillNames: []string{"Go"},
+			}
+
+			intent.Update(msg)
+
+			Expect(intent.GetState()).To(Equal(burst_management.StateSkillSuggestionReview))
+		})
+
+		It("should filter case-insensitively", func() {
+			intent.SetState(burst_management.StateInferringSkills)
+
+			msg := burst_management.SkillSuggestionsLoadedMsg{
+				Suggestions: []skillinference.SkillSuggestion{
+					{Name: "Go", Category: "backend", Confidence: 0.95},
+					{Name: "Docker", Category: "devops", Confidence: 0.85},
+				},
+				ExistingSkillNames: []string{"go", "docker"},
+			}
+
+			intent.Update(msg)
+
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+			modal := intent.GetFeedbackModal()
+			Expect(modal).NotTo(BeNil())
+			Expect(modal.Type).To(Equal(feedback.ModalSuccess))
+		})
+
+		It("should show warning when no suggestions detected at all", func() {
+			intent.SetState(burst_management.StateInferringSkills)
+
+			msg := burst_management.SkillSuggestionsLoadedMsg{
+				Suggestions:        []skillinference.SkillSuggestion{},
+				ExistingSkillNames: []string{},
+			}
+
+			intent.Update(msg)
+
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+			modal := intent.GetFeedbackModal()
+			Expect(modal).NotTo(BeNil())
+			Expect(modal.Type).To(Equal(feedback.ModalWarning))
+		})
+	})
+
+	Describe("FactExtractionCompleteMsg.Burst fallback", func() {
+		BeforeEach(func() {
+			ctx.SkillInferenceService = skillinference.NewSkillInferenceService(nil, nil)
+		})
+
+		It("should use msg.Burst when selectedBurst is nil and trigger skill inference", func() {
+			confirmedBurst := fixtures.BurstConfirmed("burst-fallback")
+			confirmedBurst.Name = "Fallback Burst"
+			intent.SetSelectedBurst(nil)
+			intent.SetState(burst_management.StateExtractingFacts)
+
+			msg := burst_management.FactExtractionCompleteMsg{
+				Facts: []*career.Fact{fixtures.FactWith("f1", "Built API with Go")},
+				Burst: confirmedBurst,
+				Error: nil,
+			}
+
+			intent.Update(msg)
+
+			Expect(intent.GetState()).To(Equal(burst_management.StateInferringSkills))
+			Expect(intent.GetSelectedBurst()).To(Equal(confirmedBurst))
+		})
+
+		It("should not trigger skill inference when msg.Burst is nil and selectedBurst is nil", func() {
+			intent.SetSelectedBurst(nil)
+
+			msg := burst_management.FactExtractionCompleteMsg{
+				Facts: []*career.Fact{fixtures.FactWith("f1", "Test fact")},
+				Burst: nil,
+				Error: nil,
+			}
+
+			intent.Update(msg)
+
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+		})
+
+		It("should not trigger skill inference when burst is not confirmed", func() {
+			unconfirmedBurst := fixtures.Burst("burst-unconfirmed")
+			unconfirmedBurst.Name = "Unconfirmed"
+			intent.SetSelectedBurst(nil)
+
+			msg := burst_management.FactExtractionCompleteMsg{
+				Facts: []*career.Fact{fixtures.FactWith("f1", "Test fact")},
+				Burst: unconfirmedBurst,
+				Error: nil,
+			}
+
+			intent.Update(msg)
+
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+		})
+
+		It("should not trigger skill inference when facts are empty", func() {
+			confirmedBurst := fixtures.BurstConfirmed("burst-nofacts")
+			confirmedBurst.Name = "No Facts"
+			intent.SetSelectedBurst(nil)
+
+			msg := burst_management.FactExtractionCompleteMsg{
+				Facts: []*career.Fact{},
+				Burst: confirmedBurst,
+				Error: nil,
+			}
+
+			intent.Update(msg)
+
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+		})
+
+		It("should prefer selectedBurst over msg.Burst when both are set", func() {
+			selectedBurst := fixtures.BurstConfirmed("burst-selected")
+			selectedBurst.Name = "Selected"
+			msgBurst := fixtures.BurstConfirmed("burst-msg")
+			msgBurst.Name = "From Message"
+			intent.SetSelectedBurst(selectedBurst)
+
+			msg := burst_management.FactExtractionCompleteMsg{
+				Facts: []*career.Fact{fixtures.FactWith("f1", "Test fact")},
+				Burst: msgBurst,
+				Error: nil,
+			}
+
+			intent.Update(msg)
+
+			Expect(intent.GetSelectedBurst()).To(Equal(selectedBurst))
+		})
+	})
+
+	Describe("SkillsCreatedMsg handling", func() {
+		It("should clear loading modal on success", func() {
+			intent.Update(burst_management.BurstSuggestionsLoadedMsg{
+				Suggestions: []burstfact.BurstSuggestion{
+					{Name: "Test", EventIDs: []string{"e1"}, ConfidenceScore: 0.8},
+				},
+			})
+			Expect(intent.GetState()).To(Equal(burst_management.StateSuggestionReview))
+
+			intent.Update(burst_management.SkillsCreatedMsg{
+				Skills: []*career.Skill{fixtures.SkillWith("s1", "Go", "Backend", "mid")},
+			})
+
+			Expect(intent.GetLoadingModal()).To(BeNil())
+		})
+
+		It("should clear loading modal on error", func() {
+			intent.Update(burst_management.SkillsCreatedMsg{
+				Error: context.DeadlineExceeded,
+			})
+
+			Expect(intent.GetLoadingModal()).To(BeNil())
+		})
+
+		It("should show success feedback modal with skill count", func() {
+			skills := []*career.Skill{
+				fixtures.SkillWith("s1", "Go", "Backend", "mid"),
+				fixtures.SkillWith("s2", "PostgreSQL", "Database", "mid"),
+				fixtures.SkillWith("s3", "Docker", "DevOps", "mid"),
+			}
+
+			intent.Update(burst_management.SkillsCreatedMsg{Skills: skills})
+
+			modal := intent.GetFeedbackModal()
+			Expect(modal).NotTo(BeNil())
+			Expect(modal.Type).To(Equal(feedback.ModalSuccess))
+			Expect(modal.Message).To(ContainSubstring("3 skill(s)"))
+		})
+
+		It("should show error feedback modal on failure", func() {
+			intent.Update(burst_management.SkillsCreatedMsg{
+				Error: fmt.Errorf("database connection lost"),
+			})
+
+			modal := intent.GetFeedbackModal()
+			Expect(modal).NotTo(BeNil())
+			Expect(modal.Type).To(Equal(feedback.ModalError))
+		})
+
+		It("should silently ignore cancelled operations", func() {
+			intent.Update(burst_management.SkillsCreatedMsg{
+				Error: context.Canceled,
+			})
+
+			Expect(intent.GetFeedbackModal()).To(BeNil())
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+		})
+
+		It("should transition to StateList on success", func() {
+			intent.SetState(burst_management.StateInferringSkills)
+
+			intent.Update(burst_management.SkillsCreatedMsg{
+				Skills: []*career.Skill{fixtures.SkillWith("s1", "Go", "Backend", "mid")},
+			})
+
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+		})
+
+		It("should transition to StateList on error", func() {
+			intent.SetState(burst_management.StateInferringSkills)
+
+			intent.Update(burst_management.SkillsCreatedMsg{
+				Error: context.DeadlineExceeded,
+			})
+
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
 		})
 	})
 })

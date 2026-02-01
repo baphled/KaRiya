@@ -10,7 +10,10 @@ import (
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/intents/skillsmanagement"
 	"github.com/baphled/kariya/internal/cli/screens"
+	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/domain/career"
+	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
+	"github.com/baphled/kariya/internal/service/career/skillinference"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -288,6 +291,246 @@ var _ = Describe("Intent", func() {
 				Expect(intent.GetSelectedSkill()).NotTo(BeNil())
 				Expect(intent.GetSelectedSkill().ID).To(Equal("skill-3"))
 			})
+		})
+	})
+
+	Describe("SkillsCreatedMsg Handling", func() {
+		var intent *skillsmanagement.Intent
+
+		BeforeEach(func() {
+			intentCtx := skillsmanagement.NewIntentContext(ctx, mockRepo)
+			intent, _ = skillsmanagement.NewIntent(intentCtx)
+			_ = intent.Init()
+		})
+
+		Context("with inference service configured", func() {
+			var inferenceIntent *skillsmanagement.Intent
+
+			BeforeEach(func() {
+				eventRepo := careermemory.NewEventRepository()
+				skillInferenceService := skillinference.NewSkillInferenceService(mockRepo, eventRepo)
+
+				intentCtx := skillsmanagement.NewIntentContext(ctx, mockRepo)
+				intentCtx.EventRepository = eventRepo
+				intentCtx.SkillInferenceService = skillInferenceService
+
+				var err error
+				inferenceIntent, err = skillsmanagement.NewIntent(intentCtx)
+				Expect(err).NotTo(HaveOccurred())
+				inferenceIntent.Init()
+			})
+
+			It("should clear loading modal on success", func() {
+				inferenceIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}})
+				Expect(inferenceIntent.GetLoadingModal()).NotTo(BeNil())
+
+				inferenceIntent.Update(skillsmanagement.SkillsCreatedMsg{
+					Skills: []*career.Skill{fixtures.SkillWith("s1", "Go", "backend", "intermediate")},
+				})
+
+				Expect(inferenceIntent.GetLoadingModal()).To(BeNil())
+			})
+
+			It("should clear loading modal on error", func() {
+				inferenceIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}})
+				Expect(inferenceIntent.GetLoadingModal()).NotTo(BeNil())
+
+				inferenceIntent.Update(skillsmanagement.SkillsCreatedMsg{
+					Error: context.DeadlineExceeded,
+				})
+
+				Expect(inferenceIntent.GetLoadingModal()).To(BeNil())
+			})
+		})
+
+		It("should show success feedback modal with skill count", func() {
+			skills := []*career.Skill{
+				fixtures.SkillWith("s1", "Go", "Backend", "intermediate"),
+				fixtures.SkillWith("s2", "PostgreSQL", "Database", "intermediate"),
+			}
+
+			intent.Update(skillsmanagement.SkillsCreatedMsg{Skills: skills})
+
+			modal := intent.GetFeedbackModal()
+			Expect(modal).NotTo(BeNil())
+			Expect(modal.Type).To(Equal(feedback.ModalSuccess))
+			Expect(modal.Message).To(ContainSubstring("2 skill(s)"))
+		})
+
+		It("should show error feedback modal on failure", func() {
+			intent.Update(skillsmanagement.SkillsCreatedMsg{
+				Error: context.DeadlineExceeded,
+			})
+
+			modal := intent.GetFeedbackModal()
+			Expect(modal).NotTo(BeNil())
+			Expect(modal.Type).To(Equal(feedback.ModalError))
+			Expect(modal.Title).To(Equal("Skill Creation Failed"))
+		})
+
+		It("should transition to StateList on success", func() {
+			intent.SetState(skillsmanagement.StateInferringSkills)
+
+			intent.Update(skillsmanagement.SkillsCreatedMsg{
+				Skills: []*career.Skill{fixtures.SkillWith("s1", "Go", "backend", "intermediate")},
+			})
+
+			Expect(intent.GetState()).To(Equal(skillsmanagement.StateList))
+		})
+
+		It("should transition to StateList on error", func() {
+			intent.SetState(skillsmanagement.StateInferringSkills)
+
+			intent.Update(skillsmanagement.SkillsCreatedMsg{
+				Error: context.DeadlineExceeded,
+			})
+
+			Expect(intent.GetState()).To(Equal(skillsmanagement.StateList))
+		})
+
+		It("should return a refresh command on success", func() {
+			cmd := intent.Update(skillsmanagement.SkillsCreatedMsg{
+				Skills: []*career.Skill{fixtures.SkillWith("s1", "Go", "backend", "intermediate")},
+			})
+
+			Expect(cmd).NotTo(BeNil())
+		})
+
+		It("should return nil command on error", func() {
+			cmd := intent.Update(skillsmanagement.SkillsCreatedMsg{
+				Error: context.DeadlineExceeded,
+			})
+
+			Expect(cmd).To(BeNil())
+		})
+
+		It("should process SkillsLoadedMsg even when feedback modal is visible", func() {
+			mockRepo.Create(ctx, fixtures.SkillWith("s1", "Go", "Backend", "intermediate"))
+			mockRepo.Create(ctx, fixtures.SkillWith("s2", "PostgreSQL", "Database", "intermediate"))
+
+			cmd := intent.Update(skillsmanagement.SkillsCreatedMsg{
+				Skills: []*career.Skill{fixtures.Skill("s1"), fixtures.Skill("s2")},
+			})
+			Expect(cmd).NotTo(BeNil())
+			Expect(intent.GetFeedbackModal()).NotTo(BeNil())
+
+			msg := cmd()
+			intent.Update(msg)
+
+			Expect(intent.GetSkills()).To(HaveLen(2))
+		})
+	})
+
+	Describe("SkillSuggestionsLoadedMsg filtering (filterNewSuggestions)", func() {
+		var intent *skillsmanagement.Intent
+
+		BeforeEach(func() {
+			intentCtx := skillsmanagement.NewIntentContext(ctx, mockRepo)
+			intent, _ = skillsmanagement.NewIntent(intentCtx)
+			_ = intent.Init()
+			intent.SetState(skillsmanagement.StateInferringSkills)
+		})
+
+		It("should show suggestion modal when no existing skills", func() {
+			msg := skillsmanagement.SkillSuggestionsLoadedMsg{
+				Suggestions: []skillinference.SkillSuggestion{
+					{Name: "Go", Category: "backend", Confidence: 0.95},
+					{Name: "Docker", Category: "devops", Confidence: 0.85},
+				},
+				ExistingSkillNames: []string{},
+			}
+
+			intent.Update(msg)
+
+			Expect(intent.GetState()).To(Equal(skillsmanagement.StateSkillSuggestionReview))
+		})
+
+		It("should show all-tracked modal when all suggestions are existing", func() {
+			msg := skillsmanagement.SkillSuggestionsLoadedMsg{
+				Suggestions: []skillinference.SkillSuggestion{
+					{Name: "Go", Category: "backend", Confidence: 0.95},
+					{Name: "Docker", Category: "devops", Confidence: 0.85},
+				},
+				ExistingSkillNames: []string{"Go", "Docker"},
+			}
+
+			intent.Update(msg)
+
+			Expect(intent.GetState()).To(Equal(skillsmanagement.StateList))
+			modal := intent.GetFeedbackModal()
+			Expect(modal).NotTo(BeNil())
+			Expect(modal.Type).To(Equal(feedback.ModalSuccess))
+			Expect(modal.Title).To(Equal("All Skills Already Tracked"))
+		})
+
+		It("should filter existing and show only new suggestions", func() {
+			msg := skillsmanagement.SkillSuggestionsLoadedMsg{
+				Suggestions: []skillinference.SkillSuggestion{
+					{Name: "Go", Category: "backend", Confidence: 0.95},
+					{Name: "Docker", Category: "devops", Confidence: 0.85},
+					{Name: "Kubernetes", Category: "devops", Confidence: 0.80},
+				},
+				ExistingSkillNames: []string{"Go"},
+			}
+
+			intent.Update(msg)
+
+			Expect(intent.GetState()).To(Equal(skillsmanagement.StateSkillSuggestionReview))
+		})
+
+		It("should filter case-insensitively", func() {
+			msg := skillsmanagement.SkillSuggestionsLoadedMsg{
+				Suggestions: []skillinference.SkillSuggestion{
+					{Name: "Go", Category: "backend", Confidence: 0.95},
+					{Name: "Docker", Category: "devops", Confidence: 0.85},
+				},
+				ExistingSkillNames: []string{"go", "docker"},
+			}
+
+			intent.Update(msg)
+
+			Expect(intent.GetState()).To(Equal(skillsmanagement.StateList))
+			modal := intent.GetFeedbackModal()
+			Expect(modal).NotTo(BeNil())
+			Expect(modal.Type).To(Equal(feedback.ModalSuccess))
+		})
+
+		It("should show warning when no suggestions detected at all", func() {
+			msg := skillsmanagement.SkillSuggestionsLoadedMsg{
+				Suggestions:        []skillinference.SkillSuggestion{},
+				ExistingSkillNames: []string{},
+			}
+
+			intent.Update(msg)
+
+			Expect(intent.GetState()).To(Equal(skillsmanagement.StateList))
+			modal := intent.GetFeedbackModal()
+			Expect(modal).NotTo(BeNil())
+			Expect(modal.Type).To(Equal(feedback.ModalWarning))
+		})
+
+		It("should show error modal on inference error", func() {
+			msg := skillsmanagement.SkillSuggestionsLoadedMsg{
+				Error: context.DeadlineExceeded,
+			}
+
+			intent.Update(msg)
+
+			Expect(intent.GetState()).To(Equal(skillsmanagement.StateList))
+			modal := intent.GetFeedbackModal()
+			Expect(modal).NotTo(BeNil())
+			Expect(modal.Type).To(Equal(feedback.ModalError))
+		})
+
+		It("should silently ignore cancelled operations", func() {
+			msg := skillsmanagement.SkillSuggestionsLoadedMsg{
+				Error: context.Canceled,
+			}
+
+			intent.Update(msg)
+
+			Expect(intent.GetState()).To(Equal(skillsmanagement.StateList))
+			Expect(intent.GetFeedbackModal()).To(BeNil())
 		})
 	})
 

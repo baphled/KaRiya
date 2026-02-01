@@ -713,22 +713,21 @@ func (svc *DefaultDataProcessingService) mergeSkills(skills []*Skill) *Skill {
 // determineSkillCategory determines the category for a skill.
 func (svc *DefaultDataProcessingService) determineSkillCategory(skill *Skill) string {
 	if len(skill.Categories) > 0 {
-		return skill.Categories[0]
+		return strings.ToLower(skill.Categories[0])
 	}
 
-	// Default categories based on skill name
 	lowerName := strings.ToLower(skill.Name)
 	if strings.Contains(lowerName, "technical") || strings.Contains(lowerName, "engineer") {
-		return "Technical"
+		return "technical"
 	}
 	if strings.Contains(lowerName, "leadership") || strings.Contains(lowerName, "manage") {
-		return "Leadership"
+		return "leadership"
 	}
 	if strings.Contains(lowerName, "product") {
-		return "Product"
+		return "product"
 	}
 
-	return "Other"
+	return "other"
 }
 
 // extractContext extracts surrounding context from text.

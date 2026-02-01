@@ -17,8 +17,14 @@ type IntentContext struct {
 	// Service provides burst and fact operations.
 	Service BurstService
 
+	// SkillInferenceService provides skill detection operations.
+	SkillInferenceService SkillInferenceService
+
 	// BurstRepository for direct burst CRUD operations.
 	BurstRepository careerrepo.BurstRepository
+
+	// SkillRepository for loading skills associated with burst events.
+	SkillRepository careerrepo.SkillRepository
 
 	// Context for service calls.
 	Context context.Context

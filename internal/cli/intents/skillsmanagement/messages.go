@@ -1,6 +1,9 @@
 package skillsmanagement
 
-import domain "github.com/baphled/kariya/internal/domain/career"
+import (
+	domain "github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/service/career/skillinference"
+)
 
 // Custom message types for ManageSkills state transitions.
 // ALL *Msg structs MUST be in this file.
@@ -54,4 +57,17 @@ type RequestBrowseEventMsg struct {
 	Event     *domain.Event
 	AllEvents []*domain.Event
 	SkillName string
+}
+
+// SkillSuggestionsLoadedMsg is sent when skill inference completes.
+type SkillSuggestionsLoadedMsg struct {
+	Suggestions        []skillinference.SkillSuggestion
+	ExistingSkillNames []string
+	Error              error
+}
+
+// SkillsCreatedMsg is sent when skills are created from accepted suggestions.
+type SkillsCreatedMsg struct {
+	Skills []*domain.Skill
+	Error  error
 }

@@ -1,0 +1,863 @@
+Text|Date|Categories|Tags|Project|Company|Skills
+Architected and maintained custom Linux infrastructure with golden disc images for RWDMag|2006-01|SysAdmin;Infrastructure|linux;golden-discs||RWDMag|Infrastructure;Linux;System Administration;Code Reviews
+Configured Apache web servers for multi-site hosting environments|2006-02|DevOps,Technical Leadership|apache,hosting,linux||RWDMag|Linux;Apache;Shell
+Provided tech support and server administration for early web projects|2006-04|SysAdmin;Support|linux;support||RWDMag|Linux;System Administration
+Implemented automated backup scripts for critical server data|2006-05|DevOps|backup,automation,shell||RWDMag|Shell;Linux;Cron
+Learned fundamentals of server configuration and maintenance|2006-07|Learning;SysAdmin|linux;learning||RWDMag|Linux;System Administration
+Troubleshot network connectivity issues across distributed infrastructure|2006-08|DevOps|networking,troubleshooting,infrastructure||RWDMag|Linux;Networking
+Managed user accounts and access control across shared hosting environment|2006-10|DevOps,Security|access-control,users,security||RWDMag|Linux;Security
+Maintained web hosting infrastructure and resolved technical issues|2006-11|Infrastructure;Support|hosting;troubleshooting||RWDMag|Infrastructure;System Administration
+Built monitoring dashboards for server health and performance metrics|2007-01|DevOps|monitoring,performance,dashboards||RWDMag|Linux;Shell
+Optimised server performance through configuration tuning|2007-02|DevOps,Performance|optimization,performance,tuning||RWDMag|Linux;Performance
+Developed early PHP applications for web content management|2007-04|Backend;Development|php;web||RWDMag|PHP;Web Development
+Created documentation for server administration procedures|2007-05|Documentation,DevOps|documentation,procedures,admin||RWDMag|Documentation;Linux
+Developed early understanding of web application architecture|2007-07|Architecture|architecture,web,learning||RWDMag|Architecture;Web
+Automated Linux server builds with custom scripts and cron jobs for RWDMag|2007-09|SysAdmin;Automation|linux;scripts;cron||RWDMag|CMS;Linux;System Administration;Web Development
+Transitioned from pure sysadmin to hybrid development role|2007-11|Career Development|transition,development,growth||RWDMag|Career Development
+Established foundation in Linux systems that would define career trajectory|2007-12|Technical Leadership|linux,foundation,career||RWDMag|Linux;Foundation
+Provided system administration and support across  servers|2001-06|SysAdmin;Support|linux;web;server||Interface Radio|Linux;System Administration;Web Development;Code Reviews
+Managed live streaming infrastructure for internet radio broadcasts|2001-06|DevOps,Technical Leadership|streaming,radio,infrastructure||Interface Radio|Linux;Streaming;ShoutCast
+Built playlist management system for radio scheduling|2001-07|Development|playlist,scheduling,system||Interface Radio|PHP;MySQL
+Built first commercial web applications using PHP|2001-08|Backend;Development|php;web||Interface Radio|PHP;Web Development
+Implemented listener statistics tracking and reporting|2001-08|Development,Analytics|statistics,tracking,analytics||Interface Radio|PHP;MySQL;Analytics
+Created artist and track database for music library management|2001-09|Development|database,music,library||Interface Radio|PHP;MySQL
+Update chat systems and interactive features for Interface Radio websites|2001-10|Web;Frontend|html;javascript;cms||Interface Radio|CMS;Frontend Development;HTML;JavaScript
+Developed request system allowing listeners to queue songs|2001-10|Development|requests,queue,interactive||Interface Radio|PHP;JavaScript
+Integrated IRC chat with website for community interaction|2001-11|Development|irc,chat,community||Interface Radio|PHP;IRC;JavaScript
+Maintained interactive web features including chat systems|2001-12|Frontend;Maintenance|javascript;chat||Interface Radio|JavaScript;Web Development
+Debug and resolved production issues on Interface Radio web platforms|2002-01|Debugging;Support|production;web||Interface Radio|Web Development
+Built DJ scheduling and rotation management tools|2002-01|Development|scheduling,dj,management||Interface Radio|PHP;MySQL
+Resolved cross-browser compatibility issues on client websites|2002-02|Frontend;Debugging|css;browsers||Interface Radio|CSS;Frontend Development
+Implemented banner ad rotation system for site monetization|2002-02|Development|advertising,monetization,rotation||Interface Radio|PHP;JavaScript
+Modernised website architecture and streamlined publishing workflow for Interface Radio|2002-03|Web;Frontend|html;cms;content||Interface Radio|CMS;Frontend Development;HTML
+Created mobile-friendly pages for WAP-enabled devices|2002-03|Development|mobile,wap,responsive||Interface Radio|PHP;WAP
+Optimised website performance for dial-up era constraints|2002-04|Performance;Frontend|optimisation;web||Interface Radio|Performance;Web Development
+Optimized database queries for high-traffic playlist lookups|2002-04|Performance|database,optimization,performance||Interface Radio|MySQL;Performance
+Developed RSS feed generation for show schedules|2002-05|Development|rss,feeds,syndication||Interface Radio|PHP;XML;RSS
+Built automated social posting for new show announcements|2002-06|Development,Automation|social,automation,announcements||Interface Radio|PHP;Automation
+Developed SEO improvements and lightweight JavaScript features for Interface Radio websites|2002-07|Web;Frontend;Optimisation|seo;javascript;cms||Interface Radio|CMS;Frontend Development;JavaScript;SEO
+Managed transition to new hosting provider with zero downtime|2002-07|DevOps|migration,hosting,uptime||Interface Radio|Linux;DevOps
+Architected backend infrastructure and deployment pipeline for KeyOne's platform services|2003-04|Web;Backend|php;deployment;cms||KeyOne|Backend Development;CMS;Deployment;PHP;Code Reviews
+Joined KeyOne to support SEO service development and automation|2003-04|Career;Onboarding|php;seo||KeyOne|PHP;SEO
+Developed automated SEO crawling and indexing tools|2003-04|Development|seo,crawling,automation||KeyOne|PHP;SEO
+Developed automated SEO reporting tools|2003-05|Backend;Automation|php;seo;reporting||KeyOne|Automation;PHP;SEO
+Built keyword density analysis and recommendation engine|2003-05|Development|keywords,analysis,seo||KeyOne|PHP;Analytics
+Created competitor backlink analysis reporting system|2003-05|Development|backlinks,competitors,analysis||KeyOne|PHP;SEO
+Developed internal tools to streamline SEO analysis workflows|2003-06|Backend;Automation|php;tooling||KeyOne|PHP;Automation
+Implemented SERP tracking across multiple search engines|2003-06|Development|serp,tracking,search||KeyOne|PHP;SEO
+Built client dashboard for real-time SEO metrics visibility|2003-06|Development|dashboard,metrics,visualization||KeyOne|PHP;JavaScript
+Built keyword tracking and ranking analysis systems|2003-07|Backend;Features|php;analytics||KeyOne|Analytics;PHP;SEO
+Developed automated report generation and email delivery|2003-07|Development,Automation|reports,email,automation||KeyOne|PHP;Email
+Created white-label reporting for agency clients|2003-07|Development|whitelabel,agency,reporting||KeyOne|PHP;Branding
+Create in-house SEO applications to support KeyOne SEO services|2003-08|Development;SEO|php;seo;automation||KeyOne|Automation;PHP;SEO
+Built client-facing SEO reporting dashboards|2003-08|Backend;Features|php;reporting||KeyOne|PHP;SEO
+Integrated Google Analytics data into reporting platform|2003-08|Development,Analytics|analytics,google,integration||KeyOne|PHP;Analytics;API
+Built batch processing system for large-scale site audits|2003-08|Development,Performance|batch,processing,audits||KeyOne|PHP;Performance;High-throughput Systems
+Developed backend systems and internal tools across early web projects|2004-05|Backend;Development|php;automation||Freelance / Contract|Automation;Backend Development;PHP;Code Reviews
+Began exploring Ruby programming language alongside PHP work|2004-05|Learning|ruby,learning,languages||Freelance / Contract|Ruby;Learning
+Built first Ruby scripts for automation and text processing|2004-06|Development|ruby,scripts,automation||Freelance / Contract|Ruby;Shell
+Developed hybrid PHP/Ruby solutions for client projects|2009-05|Development|php,ruby,hybrid||Freelance / Contract|PHP;Ruby
+Advised clients on web and backend architecture during freelance engagements|2009-06|Consulting;Architecture|php;ruby;advisory||Freelance / Contract|PHP;Ruby;Software Architecture
+Transitioned from system administration to full-time programming roles|2005-01|Career;Transition|backend;php||Freelance / Contract|Backend Development;PHP
+Created Rails prototype exploring MVC architecture patterns|2005-02|Development,Architecture|rails,mvc,prototype||Freelance / Contract|Ruby;Rails
+Built personal Ruby projects to experiment with backend design patterns|2005-03|Development;Learning|ruby;personal-project|QuikCV||Ruby;Code Reviews
+Built client websites using early WordPress installations|2005-03|Development|wordpress,cms,websites||Freelance / Contract|PHP;WordPress
+Developed custom WordPress plugins for client requirements|2005-04|Development|plugins,wordpress,custom||Freelance / Contract|PHP;WordPress
+Explored JavaScript frameworks for dynamic web applications|2005-05|Development|javascript,frameworks,web||Freelance / Contract|JavaScript;Web
+Created AJAX-powered interfaces before widespread adoption|2005-06|Development|ajax,interfaces,innovation||Freelance / Contract|JavaScript;AJAX
+Built database-driven applications with MySQL optimization|2006-01|Development|database,mysql,applications||Freelance / Contract|PHP;MySQL
+Developed RESTful API concepts before REST became mainstream|2006-02|Development,Architecture|rest,api,architecture||Freelance / Contract|PHP;API
+Created payment integration prototypes for e-commerce clients|2006-03|Development|payment,ecommerce,integration||Freelance / Contract|PHP;Payments
+Established consulting practice focusing on web development|2006-04|Business|consulting,practice,business||Freelance / Contract|Business;Consulting
+Built reputation for solving complex technical problems|2006-05|Technical Leadership|reputation,problem-solving,expertise||Freelance / Contract|Technical Leadership
+Transitioned fully to Ruby/Rails as primary technology stack|2011-06|Career Development|ruby,rails,transition||Freelance / Contract|Ruby;Rails
+Worked on multi-client PHP projects improving deployment processes|2006-07|Backend;Delivery|php;deployment||Freelance / Contract|Backend Development;Deployment;PHP
+Joined iBetX as a senior programmer delivering production services and integrating APIs|2008-07|Career;Senior|php;ruby;backend||iBetX|Backend Development;PHP;Ruby;Betting/Gaming;Code Reviews
+Created backend services for online betting platform using Zend Framework and custom components|2008-07|Backend;Delivery|php;zend;api||iBetX|API Development;Backend Development;PHP;Zend Framework;Betting/Gaming
+Created API clients for payment gateway integration with DataCash|2008-08|Integration;Backend|api;payment;datacash||iBetX|API Development;Payment Systems;PHP;Betting/Gaming
+Architected payment gateway integration layer for betting platform|2008-08|Architecture,Development|payment,gateway,architecture||iBetX|PHP;Zend;Architecture;Betting/Gaming
+Implemented secure transaction handling with PCI compliance considerations|2008-09|Security,Development|security,pci,transactions||iBetX|PHP;Security;PCI;Betting/Gaming
+Built fraud detection heuristics for suspicious betting patterns|2008-09|Development,Security|fraud,detection,security||iBetX|PHP;Security;Betting/Gaming
+Created comprehensive API documentation for payment integrations|2008-10|Documentation|documentation,api,payment||iBetX|Documentation;API;Betting/Gaming
+Created payment gateway integrations with third-party providers (3DS)|2008-10|Integration;Payments|api;payment-gateway||iBetX|API Development;System Integration;Betting/Gaming
+Mentored junior programmers and conducted code reviews at iBetX|2008-11|Leadership;Enablement|mentoring;code-review||iBetX|Code Review;Mentoring;Betting/Gaming
+Implemented 3D Secure payment verification flows|2008-11|Security;Backend|3ds;payment;security||iBetX|Payment Systems;Security;Betting/Gaming
+Built transaction processing systems for online betting platform|2008-12|Backend;Features|transactions;betting||iBetX|Backend Development;PHP;Betting/Gaming
+Developed automated testing suite for payment workflows|2009-01|Quality|testing,payment,automation||iBetX|PHP;Testing;Betting/Gaming
+Implemented retry logic and failure handling for transaction processing|2009-01|Development|retry,failure-handling,resilience||iBetX|PHP;Resilience;Betting/Gaming
+Built transaction reconciliation reporting for finance team|2009-02|Development|reconciliation,reporting,finance||iBetX|PHP;Reporting;Betting/Gaming
+Created monitoring dashboards for payment system health|2009-03|DevOps|monitoring,dashboards,health||iBetX|PHP;Monitoring;Betting/Gaming
+Established coding standards and review practices for development team|2009-04|Technical Leadership|standards,review,practices||iBetX|Technical Leadership;Betting/Gaming
+Joined Grand Union as a senior PHP engineer working across multiple client engagements including broadcasters and consumer brands|2010-02|Career;Onboarding|agency;php;consulting||Grand Union|PHP;Code Reviews
+Delivered backend services for client-facing platforms used by broadcasters including ITV and Channel 4|2010-02|Backend;Delivery|php;broadcast;api||Grand Union|API Development;Backend Development;PHP
+Maintained and extended APIs supporting digital TV migration and postcode lookup services used across multiple broadcasters|2010-02|Maintenance;Integration|api;data;broadcast||Grand Union|API Development;Data Processing;System Integration
+Developed multi-client agency solutions for broadcast and consumer brands|2010-03|Backend;Agency|agency;multi-client||Grand Union|Backend Development;PHP
+Debugged production issues across client systems with incomplete documentation and legacy constraints|2010-03|Debugging;Analysis|legacy;problem-solving||Grand Union|
+Developed internal tooling and client deployment scripts at Grand Union|2010-03|Backend;Automation|deployment;tools||Grand Union|Backend Development;Deployment
+Built digital TV migration support tools for broadcasters|2010-04|Backend;Features|broadcast;dtv||Grand Union|Backend Development;Integration
+Worked with account managers to translate vague client requirements into implementable technical solutions|2010-04|Communication;Analysis|requirements;clients||Grand Union|
+Created postcode lookup services used by ITV and Channel 4|2010-04|Backend;API|postcode;api||Grand Union|API Development;Backend Development
+Implemented incremental improvements to background services without disrupting live client platforms|2010-05|Reliability;Delivery|incremental;stability||Grand Union|
+Implemented API integrations for Coca-Cola campaigns|2010-05|Integration;Backend|api;brand||Grand Union|API Development;Integration
+Balanced delivery speed against quality expectations for high-visibility client work|2010-05|Strategy;Delivery|trade-offs;agency||Grand Union|
+Developed content management systems for agency clients|2010-06|Backend;CMS|cms;agency||Grand Union|Backend Development;CMS
+Stabilised Grand Union's client platform during high-pressure concurrent delivery phases|2010-06|Support;Context-switching|multi-client;agency||Grand Union|
+Provided technical support across multiple concurrent client projects, managing context switching|2008-08|Product;UX|cv;journal|QuikCV||
+Architected original Rails application with 10 entity models supporting CV management|2008-08|Architecture;Backend|rails;mongodb;design|QuikCV||Backend Development;Ruby;Ruby on Rails;Software Architecture
+Designed Mongoid ORM integration to leverage MongoDB schema flexibility|2008-08|Architecture;Data|mongodb;orm;modeling|QuikCV||Data Processing;Software Architecture
+Improved logging and diagnostics to reduce turnaround time on client-reported issues|2010-06|Debugging;Infrastructure|logging;observability||Grand Union|Infrastructure;Logging;Observability
+Built Backbone.js frontend with real-time editing capabilities and responsive UI|2008-09|Frontend;Architecture|backbone;javascript;ux|QuikCV||Frontend Development;JavaScript;Software Architecture
+Reviewed code across team projects to maintain consistency and shared standards|2010-07|Quality;Code Review|standards;php||Grand Union|PHP
+Led technical direction and code quality improvements across engineering team|2008-10|Debugging;Support|production;healthcare||Freelance / Contract|Code Reviews
+Implemented multi-format export system supporting PDF, VCard, and CSV|2008-10|Features;Backend|export;document-generation|QuikCV||Backend Development
+Acted as de facto technical lead on selected client engagements|2010-07|Leadership;Delivery|lead-engineer;agency||Grand Union|
+Integrated OmniAuth social login supporting LinkedIn sync and federation|2008-11|Authentication;Integration|oauth;linkedin;identity|QuikCV||System Integration
+Developed comprehensive test suite with RSpec, Cucumber, and Jasmine|2008-12|Quality;Testing|rspec;cucumber;jasmine;bdd|QuikCV||Testing
+Transitioned into agency work with We Are Friday supporting large enterprise clients|2009-01|Career;Transition|agency;enterprise||Freelance / Contract|
+Worked on HSBC programmes delivering content ingestion and API-driven platforms|2009-02|Backend;Integration|hsbc;enterprise;api||Freelance / Contract|API Development;Backend Development;System Integration
+Maintained and extended legacy enterprise systems under regulatory constraints|2009-03|Maintenance;Enterprise|legacy;finance||Freelance / Contract|
+Introduced CI/CD pipelines and test automation for We Are Friday projects|2009-03|DevOps;Automation|ci-cd;automation||Freelance / Contract|Automation;CI/CD;Continuous Integration;DevOps
+Developed content ingestion pipelines processing large volumes of documentation for HSBC|2009-04|Backend;Data|content-ingestion;enterprise||Freelance / Contract|Backend Development;Data Processing
+Demonstrated utility of consuming content management via conceptual content pages|2009-04|Architecture;Innovation|content-management;cms||Freelance / Contract|CMS;Software Architecture
+Clarified ambiguous requirements originating from multiple stakeholder groups|2009-04|Communication;Analysis|stakeholders;finance||Freelance / Contract|
+Integrated SOAP-based services while gradually introducing REST-style APIs|2009-05|Architecture;Integration|soap;rest;enterprise||Freelance / Contract|REST API;SOA;SOAP;Software Architecture;System Integration
+Delivered MVP functionality under aggressive timelines|2009-06|Delivery;Pressure|mvp;deadlines||Freelance / Contract|
+Accepted tactical compromises to ensure forward momentum on enterprise projects|2009-07|Strategy;Delivery|pragmatism;enterprise||Freelance / Contract|PHP;Backend Development
+Improved system reliability without risky rewrites|2009-08|Reliability;Architecture|incremental;stability||Freelance / Contract|Software Architecture
+Supported production incidents affecting client-facing services|2009-09|Support;Reliability|production;enterprise||Freelance / Contract|
+Coordinated incident response and resolution for production services, minimizing downtime|2009-09|Documentation;Process|knowledge-transfer||Freelance / Contract|
+Documented system behaviour to support agency handovers|2009-10|Documentation;Process|knowledge-transfer||Freelance / Contract|
+Established reputation as a stabilising engineer in high-pressure agency environments|2009-12|Identity;Leadership|reliability;agency||Freelance / Contract|PHP;Backend Development;Leadership
+Joined MyBuilder as senior PHP developer on construction marketplace platform|2009-11|Career;Onboarding|php;marketplace;construction||MyBuilder Limited|PHP;Backend Development;Web Development
+Maintained and extended PHP backend supporting builder profiles and job matching|2009-11|Backend;Maintenance|php;backend;profiles||MyBuilder Limited|PHP;Backend Development;MySQL
+Improved platform reliability and data integrity for listing management|2009-12|Backend;Quality|reliability;data-integrity||MyBuilder Limited|PHP;MySQL;Backend Development
+Contributed to backend services supporting homeowner-tradesperson matching|2009-12|Backend;Features|matching;marketplace||MyBuilder Limited|PHP;Backend Development;Web Development
+Continued agency work supporting public-sector clients via We Are Friday|2010-01|Career;Consulting|public-sector;agency||Freelance / Contract|
+Maintained long-running batch jobs and background services for environmental data pipelines|2010-03|Maintenance;Reliability|batch-processing;data||Freelance / Contract|Data Processing
+Diagnosed and resolved data integrity issues across legacy public-sector systems|2010-04|Debugging;Analysis|data-quality;legacy||Freelance / Contract|Data Processing
+Collaborated with domain experts to clarify regulatory requirements|2010-05|Communication;Domain|public-sector;requirements||Freelance / Contract|
+Improved performance and robustness of data ingestion pipelines|2010-06|Performance;Optimisation|data-pipelines||Freelance / Contract|Data Processing
+Introduced defensive coding practices to handle unpredictable external data sources|2010-07|Quality;Reliability|validation;robustness||Freelance / Contract|PHP;Ruby;Backend Development
+Joined Everlution Software as senior PHP developer on client projects|2010-08|Career;Onboarding|php;agency;consulting||Everlution Software|PHP;Backend Development;Web Development
+Delivered backend services for agency client platforms|2010-08|Backend;Delivery|php;backend;client-work||Everlution Software|PHP;Backend Development
+Maintained and extended existing PHP applications under client deadlines|2010-09|Backend;Maintenance|php;legacy;deadlines||Everlution Software|PHP;Backend Development;Web Development
+Contributed to code quality improvements across agency projects|2010-10|Quality;Backend|code-quality;standards||Everlution Software|PHP;Code Review;Backend Development
+Balanced BAU maintenance with incremental improvements|2010-08|Strategy;Maintenance|BAU;incremental||Freelance / Contract|
+Founded QuikCV as personal Ruby learning project and CV management tool|2010-08|Product;Founding|ruby;personal-project|QuikCV||Ruby
+Implemented BDD workflow using Cucumber and RSpec from project inception|2010-08|Quality;Process|cucumber;rspec;bdd|QuikCV||BDD;Cucumber;RSpec;Testing
+Selected CouchDB initially for schema flexibility in CV data structures|2010-08|Architecture;Data|couchdb;nosql|QuikCV||Architecture;NoSQL
+Provided continuity across long-lived public-sector programmes|2010-09|Reliability;Continuity|stability;public-sector||Freelance / Contract|
+Migrated from CouchDB to MongoDB with Mongoid ORM for improved Rails integration|2010-09|Architecture;Migration|mongodb;mongoid|QuikCV||MongoDB;Architecture
+Supported onboarding of new engineers into complex systems|2010-10|Enablement;Onboarding|mentoring;agency||Freelance / Contract|Mentoring
+Began freelance period focusing on Ruby and modern web technologies|2010-10|Career;Transition|freelance;ruby;consulting||Freelance / Contract|Ruby;JavaScript
+Implemented user authentication using Devise gem with bcrypt encryption|2010-10|Security;Backend|devise;authentication|QuikCV||Authentication;Security
+Acted as institutional memory across rotating agency teams|2010-11|Leadership;Stability|continuity||Freelance / Contract|
+Established institutional knowledge repository and continuity processes for agency teams|2010-11|Debugging;Analysis|distributed-systems;data||Freelance / Contract|Data Processing
+Provided Ruby consulting and development services to multiple clients|2010-11|Backend;Consulting|ruby;clients||Freelance / Contract|Ruby;Consulting
+Built profile management system supporting multiple CV sections and entries|2010-11|Features;Backend|profiles;crud|QuikCV||Ruby;Backend Development
+Completed engagement with strong public-sector domain experience|2010-12|Career;Reflection|domain-expertise||Freelance / Contract|
+Leveraged Cucumber for BDD testing across client projects|2010-12|Quality;Testing|cucumber;bdd;testing||Freelance / Contract|BDD;Cucumber;Testing
+Created entry model supporting chronological experiences, qualifications, and skills|2010-12|Architecture;Data|models;entities|QuikCV||Data Processing;Architecture
+Delivered agency work for healthcare clients including Nuffield Health|2011-01|Career;Consulting|healthcare;agency||Freelance / Contract|
+Deployed applications using Heroku for rapid client delivery|2011-01|DevOps;Deployment|heroku;deployment||Freelance / Contract|DevOps;Heroku
+Implemented Formtastic forms for consistent user input handling|2011-01|Frontend;UX|formtastic;forms|QuikCV||Frontend Development
+Maintained healthcare booking and operational systems|2011-02|Maintenance;Backend|healthcare;systems||Freelance / Contract|Backend Development
+Configured Apache servers for client hosting requirements|2011-02|Infrastructure;Operations|apache;hosting||Freelance / Contract|Apache;Infrastructure
+Added vCard export functionality allowing users to share contact information|2011-02|Features;Integration|vcard;export|QuikCV||System Integration
+Built JavaScript-enhanced interfaces for client web applications|2011-03|Frontend;Development|javascript;frontend||Freelance / Contract|Frontend Development;JavaScript
+Integrated LinkedIn OAuth for profile synchronisation and employment import|2011-03|Integration;Features|linkedin;oauth;sync|QuikCV||OAuth;System Integration
+Worked closely with non-technical healthcare stakeholders|2011-04|Communication;Stakeholders|healthcare;requirements||Freelance / Contract|
+Consulted on architecture and technology choices for early-stage projects|2011-04|Consulting;Architecture|advisory;startups||Freelance / Contract|Architecture;Consulting
+Built LinkedIn employment synchronisation handling incomplete date data|2011-04|Integration;Backend|linkedin;data-parsing|QuikCV||Data Processing;System Integration
+Improved system resilience for business-critical healthcare operations|2011-05|Reliability;Architecture|availability;healthcare||Freelance / Contract|Software Architecture
+Conducted stakeholder training sessions and knowledge transfer for healthcare systems|2011-05|Communication;Enablement|training;stakeholders||Freelance / Contract|Training;Knowledge Transfer
+Maintained multiple concurrent client projects while building QuikCV|2011-05|Delivery;Balance|multi-client;product||Freelance / Contract|Ruby
+Implemented PDF export using PDFKit and WickedPDF for professional CV generation|2011-05|Features;Backend|pdf;export;wicked-pdf|QuikCV||Backend Development
+Introduced lightweight CI practices into legacy projects|2011-06|Process;CI|ci;quality||Freelance / Contract|Continuous Integration
+Established reputation as reliable Ruby consultant in London tech scene|2011-06|Career;Identity|consulting;ruby||Freelance / Contract|Ruby;Consulting
+Added Gravatar integration for user profile images|2011-06|Features;Integration|gravatar;profiles|QuikCV||System Integration
+Balanced regulatory compliance with delivery pressure|2011-07|Strategy;Delivery|compliance;trade-offs||Freelance / Contract|
+Improved logging and traceability for audit support|2011-08|Infrastructure;Observability|logging;audit||Freelance / Contract|Infrastructure;Logging;Observability
+Expanded client base through referrals and technical community involvement|2011-08|Business;Networking|growth;community||Freelance / Contract|Consulting
+Implemented user availability tracking based on employment end dates|2011-08|Features;Backend|availability;status|QuikCV||Backend Development
+Documented system behaviour to support long-term maintainability and audits|2011-09|Documentation;Compliance|documentation;regulatory||Freelance / Contract|
+Provided steady senior engineering presence during organisational change|2011-10|Leadership;Stability|continuity;agency||Freelance / Contract|PHP;Leadership
+Balanced client work with continued development of QuikCV product|2011-10|Strategy;Product|balance;product-dev||Freelance / Contract|Ruby
+Built administration panel for user management and platform oversight|2011-10|Features;Backend|admin;dashboard|QuikCV||Backend Development
+Concluded agency engagement with strengthened healthcare domain expertise|2011-11|Career;Completion|healthcare;experience||Freelance / Contract|PHP;Backend Development
+Established pattern of trusted senior agency engineer across sectors|2011-12|Identity;Career|senior-consultant||Freelance / Contract|PHP;Ruby;Leadership
+Joined We Are Friday as a Ruby engineer supporting enterprise client platforms including HSBC|2012-01|Career;Onboarding|agency;ruby;enterprise||We Are Friday|Ruby;Ruby on Rails;PostgreSQL;Code Reviews
+Concluded freelance period to join We Are Friday full-time|2012-01|Career;Transition|agency;transition||Freelance / Contract|Ruby
+Extracted frontend into separate Rails engine gem for modular architecture|2012-01|Architecture;Refactoring|rails-engine;gem|QuikCV||Architecture;Ruby
+Designed and delivered scalable backend services using Ruby on Rails, focusing on maintainability, performance, and reliability in production environments.|2012-01|Backend;Web;APIs|ruby;rails;backend;api;scalable-systems||Freelance / Contract|Ruby;Ruby on Rails;API Design;Backend Architecture;Scalability
+Built and optimized data ingestion and processing pipelines, normalizing datasets (JSON, XML, CSV) for downstream services and client-facing applications.|2012-01|Data;Backend;ETL|data-processing;json;xml;csv;etl||Freelance / Contract|Data Processing;ETL;Ruby;JSON;XML;CSV
+Implemented Test-Driven Development practices using RSpec, improving code quality, confidence in deployments, and long-term maintainability.|2012-01|Testing;Quality|tdd;rspec;testing;quality||Freelance / Contract|TDD;RSpec;Automated Testing;Code Quality
+Collaborated closely with product managers and stakeholders to translate requirements into robust, well-scoped technical solutions.|2012-01|Product;Collaboration|stakeholders;requirements;agile||Freelance / Contract|Product Engineering;Stakeholder Management;Agile Delivery
+Worked on HSBC content ingestion systems designed to aggregate and process large volumes of client content|2012-02|Backend;Integration|hsbc;content-ingestion;api||We Are Friday|API Development;Backend Development;System Integration
+Created BackboneJS SPA with real-time editing and automatic saving|2012-02|Frontend;Architecture|backbone;spa;realtime|QuikCV||BackboneJS;Frontend Development;JavaScript
+Built content ingestion platform for HSBC Global Connections|2012-02|Backend;Architecture|hsbc;content-ingestion||We Are Friday|Architecture;Backend Development
+Maintained SOA-style architectures supporting multiple downstream consumers|2012-03|Architecture;Maintenance|SOA;enterprise||We Are Friday|SOA;Software Architecture
+Implemented collapsible sections and smooth animations for improved UX|2012-03|Frontend;UX|animations;ux|QuikCV||Frontend Development
+Implemented SOA patterns for enterprise integration|2012-03|Architecture;Integration|soa;enterprise||We Are Friday|Architecture;SOA
+Added undo functionality allowing users to recover deleted records|2012-04|Features;UX|undo;recovery|QuikCV||Frontend Development
+Created statically generated pages for improved performance|2012-04|Backend;Performance|static-generation;performance||We Are Friday|Backend Development;Performance
+Clarified ambiguous business logic originating from multiple HSBC stakeholder groups|2012-05|Communication;Analysis|requirements;finance||We Are Friday|
+Implemented flash messaging system with model-specific notifications|2012-05|Features;UX|notifications;feedback|QuikCV||Frontend Development
+Built API layer for content management operations|2012-05|Backend;API|api;cms||We Are Friday|API Development;Backend Development
+Implemented statically generated pages to improve performance and reliability|2012-06|Performance;Delivery|static-generation;optimisation||We Are Friday|
+Added chronological sorting with comparators for entry management|2012-06|Features;Backend|sorting;ordering|QuikCV||Backend Development
+Implemented living documentation for system architecture|2012-06|Documentation;Architecture|living-docs;architecture||We Are Friday|Architecture;Documentation
+Built internal dashboards to expose system health and processing state|2012-07|Infrastructure;Observability|dashboards;monitoring||We Are Friday|Infrastructure;Monitoring;Observability
+Introduced living documentation practices to reduce knowledge silos|2012-08|Documentation;Process|living-docs;knowledge-sharing||We Are Friday|
+Deployed to Heroku with Puma, Dalli caching, and NewRelic monitoring|2012-08|DevOps;Infrastructure|heroku;puma;caching|QuikCV||DevOps;Heroku;Infrastructure
+Created dashboards for system monitoring and health|2012-08|Infrastructure;Observability|dashboards;monitoring||We Are Friday|Infrastructure;Monitoring
+Balanced BAU support with delivery of new platform capabilities|2012-09|Strategy;Maintenance|BAU;incremental||We Are Friday|
+Worked closely with HSBC stakeholders on requirements|2012-09|Communication;Stakeholders|hsbc;requirements||We Are Friday|Communication;Stakeholder Management
+Provided continuity across rotating agency and client teams|2012-10|Reliability;Continuity|stability;agency||We Are Friday|
+Implemented Rollbar error tracking for production monitoring|2012-10|Infrastructure;Observability|rollbar;monitoring|QuikCV||Observability;Monitoring
+Acted as senior stabilising engineer during late-stage delivery pressure|2012-11|Leadership;Delivery|pressure-management||We Are Friday|
+Delivered high-visibility enterprise functionality|2012-11|Delivery;Enterprise|enterprise;delivery||We Are Friday|Delivery
+Completed year recognised as dependable senior agency engineer|2012-12|Career;Reflection|senior;agency||We Are Friday|CI/CD
+Joined Nature Publishing Group as Ruby and DevOps engineer in December|2012-12|Career;Onboarding|ruby;devops;publishing||Nature Publishing Group|DevOps;Ruby;CI/CD;Redis;Code Reviews
+Joined Nature Publishing Group as Ruby and DevOps engineer|2013-01|Career;Onboarding|ruby;devops;publishing||Nature Publishing Group|DevOps;Operations;Ruby;Ruby on Rails;PostgreSQL;CI/CD;Redis
+Worked on platforms supporting academic journal creation|2013-02|Backend;Delivery|content-platform;publishing||Nature Publishing Group|Backend Development;DevOps;CI/CD;Redis
+Collaborated closely with API teams building in-house publishing APIs|2013-03|Integration;Collaboration|api;cross-team||Nature Publishing Group|API Development;System Integration;DevOps;CI/CD;Redis
+Collaborated with API teams building in-house publishing APIs|2013-03|Integration;Collaboration|api;cross-team||Nature Publishing Group|API Development;System Integration;DevOps;CI/CD;Redis
+Maintained and improved Puppet scripts managing server infrastructure|2013-04|Infrastructure;Automation|puppet;configuration||Nature Publishing Group|Infrastructure;Puppet;DevOps;CI/CD;Redis
+Improved Puppet automation managing server infrastructure|2013-04|Infrastructure;Automation|puppet;configuration||Nature Publishing Group|Infrastructure;Puppet;DevOps;CI/CD;Redis
+Introduced ELK stack to centralise logs across publishing services|2013-05|Infrastructure;Observability|elk;logging||Nature Publishing Group|ELK Stack;Infrastructure;Logging;Observability;DevOps;CI/CD;Redis
+Enabled engineering teams to explore and analyze logs independently via Kibana interface|2013-06|Enablement;Data|kibana;self-service||Nature Publishing Group|Data Processing;Kibana;DevOps;CI/CD;Redis
+Built cross-team API design patterns and configured monitoring alerts|2013-06|Integration;Observability|api;monitoring;alerts||Nature Publishing Group|API Development;Monitoring;Observability;System Integration;DevOps;CI/CD;Redis
+Maintained fleets of 20+ servers across environments|2013-07|Infrastructure;Operations|servers;ops||Nature Publishing Group|Infrastructure;Operations;Server Management;DevOps;CI/CD;Redis
+Implemented metrics collection and dashboards to provide real-time visibility into platform health|2013-08|Observability;Metrics|monitoring;metrics||Nature Publishing Group|Metrics;Monitoring;Observability;DevOps;CI/CD;Redis
+Developed Rails services enabling real-time logistics coordination.|2013-09|Backend;Logistics|ruby;rails;real-time||Shutl|Ruby;Ruby on Rails;Logistics Systems;DevOps;CI/CD;Redis;Code Reviews
+Developed and maintained Rails services underpinning logistics, delivery coordination, and transactional workflows.|2013-09|Backend;Logistics|ruby;rails;logistics||Shutl|Ruby;Ruby on Rails;Logistics Systems;DevOps;CI/CD;Redis
+Created living documentation describing infrastructure topology and dependencies|2013-09|Documentation;Infrastructure|living-docs;ops||Nature Publishing Group|Infrastructure;Operations;DevOps;CI/CD;Redis
+Joined Shutl as DevOps Engineer to manage infrastructure and internal tooling|2013-09|Career;Onboarding|devops;infrastructure||Shutl|DevOps;Ruby;CI/CD;Redis
+Designed and delivered scalable backend services using Ruby on Rails, focusing on maintainability, performance, and reliability in production environments.|2013-09|Backend;Web;APIs|ruby;rails;backend;api;scalable-systems||Nature Publishing Group|Ruby;Ruby on Rails;API Design;Backend Architecture;Scalability;DevOps;CI/CD;Redis
+Built and optimized data ingestion and processing pipelines, normalizing datasets (JSON, XML, CSV) for downstream services and client-facing applications.|2013-09|Data;Backend;ETL|data-processing;json;xml;csv;etl||Nature Publishing Group|Data Processing;ETL;Ruby;JSON;XML;CSV;DevOps;CI/CD;Redis
+Implemented Test-Driven Development practices using RSpec, improving code quality, confidence in deployments, and long-term maintainability.|2013-09|Testing;Quality|tdd;rspec;testing;quality||Nature Publishing Group|TDD;RSpec;Automated Testing;Code Quality;DevOps;CI/CD;Redis
+Collaborated closely with product managers and stakeholders to translate requirements into robust, well-scoped technical solutions.|2013-09|Product;Collaboration|stakeholders;requirements;agile||Nature Publishing Group|Product Engineering;Stakeholder Management;Agile Delivery;DevOps;CI/CD;Redis
+Optimised database interactions for latency-sensitive operations.|2013-10|Backend;Performance|rails;database||Shutl|Ruby on Rails;Database Performance;DevOps;CI/CD;Redis;High-throughput Systems
+Focused on performance optimisation and fault tolerance in time-sensitive backend processes.|2013-10|Backend;Performance|rails;performance;fault-tolerance||Shutl|Ruby on Rails;Performance Engineering;Resilient Systems;DevOps;CI/CD;Redis
+Built dashboards providing real-time system insight|2013-10|Infrastructure;Dashboards|monitoring;visibility||Shutl|Infrastructure;Monitoring;DevOps;CI/CD;Redis
+Architected monitoring and observability strategy supporting operational decision-making|2013-10|Infrastructure;Observability|elk;logging||Shutl|ELK Stack;Infrastructure;Logging;Observability;DevOps;CI/CD;Redis
+Inherited ROI calculation application requiring significant quality improvements|2013-10|Assessment;Maintenance|legacy;technical-debt||Shutl|Ruby;DevOps;CI/CD;Redis
+Ensured transactional consistency across distributed systems.|2013-11|Backend;Systems|rails;transactions||Shutl|Ruby on Rails;Distributed Systems;DevOps;CI/CD;Redis
+Supported operational teams by delivering reliable backend features and system improvements.|2013-11|Backend;Support|rails;operations;support||Shutl|Ruby on Rails;Operational Support;Backend Engineering;DevOps;CI/CD;Redis
+Balanced feature delivery with operational reliability|2013-11|Strategy;Reliability|stability;delivery||Shutl|DevOps;CI/CD;Redis
+Introduced ELK stack to centralise logs across Shutl's distributed systems|2013-11|Infrastructure;Observability|elk;logging;centralisation||Shutl|ELK Stack;Infrastructure;Logging;DevOps;CI/CD;Redis
+Supported business-critical delivery workflows.|2013-12|Backend;Operations|rails;delivery||Shutl|Ruby on Rails;Operational Systems;DevOps;CI/CD;Redis
+Worked under strict uptime and reliability requirements.|2014-01|Backend;Reliability|rails;uptime||Shutl|Ruby on Rails;High Availability;DevOps;CI/CD;Redis
+Built Ruby applications gathering business intelligence data for potential clients|2014-01|Backend;Business|ruby;bi;tooling||Shutl|Ruby;Business Intelligence;DevOps;CI/CD;Redis
+Improved fault tolerance in backend processing pipelines.|2014-02|Backend;Resilience|rails;fault-tolerance||Shutl|Ruby on Rails;Resilient Systems;DevOps;CI/CD;Redis
+Inherited legacy internal applications lacking sufficient quality controls|2014-02|Maintenance;Assessment|legacy;quality||Shutl|DevOps;CI/CD;Redis
+Obtained read access to orders database to enable ROI analysis|2014-02|Data;Architecture|database;read-replica||Shutl|Data Processing;DevOps;CI/CD;Redis
+Collaborated with infrastructure teams to align application and platform concerns.|2014-03|Backend;Collaboration|rails;infrastructure||Shutl|Ruby on Rails;Cross-team Collaboration;DevOps;CI/CD;Redis
+Raised code quality and reliability of ROI-focused internal tools|2014-03|Refactoring;Quality|technical-debt;roi||Shutl|DevOps;CI/CD;Redis
+Developed custom ROI calculation tool for BI team using orders database|2014-03|Backend;Business|roi;analytics;bi||Shutl|Ruby;Business Intelligence;Data Processing;DevOps;CI/CD;Redis
+Maintained backend systems during high-growth operational phases.|2014-04|Backend;Scaling|rails;growth||Shutl|Ruby on Rails;Scaling Systems;DevOps;CI/CD;Redis
+Created living documentation describing infrastructure and data flows|2014-04|Documentation;Infrastructure|living-docs;ops||Shutl|Infrastructure;Operations;DevOps;CI/CD;Redis
+Created automated reports helping BI team demonstrate value to potential clients|2014-04|Features;Business|reporting;automation||Shutl|Automation;Business Intelligence;DevOps;CI/CD;Redis
+Maintained infrastructure supporting 80+ servers across four environments|2014-04|Infrastructure;Operations|servers;multi-environment||Shutl|Infrastructure;Server Management;DevOps;CI/CD;Redis
+Delivered incremental improvements without disrupting live operations.|2014-05|Backend;Delivery|rails;incremental||Shutl|Ruby on Rails;Incremental Delivery;DevOps;CI/CD;Redis
+Maintained four environments each consisting of 20+ servers|2014-05|Infrastructure;Operations|servers;environments||Shutl|Infrastructure;Server Management;DevOps;CI/CD;Redis
+Built dynamic graphs visualising infrastructure state and dependencies|2014-05|Infrastructure;Visualisation|graphs;monitoring||Shutl|Infrastructure;Monitoring;DevOps;CI/CD;Redis
+Developed dashboards to support operational decision-making|2014-05|Infrastructure;Dashboards|monitoring;ops||Shutl|Infrastructure;Monitoring;Operations;DevOps;CI/CD;Redis
+Configured monitoring and alerting for ROI tool to ensure data accuracy|2014-05|Infrastructure;Reliability|monitoring;alerting||Shutl|Monitoring;Infrastructure;DevOps;CI/CD;Redis
+Created dynamic infrastructure visualisations showing system dependencies|2014-05|Infrastructure;Documentation|graphs;topology||Shutl|Infrastructure;Documentation;DevOps;CI/CD;Redis
+Developed operational dashboards supporting real-time decision making|2014-05|Infrastructure;Observability|dashboards;realtime||Shutl|Monitoring;Observability;DevOps;CI/CD;Redis
+Supported long-lived Rails applications in production.|2014-06|Backend;Maintenance|rails;long-lived||Shutl|Ruby on Rails;Application Maintenance;DevOps;CI/CD;Redis
+Implemented agnostic metrics collection across all in-house services|2014-06|Observability;Metrics|metrics;visibility||Shutl|Metrics;Observability;DevOps;CI/CD;Redis
+Acted as bridge between development and operations concerns|2014-06|DevOps;Collaboration|devops;coordination||Shutl|DevOps;Operations;CI/CD;Redis
+Stabilised inherited systems while continuing feature support|2014-06|Reliability;Maintenance|stability;legacy||Shutl|DevOps;CI/CD;Redis
+Completed engagement with strong infra-as-product mindset|2014-06|Career;Reflection|devops;platform-thinking||Shutl|DevOps;Operations;CI/CD;Redis
+Implemented metrics collection enabling operational insights across all services|2014-06|Observability;Infrastructure|metrics;visibility||Shutl|Metrics;Observability;DevOps;CI/CD;Redis
+Bridged development and operations concerns as DevOps advocate|2014-06|DevOps;Culture|devops;collaboration||Shutl|DevOps;Collaboration;CI/CD;Redis
+Completed engagement with strengthened infrastructure-as-product mindset|2014-06|Career;Reflection|devops;platform||Shutl|DevOps;CI/CD;Redis
+Designed and delivered scalable backend services using Ruby on Rails, focusing on maintainability, performance, and reliability in production environments.|2014-06|Backend;Web;APIs|ruby;rails;backend;api;scalable-systems||Shutl|Ruby;Ruby on Rails;API Design;Backend Architecture;Scalability;DevOps;CI/CD;Redis
+Built and optimized data ingestion and processing pipelines, normalizing datasets (JSON, XML, CSV) for downstream services and client-facing applications.|2014-06|Data;Backend;ETL|data-processing;json;xml;csv;etl||Shutl|Data Processing;ETL;Ruby;JSON;XML;CSV;DevOps;CI/CD;Redis
+Implemented Test-Driven Development practices using RSpec, improving code quality, confidence in deployments, and long-term maintainability.|2014-06|Testing;Quality|tdd;rspec;testing;quality||Shutl|TDD;RSpec;Automated Testing;Code Quality;DevOps;CI/CD;Redis
+Collaborated closely with product managers and stakeholders to translate requirements into robust, well-scoped technical solutions.|2014-06|Product;Collaboration|stakeholders;requirements;agile||Shutl|Product Engineering;Stakeholder Management;Agile Delivery;DevOps;CI/CD;Redis
+Joined Money Advice Service as senior Ruby developer within cross-disciplinary teams|2014-09|Career;Onboarding|ruby;public-sector||Money Advice Service|Ruby;Ruby on Rails;PostgreSQL;RSpec;CI/CD;Code Reviews
+Developed Dough frontend tooling to decouple frontend and backend release cycles|2014-10|Architecture;Tooling|frontend;decoupling||Money Advice Service|Frontend Development;Software Architecture;CI/CD
+Implemented Dough frontend framework to decouple release cycles|2014-10|Architecture;Tooling|dough;frontend||Money Advice Service|Architecture;Frontend Development;CI/CD
+Enabled non-backend teams to ship new helpers without backend intervention|2014-11|Enablement;Architecture|developer-experience;tools||Money Advice Service|Software Architecture;CI/CD
+Created pensions calculator tool for public use|2014-11|Backend;Delivery|pensions;calculator||Money Advice Service|Backend Development;Ruby;CI/CD
+Completed pensions calculator tool under public-sector constraints|2014-12|Backend;Delivery|calculations;finance||Money Advice Service|Backend Development;CI/CD
+Worked with designers and policy stakeholders on requirements|2014-12|Collaboration;Communication|ux;policy||Money Advice Service|Collaboration;CI/CD
+Delivered BAU work ahead of schedule through process efficiency|2015-01|Delivery;Efficiency|BAU;optimisation||Money Advice Service|CI/CD
+Worked closely with designers, researchers, and policy stakeholders|2015-01|Collaboration;Stakeholders|ux;policy||Money Advice Service|Collaboration;Stakeholder Management;CI/CD
+Enabled frontend teams to ship independently of backend|2015-01|Architecture;Enablement|decoupling;dx||Money Advice Service|Architecture;Developer Experience;CI/CD
+Balanced user needs with regulatory and policy requirements|2015-02|Strategy;Delivery|compliance;trade-offs||Money Advice Service|CI/CD
+Improved internal tooling to reduce delivery friction|2015-02|Process;Tooling|internal-tools;velocity||Money Advice Service|Continuous Integration;CI/CD
+Delivered BAU work ahead of schedule|2015-02|Delivery;Efficiency|bau;efficiency||Money Advice Service|Delivery;CI/CD
+Provided senior guidance on Ruby architecture and testing practices|2015-03|Leadership;Quality|architecture;testing||Money Advice Service|Ruby;Ruby on Rails;Software Architecture;Testing;RSpec;CI/CD
+Ensured maintainability of tools intended for long-term public use|2015-03|Reliability;Architecture|long-lived-systems||Money Advice Service|Software Architecture;CI/CD
+Completed engagement with strong product-minded tooling experience|2015-03|Career;Completion|tooling;product-thinking||Money Advice Service|CI/CD
+Designed and delivered scalable backend services using Ruby on Rails, focusing on maintainability, performance, and reliability in production environments.|2015-03|Backend;Web;APIs|ruby;rails;backend;api;scalable-systems||Money Advice Service|Ruby;Ruby on Rails;API Design;Backend Architecture;Scalability;CI/CD
+Built and optimized data ingestion and processing pipelines, normalizing datasets (JSON, XML, CSV) for downstream services and client-facing applications.|2015-03|Data;Backend;ETL|data-processing;json;xml;csv;etl||Money Advice Service|Data Processing;ETL;Ruby;JSON;XML;CSV;CI/CD
+Implemented Test-Driven Development practices using RSpec, improving code quality, confidence in deployments, and long-term maintainability.|2015-03|Testing;Quality|tdd;rspec;testing;quality||Money Advice Service|TDD;RSpec;Automated Testing;Code Quality;CI/CD
+Collaborated closely with product managers and stakeholders to translate requirements into robust, well-scoped technical solutions.|2015-03|Product;Collaboration|stakeholders;requirements;agile||Money Advice Service|Product Engineering;Stakeholder Management;Agile Delivery;CI/CD
+Delivered Rails-based solutions across varied client domains.|2015-08|Consulting;Backend|ruby;rails;clients||We Are Friday|Ruby;Ruby on Rails;Client Work;CI/CD
+Adapted engineering approaches to suit differing project constraints.|2015-08|Consulting;Engineering|rails;constraints||We Are Friday|Ruby on Rails;Engineering Judgment;CI/CD
+Balanced speed and quality across multiple engagements.|2015-08|Consulting;Delivery|rails;quality||We Are Friday|Ruby on Rails;Delivery Management;CI/CD
+Worked autonomously while integrating with client teams.|2015-08|Consulting;Collaboration|rails;clients||We Are Friday|Ruby on Rails;Client Collaboration;CI/CD
+Maintained consistent standards across disparate codebases.|2015-08|Consulting;Standards|rails;standards||We Are Friday|Ruby on Rails;Code Standards;CI/CD
+Supported both greenfield and legacy Rails projects.|2015-08|Consulting;Projects|rails;greenfield;legacy||We Are Friday|Ruby on Rails;Project Delivery;CI/CD
+Provided pragmatic technical guidance to non-technical stakeholders.|2015-08|Consulting;Advisory|rails;advisory||We Are Friday|Ruby on Rails;Technical Advisory;CI/CD
+Delivered maintainable solutions under tight timelines.|2015-08|Consulting;Time Constraints|rails;deadlines||We Are Friday|Ruby on Rails;Time Management;CI/CD
+Worked across the full development lifecycle.|2015-08|Consulting;Lifecycle|rails;full-stack||We Are Friday|Ruby on Rails;Full Lifecycle Delivery;CI/CD
+Helped clients transition projects into long-term maintenance.|2015-08|Consulting;Handover|rails;handover||We Are Friday|Ruby on Rails;Project Handover;CI/CD
+Delivered backend features and services across multiple client projects using Ruby on Rails.|2015-08|Consulting;Backend|ruby;rails;clients||We Are Friday|Ruby;Ruby on Rails;Consulting Delivery;CI/CD
+Adapted quickly to different domains and codebases while maintaining consistent engineering standards.|2015-08|Consulting;Engineering|rails;adaptability;standards||We Are Friday|Ruby on Rails;Software Craft;Client Work;CI/CD
+Worked end-to-end from requirements through implementation and deployment in client environments.|2015-08|Consulting;Delivery|rails;delivery;end-to-end||We Are Friday|Ruby on Rails;End-to-End Delivery;Consulting;CI/CD
+Returned to We Are Friday for short contract supporting HSBC enterprise projects|2015-08|Career;Onboarding|ruby;hsbc;enterprise||We Are Friday|Ruby;Ruby on Rails;PostgreSQL;RSpec;CI/CD
+Assessed HSBC Global Connections codebase to identify release blockers|2015-08|Analysis;Assessment|hsbc;release||We Are Friday|Architecture;Analysis;CI/CD
+Implemented critical functionality required for HSBC Global Connections release|2015-08|Backend;Delivery|hsbc;deadline||We Are Friday|Ruby;Ruby on Rails;REST API;CI/CD
+Collaborated with existing team to accelerate delivery under time pressure|2015-08|Collaboration;Delivery|teamwork;deadlines||We Are Friday|Collaboration;CI/CD
+Applied BDD practices to validate new functionality against requirements|2015-08|Quality;Testing|bdd;validation||We Are Friday|BDD;Testing;CI/CD
+Delivered functionality for HSBC Global Connections release|2015-08|Backend;Delivery|hsbc;release||We Are Friday|Backend Development;Ruby;CI/CD
+Collaborated with team under time pressure for release|2015-08|Collaboration;Delivery|teamwork;deadline||We Are Friday|Collaboration;CI/CD
+Designed modular Ruby on Rails services to support evolving data ingestion requirements.|2015-09|Backend;Data|ruby;rails;ingestion||DeepCrawl|Ruby;Ruby on Rails;Data Platforms;CI/CD;Redis;Code Reviews
+Supported feature experimentation by rapidly iterating on backend services.|2015-09|Backend;Product Support|rails;experimentation||DeepCrawl|Ruby on Rails;Product Support;CI/CD;Redis
+Worked closely with product and research teams to translate analytical requirements into performant backend systems.|2015-09|Backend;Product;Collaboration|rails;product;data||DeepCrawl|Ruby on Rails;Product Engineering;Cross-functional Collaboration;CI/CD;Redis
+Identified and implemented improvements to HSBC Atlas project|2015-09|Backend;Maintenance|hsbc;atlas||We Are Friday|Ruby;Ruby on Rails;PostgreSQL;CI/CD
+Resolved integration issues between Global Connections and downstream systems|2015-09|Debugging;Integration|troubleshooting;enterprise||We Are Friday|Debugging;Integration;CI/CD
+Provided architectural consultation on HSBC platform evolution|2015-09|Consulting;Architecture|enterprise;advisory||We Are Friday|Architecture;CI/CD
+Documented changes and handover notes for ongoing maintenance|2015-09|Documentation;Process|handover;knowledge-transfer||We Are Friday|Documentation;CI/CD
+Completed short engagement after delivering required HSBC functionality|2015-09|Career;Completion|delivery;enterprise||We Are Friday|Ruby;Ruby on Rails;CI/CD
+Joined DeepCrawl to assist with release of version 2.0 of SEO platform|2015-09|Career;Onboarding|ruby;seo;data||DeepCrawl|Data Processing;Ruby;Ruby on Rails;PostgreSQL;SEO;CI/CD;Redis
+Identified critical observability gaps limiting business intelligence at DeepCrawl|2015-09|Analysis;Architecture|observability;data-strategy||DeepCrawl|Data Processing;Analysis;CI/CD;Redis
+Made improvements to HSBC Atlas project architecture|2015-09|Architecture;Backend|hsbc;atlas||We Are Friday|Architecture;Ruby;CI/CD
+Applied BDD practices for HSBC functionality validation|2015-09|Quality;Testing|bdd;hsbc||We Are Friday|BDD;Testing;CI/CD
+Designed and delivered scalable backend services using Ruby on Rails, focusing on maintainability, performance, and reliability in production environments.|2015-09|Backend;Web;APIs|ruby;rails;backend;api;scalable-systems||We Are Friday|Ruby;Ruby on Rails;API Design;Backend Architecture;Scalability;CI/CD
+Built and optimized data ingestion and processing pipelines, normalizing datasets (JSON, XML, CSV) for downstream services and client-facing applications.|2015-09|Data;Backend;ETL|data-processing;json;xml;csv;etl||We Are Friday|Data Processing;ETL;Ruby;JSON;XML;CSV;CI/CD
+Implemented Test-Driven Development practices using RSpec, improving code quality, confidence in deployments, and long-term maintainability.|2015-09|Testing;Quality|tdd;rspec;testing;quality||We Are Friday|TDD;RSpec;Automated Testing;Code Quality;CI/CD
+Collaborated closely with product managers and stakeholders to translate requirements into robust, well-scoped technical solutions.|2015-09|Product;Collaboration|stakeholders;requirements;agile||We Are Friday|Product Engineering;Stakeholder Management;Agile Delivery;CI/CD
+Refactored legacy Rails components to improve performance and maintainability.|2015-10|Backend;Maintenance|ruby;rails;refactoring||DeepCrawl|Ruby;Ruby on Rails;Code Quality;CI/CD;Redis
+Documented backend systems to improve team onboarding and knowledge sharing.|2015-10|Backend;Documentation|rails;documentation||DeepCrawl|Ruby on Rails;Technical Documentation;CI/CD;Redis
+Worked on data-heavy systems with large internal datasets|2015-10|Backend;Data|large-datasets;seo||DeepCrawl|Backend Development;Data Processing;SEO;CI/CD;Redis
+Identified difficulty in accessing and leveraging internal operational data|2015-10|Analysis;Data|observability-gaps||DeepCrawl|Data Processing;Observability;CI/CD;Redis
+Designed ETL pipeline to extract actionable insights from crawl data for non-technical teams|2015-10|Architecture;Data|etl;data-transformation||DeepCrawl|ETL;Data Processing;Architecture;CI/CD;Redis
+Implemented background job workflows to process crawl results asynchronously.|2015-11|Backend;Processing|rails;background-jobs;async||DeepCrawl|Ruby on Rails;Asynchronous Processing;CI/CD;Redis
+Worked closely with QA to ensure data accuracy across releases.|2015-11|Backend;Quality|rails;qa;testing||DeepCrawl|Ruby on Rails;Quality Assurance;CI/CD;Redis
+Built close working relationship with Customer Success to understand data access needs|2015-11|Collaboration;Stakeholders|customer-success;requirements||DeepCrawl|Stakeholder Management;CI/CD;Redis
+Configured Elasticsearch indices optimised for SEO platform query patterns|2015-11|Infrastructure;Data|elasticsearch;indexing||DeepCrawl|Elasticsearch;Infrastructure;CI/CD;Redis
+Implemented Logstash pipelines to transform raw logs into CS-friendly formats|2015-11|Infrastructure;ETL|logstash;transformation||DeepCrawl|ETL;Logstash;Data Processing;CI/CD;Redis
+Collaborated with frontend engineers to deliver performant reporting interfaces backed by Rails APIs.|2015-12|Backend;Collaboration|rails;api;frontend||DeepCrawl|Ruby on Rails;API Design;Collaboration;CI/CD;Redis
+Maintained Rails services under continuous delivery conditions.|2015-12|Backend;Delivery|rails;continuous-delivery||DeepCrawl|Ruby on Rails;Continuous Delivery;CI/CD;Redis
+Introduced ELK stack to centralise logs and surface hidden data|2015-12|Infrastructure;Observability|elk;logging||DeepCrawl|ELK Stack;Infrastructure;Logging;Observability;CI/CD;Redis
+Enabled BI and Sales teams to explore data independently using Kibana|2015-12|Enablement;Data|self-service;analytics||DeepCrawl|Data Processing;Kibana;CI/CD;Redis
+Created Kibana dashboards tailored to Customer Success team workflows|2015-12|Infrastructure;Enablement|kibana;dashboards;self-service||DeepCrawl|Kibana;Data Processing;CI/CD;Redis
+Trained Customer Success team on leveraging Kibana for customer issue investigation|2015-12|Enablement;Training|training;knowledge-transfer||DeepCrawl|Training;Knowledge Transfer;CI/CD;Redis
+Maintained data consistency across multiple storage and processing layers.|2016-01|Backend;Data Integrity|rails;data;consistency||DeepCrawl|Ruby on Rails;Data Integrity;CI/CD;Redis
+Built and evolved Ruby on Rails APIs supporting large-scale crawling, indexing, and reporting workflows.|2016-01|Backend;APIs;Data|ruby;rails;api;data||DeepCrawl|Ruby;Ruby on Rails;API Design;Data Platforms;CI/CD;Redis;High-throughput Systems
+Refined tagging strategies to improve business insight into platform usage|2016-01|Data;Architecture|tagging;analytics||DeepCrawl|Data Processing;Software Architecture;CI/CD;Redis
+Developed data transformation rules surfacing customer-relevant metrics from logs|2016-01|Data;Architecture|metrics;etl||DeepCrawl|ETL;Data Processing;CI/CD;Redis
+Enabled Sales team to independently explore platform usage data for upsell opportunities|2016-01|Enablement;Business|sales-enablement;analytics||DeepCrawl|Data Processing;Business Intelligence;CI/CD;Redis
+Created comprehensive ELK stack documentation for ongoing maintenance and extension|2016-01|Documentation;Infrastructure|elk;guides||DeepCrawl|Documentation;ELK Stack;CI/CD;Redis
+Improved error handling and resilience in long-running data processing tasks.|2016-02|Backend;Reliability|rails;resilience;errors||DeepCrawl|Ruby on Rails;Reliability Engineering;CI/CD;Redis
+Optimised background processing and data pipelines to handle high-volume, asynchronous workloads reliably.|2016-02|Backend;Data;Processing|ruby;rails;background-jobs;async||DeepCrawl|Ruby;Ruby on Rails;Background Processing;Scalable Systems;CI/CD;Redis;High-throughput Systems
+Improved system observability to support both engineering and business decisions|2016-02|Observability;Strategy|data-driven;insight||DeepCrawl|Data Processing;Observability;CI/CD;Redis
+Supported final delivery of platform features required for v2.0 release|2016-02|Delivery;Release|release-readiness||DeepCrawl|CI/CD;Redis
+Balanced delivery speed with stability in late-stage product development|2016-02|Strategy;Delivery|late-stage;stability||DeepCrawl|CI/CD;Redis
+Provided senior engineering input during final hardening phase|2016-02|Leadership;Quality|hardening;stability||DeepCrawl|CI/CD;Redis
+Completed engagement recognised for platform insight and data enablement|2016-02|Career;Reflection|platform;data-thinking||DeepCrawl|Data Processing;CI/CD;Redis
+Delivered infrastructure and handover guide enabling team to leverage ELK independently|2016-02|Delivery;Documentation|handover;enablement||DeepCrawl|Documentation;Knowledge Transfer;CI/CD;Redis
+Designed and delivered scalable backend services using Ruby on Rails, focusing on maintainability, performance, and reliability in production environments.|2016-02|Backend;Web;APIs|ruby;rails;backend;api;scalable-systems||DeepCrawl|Ruby;Ruby on Rails;API Design;Backend Architecture;Scalability;CI/CD;Redis
+Built and optimized data ingestion and processing pipelines, normalizing datasets (JSON, XML, CSV) for downstream services and client-facing applications.|2016-02|Data;Backend;ETL|data-processing;json;xml;csv;etl||DeepCrawl|Data Processing;ETL;Ruby;JSON;XML;CSV;CI/CD;Redis
+Implemented Test-Driven Development practices using RSpec, improving code quality, confidence in deployments, and long-term maintainability.|2016-02|Testing;Quality|tdd;rspec;testing;quality||DeepCrawl|TDD;RSpec;Automated Testing;Code Quality;CI/CD;Redis
+Collaborated closely with product managers and stakeholders to translate requirements into robust, well-scoped technical solutions.|2016-02|Product;Collaboration|stakeholders;requirements;agile||DeepCrawl|Product Engineering;Stakeholder Management;Agile Delivery;CI/CD;Redis
+Joined CrowdVision to assist with late delivery and platform issues|2016-06|Career;Onboarding|architecture;platform||CrowdVision|Software Architecture;CI/CD;Code Reviews
+Outlined infrastructural and architectural issues limiting delivery|2016-06|Architecture;Assessment|technical-debt;platform||CrowdVision|Software Architecture;CI/CD
+Assessed existing codebase and identified platform issues|2016-06|Analysis;Assessment|assessment;platform||CrowdVision|Analysis;Architecture;CI/CD
+Conducted platform architecture review identifying scalability concerns|2016-06|Architecture|architecture,review,scalability||CrowdVision|Architecture;Review;CI/CD
+Documented data flow patterns for crowd analytics pipeline|2016-06|Documentation,Architecture|data-flow,analytics,documentation||CrowdVision|Documentation;Analytics;CI/CD
+Continued engagement at CrowdVision to stabilise an already delayed product|2016-07|Delivery;Stabilisation|late-project;recovery||CrowdVision|CI/CD
+Assessed platform readiness for production use under delivery pressure|2016-07|Architecture;Assessment|readiness;risk||CrowdVision|Software Architecture;CI/CD
+Introduced pragmatic best practices to reduce immediate delivery risk|2016-07|Process;Quality|pragmatism;standards||CrowdVision|CI/CD
+Developed architecture documentation for white-label solution|2016-07|Architecture;Documentation|white-label;docs||CrowdVision|Architecture;Documentation;CI/CD
+Created API specification for self-discoverable services|2016-07|Architecture;API|api-design;discoverability||CrowdVision|API Design;Architecture;CI/CD
+Implemented best practices to reduce immediate delivery risk|2016-07|Process;Quality|best-practices;risk||CrowdVision|Quality;Process;CI/CD
+Designed API contracts for white-label partner integrations|2016-07|Architecture,API|api,contracts,white-label||CrowdVision|API;Architecture;CI/CD
+Created deployment runbooks for production environment|2016-07|DevOps,Documentation|runbooks,deployment,production||CrowdVision|DevOps;Documentation;CI/CD
+Outlined requirements for white-label versions of the platform|2016-08|Architecture;Strategy|white-label;scalability||CrowdVision|Software Architecture;CI/CD
+Defined API services required for self-discoverable client integrations|2016-08|Architecture;Integration|api;discoverability||CrowdVision|API Development;Software Architecture;System Integration;CI/CD
+Acted as senior technical sounding board for product and delivery decisions|2016-08|Leadership;Consulting|decision-support||CrowdVision|Continuous Integration;CI/CD
+Exited engagement after stabilising delivery trajectory|2016-08|Career;Completion|turnaround||CrowdVision|CI/CD
+Consulted on infrastructure improvements and best practices|2016-08|Consulting;Infrastructure|infrastructure;advisory||CrowdVision|Consulting;Infrastructure;CI/CD
+Stabilised product delivery under tight timeline pressure|2016-08|Delivery;Stabilisation|deadline;stabilisation||CrowdVision|Delivery;CI/CD
+Recommended infrastructure changes to improve platform reliability|2016-08|Architecture,DevOps|infrastructure,reliability,recommendations||CrowdVision|Architecture;DevOps;CI/CD
+Facilitated knowledge transfer sessions with development team|2016-08|Mentoring|knowledge-transfer,mentoring,team||CrowdVision|Mentoring;Communication;CI/CD
+Built Rails APIs forming the backbone of intelligent customer support products.|2016-09|Backend;APIs|ruby;rails;api||Digital Genius|Ruby;Ruby on Rails;API Development;Fintech;CI/CD;Redis;Code Reviews
+Worked alongside data scientists to productionise automation workflows.|2016-09|Backend;Collaboration|rails;automation;ml||Digital Genius|Ruby on Rails;Cross-functional Collaboration;Fintech;CI/CD;Redis
+Improved observability of backend services through logging and metrics.|2016-09|Backend;Observability|rails;logging;metrics||Digital Genius|Ruby on Rails;Observability;Fintech;CI/CD;Redis
+Balanced technical debt reduction with feature delivery.|2016-09|Backend;Maintenance|rails;tech-debt||Digital Genius|Ruby on Rails;Technical Debt Management;Fintech;CI/CD;Redis
+Contributed to iterative delivery cycles, balancing rapid experimentation with production stability.|2016-09|Product;Delivery|rails;agile;delivery||Digital Genius|Agile Delivery;Ruby on Rails;Software Engineering;Fintech;CI/CD;Redis
+Joined Digital Genius to maintain and improve existing SPA dashboard application|2016-09|Career;Onboarding|ruby;spa;dashboard||Digital Genius|Ruby;Ruby on Rails;REST API;Fintech;CI/CD;Redis;Git Flow
+Assessed dashboard codebase to identify technical debt and improvement opportunities|2016-09|Analysis;Assessment|technical-debt;codebase||Digital Genius|Architecture;Analysis;Fintech;CI/CD;Redis
+Maintained Rails backend supporting AI-powered customer service dashboard|2016-09|Maintenance;Backend|rails;api||Digital Genius|Ruby;Ruby on Rails;REST API;Fintech;CI/CD;Redis
+Maintained AI-powered customer service dashboard|2016-09|Maintenance;Backend|ai;dashboard||Digital Genius|AI;Backend Development;Ruby;Fintech;CI/CD;Redis
+Reviewed SPA codebase identifying performance bottlenecks|2016-09|Performance,Architecture|spa,performance,review||Digital Genius|JavaScript;Performance;Fintech;CI/CD;Redis
+Optimized React component re-rendering for dashboard responsiveness|2016-09|Performance|react,optimization,rendering||Digital Genius|React;Performance;Fintech;CI/CD;Redis
+Integrated external platforms via secure service-to-service communication.|2016-10|Backend;Integration|rails;integration;services||Digital Genius|Ruby on Rails;Service Integration;Fintech;CI/CD;Redis
+Maintained backend stability during periods of rapid product growth.|2016-10|Backend;Stability|rails;scaling||Digital Genius|Ruby on Rails;System Stability;Fintech;CI/CD;Redis
+Ensured backward compatibility for API consumers during upgrades.|2016-10|Backend;APIs|rails;versioning||Digital Genius|Ruby on Rails;API Versioning;Fintech;CI/CD;Redis
+Developed and maintained Ruby on Rails services forming the core of customer-facing automation products.|2016-10|Backend;Product|ruby;rails;automation||Digital Genius|Ruby;Ruby on Rails;Product Development;Fintech;CI/CD;Redis
+Improved API response times through query optimisation and caching strategies|2016-10|Performance;Backend|optimisation;caching||Digital Genius|Ruby;Ruby on Rails;Performance;PostgreSQL;Fintech;CI/CD;Redis
+Implemented new dashboard features to support expanding customer requirements|2016-10|Frontend;Features|spa;ui||Digital Genius|Rails;Frontend;Fintech;CI/CD;Redis
+Applied SOA patterns to improve service boundaries and maintainability|2016-10|Architecture;Refactoring|soa;decoupling||Digital Genius|SOA;Architecture;Fintech;CI/CD;Redis
+Enhanced API design to support dashboard extensibility and third-party integration|2016-10|API;Architecture|rest;design||Digital Genius|API Design;REST;Fintech;CI/CD;Redis
+Built new dashboard widgets for expanding customer needs|2016-10|Frontend;Features|dashboard;widgets||Digital Genius|Frontend Development;Fintech;CI/CD;Redis
+Improved backend performance for real-time updates|2016-10|Performance;Backend|performance;realtime||Digital Genius|Performance;Ruby;Fintech;CI/CD;Redis
+Implemented WebSocket connection pooling for real-time updates|2016-10|Development|websocket,pooling,realtime||Digital Genius|JavaScript;WebSocket;Fintech;CI/CD;Redis
+Designed state management patterns for complex dashboard views|2016-10|Architecture|state-management,patterns,react||Digital Genius|React;Architecture;Fintech;CI/CD;Redis
+Created API client library for consistent backend communication|2016-10|Development|api-client,library,communication||Digital Genius|JavaScript;API;Fintech;CI/CD;Redis
+Supported rapid product iteration through flexible backend design.|2016-11|Backend;Product|rails;product-iteration||Digital Genius|Ruby on Rails;Product Engineering;Fintech;CI/CD;Redis
+Implemented feature flags and rollout strategies in Rails services.|2016-11|Backend;Delivery|rails;feature-flags||Digital Genius|Ruby on Rails;Feature Delivery;Fintech;CI/CD;Redis;Feature Flags
+Collaborated with support teams to diagnose and resolve production issues.|2016-11|Backend;Support|rails;production-support||Digital Genius|Ruby on Rails;Production Support;Fintech;CI/CD;Redis
+Integrated third-party services and internal systems to enable intelligent workflow orchestration.|2016-11|Backend;Integration;Systems|rails;integration;services||Digital Genius|Ruby on Rails;System Integration;Service Architecture;Fintech;CI/CD;Redis
+Improved deployment reliability through DevOps best practices|2016-11|DevOps;Reliability|deployment;ci-cd||Digital Genius|DevOps;CI/CD;Fintech;Redis
+Collaborated with product team to prioritise technical improvements|2016-11|Communication;Strategy|prioritisation;product||Digital Genius|Collaboration;Fintech;CI/CD;Redis
+Completed engagement after stabilising dashboard application|2016-11|Career;Completion|delivery;stability||Digital Genius|Ruby;Ruby on Rails;Fintech;CI/CD;Redis
+Implemented SOA patterns for service decoupling|2016-11|Architecture;Refactoring|soa;decoupling||Digital Genius|Architecture;SOA;Fintech;CI/CD;Redis
+Improved error handling and user feedback in dashboard UI|2016-11|UX,Quality|error-handling,feedback,ux||Digital Genius|JavaScript;UX;Fintech;CI/CD;Redis
+Documented dashboard component architecture for future development|2016-11|Documentation|documentation,components,architecture||Digital Genius|Documentation;Fintech;CI/CD;Redis
+Designed and delivered scalable backend services using Ruby on Rails, focusing on maintainability, performance, and reliability in production environments.|2016-11|Backend;Web;APIs|ruby;rails;backend;api;scalable-systems||Digital Genius|Ruby;Ruby on Rails;API Design;Backend Architecture;Scalability;Fintech;CI/CD;Redis
+Built and optimized data ingestion and processing pipelines, normalizing datasets (JSON, XML, CSV) for downstream services and client-facing applications.|2016-11|Data;Backend;ETL|data-processing;json;xml;csv;etl||Digital Genius|Data Processing;ETL;Ruby;JSON;XML;CSV;Fintech;CI/CD;Redis
+Implemented Test-Driven Development practices using RSpec, improving code quality, confidence in deployments, and long-term maintainability.|2016-11|Testing;Quality|tdd;rspec;testing;quality||Digital Genius|TDD;RSpec;Automated Testing;Code Quality;Fintech;CI/CD;Redis
+Collaborated closely with product managers and stakeholders to translate requirements into robust, well-scoped technical solutions.|2016-11|Product;Collaboration|stakeholders;requirements;agile||Digital Genius|Product Engineering;Stakeholder Management;Agile Delivery;Fintech;CI/CD;Redis
+Joined Spice Rack as senior Ruby developer via agency engagement|2017-01|Career;Onboarding|ruby;agency||Spice Rack|Ruby;Ruby on Rails;REST API;CI/CD;Code Reviews
+Implemented SAML 2.0 authentication flow for enterprise single sign-on|2017-01|Security,Development|saml,sso,authentication||Spice Rack|Ruby;SAML;Security;CI/CD
+Configured SAML identity provider integration with client's Active Directory|2017-01|Security,DevOps|saml,ad,integration||Spice Rack|SAML;Active Directory;CI/CD
+Worked on maintaining and extending existing client-facing services|2017-02|Maintenance;Delivery|legacy;clients||Spice Rack|CI/CD
+Created SOAP client wrapper for legacy service integration|2017-02|Integration;Backend|soap;legacy||Spice Rack|SOAP;System Integration;CI/CD
+Built SOAP client library wrapping legacy service endpoints|2017-02|Development|soap,client,legacy||Spice Rack|Ruby;SOAP;CI/CD
+Created XML schema validation for SOAP request/response handling|2017-02|Development,Quality|xml,validation,soap||Spice Rack|Ruby;XML;SOAP;CI/CD
+Implemented SAML authentication for enterprise client requirements|2017-03|Security;Authentication|saml;enterprise||Spice Rack|SAML;Security;CI/CD
+Exposed RESTful APIs to support third-party integrations|2017-03|Integration;API|rest;clients||Spice Rack|REST API;System Integration;CI/CD
+Built RESTful API endpoints for client applications|2017-03|Backend;API|rest;api||Spice Rack|API Development;REST API;CI/CD
+Designed RESTful API endpoints following JSON:API specification|2017-03|Architecture,Development|rest,api,jsonapi||Spice Rack|Ruby;REST;API;CI/CD
+Implemented API versioning strategy for backward compatibility|2017-03|Architecture|versioning,api,compatibility||Spice Rack|Ruby;API;CI/CD
+Maintained SOAP APIs to support legacy client integrations|2017-04|Integration;Legacy|soap;compatibility||Spice Rack|SOA;SOAP;System Integration;CI/CD
+Balanced new feature delivery with legacy system constraints|2017-04|Strategy;Delivery|constraints;trade-offs||Spice Rack|CI/CD
+Implemented SAML authentication for enterprise clients|2017-04|Security;Backend|saml;authentication||Spice Rack|Authentication;SAML;Security;CI/CD
+Maintained existing functionality while adding new features|2017-04|Maintenance;Features|stability;features||Spice Rack|Backend Development;Ruby;CI/CD
+Built API documentation using Swagger/OpenAPI specification|2017-04|Documentation|swagger,openapi,documentation||Spice Rack|OpenAPI;Documentation;CI/CD
+Created integration tests covering SAML and SOAP workflows|2017-04|Quality,Testing|testing,integration,saml||Spice Rack|Ruby;RSpec;Testing;CI/CD
+Supported client delivery deadlines while maintaining system stability|2017-05|Reliability;Delivery|stability;deadlines||Spice Rack|CI/CD
+Completed short-term engagement after extending initial contract|2017-05|Career;Completion|agency-extension||Spice Rack|CI/CD
+Joined mGage as senior Ruby developer to stabilise neglected codebase|2017-05|Career;Onboarding|ruby;stabilisation||mGage|Ruby;Ruby on Rails;RSpec;CI/CD;Code Reviews
+Extended contract to support additional client deliverables|2017-05|Delivery;Consulting|extension;delivery||Spice Rack|Delivery;CI/CD
+Managed handoff documentation for continuing development team|2017-05|Documentation|handoff,documentation,knowledge||Spice Rack|Documentation;CI/CD
+Identified gaps in testing and verification of existing functionality|2017-06|Quality;Assessment|testing-gaps;risk||mGage|Testing;CI/CD
+Confirmed behaviour of undocumented system features through exploration|2017-06|Debugging;Analysis|reverse-engineering||mGage|CI/CD
+Reverse-engineered undocumented system behaviour|2017-06|Analysis;Debugging|reverse-engineering;docs||mGage|Analysis;Debugging;CI/CD
+Highlighted missing or incomplete functionality impacting releases|2017-07|Analysis;Delivery|feature-gaps||mGage|CI/CD
+Mentored junior developer to improve confidence and delivery quality|2017-07|Leadership;Mentoring|support;growth||mGage|CI/CD
+Validated existing features against expected behaviour|2017-07|Quality;Testing|validation;features||mGage|Quality;Testing;CI/CD
+Provided architectural consultation under time-constrained release schedules|2017-08|Architecture;Consulting|pragmatic-architecture||mGage|Software Architecture;CI/CD
+Advised on prioritisation of technical debt versus delivery|2017-08|Strategy;Quality|technical-debt;trade-offs||mGage|CI/CD
+Provided architectural consultation for system improvements|2017-08|Architecture;Consulting|architecture;advisory||mGage|Architecture;Consulting;CI/CD
+Helped team reach release readiness despite inherited deficiencies|2017-09|Delivery;Stabilisation|release-readiness||mGage|CI/CD
+Prioritised technical debt reduction during release preparation|2017-09|Strategy;Quality|technical-debt;release||mGage|Quality;Strategy;CI/CD
+Supported junior developer with mentoring and code reviews|2017-10|Leadership;Mentoring|mentoring;code-review||mGage|Code Review;Mentoring;CI/CD
+Exited role after restoring confidence in platform stability|2017-11|Career;Completion|stabilisation||mGage|CI/CD
+Brought neglected codebase to release-ready state|2017-11|Delivery;Quality|release-ready;quality||mGage|Delivery;Quality;CI/CD
+Designed and delivered scalable backend services using Ruby on Rails, focusing on maintainability, performance, and reliability in production environments.|2017-11|Backend;Web;APIs|ruby;rails;backend;api;scalable-systems||mGage|Ruby;Ruby on Rails;API Design;Backend Architecture;Scalability;CI/CD
+Built and optimized data ingestion and processing pipelines, normalizing datasets (JSON, XML, CSV) for downstream services and client-facing applications.|2017-11|Data;Backend;ETL|data-processing;json;xml;csv;etl||mGage|Data Processing;ETL;Ruby;JSON;XML;CSV;CI/CD
+Implemented Test-Driven Development practices using RSpec, improving code quality, confidence in deployments, and long-term maintainability.|2017-11|Testing;Quality|tdd;rspec;testing;quality||mGage|TDD;RSpec;Automated Testing;Code Quality;CI/CD
+Collaborated closely with product managers and stakeholders to translate requirements into robust, well-scoped technical solutions.|2017-11|Product;Collaboration|stakeholders;requirements;agile||mGage|Product Engineering;Stakeholder Management;Agile Delivery;CI/CD
+Joined Environment Agency via agency engagement to work on PAFS services|2018-05|Career;Onboarding|public-sector;ruby||Environment Agency|Ruby;Ruby on Rails;PostgreSQL;RSpec;CI/CD;Sidekiq;Code Reviews;Remote Collaboration;Pair Programming
+Worked on PAFS user-facing and core services supporting flood risk management|2018-05|Backend;Delivery|public-sector;flood-risk||Environment Agency|Backend Development;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Worked on Environment Agency systems involving large-scale data processing and reporting|2018-06|Backend;Data|environment-agency;data||Environment Agency|Backend Development;Data Processing;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Maintained and extended existing APIs under regulatory constraints|2018-06|Maintenance;API|regulatory;stability||Environment Agency|CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Resolved defects introduced by prior releases through careful analysis|2018-06|Debugging;Reliability|regressions;analysis||Environment Agency|CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Balanced delivery speed with need for public service reliability|2018-07|Strategy;Reliability|public-safety;trade-offs||Environment Agency|CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Introduced a centralised Ruby style guide gem to standardise codebases|2018-07|Enablement;Quality|standardisation;styleguide||Environment Agency|CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Improved maintainability across multiple services via shared conventions|2018-08|Architecture;Quality|maintainability;consistency||Environment Agency|Software Architecture;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Reduced onboarding time for new engineers through clearer standards|2018-08|Enablement;Process|onboarding;clarity||Environment Agency|CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Created ETL validation scripts and reporting dashboards for Environment Agency pipelines|2018-09|Data;Automation|etl;validation;reporting||Environment Agency|Data Processing;ETL;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Worked collaboratively across teams with varying Ruby experience levels|2018-09|Collaboration;Leadership|cross-team;support||Environment Agency|CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Delivered project milestones ahead of schedule and within budget|2018-10|Delivery;Efficiency|on-time;budget||Environment Agency|CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Assisted with integration of first external client service into platform|2018-10|Integration;Delivery|client-integration||Environment Agency|System Integration;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Acted as senior stabilising presence during delivery and handover|2018-11|Leadership;Continuity|stability;handover||Environment Agency|CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Completed engagement recognised for pragmatism and delivery reliability|2018-12|Career;Completion|public-sector;delivery||Environment Agency|CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Continued maintenance and enhancement of PAFS services into 2019|2019-01|Maintenance;Backend|pafs;public-sector||Environment Agency|Ruby;Backend Development;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Supported team through regulatory compliance requirements|2019-02|Compliance;Delivery|regulatory;public-sector||Environment Agency|CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Founded and began full-time development of IoT ecosystem|2019-03|Product;Founding|iot;founder|n-vyro.io||IoT;Code Reviews
+Ensured smooth handover of responsibilities before engagement end|2019-03|Documentation;Process|handover;knowledge-transfer||Environment Agency|Documentation;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Designed end-to-end IoT architecture spanning firmware services and UIs|2019-04|Architecture;Systems|iot;full-stack|n-vyro.io||IoT;Software Architecture
+Architected firmware-backend integration patterns for device communication and state synchronisation|2019-04|Architecture;Integration|firmware;backend;protocols|n-vyro.io||Backend Development;Firmware Development;Software Architecture;System Integration
+Provided final architectural recommendations for PAFS evolution|2019-04|Architecture;Consulting|advisory;roadmap||Environment Agency|Architecture;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Built custom firmware in C/C++ for prototype devices|2019-05|Firmware;Delivery|embedded;c++|n-vyro.io||C++;Embedded Systems
+Completed Environment Agency engagement after full year of delivery|2019-05|Career;Completion|public-sector;delivery||Environment Agency|Ruby;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Designed and delivered scalable backend services using Ruby on Rails, focusing on maintainability, performance, and reliability in production environments.|2019-05|Backend;Web;APIs|ruby;rails;backend;api;scalable-systems||Environment Agency|Ruby;Ruby on Rails;API Design;Backend Architecture;Scalability;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Built and optimized data ingestion and processing pipelines, normalizing datasets (JSON, XML, CSV) for downstream services and client-facing applications.|2019-05|Data;Backend;ETL|data-processing;json;xml;csv;etl||Environment Agency|Data Processing;ETL;Ruby;JSON;XML;CSV;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Implemented Test-Driven Development practices using RSpec, improving code quality, confidence in deployments, and long-term maintainability.|2019-05|Testing;Quality|tdd;rspec;testing;quality||Environment Agency|TDD;RSpec;Automated Testing;Code Quality;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Collaborated closely with product managers and stakeholders to translate requirements into robust, well-scoped technical solutions.|2019-05|Product;Collaboration|stakeholders;requirements;agile||Environment Agency|Product Engineering;Stakeholder Management;Agile Delivery;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Joined BEIS via agency to support delivery of the cosmetics regulatory platform|2019-07|Career;Onboarding|public-sector;ruby||BEIS|Ruby;Ruby on Rails;PostgreSQL;CI/CD;Sidekiq;Code Reviews
+Identified structural issues limiting delivery velocity on an under-resourced platform|2019-07|Architecture;Assessment|technical-debt;delivery-risk||BEIS|Software Architecture;CI/CD;Sidekiq
+Developed backend services in Ruby to manage device communication and state|2019-06|Backend;Delivery|ruby;iot|n-vyro.io||Backend Development;IoT;Ruby
+Developed firmware testing frameworks and conducted early user feedback sessions for n-vyro.io IoT prototypes|2019-06|Firmware;Testing|iot;qa;feedback|n-vyro.io||IoT;Quality Assurance;Testing
+Developed backend device management service handling state tracking and orchestration|2019-06|Backend;Systems|device-management;orchestration|n-vyro.io||Backend Development
+Diagnosed critical deployment issues affecting cosmetics platform stability|2019-07|DevOps,Troubleshooting|deployment,issues,stability||BEIS|Ruby;DevOps;CI/CD;Sidekiq
+Clarified unclear ownership and responsibility boundaries across teams|2019-07|Leadership;Communication|clarity;stakeholders||BEIS|CI/CD;Sidekiq
+Improved ticket creation and prioritisation to reflect actual delivery constraints|2019-07|Process;Delivery|workflow;efficiency||BEIS|Continuous Integration;CI/CD;Sidekiq
+Created web-based UIs to manage and monitor device behaviour|2019-07|Frontend;Product|ui;ux|n-vyro.io||Frontend Development
+Highlighted critical platform issues affecting delivery|2019-07|Analysis;Communication|platform;issues||BEIS|Analysis;Communication;CI/CD;Sidekiq
+Created ticket templates improving issue clarity and prioritisation|2019-07|Process|tickets,templates,process||BEIS|Process;Agile;CI/CD;Sidekiq
+Implemented missing validation rules for cosmetics product data|2019-07|Development,Quality|validation,data,rules||BEIS|Ruby;Validation;CI/CD;Sidekiq
+Focused delivery on critical missing functionality required for service viability|2019-08|Strategy;Delivery|scope-control;public-sector||BEIS|CI/CD;Sidekiq
+Provisioned infrastructure and CI/CD pipelines across multiple repositories|2019-08|DevOps;Automation|ci-cd;automation|n-vyro.io||Automation;CI/CD;Continuous Integration;DevOps
+Configured multi-stage CI/CD pipelines supporting firmware, backend, and frontend delivery|2019-08|DevOps;Infrastructure|ci-cd;pipelines|n-vyro.io||CI/CD;Continuous Integration;DevOps;Infrastructure
+Implemented missing core functionality for cosmetics platform|2019-08|Backend;Delivery|features;cosmetics||BEIS|Backend Development;Ruby;CI/CD;Sidekiq
+Streamlined Docker Compose configuration for local development|2019-08|DevOps|docker,compose,development||BEIS|Docker;DevOps;CI/CD;Sidekiq
+Improved JavaScript bundle performance reducing load times|2019-08|Performance|javascript,performance,optimization||BEIS|JavaScript;Performance;CI/CD;Sidekiq
+Balanced pragmatism with maintainability under regulatory deadlines|2019-09|Strategy;Reliability|trade-offs;compliance||BEIS|CI/CD;Sidekiq
+Implemented staged release pipelines to control feature rollout to users incrementally|2019-09|Release;Strategy|release-management|n-vyro.io||Feature Flags
+Streamlined Docker-based development environment|2019-09|DevOps;Enablement|docker;dx||BEIS|DevOps;Docker;CI/CD;Sidekiq
+Refactored CSS components for consistency across application|2019-09|Development|css,refactoring,consistency||BEIS|CSS;Frontend;CI/CD;Sidekiq
+Created onboarding documentation reducing new developer ramp-up time|2019-09|Documentation|onboarding,documentation,developers||BEIS|Documentation;CI/CD;Sidekiq
+Acted as senior stabilising engineer during late-stage delivery pressure|2019-10|Leadership;Delivery|pressure-management||BEIS|CI/CD;Sidekiq
+Designed messaging schemas shared across firmware and backend systems|2019-10|Architecture;Contracts|schemas;consistency|n-vyro.io||Software Architecture
+Improved JavaScript and CSS components for user interfaces|2019-10|Frontend;Maintenance|javascript;css||BEIS|CSS;Frontend Development;JavaScript;CI/CD;Sidekiq
+Implemented pragmatic solutions under regulatory compliance deadlines|2019-10|Delivery|pragmatic,compliance,deadlines||BEIS|Delivery;Compliance;CI/CD;Sidekiq
+Mentored junior developers on Ruby best practices|2019-10|Mentoring|mentoring,ruby,best-practices||BEIS|Ruby;Mentoring;CI/CD;Sidekiq
+Established architectural decision records to preserve design rationale as sole developer|2019-11|Documentation;Architecture|adrs;decision-making|n-vyro.io||Continuous Integration;Software Architecture
+Simplified newcomer onboarding with improved documentation|2019-11|Documentation;Process|onboarding;docs||BEIS|Documentation;CI/CD;Sidekiq
+Conducted code reviews improving team code quality standards|2019-11|Quality,Mentoring|code-review,quality,standards||BEIS|Code Review;Quality;CI/CD;Sidekiq
+Delivered working functionality ahead of regulatory deadline|2019-11|Delivery|delivery,deadline,regulatory||BEIS|Delivery;CI/CD;Sidekiq
+Exited engagement after restoring delivery momentum|2019-12|Career;Completion|turnaround||BEIS|CI/CD;Sidekiq
+Delivered pragmatic solutions under regulatory constraints|2019-12|Strategy;Delivery|pragmatism;regulatory||BEIS|Delivery;CI/CD;Sidekiq
+Designed modular firmware architecture enabling feature isolation across device types|2019-12|Architecture,Technical Leadership|firmware,modular,iot|n-vyro.io||C;C++;Architecture
+Stabilised deployment pipeline reducing failed deployments|2019-12|DevOps|deployment,pipeline,stability||BEIS|DevOps;CI/CD;Sidekiq
+Documented architectural decisions for future maintainers|2019-12|Documentation,Architecture|adr,architecture,documentation||BEIS|Documentation;Architecture;CI/CD;Sidekiq
+Designed and delivered scalable backend services using Ruby on Rails, focusing on maintainability, performance, and reliability in production environments.|2019-12|Backend;Web;APIs|ruby;rails;backend;api;scalable-systems||BEIS|Ruby;Ruby on Rails;API Design;Backend Architecture;Scalability;CI/CD;Sidekiq
+Built and optimized data ingestion and processing pipelines, normalizing datasets (JSON, XML, CSV) for downstream services and client-facing applications.|2019-12|Data;Backend;ETL|data-processing;json;xml;csv;etl||BEIS|Data Processing;ETL;Ruby;JSON;XML;CSV;CI/CD;Sidekiq
+Implemented Test-Driven Development practices using RSpec, improving code quality, confidence in deployments, and long-term maintainability.|2019-12|Testing;Quality|tdd;rspec;testing;quality||BEIS|TDD;RSpec;Automated Testing;Code Quality;CI/CD;Sidekiq
+Collaborated closely with product managers and stakeholders to translate requirements into robust, well-scoped technical solutions.|2019-12|Product;Collaboration|stakeholders;requirements;agile||BEIS|Product Engineering;Stakeholder Management;Agile Delivery;CI/CD;Sidekiq
+Engineered hardware prototyping iteration including custom circuit design and enclosure|2020-01|Hardware;Engineering|electronics;prototyping;design|n-vyro.io||Electronics
+Balanced hardware constraints with software reliability requirements|2020-02|Strategy;Systems|constraints;trade-offs|n-vyro.io||
+Created reusable libraries and infrastructure scripts for QuikCV and n-vyro.io projects|2020-02|Development;Infrastructure|ruby;automation;libraries|n-vyro.io||Automation;Infrastructure;Ruby
+Introduced component-driven development practices across services|2020-03|Architecture;Process|cdd;modularity|n-vyro.io||Software Architecture
+Implemented OTA update mechanism for remote firmware deployment to field devices|2020-04|Technical Leadership,DevOps|ota,firmware,deployment|n-vyro.io||C;C++;DevOps
+Built device provisioning workflow handling initial setup and network configuration|2020-05|Technical Leadership|provisioning,networking,iot|n-vyro.io||Ruby;C++;Networking
+Created automated testing harness for firmware validation across hardware variants|2020-06|Technical Leadership,Quality|testing,firmware,automation|n-vyro.io||C;Python;Testing
+Developed event-driven backend architecture using message queues for device communication|2020-07|Architecture,Technical Leadership|messaging,events,architecture|n-vyro.io||Ruby;RabbitMQ;Architecture
+Implemented device health monitoring with alerting for anomaly detection|2020-08|DevOps,Technical Leadership|monitoring,alerting,health|n-vyro.io||Ruby;Prometheus;Grafana
+Built web dashboard for real-time device status visualization and control|2020-09|Technical Leadership|dashboard,visualization,ui|n-vyro.io||JavaScript;React;WebSockets
+Created API documentation and developer guides for ecosystem integration|2020-10|Documentation,Technical Leadership|api,documentation,integration|n-vyro.io||OpenAPI;Markdown
+Implemented secure device authentication using certificate-based identity|2020-11|Security,Technical Leadership|security,authentication,certificates|n-vyro.io||TLS;PKI;Security
+Resolved system-wide outage caused by aggressive logging configuration|2020-12|Incident;Reliability|incident-response;logging|n-vyro.io||Continuous Integration;Logging
+Reduced recurrence risk through incremental remediation and safeguards|2020-12|Incident;Process|postmortem;stability|n-vyro.io||
+Joined NTTData to assist with platform migration and tool integration for Money Advice Service|2020-12|Career;Onboarding|ruby;migration;public-sector||NTTData|Ruby;Ruby on Rails;Architecture;PostgreSQL;CI/CD;Sidekiq;Code Reviews;Remote Collaboration;Pair Programming
+Assessed existing tooling architecture to identify migration dependencies and risks|2020-12|Architecture;Analysis|assessment;dependencies||NTTData|Architecture;Analysis;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Consulted on pragmatic migration approaches under aggressive timeline constraints|2020-12|Consulting;Strategy|pragmatism;deadlines||NTTData|Architecture;Consulting;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Integrated legacy Money Advice Service tools into new NTTData platform|2020-12|Integration;Migration|tools;platform;legacy||NTTData|Ruby;Ruby on Rails;Integration;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Integrated legacy tools into NTTData platform|2020-12|Integration;Migration|integration;legacy||NTTData|Integration;Ruby;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Shifted focus toward release management and maintainability|2021-01|Strategy;Product|maintainability;planning|n-vyro.io||
+Provided deep architectural insight into existing tool implementations|2021-01|Architecture;Knowledge-transfer|documentation;expertise||NTTData|Architecture;Documentation;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Identified and resolved CI pipeline issues blocking migration progress|2021-01|DevOps;Debugging|ci-cd;troubleshooting||NTTData|CI/CD;DevOps;Sidekiq;Remote Collaboration;Pair Programming
+Coordinated with Money Advice Service stakeholders on migration requirements and timelines|2021-01|Communication;Coordination|stakeholders;planning||NTTData|Stakeholder Management;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Documented migration procedures to support ongoing platform maintenance|2021-01|Documentation;Process|knowledge-transfer;handover||NTTData|Documentation;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Applied BDD practices to validate migrated functionality against original behaviour|2021-01|Quality;Testing|bdd;regression||NTTData|BDD;Testing;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Balanced migration speed with system stability during cutover periods|2021-01|Strategy;Reliability|trade-offs;stability||NTTData|Architecture;DevOps;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Provided architectural consultation for post-migration improvement opportunities|2021-01|Consulting;Architecture|improvements;roadmap||NTTData|Architecture;Consulting;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Completed engagement after successful tool integration and platform migration|2021-01|Career;Completion|delivery;handover||NTTData|Ruby;Ruby on Rails;DevOps;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Resolved CI pipeline blockers during migration|2021-01|DevOps;Debugging|ci;migration||NTTData|CI/CD;DevOps;Sidekiq;Remote Collaboration;Pair Programming
+Coordinated with MAS stakeholders on migration timeline|2021-01|Communication;Coordination|stakeholders;migration||NTTData|Communication;Stakeholder Management;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Documented migration procedures for ongoing maintenance|2021-01|Documentation;Process|documentation;migration||NTTData|Documentation;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Applied BDD to validate migrated functionality|2021-01|Quality;Testing|bdd;validation||NTTData|BDD;Testing;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Designed and delivered scalable backend services using Ruby on Rails, focusing on maintainability, performance, and reliability in production environments.|2021-01|Backend;Web;APIs|ruby;rails;backend;api;scalable-systems||NTTData|Ruby;Ruby on Rails;API Design;Backend Architecture;Scalability;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Built and optimized data ingestion and processing pipelines, normalizing datasets (JSON, XML, CSV) for downstream services and client-facing applications.|2021-01|Data;Backend;ETL|data-processing;json;xml;csv;etl||NTTData|Data Processing;ETL;Ruby;JSON;XML;CSV;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Implemented Test-Driven Development practices using RSpec, improving code quality, confidence in deployments, and long-term maintainability.|2021-01|Testing;Quality|tdd;rspec;testing;quality||NTTData|TDD;RSpec;Automated Testing;Code Quality;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Collaborated closely with product managers and stakeholders to translate requirements into robust, well-scoped technical solutions.|2021-01|Product;Collaboration|stakeholders;requirements;agile||NTTData|Product Engineering;Stakeholder Management;Agile Delivery;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Began freelance consulting engagements focusing on Ruby best practices and architecture|2021-02|Career;Consulting|freelance;ruby||Freelance|Ruby;Architecture;CI/CD;Sidekiq;Code Reviews;Remote Collaboration;Pair Programming
+Designed data retention policies balancing storage costs with analytics needs|2021-02|Architecture,Technical Leadership|data,retention,analytics|n-vyro.io||PostgreSQL;Architecture
+Consulted on improving code quality and testing practices for client projects|2021-03|Quality;Consulting|bdd;standards||Freelance|BDD;Code Quality;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Consulted for multiple clients on Ruby best practices|2021-03|Consulting;Quality|ruby;consulting||Freelance|Consulting;Ruby;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Built automated backup and disaster recovery procedures for ecosystem data|2021-03|DevOps,Technical Leadership|backup,disaster-recovery,automation|n-vyro.io||Shell;AWS;DevOps
+Implemented RESTful API resources for client backend systems|2021-04|Backend;API|rest;api-design||Freelance|Ruby;REST API;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Implemented REST API resources for client systems|2021-04|Backend;API|rest;api||Freelance|API Development;REST API;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Implemented feature flags enabling gradual rollout of new capabilities|2021-04|Technical Leadership|feature-flags,rollout,deployment|n-vyro.io||Ruby;Feature Flags
+Enhanced existing functionality while maintaining backward compatibility|2021-05|Maintenance;Delivery|improvements;stability||Freelance|Ruby;Rails;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Advocated for and introduced BDD practices to improve delivery confidence|2021-05|Process;Quality|bdd;testing||Freelance|BDD;Testing;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Created performance benchmarking suite tracking system responsiveness over time|2021-05|Quality,Technical Leadership|performance,benchmarking,testing|n-vyro.io||Ruby;Benchmarking
+Identified and addressed core architectural issues limiting client scalability|2021-06|Architecture;Analysis|technical-debt;improvements||Freelance|Architecture;Analysis;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Improved developer experience through better tooling|2021-06|DevOps;Enablement|tooling;dx||Freelance|Developer Experience;DevOps;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Developed mobile-responsive UI enabling device control from any screen size|2021-06|Technical Leadership|responsive,mobile,ui|n-vyro.io||CSS;JavaScript;Responsive Design
+Improved ticket creation workflows to better capture requirements and acceptance criteria|2021-07|Process;Enablement|workflow;agile||Freelance|Agile;Process;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Enhanced ticket workflows for clearer requirements|2021-07|Process;Quality|tickets;workflow||Freelance|Agile;Process;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Built integration testing framework validating end-to-end device workflows|2021-07|Quality,Technical Leadership|integration,testing,e2e|n-vyro.io||Ruby;RSpec;Testing
+Streamlined developer onboarding through improved documentation and setup scripts|2021-08|DevOps;Documentation|onboarding;dx||Freelance|Documentation;DevOps;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Mentored developers on Ruby idioms and best practices|2021-08|Leadership;Mentoring|mentoring;ruby||Freelance|Mentoring;Ruby;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Implemented log aggregation and search across distributed system components|2021-08|DevOps,Technical Leadership|logging,aggregation,search|n-vyro.io||ELK;Elasticsearch
+Provided UX delivery consultation to align technical implementation with user needs|2021-09|UX;Consulting|ux-delivery;alignment||Freelance|UX Delivery;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Mentored junior developers on Ruby idioms and Rails best practices|2021-09|Leadership;Mentoring|mentoring;ruby||Freelance|Mentoring;Ruby;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Created runbook documentation for common operational procedures|2021-09|Documentation,DevOps|runbooks,operations,documentation|n-vyro.io||Markdown;Operations
+Delivered incremental improvements across multiple short-term client engagements|2021-10|Delivery;Consulting|multi-client;agile||Freelance|Agile;Delivery;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Concluded freelance period with strengthened consulting and advisory skills|2021-10|Career;Reflection|consulting;experience||Freelance|Consulting;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Optimized firmware memory footprint enabling deployment on constrained devices|2021-10|Technical Leadership|optimization,memory,firmware|n-vyro.io||C;C++;Optimization
+Designed and delivered scalable backend services using Ruby on Rails, focusing on maintainability, performance, and reliability in production environments.|2021-10|Backend;Web;APIs|ruby;rails;backend;api;scalable-systems||Freelance|Ruby;Ruby on Rails;API Design;Backend Architecture;Scalability;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Built and optimized data ingestion and processing pipelines, normalizing datasets (JSON, XML, CSV) for downstream services and client-facing applications.|2021-10|Data;Backend;ETL|data-processing;json;xml;csv;etl||Freelance|Data Processing;ETL;Ruby;JSON;XML;CSV;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Implemented Test-Driven Development practices using RSpec, improving code quality, confidence in deployments, and long-term maintainability.|2021-10|Testing;Quality|tdd;rspec;testing;quality||Freelance|TDD;RSpec;Automated Testing;Code Quality;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Collaborated closely with product managers and stakeholders to translate requirements into robust, well-scoped technical solutions.|2021-10|Product;Collaboration|stakeholders;requirements;agile||Freelance|Product Engineering;Stakeholder Management;Agile Delivery;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Built device grouping and bulk operation capabilities for fleet management|2021-11|Technical Leadership|fleet,bulk-operations,management|n-vyro.io||Ruby;Architecture
+Implemented time-series data storage for historical device metrics|2021-12|Architecture,Technical Leadership|timeseries,metrics,storage|n-vyro.io||InfluxDB;TimescaleDB
+Validated ecosystem feature completeness ahead of funding discussions|2022-01|Product;Strategy|validation;funding|n-vyro.io||
+Returned to Spice Rack to implement WordPress-based provisioning service|2022-01|Career;Onboarding|ruby;wordpress;aws||Spice Rack|Ruby;Ruby on Rails;WordPress;AWS;CI/CD;Sidekiq
+Designed architecture integrating AWS infrastructure with Docker-based WordPress deployments|2022-01|Architecture;Infrastructure|aws;docker;wordpress||Spice Rack|AWS;Docker;Architecture;CI/CD;Sidekiq
+Implemented API layer to orchestrate WordPress instance lifecycle management|2022-01|Backend;API|api;provisioning||Spice Rack|Ruby;API Development;CI/CD;Sidekiq
+Configured AWS infrastructure to support scalable WordPress hosting|2022-01|Infrastructure;DevOps|aws;terraform||Spice Rack|AWS;DevOps;CI/CD;Sidekiq
+Implemented backup service for WordPress instances|2022-01|Backend;Features|backup;wordpress||Spice Rack|Backend Development;WordPress;CI/CD;Sidekiq
+Began funding and product validation activities for n-vyro|2022-02|Product;Business|funding;validation|n-vyro.io||
+Built Docker containerisation for consistent WordPress deployment environments|2022-02|DevOps;Infrastructure|docker;containers||Spice Rack|Docker;DevOps;CI/CD;Sidekiq
+Implemented backup functionality enabling point-in-time WordPress instance recovery|2022-02|Backend;Features|backup;disaster-recovery||Spice Rack|Ruby;MySQL;CI/CD;Sidekiq
+Developed rollback capability based on backup timestamps for safe deployments|2022-02|Backend;Reliability|rollback;versioning||Spice Rack|Ruby;DevOps;CI/CD;Sidekiq
+Created publishing workflow allowing users to deploy WordPress changes incrementally|2022-02|Features;Delivery|publishing;workflow||Spice Rack|API Development;CI/CD;Sidekiq
+Built rollback functionality based on backup timestamps|2022-02|Backend;Reliability|rollback;versioning||Spice Rack|Backend Development;Reliability;CI/CD;Sidekiq
+Developed provisioning service orchestrating AWS and Docker|2022-02|Backend;Infrastructure|provisioning;aws||Spice Rack|AWS;Backend Development;Docker;CI/CD;Sidekiq
+Extended Rails systems supporting order lifecycle management.|2022-03|Backend;Orders|ruby;rails;orders||Mindful Chef|Ruby;Ruby on Rails;Order Systems;CI/CD;Sidekiq;Code Reviews;Remote Collaboration;Pair Programming;High-throughput Systems
+Improved backend robustness for peak traffic periods.|2022-03|Backend;Performance|rails;scaling||Mindful Chef|Ruby on Rails;Scalability;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Supported integrations with third-party logistics and fulfilment providers.|2022-03|Backend;Integration|rails;integration;logistics||Mindful Chef|Ruby on Rails;System Integration;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Ensured data integrity across customer and operational systems.|2022-03|Backend;Data Integrity|rails;data||Mindful Chef|Ruby on Rails;Data Integrity;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Worked closely with operations teams to align backend behaviour with real-world processes.|2022-03|Backend;Operations|rails;operations||Mindful Chef|Ruby on Rails;Operational Alignment;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Implemented safeguards around critical business workflows.|2022-03|Backend;Reliability|rails;safety||Mindful Chef|Ruby on Rails;Reliability;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Improved monitoring to surface issues before customer impact.|2022-03|Backend;Monitoring|rails;monitoring||Mindful Chef|Ruby on Rails;Monitoring;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Participated in incident response and post-incident reviews.|2022-03|Backend;Support|rails;incidents||Mindful Chef|Ruby on Rails;Incident Response;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Maintained clean separation between domain logic and infrastructure concerns.|2022-03|Backend;Architecture|rails;architecture||Mindful Chef|Ruby on Rails;Software Architecture;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Contributed to continuous improvement of backend engineering practices.|2022-03|Backend;Engineering|rails;best-practices||Mindful Chef|Ruby on Rails;Engineering Practices;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Maintained and extended Rails services supporting order processing, fulfilment, and internal operational tools.|2022-03|Backend;Operations|ruby;rails;orders||Mindful Chef|Ruby;Ruby on Rails;Operational Systems;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Improved system robustness through defensive coding, monitoring, and failure-aware design.|2022-03|Backend;Reliability|rails;reliability;monitoring||Mindful Chef|Ruby on Rails;Reliability Engineering;Backend Systems;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Collaborated with non-technical stakeholders to ensure backend changes aligned with operational needs.|2022-03|Backend;Collaboration|rails;stakeholders;operations||Mindful Chef|Ruby on Rails;Stakeholder Collaboration;Product Support;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Applied BDD practices to validate provisioning service behaviour|2022-03|Quality;Testing|bdd;testing||Spice Rack|BDD;Testing;CI/CD;Sidekiq
+Balanced evolving requirements with delivery timeline constraints|2022-03|Strategy;Delivery|scope-management;agile||Spice Rack|Agile;CI/CD;Sidekiq
+Delivered functional provisioning system ready for client testing|2022-03|Delivery;Completion|mvp;handover||Spice Rack|Ruby;DevOps;CI/CD;Sidekiq
+Completed engagement before full service release with minimal required changes|2022-03|Career;Completion|delivery;transition||Spice Rack|Ruby;CI/CD;Sidekiq
+Joined Mindful Chef to support development team during capacity constraints|2022-03|Career;Onboarding|ruby;foodtech||Mindful Chef|Ruby;Ruby on Rails;PostgreSQL;RSpec;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Assessed codebase to identify areas requiring stability improvements|2022-03|Analysis;Assessment|technical-debt;codebase||Mindful Chef|Architecture;Analysis;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Applied BDD practices to validate provisioning behaviour|2022-03|Quality;Testing|bdd;provisioning||Spice Rack|BDD;Testing;CI/CD;Sidekiq
+Delivered MVP before contract end with minimal changes needed|2022-03|Delivery;Completion|mvp;delivery||Spice Rack|Delivery;CI/CD;Sidekiq
+Designed plugin architecture enabling third-party device integrations|2022-03|Architecture,Technical Leadership|plugins,integration,architecture|n-vyro.io||Ruby;Architecture
+Designed and delivered scalable backend services using Ruby on Rails, focusing on maintainability, performance, and reliability in production environments.|2022-03|Backend;Web;APIs|ruby;rails;backend;api;scalable-systems||Spice Rack|Ruby;Ruby on Rails;API Design;Backend Architecture;Scalability;CI/CD;Sidekiq
+Built and optimized data ingestion and processing pipelines, normalizing datasets (JSON, XML, CSV) for downstream services and client-facing applications.|2022-03|Data;Backend;ETL|data-processing;json;xml;csv;etl||Spice Rack|Data Processing;ETL;Ruby;JSON;XML;CSV;CI/CD;Sidekiq
+Implemented Test-Driven Development practices using RSpec, improving code quality, confidence in deployments, and long-term maintainability.|2022-03|Testing;Quality|tdd;rspec;testing;quality||Spice Rack|TDD;RSpec;Automated Testing;Code Quality;CI/CD;Sidekiq
+Collaborated closely with product managers and stakeholders to translate requirements into robust, well-scoped technical solutions.|2022-03|Product;Collaboration|stakeholders;requirements;agile||Spice Rack|Product Engineering;Stakeholder Management;Agile Delivery;CI/CD;Sidekiq
+Improved existing architecture while ensuring backward compatibility with live systems|2022-04|Architecture;Quality|stability;improvements||Mindful Chef|Ruby;Ruby on Rails;Architecture;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Implemented performance optimisations to improve API response times|2022-04|Performance;Backend|optimisation;profiling||Mindful Chef|Ruby;Ruby on Rails;Performance;PostgreSQL;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Applied BDD practices to increase confidence in system changes|2022-04|Quality;Testing|bdd;regression||Mindful Chef|BDD;Testing;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Improved existing architecture ensuring backward compatibility|2022-04|Architecture;Quality|architecture;stability||Mindful Chef|Architecture;Ruby;Ruby on Rails;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Implemented performance optimisations for API responses|2022-04|Performance;Backend|performance;api||Mindful Chef|Performance;Ruby;Ruby on Rails;PostgreSQL;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Created investor pitch materials and technical due diligence documentation|2022-04|Business,Technical Leadership|funding,pitch,documentation|n-vyro.io||Business;Documentation
+Collaborated with team to improve code review processes and standards|2022-05|Process;Quality|code-review;standards||Mindful Chef|Code Review;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Enhanced system observability through improved logging and metrics|2022-05|Infrastructure;Observability|logging;monitoring||Mindful Chef|Observability;Logging;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Collaborated on code review process improvements|2022-05|Process;Quality|code-review;standards||Mindful Chef|Code Review;Process;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Built demo environment showcasing ecosystem capabilities to potential investors|2022-05|Business,Technical Leadership|demo,showcase,investors|n-vyro.io||DevOps;Presentation
+Identified dependencies requiring updates for Ruby 3.1 upgrade|2022-06|Analysis;DevOps|dependencies;ruby-upgrade||Mindful Chef|Ruby;DevOps;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Planned and executed Ruby upgrade from v3.0.1 to v3.1.0|2022-06|DevOps;Migration|ruby-upgrade;planning||Mindful Chef|Ruby;DevOps;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Updated gem dependencies to ensure compatibility with Ruby 3.1|2022-06|Maintenance;DevOps|gems;dependencies||Mindful Chef|Ruby;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Planned and executed Ruby 3.1 upgrade|2022-06|DevOps;Migration|ruby-upgrade;planning||Mindful Chef|DevOps;Ruby;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Updated gem dependencies for Ruby 3.1 compatibility|2022-06|Maintenance;DevOps|gems;dependencies||Mindful Chef|DevOps;Ruby;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Implemented usage analytics tracking product engagement metrics|2022-06|Analytics,Technical Leadership|analytics,usage,metrics|n-vyro.io||Analytics;Product
+Conducted thorough testing of Ruby upgrade across test and UAT environments|2022-07|Quality;Testing|regression;validation||Mindful Chef|Testing;BDD;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Successfully deployed Ruby 3.1 upgrade to production in final week|2022-07|Delivery;Release|ruby;production||Mindful Chef|Ruby;DevOps;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Documented upgrade process and dependency changes for future reference|2022-07|Documentation;Process|knowledge-transfer||Mindful Chef|Documentation;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Departed during workforce reduction as one of most recent hires|2022-07|Career;Completion|redundancy;transition||Mindful Chef|Ruby;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Tested Ruby upgrade across all environments|2022-07|Quality;Testing|testing;upgrade||Mindful Chef|Quality;Testing;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Deployed Ruby 3.1 to production successfully|2022-07|Delivery;DevOps|deployment;ruby||Mindful Chef|DevOps;Ruby;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Refined product positioning based on early user feedback and market research|2022-07|Product,Technical Leadership|product,positioning,market|n-vyro.io||Product Management
+Designed QuikCV as a local-first career journal|2022-08|Product;UX|cv;journal|QuikCV||
+Used YAML and local storage to avoid unnecessary persistence complexity|2022-08|Architecture;Simplicity|yaml;local-storage|QuikCV||Software Architecture
+Restructured data persistence to leverage local storage for offline-first capabilities|2022-08|Architecture;Storage|local-first;yaml;persistence|QuikCV||Software Architecture
+Established beta testing program with selected users for validation|2022-08|Product,Technical Leadership|beta,testing,validation|n-vyro.io||Product Management
+Focused on progressive CV creation without form-driven input|2022-09|Product;UX|simplicity;usability|QuikCV||Continuous Integration
+Created technical roadmap aligning development priorities with funding milestones|2022-09|Technical Leadership,Planning|roadmap,planning,milestones|n-vyro.io||Project Management
+Implemented cost optimization reducing infrastructure expenses by 40%|2022-10|DevOps,Technical Leadership|cost,optimization,infrastructure|n-vyro.io||AWS;Cost Optimization
+Built automated compliance checking for device firmware releases|2022-11|Quality,Technical Leadership|compliance,automation,releases|n-vyro.io||CI/CD;Compliance
+Documented lessons learned and architectural decisions for future maintainability|2022-12|Documentation,Technical Leadership|documentation,decisions,maintainability|n-vyro.io||ADR;Documentation
+Continued product validation activities while seeking funding opportunities|2023-01|Business,Technical Leadership|validation,funding,product|n-vyro.io||Business Development
+Migrated QuikCV frontend from CoffeeScript to Vue to reduce technical debt|2023-02|Architecture;Migration|vue;frontend|QuikCV||Frontend Development;Software Architecture;Vue.js
+Deliberately excluded non-essential features to preserve core focus|2023-02|Strategy;Product|scope-control;focus|QuikCV||
+Migrated QuikCV frontend from CoffeeScript to Vue to modernise codebase architecture|2023-02|Architecture;Migration|vue;frontend|QuikCV||Frontend Development;Software Architecture;Vue.js
+Migrated frontend from CoffeeScript to Vue.js to reduce technical debt|2023-02|Architecture;Migration|vue;frontend;typescript|QuikCV||Frontend Development;Software Architecture;Vue.js
+Designed component architecture with Quasar UI library enabling reusable components|2023-02|Architecture;Frontend|quasar;components;singlepage|QuikCV||Frontend Development;Software Architecture
+Implemented mobile-first responsive design across all device sizes|2023-02|Frontend;UX|responsive;mobile;design|QuikCV||Frontend Development
+Maintained ecosystem stability while exploring partnership opportunities|2023-02|Technical Leadership,Business|stability,partnerships,maintenance|n-vyro.io||Maintenance
+Conducted full testing infrastructure migration from Rails test framework to Vue test utilities|2023-03|Quality;Testing|vue-test;unit;component-testing|QuikCV||Testing;Vue.js
+Established design system with consistent colour schemes, typography, and patterns|2023-03|Design;Frontend|design-system;consistency|QuikCV||Frontend Development
+Conducted testing infrastructure migration from Rails to Vue test utilities|2023-03|Quality;Testing|vue-test;unit;component-testing|QuikCV||Testing;Vue.js
+Implemented security audit findings and hardened system components|2023-03|Security,Technical Leadership|security,audit,hardening|n-vyro.io||Security;DevOps
+Reduced bundle size by 40% through code splitting and lazy loading|2023-04|Performance;Optimisation|bundle-optimisation;perf|QuikCV||
+Improved build time from 45s to 12s through Vite configuration|2023-04|Performance;DevOps|build-optimisation;vite|QuikCV||DevOps
+Updated dependencies and addressed technical debt across repositories|2023-04|Maintenance,Technical Leadership|dependencies,technical-debt,updates|n-vyro.io||Maintenance
+Created product demonstration videos for marketing materials|2023-05|Marketing,Technical Leadership|video,marketing,demonstration|n-vyro.io||Marketing
+Refined API contracts based on integration partner feedback|2023-06|Technical Leadership|api,contracts,integration|n-vyro.io||API Design
+Returned to Mindful Chef to support continued development and BAU|2023-07|Career;Onboarding|ruby;foodtech||Mindful Chef|Ruby;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Returned to Mindful Chef to deliver automation and BAU improvements|2023-07|Career;Onboarding|ruby;foodtech||Mindful Chef|Ruby;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Identified operational issue resolution as major cost and time sink|2023-08|Analysis;Operations|ops-efficiency||Mindful Chef|Continuous Integration;Operations;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Mentored colleagues and documented internal processes at Mindful Chef|2023-08|Enablement;Documentation|mentoring;knowledge-base||Mindful Chef|Mentoring;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Documented internal processes and mentored colleagues|2023-08|Documentation;Mentoring|docs;mentoring||Mindful Chef|Documentation;Mentoring;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Continued ecosystem development alongside Mindful Chef contract work|2023-08|Technical Leadership|development,side-project,balance|n-vyro.io||Project Management
+Designed automated issue resolution logic to replace manual ops workflows|2023-09|Architecture;Automation|ops-automation||Mindful Chef|Automation;Operations;Software Architecture;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Collaborated with operations to define clear criteria for automation|2023-09|Leadership;Collaboration|ops;clarity||Mindful Chef|Operations;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Designed automation logic replacing manual ops workflows|2023-09|Architecture;Automation|automation;ops||Mindful Chef|Architecture;Automation;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Collaborated with operations to define automation criteria|2023-09|Collaboration;Operations|ops;collaboration||Mindful Chef|Collaboration;Operations;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Implemented automated monitoring alerts for critical system components|2023-09|DevOps,Technical Leadership|monitoring,alerts,automation|n-vyro.io||Prometheus;Alerting
+Implemented automated issue resolution saving £30k annually|2023-10|Automation;Impact|cost-savings||Mindful Chef|CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Automated issue resolution saving £30k+ annually|2023-10|Automation;Impact|automation;cost-savings||Mindful Chef|Automation;Ruby;Ruby on Rails;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Optimized database queries improving dashboard load times significantly|2023-10|Performance,Technical Leadership|database,optimization,performance|n-vyro.io||PostgreSQL;Performance
+Saved company over £30k annually in administrative effort|2023-11|Impact;Efficiency|cost-savings||Mindful Chef|CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Built automated changelog generation from commit history|2023-11|DevOps,Technical Leadership|changelog,automation,git|n-vyro.io||Git;Automation
+Balanced BAU work with process and system improvements|2023-12|Strategy;Maintenance|BAU;improvement||Mindful Chef|CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Balanced BAU work with strategic improvements|2023-12|Strategy;Maintenance|bau;strategy||Mindful Chef|Strategy;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Created comprehensive system architecture documentation for investors|2023-12|Documentation,Technical Leadership|architecture,documentation,investors|n-vyro.io||Documentation
+Implemented OTP authentication to improve account security|2024-01|Security;Delivery|authentication;otp||Mindful Chef|Ruby;Ruby on Rails;Authentication;Security;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Implemented OTP authentication for improved security|2024-01|Security;Backend|otp;authentication||Mindful Chef|Ruby;Ruby on Rails;Authentication;Security;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Maintained project momentum while completing Mindful Chef contract|2024-01|Technical Leadership|maintenance,momentum,balance|n-vyro.io||Project Management
+Supported performance and volumetric analysis under production constraints|2024-02|Performance;Analysis|scaling;reliability||Mindful Chef|CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Conducted volumetric analysis for performance planning|2024-02|Analysis;Performance|volumetric;scaling||Mindful Chef|Analysis;Performance;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Updated ecosystem to support latest firmware and service versions|2024-02|Maintenance,Technical Leadership|updates,firmware,services|n-vyro.io||Maintenance
+Prepared technical materials for potential acquisition discussions|2024-03|Business,Technical Leadership|acquisition,technical,materials|n-vyro.io||Business
+Exited role after delivering automation and stabilisation improvements|2024-04|Career;Completion|delivery-impact||Mindful Chef|CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Exited Mindful Chef after stabilisation and delivery|2024-04|Career;Completion|delivery-impact||Mindful Chef|CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Conducted system health review and addressed accumulated technical debt|2024-04|Maintenance,Technical Leadership|health,technical-debt,review|n-vyro.io||Maintenance
+Designed and delivered scalable backend services using Ruby on Rails, focusing on maintainability, performance, and reliability in production environments.|2024-04|Backend;Web;APIs|ruby;rails;backend;api;scalable-systems||Mindful Chef|Ruby;Ruby on Rails;API Design;Backend Architecture;Scalability;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Built and optimized data ingestion and processing pipelines, normalizing datasets (JSON, XML, CSV) for downstream services and client-facing applications.|2024-04|Data;Backend;ETL|data-processing;json;xml;csv;etl||Mindful Chef|Data Processing;ETL;Ruby;JSON;XML;CSV;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Implemented Test-Driven Development practices using RSpec, improving code quality, confidence in deployments, and long-term maintainability.|2024-04|Testing;Quality|tdd;rspec;testing;quality||Mindful Chef|TDD;RSpec;Automated Testing;Code Quality;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Collaborated closely with product managers and stakeholders to translate requirements into robust, well-scoped technical solutions.|2024-04|Product;Collaboration|stakeholders;requirements;agile||Mindful Chef|Product Engineering;Stakeholder Management;Agile Delivery;CI/CD;Sidekiq;Remote Collaboration;Pair Programming;High-throughput Systems
+Continued seeking funding while maintaining system operational status|2024-05|Business,Technical Leadership|funding,operations,maintenance|n-vyro.io||Business Development
+Explored monetization strategies for sustainable project continuation|2024-06|Business,Technical Leadership|monetization,strategy,sustainability|n-vyro.io||Business Strategy
+Provided consulting services via FullSpektrum for early-stage product definition|2024-07|Career;Consulting|early-stage;architecture||FullSpektrum|Software Architecture;CI/CD;Sidekiq;Code Reviews;Remote Collaboration;Pair Programming
+Defined MVP scope by translating vague ideas into concrete requirements|2024-07|Strategy;Product|clarity;mvp||FullSpektrum|CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Aligned Figma designs with technical feasibility to reduce ambiguity|2024-07|Architecture;Communication|design-systems||FullSpektrum|Software Architecture;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Selected tooling enabling non-technical stakeholders to participate in iteration|2024-07|Enablement;Product|stakeholder-access||FullSpektrum|CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Defined MVP scope translating ideas into requirements|2024-07|Strategy;Product|mvp;requirements||FullSpektrum|Product;Strategy;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Removed accidental complexity by eliminating multiple sources of truth|2024-08|Architecture;Simplicity|single-source||FullSpektrum|Software Architecture;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Balanced consultancy with retained architectural ownership|2024-08|Strategy;Delivery|consulting;ownership||FullSpektrum|CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Aligned Figma designs with technical feasibility|2024-08|Architecture;Design|figma;feasibility||FullSpektrum|Architecture;Design;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Removed complexity by eliminating multiple sources of truth|2024-08|Architecture;Simplicity|simplification;architecture||FullSpektrum|Architecture;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Evaluated partnership opportunities with complementary IoT platforms|2024-08|Business,Technical Leadership|partnerships,iot,evaluation|n-vyro.io||Business Development
+Authored technical documentation used in investor due diligence|2024-09|Architecture;Documentation|investor-materials||FullSpektrum|Software Architecture;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Delivered technical demos and participated in investor Q&A|2024-09|Communication;Leadership|investor-engagement||FullSpektrum|CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Clarified technical assumptions affecting timelines and confidence|2024-09|Strategy;Leadership|assumptions;clarity||FullSpektrum|CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Authored technical documentation for investor due diligence|2024-09|Documentation;Business|investor;docs||FullSpektrum|Documentation;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Delivered technical demos for investor presentations|2024-09|Communication;Leadership|demos;investors||FullSpektrum|Communication;Leadership;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Maintained ecosystem while focusing on FullSpektrum consulting work|2024-09|Maintenance,Technical Leadership|maintenance,consulting,balance|n-vyro.io||Project Management
+Mentored founders to understand MVP maturity and delivery constraints|2024-10|Leadership;Enablement|mentoring;founders||FullSpektrum|Mentoring;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Reduced rework by establishing shared language across business and engineering|2024-10|Process;Delivery|alignment;clarity||FullSpektrum|CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Mentored founders on MVP maturity and constraints|2024-10|Leadership;Mentoring|mentoring;founders||FullSpektrum|Mentoring;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Reduced rework through shared language across teams|2024-10|Process;Communication|alignment;communication||FullSpektrum|Communication;Process;CI/CD;Sidekiq;Remote Collaboration;Pair Programming
+Documented project status and potential paths forward|2024-10|Documentation,Technical Leadership|documentation,status,planning|n-vyro.io||Documentation
+Architected production-grade Career Event CLI using Domain-Driven Design and Go|2025-01|Architecture;Product|go;ddd;cli|KaRiya||Software Architecture;Code Reviews
+Designed event model with XOR constraint enforcing project-or-company separation|2025-01|Architecture;Domain|constraints;validation;ddd|KaRiya||Software Architecture
+Implemented Domain-Driven Design with bounded contexts separating career domain from infrastructure|2025-01|Architecture;DDD|ddd;bounded-contexts;clean-architecture|KaRiya||Domain-Driven Design;Software Architecture;Go
+Implemented 3-mode event capture system: timeline journaling, CV backfill, manual|2025-02|Features;Backend|career-events;input-modes|KaRiya||Backend Development
+Built Bubble Tea terminal UI with 19 standardised keyboard shortcuts|2025-02|Frontend;TUI|bubble-tea;tui;keyboard|KaRiya||Frontend Development
+Engineered SQLite repository layer with full CRUD, filtering, pagination, sorting|2025-02|Backend;Data|sqlite;repository;queries|KaRiya||Backend Development;Data Processing
+Implemented event classification service auto-categorizing entries into 6 competencies|2025-02|Backend;Features|classification;ml;competencies|KaRiya||Backend Development;Continuous Integration
+Demonstrated effective human-AI collaboration for feature implementation|2025-02|Collaboration;Innovation|ai-assisted;coding;acceleration|KaRiya||
+Implemented structured logging system with context-aware fields|2025-02|Infrastructure;Logging|structured-logging;observability|KaRiya||Infrastructure;Logging;Observability
+Engineered in-memory repository implementation for comprehensive testing|2025-02|Quality;Testing|mocking;test-doubles;isolation|KaRiya||Testing
+Designed repository pattern with SQLite implementation and in-memory test doubles|2025-02|Architecture;Data|repository;sqlite;testing|KaRiya||Repository Pattern;SQLite;Testing;Go
+Built service layer orchestrating domain logic with dependency injection for testability|2025-02|Architecture;Backend|service-layer;di;orchestration|KaRiya||Service Layer;Dependency Injection;Go
+Designed unified keyboard shortcut system with 19+ standardized shortcuts across all screens|2025-02|UX;Architecture|keyboard;shortcuts;navigation|KaRiya||Keyboard Navigation;UX;Accessibility
+Built multi-mode event capture system supporting timeline journaling, CV backfill, and manual entry|2025-02|Features;UX|event-capture;modes;workflows|KaRiya||Workflow Design;Go;UX
+Implemented Ginkgo/Gomega BDD testing framework with descriptive specifications|2025-02|Quality;Testing|ginkgo;gomega;bdd;specs|KaRiya||BDD;Ginkgo;Gomega;Testing
+Implemented structured logging with context-aware fields for debugging|2025-02|Infrastructure;Quality|logging;structured;context|KaRiya||Structured Logging;Observability;Go
+Achieved 337/337 test passing with zero race conditions using Ginkgo v2|2025-03|Quality;Testing|ginkgo;gomega;tdd;coverage|KaRiya||Testing
+Maintained 80%+ code coverage across domain, service, and repository layers|2025-03|Quality;Standards|coverage;testing;quality|KaRiya||Testing
+Configured GitHub Actions CI/CD for automated testing and semantic releases|2025-03|DevOps;Automation|github-actions;ci-cd;git|KaRiya||CI/CD;Continuous Integration;DevOps
+Developed comprehensive documentation including CLI guide and TUI standards|2025-03|Documentation;Process|guides;knowledge-base;ddd|KaRiya||
+Designed metadata enrichment pipeline supporting bulk operations|2025-03|Features;Backend|metadata;enrichment;bulk-ops|KaRiya||Backend Development;Data Processing;Operations
+Created professional TUI component library with reusable elements|2025-03|Frontend;Patterns|components;reusability;patterns|KaRiya||Frontend Development
+Validated production readiness through comprehensive integration testing|2025-03|Quality;Release|e2e-testing;readiness|KaRiya||Testing
+Documented architectural decisions and development rationale|2025-03|Documentation;Architecture|decision-records;adrs|KaRiya||Continuous Integration;Software Architecture
+Architected Intent/Screen/Component pattern enabling scalable TUI state management|2025-03|Architecture;TUI|intents;screens;components;state-machine|KaRiya||State Machine;Architecture;Go;Bubble Tea
+Created BaseIntent contract enforcing consistent lifecycle management across all workflows|2025-03|Architecture;Patterns|base-intent;contracts;interfaces|KaRiya||Interface Design;Go;Architecture
+Created metadata enrichment pipeline with category, tag, and skill suggestions|2025-03|Features;Backend|enrichment;metadata;suggestions|KaRiya||Data Processing;Go;Backend Development
+Configured GitHub Actions CI/CD with automated testing, linting, and semantic releases|2025-03|DevOps;Automation|github-actions;ci-cd;automation|KaRiya||GitHub Actions;CI/CD;DevOps
+Established project as foundation for next-generation career management tooling|2025-04|Product;Strategy|platform;foundation;vision|KaRiya||
+Initialized KaRiya project with CLI MVP foundation using Bubble Tea framework|2025-12|Architecture,Development|bubble-tea,tui,mvp|KaRiya||Go;Bubble Tea;Architecture
+Implemented tag selector component for categorizing career events|2025-12|Development|tags,selector,components|KaRiya||Go;Bubble Tea
+Built form model with field-level validation and error display|2025-12|Development,Quality|validation,forms,errors|KaRiya||Go;Testing
+Created SuccessModel for post-capture user feedback|2025-12|Development,UX|success,feedback,ux|KaRiya||Go;UX
+Designed event validator with formatted suggestion display|2025-12|Development,Quality|validation,suggestions,ux|KaRiya||Go;Validation
+Refactored main() for testability and eliminated race conditions|2025-12|Quality,Architecture|testing,race-conditions,refactoring|KaRiya||Go;Testing
+Implemented generic reusable Form component for consistent input handling|2026-01|Architecture,Development|forms,components,reusable|KaRiya||Go;Components
+Increased default terminal width from 120 to 140 for better content display|2026-01|UX|terminal,width,display|KaRiya||Go;UX
+Replaced capture mode system with more intuitive strategy system|2026-01|Architecture,UX|strategy,modes,refactoring|KaRiya||Go;Architecture
+Integrated goose migration framework for database schema versioning|2026-01|DevOps,Architecture|migrations,database,goose|KaRiya||Go;SQLite;Migrations
+Implemented strict workflow enforcement system for development process|2026-01|Quality,Process|workflow,enforcement,quality|KaRiya||Go;Process
+Added comprehensive E2E integration tests for all user journeys|2026-01|Quality,Testing|e2e,integration,testing|KaRiya||Go;Ginkgo;Testing
+Implemented TUI visual overhaul with theme system and KeyBadge footer|2026-01|UX,Architecture|theme,visual,keybadge|KaRiya||Go;Lipgloss;UX
+Built modal overlay system for inline event editing|2026-01|Development,UX|modals,overlay,editing|KaRiya||Go;Bubble Tea
+Standardized navigation patterns across all TUI screens|2026-01|Architecture,UX|navigation,patterns,standardization|KaRiya||Go;UX
+Implemented complete event editing with full field support|2026-01|Development|editing,events,crud|KaRiya||Go;CRUD
+Created E2E test refactoring with AI commit automation|2026-01|Quality,DevOps|testing,automation,ai|KaRiya||Go;CI/CD
+Added comprehensive escape key handling across entire application|2026-01|UX|keyboard,escape,navigation|KaRiya||Go;UX
+Implemented user-defined skills management system|2026-01|Development|skills,management,crud|KaRiya||Go;Domain
+Built state matrix generator for centralized key handling|2026-01|Architecture|state-machine,keyboard,matrix|KaRiya||Go;Architecture
+Implemented CV Variant System with 16 built-in variants|2026-01|Development,Architecture|cv,variants,generation|KaRiya||Go;CV
+Created UIKit Foundation with reusable primitives and behaviors|2026-01|Architecture,Components|uikit,primitives,behaviors|KaRiya||Go;Components
+Built CV Generation wizard modal for guided CV creation|2026-01|Development,UX|wizard,modal,cv|KaRiya||Go;UX
+Added enhanced bullet generator with configurable defaults|2026-01|Development|bullets,cv,generation|KaRiya||Go;CV
+Created DetailView widget for consistent detail display|2026-01|Components|detail-view,widgets,display|KaRiya||Go;Components
+Implemented ProfileInferenceService for automated profile detection|2026-01|Development,AI|profile,inference,automation|KaRiya||Go;AI
+Added onboarding wizard for first-run profile setup|2026-01|UX,Development|onboarding,wizard,setup|KaRiya||Go;UX
+Implemented Intent/Screen/Component architecture for scalable TUI|2026-01|Architecture|intents,screens,architecture|KaRiya||Go;Architecture
+Achieved zero-tolerance policy for skipped/pending tests|2026-01|Quality|testing,policy,quality|KaRiya||Go;Testing
+Demonstrated effective human-AI pair programming for rapid development|2026-01|Process,Innovation|ai,pair-programming,collaboration|KaRiya||AI;Collaboration
+Created comprehensive documentation system with workflow guides|2026-01|Documentation|documentation,guides,workflows|KaRiya||Documentation
+Implemented AI-enforced architecture compliance system with automated pre-commit validation|2026-01|Architecture;Quality|ai;enforcement;compliance;architecture|KaRiya||AI;Architecture;Code Quality;Automation
+Created AGENTS.md specification defining AI agent behavior rules and workflow constraints|2026-01|Documentation;Process|ai;agents;specification;rules|KaRiya||AI;Documentation;Process
+Established zero-tolerance quality gates enforced by AI agents during development|2026-01|Quality;Process|ai;quality-gates;enforcement|KaRiya||AI;Code Quality;CI/CD
+Leveraged AI-assisted code reviews to maintain consistent code style and identify issues|2026-01|Quality;Collaboration|ai;code-review;quality|KaRiya||AI;Code Reviews;Code Quality
+Implemented AI-driven architectural pattern enforcement during pull request reviews|2026-01|Architecture;Quality|ai;patterns;review;enforcement|KaRiya||AI;Architecture;Code Reviews
+Used AI pair programming to accelerate feature development while maintaining quality standards|2026-01|Collaboration;Development|ai;pair-programming;acceleration|KaRiya||AI;Pair Programming;Collaboration
+Applied AI-assisted debugging to rapidly diagnose and resolve complex race conditions|2026-01|Quality;Debugging|ai;debugging;race-conditions;troubleshooting|KaRiya||AI;Debugging;Testing;Go
+Utilised AI to implement TDD red-green-refactor cycles with comprehensive test coverage|2026-01|Quality;Testing|ai;tdd;testing;coverage|KaRiya||AI;TDD;Testing;BDD
+Collaborated with AI to refactor legacy components while preserving behavioral compatibility|2026-01|Refactoring;Quality|ai;refactoring;compatibility;legacy|KaRiya||AI;Refactoring;Code Quality
+Designed intent-based TUI architecture with AI-assisted component generation|2026-01|Architecture;Development|ai;intents;components;generation|KaRiya||AI;Architecture;Go;Bubble Tea
+Built comprehensive UIKit library through iterative AI-human collaboration|2026-01|Architecture;Components|ai;uikit;collaboration;components|KaRiya||AI;Components;Go
+Achieved 95%+ test coverage through AI-assisted test case generation and edge case discovery|2026-01|Quality;Testing|ai;testing;coverage;edge-cases|KaRiya||AI;Testing;TDD;Ginkgo
+Established AI-integrated development workflow with session management and compliance checks|2026-01|Process;DevOps|ai;workflow;session;compliance|KaRiya||AI;DevOps;Process;CI/CD
+Implemented make ai-commit automation for consistent AI-attributed version control|2026-01|DevOps;Process|ai;commits;automation;attribution|KaRiya||AI;Git;Automation;DevOps
+Created human-AI collaboration patterns enabling rapid iteration on complex TUI features|2026-01|Process;Innovation|ai;collaboration;patterns;iteration|KaRiya||AI;Collaboration;Innovation
+Implemented 7 distinct intents: Browse Timeline, Capture Event, Manage Skills, Generate CV, Configure System, Burst Management, Fact Management|2026-01|Architecture;Features|intents;workflows;state-machines|KaRiya||State Machine;Go;Architecture
+Built comprehensive UIKit library with 9 packages: containers, display, feedback, layout, navigation, primitives, selectors, theme, widgets|2026-01|Architecture;Components|uikit;component-library;reusable|KaRiya||Component Library;Go;Lipgloss;Architecture
+Implemented reusable Box and Overlay containers with fluent builder API|2026-01|Components;UX|containers;overlay;builder-pattern|KaRiya||Builder Pattern;Go;Components
+Created Modal system with ConfirmModal, DetailModal, InfoModal, and HelpModal variants|2026-01|Components;UX|modals;feedback;user-interaction|KaRiya||Modal Design;Go;UX
+Built TableBehavior providing generic sortable, filterable table functionality|2026-01|Components;Patterns|table;behavior;generic|KaRiya||Generics;Go;Reusable Components
+Designed ScreenLayout component standardizing header, content, and footer structure|2026-01|Components;Layout|layout;standardization;consistency|KaRiya||Layout Design;Go;UX
+Implemented comprehensive theme system with customizable color schemes and typography|2026-01|UX;Architecture|themes;colors;typography|KaRiya||Theme System;Lipgloss;UX
+Created consistent visual language using Lipgloss styling primitives|2026-01|UX;Frontend|lipgloss;styling;visual-design|KaRiya||Lipgloss;Go;Visual Design
+Built state matrix generator for centralized key handling and navigation flow documentation|2026-01|Architecture;Documentation|state-matrix;navigation;documentation|KaRiya||State Machine;Documentation;Go
+Implemented breadcrumb navigation component for contextual awareness|2026-01|UX;Navigation|breadcrumbs;navigation;context|KaRiya||Navigation;UX;Go
+Implemented burst extraction automatically generating related events from single entries|2026-01|Features;AI|burst;extraction;automation|KaRiya||Automation;Go;AI
+Developed comprehensive skills management system with CRUD, filtering, sorting, and search|2026-01|Features;Backend|skills;crud;management|KaRiya||CRUD;Go;Backend Development
+Built skill selector component with multi-select and validation support|2026-01|Components;UX|selector;multi-select;validation|KaRiya||Form Components;Go;Validation
+Implemented skill-to-event linking enabling competency-based CV generation|2026-01|Features;Architecture|skills;events;linking|KaRiya||Data Modeling;Go;Architecture
+Architected CV generation system with 16 built-in variants targeting different roles and industries|2026-01|Features;Product|cv;variants;templates|KaRiya||CV Generation;Go;Product Development
+Built CV configuration wizard modal guiding users through generation options|2026-01|UX;Features|wizard;cv-config;guided|KaRiya||Wizard Design;Go;UX
+Implemented bullet point generator with configurable defaults and audience targeting|2026-01|Features;AI|bullets;generation;targeting|KaRiya||Content Generation;Go;AI
+Created export system supporting multiple formats: Markdown, JSON, YAML|2026-01|Features;Backend|export;formats;serialization|KaRiya||Data Export;Go;Serialization
+Achieved 243 test files with comprehensive unit, integration, and E2E coverage|2026-01|Quality;Testing|testing;coverage;comprehensive|KaRiya||Testing;Ginkgo;Go;TDD
+Created navigation test patterns validating keyboard flows across all screens|2026-01|Quality;Testing|navigation;testing;keyboard|KaRiya||E2E Testing;Ginkgo;Go
+Built escape key test suite ensuring consistent modal and screen dismissal|2026-01|Quality;Testing|escape;testing;consistency|KaRiya||Testing;UX;Go
+Established zero-tolerance policy for skipped or pending tests in CI pipeline|2026-01|Quality;Process|testing;policy;ci|KaRiya||CI/CD;Testing;Code Quality
+Created 1160-line AGENTS.md specification defining AI agent development rules and workflows|2026-01|Documentation;Process|agents;specification;ai-rules|KaRiya||Documentation;AI;Process
+Developed 80+ documentation files covering architecture, workflows, guides, and troubleshooting|2026-01|Documentation|docs;guides;comprehensive|KaRiya||Documentation;Technical Writing
+Built workflow documentation with Mermaid diagrams visualizing state transitions|2026-01|Documentation;Architecture|mermaid;diagrams;workflows|KaRiya||Documentation;Architecture;Diagramming
+Implemented goose database migrations for schema versioning and rollback support|2026-01|DevOps;Data|migrations;goose;versioning|KaRiya||Database Migrations;Go;DevOps
+Created comprehensive Makefile with 50+ targets for development workflow automation|2026-01|DevOps;Automation|makefile;automation;dx|KaRiya||Automation;Developer Experience;DevOps
+Established pre-commit hooks enforcing code quality, test coverage, and architecture compliance|2026-01|DevOps;Quality|pre-commit;hooks;enforcement|KaRiya||Git Hooks;Code Quality;DevOps
+Implemented generic TableBehavior[T] using Go generics for type-safe reusable tables|2026-01|Architecture;Patterns|generics;table;type-safe|KaRiya||Go Generics;Reusable Components;Architecture
+Created FilterBehavior enabling consistent filtering across all list views|2026-01|Architecture;Patterns|filter;behavior;consistency|KaRiya||Filter Design;Go;Architecture
+Built ScreenResult pattern for type-safe communication between screens and intents|2026-01|Architecture;Patterns|screen-result;type-safe;communication|KaRiya||Type Safety;Go;Architecture
+Designed onboarding wizard for first-run profile setup with guided configuration|2026-01|UX;Features|onboarding;wizard;first-run|KaRiya||Onboarding;UX;Go
+Implemented ProfileInferenceService automatically detecting user profile from existing data|2026-01|Features;AI|profile;inference;automation|KaRiya||AI;Automation;Go
+Optimized SQLite queries with proper indexing for sub-100ms response times|2026-01|Performance;Backend|sqlite;indexing;optimization|KaRiya||Database Optimization;SQLite;Performance
+Implemented pagination and lazy loading for large event collections|2026-01|Performance;UX|pagination;lazy-loading;scale|KaRiya||Pagination;Performance;Go
+Built comprehensive error handling system with user-friendly messages and recovery options|2026-01|Quality;UX|errors;handling;recovery|KaRiya||Error Handling;UX;Go

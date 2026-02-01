@@ -219,35 +219,28 @@ var _ = Describe("BurstManagement E2E Workflow Tests", func() {
 
 	BeforeEach(func() {
 		// Create test bursts
-		bursts = []*career.Burst{
-			{
-				ID:          "burst-1",
-				Name:        "Backend Development at TechCorp",
-				Description: "Built scalable microservices architecture",
-				EventIDs:    []string{"event-1", "event-2"},
-				Confirmed:   true,
-				CreatedAt:   time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-				UpdatedAt:   time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-			},
-			{
-				ID:          "burst-2",
-				Name:        "DevOps Implementation",
-				Description: "Migrated infrastructure to Kubernetes",
-				EventIDs:    []string{"event-3"},
-				Confirmed:   false,
-				CreatedAt:   time.Date(2023, 6, 15, 0, 0, 0, 0, time.UTC),
-				UpdatedAt:   time.Date(2023, 6, 15, 0, 0, 0, 0, time.UTC),
-			},
-			{
-				ID:          "burst-3",
-				Name:        "Frontend Modernization",
-				Description: "Migrated from jQuery to React",
-				EventIDs:    []string{"event-4", "event-5", "event-6"},
-				Confirmed:   true,
-				CreatedAt:   time.Date(2023, 3, 10, 0, 0, 0, 0, time.UTC),
-				UpdatedAt:   time.Date(2023, 3, 10, 0, 0, 0, 0, time.UTC),
-			},
-		}
+		burst1 := fixtures.Burst("burst-1", "event-1", "event-2")
+		burst1.Name = "Backend Development at TechCorp"
+		burst1.Description = "Built scalable microservices architecture"
+		burst1.Confirmed = true
+		burst1.CreatedAt = time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
+		burst1.UpdatedAt = time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
+
+		burst2 := fixtures.Burst("burst-2", "event-3", "event-4")
+		burst2.Name = "DevOps Implementation"
+		burst2.Description = "Migrated infrastructure to Kubernetes"
+		burst2.Confirmed = false
+		burst2.CreatedAt = time.Date(2023, 6, 15, 0, 0, 0, 0, time.UTC)
+		burst2.UpdatedAt = time.Date(2023, 6, 15, 0, 0, 0, 0, time.UTC)
+
+		burst3 := fixtures.Burst("burst-3", "event-4", "event-5", "event-6")
+		burst3.Name = "Frontend Modernization"
+		burst3.Description = "Migrated from jQuery to React"
+		burst3.Confirmed = true
+		burst3.CreatedAt = time.Date(2023, 3, 10, 0, 0, 0, 0, time.UTC)
+		burst3.UpdatedAt = time.Date(2023, 3, 10, 0, 0, 0, 0, time.UTC)
+
+		bursts = []*career.Burst{burst1, burst2, burst3}
 
 		// Create context (without repository/service for navigation tests)
 		ctx = &burst_management.IntentContext{
@@ -432,7 +425,7 @@ var _ = Describe("BurstManagement E2E Workflow Tests", func() {
 			intent.ShowErrorModal("Test Error", "Something went wrong")
 
 			// Error modal should be visible
-			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+			Expect(intent.HasVisibleFeedbackModal()).To(BeTrue())
 
 			// View should show error
 			view := intent.View()
@@ -440,7 +433,7 @@ var _ = Describe("BurstManagement E2E Workflow Tests", func() {
 
 			// Press Esc to dismiss error
 			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
-			Expect(intent.HasVisibleErrorModal()).To(BeFalse())
+			Expect(intent.HasVisibleFeedbackModal()).To(BeFalse())
 		})
 	})
 
@@ -532,7 +525,7 @@ var _ = Describe("BurstManagement E2E Workflow Tests", func() {
 
 			// Should show error modal and stay at list (service unavailable)
 			Expect(intent.GetState()).To(Equal(burst_management.StateList))
-			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+			Expect(intent.HasVisibleFeedbackModal()).To(BeTrue())
 			view := intent.View()
 			Expect(view).To(ContainSubstring("Service not available"))
 		})
@@ -835,7 +828,7 @@ var _ = Describe("BurstManagement E2E Workflow Tests", func() {
 
 			// Should show error and stay at list
 			Expect(intent.GetState()).To(Equal(burst_management.StateList))
-			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+			Expect(intent.HasVisibleFeedbackModal()).To(BeTrue())
 		})
 
 		It("should handle empty suggestions list", func() {
@@ -847,11 +840,15 @@ var _ = Describe("BurstManagement E2E Workflow Tests", func() {
 
 			_ = intent.Update(msg)
 
-			// Should show error about no suggestions and stay at list
+			// Should show warning about no suggestions and stay at list (not error — no failure occurred)
 			Expect(intent.GetState()).To(Equal(burst_management.StateList))
-			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+			Expect(intent.HasVisibleFeedbackModal()).To(BeTrue())
 			view := intent.View()
 			Expect(view).To(ContainSubstring("No suggestions"))
+
+			modal := intent.GetFeedbackModal()
+			Expect(modal).NotTo(BeNil())
+			Expect(modal.Type).To(Equal(feedback.ModalWarning))
 		})
 	})
 })
@@ -870,13 +867,17 @@ var _ = Describe("Burst Suggestion Integration E2E", func() {
 		now := time.Now()
 
 		// Create test events.
-		events = []*career.Event{
-			{ID: "e1", Text: "Led backend project", Date: now.AddDate(0, -1, 0), Company: "TechCorp", Project: "Platform"},
-			{ID: "e2", Text: "Built microservices", Date: now.AddDate(0, -2, 0), Company: "TechCorp", Project: "Platform"},
-			{ID: "e3", Text: "Frontend redesign", Date: now.AddDate(0, -3, 0), Company: "TechCorp", Project: "UI"},
-			{ID: "e4", Text: "React migration", Date: now.AddDate(0, -4, 0), Company: "TechCorp", Project: "UI"},
-			{ID: "e5", Text: "DevOps setup", Date: now.AddDate(0, -5, 0), Company: "TechCorp", Project: "Infra"},
-		}
+		e1 := fixtures.EventWith("e1", "Led backend project", "TechCorp", "Platform")
+		e1.Date = now.AddDate(0, -1, 0)
+		e2 := fixtures.EventWith("e2", "Built microservices", "TechCorp", "Platform")
+		e2.Date = now.AddDate(0, -2, 0)
+		e3 := fixtures.EventWith("e3", "Frontend redesign", "TechCorp", "UI")
+		e3.Date = now.AddDate(0, -3, 0)
+		e4 := fixtures.EventWith("e4", "React migration", "TechCorp", "UI")
+		e4.Date = now.AddDate(0, -4, 0)
+		e5 := fixtures.EventWith("e5", "DevOps setup", "TechCorp", "Infra")
+		e5.Date = now.AddDate(0, -5, 0)
+		events = []*career.Event{e1, e2, e3, e4, e5}
 
 		// Create suggestions (each must have at least 2 events for validation).
 		suggestions = []burstfact.BurstSuggestion{
@@ -905,8 +906,8 @@ var _ = Describe("Burst Suggestion Integration E2E", func() {
 			SetEvents(events).
 			SetSuggestions(suggestions).
 			SetExtractedFacts([]career.Fact{
-				{ID: "f1", Text: "Built scalable API"},
-				{ID: "f2", Text: "Improved response time by 40%"},
+				*fixtures.FactWith("f1", "Built scalable API"),
+				*fixtures.FactWith("f2", "Improved response time by 40%"),
 			})
 
 		// Create burst repository.
@@ -1039,7 +1040,7 @@ var _ = Describe("Burst Suggestion Integration E2E", func() {
 			intent.Update(msg)
 
 			Expect(intent.GetState()).To(Equal(burst_management.StateList))
-			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+			Expect(intent.HasVisibleFeedbackModal()).To(BeTrue())
 		})
 
 		It("should handle fact extraction failure", func() {
@@ -1057,7 +1058,7 @@ var _ = Describe("Burst Suggestion Integration E2E", func() {
 			}
 			intent.Update(extractError)
 
-			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+			Expect(intent.HasVisibleFeedbackModal()).To(BeTrue())
 		})
 
 		It("should recover to list state after error dismissal", func() {
@@ -1069,7 +1070,7 @@ var _ = Describe("Burst Suggestion Integration E2E", func() {
 			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
 
 			Expect(intent.GetState()).To(Equal(burst_management.StateList))
-			Expect(intent.HasVisibleErrorModal()).To(BeFalse())
+			Expect(intent.HasVisibleFeedbackModal()).To(BeFalse())
 		})
 	})
 
@@ -1765,7 +1766,7 @@ var _ = Describe("Burst Suggestion Workflow Bug Regressions", func() {
 			})
 
 			// Error modal should show
-			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+			Expect(intent.HasVisibleFeedbackModal()).To(BeTrue())
 
 			// But burst should still be in the list!
 			Expect(intent.GetFilteredBursts()).To(HaveLen(1))
@@ -2623,13 +2624,13 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 			It("should dismiss error modal when escape is pressed", func() {
 				// Show error modal.
 				intent.ShowErrorModal("Test Error", "Error message")
-				Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+				Expect(intent.HasVisibleFeedbackModal()).To(BeTrue())
 
 				// Press Escape to dismiss.
 				intent.Update(tea.KeyMsg{Type: tea.KeyEscape})
 
 				// Error modal should be dismissed.
-				Expect(intent.HasVisibleErrorModal()).To(BeFalse())
+				Expect(intent.HasVisibleFeedbackModal()).To(BeFalse())
 			})
 		})
 
@@ -2664,11 +2665,11 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 
 				// Both detail and error modal exist.
 				Expect(intent.GetDetailModal()).NotTo(BeNil())
-				Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+				Expect(intent.HasVisibleFeedbackModal()).To(BeTrue())
 
 				// First escape should dismiss error modal only.
 				intent.Update(tea.KeyMsg{Type: tea.KeyEscape})
-				Expect(intent.HasVisibleErrorModal()).To(BeFalse())
+				Expect(intent.HasVisibleFeedbackModal()).To(BeFalse())
 				// Detail modal should still be visible.
 				Expect(intent.GetDetailModal()).NotTo(BeNil())
 			})
@@ -2725,7 +2726,7 @@ var _ = Describe("User Journey: Database Failure Handling", func() {
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
 
 			// Then: I should see an error message.
-			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+			Expect(intent.HasVisibleFeedbackModal()).To(BeTrue())
 			view := intent.View()
 			Expect(view).To(ContainSubstring("Delete Failed"))
 
@@ -2748,9 +2749,9 @@ var _ = Describe("User Journey: Database Failure Handling", func() {
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
 
 			// Then: I can dismiss the error with escape.
-			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+			Expect(intent.HasVisibleFeedbackModal()).To(BeTrue())
 			intent.Update(tea.KeyMsg{Type: tea.KeyEscape})
-			Expect(intent.HasVisibleErrorModal()).To(BeFalse())
+			Expect(intent.HasVisibleFeedbackModal()).To(BeFalse())
 
 			// And: I should be able to view burst details again.
 			intent.HandleNavigate(&screens.NavigateResult{ResultData: burst})
@@ -2775,7 +2776,7 @@ var _ = Describe("User Journey: Database Failure Handling", func() {
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
 
 			// Then: I should see an error message.
-			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+			Expect(intent.HasVisibleFeedbackModal()).To(BeTrue())
 			view := intent.View()
 			Expect(view).To(ContainSubstring("Confirmation Failed"))
 
@@ -2804,7 +2805,7 @@ var _ = Describe("User Journey: Database Failure Handling", func() {
 			})
 
 			// Then: I should see an error message.
-			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+			Expect(intent.HasVisibleFeedbackModal()).To(BeTrue())
 			view := intent.View()
 			Expect(view).To(ContainSubstring("Update Failed"))
 
@@ -2902,7 +2903,7 @@ var _ = Describe("User Journey: Service Unavailable Handling", func() {
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
 
 			// Then: I should see an error about service unavailability.
-			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+			Expect(intent.HasVisibleFeedbackModal()).To(BeTrue())
 			view := intent.View()
 			Expect(view).To(ContainSubstring("Service not available"))
 
@@ -2960,7 +2961,7 @@ var _ = Describe("User Journey: All Burst Saves Fail During Suggestion Acceptanc
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}}) // Accept second
 
 			// Then: I should see error modals for the failures.
-			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+			Expect(intent.HasVisibleFeedbackModal()).To(BeTrue())
 			view := intent.View()
 			Expect(view).To(ContainSubstring("Failed to create burst"))
 
@@ -3104,7 +3105,7 @@ var _ = Describe("User Journey: Fact Extraction In Progress", func() {
 			}
 
 			// Then: An error should be shown.
-			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+			Expect(intent.HasVisibleFeedbackModal()).To(BeTrue())
 
 			// But: The burst should still be saved (extraction failure doesn't lose the burst).
 			Expect(intent.GetFilteredBursts()).To(HaveLen(1))
@@ -3853,7 +3854,7 @@ var _ = Describe("User Journey: Suggestion Review Workflow", func() {
 			}
 
 			// Should show error.
-			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+			Expect(intent.HasVisibleFeedbackModal()).To(BeTrue())
 			Expect(intent.GetState()).To(Equal(burst_management.StateList))
 		})
 
@@ -3872,7 +3873,7 @@ var _ = Describe("User Journey: Suggestion Review Workflow", func() {
 			}
 
 			// Should show error.
-			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+			Expect(intent.HasVisibleFeedbackModal()).To(BeTrue())
 		})
 	})
 })

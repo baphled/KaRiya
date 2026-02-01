@@ -318,9 +318,9 @@ func (sb *DefaultSectionBuilder) buildGroupedSkills(skills []skillInfo, limitPer
 	// Group skills by category
 	categoryMap := make(map[string][]string)
 	for _, skill := range skills {
-		category := skill.Category
+		category := strings.ToLower(skill.Category)
 		if category == "" {
-			category = "Other"
+			category = "other"
 		}
 		categoryMap[category] = append(categoryMap[category], skill.Name)
 	}

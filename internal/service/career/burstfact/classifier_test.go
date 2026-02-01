@@ -174,5 +174,60 @@ var _ = Describe("Classifier", func() {
 			Expect(competencies).To(ContainElement("mentoring"))
 			Expect(competencies).To(ContainElement("product"))
 		})
+
+		It("should infer communication from presentation text", func() {
+			text := "Presented quarterly results and documented architecture decisions for stakeholders"
+			competencies := classifier.InferCompetencies(text, []string{})
+			Expect(competencies).To(ContainElement("communication"))
+		})
+
+		It("should infer collaboration from teamwork text", func() {
+			text := "Collaborated with cross-functional partners to coordinate and facilitate the delivery"
+			competencies := classifier.InferCompetencies(text, []string{})
+			Expect(competencies).To(ContainElement("collaboration"))
+		})
+
+		It("should infer problem-solving from debugging text", func() {
+			text := "Debugged and diagnosed root cause of production failure then resolved the critical issue"
+			competencies := classifier.InferCompetencies(text, []string{})
+			Expect(competencies).To(ContainElement("problem-solving"))
+		})
+
+		It("should infer project-management from planning text", func() {
+			text := "Planned sprint milestones and estimated delivery schedule for the roadmap"
+			competencies := classifier.InferCompetencies(text, []string{})
+			Expect(competencies).To(ContainElement("project-management"))
+		})
+
+		It("should infer architecture from design text", func() {
+			text := "Architected distributed microservices platform with scalable infrastructure"
+			competencies := classifier.InferCompetencies(text, []string{})
+			Expect(competencies).To(ContainElement("architecture"))
+		})
+
+		It("should infer soft skills from explicit tags", func() {
+			text := "Worked on project"
+			tags := []string{"communication", "collaboration"}
+			competencies := classifier.InferCompetencies(text, tags)
+			Expect(competencies).To(ContainElement("communication"))
+			Expect(competencies).To(ContainElement("collaboration"))
+		})
+
+		It("should infer problem-solving and architecture from explicit tags", func() {
+			text := "Worked on project"
+			tags := []string{"problem-solving", "project-management", "architecture"}
+			competencies := classifier.InferCompetencies(text, tags)
+			Expect(competencies).To(ContainElement("problem-solving"))
+			Expect(competencies).To(ContainElement("project-management"))
+			Expect(competencies).To(ContainElement("architecture"))
+		})
+
+		It("should infer multiple soft skills from complex text", func() {
+			text := "Presented design to stakeholders then collaborated with partners to debug and resolve the production issue"
+			competencies := classifier.InferCompetencies(text, []string{})
+			Expect(competencies).To(ContainElement("communication"))
+			Expect(competencies).To(ContainElement("collaboration"))
+			Expect(competencies).To(ContainElement("problem-solving"))
+		})
 	})
 })

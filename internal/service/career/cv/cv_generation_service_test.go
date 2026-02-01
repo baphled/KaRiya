@@ -584,6 +584,10 @@ func (r *EmptyRepository) Count(ctx context.Context, filters careerrepo.EventLis
 	return 0, nil
 }
 
+func (r *EmptyRepository) LinkSkill(_ context.Context, _ string, _ string) error {
+	return nil
+}
+
 type CountingRepository struct {
 	count int
 }
@@ -618,6 +622,10 @@ func (r *CountingRepository) Delete(ctx context.Context, id string) error {
 
 func (r *CountingRepository) Count(ctx context.Context, filters careerrepo.EventListFilters) (int, error) {
 	return r.count, nil
+}
+
+func (r *CountingRepository) LinkSkill(_ context.Context, _ string, _ string) error {
+	return nil
 }
 
 type EmptyFactRepository struct{}
@@ -816,6 +824,10 @@ func (r *MockEventRepository) Delete(ctx context.Context, id string) error {
 
 func (r *MockEventRepository) Count(ctx context.Context, filters careerrepo.EventListFilters) (int, error) {
 	return len(r.events), nil
+}
+
+func (r *MockEventRepository) LinkSkill(_ context.Context, _ string, _ string) error {
+	return nil
 }
 
 // MockBulletGenerator for testing bullet generation with achievements

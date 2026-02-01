@@ -229,6 +229,35 @@ func (r *EventRepository) loadSkillIDs(ctx context.Context, eventID string) ([]s
 	return ids, err
 }
 
+// LinkSkill creates an association between an event and a skill.
+func (r *EventRepository) LinkSkill(ctx context.Context, eventID string, skillID string) error {
+	// First check if event exists
+	var exists bool
+	err := r.db.WithContext(ctx).
+		Table("career_events").
+		Select("1").
+		Where("id = ?", eventID).
+		Limit(1).
+		Scan(&exists).Error
+
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		return career_repo.ErrEventNotFound
+	}
+
+	// Insert the skill association if it doesn't already exist (ON CONFLICT DO NOTHING)
+	// This prevents duplicate entries in the junction table
+	err = r.db.WithContext(ctx).Exec(
+		"INSERT INTO event_skills (event_id, skill_id) VALUES (?, ?) ON CONFLICT (event_id, skill_id) DO NOTHING",
+		eventID, skillID,
+	).Error
+
+	return err
+}
+
 // loadSkillIDsForEvents batch loads skill IDs for multiple events in a single query.
 func (r *EventRepository) loadSkillIDsForEvents(ctx context.Context, eventIDs []string) (map[string][]string, error) {
 	if len(eventIDs) == 0 {

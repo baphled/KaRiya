@@ -60,10 +60,9 @@ type ScreenLayout struct {
 }
 
 // NewScreenLayout creates a new ScreenLayout with default settings.
-// If info is nil, uses sensible defaults (140x40).
+// If info is nil or has zero dimensions, uses sensible defaults (140x40).
 func NewScreenLayout(info *terminal.Info) *ScreenLayout {
-	// Handle nil terminal info gracefully with defaults
-	if info == nil {
+	if info == nil || (info.Width == 0 && info.Height == 0) {
 		info = &terminal.Info{Width: 140, Height: 40}
 	}
 

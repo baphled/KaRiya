@@ -28,11 +28,12 @@ type IntentRegistrar interface {
 
 // RegistrarConfig contains dependencies needed for intent registration.
 type RegistrarConfig struct {
-	CLIService      *service.CLIEventService
-	CareerService   *careerservice.Service
-	Log             *logger.Logger
-	CVGenService    cv.CVGenerationService
-	CVExportService *cv.ExportService
+	CLIService            *service.CLIEventService
+	CareerService         *careerservice.Service
+	SkillInferenceService burstmanagement.SkillInferenceService
+	Log                   *logger.Logger
+	CVGenService          cv.CVGenerationService
+	CVExportService       *cv.ExportService
 }
 
 // DefaultIntentRegistrar implements IntentRegistrar with production logic.
@@ -124,6 +125,10 @@ func (r *DefaultIntentRegistrar) registerManageSkills(ctx context.Context, route
 			ctx,
 			r.config.CareerService.GetSkillRepository(),
 		)
+		skillsCtx.EventRepository = r.config.CareerService.GetEventRepository()
+		if r.config.SkillInferenceService != nil {
+			skillsCtx.SkillInferenceService = r.config.SkillInferenceService
+		}
 		intent, err := skillsmanagement.NewIntent(skillsCtx)
 		if err != nil {
 			r.config.Log.Error("Failed to create ManageSkills intent: %v", err)
@@ -204,9 +209,11 @@ func (r *DefaultIntentRegistrar) registerBurstManagement(ctx context.Context, ro
 		}
 		burstRepo := r.config.CareerService.GetBurstRepository()
 		burstCtx := &burstmanagement.IntentContext{
-			Service:         r.config.CareerService,
-			BurstRepository: burstRepo,
-			Context:         ctx,
+			Service:               r.config.CareerService,
+			SkillInferenceService: r.config.SkillInferenceService,
+			BurstRepository:       burstRepo,
+			SkillRepository:       r.config.CareerService.GetSkillRepository(),
+			Context:               ctx,
 		}
 		intent, err := burstmanagement.NewIntent(burstCtx)
 		if err != nil || intent == nil {

@@ -35,4 +35,10 @@ const (
 
 	// StateSuggestionReview shows burst suggestion review.
 	StateSuggestionReview State = "suggestion_review"
+
+	// StateInferringSkills shows the skill inference progress.
+	StateInferringSkills State = "inferring_skills"
+
+	// StateSkillSuggestionReview shows skill suggestion review.
+	StateSkillSuggestionReview State = "skill_suggestion_review"
 )
