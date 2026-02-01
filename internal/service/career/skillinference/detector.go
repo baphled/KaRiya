@@ -270,10 +270,15 @@ func (s *DefaultSkillInferenceService) containsPattern(text string, words []stri
 
 		// Check proximity: count words between last match and current match
 		if i > 0 {
-			betweenText := text[lastIndex+len(words[i-1]) : searchStart+index]
-			wordsBetween := len(strings.Fields(betweenText))
-			if wordsBetween > maxWordsApart {
-				return false
+			prevWordEnd := lastIndex + len(words[i-1])
+			currentWordStart := searchStart + index
+
+			if prevWordEnd < currentWordStart && currentWordStart < len(text) {
+				betweenText := text[prevWordEnd:currentWordStart]
+				wordsBetween := len(strings.Fields(betweenText))
+				if wordsBetween > maxWordsApart {
+					return false
+				}
 			}
 		}
 

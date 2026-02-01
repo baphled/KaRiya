@@ -7,12 +7,9 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/baphled/kariya/internal/cli/intents/skillsmanagement"
-<<<<<<< HEAD
-	"github.com/baphled/kariya/internal/testutil/fixtures"
-=======
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/service/career/skillinference"
->>>>>>> 9ea4d2d4 (test(intents): add test coverage for filterNewSuggestions and message structs)
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 var _ = Describe("Messages", func() {
