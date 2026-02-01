@@ -189,9 +189,10 @@ var _ = Describe("Messages", func() {
 		})
 
 		It("should store associated burst", func() {
-			burst := &career.Burst{ID: "burst-1", Name: "Test Burst", Confirmed: true}
+			burst := fixtures.BurstConfirmed("burst-1")
+			burst.Name = "Test Burst"
 			msg := burst_management.FactExtractionCompleteMsg{
-				Facts: []*career.Fact{{ID: "f1", Text: "Fact"}},
+				Facts: []*career.Fact{fixtures.FactWith("f1", "Fact")},
 				Burst: burst,
 			}
 			Expect(msg.Burst).To(Equal(burst))
@@ -200,7 +201,7 @@ var _ = Describe("Messages", func() {
 
 		It("should handle nil burst", func() {
 			msg := burst_management.FactExtractionCompleteMsg{
-				Facts: []*career.Fact{{ID: "f1", Text: "Fact"}},
+				Facts: []*career.Fact{fixtures.FactWith("f1", "Fact")},
 				Burst: nil,
 			}
 			Expect(msg.Burst).To(BeNil())
@@ -301,8 +302,8 @@ var _ = Describe("Messages", func() {
 	Describe("BurstSkillsLoadedMsg", func() {
 		It("should store loaded skills", func() {
 			skills := []*career.Skill{
-				{ID: "s1", Name: "Go"},
-				{ID: "s2", Name: "Docker"},
+				fixtures.SkillWith("s1", "Go", "Backend", "mid"),
+				fixtures.SkillWith("s2", "Docker", "DevOps", "mid"),
 			}
 			msg := burst_management.BurstSkillsLoadedMsg{
 				Skills: skills,

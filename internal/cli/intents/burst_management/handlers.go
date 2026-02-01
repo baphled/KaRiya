@@ -831,8 +831,7 @@ func (i *Intent) handleSkillSuggestionsLoaded(msg SkillSuggestionsLoadedMsg) tea
 	newSuggestions := filterNewSuggestions(msg.Suggestions, msg.ExistingSkillNames)
 	if len(newSuggestions) == 0 {
 		i.ShowSuccessModal("All Skills Already Tracked",
-			fmt.Sprintf("Detected skills already in your profile: %s",
-				strings.Join(msg.ExistingSkillNames, ", ")))
+			"Detected skills already in your profile: "+strings.Join(msg.ExistingSkillNames, ", "))
 		i.state = StateList
 		return nil
 	}

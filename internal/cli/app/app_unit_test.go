@@ -1343,11 +1343,11 @@ var _ = Describe("IntentRegistrar DI Tests", func() {
 			// Register intents
 			router := intents.NewDefaultIntentRouter()
 			err := registrar.RegisterAll(context.Background(), router)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 
 			// Activate burst management intent
 			_, err = router.ActivateIntent("burst_management", nil)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 
 			// Get the active intent
 			activeIntent := router.GetActiveIntent()
@@ -1388,10 +1388,10 @@ var _ = Describe("IntentRegistrar DI Tests", func() {
 
 			router := intents.NewDefaultIntentRouter()
 			err := registrar.RegisterAll(context.Background(), router)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 
 			_, err = router.ActivateIntent("manage_skills", nil)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 
 			activeIntent := router.GetActiveIntent()
 			Expect(activeIntent).NotTo(BeNil())

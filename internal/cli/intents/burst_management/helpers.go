@@ -3,6 +3,7 @@ package burst_management
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -1007,7 +1008,7 @@ func (i *Intent) extractFactsForBurst(burst *career.Burst) tea.Cmd {
 		}
 
 		if service == nil {
-			return FactExtractionCompleteMsg{Burst: burst, Error: fmt.Errorf("service not available")}
+			return FactExtractionCompleteMsg{Burst: burst, Error: errors.New("service not available")}
 		}
 
 		facts, err := service.ExtractFactsFromBurst(ctx, burst)

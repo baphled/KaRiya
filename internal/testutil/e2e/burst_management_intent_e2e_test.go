@@ -432,7 +432,7 @@ var _ = Describe("BurstManagement E2E Workflow Tests", func() {
 			intent.ShowErrorModal("Test Error", "Something went wrong")
 
 			// Error modal should be visible
-			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+			Expect(intent.HasVisibleFeedbackModal()).To(BeTrue())
 
 			// View should show error
 			view := intent.View()
@@ -440,7 +440,7 @@ var _ = Describe("BurstManagement E2E Workflow Tests", func() {
 
 			// Press Esc to dismiss error
 			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
-			Expect(intent.HasVisibleErrorModal()).To(BeFalse())
+			Expect(intent.HasVisibleFeedbackModal()).To(BeFalse())
 		})
 	})
 
@@ -532,7 +532,7 @@ var _ = Describe("BurstManagement E2E Workflow Tests", func() {
 
 			// Should show error modal and stay at list (service unavailable)
 			Expect(intent.GetState()).To(Equal(burst_management.StateList))
-			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+			Expect(intent.HasVisibleFeedbackModal()).To(BeTrue())
 			view := intent.View()
 			Expect(view).To(ContainSubstring("Service not available"))
 		})
@@ -835,7 +835,7 @@ var _ = Describe("BurstManagement E2E Workflow Tests", func() {
 
 			// Should show error and stay at list
 			Expect(intent.GetState()).To(Equal(burst_management.StateList))
-			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+			Expect(intent.HasVisibleFeedbackModal()).To(BeTrue())
 		})
 
 		It("should handle empty suggestions list", func() {
@@ -849,7 +849,7 @@ var _ = Describe("BurstManagement E2E Workflow Tests", func() {
 
 			// Should show warning about no suggestions and stay at list (not error — no failure occurred)
 			Expect(intent.GetState()).To(Equal(burst_management.StateList))
-			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+			Expect(intent.HasVisibleFeedbackModal()).To(BeTrue())
 			view := intent.View()
 			Expect(view).To(ContainSubstring("No suggestions"))
 
@@ -1043,7 +1043,7 @@ var _ = Describe("Burst Suggestion Integration E2E", func() {
 			intent.Update(msg)
 
 			Expect(intent.GetState()).To(Equal(burst_management.StateList))
-			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+			Expect(intent.HasVisibleFeedbackModal()).To(BeTrue())
 		})
 
 		It("should handle fact extraction failure", func() {
@@ -1061,7 +1061,7 @@ var _ = Describe("Burst Suggestion Integration E2E", func() {
 			}
 			intent.Update(extractError)
 
-			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+			Expect(intent.HasVisibleFeedbackModal()).To(BeTrue())
 		})
 
 		It("should recover to list state after error dismissal", func() {
@@ -1073,7 +1073,7 @@ var _ = Describe("Burst Suggestion Integration E2E", func() {
 			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
 
 			Expect(intent.GetState()).To(Equal(burst_management.StateList))
-			Expect(intent.HasVisibleErrorModal()).To(BeFalse())
+			Expect(intent.HasVisibleFeedbackModal()).To(BeFalse())
 		})
 	})
 
@@ -1769,7 +1769,7 @@ var _ = Describe("Burst Suggestion Workflow Bug Regressions", func() {
 			})
 
 			// Error modal should show
-			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+			Expect(intent.HasVisibleFeedbackModal()).To(BeTrue())
 
 			// But burst should still be in the list!
 			Expect(intent.GetFilteredBursts()).To(HaveLen(1))
@@ -2627,13 +2627,13 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 			It("should dismiss error modal when escape is pressed", func() {
 				// Show error modal.
 				intent.ShowErrorModal("Test Error", "Error message")
-				Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+				Expect(intent.HasVisibleFeedbackModal()).To(BeTrue())
 
 				// Press Escape to dismiss.
 				intent.Update(tea.KeyMsg{Type: tea.KeyEscape})
 
 				// Error modal should be dismissed.
-				Expect(intent.HasVisibleErrorModal()).To(BeFalse())
+				Expect(intent.HasVisibleFeedbackModal()).To(BeFalse())
 			})
 		})
 
@@ -2668,11 +2668,11 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 
 				// Both detail and error modal exist.
 				Expect(intent.GetDetailModal()).NotTo(BeNil())
-				Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+				Expect(intent.HasVisibleFeedbackModal()).To(BeTrue())
 
 				// First escape should dismiss error modal only.
 				intent.Update(tea.KeyMsg{Type: tea.KeyEscape})
-				Expect(intent.HasVisibleErrorModal()).To(BeFalse())
+				Expect(intent.HasVisibleFeedbackModal()).To(BeFalse())
 				// Detail modal should still be visible.
 				Expect(intent.GetDetailModal()).NotTo(BeNil())
 			})
@@ -2729,7 +2729,7 @@ var _ = Describe("User Journey: Database Failure Handling", func() {
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
 
 			// Then: I should see an error message.
-			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+			Expect(intent.HasVisibleFeedbackModal()).To(BeTrue())
 			view := intent.View()
 			Expect(view).To(ContainSubstring("Delete Failed"))
 
@@ -2752,9 +2752,9 @@ var _ = Describe("User Journey: Database Failure Handling", func() {
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
 
 			// Then: I can dismiss the error with escape.
-			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+			Expect(intent.HasVisibleFeedbackModal()).To(BeTrue())
 			intent.Update(tea.KeyMsg{Type: tea.KeyEscape})
-			Expect(intent.HasVisibleErrorModal()).To(BeFalse())
+			Expect(intent.HasVisibleFeedbackModal()).To(BeFalse())
 
 			// And: I should be able to view burst details again.
 			intent.HandleNavigate(&screens.NavigateResult{ResultData: burst})
@@ -2779,7 +2779,7 @@ var _ = Describe("User Journey: Database Failure Handling", func() {
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
 
 			// Then: I should see an error message.
-			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+			Expect(intent.HasVisibleFeedbackModal()).To(BeTrue())
 			view := intent.View()
 			Expect(view).To(ContainSubstring("Confirmation Failed"))
 
@@ -2808,7 +2808,7 @@ var _ = Describe("User Journey: Database Failure Handling", func() {
 			})
 
 			// Then: I should see an error message.
-			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+			Expect(intent.HasVisibleFeedbackModal()).To(BeTrue())
 			view := intent.View()
 			Expect(view).To(ContainSubstring("Update Failed"))
 
@@ -2906,7 +2906,7 @@ var _ = Describe("User Journey: Service Unavailable Handling", func() {
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
 
 			// Then: I should see an error about service unavailability.
-			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+			Expect(intent.HasVisibleFeedbackModal()).To(BeTrue())
 			view := intent.View()
 			Expect(view).To(ContainSubstring("Service not available"))
 
@@ -2964,7 +2964,7 @@ var _ = Describe("User Journey: All Burst Saves Fail During Suggestion Acceptanc
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}}) // Accept second
 
 			// Then: I should see error modals for the failures.
-			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+			Expect(intent.HasVisibleFeedbackModal()).To(BeTrue())
 			view := intent.View()
 			Expect(view).To(ContainSubstring("Failed to create burst"))
 
@@ -3108,7 +3108,7 @@ var _ = Describe("User Journey: Fact Extraction In Progress", func() {
 			}
 
 			// Then: An error should be shown.
-			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+			Expect(intent.HasVisibleFeedbackModal()).To(BeTrue())
 
 			// But: The burst should still be saved (extraction failure doesn't lose the burst).
 			Expect(intent.GetFilteredBursts()).To(HaveLen(1))
@@ -3857,7 +3857,7 @@ var _ = Describe("User Journey: Suggestion Review Workflow", func() {
 			}
 
 			// Should show error.
-			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+			Expect(intent.HasVisibleFeedbackModal()).To(BeTrue())
 			Expect(intent.GetState()).To(Equal(burst_management.StateList))
 		})
 
@@ -3876,7 +3876,7 @@ var _ = Describe("User Journey: Suggestion Review Workflow", func() {
 			}
 
 			// Should show error.
-			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+			Expect(intent.HasVisibleFeedbackModal()).To(BeTrue())
 		})
 	})
 })

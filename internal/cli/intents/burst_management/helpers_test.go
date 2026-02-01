@@ -840,16 +840,13 @@ var _ = Describe("Helper Methods", func() {
 		})
 
 		It("should use msg.Burst when selectedBurst is nil and trigger skill inference", func() {
-			confirmedBurst := &career.Burst{
-				ID:        "burst-fallback",
-				Name:      "Fallback Burst",
-				Confirmed: true,
-			}
+			confirmedBurst := fixtures.BurstConfirmed("burst-fallback")
+			confirmedBurst.Name = "Fallback Burst"
 			intent.SetSelectedBurst(nil)
 			intent.SetState(burst_management.StateExtractingFacts)
 
 			msg := burst_management.FactExtractionCompleteMsg{
-				Facts: []*career.Fact{{ID: "f1", Text: "Built API with Go"}},
+				Facts: []*career.Fact{fixtures.FactWith("f1", "Built API with Go")},
 				Burst: confirmedBurst,
 				Error: nil,
 			}
@@ -864,7 +861,7 @@ var _ = Describe("Helper Methods", func() {
 			intent.SetSelectedBurst(nil)
 
 			msg := burst_management.FactExtractionCompleteMsg{
-				Facts: []*career.Fact{{ID: "f1", Text: "Test fact"}},
+				Facts: []*career.Fact{fixtures.FactWith("f1", "Test fact")},
 				Burst: nil,
 				Error: nil,
 			}
@@ -875,15 +872,12 @@ var _ = Describe("Helper Methods", func() {
 		})
 
 		It("should not trigger skill inference when burst is not confirmed", func() {
-			unconfirmedBurst := &career.Burst{
-				ID:        "burst-unconfirmed",
-				Name:      "Unconfirmed",
-				Confirmed: false,
-			}
+			unconfirmedBurst := fixtures.Burst("burst-unconfirmed")
+			unconfirmedBurst.Name = "Unconfirmed"
 			intent.SetSelectedBurst(nil)
 
 			msg := burst_management.FactExtractionCompleteMsg{
-				Facts: []*career.Fact{{ID: "f1", Text: "Test fact"}},
+				Facts: []*career.Fact{fixtures.FactWith("f1", "Test fact")},
 				Burst: unconfirmedBurst,
 				Error: nil,
 			}
@@ -894,11 +888,8 @@ var _ = Describe("Helper Methods", func() {
 		})
 
 		It("should not trigger skill inference when facts are empty", func() {
-			confirmedBurst := &career.Burst{
-				ID:        "burst-nofacts",
-				Name:      "No Facts",
-				Confirmed: true,
-			}
+			confirmedBurst := fixtures.BurstConfirmed("burst-nofacts")
+			confirmedBurst.Name = "No Facts"
 			intent.SetSelectedBurst(nil)
 
 			msg := burst_management.FactExtractionCompleteMsg{
@@ -913,20 +904,14 @@ var _ = Describe("Helper Methods", func() {
 		})
 
 		It("should prefer selectedBurst over msg.Burst when both are set", func() {
-			selectedBurst := &career.Burst{
-				ID:        "burst-selected",
-				Name:      "Selected",
-				Confirmed: true,
-			}
-			msgBurst := &career.Burst{
-				ID:        "burst-msg",
-				Name:      "From Message",
-				Confirmed: true,
-			}
+			selectedBurst := fixtures.BurstConfirmed("burst-selected")
+			selectedBurst.Name = "Selected"
+			msgBurst := fixtures.BurstConfirmed("burst-msg")
+			msgBurst.Name = "From Message"
 			intent.SetSelectedBurst(selectedBurst)
 
 			msg := burst_management.FactExtractionCompleteMsg{
-				Facts: []*career.Fact{{ID: "f1", Text: "Test fact"}},
+				Facts: []*career.Fact{fixtures.FactWith("f1", "Test fact")},
 				Burst: msgBurst,
 				Error: nil,
 			}
@@ -947,7 +932,7 @@ var _ = Describe("Helper Methods", func() {
 			Expect(intent.GetState()).To(Equal(burst_management.StateSuggestionReview))
 
 			intent.Update(burst_management.SkillsCreatedMsg{
-				Skills: []*career.Skill{{ID: "s1", Name: "Go"}},
+				Skills: []*career.Skill{fixtures.SkillWith("s1", "Go", "Backend", "mid")},
 			})
 
 			Expect(intent.GetLoadingModal()).To(BeNil())
@@ -963,9 +948,9 @@ var _ = Describe("Helper Methods", func() {
 
 		It("should show success feedback modal with skill count", func() {
 			skills := []*career.Skill{
-				{ID: "s1", Name: "Go", Category: "Backend"},
-				{ID: "s2", Name: "PostgreSQL", Category: "Database"},
-				{ID: "s3", Name: "Docker", Category: "DevOps"},
+				fixtures.SkillWith("s1", "Go", "Backend", "mid"),
+				fixtures.SkillWith("s2", "PostgreSQL", "Database", "mid"),
+				fixtures.SkillWith("s3", "Docker", "DevOps", "mid"),
 			}
 
 			intent.Update(burst_management.SkillsCreatedMsg{Skills: skills})
@@ -999,7 +984,7 @@ var _ = Describe("Helper Methods", func() {
 			intent.SetState(burst_management.StateInferringSkills)
 
 			intent.Update(burst_management.SkillsCreatedMsg{
-				Skills: []*career.Skill{{ID: "s1", Name: "Go"}},
+				Skills: []*career.Skill{fixtures.SkillWith("s1", "Go", "Backend", "mid")},
 			})
 
 			Expect(intent.GetState()).To(Equal(burst_management.StateList))
