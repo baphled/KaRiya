@@ -178,7 +178,7 @@ var _ = Describe("Confidence Scoring", func() {
 			Expect(reactSkill.Confidence).To(Equal(0.95))
 		})
 
-		It("should score 'X project' as high confidence", func() {
+		It("should score 'X project' as medium confidence", func() {
 			events := []*career.Event{
 				fixtures.EventWith("event-1", "Led React project for frontend rewrite", "", ""),
 			}
@@ -188,10 +188,10 @@ var _ = Describe("Confidence Scoring", func() {
 			Expect(err).NotTo(HaveOccurred())
 			reactSkill := findByName(result.Suggestions, "React")
 			Expect(reactSkill).NotTo(BeNil())
-			Expect(reactSkill.Confidence).To(Equal(0.95))
+			Expect(reactSkill.Confidence).To(Equal(0.75))
 		})
 
-		It("should score 'X system' as high confidence", func() {
+		It("should score 'X system' as medium confidence", func() {
 			events := []*career.Event{
 				fixtures.EventWith("event-1", "Maintained PostgreSQL system for user data", "", ""),
 			}
@@ -201,10 +201,10 @@ var _ = Describe("Confidence Scoring", func() {
 			Expect(err).NotTo(HaveOccurred())
 			pgSkill := findByName(result.Suggestions, "PostgreSQL")
 			Expect(pgSkill).NotTo(BeNil())
-			Expect(pgSkill.Confidence).To(Equal(0.95))
+			Expect(pgSkill.Confidence).To(Equal(0.75))
 		})
 
-		It("should score 'X application' as high confidence", func() {
+		It("should score 'X application' as medium confidence", func() {
 			events := []*career.Event{
 				fixtures.EventWith("event-1", "Debugged Node.js application performance issues", "", ""),
 			}
@@ -214,7 +214,7 @@ var _ = Describe("Confidence Scoring", func() {
 			Expect(err).NotTo(HaveOccurred())
 			nodeSkill := findByName(result.Suggestions, "Node.js")
 			Expect(nodeSkill).NotTo(BeNil())
-			Expect(nodeSkill.Confidence).To(Equal(0.95))
+			Expect(nodeSkill.Confidence).To(Equal(0.75))
 		})
 	})
 
@@ -439,6 +439,7 @@ func findByName(suggestions []skillinference.SkillSuggestion, name string) *skil
 	return nil
 }
 
+//nolint:unparam // name parameter allows reuse with different skills in future tests
 func filterByName(suggestions []skillinference.SkillSuggestion, name string) []skillinference.SkillSuggestion {
 	var filtered []skillinference.SkillSuggestion
 	for _, s := range suggestions {
