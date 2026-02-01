@@ -1099,8 +1099,15 @@ func (i *Intent) saveSkillFromSuggestion(suggestion skillinference.SkillSuggesti
 	}
 
 	ctx := i.getContext()
+	if ctx.Err() != nil {
+		return
+	}
+
 	_, err := service.CreateSkillsFromSuggestions(ctx, []skillinference.SkillSuggestion{suggestion})
 	if err != nil {
+		if ctx.Err() != nil {
+			return
+		}
 		i.ShowErrorModal("Skill Creation Failed", fmt.Sprintf("Failed to create skill: %v", err))
 	}
 }
