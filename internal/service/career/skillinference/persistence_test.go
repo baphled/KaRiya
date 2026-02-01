@@ -37,7 +37,7 @@ var _ = Describe("Skill Persistence", func() {
 		}
 
 		service = skillinference.NewSkillInferenceService(skillRepo, eventRepo)
-		ctx = context.Background()
+		ctx = context.Background() //nolint:fatcontext // test setup
 		testTime = time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
 	})
 
