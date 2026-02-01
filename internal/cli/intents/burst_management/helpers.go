@@ -326,6 +326,12 @@ func (i *Intent) confirmBurst() tea.Cmd {
 }
 
 // HasVisibleFeedbackModal returns true if the feedback modal is visible.
+//
+// Returns:
+//   - True if the feedback modal reference is non-nil.
+//
+// Side effects:
+//   - None.
 func (i *Intent) HasVisibleFeedbackModal() bool {
 	return i.feedbackModal != nil
 }
@@ -344,11 +350,23 @@ func (i *Intent) HasVisibleErrorModal() bool {
 }
 
 // GetFeedbackModal returns the current feedback modal for testing.
+//
+// Returns:
+//   - The feedback modal instance or nil if none exists.
+//
+// Side effects:
+//   - None.
 func (i *Intent) GetFeedbackModal() *feedback.Modal {
 	return i.feedbackModal
 }
 
 // GetLoadingModal returns the current loading modal for testing.
+//
+// Returns:
+//   - The loading modal instance or nil if none exists.
+//
+// Side effects:
+//   - None.
 func (i *Intent) GetLoadingModal() *feedback.Modal {
 	return i.loadingModal
 }
@@ -399,11 +417,25 @@ func (i *Intent) ShowErrorModal(title, message string) {
 }
 
 // ShowWarningModal creates and shows a warning modal with the given title and message.
+//
+// Expected:
+//   - title must be a non-empty string.
+//   - message must describe the warning condition.
+//
+// Side effects:
+//   - Replaces any existing feedback modal on the intent.
 func (i *Intent) ShowWarningModal(title, message string) {
 	i.feedbackModal = feedback.NewWarningModal(title, message)
 }
 
 // ShowSuccessModal creates and shows a success modal with the given message.
+//
+// Expected:
+//   - title must be a non-empty string.
+//   - message must describe the success condition.
+//
+// Side effects:
+//   - Replaces any existing feedback modal on the intent.
 func (i *Intent) ShowSuccessModal(title, message string) {
 	modal := feedback.NewSuccessModal(message)
 	modal.Title = title

@@ -118,6 +118,12 @@ func (i *Intent) IsActive() bool {
 }
 
 // HasActiveModal returns true if a loading, feedback, suggestion, or events modal is currently active.
+//
+// Returns:
+//   - True if any modal is currently active.
+//
+// Side effects:
+//   - None.
 func (i *Intent) HasActiveModal() bool {
 	return i.loadingModal != nil || i.feedbackModal != nil ||
 		(i.skillSuggestionModal != nil && i.skillSuggestionModal.IsVisible()) ||
@@ -125,11 +131,23 @@ func (i *Intent) HasActiveModal() bool {
 }
 
 // GetFeedbackModal returns the current feedback modal for testing.
+//
+// Returns:
+//   - The feedback modal instance or nil if none exists.
+//
+// Side effects:
+//   - None.
 func (i *Intent) GetFeedbackModal() *feedback.Modal {
 	return i.feedbackModal
 }
 
 // GetLoadingModal returns the current loading modal for testing.
+//
+// Returns:
+//   - The loading modal instance or nil if none exists.
+//
+// Side effects:
+//   - None.
 func (i *Intent) GetLoadingModal() *feedback.Modal {
 	return i.loadingModal
 }

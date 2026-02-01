@@ -142,6 +142,12 @@ func (i *Intent) renderWithScreen(screen screens.Screen) string {
 
 // GetTestContext returns the intent context for testing purposes.
 // This method is only for testing and should not be used in production code.
+//
+// Returns:
+//   - The IntentContext instance.
+//
+// Side effects:
+//   - None.
 func (i *Intent) GetTestContext() *IntentContext {
 	return i.context
 }
