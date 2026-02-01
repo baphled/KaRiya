@@ -68,15 +68,15 @@ func (r *SkillRepository) GetByID(ctx context.Context, id string) (*career.Skill
 	return model.ToDomain(), nil
 }
 
-// GetByName retrieves a single skill by its exact name.
+// GetByName retrieves a single skill by name using case-insensitive matching.
 //
-// The name parameter is compared case-sensitively against the unique name
-// column. Returns the domain Skill and nil on a match. Returns nil and
-// ErrSkillNotFound when no row matches. Returns nil and a GORM error for
-// any other database failure.
+// The name parameter is compared case-insensitively against the name column
+// using LOWER() on both sides. Returns the domain Skill and nil on a match.
+// Returns nil and ErrSkillNotFound when no row matches. Returns nil and a
+// GORM error for any other database failure.
 func (r *SkillRepository) GetByName(ctx context.Context, name string) (*career.Skill, error) {
 	var model models.Skill
-	err := r.db.WithContext(ctx).First(&model, "name = ?", name).Error
+	err := r.db.WithContext(ctx).First(&model, "LOWER(name) = LOWER(?)", name).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, career_repo.ErrSkillNotFound
 	}

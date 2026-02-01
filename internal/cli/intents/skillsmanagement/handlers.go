@@ -1,13 +1,55 @@
 package skillsmanagement
 
 import (
+	"context"
+	"errors"
+	"fmt"
+	"strings"
+
 	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/screens"
+	burstmodals "github.com/baphled/kariya/internal/cli/screens/burst_management/modals"
 	"github.com/baphled/kariya/internal/cli/screens/skills"
+	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	domain "github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/service/career/skillinference"
 	tea "github.com/charmbracelet/bubbletea"
 )
+
+// noopCmd is a command that does nothing but prevents message propagation.
+func noopCmd() tea.Msg { return nil }
+
+// handleFeedbackModalUpdate handles feedback modal updates (highest priority).
+func (i *Intent) handleFeedbackModalUpdate(msg tea.Msg) tea.Cmd {
+	if i.feedbackModal == nil {
+		return nil
+	}
+	if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.Type == tea.KeyEsc {
+		i.feedbackModal = nil
+	}
+	return noopCmd
+}
+
+// handleLoadingModalUpdate handles loading modal updates (cancellable with Esc).
+func (i *Intent) handleLoadingModalUpdate(msg tea.Msg) tea.Cmd {
+	if i.loadingModal == nil {
+		return nil
+	}
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		if msg.Type == tea.KeyEsc {
+			i.loadingModal = nil
+			i.state = StateList
+			return noopCmd
+		}
+		return noopCmd
+	case feedback.ModalSpinnerTickMsg:
+		return i.loadingModal.Update(msg)
+	default:
+		return noopCmd
+	}
+}
 
 // handleSkillsLoaded handles the SkillsLoadedMsg.
 func (i *Intent) handleSkillsLoaded(msg SkillsLoadedMsg) tea.Cmd {
@@ -153,6 +195,8 @@ func (i *Intent) handleKeyShortcuts(keyMsg tea.KeyMsg) tea.Cmd {
 		return i.openSortModal()
 	case "/":
 		return i.openSearchModal()
+	case "i":
+		return i.startSkillInference()
 	case "x":
 		if i.HasActiveFilters() {
 			i.ClearFilters()
@@ -420,4 +464,147 @@ func (i *Intent) updateSkill(skill *domain.Skill) tea.Cmd {
 			Error: err,
 		}
 	}
+}
+
+// handleSkillSuggestionsLoaded handles the SkillSuggestionsLoadedMsg.
+func (i *Intent) handleSkillSuggestionsLoaded(msg SkillSuggestionsLoadedMsg) tea.Cmd {
+	i.loadingModal = nil
+
+	if msg.Error != nil {
+		// Silently ignore cancelled operations.
+		if errors.Is(msg.Error, context.Canceled) {
+			i.state = StateList
+			return nil
+		}
+		i.feedbackModal = feedback.NewErrorModal("Skill Inference Failed", msg.Error.Error())
+		i.state = StateList
+		return nil
+	}
+
+	if len(msg.Suggestions) == 0 {
+		i.feedbackModal = feedback.NewWarningModal("No Skills Found", "No skills were detected from the events")
+		i.state = StateList
+		return nil
+	}
+
+	newSuggestions := filterNewSuggestions(msg.Suggestions, msg.ExistingSkillNames)
+	if len(newSuggestions) == 0 {
+		successModal := feedback.NewSuccessModal(
+			"Detected skills already in your profile: " +
+				strings.Join(msg.ExistingSkillNames, ", "))
+		successModal.Title = "All Skills Already Tracked"
+		i.feedbackModal = successModal
+		i.state = StateList
+		return nil
+	}
+
+	i.skillSuggestionModal = burstmodals.NewSkillSuggestionModal(newSuggestions, i.Theme())
+	width, height := i.getTerminalDimensions()
+	i.skillSuggestionModal.SetDimensions(width, height)
+	i.skillSuggestionModal.Show()
+	i.state = StateSkillSuggestionReview
+	return nil
+}
+
+// handleSkillSuggestionModalUpdate handles skill suggestion modal updates.
+func (i *Intent) handleSkillSuggestionModalUpdate(msg tea.Msg) tea.Cmd {
+	if i.skillSuggestionModal == nil || !i.skillSuggestionModal.IsVisible() {
+		return nil
+	}
+
+	_, cmd := i.skillSuggestionModal.Update(msg)
+
+	if !i.skillSuggestionModal.IsVisible() {
+		action := i.skillSuggestionModal.GetAction()
+
+		switch action {
+		case burstmodals.SuggestionActionAccept, burstmodals.SuggestionActionReject:
+			if !i.skillSuggestionModal.IsVisible() {
+				accepted := i.skillSuggestionModal.GetAcceptedSkills()
+
+				if len(accepted) > 0 {
+					i.loadingModal = feedback.NewLoadingModal(
+						fmt.Sprintf("Creating %d skill(s)...", len(accepted)),
+						true,
+					).WithTheme(i.Theme())
+					i.skillSuggestionModal = nil
+					return tea.Batch(cmd, i.loadingModal.Init(), i.createSkillsFromSuggestions(accepted))
+				}
+
+				i.skillSuggestionModal = nil
+				i.state = StateList
+			}
+			return noopCmd
+
+		case burstmodals.SuggestionActionViewEvents:
+			return i.openSuggestionEventsModal()
+
+		case burstmodals.SuggestionActionCancel:
+			i.skillSuggestionModal = nil
+			i.state = StateList
+			return noopCmd
+		}
+	}
+
+	return noopCmd
+}
+
+// handleSuggestionEventsModalUpdate handles updates when the suggestion events modal is visible.
+func (i *Intent) handleSuggestionEventsModalUpdate(msg tea.Msg) tea.Cmd {
+	if i.suggestionEventsModal == nil || !i.suggestionEventsModal.IsVisible() {
+		return nil
+	}
+
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		if keyMsg.Type == tea.KeyEsc {
+			i.suggestionEventsModal = nil
+			i.skillSuggestionModal.Show()
+			return noopCmd
+		}
+	}
+
+	_, cmd := i.suggestionEventsModal.Update(msg)
+	return cmd
+}
+
+// createSkillsFromSuggestions persists accepted skill suggestions as confirmed skills.
+func (i *Intent) createSkillsFromSuggestions(suggestions []skillinference.SkillSuggestion) tea.Cmd {
+	if len(suggestions) == 0 {
+		return func() tea.Msg {
+			return SkillsCreatedMsg{Skills: nil, Error: nil}
+		}
+	}
+
+	service := i.context.SkillInferenceService
+
+	return func() tea.Msg {
+		if service == nil {
+			return SkillsCreatedMsg{Error: errors.New("skill inference service not available")}
+		}
+
+		skills, err := service.CreateSkillsFromSuggestions(i.context.Ctx, suggestions)
+		if err != nil {
+			return SkillsCreatedMsg{Error: fmt.Errorf("failed to create skills: %w", err)}
+		}
+
+		return SkillsCreatedMsg{
+			Skills: skills,
+			Error:  nil,
+		}
+	}
+}
+
+// handleSkillsCreatedFromInference handles skills created from accepted suggestions.
+func (i *Intent) handleSkillsCreatedFromInference(msg SkillsCreatedMsg) tea.Cmd {
+	i.loadingModal = nil
+
+	if msg.Error != nil {
+		i.feedbackModal = feedback.NewErrorModal("Skill Creation Failed", msg.Error.Error())
+		i.state = StateList
+		return nil
+	}
+
+	i.feedbackModal = feedback.NewSuccessModal(fmt.Sprintf("Successfully created %d skill(s)", len(msg.Skills)))
+	i.state = StateList
+	return i.RefreshData()
 }

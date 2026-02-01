@@ -498,6 +498,10 @@ func SetupWithMemory(t TestingT) *TestEnv {
 	factRepo := careermemory.NewFactRepository()
 	skillRepo := careermemory.NewSkillRepository()
 
+	// Cross-link event and skill repos for LinkSkill/GetSkillsForEvent sync.
+	skillRepo.SetEventRepository(eventRepo)
+	eventRepo.SetSkillRepository(skillRepo)
+
 	// Create service
 	svc := careerservice.NewService(eventRepo)
 	svc.SetBurstRepository(burstRepo)

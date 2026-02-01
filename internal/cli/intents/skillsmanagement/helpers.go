@@ -1,15 +1,20 @@
 package skillsmanagement
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/screens/skills/modals"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	domain "github.com/baphled/kariya/internal/domain/career"
+	career "github.com/baphled/kariya/internal/repository/career"
+	"github.com/baphled/kariya/internal/service/career/skillinference"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -90,13 +95,23 @@ func (i *Intent) getContextHelp() string {
 	switch i.state {
 	case StateList:
 		return intents.CombineThemedFooters(
-			intents.ThemedListFooter(theme),
+			intents.ThemedCustomFooter(theme,
+				primitives.NavigateBadge(theme),
+				primitives.SelectBadge(theme),
+				primitives.InferSkillsBadge(theme),
+				primitives.SearchBadge(theme),
+				primitives.BackBadge(theme),
+			),
 			intents.ThemedGlobalBadges(theme),
 		)
 	case StateDetail:
 		return intents.CombineThemedFooters(
 			intents.ThemedDetailViewFooter(theme),
 			intents.ThemedGlobalBadges(theme),
+		)
+	case StateInferringSkills, StateSkillSuggestionReview:
+		return intents.ThemedCustomFooter(theme,
+			primitives.CancelBadge(theme),
 		)
 	case StateDelete:
 		return intents.ThemedGlobalBadges(theme)
@@ -114,6 +129,21 @@ func (i *Intent) rebuildModalRegistry() {
 	i.modalRegistry.Clear()
 
 	// Register modals in priority order (highest priority first).
+	// Error modal has highest priority.
+	if i.feedbackModal != nil {
+		width, height := i.getTerminalDimensions()
+		i.modalRegistry.Register(intents.NewErrorModalAdapter(i.feedbackModal, width, height, i.Theme()))
+	}
+
+	// Loading modal (for StateInferringSkills).
+	// When loading is active, it should be the only modal visible.
+	if i.loadingModal != nil {
+		width, height := i.getTerminalDimensions()
+		i.modalRegistry.Register(intents.NewErrorModalAdapter(i.loadingModal, width, height, i.Theme()))
+		// Don't register other modals when loading - loading takes full precedence.
+		return
+	}
+
 	// Form modals (search, filter, sort, add/edit).
 	if i.searchModal != nil {
 		i.modalRegistry.Register(intents.NewFormModalAdapter(
@@ -174,6 +204,22 @@ func (i *Intent) rebuildModalRegistry() {
 			i.eventDetailModal.IsVisible,
 			i.eventDetailModal.View,
 			i.eventDetailModal.Update,
+		))
+	}
+
+	if i.suggestionEventsModal != nil && i.suggestionEventsModal.IsVisible() {
+		i.modalRegistry.Register(intents.NewViewModalAdapter(
+			i.suggestionEventsModal.IsVisible,
+			i.suggestionEventsModal.View,
+			i.suggestionEventsModal.Update,
+		))
+	}
+
+	if i.skillSuggestionModal != nil && i.skillSuggestionModal.IsVisible() {
+		i.modalRegistry.Register(intents.NewViewModalAdapter(
+			i.skillSuggestionModal.IsVisible,
+			i.skillSuggestionModal.View,
+			i.skillSuggestionModal.Update,
 		))
 	}
 }
@@ -362,6 +408,121 @@ func (i *Intent) loadEventsForSkillModal() tea.Cmd {
 		return SkillEventsForModalLoadedMsg{
 			Events: events,
 			Error:  err,
+		}
+	}
+}
+
+// startSkillInference triggers skill inference from all events.
+func (i *Intent) startSkillInference() tea.Cmd {
+	if i.context.SkillInferenceService == nil {
+		i.feedbackModal = feedback.NewErrorModal("Inference Failed", "Skill inference service not available")
+		return nil
+	}
+
+	if i.context.EventRepository == nil {
+		i.feedbackModal = feedback.NewErrorModal("Inference Failed", "Event repository not available")
+		return nil
+	}
+
+	i.state = StateInferringSkills
+	i.loadingModal = feedback.NewLoadingModal("Analyzing all events for skills...", true).WithTheme(i.Theme())
+
+	return tea.Batch(
+		i.loadingModal.Init(),
+		i.inferSkillsFromAllEvents(),
+	)
+}
+
+// openSuggestionEventsModal resolves event IDs from the currently selected skill suggestion
+// and opens an events modal to display them.
+func (i *Intent) openSuggestionEventsModal() tea.Cmd {
+	if i.skillSuggestionModal == nil {
+		return noopCmd
+	}
+
+	selected := i.skillSuggestionModal.GetCurrentSkill()
+	if selected == nil {
+		return noopCmd
+	}
+
+	events := i.resolveEventsFromIDs(selected.EventIDs)
+
+	width, height := i.getTerminalDimensions()
+	i.suggestionEventsModal = modals.NewEventsModal(
+		"suggestion",
+		selected.Name,
+		events,
+		i.Theme(),
+	)
+	i.suggestionEventsModal.SetDimensions(width, height)
+	i.suggestionEventsModal.Show()
+
+	return noopCmd
+}
+
+// resolveEventsFromIDs resolves event IDs to Event objects using the EventRepository.
+func (i *Intent) resolveEventsFromIDs(eventIDs []string) []*domain.Event {
+	if i.context.EventRepository == nil || len(eventIDs) == 0 {
+		return []*domain.Event{}
+	}
+
+	events := make([]*domain.Event, 0, len(eventIDs))
+	for _, id := range eventIDs {
+		event, err := i.context.EventRepository.GetByID(i.context.Ctx, id)
+		if err == nil && event != nil {
+			events = append(events, event)
+		}
+	}
+	return events
+}
+
+// filterNewSuggestions removes suggestions whose names appear in existingNames.
+// Returns only suggestions for skills not already tracked.
+func filterNewSuggestions(
+	suggestions []skillinference.SkillSuggestion,
+	existingNames []string,
+) []skillinference.SkillSuggestion {
+	if len(existingNames) == 0 {
+		return suggestions
+	}
+
+	existingSet := make(map[string]bool, len(existingNames))
+	for _, name := range existingNames {
+		existingSet[strings.ToLower(name)] = true
+	}
+
+	filtered := make([]skillinference.SkillSuggestion, 0, len(suggestions))
+	for _, s := range suggestions {
+		if !existingSet[strings.ToLower(s.Name)] {
+			filtered = append(filtered, s)
+		}
+	}
+	return filtered
+}
+
+// inferSkillsFromAllEvents creates async command for skill inference from all events.
+func (i *Intent) inferSkillsFromAllEvents() tea.Cmd {
+	return func() tea.Msg {
+		// Get all events from repository
+		events, err := i.context.EventRepository.List(i.context.Ctx, career.EventListFilters{})
+		if err != nil {
+			return SkillSuggestionsLoadedMsg{Error: err}
+		}
+
+		if len(events) == 0 {
+			return SkillSuggestionsLoadedMsg{
+				Error: errors.New("no events available for skill analysis"),
+			}
+		}
+
+		result, err := i.context.SkillInferenceService.InferSkillsFromEvents(i.context.Ctx, events)
+		if err != nil {
+			return SkillSuggestionsLoadedMsg{Error: err}
+		}
+
+		return SkillSuggestionsLoadedMsg{
+			Suggestions:        result.Suggestions,
+			ExistingSkillNames: result.ExistingSkillNames,
 		}
 	}
 }

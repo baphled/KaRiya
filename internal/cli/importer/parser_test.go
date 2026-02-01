@@ -480,16 +480,15 @@ Test event,2024-01,Technical,technical,MyProject,MyCompany,Go;Ruby`
 			Expect(rows[0].IsValid).To(BeTrue())
 			Expect(rows[0].Event.Skills).To(HaveLen(2))
 
-			// Verify skills were created in repository
 			goSkill, err := skillRepo.GetByName(ctx, "Go")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(goSkill).NotTo(BeNil())
-			Expect(goSkill.Category).To(Equal("other"))
+			Expect(goSkill.Category).To(Equal("backend"))
 
 			rubySkill, err := skillRepo.GetByName(ctx, "Ruby")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rubySkill).NotTo(BeNil())
-			Expect(rubySkill.Category).To(Equal("other"))
+			Expect(rubySkill.Category).To(Equal("backend"))
 		})
 
 		It("should reuse existing skills from repository", func() {
@@ -512,10 +511,9 @@ Test event,2024-01,Technical,technical,MyProject,MyCompany,Go;Ruby`
 			// Verify the existing skill ID was used
 			Expect(rows[0].Event.Skills).To(ContainElement(existingSkill.ID))
 
-			// Verify Ruby was created as new
 			rubySkill, err := skillRepo.GetByName(ctx, "Ruby")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rubySkill.Category).To(Equal("other"))
+			Expect(rubySkill.Category).To(Equal("backend"))
 		})
 
 		It("should handle multiple events with shared skills", func() {
@@ -570,13 +568,11 @@ Test event,2024-01,Technical,technical,MyProject,MyCompany,  Go  ;  Ruby  `
 			Expect(rubySkill).NotTo(BeNil())
 		})
 
-		It("should handle case-sensitive skill matching", func() {
-			// Pre-create a skill with specific case
+		It("should handle case-insensitive skill matching", func() {
 			existingSkill := fixtures.SkillWith("", "Go", "backend", "")
 			err := skillRepo.Create(ctx, existingSkill)
 			Expect(err).NotTo(HaveOccurred())
 
-			// Import with different case - should create new skill
 			csvData := `Text,Date,Categories,Tags,Project,Company,Skills
 Test event,2024-01,Technical,technical,MyProject,MyCompany,go`
 
@@ -587,11 +583,11 @@ Test event,2024-01,Technical,technical,MyProject,MyCompany,go`
 			Expect(rows).To(HaveLen(1))
 			Expect(rows[0].Event.Skills).To(HaveLen(1))
 
-			// Should have created a new skill "go" (lowercase)
-			lowercaseSkill, err := skillRepo.GetByName(ctx, "go")
+			foundSkill, err := skillRepo.GetByName(ctx, "go")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(lowercaseSkill).NotTo(BeNil())
-			Expect(lowercaseSkill.ID).NotTo(Equal(existingSkill.ID))
+			Expect(foundSkill).NotTo(BeNil())
+			Expect(foundSkill.ID).To(Equal(existingSkill.ID),
+				"should reuse existing 'Go' skill when import has 'go'")
 		})
 
 		It("should skip empty skill names in semicolon-separated list", func() {
@@ -609,6 +605,66 @@ Test event,2024-01,Technical,technical,MyProject,MyCompany,Go;;Ruby;  ;Python`
 			skills, err := skillRepo.List(ctx, nil)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(skills).To(HaveLen(3))
+		})
+
+		It("should auto-categorize known skills from technology dictionary", func() {
+			csvData := `Text,Date,Categories,Tags,Project,Company,Skills
+Test event,2024-01,Technical,technical,MyProject,MyCompany,PostgreSQL;Docker;React`
+
+			reader := bytes.NewReader([]byte(csvData))
+			rows, err := parserWithSkill.Parse(reader)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rows).To(HaveLen(1))
+			Expect(rows[0].Event.Skills).To(HaveLen(3))
+
+			pgSkill, err := skillRepo.GetByName(ctx, "PostgreSQL")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(pgSkill.Category).To(Equal("database"))
+
+			dockerSkill, err := skillRepo.GetByName(ctx, "Docker")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dockerSkill.Category).To(Equal("devops"))
+
+			reactSkill, err := skillRepo.GetByName(ctx, "React")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(reactSkill.Category).To(Equal("frontend"))
+		})
+
+		It("should fall back to other for unknown skills", func() {
+			csvData := `Text,Date,Categories,Tags,Project,Company,Skills
+Test event,2024-01,Technical,technical,MyProject,MyCompany,CustomFramework`
+
+			reader := bytes.NewReader([]byte(csvData))
+			rows, err := parserWithSkill.Parse(reader)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rows).To(HaveLen(1))
+			Expect(rows[0].Event.Skills).To(HaveLen(1))
+
+			skill, err := skillRepo.GetByName(ctx, "CustomFramework")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(skill.Category).To(Equal("other"))
+		})
+
+		It("should auto-categorize case-insensitively", func() {
+			csvData := `Text,Date,Categories,Tags,Project,Company,Skills
+Test event,2024-01,Technical,technical,MyProject,MyCompany,postgresql;docker`
+
+			reader := bytes.NewReader([]byte(csvData))
+			rows, err := parserWithSkill.Parse(reader)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rows).To(HaveLen(1))
+			Expect(rows[0].Event.Skills).To(HaveLen(2))
+
+			pgSkill, err := skillRepo.GetByName(ctx, "postgresql")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(pgSkill.Category).To(Equal("database"))
+
+			dockerSkill, err := skillRepo.GetByName(ctx, "docker")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dockerSkill.Category).To(Equal("devops"))
 		})
 	})
 

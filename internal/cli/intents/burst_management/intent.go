@@ -58,6 +58,8 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 		return i.handleBurstEventsLoaded(msg)
 	case BurstFactsLoadedMsg:
 		return i.handleBurstFactsLoaded(msg)
+	case BurstSkillsLoadedMsg:
+		return i.handleBurstSkillsLoaded(msg)
 	case BurstSuggestionsLoadedMsg:
 		return i.handleBurstSuggestionsLoaded(msg)
 	case SuggestionReviewCompleteMsg:
@@ -66,6 +68,12 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 		return i.handleSuggestionReviewComplete(msg)
 	case FactExtractionCompleteMsg:
 		return i.handleFactExtractionComplete(msg)
+	case SkillSuggestionsLoadedMsg:
+		return i.handleSkillSuggestionsLoaded(msg)
+	case SkillSuggestionsErrorMsg:
+		return i.handleSkillSuggestionsError(msg)
+	case SkillsCreatedMsg:
+		return i.handleSkillsCreated(msg)
 	}
 
 	// Handle modals first (highest priority).
@@ -130,4 +138,16 @@ func (i *Intent) renderWithScreen(screen screens.Screen) string {
 	// Rebuild registry and render any visible modal as overlay.
 	i.rebuildModalRegistry()
 	return i.modalRegistry.RenderOverlay(baseView)
+}
+
+// GetTestContext returns the intent context for testing purposes.
+// This method is only for testing and should not be used in production code.
+//
+// Returns:
+//   - The IntentContext instance.
+//
+// Side effects:
+//   - None.
+func (i *Intent) GetTestContext() *IntentContext {
+	return i.context
 }

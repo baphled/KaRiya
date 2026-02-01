@@ -5,6 +5,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/screens"
+	burstmodals "github.com/baphled/kariya/internal/cli/screens/burst_management/modals"
 	"github.com/baphled/kariya/internal/cli/screens/skills"
 	"github.com/baphled/kariya/internal/cli/screens/skills/modals"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
@@ -47,6 +48,12 @@ type Intent struct {
 	deleteModal      *feedback.ConfirmModal
 	skillEventsModal *modals.EventsModal
 	eventDetailModal *components.ViewEventDetailModal
+
+	// Skill inference modals.
+	loadingModal          *feedback.Modal
+	feedbackModal         *feedback.Modal
+	skillSuggestionModal  *burstmodals.SuggestionReviewModal
+	suggestionEventsModal *modals.EventsModal
 
 	// Screen orchestration (new architecture).
 	activeScreen screens.Screen
@@ -108,6 +115,41 @@ func (i *Intent) SetActive(active bool) {
 // Side effects: None.
 func (i *Intent) IsActive() bool {
 	return i.active
+}
+
+// HasActiveModal returns true if a loading, feedback, suggestion, or events modal is currently active.
+//
+// Returns:
+//   - True if any modal is currently active.
+//
+// Side effects:
+//   - None.
+func (i *Intent) HasActiveModal() bool {
+	return i.loadingModal != nil || i.feedbackModal != nil ||
+		(i.skillSuggestionModal != nil && i.skillSuggestionModal.IsVisible()) ||
+		(i.suggestionEventsModal != nil && i.suggestionEventsModal.IsVisible())
+}
+
+// GetFeedbackModal returns the current feedback modal for testing.
+//
+// Returns:
+//   - The feedback modal instance or nil if none exists.
+//
+// Side effects:
+//   - None.
+func (i *Intent) GetFeedbackModal() *feedback.Modal {
+	return i.feedbackModal
+}
+
+// GetLoadingModal returns the current loading modal for testing.
+//
+// Returns:
+//   - The loading modal instance or nil if none exists.
+//
+// Side effects:
+//   - None.
+func (i *Intent) GetLoadingModal() *feedback.Modal {
+	return i.loadingModal
 }
 
 // GetSkills provides access to the loaded skills for testing and screen rendering.

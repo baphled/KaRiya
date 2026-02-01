@@ -10,12 +10,17 @@ import (
 
 // AllowedCategories defines the set of valid competency categories.
 var AllowedCategories = map[string]bool{
-	"technical":  true,
-	"leadership": true,
-	"product":    true,
-	"consulting": true,
-	"research":   true,
-	"mentoring":  true,
+	"technical":          true,
+	"leadership":         true,
+	"product":            true,
+	"consulting":         true,
+	"research":           true,
+	"mentoring":          true,
+	"communication":      true,
+	"collaboration":      true,
+	"problem-solving":    true,
+	"project-management": true,
+	"architecture":       true,
 }
 
 // CategorySelector manages category selection for career events.
@@ -134,12 +139,17 @@ func (cs *CategorySelector) SetSelected(categories []string) error {
 // GetCategoryDescription returns a human-friendly description of a category.
 func GetCategoryDescription(category string) string {
 	descriptions := map[string]string{
-		"technical":  "Technical skills and engineering work",
-		"leadership": "Leadership and management experience",
-		"product":    "Product management and strategy",
-		"consulting": "Consulting and advisory work",
-		"research":   "Research and investigation",
-		"mentoring":  "Mentoring and coaching others",
+		"technical":          "Technical skills and engineering work",
+		"leadership":         "Leadership and management experience",
+		"product":            "Product management and strategy",
+		"consulting":         "Consulting and advisory work",
+		"research":           "Research and investigation",
+		"mentoring":          "Mentoring and coaching others",
+		"communication":      "Communication and documentation skills",
+		"collaboration":      "Cross-functional collaboration and teamwork",
+		"problem-solving":    "Analytical and problem-solving abilities",
+		"project-management": "Project planning and delivery management",
+		"architecture":       "System architecture and technical design",
 	}
 	if desc, ok := descriptions[strings.ToLower(category)]; ok {
 		return desc
@@ -165,6 +175,16 @@ func MapToClassificationCategories(categories []string) []classification.Compete
 			result = append(result, classification.ResearchCompetency)
 		case "mentoring":
 			result = append(result, classification.MentoringCompetency)
+		case "communication":
+			result = append(result, classification.CommunicationCompetency)
+		case "collaboration":
+			result = append(result, classification.CollaborationCompetency)
+		case "problem-solving":
+			result = append(result, classification.ProblemSolvingCompetency)
+		case "project-management":
+			result = append(result, classification.ProjectManagementCompetency)
+		case "architecture":
+			result = append(result, classification.ArchitectureCompetency)
 		}
 	}
 	return result

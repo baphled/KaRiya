@@ -122,8 +122,9 @@ var _ = Describe("Selectors E2E", func() {
 
 			// Step 1: View available categories.
 			available := selector.AvailableCategories()
-			Expect(available).To(HaveLen(6))
-			Expect(available).To(ContainElements("technical", "leadership", "product"))
+			Expect(available).To(HaveLen(11))
+			Expect(available).To(ContainElements("technical", "leadership", "product",
+				"communication", "collaboration", "problem-solving", "project-management", "architecture"))
 
 			// Step 2: This is a technical leadership event.
 			Expect(selector.SelectCategory("technical")).To(Succeed())

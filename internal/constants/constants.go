@@ -89,6 +89,22 @@ const (
 	// CompetencyMentoring covers knowledge transfer skills such as coaching
 	// junior engineers, conducting code reviews, and running workshops.
 	CompetencyMentoring CompetencyCategory = "mentoring"
+
+	// CompetencyCommunication covers presenting, documenting, and explaining
+	// technical concepts to diverse audiences including stakeholders and teams.
+	CompetencyCommunication CompetencyCategory = "communication"
+	// CompetencyCollaboration covers cross-functional teamwork, partnering with
+	// other teams, and coordinating efforts across organisational boundaries.
+	CompetencyCollaboration CompetencyCategory = "collaboration"
+	// CompetencyProblemSolving covers analytical debugging, troubleshooting
+	// complex issues, and systematic root-cause investigation.
+	CompetencyProblemSolving CompetencyCategory = "problem-solving"
+	// CompetencyProjectManagement covers planning sprints, tracking milestones,
+	// estimating effort, and delivering projects on schedule.
+	CompetencyProjectManagement CompetencyCategory = "project-management"
+	// CompetencyArchitecture covers system design, scalability decisions,
+	// distributed systems thinking, and technical design authority.
+	CompetencyArchitecture CompetencyCategory = "architecture"
 )
 
 // AllCompetencyCategories returns every defined CompetencyCategory value in
@@ -102,6 +118,11 @@ func AllCompetencyCategories() []CompetencyCategory {
 		CompetencyConsulting,
 		CompetencyResearch,
 		CompetencyMentoring,
+		CompetencyCommunication,
+		CompetencyCollaboration,
+		CompetencyProblemSolving,
+		CompetencyProjectManagement,
+		CompetencyArchitecture,
 	}
 }
 
@@ -301,17 +322,28 @@ const (
 	// Swift, Kotlin, React Native, and platform-specific APIs.
 	SkillCategoryMobile SkillCategory = "mobile"
 	// SkillCategoryTooling groups developer productivity tools such as
-	// editors, linters, profilers, and version control systems.
+	// editors, linters, profilers, build systems, and version control.
 	SkillCategoryTooling SkillCategory = "tooling"
+	// SkillCategoryTesting groups testing frameworks and quality assurance
+	// tools such as Jest, Pytest, Selenium, Cypress, and Ginkgo.
+	SkillCategoryTesting SkillCategory = "testing"
+	// SkillCategoryData groups data engineering technologies such as
+	// Apache Spark, Airflow, Snowflake, dbt, and ETL pipelines.
+	SkillCategoryData SkillCategory = "data"
+	// SkillCategoryML groups machine learning and AI technologies such as
+	// TensorFlow, PyTorch, scikit-learn, and OpenAI integrations.
+	SkillCategoryML SkillCategory = "ml"
+	// SkillCategoryMonitoring groups observability and monitoring tools
+	// such as Prometheus, Grafana, Splunk, Sentry, and PagerDuty.
+	SkillCategoryMonitoring SkillCategory = "monitoring"
 	// SkillCategoryOther is a catch-all for skills that do not fit neatly
 	// into the predefined categories above.
 	SkillCategoryOther SkillCategory = "other"
 )
 
-// SuggestedSkillCategories returns every predefined SkillCategory value in
-// declaration order. The returned slice provides sensible defaults for skill
-// grouping forms; users may still enter free-form categories beyond this list.
-func SuggestedSkillCategories() []SkillCategory {
+// AllSkillCategories returns every defined SkillCategory value in declaration
+// order. Use this for validation checks and exhaustive iterations.
+func AllSkillCategories() []SkillCategory {
 	return []SkillCategory{
 		SkillCategoryBackend,
 		SkillCategoryFrontend,
@@ -320,8 +352,31 @@ func SuggestedSkillCategories() []SkillCategory {
 		SkillCategoryCloud,
 		SkillCategoryMobile,
 		SkillCategoryTooling,
+		SkillCategoryTesting,
+		SkillCategoryData,
+		SkillCategoryML,
+		SkillCategoryMonitoring,
 		SkillCategoryOther,
 	}
+}
+
+// SuggestedSkillCategories returns every predefined SkillCategory value in
+// declaration order. The returned slice provides sensible defaults for skill
+// grouping forms and category selection dropdowns.
+func SuggestedSkillCategories() []SkillCategory {
+	return AllSkillCategories()
+}
+
+// IsValidSkillCategory reports whether s matches a recognised SkillCategory
+// value. The comparison is case-sensitive against the string representation of
+// each constant. Returns true on match, false otherwise.
+func IsValidSkillCategory(s string) bool {
+	for _, c := range AllSkillCategories() {
+		if string(c) == s {
+			return true
+		}
+	}
+	return false
 }
 
 // SectionType identifies the kind of content block within a generated CV. The

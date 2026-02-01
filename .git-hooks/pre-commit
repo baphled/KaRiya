@@ -98,11 +98,11 @@ fi
 
 # Check for forbidden comment markers (only in added lines)
 # Variable is split to avoid self-matching during diff checks
-FORBIDDEN_MARKERS="TO""DO|FIX""ME|XX""X|HA""CK|NO""TE:|IMPOR""TANT:|\bBU""G\b"
+FORBIDDEN_MARKERS="TO""DO|FIX""ME|XX""X|HA""CK|\bNO""TE\b|\bIMPOR""TANT\b|\bBU""G\b"
 if git diff --cached | grep '^+' | grep -v '^+++' | grep -E "$FORBIDDEN_MARKERS" | grep -v '_test.go' > /dev/null 2>&1; then
     echo -e "${RED}❌ ERROR: Forbidden comment markers detected${NC}"
     echo ""
-    echo "Found: TODO, FIXME, XXX, HACK, NOTE, IMPORTANT, or BUG"
+    echo "Found: TODO, FIXME, XXX, HACK, NOTE (standalone), IMPORTANT (standalone), or BUG"
     echo ""
     git diff --cached | grep '^+' | grep -v '^+++' | grep -E "$FORBIDDEN_MARKERS" | grep -v '_test.go' | head -5
     echo ""

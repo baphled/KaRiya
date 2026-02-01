@@ -9,12 +9,15 @@ import (
 	"github.com/baphled/kariya/internal/cli/app"
 	"github.com/baphled/kariya/internal/cli/bootstrap"
 	"github.com/baphled/kariya/internal/cli/intents"
+	burst_management "github.com/baphled/kariya/internal/cli/intents/burst_management"
+	"github.com/baphled/kariya/internal/cli/intents/skillsmanagement"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/uikit/display"
 	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/logger"
 	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	careerservice "github.com/baphled/kariya/internal/service/career"
+	"github.com/baphled/kariya/internal/service/career/skillinference"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
@@ -1310,6 +1313,97 @@ var _ = Describe("IntentRegistrar DI Tests", func() {
 
 			_, err := router.ActivateIntent("fact_management", nil)
 			Expect(err).NotTo(BeNil())
+		})
+
+		It("should wire SkillInferenceService into BurstManagement intent context", func() {
+			// Create test repositories
+			eventRepo := careermemory.NewEventRepository()
+			skillRepo := careermemory.NewSkillRepository()
+			burstRepo := careermemory.NewBurstRepository()
+			factRepo := careermemory.NewFactRepository()
+
+			// Create career service
+			careerSvc := careerservice.NewService(eventRepo)
+			careerSvc.SetSkillRepository(skillRepo)
+			careerSvc.SetBurstRepository(burstRepo)
+			careerSvc.SetFactRepository(factRepo)
+
+			// Create skill inference service
+			skillInferenceService := skillinference.NewSkillInferenceService(skillRepo, eventRepo)
+
+			// Create registrar config with SkillInferenceService
+			log := logger.DefaultLogger()
+			registrar := app.NewDefaultIntentRegistrar(&app.RegistrarConfig{
+				CLIService:            nil,
+				CareerService:         careerSvc,
+				SkillInferenceService: skillInferenceService,
+				Log:                   log,
+			})
+
+			// Register intents
+			router := intents.NewDefaultIntentRouter()
+			err := registrar.RegisterAll(context.Background(), router)
+			Expect(err).ToNot(HaveOccurred())
+
+			// Activate burst management intent
+			_, err = router.ActivateIntent("burst_management", nil)
+			Expect(err).ToNot(HaveOccurred())
+
+			// Get the active intent
+			activeIntent := router.GetActiveIntent()
+			Expect(activeIntent).NotTo(BeNil())
+
+			// Cast to BurstManagement intent
+			burstIntent, ok := activeIntent.(*burst_management.Intent)
+			Expect(ok).To(BeTrue(), "Active intent should be *burst_management.Intent")
+			Expect(burstIntent).NotTo(BeNil())
+
+			// Verify SkillInferenceService is wired up
+			// We'll add a test helper method GetTestContext() to expose the context
+			testCtx := burstIntent.GetTestContext()
+			Expect(testCtx).NotTo(BeNil(), "Intent context should not be nil")
+			Expect(testCtx.SkillInferenceService).NotTo(BeNil(), "SkillInferenceService should be wired up in context")
+		})
+
+		It("should wire SkillInferenceService and EventRepository into ManageSkills intent context", func() {
+			eventRepo := careermemory.NewEventRepository()
+			skillRepo := careermemory.NewSkillRepository()
+			burstRepo := careermemory.NewBurstRepository()
+			factRepo := careermemory.NewFactRepository()
+
+			careerSvc := careerservice.NewService(eventRepo)
+			careerSvc.SetSkillRepository(skillRepo)
+			careerSvc.SetBurstRepository(burstRepo)
+			careerSvc.SetFactRepository(factRepo)
+
+			skillInferenceService := skillinference.NewSkillInferenceService(skillRepo, eventRepo)
+
+			log := logger.DefaultLogger()
+			registrar := app.NewDefaultIntentRegistrar(&app.RegistrarConfig{
+				CLIService:            nil,
+				CareerService:         careerSvc,
+				SkillInferenceService: skillInferenceService,
+				Log:                   log,
+			})
+
+			router := intents.NewDefaultIntentRouter()
+			err := registrar.RegisterAll(context.Background(), router)
+			Expect(err).ToNot(HaveOccurred())
+
+			_, err = router.ActivateIntent("manage_skills", nil)
+			Expect(err).ToNot(HaveOccurred())
+
+			activeIntent := router.GetActiveIntent()
+			Expect(activeIntent).NotTo(BeNil())
+
+			skillsIntent, ok := activeIntent.(*skillsmanagement.Intent)
+			Expect(ok).To(BeTrue(), "Active intent should be *skillsmanagement.Intent")
+			Expect(skillsIntent).NotTo(BeNil())
+
+			testCtx := skillsIntent.GetTestContext()
+			Expect(testCtx).NotTo(BeNil(), "Intent context should not be nil")
+			Expect(testCtx.SkillInferenceService).NotTo(BeNil(), "SkillInferenceService should be wired up in context")
+			Expect(testCtx.EventRepository).NotTo(BeNil(), "EventRepository should be wired up in context")
 		})
 	})
 })

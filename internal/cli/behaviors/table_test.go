@@ -172,6 +172,7 @@ var _ = Describe("TableBehavior", func() {
 				selected := table.GetSelectedItem()
 				Expect(*selected).To(Equal(items[1]))
 			})
+
 		})
 
 		Describe("GetSelectedIndex", func() {
@@ -243,6 +244,27 @@ var _ = Describe("TableBehavior", func() {
 				emptyTable := behaviors.NewTableBehavior(theme, columns, formatter)
 				emptyTable.SetSelectedIndex(5)
 				Expect(emptyTable.GetSelectedIndex()).To(Equal(0))
+			})
+
+			It("should scroll viewport down when selecting item below viewport", func() {
+				manyItems := make([]*TestItem, 20)
+				for i := range manyItems {
+					manyItems[i] = &TestItem{Name: "Item", Status: "Active", Count: i}
+				}
+				table.SetItems(manyItems).SetHeight(5)
+				table.SetSelectedIndex(15)
+				Expect(table.GetSelectedIndex()).To(Equal(15))
+			})
+
+			It("should scroll viewport up when selecting item above viewport", func() {
+				manyItems := make([]*TestItem, 20)
+				for i := range manyItems {
+					manyItems[i] = &TestItem{Name: "Item", Status: "Active", Count: i}
+				}
+				table.SetItems(manyItems).SetHeight(5)
+				table.SetSelectedIndex(15) // Scroll down first
+				table.SetSelectedIndex(2)  // Then scroll up
+				Expect(table.GetSelectedIndex()).To(Equal(2))
 			})
 		})
 
@@ -540,6 +562,15 @@ var _ = Describe("TableBehavior", func() {
 				selected := table.GetSelectedItem()
 				Expect((*selected).Name).To(Equal("Item 2"))
 			})
+
+			It("should handle empty list when sorting", func() {
+				emptyTable := behaviors.NewTableBehavior(theme, columns, formatter)
+				comparator := func(a, b *TestItem) int {
+					return a.Count - b.Count
+				}
+				result := emptyTable.SetSort(comparator, false)
+				Expect(result).To(BeIdenticalTo(emptyTable))
+			})
 		})
 
 		Describe("ClearSort", func() {
@@ -744,6 +775,19 @@ var _ = Describe("TableBehavior", func() {
 			})
 		})
 
+		Describe("Edge cases with cursor positioning", func() {
+			It("should handle navigation with very small page", func() {
+				// Create items with small page size to test relative cursor calculations
+				fewItems := []*TestItem{
+					{Name: "Item 1", Status: "Active", Count: 1},
+					{Name: "Item 2", Status: "Active", Count: 2},
+				}
+				table.SetItems(fewItems).PageSize(1)
+				table.SetSelectedIndex(1)
+				Expect(table.GetSelectedIndex()).To(Equal(1))
+			})
+		})
+
 		Describe("Viewport disables pagination", func() {
 			It("should show all items when viewport is enabled", func() {
 				manyItems := make([]*TestItem, 30)
@@ -751,7 +795,7 @@ var _ = Describe("TableBehavior", func() {
 					manyItems[i] = &TestItem{Name: "Item", Status: "Active", Count: i}
 				}
 				table.PageSize(5)
-				table.SetItems(manyItems).SetHeight(10)
+				table.SetItems(manyItems).SetHeight(10).HidePagination()
 
 				rendered := table.Render()
 				Expect(rendered).NotTo(ContainSubstring("Page"))
@@ -769,6 +813,20 @@ var _ = Describe("TableBehavior", func() {
 				rendered := table.Render()
 				Expect(rendered).NotTo(BeEmpty())
 				Expect(table.GetSelectedIndex()).To(Equal(10))
+			})
+		})
+
+		Describe("Viewport with Pagination", func() {
+			It("should display pagination info when showPagination is enabled", func() {
+				manyItems := make([]*TestItem, 30)
+				for i := range manyItems {
+					manyItems[i] = &TestItem{Name: "Item", Status: "Active", Count: i}
+				}
+				table.SetItems(manyItems).SetHeight(10).ShowPagination()
+
+				rendered := table.Render()
+				Expect(rendered).To(ContainSubstring("Items:"))
+				Expect(rendered).To(ContainSubstring("Page"))
 			})
 		})
 	})

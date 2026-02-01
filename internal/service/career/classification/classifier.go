@@ -14,12 +14,17 @@ type CompetencyCategory = constants.CompetencyCategory
 
 // Competency category constants for backward compatibility.
 const (
-	TechnicalCompetency  = constants.CompetencyTechnical
-	LeadershipCompetency = constants.CompetencyLeadership
-	ProductCompetency    = constants.CompetencyProduct
-	ConsultingCompetency = constants.CompetencyConsulting
-	ResearchCompetency   = constants.CompetencyResearch
-	MentoringCompetency  = constants.CompetencyMentoring
+	TechnicalCompetency         = constants.CompetencyTechnical
+	LeadershipCompetency        = constants.CompetencyLeadership
+	ProductCompetency           = constants.CompetencyProduct
+	ConsultingCompetency        = constants.CompetencyConsulting
+	ResearchCompetency          = constants.CompetencyResearch
+	MentoringCompetency         = constants.CompetencyMentoring
+	CommunicationCompetency     = constants.CompetencyCommunication
+	CollaborationCompetency     = constants.CompetencyCollaboration
+	ProblemSolvingCompetency    = constants.CompetencyProblemSolving
+	ProjectManagementCompetency = constants.CompetencyProjectManagement
+	ArchitectureCompetency      = constants.CompetencyArchitecture
 )
 
 // Classifier provides methods for classifying career events.
@@ -57,35 +62,47 @@ func NewClassifier() *Classifier {
 				"mentor", "train", "coach", "develop", "guide",
 				"support", "teach", "onboard", "grow", "skill development",
 			},
+			CommunicationCompetency: {
+				"communicate", "present", "document", "explain", "write",
+				"articulate", "stakeholder", "meeting", "update", "report",
+				"clarify", "brief",
+			},
+			CollaborationCompetency: {
+				"collaborate", "team", "cross-functional", "partner",
+				"coordinate", "facilitate", "align", "together", "joint",
+				"cooperate",
+			},
+			ProblemSolvingCompetency: {
+				"solve", "debug", "analyze", "troubleshoot", "investigate",
+				"diagnose", "optimize", "fix", "resolve", "identify",
+				"root cause",
+			},
+			ProjectManagementCompetency: {
+				"plan", "estimate", "schedule", "deliver", "milestone",
+				"sprint", "roadmap", "prioritize", "deadline", "timeline",
+			},
+			ArchitectureCompetency: {
+				"architect", "design", "scalable", "distributed",
+				"microservices", "pattern", "infrastructure", "platform",
+				"modular", "decoupled",
+			},
 		},
 	}
 }
 
+// GetCategoryKeywords returns the keyword list for a competency category.
+func (c *Classifier) GetCategoryKeywords(category CompetencyCategory) []string {
+	return c.categoryKeywords[category]
+}
+
 // Classify determines the primary competency category for a career event.
 func (c *Classifier) Classify(event *career.Event) CompetencyCategory {
-	// First, check explicit tags
-	for _, tag := range event.Tags {
-		// Convert tag to corresponding CompetencyCategory if possible
-		switch strings.ToLower(tag) {
-		case "technical":
-			return TechnicalCompetency
-		case "leadership":
-			return LeadershipCompetency
-		case "product":
-			return ProductCompetency
-		case "consulting":
-			return ConsultingCompetency
-		case "research":
-			return ResearchCompetency
-		case "mentoring":
-			return MentoringCompetency
-		}
+	if category := c.classifyByTag(event.Tags); category != "" {
+		return category
 	}
 
-	// If no explicit tag, analyze event text
 	normalizedText := strings.ToLower(event.Text)
 
-	// Predefined test cases
 	switch {
 	case strings.Contains(normalizedText, "cross-functional team"):
 		return LeadershipCompetency
@@ -93,70 +110,27 @@ func (c *Classifier) Classify(event *career.Event) CompetencyCategory {
 		strings.Contains(normalizedText, "mentored"):
 		return TechnicalCompetency
 	default:
-		// Track keyword matches for each category
-		categoryScores := make(map[CompetencyCategory]int)
+		categoryScores := c.scoreCategoryKeywords(normalizedText)
 
-		// Check for keyword matches
-		for category, keywords := range c.categoryKeywords {
-			for _, keyword := range keywords {
-				pattern := fmt.Sprintf(`\b%s\w*\b`, regexp.QuoteMeta(keyword))
-				matches := regexp.MustCompile(pattern).FindAllString(normalizedText, -1)
-				categoryScores[category] += len(matches)
-			}
-		}
-
-		// Predefined priority order for classification
-		priorityOrder := []CompetencyCategory{
-			LeadershipCompetency,
-			MentoringCompetency,
-			ProductCompetency,
-			ConsultingCompetency,
-			ResearchCompetency,
-			TechnicalCompetency,
-		}
-
-		// Find the first category in priority order with matches
-		for _, category := range priorityOrder {
+		for _, category := range classificationPriorityOrder() {
 			if categoryScores[category] > 0 {
 				return category
 			}
 		}
 
-		// Default to technical if no clear category
 		return TechnicalCompetency
 	}
 }
 
 // ClassifyMulti returns multiple potential competency categories.
 func (c *Classifier) ClassifyMulti(event *career.Event) []CompetencyCategory {
-	// If explicit tags are present, use them first
-	var categories []CompetencyCategory
-	for _, tag := range event.Tags {
-		switch strings.ToLower(tag) {
-		case "technical":
-			categories = append(categories, TechnicalCompetency)
-		case "leadership":
-			categories = append(categories, LeadershipCompetency)
-		case "product":
-			categories = append(categories, ProductCompetency)
-		case "consulting":
-			categories = append(categories, ConsultingCompetency)
-		case "research":
-			categories = append(categories, ResearchCompetency)
-		case "mentoring":
-			categories = append(categories, MentoringCompetency)
-		}
-	}
-
-	// If tags provided categories, return those
+	categories := c.classifyTagsMulti(event.Tags)
 	if len(categories) > 0 {
 		return categories
 	}
 
-	// Analyze text for multiple categories
 	normalizedText := strings.ToLower(event.Text)
 
-	// Predefined test cases with specific handling
 	switch {
 	case strings.Contains(normalizedText, "cross-functional team"):
 		return []CompetencyCategory{LeadershipCompetency}
@@ -173,43 +147,96 @@ func (c *Classifier) ClassifyMulti(event *career.Event) []CompetencyCategory {
 		strings.Contains(normalizedText, "mentored"):
 		return []CompetencyCategory{TechnicalCompetency, MentoringCompetency}
 	default:
-		// Track keyword matches for each category
-		categoryScores := make(map[CompetencyCategory]int)
-
-		// Check for keyword matches
-		for category, keywords := range c.categoryKeywords {
-			for _, keyword := range keywords {
-				pattern := fmt.Sprintf(`\b%s\w*\b`, regexp.QuoteMeta(keyword))
-				matches := regexp.MustCompile(pattern).FindAllString(normalizedText, -1)
-				categoryScores[category] += len(matches)
-			}
-		}
-
-		// Predefined priority order for classification
-		priorityOrder := []CompetencyCategory{
-			LeadershipCompetency,
-			MentoringCompetency,
-			ProductCompetency,
-			ConsultingCompetency,
-			ResearchCompetency,
-			TechnicalCompetency,
-		}
+		categoryScores := c.scoreCategoryKeywords(normalizedText)
 
 		var matchedCategories []CompetencyCategory
-
-		// Find the first category in priority order with matches
-		for _, category := range priorityOrder {
+		for _, category := range classificationPriorityOrder() {
 			if categoryScores[category] > 0 {
 				matchedCategories = append(matchedCategories, category)
 				break
 			}
 		}
 
-		// If no categories matched, default to technical
 		if len(matchedCategories) == 0 {
 			return []CompetencyCategory{TechnicalCompetency}
 		}
 
 		return matchedCategories
+	}
+}
+
+func (c *Classifier) classifyByTag(tags []string) CompetencyCategory {
+	for _, tag := range tags {
+		if category := tagToCategory(strings.ToLower(tag)); category != "" {
+			return category
+		}
+	}
+	return ""
+}
+
+func (c *Classifier) classifyTagsMulti(tags []string) []CompetencyCategory {
+	var categories []CompetencyCategory
+	for _, tag := range tags {
+		if category := tagToCategory(strings.ToLower(tag)); category != "" {
+			categories = append(categories, category)
+		}
+	}
+	return categories
+}
+
+func tagToCategory(tag string) CompetencyCategory {
+	switch tag {
+	case "technical":
+		return TechnicalCompetency
+	case "leadership":
+		return LeadershipCompetency
+	case "product":
+		return ProductCompetency
+	case "consulting":
+		return ConsultingCompetency
+	case "research":
+		return ResearchCompetency
+	case "mentoring":
+		return MentoringCompetency
+	case "communication":
+		return CommunicationCompetency
+	case "collaboration":
+		return CollaborationCompetency
+	case "problem-solving":
+		return ProblemSolvingCompetency
+	case "project-management":
+		return ProjectManagementCompetency
+	case "architecture":
+		return ArchitectureCompetency
+	default:
+		return ""
+	}
+}
+
+func (c *Classifier) scoreCategoryKeywords(normalizedText string) map[CompetencyCategory]int {
+	categoryScores := make(map[CompetencyCategory]int)
+	for category, keywords := range c.categoryKeywords {
+		for _, keyword := range keywords {
+			pattern := fmt.Sprintf(`\b%s\w*\b`, regexp.QuoteMeta(keyword))
+			matches := regexp.MustCompile(pattern).FindAllString(normalizedText, -1)
+			categoryScores[category] += len(matches)
+		}
+	}
+	return categoryScores
+}
+
+func classificationPriorityOrder() []CompetencyCategory {
+	return []CompetencyCategory{
+		LeadershipCompetency,
+		MentoringCompetency,
+		ProductCompetency,
+		ConsultingCompetency,
+		ResearchCompetency,
+		CommunicationCompetency,
+		CollaborationCompetency,
+		ProblemSolvingCompetency,
+		ProjectManagementCompetency,
+		ArchitectureCompetency,
+		TechnicalCompetency,
 	}
 }

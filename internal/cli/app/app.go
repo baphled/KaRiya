@@ -13,6 +13,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/logger"
 	careerservice "github.com/baphled/kariya/internal/service/career"
+	"github.com/baphled/kariya/internal/service/career/skillinference"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -50,15 +51,22 @@ func NewModel(
 	// Initialize intent router.
 	router := intents.NewDefaultIntentRouter()
 
+	// Create skill inference service.
+	skillInferenceService := skillinference.NewSkillInferenceService(
+		careerService.GetSkillRepository(),
+		careerService.GetEventRepository(),
+	)
+
 	// Use provided registrar or create default.
 	registrar := options.registrar
 	if registrar == nil {
 		registrar = NewDefaultIntentRegistrar(&RegistrarConfig{
-			CLIService:      cliService,
-			CareerService:   careerService,
-			Log:             log,
-			CVGenService:    bootstrapResult.Services.CVGenService,
-			CVExportService: bootstrapResult.Services.CVExportService,
+			CLIService:            cliService,
+			CareerService:         careerService,
+			SkillInferenceService: skillInferenceService,
+			Log:                   log,
+			CVGenService:          bootstrapResult.Services.CVGenService,
+			CVExportService:       bootstrapResult.Services.CVExportService,
 		})
 	}
 

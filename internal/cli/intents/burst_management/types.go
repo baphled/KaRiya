@@ -8,6 +8,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/screens"
 	burstmodals "github.com/baphled/kariya/internal/cli/screens/burst_management/modals"
+	skillmodals "github.com/baphled/kariya/internal/cli/screens/skills/modals"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/domain/career"
 )
@@ -74,6 +75,9 @@ type Intent struct {
 	// suggestionsLoading indicates if burst suggestions are being loaded.
 	suggestionsLoading bool
 
+	// inferringSkills indicates if skills are being inferred.
+	inferringSkills bool
+
 	// --- Error states ---
 
 	// deleteError stores any error from delete operation.
@@ -87,6 +91,9 @@ type Intent struct {
 
 	// suggestionsError stores any error from suggestion detection.
 	suggestionsError error
+
+	// skillInferenceError stores any error from skill inference.
+	skillInferenceError error
 
 	// --- Progress tracking ---
 
@@ -107,6 +114,9 @@ type Intent struct {
 	// factsModal holds the burst facts modal (replaces facts screen).
 	factsModal *burstmodals.BurstFactsModal
 
+	// skillsModal holds the burst skills modal for viewing skills associated with a burst.
+	skillsModal *burstmodals.BurstSkillsModal
+
 	// editModal holds the edit burst modal.
 	editModal *burstmodals.EditBurstModal
 
@@ -119,8 +129,17 @@ type Intent struct {
 	// suggestionModal holds the suggestion review modal.
 	suggestionModal *burstmodals.SuggestionReviewModal
 
-	// errorModal holds the error modal (shown when operations fail).
-	errorModal *feedback.Modal
+	// skillSuggestionModal holds the skill suggestion review modal.
+	skillSuggestionModal *burstmodals.SuggestionReviewModal
+
+	// suggestionEventsModal holds the events sub-modal for drill-down from skill suggestions.
+	suggestionEventsModal *skillmodals.EventsModal
+
+	// inferredFromDetail tracks whether skill inference was triggered from burst detail modal.
+	inferredFromDetail bool
+
+	// feedbackModal holds the feedback modal (shown for errors, warnings, and success messages).
+	feedbackModal *feedback.Modal
 
 	// loadingModal holds the loading modal (shown during async operations).
 	loadingModal *feedback.Modal

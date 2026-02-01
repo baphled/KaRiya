@@ -158,3 +158,8 @@ func (m *TestMockRepository) ListCalled() bool {
 func (m *TestMockRepository) CountCalled() bool {
 	return m.countCalled
 }
+
+// LinkSkill implements EventRepository interface.
+func (m *TestMockRepository) LinkSkill(_ context.Context, _ string, _ string) error {
+	return nil
+}

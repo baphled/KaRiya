@@ -105,9 +105,8 @@ var _ = Describe("Extractor Integration Tests", func() {
 
 			facts := extractor.ExtractFromBurst(ctx, burst, events)
 
-			// Verify burst-level fact includes diverse competencies
 			burstFact := facts[0]
-			Expect(burstFact.CompetencyCategories).To(ContainElement("technical"))
+			Expect(burstFact.CompetencyCategories).To(ContainElement("architecture"))
 			Expect(burstFact.CompetencyCategories).To(ContainElement("leadership"))
 			Expect(burstFact.CompetencyCategories).To(ContainElement("mentoring"))
 			Expect(burstFact.CompetencyCategories).To(ContainElement("product"))

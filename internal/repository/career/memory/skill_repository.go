@@ -81,13 +81,13 @@ func (r *SkillRepository) GetByID(_ context.Context, id string) (*career.Skill, 
 	return skill, nil
 }
 
-// GetByName retrieves a skill by its name (case-sensitive).
+// GetByName retrieves a skill by name using case-insensitive matching.
 func (r *SkillRepository) GetByName(_ context.Context, name string) (*career.Skill, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
 	for _, skill := range r.skills {
-		if skill.Name == name {
+		if strings.EqualFold(skill.Name, name) {
 			return skill, nil
 		}
 	}

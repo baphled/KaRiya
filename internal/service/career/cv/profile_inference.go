@@ -3,6 +3,7 @@ package cv
 import (
 	"strings"
 
+	"github.com/baphled/kariya/internal/constants"
 	"github.com/baphled/kariya/internal/domain/career"
 )
 
@@ -24,22 +25,32 @@ func NewProfileInferenceService() *ProfileInferenceService {
 
 // categoryStrengthMapping maps competency categories to core strength descriptions.
 var categoryStrengthMapping = map[string]string{
-	"technical":  "Strong technical problem-solving and implementation skills",
-	"leadership": "Technical leadership and team guidance",
-	"product":    "Product-oriented thinking and delivery focus",
-	"consulting": "Client-facing consulting and advisory capabilities",
-	"research":   "Research-driven approach to problem solving",
-	"mentoring":  "Mentoring and knowledge sharing",
+	"technical":          "Strong technical problem-solving and implementation skills",
+	"leadership":         "Technical leadership and team guidance",
+	"product":            "Product-oriented thinking and delivery focus",
+	"consulting":         "Client-facing consulting and advisory capabilities",
+	"research":           "Research-driven approach to problem solving",
+	"mentoring":          "Mentoring and knowledge sharing",
+	"communication":      "Strong communication and documentation skills with stakeholder engagement",
+	"collaboration":      "Effective cross-functional collaboration and team leadership",
+	"problem-solving":    "Analytical and systematic problem-solving abilities",
+	"project-management": "Project planning and delivery management with milestone tracking",
+	"architecture":       "System architecture and technical design expertise with scalability focus",
 }
 
 // categoryValueMapping maps competency categories to value proposition descriptions.
 var categoryValueMapping = map[string]string{
-	"technical":  "Deep technical expertise with production focus",
-	"leadership": "Cross-functional collaboration and team leadership",
-	"product":    "Outcome-driven delivery with business alignment",
-	"consulting": "Strategic consulting and stakeholder management",
-	"research":   "Innovation through research and experimentation",
-	"mentoring":  "Team growth through mentoring and coaching",
+	"technical":          "Deep technical expertise with production focus",
+	"leadership":         "Cross-functional collaboration and team leadership",
+	"product":            "Outcome-driven delivery with business alignment",
+	"consulting":         "Strategic consulting and stakeholder management",
+	"research":           "Innovation through research and experimentation",
+	"mentoring":          "Team growth through mentoring and coaching",
+	"communication":      "Clear technical communication with diverse audiences",
+	"collaboration":      "Effective cross-functional partnerships and teamwork",
+	"problem-solving":    "Systematic debugging and root-cause analysis",
+	"project-management": "Reliable project delivery with transparent planning",
+	"architecture":       "Scalable system design with long-term technical vision",
 }
 
 // genericCoreStrengths provides sensible defaults when no data is available.
@@ -86,7 +97,7 @@ func (s *ProfileInferenceService) InferCoreStrengths(
 	}
 
 	// Add skill-based strength if we have backend skills
-	if s.hasExpertiseIn(skills, "backend") {
+	if s.hasExpertiseIn(skills, string(constants.SkillCategoryBackend)) {
 		strengths = append(strengths, "Backend and systems engineering expertise")
 	}
 
@@ -185,11 +196,14 @@ func (s *ProfileInferenceService) InferTechnologies(
 
 	for _, skill := range skills {
 		switch skill.Category {
-		case "backend":
+		case string(constants.SkillCategoryBackend):
 			languages = append(languages, skill.Name)
-		case "frontend":
+		case string(constants.SkillCategoryFrontend):
 			frontend = append(frontend, skill.Name)
-		case "database", "devops", "cloud", "tooling":
+		case string(constants.SkillCategoryDatabase),
+			string(constants.SkillCategoryDevOps),
+			string(constants.SkillCategoryCloud),
+			string(constants.SkillCategoryTooling):
 			systems = append(systems, skill.Name)
 		}
 	}
@@ -266,9 +280,8 @@ func (s *ProfileInferenceService) hasCollaborationIndicators(
 				return true
 			}
 		}
-		// Also check categories
 		for _, cat := range event.Categories {
-			if cat == "leadership" || cat == "product" {
+			if cat == "leadership" || cat == "product" || cat == "collaboration" {
 				return true
 			}
 		}
@@ -290,7 +303,7 @@ func (s *ProfileInferenceService) hasCollaborationIndicators(
 func (s *ProfileInferenceService) hasLanguageDiversity(skills []*career.Skill) bool {
 	backendCount := 0
 	for _, skill := range skills {
-		if skill.Category == "backend" {
+		if skill.Category == string(constants.SkillCategoryBackend) {
 			backendCount++
 		}
 	}
