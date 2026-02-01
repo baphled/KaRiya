@@ -1002,7 +1002,6 @@ func (i *Intent) extractFactsForBurst(burst *career.Burst) tea.Cmd {
 	service := i.context.Service
 
 	return func() tea.Msg {
-		// Check if cancelled before starting.
 		if ctx.Err() != nil {
 			return FactExtractionCompleteMsg{Burst: burst, Error: ctx.Err()}
 		}
@@ -1016,7 +1015,6 @@ func (i *Intent) extractFactsForBurst(burst *career.Burst) tea.Cmd {
 			return FactExtractionCompleteMsg{Burst: burst, Error: err}
 		}
 
-		// Check if cancelled after extraction.
 		if ctx.Err() != nil {
 			return FactExtractionCompleteMsg{Burst: burst, Error: ctx.Err()}
 		}
@@ -1026,7 +1024,6 @@ func (i *Intent) extractFactsForBurst(burst *career.Burst) tea.Cmd {
 			fact := &facts[idx]
 			fact.SourceBurstID = burst.ID
 
-			// Check if cancelled during save loop.
 			if ctx.Err() != nil {
 				return FactExtractionCompleteMsg{Burst: burst, Error: ctx.Err()}
 			}
@@ -1062,7 +1059,6 @@ func (i *Intent) inferSkillsFromBurst(burst *career.Burst) tea.Cmd {
 	service := i.context.SkillInferenceService
 
 	return func() tea.Msg {
-		// Check if cancelled before starting.
 		if ctx.Err() != nil {
 			return SkillSuggestionsErrorMsg{Err: ctx.Err()}
 		}
@@ -1077,7 +1073,6 @@ func (i *Intent) inferSkillsFromBurst(burst *career.Burst) tea.Cmd {
 			return SkillSuggestionsErrorMsg{Err: fmt.Errorf("no events found for burst")}
 		}
 
-		// Check if cancelled after loading events.
 		if ctx.Err() != nil {
 			return SkillSuggestionsErrorMsg{Err: ctx.Err()}
 		}
