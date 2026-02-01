@@ -1,6 +1,6 @@
 package violations
 
-import "career"
+import "fake/career"
 
 func helperWithInlineEvent() {
 	_ = career.Event{ID: "1", Text: "test"} // want `inline career\.Event\{\} in test file; use fixtures package instead`

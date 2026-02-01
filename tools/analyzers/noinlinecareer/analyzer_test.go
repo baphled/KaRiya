@@ -29,5 +29,5 @@ func TestFixturePackagesExcluded(t *testing.T) {
 
 func TestUnexportedTypesSkipped(t *testing.T) {
 	testdata := analysistest.TestData()
-	analysistest.Run(t, testdata, noinlinecareer.Analyzer, "career")
+	analysistest.Run(t, testdata, noinlinecareer.Analyzer, "fake/career")
 }
