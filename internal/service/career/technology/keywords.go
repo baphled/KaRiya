@@ -26,7 +26,7 @@ type Entry struct {
 // constants.AllSkillCategories().
 var Keywords = []Entry{
 
-	// --- backend (35) ---
+	// --- backend ---
 	{Keyword: "go", Skill: "Go", Category: "backend"},
 	{Keyword: "golang", Skill: "Go", Category: "backend"},
 	{Keyword: "ruby", Skill: "Ruby", Category: "backend"},
@@ -82,8 +82,26 @@ var Keywords = []Entry{
 	{Keyword: "delphi", Skill: "Delphi", Category: "backend"},
 	{Keyword: "asp.net", Skill: "ASP.NET", Category: "backend"},
 	{Keyword: "nestjs", Skill: "NestJS", Category: "backend"},
+	{Keyword: "api development", Skill: "API Development", Category: "backend"},
+	{Keyword: "api versioning", Skill: "API Versioning", Category: "backend"},
+	{Keyword: "backend development", Skill: "Backend Development", Category: "backend"},
+	{Keyword: "backend engineering", Skill: "Backend Engineering", Category: "backend"},
+	{Keyword: "cms", Skill: "CMS", Category: "backend"},
+	{Keyword: "crud", Skill: "CRUD", Category: "backend"},
+	{Keyword: "error handling", Skill: "Error Handling", Category: "backend"},
+	{Keyword: "full-stack development", Skill: "Full-stack Development", Category: "backend"},
+	{Keyword: "full stack development", Skill: "Full-stack Development", Category: "backend"},
+	{Keyword: "integration", Skill: "Integration", Category: "backend"},
+	{Keyword: "pagination", Skill: "Pagination", Category: "backend"},
+	{Keyword: "serialization", Skill: "Serialization", Category: "backend"},
+	{Keyword: "validation", Skill: "Validation", Category: "backend"},
+	{Keyword: "web development", Skill: "Web Development", Category: "backend"},
+	{Keyword: "web", Skill: "Web", Category: "backend"},
+	{Keyword: "websocket", Skill: "WebSocket", Category: "backend"},
+	{Keyword: "generics", Skill: "Generics", Category: "backend"},
+	{Keyword: "go generics", Skill: "Go Generics", Category: "backend"},
 
-	// --- frontend (25) ---
+	// --- frontend ---
 	{Keyword: "javascript", Skill: "JavaScript", Category: "frontend"},
 	{Keyword: "typescript", Skill: "TypeScript", Category: "frontend"},
 	{Keyword: "react", Skill: "React", Category: "frontend"},
@@ -120,8 +138,29 @@ var Keywords = []Entry{
 	{Keyword: "nuxt.js", Skill: "Nuxt.js", Category: "frontend"},
 	{Keyword: "less", Skill: "Less", Category: "frontend"},
 	{Keyword: "styled-components", Skill: "Styled Components", Category: "frontend"},
+	{Keyword: "bubble tea", Skill: "Bubble Tea", Category: "frontend"},
+	{Keyword: "bubbletea", Skill: "Bubble Tea", Category: "frontend"},
+	{Keyword: "lipgloss", Skill: "Lipgloss", Category: "frontend"},
+	{Keyword: "vite", Skill: "Vite", Category: "frontend"},
+	{Keyword: "component library", Skill: "Component Library", Category: "frontend"},
+	{Keyword: "components", Skill: "Components", Category: "frontend"},
+	{Keyword: "form components", Skill: "Form Components", Category: "frontend"},
+	{Keyword: "filter design", Skill: "Filter Design", Category: "frontend"},
+	{Keyword: "frontend development", Skill: "Frontend Development", Category: "frontend"},
+	{Keyword: "frontend", Skill: "Frontend", Category: "frontend"},
+	{Keyword: "interface design", Skill: "Interface Design", Category: "frontend"},
+	{Keyword: "keyboard navigation", Skill: "Keyboard Navigation", Category: "frontend"},
+	{Keyword: "layout design", Skill: "Layout Design", Category: "frontend"},
+	{Keyword: "modal design", Skill: "Modal Design", Category: "frontend"},
+	{Keyword: "navigation", Skill: "Navigation", Category: "frontend"},
+	{Keyword: "theme system", Skill: "Theme System", Category: "frontend"},
+	{Keyword: "ux", Skill: "UX", Category: "frontend"},
+	{Keyword: "ux delivery", Skill: "UX Delivery", Category: "frontend"},
+	{Keyword: "user experience", Skill: "User Experience", Category: "frontend"},
+	{Keyword: "wizard design", Skill: "Wizard Design", Category: "frontend"},
+	{Keyword: "reusable components", Skill: "Reusable Components", Category: "frontend"},
 
-	// --- devops (25) ---
+	// --- devops ---
 	{Keyword: "docker", Skill: "Docker", Category: "devops"},
 	{Keyword: "kubernetes", Skill: "Kubernetes", Category: "devops"},
 	{Keyword: "k8s", Skill: "Kubernetes", Category: "devops"},
@@ -155,8 +194,22 @@ var Keywords = []Entry{
 	{Keyword: "istio", Skill: "Istio", Category: "devops"},
 	{Keyword: "travis ci", Skill: "Travis CI", Category: "devops"},
 	{Keyword: "capistrano", Skill: "Capistrano", Category: "devops"},
+	{Keyword: "devops", Skill: "DevOps", Category: "devops"},
+	{Keyword: "embedded systems", Skill: "Embedded Systems", Category: "devops"},
+	{Keyword: "firmware development", Skill: "Firmware Development", Category: "devops"},
+	{Keyword: "incident response", Skill: "Incident Response", Category: "devops"},
+	{Keyword: "iot", Skill: "IoT", Category: "devops"},
+	{Keyword: "migration", Skill: "Migration", Category: "devops"},
+	{Keyword: "migrations", Skill: "Migrations", Category: "devops"},
+	{Keyword: "operational support", Skill: "Operational Support", Category: "devops"},
+	{Keyword: "operational systems", Skill: "Operational Systems", Category: "devops"},
+	{Keyword: "production support", Skill: "Production Support", Category: "devops"},
+	{Keyword: "reliability engineering", Skill: "Reliability Engineering", Category: "devops"},
+	{Keyword: "reliability", Skill: "Reliability", Category: "devops"},
+	{Keyword: "system stability", Skill: "System Stability", Category: "devops"},
+	{Keyword: "system integration", Skill: "System Integration", Category: "devops"},
 
-	// --- database (18) ---
+	// --- database ---
 	{Keyword: "postgresql", Skill: "PostgreSQL", Category: "database"},
 	{Keyword: "postgres", Skill: "PostgreSQL", Category: "database"},
 	{Keyword: "mysql", Skill: "MySQL", Category: "database"},
@@ -179,8 +232,9 @@ var Keywords = []Entry{
 	{Keyword: "neo4j", Skill: "Neo4j", Category: "database"},
 	{Keyword: "memcached", Skill: "Memcached", Category: "database"},
 	{Keyword: "influxdb", Skill: "InfluxDB", Category: "database"},
+	{Keyword: "timescaledb", Skill: "TimescaleDB", Category: "database"},
 
-	// --- cloud (8) ---
+	// --- cloud ---
 	{Keyword: "aws", Skill: "AWS", Category: "cloud"},
 	{Keyword: "gcp", Skill: "GCP", Category: "cloud"},
 	{Keyword: "google cloud", Skill: "Google Cloud", Category: "cloud"},
@@ -190,7 +244,7 @@ var Keywords = []Entry{
 	{Keyword: "serverless", Skill: "Serverless", Category: "cloud"},
 	{Keyword: "cloudflare", Skill: "Cloudflare", Category: "cloud"},
 
-	// --- mobile (6) ---
+	// --- mobile ---
 	{Keyword: "react native", Skill: "React Native", Category: "mobile"},
 	{Keyword: "flutter", Skill: "Flutter", Category: "mobile"},
 	{Keyword: "ios", Skill: "iOS", Category: "mobile"},
@@ -198,7 +252,7 @@ var Keywords = []Entry{
 	{Keyword: "xamarin", Skill: "Xamarin", Category: "mobile"},
 	{Keyword: "ionic", Skill: "Ionic", Category: "mobile"},
 
-	// --- tooling (32) ---
+	// --- tooling ---
 	{Keyword: "git", Skill: "Git", Category: "tooling"},
 	{Keyword: "github", Skill: "GitHub", Category: "tooling"},
 	{Keyword: "gitlab", Skill: "GitLab", Category: "tooling"},
@@ -241,8 +295,12 @@ var Keywords = []Entry{
 	{Keyword: "yaml", Skill: "YAML", Category: "tooling"},
 	{Keyword: "toml", Skill: "TOML", Category: "tooling"},
 	{Keyword: "protobuf", Skill: "Protocol Buffers", Category: "tooling"},
+	{Keyword: "diagramming", Skill: "Diagramming", Category: "tooling"},
+	{Keyword: "technical writing", Skill: "Technical Writing", Category: "tooling"},
+	{Keyword: "automation", Skill: "Automation", Category: "tooling"},
+	{Keyword: "code generation", Skill: "Code Generation", Category: "tooling"},
 
-	// --- testing (18) ---
+	// --- testing ---
 	{Keyword: "testing", Skill: "Testing", Category: "testing"},
 	{Keyword: "unit testing", Skill: "Unit Testing", Category: "testing"},
 	{Keyword: "integration testing", Skill: "Integration Testing", Category: "testing"},
@@ -261,8 +319,10 @@ var Keywords = []Entry{
 	{Keyword: "load testing", Skill: "Load Testing", Category: "testing"},
 	{Keyword: "test automation", Skill: "Test Automation", Category: "testing"},
 	{Keyword: "cucumber", Skill: "Cucumber", Category: "testing"},
+	{Keyword: "playwright", Skill: "Playwright", Category: "testing"},
+	{Keyword: "benchmarking", Skill: "Benchmarking", Category: "testing"},
 
-	// --- monitoring (14) ---
+	// --- monitoring ---
 	{Keyword: "prometheus", Skill: "Prometheus", Category: "monitoring"},
 	{Keyword: "grafana", Skill: "Grafana", Category: "monitoring"},
 	{Keyword: "datadog", Skill: "Datadog", Category: "monitoring"},
@@ -277,8 +337,10 @@ var Keywords = []Entry{
 	{Keyword: "monitoring", Skill: "Monitoring", Category: "monitoring"},
 	{Keyword: "splunk", Skill: "Splunk", Category: "monitoring"},
 	{Keyword: "pagerduty", Skill: "PagerDuty", Category: "monitoring"},
+	{Keyword: "kibana", Skill: "Kibana", Category: "monitoring"},
+	{Keyword: "logstash", Skill: "Logstash", Category: "monitoring"},
 
-	// --- data (10) ---
+	// --- data ---
 	{Keyword: "etl", Skill: "ETL", Category: "data"},
 	{Keyword: "data processing", Skill: "Data Processing", Category: "data"},
 	{Keyword: "data export", Skill: "Data Export", Category: "data"},
@@ -289,8 +351,10 @@ var Keywords = []Entry{
 	{Keyword: "apache spark", Skill: "Apache Spark", Category: "data"},
 	{Keyword: "kafka", Skill: "Kafka", Category: "data"},
 	{Keyword: "rabbitmq", Skill: "RabbitMQ", Category: "data"},
+	{Keyword: "streaming", Skill: "Streaming", Category: "data"},
+	{Keyword: "rss", Skill: "RSS", Category: "data"},
 
-	// --- ml (10) ---
+	// --- ml ---
 	{Keyword: "machine learning", Skill: "Machine Learning", Category: "ml"},
 	{Keyword: "deep learning", Skill: "Deep Learning", Category: "ml"},
 	{Keyword: "tensorflow", Skill: "TensorFlow", Category: "ml"},
@@ -304,7 +368,7 @@ var Keywords = []Entry{
 	{Keyword: "computer vision", Skill: "Computer Vision", Category: "ml"},
 	{Keyword: "scikit-learn", Skill: "scikit-learn", Category: "ml"},
 
-	// --- architecture (30) ---
+	// --- architecture ---
 	{Keyword: "microservices", Skill: "Microservices", Category: "architecture"},
 	{Keyword: "monolith", Skill: "Monolithic Architecture", Category: "architecture"},
 	{Keyword: "soa", Skill: "SOA", Category: "architecture"},
@@ -340,6 +404,31 @@ var Keywords = []Entry{
 	{Keyword: "circuit breaker", Skill: "Circuit Breaker", Category: "architecture"},
 	{Keyword: "rate limiting", Skill: "Rate Limiting", Category: "architecture"},
 	{Keyword: "idempotency", Skill: "Idempotency", Category: "architecture"},
+	{Keyword: "adr", Skill: "ADR", Category: "architecture"},
+	{Keyword: "architecture", Skill: "Architecture", Category: "architecture"},
+	{Keyword: "asynchronous processing", Skill: "Asynchronous Processing", Category: "architecture"},
+	{Keyword: "backend architecture", Skill: "Backend Architecture", Category: "architecture"},
+	{Keyword: "backend systems", Skill: "Backend Systems", Category: "architecture"},
+	{Keyword: "background processing", Skill: "Background Processing", Category: "architecture"},
+	{Keyword: "builder pattern", Skill: "Builder Pattern", Category: "architecture"},
+	{Keyword: "component architecture", Skill: "Component Architecture", Category: "architecture"},
+	{Keyword: "high-throughput systems", Skill: "High-throughput Systems", Category: "architecture"},
+	{Keyword: "legacy modernization", Skill: "Legacy Modernization", Category: "architecture"},
+	{Keyword: "multi-language systems", Skill: "Multi-language Systems", Category: "architecture"},
+	{Keyword: "payment systems", Skill: "Payment Systems", Category: "architecture"},
+	{Keyword: "payments", Skill: "Payments", Category: "architecture"},
+	{Keyword: "order systems", Skill: "Order Systems", Category: "architecture"},
+	{Keyword: "real-time systems", Skill: "Real-time Systems", Category: "architecture"},
+	{Keyword: "repository pattern", Skill: "Repository Pattern", Category: "architecture"},
+	{Keyword: "resilience", Skill: "Resilience", Category: "architecture"},
+	{Keyword: "resilient systems", Skill: "Resilient Systems", Category: "architecture"},
+	{Keyword: "scalable systems", Skill: "Scalable Systems", Category: "architecture"},
+	{Keyword: "scaling systems", Skill: "Scaling Systems", Category: "architecture"},
+	{Keyword: "service architecture", Skill: "Service Architecture", Category: "architecture"},
+	{Keyword: "service integration", Skill: "Service Integration", Category: "architecture"},
+	{Keyword: "service layer", Skill: "Service Layer", Category: "architecture"},
+	{Keyword: "type safety", Skill: "Type Safety", Category: "architecture"},
+	{Keyword: "domain", Skill: "Domain", Category: "architecture"},
 
 	// --- security (15) ---
 	{Keyword: "security", Skill: "Security", Category: "security"},
@@ -363,7 +452,7 @@ var Keywords = []Entry{
 	{Keyword: "gdpr", Skill: "GDPR", Category: "security"},
 	{Keyword: "soc2", Skill: "SOC 2", Category: "security"},
 
-	// --- practices (30) ---
+	// --- practices ---
 	{Keyword: "agile", Skill: "Agile", Category: "practices"},
 	{Keyword: "scrum", Skill: "Scrum", Category: "practices"},
 	{Keyword: "kanban", Skill: "Kanban", Category: "practices"},
@@ -403,6 +492,62 @@ var Keywords = []Entry{
 	{Keyword: "knowledge sharing", Skill: "Knowledge Sharing", Category: "practices"},
 	{Keyword: "mentoring", Skill: "Mentoring", Category: "practices"},
 	{Keyword: "stakeholder management", Skill: "Stakeholder Management", Category: "practices"},
+	{Keyword: "agile delivery", Skill: "Agile Delivery", Category: "practices"},
+	{Keyword: "analysis", Skill: "Analysis", Category: "practices"},
+	{Keyword: "application maintenance", Skill: "Application Maintenance", Category: "practices"},
+	{Keyword: "client collaboration", Skill: "Client Collaboration", Category: "practices"},
+	{Keyword: "client work", Skill: "Client Work", Category: "practices"},
+	{Keyword: "code standards", Skill: "Code Standards", Category: "practices"},
+	{Keyword: "collaboration", Skill: "Collaboration", Category: "practices"},
+	{Keyword: "consulting", Skill: "Consulting", Category: "practices"},
+	{Keyword: "consulting delivery", Skill: "Consulting Delivery", Category: "practices"},
+	{Keyword: "cost optimization", Skill: "Cost Optimization", Category: "practices"},
+	{Keyword: "cross-functional collaboration", Skill: "Cross-functional Collaboration", Category: "practices"},
+	{Keyword: "cross-team collaboration", Skill: "Cross-team Collaboration", Category: "practices"},
+	{Keyword: "delivery", Skill: "Delivery", Category: "practices"},
+	{Keyword: "delivery management", Skill: "Delivery Management", Category: "practices"},
+	{Keyword: "developer experience", Skill: "Developer Experience", Category: "practices"},
+	{Keyword: "end-to-end delivery", Skill: "End-to-End Delivery", Category: "practices"},
+	{Keyword: "engineering judgment", Skill: "Engineering Judgment", Category: "practices"},
+	{Keyword: "engineering practices", Skill: "Engineering Practices", Category: "practices"},
+	{Keyword: "feature delivery", Skill: "Feature Delivery", Category: "practices"},
+	{Keyword: "full lifecycle delivery", Skill: "Full Lifecycle Delivery", Category: "practices"},
+	{Keyword: "incremental delivery", Skill: "Incremental Delivery", Category: "practices"},
+	{Keyword: "innovation", Skill: "Innovation", Category: "practices"},
+	{Keyword: "knowledge transfer", Skill: "Knowledge Transfer", Category: "practices"},
+	{Keyword: "leadership", Skill: "Leadership", Category: "practices"},
+	{Keyword: "learning", Skill: "Learning", Category: "practices"},
+	{Keyword: "maintenance", Skill: "Maintenance", Category: "practices"},
+	{Keyword: "onboarding", Skill: "Onboarding", Category: "practices"},
+	{Keyword: "operational alignment", Skill: "Operational Alignment", Category: "practices"},
+	{Keyword: "optimization", Skill: "Optimization", Category: "practices"},
+	{Keyword: "performance", Skill: "Performance", Category: "practices"},
+	{Keyword: "performance engineering", Skill: "Performance Engineering", Category: "practices"},
+	{Keyword: "presentation", Skill: "Presentation", Category: "practices"},
+	{Keyword: "process", Skill: "Process", Category: "practices"},
+	{Keyword: "product development", Skill: "Product Development", Category: "practices"},
+	{Keyword: "product engineering", Skill: "Product Engineering", Category: "practices"},
+	{Keyword: "product management", Skill: "Product Management", Category: "practices"},
+	{Keyword: "product support", Skill: "Product Support", Category: "practices"},
+	{Keyword: "project delivery", Skill: "Project Delivery", Category: "practices"},
+	{Keyword: "project handover", Skill: "Project Handover", Category: "practices"},
+	{Keyword: "project management", Skill: "Project Management", Category: "practices"},
+	{Keyword: "quality", Skill: "Quality", Category: "practices"},
+	{Keyword: "remote collaboration", Skill: "Remote Collaboration", Category: "practices"},
+	{Keyword: "review", Skill: "Review", Category: "practices"},
+	{Keyword: "software craft", Skill: "Software Craft", Category: "practices"},
+	{Keyword: "software engineering", Skill: "Software Engineering", Category: "practices"},
+	{Keyword: "stakeholder collaboration", Skill: "Stakeholder Collaboration", Category: "practices"},
+	{Keyword: "strategy", Skill: "Strategy", Category: "practices"},
+	{Keyword: "technical advisory", Skill: "Technical Advisory", Category: "practices"},
+	{Keyword: "technical debt management", Skill: "Technical Debt Management", Category: "practices"},
+	{Keyword: "technical leadership", Skill: "Technical Leadership", Category: "practices"},
+	{Keyword: "time management", Skill: "Time Management", Category: "practices"},
+	{Keyword: "training", Skill: "Training", Category: "practices"},
+	{Keyword: "workflow design", Skill: "Workflow Design", Category: "practices"},
+	{Keyword: "design", Skill: "Design", Category: "practices"},
+	{Keyword: "product", Skill: "Product", Category: "practices"},
+	{Keyword: "foundation", Skill: "Foundation", Category: "practices"},
 }
 
 // keywordIndex is a pre-built map from lowercase keyword to category for

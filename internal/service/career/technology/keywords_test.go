@@ -16,8 +16,8 @@ import (
 
 var _ = Describe("Keywords", func() {
 	Describe("Dictionary Structure", func() {
-		It("should have at least 350 keyword entries", func() {
-			Expect(len(technology.Keywords)).To(BeNumerically(">=", 350))
+		It("should have at least 480 keyword entries", func() {
+			Expect(len(technology.Keywords)).To(BeNumerically(">=", 480))
 		})
 
 		It("should only use canonical categories from constants.AllSkillCategories", func() {
@@ -68,7 +68,7 @@ var _ = Describe("Keywords", func() {
 		})
 
 		It("should have architecture keywords", func() {
-			Expect(categoryCounts["architecture"]).To(BeNumerically(">=", 25))
+			Expect(categoryCounts["architecture"]).To(BeNumerically(">=", 55))
 		})
 
 		It("should have security keywords", func() {
@@ -76,35 +76,35 @@ var _ = Describe("Keywords", func() {
 		})
 
 		It("should have practices keywords", func() {
-			Expect(categoryCounts["practices"]).To(BeNumerically(">=", 25))
+			Expect(categoryCounts["practices"]).To(BeNumerically(">=", 80))
 		})
 
 		It("should have backend keywords", func() {
-			Expect(categoryCounts["backend"]).To(BeNumerically(">=", 30))
+			Expect(categoryCounts["backend"]).To(BeNumerically(">=", 68))
 		})
 
 		It("should have frontend keywords", func() {
-			Expect(categoryCounts["frontend"]).To(BeNumerically(">=", 20))
+			Expect(categoryCounts["frontend"]).To(BeNumerically(">=", 50))
 		})
 
 		It("should have devops keywords", func() {
-			Expect(categoryCounts["devops"]).To(BeNumerically(">=", 20))
+			Expect(categoryCounts["devops"]).To(BeNumerically(">=", 38))
 		})
 
 		It("should have database keywords", func() {
-			Expect(categoryCounts["database"]).To(BeNumerically(">=", 14))
+			Expect(categoryCounts["database"]).To(BeNumerically(">=", 15))
 		})
 
 		It("should have testing keywords", func() {
-			Expect(categoryCounts["testing"]).To(BeNumerically(">=", 15))
+			Expect(categoryCounts["testing"]).To(BeNumerically(">=", 16))
 		})
 
 		It("should have monitoring keywords", func() {
-			Expect(categoryCounts["monitoring"]).To(BeNumerically(">=", 10))
+			Expect(categoryCounts["monitoring"]).To(BeNumerically(">=", 16))
 		})
 
 		It("should have data keywords", func() {
-			Expect(categoryCounts["data"]).To(BeNumerically(">=", 7))
+			Expect(categoryCounts["data"]).To(BeNumerically(">=", 12))
 		})
 
 		It("should have ml keywords", func() {
@@ -112,7 +112,7 @@ var _ = Describe("Keywords", func() {
 		})
 
 		It("should have tooling keywords", func() {
-			Expect(categoryCounts["tooling"]).To(BeNumerically(">=", 30))
+			Expect(categoryCounts["tooling"]).To(BeNumerically(">=", 34))
 		})
 	})
 
@@ -254,6 +254,79 @@ var _ = Describe("Keywords", func() {
 
 		It("should return cloud for AWS", func() {
 			Expect(technology.GetCategoryForSkillName("AWS")).To(Equal("cloud"))
+		})
+
+		Context("compound phrase lookups", func() {
+			It("should categorize architecture compound phrases", func() {
+				Expect(technology.GetCategoryForSkillName("Backend Architecture")).To(Equal("architecture"))
+				Expect(technology.GetCategoryForSkillName("Service Architecture")).To(Equal("architecture"))
+				Expect(technology.GetCategoryForSkillName("Component Architecture")).To(Equal("architecture"))
+				Expect(technology.GetCategoryForSkillName("Real-time Systems")).To(Equal("architecture"))
+				Expect(technology.GetCategoryForSkillName("Scalable Systems")).To(Equal("architecture"))
+				Expect(technology.GetCategoryForSkillName("Repository Pattern")).To(Equal("architecture"))
+				Expect(technology.GetCategoryForSkillName("Builder Pattern")).To(Equal("architecture"))
+				Expect(technology.GetCategoryForSkillName("ADR")).To(Equal("architecture"))
+			})
+
+			It("should categorize practices compound phrases", func() {
+				Expect(technology.GetCategoryForSkillName("Agile Delivery")).To(Equal("practices"))
+				Expect(technology.GetCategoryForSkillName("Project Management")).To(Equal("practices"))
+				Expect(technology.GetCategoryForSkillName("Software Engineering")).To(Equal("practices"))
+				Expect(technology.GetCategoryForSkillName("Engineering Practices")).To(Equal("practices"))
+				Expect(technology.GetCategoryForSkillName("Code Standards")).To(Equal("practices"))
+				Expect(technology.GetCategoryForSkillName("Technical Leadership")).To(Equal("practices"))
+				Expect(technology.GetCategoryForSkillName("Knowledge Transfer")).To(Equal("practices"))
+				Expect(technology.GetCategoryForSkillName("Collaboration")).To(Equal("practices"))
+			})
+
+			It("should categorize backend compound phrases", func() {
+				Expect(technology.GetCategoryForSkillName("Backend Development")).To(Equal("backend"))
+				Expect(technology.GetCategoryForSkillName("Full-stack Development")).To(Equal("backend"))
+				Expect(technology.GetCategoryForSkillName("Web Development")).To(Equal("backend"))
+				Expect(technology.GetCategoryForSkillName("API Development")).To(Equal("backend"))
+				Expect(technology.GetCategoryForSkillName("CRUD")).To(Equal("backend"))
+				Expect(technology.GetCategoryForSkillName("Error Handling")).To(Equal("backend"))
+			})
+
+			It("should categorize frontend compound phrases", func() {
+				Expect(technology.GetCategoryForSkillName("Component Library")).To(Equal("frontend"))
+				Expect(technology.GetCategoryForSkillName("Keyboard Navigation")).To(Equal("frontend"))
+				Expect(technology.GetCategoryForSkillName("Layout Design")).To(Equal("frontend"))
+				Expect(technology.GetCategoryForSkillName("UX")).To(Equal("frontend"))
+				Expect(technology.GetCategoryForSkillName("User Experience")).To(Equal("frontend"))
+				Expect(technology.GetCategoryForSkillName("Bubble Tea")).To(Equal("frontend"))
+				Expect(technology.GetCategoryForSkillName("Vite")).To(Equal("frontend"))
+			})
+
+			It("should categorize devops compound phrases", func() {
+				Expect(technology.GetCategoryForSkillName("Incident Response")).To(Equal("devops"))
+				Expect(technology.GetCategoryForSkillName("Production Support")).To(Equal("devops"))
+				Expect(technology.GetCategoryForSkillName("Embedded Systems")).To(Equal("devops"))
+				Expect(technology.GetCategoryForSkillName("Reliability Engineering")).To(Equal("devops"))
+				Expect(technology.GetCategoryForSkillName("Firmware Development")).To(Equal("devops"))
+			})
+
+			It("should categorize monitoring compound phrases", func() {
+				Expect(technology.GetCategoryForSkillName("Kibana")).To(Equal("monitoring"))
+				Expect(technology.GetCategoryForSkillName("Logstash")).To(Equal("monitoring"))
+			})
+
+			It("should categorize database compound phrases", func() {
+				Expect(technology.GetCategoryForSkillName("TimescaleDB")).To(Equal("database"))
+			})
+
+			It("should categorize tooling compound phrases", func() {
+				Expect(technology.GetCategoryForSkillName("Technical Writing")).To(Equal("tooling"))
+				Expect(technology.GetCategoryForSkillName("Diagramming")).To(Equal("tooling"))
+			})
+
+			It("should categorize data compound phrases", func() {
+				Expect(technology.GetCategoryForSkillName("Streaming")).To(Equal("data"))
+			})
+
+			It("should categorize testing compound phrases", func() {
+				Expect(technology.GetCategoryForSkillName("Playwright")).To(Equal("testing"))
+			})
 		})
 
 		Context("substring matching fallback", func() {
