@@ -783,6 +783,21 @@ var _ = Describe("E2E Skill Inference Workflow", func() {
 
 		skillInferenceService := skillinference.NewSkillInferenceService(skillRepo, eventRepo)
 
+		// Create events that the burst references
+		event1 := &career.Event{
+			ID:      "event-1",
+			Text:    "Built REST API with Go and gRPC",
+			Date:    time.Date(2024, 6, 15, 0, 0, 0, 0, time.UTC),
+			Company: "Acme Corp",
+		}
+		event2 := &career.Event{
+			ID:      "event-2",
+			Text:    "Designed PostgreSQL schema for user service",
+			Date:    time.Date(2024, 7, 20, 0, 0, 0, 0, time.UTC),
+			Company: "Acme Corp",
+		}
+		mockService.SetEvents([]*career.Event{event1, event2})
+
 		// Create a burst with events
 		burst = &career.Burst{
 			ID:          "burst-1",
