@@ -17,7 +17,7 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 	)
 
 	BeforeEach(func() {
-		ctx = context.Background()
+		ctx = context.Background() //nolint:fatcontext // test setup
 		service = skillinference.NewSkillInferenceService(nil, nil) // No persistence needed for detection tests
 	})
 

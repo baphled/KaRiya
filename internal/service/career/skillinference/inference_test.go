@@ -61,7 +61,7 @@ var _ = Describe("SkillInferenceService Interface", func() {
 	)
 
 	BeforeEach(func() {
-		ctx = context.Background()
+		ctx = context.Background() //nolint:fatcontext // test setup
 		events = []*career.Event{
 			fixtures.EventWith("event-1", "Built API using Go and PostgreSQL", "TechCorp", "Backend Migration"),
 			fixtures.EventWith("event-2", "Deployed services to Kubernetes cluster", "TechCorp", "DevOps Platform"),

@@ -22,7 +22,7 @@ var _ = Describe("SkillRepository", func() {
 		skillRepo = NewSkillRepository()
 		skillRepo.SetEventRepository(eventRepo)
 		eventRepo.SetSkillRepository(skillRepo)
-		ctx = context.Background()
+		ctx = context.Background() //nolint:fatcontext // test setup
 	})
 
 	Describe("GetSkillsForEvent", func() {

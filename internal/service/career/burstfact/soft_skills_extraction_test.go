@@ -19,7 +19,7 @@ var _ = Describe("Soft Skills Fact Extraction Workflow", func() {
 	)
 
 	BeforeEach(func() {
-		ctx = context.Background()
+		ctx = context.Background() //nolint:fatcontext // test setup
 		classifier = burstfact.NewClassifier()
 		extractor = burstfact.NewExtractor(classifier)
 	})
