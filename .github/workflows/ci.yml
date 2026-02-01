@@ -72,6 +72,66 @@ jobs:
       - name: Run staticcheck
         run: staticcheck ./...
 
+  # Golangci-lint (comprehensive static analysis including doc checks)
+  golangci-lint:
+    name: Golangci-lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.64.8
+          install-mode: goinstall
+          args: --timeout=5m
+          only-new-issues: true
+
+  # Docblocks enforcement (structured doc comments on exports)
+  docblocks:
+    name: Docblocks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Run docblocks analyzer
+        run: |
+          go build -o ./bin/docblocks ./cmd/docblocks
+          go vet -vettool=./bin/docblocks ./internal/cli/behaviors/... ./internal/cli/intents/... ./tools/analyzers/docblocks/...
+
+  # Intent architecture enforcement
+  architecture:
+    name: Intent Architecture
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Run architecture checks
+        run: bash scripts/check-intent-architecture.sh
+
   # Run tests
   test:
     name: Test
@@ -112,7 +172,7 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    needs: [lint, test]
+    needs: [lint, test, golangci-lint, docblocks, architecture]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
