@@ -428,3 +428,23 @@ var _ = Describe("Confidence Scoring", func() {
 		})
 	})
 })
+
+// Helper functions
+func findByName(suggestions []skillinference.SkillSuggestion, name string) *skillinference.SkillSuggestion {
+	for i := range suggestions {
+		if suggestions[i].Name == name {
+			return &suggestions[i]
+		}
+	}
+	return nil
+}
+
+func filterByName(suggestions []skillinference.SkillSuggestion, name string) []skillinference.SkillSuggestion {
+	var filtered []skillinference.SkillSuggestion
+	for _, s := range suggestions {
+		if s.Name == name {
+			filtered = append(filtered, s)
+		}
+	}
+	return filtered
+}
