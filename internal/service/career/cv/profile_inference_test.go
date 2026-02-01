@@ -109,6 +109,50 @@ var _ = Describe("ProfileInferenceService", func() {
 			})
 		})
 
+		Context("when skills indicate architecture expertise", func() {
+			BeforeEach(func() {
+				skills = []*career.Skill{
+					fixtures.SkillWith("skill-1", "Microservices", "architecture", "expert"),
+					fixtures.SkillWith("skill-2", "DDD", "architecture", "advanced"),
+				}
+			})
+
+			It("should infer architecture-related core strength", func() {
+				strengths := service.InferCoreStrengths(events, facts, skills)
+				Expect(strengths).NotTo(BeEmpty())
+				hasArchStrength := false
+				for _, s := range strengths {
+					if ContainsAny(s, []string{"architecture", "system design"}) {
+						hasArchStrength = true
+						break
+					}
+				}
+				Expect(hasArchStrength).To(BeTrue(), "Should have architecture-related strength")
+			})
+		})
+
+		Context("when skills indicate security expertise", func() {
+			BeforeEach(func() {
+				skills = []*career.Skill{
+					fixtures.SkillWith("skill-1", "OAuth", "security", "expert"),
+					fixtures.SkillWith("skill-2", "TLS", "security", "advanced"),
+				}
+			})
+
+			It("should infer security-related core strength", func() {
+				strengths := service.InferCoreStrengths(events, facts, skills)
+				Expect(strengths).NotTo(BeEmpty())
+				hasSecurityStrength := false
+				for _, s := range strengths {
+					if ContainsAny(s, []string{"security", "compliance"}) {
+						hasSecurityStrength = true
+						break
+					}
+				}
+				Expect(hasSecurityStrength).To(BeTrue(), "Should have security-related strength")
+			})
+		})
+
 		Context("when no career data is provided", func() {
 			It("should return generic core strengths", func() {
 				strengths := service.InferCoreStrengths(nil, nil, nil)
@@ -261,6 +305,36 @@ var _ = Describe("ProfileInferenceService", func() {
 			It("should extract systems/database from skills", func() {
 				result := service.InferTechnologies(events, skills)
 				Expect(result.Systems).To(ContainElement("PostgreSQL"))
+			})
+		})
+
+		Context("when skills include architecture category", func() {
+			BeforeEach(func() {
+				skills = []*career.Skill{
+					fixtures.SkillWith("skill-1", "Microservices", "architecture", "expert"),
+					fixtures.SkillWith("skill-2", "CQRS", "architecture", "advanced"),
+				}
+			})
+
+			It("should route architecture skills to systems", func() {
+				result := service.InferTechnologies(events, skills)
+				Expect(result.Systems).To(ContainElement("Microservices"))
+				Expect(result.Systems).To(ContainElement("CQRS"))
+			})
+		})
+
+		Context("when skills include security category", func() {
+			BeforeEach(func() {
+				skills = []*career.Skill{
+					fixtures.SkillWith("skill-1", "OAuth", "security", "advanced"),
+					fixtures.SkillWith("skill-2", "TLS", "security", "intermediate"),
+				}
+			})
+
+			It("should route security skills to systems", func() {
+				result := service.InferTechnologies(events, skills)
+				Expect(result.Systems).To(ContainElement("OAuth"))
+				Expect(result.Systems).To(ContainElement("TLS"))
 			})
 		})
 
