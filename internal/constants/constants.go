@@ -404,7 +404,6 @@ func SkillCategoryStrings() []string {
 	return result
 }
 
->>>>>>> 49bc64e4 (feat(domain): add architecture, security, practices skill categories)
 // SectionType identifies the kind of content block within a generated CV. The
 // CV renderer uses it to apply the correct layout, ordering, and formatting
 // rules for each block.
