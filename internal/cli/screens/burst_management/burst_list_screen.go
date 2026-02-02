@@ -86,14 +86,14 @@ type BurstListScreen struct {
 
 // NewBurstListScreen creates a new burst list screen.
 //
-// The screen:
-// - Displays bursts in a scrollable list
-// - Supports keyboard navigation (↑/↓, j/k)
-// - Shows burst name, description, confirmed status, event count, created date
-// - Provides actions (add, edit, delete, suggest, view)
+// Expected:
+//   - burst must be valid.
 //
-// Parameters:
-//   - bursts: List of career bursts to display (can be empty)
+// Returns:
+//   - A fully initialized BurstListScreen ready for use.
+//
+// Side effects:
+//   - None.
 func NewBurstListScreen(bursts []*career.Burst) *BurstListScreen {
 	columns := []behaviors.ColumnDef{
 		{Title: "Name", Width: 30},
@@ -120,6 +120,17 @@ func NewBurstListScreen(bursts []*career.Burst) *BurstListScreen {
 }
 
 // Update handles messages and navigation.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - tea.Cmd: command to execute.
+//   - screens.ScreenResult: result indicating navigation or action.
+//
+// Side effects:
+//   - May update table selection.
+//   - May return CancelResult or NavigateResult.
 func (s *BurstListScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -239,12 +250,23 @@ func (s *BurstListScreen) handleActionKey(msg tea.KeyMsg) (tea.Cmd, screens.Scre
 }
 
 // RenderContent returns just the content (table) without StandardView wrapper.
-// This allows the intent to wrap it with proper breadcrumbs and themed footer.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *BurstListScreen) RenderContent() string {
 	return s.tableBehavior.Render()
 }
 
 // View renders the burst list screen using StandardView with table.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *BurstListScreen) View() string {
 	content := s.RenderContent()
 
@@ -274,6 +296,12 @@ func (s *BurstListScreen) View() string {
 }
 
 // SetTheme applies theme to the table (override Screen).
+//
+// Expected:
+//   - interface{} must be valid.
+//
+// Side effects:
+//   - None.
 func (s *BurstListScreen) SetTheme(theme interface{}) {
 	s.Screen.SetTheme(theme)
 	if t, ok := theme.(themes.Theme); ok && t != nil {
@@ -282,11 +310,23 @@ func (s *BurstListScreen) SetTheme(theme interface{}) {
 }
 
 // GetBursts returns the list of bursts.
+//
+// Returns:
+//   - A []*career.Burst value.
+//
+// Side effects:
+//   - None.
 func (s *BurstListScreen) GetBursts() []*career.Burst {
 	return s.bursts
 }
 
 // GetSelectedIndex returns the currently selected index.
+//
+// Returns:
+//   - A int value.
+//
+// Side effects:
+//   - None.
 func (s *BurstListScreen) GetSelectedIndex() int {
 	return s.tableBehavior.GetSelectedIndex()
 }

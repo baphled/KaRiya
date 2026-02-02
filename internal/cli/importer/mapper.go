@@ -16,6 +16,12 @@ type CategoryMapper struct {
 }
 
 // NewCategoryMapper creates a new category mapper.
+//
+// Returns:
+//   - A fully initialized CategoryMapper ready for use.
+//
+// Side effects:
+//   - None.
 func NewCategoryMapper() *CategoryMapper {
 	return &CategoryMapper{
 		technicalKeywords: []string{
@@ -51,7 +57,15 @@ func NewCategoryMapper() *CategoryMapper {
 }
 
 // MapCategories converts CSV categories to KaRiya competency categories.
-// It analyzes all provided category keywords and returns the most appropriate category.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A []string value.
+//
+// Side effects:
+//   - None.
 func (m *CategoryMapper) MapCategories(csvCategories []string) []string {
 	if len(csvCategories) == 0 {
 		return []string{}
@@ -143,6 +157,12 @@ type TagMapper struct {
 }
 
 // NewTagMapper creates a new tag mapper.
+//
+// Returns:
+//   - A fully initialized TagMapper ready for use.
+//
+// Side effects:
+//   - None.
 func NewTagMapper() *TagMapper {
 	return &TagMapper{
 		allowedTags: []string{
@@ -244,7 +264,15 @@ func NewTagMapper() *TagMapper {
 }
 
 // MapTags converts CSV tags to KaRiya's supported tags.
-// It filters and maps domain-specific tags to allowed tags.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A []string value.
+//
+// Side effects:
+//   - None.
 func (m *TagMapper) MapTags(csvTags []string) []string {
 	if len(csvTags) == 0 {
 		return []string{}
@@ -296,6 +324,12 @@ func (m *TagMapper) isAllowedTag(tag string) bool {
 }
 
 // GetAllowedTags returns the list of allowed tags.
+//
+// Returns:
+//   - A []string value.
+//
+// Side effects:
+//   - None.
 func (m *TagMapper) GetAllowedTags() []string {
 	return m.allowedTags
 }

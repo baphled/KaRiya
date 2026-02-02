@@ -34,6 +34,16 @@ const (
 )
 
 // NewThemedSpinnerWithType creates a theme-aware spinner with a specific animation type.
+//
+// Expected:
+//   - th must be a valid theme instance (can be nil).
+//   - spinnertype must be valid.
+//
+// Returns:
+//   - A spinner.Model value.
+//
+// Side effects:
+//   - None.
 func NewThemedSpinnerWithType(theme Theme, spinnerType SpinnerType) spinner.Model {
 	s := spinner.New()
 
@@ -82,6 +92,16 @@ type LoadingView struct {
 }
 
 // NewLoadingView creates a new themed loading view.
+//
+// Expected:
+//   - th must be a valid theme instance (can be nil).
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized LoadingView ready for use.
+//
+// Side effects:
+//   - None.
 func NewLoadingView(theme Theme, message string) *LoadingView {
 	return &LoadingView{
 		theme:   theme,
@@ -91,21 +111,45 @@ func NewLoadingView(theme Theme, message string) *LoadingView {
 }
 
 // SetMessage updates the loading message.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Side effects:
+//   - None.
 func (lv *LoadingView) SetMessage(message string) {
 	lv.message = message
 }
 
 // GetSpinner returns the underlying spinner model for updates.
+//
+// Returns:
+//   - A spinner.Model value.
+//
+// Side effects:
+//   - None.
 func (lv *LoadingView) GetSpinner() spinner.Model {
 	return lv.spinner
 }
 
 // SetSpinner updates the spinner model (typically after Update).
+//
+// Expected:
+//   - model must be valid.
+//
+// Side effects:
+//   - None.
 func (lv *LoadingView) SetSpinner(s spinner.Model) {
 	lv.spinner = s
 }
 
 // View renders the loading view with spinner and message.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (lv *LoadingView) View() string {
 	var messageStyle lipgloss.Style
 
@@ -122,6 +166,16 @@ func (lv *LoadingView) View() string {
 }
 
 // RenderLoadingBox renders a loading indicator in a styled box.
+//
+// Expected:
+//   - th must be a valid theme instance (can be nil).
+//   - Must be a valid string.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func RenderLoadingBox(theme Theme, title, message, spinnerView string) string {
 	if theme == nil {
 		return title + "\n" + spinnerView + " " + message
@@ -150,6 +204,18 @@ func RenderLoadingBox(theme Theme, title, message, spinnerView string) string {
 }
 
 // RenderProgressBox renders a progress indicator with percentage.
+//
+// Expected:
+//   - th must be a valid theme instance (can be nil).
+//   - Must be a valid string.
+//   - float64 must be valid.
+//   - Must be a valid string.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func RenderProgressBox(theme Theme, title string, progress float64, progressView string) string {
 	if theme == nil {
 		return title + "\n" + progressView

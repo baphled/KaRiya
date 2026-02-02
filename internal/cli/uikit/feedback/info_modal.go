@@ -56,11 +56,14 @@ type InfoModal struct {
 
 // NewInfoModal creates a new info modal with informational styling (teal/blue border).
 //
-// Parameters:
-//   - title: Modal title (displayed prominently at top)
-//   - message: Message body (can include newlines for formatting)
+// Expected:
+//   - Must be a valid string.
 //
-// Returns a new InfoModal ready to use.
+// Returns:
+//   - A fully initialized InfoModal ready for use.
+//
+// Side effects:
+//   - None.
 func NewInfoModal(title, message string) *InfoModal {
 	return &InfoModal{
 		title:   title,
@@ -74,13 +77,15 @@ func NewInfoModal(title, message string) *InfoModal {
 }
 
 // NewWarningInfoModal creates a new info modal with warning styling (amber/yellow border).
-// Use this when the message is a warning or caution to the user.
 //
-// Parameters:
-//   - title: Modal title (displayed prominently at top)
-//   - message: Warning message (can include newlines for formatting)
+// Expected:
+//   - Must be a valid string.
 //
-// Returns a new InfoModal with warning variant.
+// Returns:
+//   - A fully initialized InfoModal ready for use.
+//
+// Side effects:
+//   - None.
 func NewWarningInfoModal(title, message string) *InfoModal {
 	return &InfoModal{
 		title:   title,
@@ -94,13 +99,15 @@ func NewWarningInfoModal(title, message string) *InfoModal {
 }
 
 // NewSuccessInfoModal creates a new info modal with success styling (green border).
-// Use this when displaying a success or completion message.
 //
-// Parameters:
-//   - title: Modal title (displayed prominently at top)
-//   - message: Success message (can include newlines for formatting)
+// Expected:
+//   - Must be a valid string.
 //
-// Returns a new InfoModal with success variant.
+// Returns:
+//   - A fully initialized InfoModal ready for use.
+//
+// Side effects:
+//   - None.
 func NewSuccessInfoModal(title, message string) *InfoModal {
 	return &InfoModal{
 		title:   title,
@@ -114,18 +121,26 @@ func NewSuccessInfoModal(title, message string) *InfoModal {
 }
 
 // Init initializes the modal (required by BubbleTea lifecycle).
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (m *InfoModal) Init() tea.Cmd {
 	return nil
 }
 
 // Update handles keyboard input for the info modal.
 //
-// Returns true if the modal was dismissed, false otherwise.
+// Expected:
+//   - msg must be valid.
 //
-// The modal dismisses on:
-//   - Enter: acknowledges the message
-//   - Space: acknowledges the message
-//   - Esc: closes the modal
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *InfoModal) Update(msg tea.Msg) bool {
 	if !m.visible {
 		return false
@@ -151,12 +166,11 @@ func (m *InfoModal) Update(msg tea.Msg) bool {
 
 // View renders the info modal as a centered box.
 //
-// The modal displays:
-//   - Title (styled based on variant)
-//   - Message body
-//   - Dismissal instructions
+// Returns:
+//   - A string value.
 //
-// Returns empty string if modal is not visible.
+// Side effects:
+//   - None.
 func (m *InfoModal) View() string {
 	if !m.visible {
 		return ""
@@ -238,44 +252,88 @@ func (m *InfoModal) getBorderColor() lipgloss.Color {
 }
 
 // IsVisible returns whether the modal is currently visible.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *InfoModal) IsVisible() bool {
 	return m.visible
 }
 
 // Show makes the modal visible.
+//
+// Side effects:
+//   - None.
 func (m *InfoModal) Show() {
 	m.visible = true
 }
 
 // Hide hides the modal.
+//
+// Side effects:
+//   - None.
 func (m *InfoModal) Hide() {
 	m.visible = false
 }
 
 // WithTheme sets the theme for the modal (useful for testing or custom themes).
-// Returns the modal for method chaining.
+//
+// Expected:
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A fully initialized InfoModal ready for use.
+//
+// Side effects:
+//   - None.
 func (m *InfoModal) WithTheme(theme themes.Theme) *InfoModal {
 	m.theme = theme
 	return m
 }
 
 // SetDimensions sets the terminal dimensions for responsive sizing.
+//
+// Expected:
+//   - int must be valid.
+//
+// Side effects:
+//   - None.
 func (m *InfoModal) SetDimensions(width, height int) {
 	m.width = width
 	m.height = height
 }
 
 // GetTitle returns the modal title.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *InfoModal) GetTitle() string {
 	return m.title
 }
 
 // GetMessage returns the modal message.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *InfoModal) GetMessage() string {
 	return m.message
 }
 
 // GetVariant returns the modal variant.
+//
+// Returns:
+//   - A InfoModalVariant value.
+//
+// Side effects:
+//   - None.
 func (m *InfoModal) GetVariant() InfoModalVariant {
 	return m.variant
 }

@@ -25,6 +25,15 @@ type ReviewScreen struct {
 }
 
 // NewCVReviewScreen creates a new CV review screen.
+//
+// Expected:
+//   - cvview must be valid.
+//
+// Returns:
+//   - A fully initialized ReviewScreen ready for use.
+//
+// Side effects:
+//   - None.
 func NewCVReviewScreen(cv *career.CVView) *ReviewScreen {
 	return &ReviewScreen{
 		Screen: base.NewBaseScreen(),
@@ -33,11 +42,27 @@ func NewCVReviewScreen(cv *career.CVView) *ReviewScreen {
 }
 
 // Init initializes the screen.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (s *ReviewScreen) Init() tea.Cmd {
 	return nil
 }
 
 // Update handles messages.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - tea.Cmd: command to execute.
+//   - screens.ScreenResult: result indicating user action.
+//
+// Side effects:
+//   - May return CancelResult or NavigateResult.
 func (s *ReviewScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -74,6 +99,12 @@ func (s *ReviewScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 }
 
 // View renders the review screen with CV metadata and section summary.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *ReviewScreen) View() string {
 	var b strings.Builder
 
@@ -159,6 +190,12 @@ func (s *ReviewScreen) View() string {
 }
 
 // GetCV returns the CV data.
+//
+// Returns:
+//   - A fully initialized career.CVView ready for use.
+//
+// Side effects:
+//   - None.
 func (s *ReviewScreen) GetCV() *career.CVView {
 	return s.cv
 }

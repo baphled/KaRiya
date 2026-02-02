@@ -43,7 +43,17 @@ type FilterModal struct {
 }
 
 // NewFilterModal creates a new skill filter modal.
-// Search and Sort are handled by separate modals.
+//
+// Expected:
+//   - skill must be valid.
+//   - filters must be valid.
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized FilterModal ready for use.
+//
+// Side effects:
+//   - None.
 func NewFilterModal(skills []*career.Skill, currentFilter *Filters, width, height int) *FilterModal {
 	formData := initFilterFormData(currentFilter)
 
@@ -178,6 +188,12 @@ func (m *FilterModal) calculateModalWidth() int {
 }
 
 // Init initializes the filter modal and its form.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (m *FilterModal) Init() tea.Cmd {
 	if m.form == nil {
 		return nil
@@ -186,6 +202,17 @@ func (m *FilterModal) Init() tea.Cmd {
 }
 
 // Update handles messages for the filter modal.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - tea.Cmd: command to execute.
+//   - bool: true if form completed successfully.
+//   - *FilterFormData: filter data if completed, nil otherwise.
+//
+// Side effects:
+//   - May hide modal on completion or cancellation.
 func (m *FilterModal) Update(msg tea.Msg) (tea.Cmd, bool, *FilterFormData) {
 	if !m.visible {
 		return nil, false, nil
@@ -218,6 +245,12 @@ func (m *FilterModal) Update(msg tea.Msg) (tea.Cmd, bool, *FilterFormData) {
 }
 
 // View renders the filter modal with proper chrome (border, background).
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *FilterModal) View() string {
 	if !m.visible {
 		return ""
@@ -249,22 +282,39 @@ func (m *FilterModal) View() string {
 }
 
 // IsVisible returns whether the modal is currently visible.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *FilterModal) IsVisible() bool {
 	return m.visible
 }
 
 // Show makes the modal visible.
+//
+// Side effects:
+//   - None.
 func (m *FilterModal) Show() {
 	m.visible = true
 }
 
 // Hide hides the modal.
+//
+// Side effects:
+//   - None.
 func (m *FilterModal) Hide() {
 	m.visible = false
 }
 
 // ToFilters converts form data to Filters.
-// Search and Sort are handled separately by other modals.
+//
+// Returns:
+//   - A fully initialized Filters ready for use.
+//
+// Side effects:
+//   - None.
 func (m *FilterModal) ToFilters() *Filters {
 	filters := &Filters{
 		Categories: m.formData.Categories,
@@ -287,7 +337,15 @@ func (m *FilterModal) ToFilters() *Filters {
 }
 
 // RenderOverlay renders the filter modal as an overlay on top of the base view.
-// This follows the bubbletea-overlay pattern used in BrowseTimeline modals.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *FilterModal) RenderOverlay(baseView string) string {
 	if !m.visible {
 		return baseView

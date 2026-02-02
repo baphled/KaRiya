@@ -75,12 +75,16 @@ type ConfirmScreen struct {
 //   - title: The confirmation dialog title
 //   - message: The confirmation message/question
 //
-// Default behavior:
-//   - Starts with "No" selected (safer default)
-//   - Left/Right arrows and h/l toggle selection
-//   - Enter confirms current selection
-//   - y/n keys submit directly
-//   - Escape cancels
+// Expected:
+//   - breadcrumbs must be a valid slice of strings.
+//   - title must be a valid string.
+//   - message must be a valid string.
+//
+// Returns:
+//   - A fully initialized ConfirmScreen ready for use.
+//
+// Side effects:
+//   - None.
 func NewBaseConfirmScreen(
 	breadcrumbs []string,
 	title, message string,
@@ -98,6 +102,17 @@ func NewBaseConfirmScreen(
 }
 
 // Update handles messages and returns result when user makes a choice.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - tea.Cmd: command to execute.
+//   - screens.ScreenResult: result indicating user choice.
+//
+// Side effects:
+//   - May return CancelResult on escape.
+//   - May return NavigateResult with selection on confirm.
 func (s *ConfirmScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -140,7 +155,12 @@ func (s *ConfirmScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 }
 
 // RenderContent returns the confirmation content without StandardView wrapper.
-// This allows intents to wrap in their own StandardView with custom breadcrumbs/help.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *ConfirmScreen) RenderContent() string {
 	var b strings.Builder
 
@@ -183,52 +203,90 @@ func (s *ConfirmScreen) RenderContent() string {
 }
 
 // View renders the confirmation screen using StandardView.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *ConfirmScreen) View() string {
 	// Use Screen's CreateView helper for StandardView integration
 	return s.CreateView(s.breadcrumbs, s.RenderContent(), s.footer)
 }
 
 // SetFooter updates the footer help text.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Side effects:
+//   - None.
 func (s *ConfirmScreen) SetFooter(footer string) {
 	s.footer = footer
 }
 
 // GetTitle returns the confirmation title.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *ConfirmScreen) GetTitle() string {
 	return s.title
 }
 
 // GetMessage returns the confirmation message.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *ConfirmScreen) GetMessage() string {
 	return s.message
 }
 
 // GetSelection returns the current selection (true = Yes, false = No).
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (s *ConfirmScreen) GetSelection() bool {
 	return s.selectedYes
 }
 
 // SetSelection sets the current selection (true = Yes, false = No).
+//
+// Expected:
+//   - bool must be valid.
+//
+// Side effects:
+//   - None.
 func (s *ConfirmScreen) SetSelection(yes bool) {
 	s.selectedYes = yes
 }
 
 // SetYesText customizes the Yes button text.
 //
-// Example:
+// Expected:
+//   - Must be a valid string.
 //
-//	screen.SetYesText("Delete")   // "Delete" instead of "Yes"
-//	screen.SetYesText("Proceed")  // "Proceed" instead of "Yes"
+// Side effects:
+//   - None.
 func (s *ConfirmScreen) SetYesText(text string) {
 	s.yesText = text
 }
 
 // SetNoText customizes the No button text.
 //
-// Example:
+// Expected:
+//   - Must be a valid string.
 //
-//	screen.SetNoText("Cancel")  // "Cancel" instead of "No"
-//	screen.SetNoText("Keep")    // "Keep" instead of "No"
+// Side effects:
+//   - None.
 func (s *ConfirmScreen) SetNoText(text string) {
 	s.noText = text
 }

@@ -25,6 +25,15 @@ type modelOptions struct {
 }
 
 // WithIntentRegistrar sets a custom intent registrar (useful for testing).
+//
+// Expected:
+//   - intentregistrar must be valid.
+//
+// Returns:
+//   - A ModelOption value.
+//
+// Side effects:
+//   - None.
 func WithIntentRegistrar(registrar IntentRegistrar) ModelOption {
 	return func(o *modelOptions) {
 		o.registrar = registrar
@@ -33,6 +42,18 @@ func WithIntentRegistrar(registrar IntentRegistrar) ModelOption {
 
 // NewModel creates and initializes a new application model.
 // Bootstrap must be run first to handle onboarding and service initialization.
+//
+// Expected:
+//   - cliservice must be a valid CLIEventService instance.
+//   - careerservice must be a valid career Service instance.
+//   - bootstrapresult must be a valid bootstrap.Result with initialized services.
+//
+// Returns:
+//   - A fully initialized Model ready for use.
+//
+// Side effects:
+//   - Registers all intents with the router.
+//   - Initializes logger.
 func NewModel(
 	cliService *service.CLIEventService,
 	careerService *careerservice.Service,
@@ -113,6 +134,12 @@ func NewModel(
 }
 
 // Init initializes the model.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (m *Model) Init() tea.Cmd {
 	cmds := []tea.Cmd{
 		tea.WindowSize(),
@@ -145,7 +172,16 @@ func (m *Model) Init() tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
-// Update handles messages.
+// Update handles messages and state transitions.
+//
+// Expected:
+//   - msg must be a valid tea.Msg.
+//
+// Returns:
+//   - Updated Model and command to execute.
+//
+// Side effects:
+//   - May update internal state, navigate between intents.
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// Update logo animation if in menu state.
 	if m.state == StateMenu {
@@ -279,6 +315,12 @@ func (m *Model) handleEditEventRequest(editMsg intents.RequestEditEventMsg) (tea
 }
 
 // View renders the current screen.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *Model) View() string {
 	if m.showingHelp {
 		return m.renderHelpScreen()

@@ -113,7 +113,23 @@ jobs:
       - name: Run docblocks analyzer
         run: |
           go build -o ./bin/docblocks ./cmd/docblocks
-          go vet -vettool=./bin/docblocks ./internal/cli/behaviors/... ./internal/cli/intents/... ./tools/analyzers/docblocks/...
+          go vet -vettool=./bin/docblocks \
+            ./internal/cli/app/... \
+            ./internal/cli/behaviors/... \
+            ./internal/cli/bootstrap/... \
+            ./internal/cli/configtypes/... \
+            ./internal/cli/forms/... \
+            ./internal/cli/importer/... \
+            ./internal/cli/intents/... \
+            ./internal/cli/navigation/... \
+            ./internal/cli/screens/... \
+            ./internal/cli/service/... \
+            ./internal/cli/statematrix/... \
+            ./internal/cli/terminal/... \
+            ./internal/cli/themes/... \
+            ./internal/cli/types/... \
+            ./internal/cli/uikit/... \
+            ./tools/analyzers/docblocks/...
 
   # Intent architecture enforcement
   architecture:

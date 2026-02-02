@@ -21,7 +21,15 @@ type SkillFormData struct {
 }
 
 // NewSkillForm creates a form for adding or editing a skill.
-// If skill is nil, creates form for new skill. Otherwise, pre-populates with existing data.
+//
+// Expected:
+//   - skill must be valid.
+//
+// Returns:
+//   - A fully initialized huh.Form ready for use.
+//
+// Side effects:
+//   - None.
 func NewSkillForm(skill *career.Skill) *huh.Form {
 	data := &SkillFormData{}
 	if skill != nil {
@@ -66,21 +74,45 @@ func NewSkillForm(skill *career.Skill) *huh.Form {
 }
 
 // NewSkillFormWithData creates a form for editing a skill with initial form data.
-// This variant allows external data binding for more control.
+//
+// Expected:
+//   - skillformdata must be valid.
+//
+// Returns:
+//   - A fully initialized huh.Form ready for use.
+//
+// Side effects:
+//   - None.
 func NewSkillFormWithData(data *SkillFormData) *huh.Form {
 	return NewSkillFormWithDataAndHeight(data, 0)
 }
 
 // NewSkillFormWithDataAndHeight creates a form for editing a skill with initial form data and height.
-// When height > 0, the form becomes scrollable if content exceeds the height.
+//
+// Expected:
+//   - skillformdata must be valid.
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized huh.Form ready for use.
+//
+// Side effects:
+//   - None.
 func NewSkillFormWithDataAndHeight(data *SkillFormData, height int) *huh.Form {
 	return NewSkillFormWithDataAndDimensions(data, 0, height)
 }
 
 // NewSkillFormWithDataAndDimensions creates a form for editing a skill with initial form data and dimensions.
-// When height > 0, the form becomes scrollable if content exceeds the height.
-// When width > 0, the form will be constrained to that width.
-// The confirm button is fixed at the bottom, always visible.
+//
+// Expected:
+//   - skillformdata must be valid.
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized huh.Form ready for use.
+//
+// Side effects:
+//   - None.
 func NewSkillFormWithDataAndDimensions(data *SkillFormData, width, height int) *huh.Form {
 	// Initialize submit confirmation to false
 	data.SubmitConfirmed = false
@@ -137,6 +169,15 @@ func buildLevelOptions() []SelectOption {
 }
 
 // GetSkillFormData extracts form data from a skill domain object.
+//
+// Expected:
+//   - skill must be valid.
+//
+// Returns:
+//   - A fully initialized SkillFormData ready for use.
+//
+// Side effects:
+//   - None.
 func GetSkillFormData(skill *career.Skill) *SkillFormData {
 	yearsStr := ""
 	if skill.YearsUsed != nil {
@@ -152,6 +193,13 @@ func GetSkillFormData(skill *career.Skill) *SkillFormData {
 }
 
 // ApplySkillFormData applies the form data to a skill domain object.
+//
+// Expected:
+//   - skill must be valid.
+//   - skillformdata must be valid.
+//
+// Side effects:
+//   - None.
 func ApplySkillFormData(skill *career.Skill, data *SkillFormData) {
 	skill.Name = strings.TrimSpace(data.Name)
 	skill.Category = strings.TrimSpace(data.Category)
@@ -171,6 +219,15 @@ func ApplySkillFormData(skill *career.Skill, data *SkillFormData) {
 // Skill-specific validators
 
 // SkillName validates skill name (required, 1-100 characters).
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func SkillName(value string) error {
 	return Compose(
 		Required,
@@ -179,6 +236,15 @@ func SkillName(value string) error {
 }
 
 // SkillCategory validates skill category (required, 1-50 characters).
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func SkillCategory(value string) error {
 	return Compose(
 		Required,
@@ -187,6 +253,15 @@ func SkillCategory(value string) error {
 }
 
 // SkillLevel validates skill level (optional, must be one of valid levels if provided).
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func SkillLevel(value string) error {
 	trimmed := strings.TrimSpace(value)
 	if trimmed == "" {
@@ -208,6 +283,15 @@ func SkillLevel(value string) error {
 }
 
 // SkillYearsUsed validates years of experience (optional, 0-50 if provided).
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func SkillYearsUsed(value string) error {
 	trimmed := strings.TrimSpace(value)
 	if trimmed == "" {

@@ -39,6 +39,16 @@ type CSVParser struct {
 }
 
 // NewCSVParser creates a new CSV parser.
+//
+// Expected:
+//   - event must be valid.
+//   - skillrepository must be valid.
+//
+// Returns:
+//   - A fully initialized CSVParser ready for use.
+//
+// Side effects:
+//   - None.
 func NewCSVParser(existingEvents []*career.Event, skillRepo repo.SkillRepository, ctx context.Context) *CSVParser {
 	return &CSVParser{
 		existingEvents:  &existingEvents,
@@ -59,6 +69,16 @@ func NewCSVParser(existingEvents []*career.Event, skillRepo repo.SkillRepository
 }
 
 // NewCSVParserWithMapping creates a CSV parser with auto-mapping enabled.
+//
+// Expected:
+//   - event must be valid.
+//   - skillrepository must be valid.
+//
+// Returns:
+//   - A fully initialized CSVParser ready for use.
+//
+// Side effects:
+//   - None.
 func NewCSVParserWithMapping(existingEvents []*career.Event, skillRepo repo.SkillRepository, ctx context.Context) *CSVParser {
 	parser := NewCSVParser(existingEvents, skillRepo, ctx)
 	parser.mapData = true
@@ -66,11 +86,27 @@ func NewCSVParserWithMapping(existingEvents []*career.Event, skillRepo repo.Skil
 }
 
 // SetMapping enables or disables automatic mapping of categories and tags.
+//
+// Expected:
+//   - bool must be valid.
+//
+// Side effects:
+//   - None.
 func (p *CSVParser) SetMapping(enabled bool) {
 	p.mapData = enabled
 }
 
 // Parse reads and parses a CSV file (auto-detects delimiter).
+//
+// Expected:
+//   - reader must be a valid io.Reader.
+//
+// Returns:
+//   - A []*ParsedRow value containing parsed data.
+//   - An error value if parsing failed.
+//
+// Side effects:
+//   - None.
 func (p *CSVParser) Parse(reader io.Reader) ([]*ParsedRow, error) {
 	// Read entire content into buffer to detect delimiter
 	data, err := io.ReadAll(reader)

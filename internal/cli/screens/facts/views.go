@@ -8,6 +8,15 @@ import (
 )
 
 // RenderFactDetail renders the detail view for a single fact.
+//
+// Expected:
+//   - fact must be valid.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func RenderFactDetail(fact *career.Fact) string {
 	if fact == nil {
 		return "No fact selected"
@@ -26,6 +35,15 @@ func RenderFactDetail(fact *career.Fact) string {
 }
 
 // RenderDeleteConfirm renders the delete confirmation view.
+//
+// Expected:
+//   - fact must be valid.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func RenderDeleteConfirm(fact *career.Fact) string {
 	if fact == nil {
 		return "No fact to delete"
@@ -41,6 +59,16 @@ func RenderDeleteConfirm(fact *career.Fact) string {
 }
 
 // RenderResults renders the fact statistics view.
+//
+// Expected:
+//   - int must be valid.
+//   - int must be valid.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func RenderResults(totalFacts int, currentCount int) string {
 	var content string
 	content += "Fact Statistics\n\n"
@@ -54,6 +82,16 @@ func RenderResults(totalFacts int, currentCount int) string {
 }
 
 // RenderEditorFallback renders the editor content when no modal is available.
+//
+// Expected:
+//   - fact must be valid.
+//   - bool must be valid.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func RenderEditorFallback(fact *career.Fact, hasFormErrors bool) string {
 	var content string
 	content += "Edit Fact\n\n"

@@ -22,6 +22,18 @@ type MetadataFormData struct {
 //
 // This form has no height constraint and renders all fields at once.
 // For modal overlays where space is limited, use NewMetadataEditorFormWithDimensions.
+//
+// Expected:
+//   - event must be a valid career.Event pointer.
+//   - availabletags must be a valid slice of strings.
+//   - availablecategories must be a valid slice of strings.
+//   - availableskills must be a valid slice of *career.Skill pointers.
+//
+// Returns:
+//   - A fully initialized huh.Form ready for use.
+//
+// Side effects:
+//   - None.
 func NewMetadataEditorForm(
 	event *career.Event, availableTags, availableCategories []string, availableSkills []*career.Skill,
 ) *huh.Form {
@@ -33,6 +45,19 @@ func NewMetadataEditorForm(
 
 // NewMetadataEditorFormWithHeight creates a height-constrained metadata form.
 // When height > 0, the form fields scroll and the submit button stays fixed.
+//
+// Expected:
+//   - event must be a valid career.Event pointer.
+//   - availabletags must be a valid slice of strings.
+//   - availablecategories must be a valid slice of strings.
+//   - availableskills must be a valid slice of *career.Skill pointers.
+//   - height must be a positive integer.
+//
+// Returns:
+//   - A fully initialized huh.Form ready for use.
+//
+// Side effects:
+//   - None.
 func NewMetadataEditorFormWithHeight(
 	event *career.Event, availableTags, availableCategories []string, availableSkills []*career.Skill,
 	height int,
@@ -48,6 +73,18 @@ func NewMetadataEditorFormWithHeight(
 //
 // This form has no height constraint and renders all fields at once.
 // For modal overlays, use NewMetadataEditorFormWithDataAndDimensions.
+//
+// Expected:
+//   - metadataformdata must be a valid MetadataFormData pointer.
+//   - availabletags must be a valid slice of strings.
+//   - availablecategories must be a valid slice of strings.
+//   - availableskills must be a valid slice of *career.Skill pointers.
+//
+// Returns:
+//   - A fully initialized huh.Form ready for use.
+//
+// Side effects:
+//   - None.
 func NewMetadataEditorFormWithData(
 	data *MetadataFormData, availableTags, availableCategories []string, availableSkills []*career.Skill,
 ) *huh.Form {
@@ -58,6 +95,19 @@ func NewMetadataEditorFormWithData(
 
 // NewMetadataEditorFormWithDataAndHeight creates a height-constrained metadata form with initial data.
 // When height > 0, the form fields scroll and the submit button stays fixed.
+//
+// Expected:
+//   - metadataformdata must be a valid MetadataFormData pointer.
+//   - availabletags must be a valid slice of strings.
+//   - availablecategories must be a valid slice of strings.
+//   - availableskills must be a valid slice of *career.Skill pointers.
+//   - height must be a positive integer.
+//
+// Returns:
+//   - A fully initialized huh.Form ready for use.
+//
+// Side effects:
+//   - None.
 func NewMetadataEditorFormWithDataAndHeight(
 	data *MetadataFormData, availableTags, availableCategories []string, availableSkills []*career.Skill,
 	height int,
@@ -79,8 +129,16 @@ type MetadataFormConfig struct {
 }
 
 // NewMetadataEditorFormWithDataAndDimensions creates a dimension-constrained metadata form.
-// When Height > 0, the form fields scroll with the submit button always visible.
-// When Width > 0, the form content is constrained to that width.
+//
+// Expected:
+//   - metadataformdata must be valid.
+//   - config must be a valid configuration object.
+//
+// Returns:
+//   - A fully initialized huh.Form ready for use.
+//
+// Side effects:
+//   - None.
 func NewMetadataEditorFormWithDataAndDimensions(data *MetadataFormData, cfg MetadataFormConfig) *huh.Form {
 	return buildMetadataForm(data, cfg)
 }
@@ -187,6 +245,16 @@ func metadataFields(
 }
 
 // ApplyMetadataFormData applies the form data to an event domain object.
+//
+// Expected:
+//   - event must be valid.
+//   - metadataformdata must be valid.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func ApplyMetadataFormData(event *career.Event, data *MetadataFormData) error {
 	// Parse date string
 	parsedDate, err := ParseDateString(data.Date)
@@ -205,6 +273,15 @@ func ApplyMetadataFormData(event *career.Event, data *MetadataFormData) error {
 }
 
 // GetMetadataFormData extracts form data from an event domain object.
+//
+// Expected:
+//   - event must be valid.
+//
+// Returns:
+//   - A fully initialized MetadataFormData ready for use.
+//
+// Side effects:
+//   - None.
 func GetMetadataFormData(event *career.Event) *MetadataFormData {
 	return &MetadataFormData{
 		Date:       event.Date.Format("2006-01-02"),

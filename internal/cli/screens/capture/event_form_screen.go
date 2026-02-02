@@ -52,7 +52,16 @@ type EventFormScreen struct {
 //   - breadcrumbs: Breadcrumb trail for header (e.g., ["Main Menu", "Capture Event", "Form"])
 //   - strategy: Capture strategy (StrategyQuick or StrategyManual)
 //
-// Returns a EventFormScreen with an initialized CaptureForm.
+// Expected:
+//   - cliservice must be a valid *service.CLIEventService.
+//   - breadcrumbs must be a valid slice of strings.
+//   - strategy must be a valid CaptureStrategy.
+//
+// Returns:
+//   - A fully initialized EventFormScreen ready for use.
+//
+// Side effects:
+//   - Initializes CaptureForm.
 func NewEventFormScreen(
 	cliService *service.CLIEventService,
 	breadcrumbs []string,
@@ -79,7 +88,17 @@ func NewEventFormScreen(
 //   - strategy: Capture strategy (typically StrategyManual for editing)
 //   - event: Existing event to edit (nil creates a new event)
 //
-// Returns a EventFormScreen with form pre-populated with event data.
+// Expected:
+//   - cliservice must be a valid *service.CLIEventService.
+//   - breadcrumbs must be a valid slice of strings.
+//   - strategy must be a valid CaptureStrategy.
+//   - event must be a valid *career.Event (can be nil).
+//
+// Returns:
+//   - A fully initialized EventFormScreen ready for use with form pre-populated with event data.
+//
+// Side effects:
+//   - Pre-populates form with event data if event is provided.
 func NewEventFormScreenWithEvent(
 	cliService *service.CLIEventService,
 	breadcrumbs []string,
@@ -97,7 +116,11 @@ func NewEventFormScreenWithEvent(
 
 // Init implements the Screen interface.
 //
-// Initializes the underlying CaptureForm.
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (s *EventFormScreen) Init() tea.Cmd {
 	return s.captureForm.Init()
 }
@@ -109,6 +132,18 @@ func (s *EventFormScreen) Init() tea.Cmd {
 // - WindowSizeMsg → updates form dimensions
 // - SubmitMsg → returns SubmitResult with event data
 // - Other messages → delegates to CaptureForm.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - A tea.Cmd value.
+//   - A screens.ScreenResult value.
+//
+// Side effects:
+//   - May return CancelResult on escape.
+//   - May return SubmitResult on form completion.
+//   - May return ErrorResult on submission error.
 func (s *EventFormScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	// Handle window size via Screen
 	if cmd := s.Screen.HandleWindowSizeMsg(msg); cmd != nil {
@@ -153,7 +188,11 @@ func (s *EventFormScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 
 // View implements the Screen interface.
 //
-// Renders the form using StandardView layout.
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *EventFormScreen) View() string {
 	// Get form content
 	content := s.captureForm.View()

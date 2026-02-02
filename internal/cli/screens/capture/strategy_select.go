@@ -30,10 +30,14 @@ type StrategySelectScreen struct {
 
 // NewStrategySelectScreen creates a new StrategySelectScreen.
 //
-// Parameters:
-//   - breadcrumbs: Breadcrumb trail for header (e.g., ["Main Menu", "Capture Event"])
+// Expected:
+//   - Must be a valid string.
 //
-// Returns a StrategySelectScreen with Quick strategy selected by default (index 0).
+// Returns:
+//   - A fully initialized StrategySelectScreen ready for use.
+//
+// Side effects:
+//   - None.
 func NewStrategySelectScreen(breadcrumbs []string) *StrategySelectScreen {
 	// Define strategy options with labels and descriptions
 	strategies := []types.CaptureStrategy{
@@ -73,10 +77,14 @@ func NewStrategySelectScreen(breadcrumbs []string) *StrategySelectScreen {
 
 // WithInitialSelection sets the initial selection index.
 //
-// This is useful for restoring state when navigating back.
-// If the index is out of bounds, it will be clamped to valid range.
+// Expected:
+//   - int must be valid.
 //
-// Returns the screen for method chaining.
+// Returns:
+//   - A fully initialized StrategySelectScreen ready for use.
+//
+// Side effects:
+//   - None.
 func (s *StrategySelectScreen) WithInitialSelection(index int) *StrategySelectScreen {
 	s.SelectScreen.WithInitialSelection(index)
 	return s

@@ -72,7 +72,15 @@ type StyleSet struct {
 }
 
 // GenerateStyles creates a complete StyleSet from the given color palette.
-// This ensures all UI components have consistent, theme-aware styling.
+//
+// Expected:
+//   - colorpalette must be valid.
+//
+// Returns:
+//   - A fully initialized StyleSet ready for use.
+//
+// Side effects:
+//   - None.
 func GenerateStyles(palette *ColorPalette) *StyleSet {
 	if palette == nil {
 		return &StyleSet{}

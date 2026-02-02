@@ -23,8 +23,15 @@ type ButtonGroup struct {
 }
 
 // NewButtonGroup creates a new button group with the given theme.
-// If theme is nil, the default theme is used.
-// The group defaults to horizontal layout.
+//
+// Expected:
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A fully initialized ButtonGroup ready for use.
+//
+// Side effects:
+//   - None.
 func NewButtonGroup(th theme.Theme) *ButtonGroup {
 	g := &ButtonGroup{
 		buttons:      []*Button{},
@@ -38,7 +45,15 @@ func NewButtonGroup(th theme.Theme) *ButtonGroup {
 }
 
 // Add adds a secondary button with the given label to the group.
-// Returns the group for method chaining.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized ButtonGroup ready for use.
+//
+// Side effects:
+//   - None.
 func (g *ButtonGroup) Add(label string) *ButtonGroup {
 	btn := NewButton(label, g.Theme())
 	g.buttons = append(g.buttons, btn)
@@ -46,7 +61,15 @@ func (g *ButtonGroup) Add(label string) *ButtonGroup {
 }
 
 // AddPrimary adds a primary button with the given label to the group.
-// Returns the group for method chaining.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized ButtonGroup ready for use.
+//
+// Side effects:
+//   - None.
 func (g *ButtonGroup) AddPrimary(label string) *ButtonGroup {
 	btn := PrimaryButton(label, g.Theme())
 	g.buttons = append(g.buttons, btn)
@@ -54,7 +77,15 @@ func (g *ButtonGroup) AddPrimary(label string) *ButtonGroup {
 }
 
 // AddSecondary adds a secondary button with the given label to the group.
-// Returns the group for method chaining.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized ButtonGroup ready for use.
+//
+// Side effects:
+//   - None.
 func (g *ButtonGroup) AddSecondary(label string) *ButtonGroup {
 	btn := SecondaryButton(label, g.Theme())
 	g.buttons = append(g.buttons, btn)
@@ -62,7 +93,15 @@ func (g *ButtonGroup) AddSecondary(label string) *ButtonGroup {
 }
 
 // AddDanger adds a danger button with the given label to the group.
-// Returns the group for method chaining.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized ButtonGroup ready for use.
+//
+// Side effects:
+//   - None.
 func (g *ButtonGroup) AddDanger(label string) *ButtonGroup {
 	btn := DangerButton(label, g.Theme())
 	g.buttons = append(g.buttons, btn)
@@ -70,19 +109,38 @@ func (g *ButtonGroup) AddDanger(label string) *ButtonGroup {
 }
 
 // Horizontal sets whether buttons are laid out horizontally or vertically.
-// Returns the group for method chaining.
+//
+// Expected:
+//   - bool must be valid.
+//
+// Returns:
+//   - A fully initialized ButtonGroup ready for use.
+//
+// Side effects:
+//   - None.
 func (g *ButtonGroup) Horizontal(h bool) *ButtonGroup {
 	g.horizontal = h
 	return g
 }
 
 // FocusIndex returns the index of the currently focused button.
+//
+// Returns:
+//   - A int value.
+//
+// Side effects:
+//   - None.
 func (g *ButtonGroup) FocusIndex() int {
 	return g.focusedIndex
 }
 
 // FocusedLabel returns the label of the currently focused button.
-// Returns empty string if there are no buttons.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (g *ButtonGroup) FocusedLabel() string {
 	if len(g.buttons) == 0 {
 		return ""
@@ -91,6 +149,9 @@ func (g *ButtonGroup) FocusedLabel() string {
 }
 
 // FocusNext moves focus to the next button, wrapping at the end.
+//
+// Side effects:
+//   - None.
 func (g *ButtonGroup) FocusNext() {
 	if len(g.buttons) == 0 {
 		return
@@ -99,6 +160,9 @@ func (g *ButtonGroup) FocusNext() {
 }
 
 // FocusPrev moves focus to the previous button, wrapping at the beginning.
+//
+// Side effects:
+//   - None.
 func (g *ButtonGroup) FocusPrev() {
 	if len(g.buttons) == 0 {
 		return
@@ -110,6 +174,9 @@ func (g *ButtonGroup) FocusPrev() {
 }
 
 // FocusFirst moves focus to the first button.
+//
+// Side effects:
+//   - None.
 func (g *ButtonGroup) FocusFirst() {
 	if len(g.buttons) > 0 {
 		g.focusedIndex = 0
@@ -117,6 +184,9 @@ func (g *ButtonGroup) FocusFirst() {
 }
 
 // FocusLast moves focus to the last button.
+//
+// Side effects:
+//   - None.
 func (g *ButtonGroup) FocusLast() {
 	if len(g.buttons) > 0 {
 		g.focusedIndex = len(g.buttons) - 1
@@ -131,6 +201,15 @@ func (g *ButtonGroup) FocusLast() {
 // - Shift+Tab / Left / 'h': Focus previous button
 // - Home: Focus first button
 // - End: Focus last button.
+//
+// Expected:
+//   - msg must be a valid tea.Msg (typically tea.KeyMsg).
+//
+// Returns:
+//   - Updated ButtonGroup model and command.
+//
+// Side effects:
+//   - Updates focused button state.
 func (g *ButtonGroup) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if keyMsg, ok := msg.(tea.KeyMsg); ok {
 		switch keyMsg.Type {
@@ -162,17 +241,34 @@ func (g *ButtonGroup) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 // View returns the rendered button group as a string.
-// This is an alias for Render() to support Bubble Tea's tea.Model interface.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (g *ButtonGroup) View() string {
 	return g.Render()
 }
 
 // Init implements tea.Model interface. Returns nil as no initialization is needed.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (g *ButtonGroup) Init() tea.Cmd {
 	return nil
 }
 
 // Render returns the styled button group as a string.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (g *ButtonGroup) Render() string {
 	if len(g.buttons) == 0 {
 		return ""

@@ -29,6 +29,12 @@ func newOnboardingModel(cfg *config.ProfileConfig) *onboardingModel {
 }
 
 // Init initializes the onboarding model.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (m *onboardingModel) Init() tea.Cmd {
 	return tea.Batch(
 		tea.WindowSize(),
@@ -37,6 +43,18 @@ func (m *onboardingModel) Init() tea.Cmd {
 }
 
 // Update handles messages for the onboarding model.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - Updated model.
+//   - Command to execute.
+//
+// Side effects:
+//   - May update wizard dimensions.
+//   - May complete onboarding and return result.
+//   - May quit on Ctrl+C.
 func (m *onboardingModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -66,12 +84,24 @@ func (m *onboardingModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 // View renders the onboarding screen.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *onboardingModel) View() string {
 	wizardView := m.wizard.View()
 	return primitives.CenterInTerminal(wizardView, m.width, m.height)
 }
 
 // Result returns the profile config if onboarding completed successfully.
+//
+// Returns:
+//   - A fully initialized config.ProfileConfig ready for use.
+//
+// Side effects:
+//   - None.
 func (m *onboardingModel) Result() *config.ProfileConfig {
 	return m.result
 }

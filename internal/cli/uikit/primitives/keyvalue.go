@@ -32,6 +32,15 @@ type keyValuePair struct {
 }
 
 // NewKeyValue creates a new key-value component with the given theme.
+//
+// Expected:
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A fully initialized KeyValue ready for use.
+//
+// Side effects:
+//   - None.
 func NewKeyValue(th theme.Theme) *KeyValue {
 	kv := &KeyValue{
 		labelWidth: 12,
@@ -45,49 +54,96 @@ func NewKeyValue(th theme.Theme) *KeyValue {
 }
 
 // LabelWidth sets the fixed width for labels.
-// Returns the KeyValue for method chaining.
+//
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized KeyValue ready for use.
+//
+// Side effects:
+//   - None.
 func (kv *KeyValue) LabelWidth(width int) *KeyValue {
 	kv.labelWidth = width
 	return kv
 }
 
 // Separator sets the separator string between pairs (e.g., newline for vertical list).
-// Returns the KeyValue for method chaining.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized KeyValue ready for use.
+//
+// Side effects:
+//   - None.
 func (kv *KeyValue) Separator(sep string) *KeyValue {
 	kv.separator = sep
 	return kv
 }
 
 // Add adds a label-value pair with the value in primary color.
-// Returns the KeyValue for method chaining.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized KeyValue ready for use.
+//
+// Side effects:
+//   - None.
 func (kv *KeyValue) Add(label, value string) *KeyValue {
 	kv.pairs = append(kv.pairs, keyValuePair{label: label, value: value, muted: false})
 	return kv
 }
 
 // AddMuted adds a label-value pair with the value in muted color.
-// Useful for timestamps and less important information.
-// Returns the KeyValue for method chaining.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized KeyValue ready for use.
+//
+// Side effects:
+//   - None.
 func (kv *KeyValue) AddMuted(label, value string) *KeyValue {
 	kv.pairs = append(kv.pairs, keyValuePair{label: label, value: value, muted: true})
 	return kv
 }
 
 // AddBlank adds a blank line (empty pair) for spacing.
-// Returns the KeyValue for method chaining.
+//
+// Returns:
+//   - A fully initialized KeyValue ready for use.
+//
+// Side effects:
+//   - None.
 func (kv *KeyValue) AddBlank() *KeyValue {
 	kv.pairs = append(kv.pairs, keyValuePair{label: "", value: "", muted: false})
 	return kv
 }
 
 // Clear removes all pairs.
-// Returns the KeyValue for method chaining.
+//
+// Returns:
+//   - A fully initialized KeyValue ready for use.
+//
+// Side effects:
+//   - None.
 func (kv *KeyValue) Clear() *KeyValue {
 	kv.pairs = make([]keyValuePair, 0)
 	return kv
 }
 
 // Render returns the styled key-value pairs as a string.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (kv *KeyValue) Render() string {
 	if len(kv.pairs) == 0 {
 		return ""

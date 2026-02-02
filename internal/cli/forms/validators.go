@@ -13,6 +13,16 @@ import (
 // - YYYY-MM-DD format
 // - "today"
 // - Relative dates like "1 week ago", "2 days ago".
+//
+// Expected:
+//   - s must be a valid date string.
+//
+// Returns:
+//   - time.Time: the parsed time.
+//   - error: any parsing error.
+//
+// Side effects:
+//   - None.
 func ParseDateString(s string) (time.Time, error) {
 	s = strings.TrimSpace(s)
 
@@ -61,6 +71,15 @@ var (
 )
 
 // Required validates that a field is not empty.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func Required(value string) error {
 	if strings.TrimSpace(value) == "" {
 		return ErrRequired
@@ -69,6 +88,15 @@ func Required(value string) error {
 }
 
 // MinLength validates that a string has at least n characters.
+//
+// Expected:
+//   - n must be a non-negative integer.
+//
+// Returns:
+//   - func(string) error: a validator function.
+//
+// Side effects:
+//   - None.
 func MinLength(n int) func(string) error {
 	return func(value string) error {
 		if len(strings.TrimSpace(value)) < n {
@@ -79,6 +107,15 @@ func MinLength(n int) func(string) error {
 }
 
 // MaxLength validates that a string has at most n characters.
+//
+// Expected:
+//   - n must be a non-negative integer.
+//
+// Returns:
+//   - func(string) error: a validator function.
+//
+// Side effects:
+//   - None.
 func MaxLength(n int) func(string) error {
 	return func(value string) error {
 		if len(value) > n {
@@ -89,6 +126,16 @@ func MaxLength(n int) func(string) error {
 }
 
 // LengthRange validates that a string length is within a range.
+//
+// Expected:
+//   - minLen must be a non-negative integer.
+//   - maxLen must be greater than or equal to minLen.
+//
+// Returns:
+//   - func(string) error: a validator function.
+//
+// Side effects:
+//   - None.
 func LengthRange(minLen, maxLen int) func(string) error {
 	return func(value string) error {
 		length := len(strings.TrimSpace(value))
@@ -103,6 +150,15 @@ func LengthRange(minLen, maxLen int) func(string) error {
 }
 
 // DateFormat validates that a date string matches YYYY-MM-DD format.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func DateFormat(value string) error {
 	if strings.TrimSpace(value) == "" {
 		return nil
@@ -124,6 +180,15 @@ func DateFormat(value string) error {
 }
 
 // DateFormatRequired validates date format and requires non-empty.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func DateFormatRequired(value string) error {
 	if err := Required(value); err != nil {
 		return err
@@ -132,6 +197,15 @@ func DateFormatRequired(value string) error {
 }
 
 // Email validates basic email format.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func Email(value string) error {
 	if strings.TrimSpace(value) == "" {
 		return nil
@@ -146,6 +220,15 @@ func Email(value string) error {
 }
 
 // URL validates basic URL format.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func URL(value string) error {
 	if strings.TrimSpace(value) == "" {
 		return nil
@@ -160,6 +243,15 @@ func URL(value string) error {
 }
 
 // AlphaNumeric validates that a string contains only letters and numbers.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func AlphaNumeric(value string) error {
 	if strings.TrimSpace(value) == "" {
 		return nil
@@ -174,6 +266,15 @@ func AlphaNumeric(value string) error {
 }
 
 // NoSpecialChars validates that a string doesn't contain special characters.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func NoSpecialChars(value string) error {
 	if strings.TrimSpace(value) == "" {
 		return nil
@@ -190,6 +291,15 @@ func NoSpecialChars(value string) error {
 
 // Compose combines multiple validators into one.
 // Returns the first error encountered, or nil if all pass.
+//
+// Expected:
+//   - validators must be a slice of validator functions.
+//
+// Returns:
+//   - func(string) error: a combined validator function.
+//
+// Side effects:
+//   - None.
 func Compose(validators ...func(string) error) func(string) error {
 	return func(value string) error {
 		for _, validator := range validators {
@@ -204,6 +314,15 @@ func Compose(validators ...func(string) error) func(string) error {
 // Domain-specific validators for KaRiya
 
 // EventText validates career event text (required, reasonable length).
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func EventText(value string) error {
 	return Compose(
 		Required,
@@ -213,6 +332,15 @@ func EventText(value string) error {
 }
 
 // EventTextOptional validates career event text when optional.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func EventTextOptional(value string) error {
 	if strings.TrimSpace(value) == "" {
 		return nil
@@ -224,6 +352,15 @@ func EventTextOptional(value string) error {
 }
 
 // CompanyName validates company name (reasonable length, no special chars).
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func CompanyName(value string) error {
 	if strings.TrimSpace(value) == "" {
 		return nil
@@ -235,6 +372,15 @@ func CompanyName(value string) error {
 }
 
 // TagName validates a single tag name.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func TagName(value string) error {
 	if strings.TrimSpace(value) == "" {
 		return nil
@@ -247,6 +393,15 @@ func TagName(value string) error {
 }
 
 // Title validates a title field (burst, fact, etc.).
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func Title(value string) error {
 	return Compose(
 		Required,
@@ -256,6 +411,15 @@ func Title(value string) error {
 }
 
 // Description validates a description field.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func Description(value string) error {
 	if strings.TrimSpace(value) == "" {
 		return nil
@@ -267,6 +431,15 @@ func Description(value string) error {
 }
 
 // ProfileName validates a CV profile name.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func ProfileName(value string) error {
 	return Compose(
 		Required,
@@ -276,6 +449,15 @@ func ProfileName(value string) error {
 }
 
 // AudienceName validates a CV audience name.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func AudienceName(value string) error {
 	return Compose(
 		Required,
@@ -285,6 +467,15 @@ func AudienceName(value string) error {
 }
 
 // OneOf validates that a value is one of the allowed options.
+//
+// Expected:
+//   - allowed must be a non-empty slice of allowed string values.
+//
+// Returns:
+//   - func(string) error: a validator function.
+//
+// Side effects:
+//   - None.
 func OneOf(allowed []string) func(string) error {
 	return func(value string) error {
 		for _, option := range allowed {
@@ -297,6 +488,16 @@ func OneOf(allowed []string) func(string) error {
 }
 
 // Custom creates a custom validator with a specific error message.
+//
+// Expected:
+//   - validate must be a valid validation function.
+//   - errorMsg must be a non-empty string.
+//
+// Returns:
+//   - func(string) error: a validator function.
+//
+// Side effects:
+//   - None.
 func Custom(validate func(string) bool, errorMsg string) func(string) error {
 	return func(value string) error {
 		if !validate(value) {
@@ -316,11 +517,15 @@ var (
 )
 
 // GitHubUsername validates that a value is a valid GitHub username (not a URL).
-// GitHub username rules:
-// - May only contain alphanumeric characters or hyphens
-// - Cannot have consecutive hyphens
-// - Cannot begin or end with a hyphen
-// - Maximum 39 characters.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func GitHubUsername(value string) error {
 	value = strings.TrimSpace(value)
 
@@ -359,7 +564,15 @@ func GitHubUsername(value string) error {
 }
 
 // GitHubURL formats a GitHub username as a full URL.
-// Returns empty string if username is empty.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func GitHubURL(username string) string {
 	username = strings.TrimSpace(username)
 	if username == "" {

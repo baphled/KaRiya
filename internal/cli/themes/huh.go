@@ -7,7 +7,15 @@ import (
 )
 
 // GenerateHuhTheme creates a huh.Theme that matches the active KaRiya theme.
-// This ensures form styling is consistent with the rest of the TUI.
+//
+// Expected:
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A fully initialized huh.Theme ready for use.
+//
+// Side effects:
+//   - None.
 func GenerateHuhTheme(theme Theme) *huh.Theme {
 	// Return Catppuccin theme if no theme provided
 	if theme == nil {
@@ -201,7 +209,16 @@ func GenerateHuhTheme(theme Theme) *huh.Theme {
 }
 
 // NewThemedForm creates a new huh.Form with the given theme.
-// This is a convenience function for creating forms with consistent styling.
+//
+// Expected:
+//   - th must be a valid theme instance (can be nil).
+//   - group must be valid.
+//
+// Returns:
+//   - A fully initialized huh.Form ready for use.
+//
+// Side effects:
+//   - None.
 func NewThemedForm(theme Theme, groups ...*huh.Group) *huh.Form {
 	return huh.NewForm(groups...).WithTheme(GenerateHuhTheme(theme))
 }

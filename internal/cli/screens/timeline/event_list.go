@@ -77,14 +77,14 @@ type EventListScreen struct {
 
 // NewTimelineEventListScreen creates a new timeline event list screen.
 //
-// The screen:
-// - Displays events in a scrollable list
-// - Supports keyboard navigation (↑/↓, j/k)
-// - Shows event date, text, and company
-// - Provides actions (add, edit, delete, view)
+// Expected:
+//   - event must be valid.
 //
-// Parameters:
-//   - events: List of career events to display (can be empty)
+// Returns:
+//   - A fully initialized EventListScreen ready for use.
+//
+// Side effects:
+//   - None.
 func NewTimelineEventListScreen(events []*career.Event) *EventListScreen {
 	columns := []behaviors.ColumnDef{
 		{Title: "Date", Width: 12},
@@ -110,6 +110,17 @@ func NewTimelineEventListScreen(events []*career.Event) *EventListScreen {
 }
 
 // Update handles messages and navigation.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - tea.Cmd: command to execute.
+//   - screens.ScreenResult: result indicating navigation or action.
+//
+// Side effects:
+//   - May update table selection.
+//   - May return CancelResult or NavigateResult.
 func (s *EventListScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -175,9 +186,12 @@ func (s *EventListScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 }
 
 // SetContentHeight configures the table to use the specified height with viewport scrolling.
-// This enables the table to fill available space and scroll when content exceeds height.
-// Only height is set; the table keeps its natural column-defined width so that
-// ScreenLayout can center it horizontally.
+//
+// Expected:
+//   - int must be valid.
+//
+// Side effects:
+//   - None.
 func (s *EventListScreen) SetContentHeight(height int) {
 	if height < 10 {
 		return
@@ -187,12 +201,23 @@ func (s *EventListScreen) SetContentHeight(height int) {
 }
 
 // RenderContent returns just the content (table) without StandardView wrapper.
-// This allows the intent to wrap it with proper breadcrumbs and themed footer.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *EventListScreen) RenderContent() string {
 	return s.tableBehavior.Render()
 }
 
 // View renders the event list screen using StandardView with table.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *EventListScreen) View() string {
 	content := s.RenderContent()
 
@@ -223,6 +248,12 @@ func (s *EventListScreen) View() string {
 }
 
 // SetTheme applies theme to the table (override Screen).
+//
+// Expected:
+//   - interface{} must be valid.
+//
+// Side effects:
+//   - None.
 func (s *EventListScreen) SetTheme(theme interface{}) {
 	s.Screen.SetTheme(theme)
 	if t, ok := theme.(themes.Theme); ok && t != nil {
@@ -231,11 +262,23 @@ func (s *EventListScreen) SetTheme(theme interface{}) {
 }
 
 // GetEvents returns the list of events.
+//
+// Returns:
+//   - A []*career.Event value.
+//
+// Side effects:
+//   - None.
 func (s *EventListScreen) GetEvents() []*career.Event {
 	return s.events
 }
 
 // GetSelectedIndex returns the currently selected index.
+//
+// Returns:
+//   - A int value.
+//
+// Side effects:
+//   - None.
 func (s *EventListScreen) GetSelectedIndex() int {
 	return s.tableBehavior.GetSelectedIndex()
 }

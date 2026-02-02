@@ -42,11 +42,29 @@ type DefaultIntentRegistrar struct {
 }
 
 // NewDefaultIntentRegistrar creates a new default intent registrar.
+//
+// Expected:
+//   - config must be a valid configuration object.
+//
+// Returns:
+//   - A fully initialized DefaultIntentRegistrar ready for use.
+//
+// Side effects:
+//   - None.
 func NewDefaultIntentRegistrar(cfg *RegistrarConfig) *DefaultIntentRegistrar {
 	return &DefaultIntentRegistrar{config: cfg}
 }
 
 // RegisterAll registers all intents with the router.
+//
+// Expected:
+//   - defaultintentrouter must be valid.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (r *DefaultIntentRegistrar) RegisterAll(ctx context.Context, router *intents.DefaultIntentRouter) error {
 	var firstErr error
 	recordErr := func(err error) {

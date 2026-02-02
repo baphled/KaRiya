@@ -35,6 +35,16 @@ type BurstDetailModal struct {
 }
 
 // NewBurstDetailModal creates a new burst detail modal.
+//
+// Expected:
+//   - burst must be a non-nil *career.Burst pointer.
+//   - theme must be a valid Theme instance (can be nil).
+//
+// Returns:
+//   - A fully initialized BurstDetailModal ready for use.
+//
+// Side effects:
+//   - Initializes footer badges.
 func NewBurstDetailModal(burst *career.Burst, theme themes.Theme) *BurstDetailModal {
 	if theme == nil {
 		theme = themes.NewDefaultTheme()
@@ -81,42 +91,90 @@ func (m *BurstDetailModal) updateFooterBadges() {
 }
 
 // Init initializes the modal.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - Updates footer badges.
 func (m *BurstDetailModal) Init() tea.Cmd {
 	m.updateFooterBadges()
 	return m.modal.Init()
 }
 
 // Update handles keyboard input and window sizing.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - tea.Model: the updated model.
+//   - tea.Cmd: command to execute.
+//
+// Side effects:
+//   - Delegates to underlying modal's Update method.
 func (m *BurstDetailModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m.modal.Update(msg)
 }
 
 // View renders the modal content.
+//
+// Returns:
+//   - string: the rendered modal view.
+//
+// Side effects:
+//   - None.
 func (m *BurstDetailModal) View() string {
 	return m.modal.View()
 }
 
 // IsVisible returns whether the modal is currently visible.
+//
+// Returns:
+//   - bool: true if modal is visible.
+//
+// Side effects:
+//   - None.
 func (m *BurstDetailModal) IsVisible() bool {
 	return m.modal.IsVisible()
 }
 
 // Show makes the modal visible.
+//
+// Side effects:
+//   - Sets modal visibility to true.
 func (m *BurstDetailModal) Show() {
 	m.modal.Show()
 }
 
 // Hide hides the modal.
+//
+// Side effects:
+//   - Sets modal visibility to false.
 func (m *BurstDetailModal) Hide() {
 	m.modal.Hide()
 }
 
 // SetDimensions sets the terminal dimensions.
+//
+// Expected:
+//   - width must be a positive integer.
+//   - height must be a positive integer.
+//
+// Side effects:
+//   - Updates underlying modal dimensions.
 func (m *BurstDetailModal) SetDimensions(width, height int) {
 	m.modal.SetDimensions(width, height)
 }
 
 // SetBurst updates the burst being displayed.
+//
+// Expected:
+//   - burst must be a non-nil *career.Burst pointer.
+//
+// Side effects:
+//   - Updates internal burst reference.
+//   - Regenerates modal content.
 func (m *BurstDetailModal) SetBurst(burst *career.Burst) {
 	m.burst = burst
 	content := renderBurstDetailContent(burst, m.theme)
@@ -124,6 +182,12 @@ func (m *BurstDetailModal) SetBurst(burst *career.Burst) {
 }
 
 // GetBurst returns the burst being displayed.
+//
+// Returns:
+//   - *career.Burst: the current burst.
+//
+// Side effects:
+//   - None.
 func (m *BurstDetailModal) GetBurst() *career.Burst {
 	return m.burst
 }

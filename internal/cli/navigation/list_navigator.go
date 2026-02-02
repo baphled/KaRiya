@@ -24,6 +24,15 @@ type ListNavigationHandler struct {
 }
 
 // NewListNavigationHandler creates a new list navigation handler.
+//
+// Expected:
+//   - listnavigator must be valid.
+//
+// Returns:
+//   - A fully initialized ListNavigationHandler ready for use.
+//
+// Side effects:
+//   - None.
 func NewListNavigationHandler(navigator ListNavigator) *ListNavigationHandler {
 	return &ListNavigationHandler{
 		navigator: navigator,
@@ -31,7 +40,15 @@ func NewListNavigationHandler(navigator ListNavigator) *ListNavigationHandler {
 }
 
 // HandleKey processes navigation keys and updates the selection accordingly.
-// Returns true if the key was handled, false otherwise.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (h *ListNavigationHandler) HandleKey(keyStr string) bool {
 	totalItems := h.navigator.GetTotalItems()
 	if totalItems == 0 {
@@ -94,7 +111,16 @@ func (h *ListNavigationHandler) HandleKey(keyStr string) bool {
 }
 
 // FormatRowText returns text with a selection indicator if this is the selected row.
-// This ensures the ▶ indicator is always in sync with the current selection.
+//
+// Expected:
+//   - int must be valid.
+//   - Must be a valid string.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (h *ListNavigationHandler) FormatRowText(rowIndex int, text string) string {
 	selectedIndex := h.navigator.GetSelectedIndex()
 	if rowIndex == selectedIndex {

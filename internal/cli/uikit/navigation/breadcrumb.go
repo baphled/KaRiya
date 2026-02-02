@@ -58,6 +58,16 @@ const (
 )
 
 // NewBreadcrumbBar creates a new breadcrumb bar.
+//
+// Expected:
+//   - int must be valid.
+//   - bool must be valid.
+//
+// Returns:
+//   - A fully initialized BreadcrumbBar ready for use.
+//
+// Side effects:
+//   - None.
 func NewBreadcrumbBar(width int, boxed bool) *BreadcrumbBar {
 	return &BreadcrumbBar{
 		crumbs:   []Breadcrumb{},
@@ -68,36 +78,90 @@ func NewBreadcrumbBar(width int, boxed bool) *BreadcrumbBar {
 }
 
 // WithTheme sets the theme for the breadcrumb bar.
+//
+// Expected:
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A fully initialized BreadcrumbBar ready for use.
+//
+// Side effects:
+//   - None.
 func (b *BreadcrumbBar) WithTheme(theme themes.Theme) *BreadcrumbBar {
 	b.theme = theme
 	return b
 }
 
 // SetCrumbs sets the breadcrumb trail.
+//
+// Expected:
+//   - []breadcrumb must be valid.
+//
+// Returns:
+//   - A fully initialized BreadcrumbBar ready for use.
+//
+// Side effects:
+//   - None.
 func (b *BreadcrumbBar) SetCrumbs(crumbs []Breadcrumb) *BreadcrumbBar {
 	b.crumbs = crumbs
 	return b
 }
 
 // AddCrumb adds a breadcrumb to the trail.
+//
+// Expected:
+//   - breadcrumb must be valid.
+//
+// Returns:
+//   - A fully initialized BreadcrumbBar ready for use.
+//
+// Side effects:
+//   - None.
 func (b *BreadcrumbBar) AddCrumb(crumb Breadcrumb) *BreadcrumbBar {
 	b.crumbs = append(b.crumbs, crumb)
 	return b
 }
 
 // SetWidth sets the width for the breadcrumb bar.
+//
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized BreadcrumbBar ready for use.
+//
+// Side effects:
+//   - None.
 func (b *BreadcrumbBar) SetWidth(width int) *BreadcrumbBar {
 	b.width = width
 	return b
 }
 
 // SetBoxed sets whether to show a box around the breadcrumbs.
+//
+// Expected:
+//   - bool must be valid.
+//
+// Returns:
+//   - A fully initialized BreadcrumbBar ready for use.
+//
+// Side effects:
+//   - None.
 func (b *BreadcrumbBar) SetBoxed(boxed bool) *BreadcrumbBar {
 	b.boxed = boxed
 	return b
 }
 
 // ShowIcons controls icon visibility.
+//
+// Expected:
+//   - bool must be valid.
+//
+// Returns:
+//   - A fully initialized BreadcrumbBar ready for use.
+//
+// Side effects:
+//   - None.
 func (b *BreadcrumbBar) ShowIcons(show bool) *BreadcrumbBar {
 	b.showIcon = show
 	return b
@@ -112,6 +176,12 @@ func (b *BreadcrumbBar) getTheme() themes.Theme {
 }
 
 // View renders the breadcrumb bar.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (b *BreadcrumbBar) View() string {
 	if len(b.crumbs) == 0 {
 		return ""
@@ -213,6 +283,15 @@ func (b *BreadcrumbBar) renderTruncated(theme themes.Theme) string {
 }
 
 // GetIconForIntent returns the appropriate icon for a given intent name.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func GetIconForIntent(intent string) string {
 	iconMap := map[string]string{
 		"home":             IconHome,
@@ -243,6 +322,15 @@ func GetIconForIntent(intent string) string {
 }
 
 // CreateBreadcrumbTrail is a helper to create a breadcrumb trail.
+//
+// Expected:
+//   - trail must be a valid slice of breadcrumb items.
+//
+// Returns:
+//   - A []Breadcrumb value ready for use.
+//
+// Side effects:
+//   - None.
 func CreateBreadcrumbTrail(trail ...struct {
 	Label  string
 	Intent string

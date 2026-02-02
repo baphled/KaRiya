@@ -42,17 +42,15 @@ type ConfirmScreen struct {
 
 // NewConfirmScreen creates a new confirmation screen.
 //
-// Parameters:
-//   - domain: The configuration domain being modified
-//   - changeCount: Number of settings that will be changed
+// Expected:
+//   - config must be a valid configuration object.
+//   - int must be valid.
 //
-// Default behavior:
-//   - Starts with "Cancel" selected (safer default)
-//   - Left/Right arrows and h/l toggle selection
-//   - Enter confirms current selection
-//   - y/n keys submit directly
-//   - Escape cancels
-//   - 'm' returns to main menu
+// Returns:
+//   - A fully initialized ConfirmScreen ready for use.
+//
+// Side effects:
+//   - None.
 func NewConfirmScreen(domain configtypes.ConfigurationDomain, changeCount int) *ConfirmScreen {
 	theme := themes.NewDefaultTheme()
 
@@ -71,11 +69,28 @@ func NewConfirmScreen(domain configtypes.ConfigurationDomain, changeCount int) *
 }
 
 // Init initializes the screen.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (s *ConfirmScreen) Init() tea.Cmd {
 	return nil
 }
 
 // Update handles messages.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - tea.Cmd: command to execute.
+//   - screens.ScreenResult: result indicating confirmation.
+//
+// Side effects:
+//   - May return CancelResult on escape.
+//   - May return NavigateResult with confirmation status.
 func (s *ConfirmScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	if cmd := s.Screen.HandleWindowSizeMsg(msg); cmd != nil {
 		return cmd, nil
@@ -106,6 +121,12 @@ func (s *ConfirmScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 }
 
 // View renders the screen using UIKit layout and Screen.CreateView().
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *ConfirmScreen) View() string {
 	theme := s.getTheme()
 	domainLabel := formatDomainLabel(s.domain)
@@ -147,6 +168,12 @@ func (s *ConfirmScreen) getTheme() themes.Theme {
 }
 
 // SetTheme updates the theme.
+//
+// Expected:
+//   - interface{} must be valid.
+//
+// Side effects:
+//   - None.
 func (s *ConfirmScreen) SetTheme(theme interface{}) {
 	if t, ok := theme.(themes.Theme); ok {
 		s.theme = t
@@ -157,11 +184,23 @@ func (s *ConfirmScreen) SetTheme(theme interface{}) {
 }
 
 // GetSelection returns the current selection (true = Yes/Save, false = No/Cancel).
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (s *ConfirmScreen) GetSelection() bool {
 	return s.buttonGroup.FocusIndex() == 0
 }
 
 // SetSelection sets the current selection.
+//
+// Expected:
+//   - bool must be valid.
+//
+// Side effects:
+//   - None.
 func (s *ConfirmScreen) SetSelection(yes bool) {
 	if yes {
 		s.buttonGroup.FocusFirst()

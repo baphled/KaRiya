@@ -15,6 +15,12 @@ type FactFormData struct {
 }
 
 // RoleFitOptions returns the available role fit options.
+//
+// Returns:
+//   - A []SelectOption value.
+//
+// Side effects:
+//   - None.
 func RoleFitOptions() []SelectOption {
 	return []SelectOption{
 		{Key: string(career.RoleFitPrincipal), Value: "Principal"},
@@ -25,6 +31,12 @@ func RoleFitOptions() []SelectOption {
 }
 
 // CompetencyCategoryOptions returns all available competency categories.
+//
+// Returns:
+//   - A []huh.Option[string] value.
+//
+// Side effects:
+//   - None.
 func CompetencyCategoryOptions() []huh.Option[string] {
 	categories := []string{"technical", "leadership", "product", "consulting", "research", "mentoring"}
 	options := make([]huh.Option[string], len(categories))
@@ -40,6 +52,12 @@ func CompetencyCategoryOptions() []huh.Option[string] {
 }
 
 // AudienceRelevanceOptions returns all available audience relevance types.
+//
+// Returns:
+//   - A []huh.Option[string] value.
+//
+// Side effects:
+//   - None.
 func AudienceRelevanceOptions() []huh.Option[string] {
 	audiences := []struct {
 		key   string
@@ -57,29 +75,60 @@ func AudienceRelevanceOptions() []huh.Option[string] {
 }
 
 // NewFactEditorForm creates a form for editing a fact.
-// The form has 4 fields: Text, Competency Categories, Role Fit, Audience Relevance,
-// plus a Submit confirmation button.
-// Note: StrengthSignal is auto-generated and not user-editable.
+//
+// Expected:
+//   - fact must be valid.
+//
+// Returns:
+//   - A fully initialized huh.Form ready for use.
+//
+// Side effects:
+//   - None.
 func NewFactEditorForm(fact *career.Fact) *huh.Form {
 	data := GetFactFormData(fact)
 	return NewFactEditorFormWithData(data)
 }
 
 // NewFactEditorFormWithData creates a form for editing a fact with initial form data.
+//
+// Expected:
+//   - factformdata must be valid.
+//
+// Returns:
+//   - A fully initialized huh.Form ready for use.
+//
+// Side effects:
+//   - None.
 func NewFactEditorFormWithData(data *FactFormData) *huh.Form {
 	return NewFactEditorFormWithDataAndHeight(data, 0)
 }
 
 // NewFactEditorFormWithDataAndHeight creates a form for editing a fact with initial form data and height.
-// When height > 0, the form becomes scrollable if content exceeds the height.
+//
+// Expected:
+//   - factformdata must be valid.
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized huh.Form ready for use.
+//
+// Side effects:
+//   - None.
 func NewFactEditorFormWithDataAndHeight(data *FactFormData, height int) *huh.Form {
 	return NewFactEditorFormWithDataAndDimensions(data, 0, height)
 }
 
 // NewFactEditorFormWithDataAndDimensions creates a form for editing a fact with initial form data and dimensions.
-// When height > 0, the form becomes scrollable if content exceeds the height.
-// When width > 0, the form will be constrained to that width.
-// The confirm button is fixed at the bottom, always visible.
+//
+// Expected:
+//   - factformdata must be valid.
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized huh.Form ready for use.
+//
+// Side effects:
+//   - None.
 func NewFactEditorFormWithDataAndDimensions(data *FactFormData, width, height int) *huh.Form {
 	// Initialize submit confirmation to false
 	data.SubmitConfirmed = false
@@ -130,7 +179,16 @@ func NewFactEditorFormWithDataAndDimensions(data *FactFormData, width, height in
 }
 
 // ApplyFactFormData applies the form data to a fact domain object.
-// Note: StrengthSignal is preserved from the original fact as it's auto-generated.
+//
+// Expected:
+//   - fact must be valid.
+//   - factformdata must be valid.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func ApplyFactFormData(fact *career.Fact, data *FactFormData) error {
 	fact.Text = data.Text
 	fact.CompetencyCategories = data.CompetencyCategories
@@ -142,6 +200,15 @@ func ApplyFactFormData(fact *career.Fact, data *FactFormData) error {
 }
 
 // GetFactFormData extracts form data from a fact domain object.
+//
+// Expected:
+//   - fact must be valid.
+//
+// Returns:
+//   - A fully initialized FactFormData ready for use.
+//
+// Side effects:
+//   - None.
 func GetFactFormData(fact *career.Fact) *FactFormData {
 	// Ensure slices are not nil for proper multi-select binding
 	categories := fact.CompetencyCategories

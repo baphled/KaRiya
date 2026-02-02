@@ -24,6 +24,15 @@ type GeneratingScreen struct {
 }
 
 // NewCVGeneratingScreen creates a new CV generating screen.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized GeneratingScreen ready for use.
+//
+// Side effects:
+//   - None.
 func NewCVGeneratingScreen(profile, audience string) *GeneratingScreen {
 	return &GeneratingScreen{
 		Screen:   base.NewBaseScreen(),
@@ -34,11 +43,27 @@ func NewCVGeneratingScreen(profile, audience string) *GeneratingScreen {
 }
 
 // Init initializes the screen.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (s *GeneratingScreen) Init() tea.Cmd {
 	return nil
 }
 
 // Update handles messages.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - tea.Cmd: command to execute.
+//   - screens.ScreenResult: result indicating cancellation.
+//
+// Side effects:
+//   - May return CancelResult on escape.
 func (s *GeneratingScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -56,6 +81,12 @@ func (s *GeneratingScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 }
 
 // View renders the screen.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *GeneratingScreen) View() string {
 	var b strings.Builder
 

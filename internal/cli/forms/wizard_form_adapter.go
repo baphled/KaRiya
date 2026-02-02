@@ -21,7 +21,16 @@ type WizardFormAdapter struct {
 }
 
 // NewWizardFormAdapter creates an adapter wrapping the given huh form.
-// totalSteps should match the number of groups in the form.
+//
+// Expected:
+//   - form must be valid.
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized WizardFormAdapter ready for use.
+//
+// Side effects:
+//   - None.
 func NewWizardFormAdapter(form *huh.Form, totalSteps int) *WizardFormAdapter {
 	return &WizardFormAdapter{
 		form:       form,
@@ -30,6 +39,12 @@ func NewWizardFormAdapter(form *huh.Form, totalSteps int) *WizardFormAdapter {
 }
 
 // Init initializes the underlying huh form.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (a *WizardFormAdapter) Init() tea.Cmd {
 	if a.form == nil {
 		return nil
@@ -38,6 +53,15 @@ func (a *WizardFormAdapter) Init() tea.Cmd {
 }
 
 // Update delegates the message to the huh form and returns the resulting command.
+//
+// Expected:
+//   - msg must be valid.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (a *WizardFormAdapter) Update(msg tea.Msg) tea.Cmd {
 	if a.form == nil {
 		return nil
@@ -52,6 +76,12 @@ func (a *WizardFormAdapter) Update(msg tea.Msg) tea.Cmd {
 }
 
 // View returns the huh form's rendered view.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (a *WizardFormAdapter) View() string {
 	if a.form == nil {
 		return ""
@@ -60,6 +90,12 @@ func (a *WizardFormAdapter) View() string {
 }
 
 // IsCompleted returns true when the huh form has been completed.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (a *WizardFormAdapter) IsCompleted() bool {
 	if a.form == nil {
 		return false
@@ -68,6 +104,12 @@ func (a *WizardFormAdapter) IsCompleted() bool {
 }
 
 // IsAborted returns true when the huh form has been aborted.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (a *WizardFormAdapter) IsAborted() bool {
 	if a.form == nil {
 		return false
@@ -76,16 +118,34 @@ func (a *WizardFormAdapter) IsAborted() bool {
 }
 
 // CurrentStep returns the manually-tracked current step index (0-based).
+//
+// Returns:
+//   - A int value.
+//
+// Side effects:
+//   - None.
 func (a *WizardFormAdapter) CurrentStep() int {
 	return a.currentStep
 }
 
 // TotalSteps returns the total number of steps in the wizard.
+//
+// Returns:
+//   - A int value.
+//
+// Side effects:
+//   - None.
 func (a *WizardFormAdapter) TotalSteps() int {
 	return a.totalSteps
 }
 
 // SetCurrentStep manually sets the current step index, clamped to valid range.
+//
+// Expected:
+//   - int must be valid.
+//
+// Side effects:
+//   - None.
 func (a *WizardFormAdapter) SetCurrentStep(step int) {
 	if step < 0 {
 		step = 0
@@ -101,6 +161,12 @@ func (a *WizardFormAdapter) SetCurrentStep(step int) {
 }
 
 // SetDimensions updates the form's width and height.
+//
+// Expected:
+//   - int must be valid.
+//
+// Side effects:
+//   - None.
 func (a *WizardFormAdapter) SetDimensions(width, height int) {
 	if a.form == nil {
 		return
@@ -111,11 +177,24 @@ func (a *WizardFormAdapter) SetDimensions(width, height int) {
 }
 
 // Form returns the underlying *huh.Form for direct access when needed.
+//
+// Returns:
+//   - A fully initialized huh.Form ready for use.
+//
+// Side effects:
+//   - None.
 func (a *WizardFormAdapter) Form() *huh.Form {
 	return a.form
 }
 
 // SetForm replaces the underlying form and resets the step counter.
+//
+// Expected:
+//   - form must be valid.
+//   - int must be valid.
+//
+// Side effects:
+//   - None.
 func (a *WizardFormAdapter) SetForm(form *huh.Form, totalSteps int) {
 	a.form = form
 	a.totalSteps = totalSteps

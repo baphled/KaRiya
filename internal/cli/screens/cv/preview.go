@@ -35,12 +35,30 @@ type CVPreviewScreen struct {
 }
 
 // NewCVPreviewScreen creates a new CV preview screen with default profile.
+//
+// Expected:
+//   - cvview must be valid.
+//
+// Returns:
+//   - A fully initialized CVPreviewScreen ready for use.
+//
+// Side effects:
+//   - None.
 func NewCVPreviewScreen(cv *career.CVView) *CVPreviewScreen {
 	return NewCVPreviewScreenWithProfile(cv, nil)
 }
 
 // NewCVPreviewScreenWithProfile creates a new CV preview screen with custom profile config.
-// If profileConfig is nil, falls back to default narrative profile.
+//
+// Expected:
+//   - cvview must be valid.
+//   - config must be a valid configuration object.
+//
+// Returns:
+//   - A fully initialized CVPreviewScreen ready for use.
+//
+// Side effects:
+//   - None.
 func NewCVPreviewScreenWithProfile(cv *career.CVView, profileConfig *config.ProfileConfig) *CVPreviewScreen {
 	return &CVPreviewScreen{
 		Screen:        base.NewBaseScreen(),
@@ -53,11 +71,28 @@ func NewCVPreviewScreenWithProfile(cv *career.CVView, profileConfig *config.Prof
 }
 
 // Init initializes the screen.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (s *CVPreviewScreen) Init() tea.Cmd {
 	return nil
 }
 
 // Update handles messages.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - tea.Cmd: command to execute.
+//   - screens.ScreenResult: result indicating user action.
+//
+// Side effects:
+//   - May update viewport dimensions.
+//   - May return CancelResult or NavigateResult.
 func (s *CVPreviewScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	var cmd tea.Cmd
 
@@ -117,6 +152,12 @@ func (s *CVPreviewScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 }
 
 // View renders the screen with full CV content in a scrollable viewport.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *CVPreviewScreen) View() string {
 	theme := s.getTheme()
 	var b strings.Builder
@@ -388,6 +429,12 @@ func (s *CVPreviewScreen) renderFooter() string {
 }
 
 // GetCV returns the CV data.
+//
+// Returns:
+//   - A fully initialized career.CVView ready for use.
+//
+// Side effects:
+//   - None.
 func (s *CVPreviewScreen) GetCV() *career.CVView {
 	return s.cv
 }

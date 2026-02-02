@@ -38,9 +38,15 @@ type FailedScreen struct {
 
 // NewFailedScreen creates a new failed screen.
 //
-// Parameters:
-//   - domain: The configuration domain that failed to save
-//   - errorMessage: The error message to display (defaults to generic message if empty)
+// Expected:
+//   - config must be a valid configuration object.
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized FailedScreen ready for use.
+//
+// Side effects:
+//   - None.
 func NewFailedScreen(domain configtypes.ConfigurationDomain, errorMessage string) *FailedScreen {
 	if errorMessage == "" {
 		errorMessage = "An unknown error occurred while saving configuration."
@@ -54,11 +60,27 @@ func NewFailedScreen(domain configtypes.ConfigurationDomain, errorMessage string
 }
 
 // Init initializes the screen.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (s *FailedScreen) Init() tea.Cmd {
 	return nil
 }
 
 // Update handles messages.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - tea.Cmd: command to execute.
+//   - screens.ScreenResult: result indicating user action.
+//
+// Side effects:
+//   - May return CancelResult or NavigateResult.
 func (s *FailedScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	if cmd := s.Screen.HandleWindowSizeMsg(msg); cmd != nil {
 		return cmd, nil
@@ -83,6 +105,12 @@ func (s *FailedScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 }
 
 // View renders the screen using UIKit layout and Screen.CreateView().
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *FailedScreen) View() string {
 	theme := s.getTheme()
 	domainLabel := formatDomainLabel(s.domain)
@@ -116,6 +144,12 @@ func (s *FailedScreen) getTheme() themes.Theme {
 }
 
 // SetTheme updates the theme.
+//
+// Expected:
+//   - interface{} must be valid.
+//
+// Side effects:
+//   - None.
 func (s *FailedScreen) SetTheme(theme interface{}) {
 	if t, ok := theme.(themes.Theme); ok {
 		s.theme = t
@@ -123,6 +157,12 @@ func (s *FailedScreen) SetTheme(theme interface{}) {
 }
 
 // GetErrorMessage returns the error message.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *FailedScreen) GetErrorMessage() string {
 	return s.errorMessage
 }

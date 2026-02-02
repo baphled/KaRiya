@@ -36,8 +36,16 @@ type EditModal struct {
 }
 
 // NewEditModal creates a new edit event modal with fields pre-populated from the existing event.
-// event: the existing event to edit
-// width, height: terminal dimensions for responsive sizing
+//
+// Expected:
+//   - event must be valid.
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized EditModal ready for use.
+//
+// Side effects:
+//   - None.
 func NewEditModal(event *career.Event, width, height int) *EditModal {
 	// Pre-populate form data from existing event.
 	formData := &forms.CaptureEventFormData{
@@ -81,6 +89,12 @@ func (m *EditModal) buildForm() {
 }
 
 // Init initializes the modal and its form.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (m *EditModal) Init() tea.Cmd {
 	if m.form == nil {
 		return nil
@@ -90,10 +104,17 @@ func (m *EditModal) Init() tea.Cmd {
 
 // Update handles messages for the edit event modal.
 //
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
 // Returns:
-//   - tea.Cmd: command to execute
-//   - bool: true if form completed successfully
-//   - *EditData: event data if completed, nil otherwise
+//   - tea.Cmd: command to execute.
+//   - bool: true if form completed successfully.
+//   - *EditData: event data if completed, nil otherwise.
+//
+// Side effects:
+//   - May hide modal on completion or cancellation.
+//   - May rebuild form on window resize.
 func (m *EditModal) Update(msg tea.Msg) (tea.Cmd, bool, *EditData) {
 	if !m.visible {
 		return nil, false, nil
@@ -145,8 +166,12 @@ func (m *EditModal) Update(msg tea.Msg) (tea.Cmd, bool, *EditData) {
 }
 
 // View renders the edit event modal with proper chrome (border, background)
-// for overlay compositing. The chrome provides a solid background so the modal
-// doesn't show the background layer through.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *EditModal) View() string {
 	if !m.visible {
 		return ""
@@ -162,21 +187,39 @@ func (m *EditModal) View() string {
 }
 
 // IsVisible returns whether the modal is currently visible.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *EditModal) IsVisible() bool {
 	return m.visible
 }
 
 // Show makes the modal visible.
+//
+// Side effects:
+//   - None.
 func (m *EditModal) Show() {
 	m.visible = true
 }
 
 // Hide hides the modal.
+//
+// Side effects:
+//   - None.
 func (m *EditModal) Hide() {
 	m.visible = false
 }
 
 // GetOriginalEvent returns the original event being edited (useful for comparison).
+//
+// Returns:
+//   - A fully initialized career.Event ready for use.
+//
+// Side effects:
+//   - None.
 func (m *EditModal) GetOriginalEvent() *career.Event {
 	return m.originalEvent
 }
@@ -192,8 +235,16 @@ type EditData struct {
 }
 
 // ToCareerEvent converts the form data to a Event domain object.
-// eventID: the ID of the event being updated (preserved from original)
-// Returns an updated Event ready to be saved.
+//
+// Expected:
+//   - Must be a valid string.
+//   - interface{} must be valid.
+//
+// Returns:
+//   - A fully initialized career.Event ready for use.
+//
+// Side effects:
+//   - None.
 func (d *EditData) ToCareerEvent(eventID string, createdAt, updatedAt interface{}) *career.Event {
 	// Parse date or default to original.
 	eventDate, err := forms.ParseDateString(d.Date)

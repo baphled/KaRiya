@@ -52,6 +52,18 @@ type DetailModal struct {
 }
 
 // NewDetailModal creates a new skill detail modal.
+//
+// Expected:
+//   - skill must be valid.
+//   - th must be a valid theme instance (can be nil).
+//   - int must be valid.
+//   - time must be valid.
+//
+// Returns:
+//   - A fully initialized DetailModal ready for use.
+//
+// Side effects:
+//   - None.
 func NewDetailModal(skill *career.Skill, theme themes.Theme, eventCount int, lastUsed *time.Time) *DetailModal {
 	return &DetailModal{
 		skill:      skill,
@@ -66,11 +78,27 @@ func NewDetailModal(skill *career.Skill, theme themes.Theme, eventCount int, las
 }
 
 // Init initializes the modal (implements tea.Model for bubbletea-overlay).
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (m *DetailModal) Init() tea.Cmd {
 	return nil
 }
 
 // Update handles keyboard input and window sizing.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - tea.Model: the updated model.
+//   - tea.Cmd: command to execute.
+//
+// Side effects:
+//   - May set action and hide modal.
 func (m *DetailModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if !m.visible {
 		return m, nil
@@ -122,6 +150,12 @@ func (m *DetailModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 // View renders the modal content with solid background.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *DetailModal) View() string {
 	if !m.visible {
 		return ""
@@ -212,34 +246,65 @@ func (m *DetailModal) renderSkillDetails(th themes.Theme) string {
 }
 
 // SetDimensions updates the modal's available dimensions.
+//
+// Expected:
+//   - int must be valid.
+//
+// Side effects:
+//   - None.
 func (m *DetailModal) SetDimensions(width, height int) {
 	m.width = width
 	m.height = height
 }
 
 // Show makes the modal visible.
+//
+// Side effects:
+//   - None.
 func (m *DetailModal) Show() {
 	m.visible = true
 	m.action = ""
 }
 
 // Hide hides the modal.
+//
+// Side effects:
+//   - None.
 func (m *DetailModal) Hide() {
 	m.visible = false
 }
 
 // IsVisible returns whether the modal is currently visible.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *DetailModal) IsVisible() bool {
 	return m.visible
 }
 
 // GetAction returns the action selected by the user.
-// Returns "events", "edit", "delete", or "" for simple close.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *DetailModal) GetAction() string {
 	return m.action
 }
 
 // SetSkill updates the skill being displayed (useful for reusing the modal).
+//
+// Expected:
+//   - skill must be valid.
+//   - int must be valid.
+//   - time must be valid.
+//
+// Side effects:
+//   - None.
 func (m *DetailModal) SetSkill(skill *career.Skill, eventCount int, lastUsed *time.Time) {
 	m.skill = skill
 	m.eventCount = eventCount

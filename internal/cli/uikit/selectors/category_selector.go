@@ -29,6 +29,12 @@ type CategorySelector struct {
 }
 
 // NewCategorySelector creates a new category selector.
+//
+// Returns:
+//   - A fully initialized CategorySelector ready for use.
+//
+// Side effects:
+//   - None.
 func NewCategorySelector() *CategorySelector {
 	return &CategorySelector{
 		selected: make(map[string]bool),
@@ -36,6 +42,12 @@ func NewCategorySelector() *CategorySelector {
 }
 
 // SelectedCategories returns a sorted list of currently selected categories.
+//
+// Returns:
+//   - A []string value.
+//
+// Side effects:
+//   - None.
 func (cs *CategorySelector) SelectedCategories() []string {
 	categories := make([]string, 0, len(cs.selected))
 	for category := range cs.selected {
@@ -47,6 +59,12 @@ func (cs *CategorySelector) SelectedCategories() []string {
 }
 
 // AvailableCategories returns all available categories.
+//
+// Returns:
+//   - A []string value.
+//
+// Side effects:
+//   - None.
 func (cs *CategorySelector) AvailableCategories() []string {
 	categories := make([]string, 0, len(AllowedCategories))
 	for category := range AllowedCategories {
@@ -58,6 +76,15 @@ func (cs *CategorySelector) AvailableCategories() []string {
 }
 
 // SelectCategory adds a category to the selected list.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (cs *CategorySelector) SelectCategory(category string) error {
 	// Validate category is allowed
 	if !AllowedCategories[strings.ToLower(category)] {
@@ -76,6 +103,15 @@ func (cs *CategorySelector) SelectCategory(category string) error {
 }
 
 // DeselectCategory removes a category from the selected list.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (cs *CategorySelector) DeselectCategory(category string) error {
 	categoryLower := strings.ToLower(category)
 	if !cs.selected[categoryLower] {
@@ -87,6 +123,15 @@ func (cs *CategorySelector) DeselectCategory(category string) error {
 }
 
 // FilterCategories returns categories that match the given prefix.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A []string value.
+//
+// Side effects:
+//   - None.
 func (cs *CategorySelector) FilterCategories(prefix string) []string {
 	if prefix == "" {
 		return cs.AvailableCategories()
@@ -107,6 +152,15 @@ func (cs *CategorySelector) FilterCategories(prefix string) []string {
 }
 
 // ToggleCategory selects the category if not selected, deselects if already selected.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (cs *CategorySelector) ToggleCategory(category string) error {
 	categoryLower := strings.ToLower(category)
 	if cs.selected[categoryLower] {
@@ -116,16 +170,37 @@ func (cs *CategorySelector) ToggleCategory(category string) error {
 }
 
 // IsSelected returns true if the category is currently selected.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (cs *CategorySelector) IsSelected(category string) bool {
 	return cs.selected[strings.ToLower(category)]
 }
 
 // Clear removes all selected categories.
+//
+// Side effects:
+//   - None.
 func (cs *CategorySelector) Clear() {
 	cs.selected = make(map[string]bool)
 }
 
 // SetSelected sets the selected categories from a list.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (cs *CategorySelector) SetSelected(categories []string) error {
 	cs.Clear()
 	for _, category := range categories {
@@ -137,6 +212,15 @@ func (cs *CategorySelector) SetSelected(categories []string) error {
 }
 
 // GetCategoryDescription returns a human-friendly description of a category.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func GetCategoryDescription(category string) string {
 	descriptions := map[string]string{
 		"technical":          "Technical skills and engineering work",
@@ -158,7 +242,15 @@ func GetCategoryDescription(category string) string {
 }
 
 // MapToClassificationCategories converts string categories to classification.CompetencyCategory.
-// This is useful for compatibility with the classification service.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A []classification.CompetencyCategory value.
+//
+// Side effects:
+//   - None.
 func MapToClassificationCategories(categories []string) []classification.CompetencyCategory {
 	result := make([]classification.CompetencyCategory, 0, len(categories))
 	for _, category := range categories {

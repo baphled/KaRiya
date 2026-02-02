@@ -48,14 +48,14 @@ type SkillDeleteConfirmScreen struct {
 
 // NewSkillDeleteConfirmScreen creates a new skill deletion confirmation screen.
 //
-// The screen:
-// - Displays skill name in the confirmation message
-// - Uses "Delete" / "Cancel" button text
-// - Defaults to "No" (Cancel) for safety
-// - Supports standard navigation: ←→/hl to toggle, y/n for direct, Enter to confirm
+// Expected:
+//   - skill must be valid.
 //
-// Parameters:
-//   - skill: The skill to delete
+// Returns:
+//   - A fully initialized SkillDeleteConfirmScreen ready for use.
+//
+// Side effects:
+//   - None.
 func NewSkillDeleteConfirmScreen(skill *career.Skill) *SkillDeleteConfirmScreen {
 	breadcrumbs := []string{"Main Menu", "Manage Skills", "Delete Confirmation"}
 	title := "Delete Skill"
@@ -75,6 +75,12 @@ func NewSkillDeleteConfirmScreen(skill *career.Skill) *SkillDeleteConfirmScreen 
 }
 
 // GetSkill returns the skill being considered for deletion.
+//
+// Returns:
+//   - A fully initialized career.Skill ready for use.
+//
+// Side effects:
+//   - None.
 func (s *SkillDeleteConfirmScreen) GetSkill() *career.Skill {
 	return s.skill
 }

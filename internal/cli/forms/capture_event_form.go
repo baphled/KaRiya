@@ -19,6 +19,12 @@ type CaptureEventFormData struct {
 }
 
 // NewCaptureEventFormData creates a new CaptureEventFormData with default values.
+//
+// Returns:
+//   - A fully initialized CaptureEventFormData ready for use.
+//
+// Side effects:
+//   - None.
 func NewCaptureEventFormData() *CaptureEventFormData {
 	return &CaptureEventFormData{
 		Text:            "",
@@ -32,9 +38,17 @@ func NewCaptureEventFormData() *CaptureEventFormData {
 }
 
 // NewCaptureEventForm creates a huh-based form for capturing career events.
-// Parameters:
-//   - strategy: "quick" (text+date only) or "manual" (all fields).
-//   - width, height: terminal dimensions for proper sizing.
+//
+// Expected:
+//   - captureeventformdata must be valid.
+//   - Must be a valid string.
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized huh.Form ready for use.
+//
+// Side effects:
+//   - None.
 func NewCaptureEventForm(data *CaptureEventFormData, strategy string, width, height int) *huh.Form {
 	var fieldsGroup *huh.Group
 
@@ -145,16 +159,17 @@ func NewCaptureEventForm(data *CaptureEventFormData, strategy string, width, hei
 }
 
 // NewCaptureEventFormForModal creates a huh-based form for modal overlays (WITHOUT confirm button).
-// This creates a simple form where pressing Enter on the last field completes the form.
-// Use this for quick modal interactions, NOT for full-screen forms.
 //
-// strategy: "quick" (text+date+company) or "manual" (all fields)
-// width, height: terminal dimensions for proper sizing
+// Expected:
+//   - captureeventformdata must be valid.
+//   - Must be a valid string.
+//   - int must be valid.
 //
-// Pattern (like FilterModal):
-//   - Just form fields, no Submit/Cancel button
-//   - Press Enter on last field = save and close
-//   - Press Esc = cancel and close
+// Returns:
+//   - A fully initialized huh.Form ready for use.
+//
+// Side effects:
+//   - None.
 func NewCaptureEventFormForModal(data *CaptureEventFormData, strategy string, width, height int) *huh.Form {
 	var fieldsGroup *huh.Group
 

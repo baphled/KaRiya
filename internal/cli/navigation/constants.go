@@ -80,7 +80,12 @@ const (
 )
 
 // AllNavigationKeys returns every defined NavigationKey value. The returned
-// slice is safe to range over for building help screens or validation checks.
+//
+// Returns:
+//   - A []NavigationKey value.
+//
+// Side effects:
+//   - None.
 func AllNavigationKeys() []NavigationKey {
 	return []NavigationKey{
 		KeyBack,

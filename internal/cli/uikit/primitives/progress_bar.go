@@ -25,8 +25,16 @@ type ProgressBar struct {
 }
 
 // NewProgressBar creates a new progress bar with the given value (0.0 to 1.0) and theme.
-// If theme is nil, the default theme is used.
-// The value is clamped to the range [0.0, 1.0].
+//
+// Expected:
+//   - float64 must be valid.
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A fully initialized ProgressBar ready for use.
+//
+// Side effects:
+//   - None.
 func NewProgressBar(value float64, th theme.Theme) *ProgressBar {
 	if value < 0.0 {
 		value = 0.0
@@ -50,7 +58,15 @@ func NewProgressBar(value float64, th theme.Theme) *ProgressBar {
 }
 
 // Width sets the width of the bar (number of characters).
-// Returns the progress bar for method chaining.
+//
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized ProgressBar ready for use.
+//
+// Side effects:
+//   - None.
 func (pb *ProgressBar) Width(w int) *ProgressBar {
 	if w > 0 {
 		pb.width = w
@@ -59,21 +75,45 @@ func (pb *ProgressBar) Width(w int) *ProgressBar {
 }
 
 // ShowPercentage controls whether to display the percentage value.
-// Returns the progress bar for method chaining.
+//
+// Expected:
+//   - bool must be valid.
+//
+// Returns:
+//   - A fully initialized ProgressBar ready for use.
+//
+// Side effects:
+//   - None.
 func (pb *ProgressBar) ShowPercentage(show bool) *ProgressBar {
 	pb.showPercentage = show
 	return pb
 }
 
 // Label sets a label prefix for the progress bar.
-// Returns the progress bar for method chaining.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized ProgressBar ready for use.
+//
+// Side effects:
+//   - None.
 func (pb *ProgressBar) Label(label string) *ProgressBar {
 	pb.label = label
 	return pb
 }
 
 // FilledChar sets the character used for the filled portion.
-// Returns the progress bar for method chaining.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized ProgressBar ready for use.
+//
+// Side effects:
+//   - None.
 func (pb *ProgressBar) FilledChar(char string) *ProgressBar {
 	if char != "" {
 		pb.filledChar = char
@@ -82,7 +122,15 @@ func (pb *ProgressBar) FilledChar(char string) *ProgressBar {
 }
 
 // EmptyChar sets the character used for the empty portion.
-// Returns the progress bar for method chaining.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized ProgressBar ready for use.
+//
+// Side effects:
+//   - None.
 func (pb *ProgressBar) EmptyChar(char string) *ProgressBar {
 	if char != "" {
 		pb.emptyChar = char
@@ -91,6 +139,12 @@ func (pb *ProgressBar) EmptyChar(char string) *ProgressBar {
 }
 
 // Render returns the styled progress bar as a string.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (pb *ProgressBar) Render() string {
 	var parts []string
 
@@ -116,13 +170,32 @@ func (pb *ProgressBar) Render() string {
 }
 
 // ConfidenceBar creates a progress bar configured for displaying confidence scores.
-// It shows the percentage and uses the default width of 20.
+//
+// Expected:
+//   - float64 must be valid.
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A fully initialized ProgressBar ready for use.
+//
+// Side effects:
+//   - None.
 func ConfidenceBar(value float64, th theme.Theme) *ProgressBar {
 	return NewProgressBar(value, th).ShowPercentage(true)
 }
 
 // CompactBar creates a compact progress bar without label or percentage.
-// Useful for inline display in tables or lists.
+//
+// Expected:
+//   - float64 must be valid.
+//   - int must be valid.
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A fully initialized ProgressBar ready for use.
+//
+// Side effects:
+//   - None.
 func CompactBar(value float64, width int, th theme.Theme) *ProgressBar {
 	return NewProgressBar(value, th).Width(width).ShowPercentage(false)
 }

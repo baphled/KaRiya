@@ -50,14 +50,14 @@ type BurstDetailScreen struct {
 
 // NewBurstDetailScreen creates a new burst detail screen.
 //
-// The screen:
-// - Displays all burst fields in a formatted layout
-// - Shows optional fields only when present
-// - Provides multiple actions for burst management
-// - Supports back navigation
+// Expected:
+//   - burst must be valid.
 //
-// Parameters:
-//   - burst: The career burst to display (can be nil)
+// Returns:
+//   - A fully initialized BurstDetailScreen ready for use.
+//
+// Side effects:
+//   - None.
 func NewBurstDetailScreen(burst *career.Burst) *BurstDetailScreen {
 	return &BurstDetailScreen{
 		Screen: base.NewBaseScreen(),
@@ -66,11 +66,28 @@ func NewBurstDetailScreen(burst *career.Burst) *BurstDetailScreen {
 }
 
 // GetBurst returns the burst being displayed.
+//
+// Returns:
+//   - A fully initialized career.Burst ready for use.
+//
+// Side effects:
+//   - None.
 func (s *BurstDetailScreen) GetBurst() *career.Burst {
 	return s.burst
 }
 
 // Update handles messages and actions.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - tea.Cmd: command to execute.
+//   - screens.ScreenResult: result indicating user action.
+//
+// Side effects:
+//   - May return CancelResult on escape.
+//   - May return NavigateResult with action data.
 func (s *BurstDetailScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -127,7 +144,12 @@ func (s *BurstDetailScreen) actionResult(action string) *screens.NavigateResult 
 }
 
 // RenderContent returns just the content (burst detail card) without StandardView wrapper.
-// This allows the intent to wrap it with proper breadcrumbs and themed footer.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *BurstDetailScreen) RenderContent() string {
 	if s.burst == nil {
 		return "No burst selected."
@@ -152,7 +174,12 @@ func (s *BurstDetailScreen) RenderContent() string {
 }
 
 // View returns the full screen view (for standalone usage).
-// Most callers should use RenderContent() instead.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *BurstDetailScreen) View() string {
 	return s.RenderContent()
 }

@@ -30,6 +30,17 @@ type ReviewChangesModal struct {
 }
 
 // NewReviewChangesModal creates a new review changes modal.
+//
+// Expected:
+//   - config must be a valid configuration object.
+//   - Must be a valid string.
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized ReviewChangesModal ready for use.
+//
+// Side effects:
+//   - None.
 func NewReviewChangesModal(domain configtypes.ConfigurationDomain, changes map[string]interface{}, width, height int) *ReviewChangesModal {
 	return &ReviewChangesModal{
 		domain:  domain,
@@ -42,11 +53,26 @@ func NewReviewChangesModal(domain configtypes.ConfigurationDomain, changes map[s
 }
 
 // Init initializes the modal.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (m *ReviewChangesModal) Init() tea.Cmd {
 	return nil
 }
 
 // Update handles messages.
+//
+// Expected:
+//   - msg must be valid.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (m *ReviewChangesModal) Update(msg tea.Msg) tea.Cmd {
 	if !m.visible {
 		return nil
@@ -81,6 +107,12 @@ func (m *ReviewChangesModal) Update(msg tea.Msg) tea.Cmd {
 }
 
 // View renders the modal content.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *ReviewChangesModal) View() string {
 	if !m.visible {
 		return ""
@@ -148,6 +180,15 @@ func (m *ReviewChangesModal) View() string {
 }
 
 // Render renders the modal at the specified dimensions.
+//
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *ReviewChangesModal) Render(width, height int) string {
 	m.width = width
 	m.height = height
@@ -155,26 +196,53 @@ func (m *ReviewChangesModal) Render(width, height int) string {
 }
 
 // IsVisible returns whether the modal is visible.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *ReviewChangesModal) IsVisible() bool {
 	return m.visible
 }
 
 // IsConfirmed returns whether the changes were confirmed.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *ReviewChangesModal) IsConfirmed() bool {
 	return m.confirmed
 }
 
 // IsCancelled returns whether the modal was cancelled.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *ReviewChangesModal) IsCancelled() bool {
 	return m.cancelled
 }
 
 // SetTheme updates the theme.
+//
+// Expected:
+//   - th must be a valid theme instance (can be nil).
+//
+// Side effects:
+//   - None.
 func (m *ReviewChangesModal) SetTheme(theme themes.Theme) {
 	m.theme = theme
 }
 
 // Show makes the modal visible.
+//
+// Side effects:
+//   - None.
 func (m *ReviewChangesModal) Show() {
 	m.visible = true
 	m.confirmed = false
@@ -182,11 +250,20 @@ func (m *ReviewChangesModal) Show() {
 }
 
 // Hide hides the modal.
+//
+// Side effects:
+//   - None.
 func (m *ReviewChangesModal) Hide() {
 	m.visible = false
 }
 
 // GetChanges returns the changes being reviewed.
+//
+// Returns:
+//   - A map[string]interface{} value.
+//
+// Side effects:
+//   - None.
 func (m *ReviewChangesModal) GetChanges() map[string]interface{} {
 	return m.changes
 }

@@ -29,6 +29,12 @@ type ModalContainer struct {
 }
 
 // NewModalContainer creates a new ModalContainer.
+//
+// Returns:
+//   - A fully initialized ModalContainer ready for use.
+//
+// Side effects:
+//   - None.
 func NewModalContainer() *ModalContainer {
 	return &ModalContainer{
 		isDestructive:   false,
@@ -49,7 +55,15 @@ func (mc *ModalContainer) getTheme() themes.Theme {
 }
 
 // SetTitle sets the title for the modal.
-// This method uses the builder pattern to allow method chaining.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized ModalContainer ready for use.
+//
+// Side effects:
+//   - None.
 func (mc *ModalContainer) SetTitle(title string) *ModalContainer {
 	mc.title = title
 	mc.hasTitle = true
@@ -57,7 +71,15 @@ func (mc *ModalContainer) SetTitle(title string) *ModalContainer {
 }
 
 // SetMessage sets the message content for the modal.
-// This method uses the builder pattern to allow method chaining.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized ModalContainer ready for use.
+//
+// Side effects:
+//   - None.
 func (mc *ModalContainer) SetMessage(message string) *ModalContainer {
 	mc.message = message
 	mc.hasMessage = true
@@ -65,7 +87,15 @@ func (mc *ModalContainer) SetMessage(message string) *ModalContainer {
 }
 
 // SetButtons sets the button labels for the modal.
-// This method uses the builder pattern to allow method chaining.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized ModalContainer ready for use.
+//
+// Side effects:
+//   - None.
 func (mc *ModalContainer) SetButtons(buttons []string) *ModalContainer {
 	mc.buttons = buttons
 	mc.hasButtons = true
@@ -73,7 +103,15 @@ func (mc *ModalContainer) SetButtons(buttons []string) *ModalContainer {
 }
 
 // SetInstructions sets the instruction text for the modal.
-// This method uses the builder pattern to allow method chaining.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized ModalContainer ready for use.
+//
+// Side effects:
+//   - None.
 func (mc *ModalContainer) SetInstructions(instructions string) *ModalContainer {
 	mc.instructions = instructions
 	mc.hasInstructions = true
@@ -81,36 +119,69 @@ func (mc *ModalContainer) SetInstructions(instructions string) *ModalContainer {
 }
 
 // WithDestructiveStyle marks the modal as destructive (e.g., for delete confirmations).
-// This changes the styling to use error colors.
-// This method uses the builder pattern to allow method chaining.
+//
+// Returns:
+//   - A fully initialized ModalContainer ready for use.
+//
+// Side effects:
+//   - None.
 func (mc *ModalContainer) WithDestructiveStyle() *ModalContainer {
 	mc.isDestructive = true
 	return mc
 }
 
 // WithTheme sets the theme for the modal.
-// This method uses the builder pattern to allow method chaining.
+//
+// Expected:
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A fully initialized ModalContainer ready for use.
+//
+// Side effects:
+//   - None.
 func (mc *ModalContainer) WithTheme(theme themes.Theme) *ModalContainer {
 	mc.theme = theme
 	return mc
 }
 
 // WithWidth sets the width for the modal.
-// This method uses the builder pattern to allow method chaining.
+//
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized ModalContainer ready for use.
+//
+// Side effects:
+//   - None.
 func (mc *ModalContainer) WithWidth(width int) *ModalContainer {
 	mc.width = width
 	return mc
 }
 
 // WithScrollHint enables the scroll indicator hint.
-// This method uses the builder pattern to allow method chaining.
+//
+// Expected:
+//   - bool must be valid.
+//
+// Returns:
+//   - A fully initialized ModalContainer ready for use.
+//
+// Side effects:
+//   - None.
 func (mc *ModalContainer) WithScrollHint(show bool) *ModalContainer {
 	mc.showScrollHint = show
 	return mc
 }
 
 // Render returns the styled modal container as a string.
-// It combines title, message, buttons, and instructions with appropriate styling.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (mc *ModalContainer) Render() string {
 	theme := mc.getTheme()
 	var parts []string

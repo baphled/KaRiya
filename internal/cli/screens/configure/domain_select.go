@@ -14,6 +14,15 @@ type DomainSelectScreen struct {
 }
 
 // NewDomainSelectScreen creates a new domain selection screen.
+//
+// Expected:
+//   - config must be a valid configuration object.
+//
+// Returns:
+//   - A fully initialized DomainSelectScreen ready for use.
+//
+// Side effects:
+//   - None.
 func NewDomainSelectScreen(domains []configtypes.ConfigurationDomain) *DomainSelectScreen {
 	// Breadcrumbs
 	breadcrumbs := []string{"Main Menu", "Configure System"}
@@ -50,17 +59,39 @@ func formatDomainLabel(domain configtypes.ConfigurationDomain) string {
 }
 
 // Init initializes the screen.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (s *DomainSelectScreen) Init() tea.Cmd {
 	return nil
 }
 
 // Update handles messages.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - tea.Cmd: command to execute.
+//   - screens.ScreenResult: result indicating selection.
+//
+// Side effects:
+//   - Delegates to underlying SelectScreen.
 func (s *DomainSelectScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	// Delegate to base - it handles navigation and selection
 	return s.SelectScreen.Update(msg)
 }
 
 // View renders the screen.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *DomainSelectScreen) View() string {
 	return s.SelectScreen.View()
 }

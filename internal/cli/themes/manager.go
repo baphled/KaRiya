@@ -18,6 +18,12 @@ type ThemeManager struct {
 }
 
 // NewThemeManager creates a new ThemeManager with the default theme registered.
+//
+// Returns:
+//   - A fully initialized ThemeManager ready for use.
+//
+// Side effects:
+//   - None.
 func NewThemeManager() *ThemeManager {
 	tm := &ThemeManager{
 		themes:      make(map[string]Theme),
@@ -35,7 +41,12 @@ func NewThemeManager() *ThemeManager {
 }
 
 // NewEmptyThemeManager creates a ThemeManager without any themes registered.
-// This is primarily for testing purposes.
+//
+// Returns:
+//   - A fully initialized ThemeManager ready for use.
+//
+// Side effects:
+//   - None.
 func NewEmptyThemeManager() *ThemeManager {
 	return &ThemeManager{
 		themes:      make(map[string]Theme),
@@ -46,7 +57,15 @@ func NewEmptyThemeManager() *ThemeManager {
 }
 
 // Register adds a new theme to the manager.
-// Returns an error if the theme is nil, has an empty name, or already exists.
+//
+// Expected:
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (tm *ThemeManager) Register(theme Theme) error {
 	if theme == nil {
 		return errors.New("cannot register nil theme")
@@ -68,7 +87,15 @@ func (tm *ThemeManager) Register(theme Theme) error {
 }
 
 // SetActive sets the active theme by name.
-// Returns an error if the theme is not found.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (tm *ThemeManager) SetActive(name string) error {
 	tm.mu.Lock()
 	defer tm.mu.Unlock()
@@ -89,7 +116,12 @@ func (tm *ThemeManager) SetActive(name string) error {
 }
 
 // Active returns the currently active theme.
-// Returns nil if no theme is set.
+//
+// Returns:
+//   - A Theme value.
+//
+// Side effects:
+//   - None.
 func (tm *ThemeManager) Active() Theme {
 	tm.mu.RLock()
 	defer tm.mu.RUnlock()
@@ -98,6 +130,16 @@ func (tm *ThemeManager) Active() Theme {
 
 // Get returns a theme by name.
 // Returns an error if the theme is not found.
+//
+// Expected:
+//   - name must be a valid string.
+//
+// Returns:
+//   - A Theme value if found.
+//   - An error value if theme not found.
+//
+// Side effects:
+//   - None.
 func (tm *ThemeManager) Get(name string) (Theme, error) {
 	tm.mu.RLock()
 	defer tm.mu.RUnlock()
@@ -111,6 +153,12 @@ func (tm *ThemeManager) Get(name string) (Theme, error) {
 }
 
 // List returns the names of all registered themes in alphabetical order.
+//
+// Returns:
+//   - A []string value.
+//
+// Side effects:
+//   - None.
 func (tm *ThemeManager) List() []string {
 	tm.mu.RLock()
 	defer tm.mu.RUnlock()
@@ -126,6 +174,15 @@ func (tm *ThemeManager) List() []string {
 
 // OnChange registers a callback that is called when the active theme changes.
 // Returns an ID that can be used to remove the callback.
+//
+// Expected:
+//   - callback must be a valid function.
+//
+// Returns:
+//   - A int value for use in RemoveChangeCallback.
+//
+// Side effects:
+//   - Registers callback for theme change notifications.
 func (tm *ThemeManager) OnChange(callback func(Theme)) int {
 	tm.mu.Lock()
 	defer tm.mu.Unlock()
@@ -138,6 +195,12 @@ func (tm *ThemeManager) OnChange(callback func(Theme)) int {
 }
 
 // RemoveChangeCallback removes a previously registered callback.
+//
+// Expected:
+//   - int must be valid.
+//
+// Side effects:
+//   - None.
 func (tm *ThemeManager) RemoveChangeCallback(id int) {
 	tm.mu.Lock()
 	defer tm.mu.Unlock()
@@ -145,7 +208,12 @@ func (tm *ThemeManager) RemoveChangeCallback(id int) {
 }
 
 // Styles returns the StyleSet of the active theme.
-// Returns nil if no theme is active.
+//
+// Returns:
+//   - A fully initialized StyleSet ready for use.
+//
+// Side effects:
+//   - None.
 func (tm *ThemeManager) Styles() *StyleSet {
 	tm.mu.RLock()
 	defer tm.mu.RUnlock()
@@ -157,7 +225,12 @@ func (tm *ThemeManager) Styles() *StyleSet {
 }
 
 // Palette returns the ColorPalette of the active theme.
-// Returns nil if no theme is active.
+//
+// Returns:
+//   - A fully initialized ColorPalette ready for use.
+//
+// Side effects:
+//   - None.
 func (tm *ThemeManager) Palette() *ColorPalette {
 	tm.mu.RLock()
 	defer tm.mu.RUnlock()
