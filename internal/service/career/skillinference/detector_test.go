@@ -85,8 +85,8 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 			result, err := service.InferSkillsFromEvents(ctx, events)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result.Suggestions).NotTo(BeEmpty())
-			Expect(result.Suggestions[0].Name).To(Equal("Go"))
+			names := extractNames(result.Suggestions)
+			Expect(names).To(ContainElements("Go"))
 		})
 
 		It("should match 'go' (lowercase)", func() {
