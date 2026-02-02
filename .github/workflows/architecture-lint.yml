@@ -120,7 +120,7 @@ jobs:
         if: github.event_name == 'pull_request'
         uses: golangci/golangci-lint-action@v6
         with:
-          version: v1.63.4
+          version: v2
           install-mode: goinstall
           args: --timeout=5m --new-from-rev=origin/${{ github.base_ref }}
 
@@ -128,7 +128,7 @@ jobs:
         if: github.event_name == 'push'
         uses: golangci/golangci-lint-action@v6
         with:
-          version: v1.63.4
+          version: v2
           install-mode: goinstall
           args: --timeout=5m
 
