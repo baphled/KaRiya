@@ -286,12 +286,13 @@ See `AGENTS.md` section "E2E Test Structure" for detailed examples.
 
 1. **Format code with the standard `gofmt` tool** (or run `go fmt ./...`). This automatically formats code (indentation, spacing, etc.) according to Go conventions.
    - **Use tabs for indentation** in Go files - never use spaces. This is enforced by `gofmt`.
+   - **Tabs display as 2 spaces** for readability (configured in .editorconfig)
    - Run `go vet` to catch common issues (unused variables, misuse of `unsafe`, etc.).
 
 2. **EditorConfig**: The `.editorconfig` file at project root configures indentation for supported editors:
-   - Go files: tabs
+   - Go files: tabs (displayed as 2 spaces)
    - YAML files: 2 spaces
-   - Makefiles: tabs (required by make syntax)
+   - Makefiles: tabs (displayed as 2 spaces)
 
 ### Naming Conventions
 

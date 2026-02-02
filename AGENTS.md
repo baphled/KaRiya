@@ -29,16 +29,18 @@ make session-start   # MUST run first - validates environment, acknowledges rule
 
 ### Indentation
 
-| File Type | Indentation | Tool | Notes |
-|-----------|-------------|------|-------|
-| **Go (`*.go`)** | **Tabs** | `gofmt` | Standard Go convention, enforced by gofmt |
-| **YAML (`*.yml`, `*.yaml`)** | **2 spaces** | manual | Config files (e.g., `.golangci.yml`) |
-| **Markdown (`*.md`)** | **N/A** | - | Follow natural document flow |
-| **Makefile** | **Tabs** | - | Required by make syntax |
+| File Type | Indentation | Display Width | Tool | Notes |
+|-----------|-------------|---------------|------|-------|
+| **Go (`*.go`)** | **Tabs** | **2 spaces** | `gofmt` | Standard Go convention, enforced by gofmt |
+| **YAML (`*.yml`, `*.yaml`)** | **2 spaces** | 2 spaces | manual | Config files (e.g., `.golangci.yml`) |
+| **Markdown (`*.md`)** | **N/A** | N/A | - | Follow natural document flow |
+| **Makefile** | **Tabs** | 2 spaces | - | Required by make syntax |
 
 ### Go Code Formatting
 
-- **Never use spaces** for indentation in Go files - always use tabs
+- **Use tabs for indentation** - never use spaces (enforced by gofmt)
+- **Tabs display as 2 spaces** for readability (configured in .editorconfig)
+- The actual character is a tab (`\t`), but editors should render it as 2 spaces wide
 - **Always run `go fmt ./...`** before committing
 - **gofmt is non-negotiable** - it automatically formats code according to Go conventions
 - The `.editorconfig` file at project root configures this for supported editors

@@ -224,7 +224,7 @@ linters:
 
     lll:
       line-length: 140
-      tab-width: 4
+      tab-width: 2
 
     # ---------------------------------------------------------------------------
     # A4. Code Duplication (DRY principle)

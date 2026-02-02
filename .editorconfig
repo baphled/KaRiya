@@ -4,10 +4,11 @@
 root = true
 
 # Go files - use tabs (standard Go convention)
+# Tab width set to 2 for readability while maintaining Go standards
 [*.go]
 indent_style = tab
-indent_size = 4
-tab_width = 4
+indent_size = 2
+tab_width = 2
 charset = utf-8
 trim_trailing_whitespace = true
 insert_final_newline = true
