@@ -96,9 +96,15 @@ func (s *ProfileInferenceService) InferCoreStrengths(
 		}
 	}
 
-	// Add skill-based strength if we have backend skills
+	// Add skill-based strengths for key categories
 	if s.hasExpertiseIn(skills, string(constants.SkillCategoryBackend)) {
 		strengths = append(strengths, "Backend and systems engineering expertise")
+	}
+	if s.hasExpertiseIn(skills, string(constants.SkillCategoryArchitecture)) {
+		strengths = append(strengths, "System design and architecture expertise")
+	}
+	if s.hasExpertiseIn(skills, string(constants.SkillCategorySecurity)) {
+		strengths = append(strengths, "Security and compliance expertise")
 	}
 
 	// Ensure we have at least 3 strengths
@@ -203,7 +209,9 @@ func (s *ProfileInferenceService) InferTechnologies(
 		case string(constants.SkillCategoryDatabase),
 			string(constants.SkillCategoryDevOps),
 			string(constants.SkillCategoryCloud),
-			string(constants.SkillCategoryTooling):
+			string(constants.SkillCategoryTooling),
+			string(constants.SkillCategoryArchitecture),
+			string(constants.SkillCategorySecurity):
 			systems = append(systems, skill.Name)
 		}
 	}

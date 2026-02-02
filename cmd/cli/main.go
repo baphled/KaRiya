@@ -19,6 +19,7 @@ import (
 	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	careersql "github.com/baphled/kariya/internal/repository/career/sql"
 	careerservice "github.com/baphled/kariya/internal/service/career"
+	"github.com/baphled/kariya/internal/service/career/technology"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -33,19 +34,20 @@ func main() {
 func run(args []string, out io.Writer, errOut io.Writer) int {
 	// Parse CLI flags
 	var (
-		showVersion  = false
-		showHelp     = false
-		dbPath       = ""
-		mode         = ""
-		listEvents   = false
-		inMemory     = false
-		importPath   = ""
-		importSkip   = false
-		reviewFacts  = false
-		detectBursts = false
-		extractFacts = false
-		showBursts   = false
-		showFacts    = false
+		showVersion        = false
+		showHelp           = false
+		dbPath             = ""
+		mode               = ""
+		listEvents         = false
+		inMemory           = false
+		importPath         = ""
+		importSkip         = false
+		reviewFacts        = false
+		detectBursts       = false
+		extractFacts       = false
+		showBursts         = false
+		showFacts          = false
+		recategorizeSkills = false
 	)
 
 	// Parse command-line arguments
@@ -92,6 +94,8 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 			showBursts = true
 		case "--show-facts":
 			showFacts = true
+		case "--recategorize-skills":
+			recategorizeSkills = true
 		}
 	}
 
@@ -181,6 +185,10 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 
 	if showFacts {
 		return handleShowFacts(svc, out, errOut)
+	}
+
+	if recategorizeSkills {
+		return handleRecategorizeSkills(svc, out, errOut)
 	}
 
 	// Handle non-interactive import
@@ -447,6 +455,48 @@ func handleShowFacts(svc *careerservice.Service, out io.Writer, errOut io.Writer
 	return 0
 }
 
+// handleRecategorizeSkills updates existing skills using the keyword dictionary.
+func handleRecategorizeSkills(svc *careerservice.Service, out io.Writer, errOut io.Writer) int {
+	ctx := context.Background()
+
+	skillRepo := svc.GetSkillRepository()
+	if skillRepo == nil {
+		fmt.Fprintf(errOut, "Error: Skill repository not configured\n")
+		return 1
+	}
+
+	result, err := technology.RecategorizeSkills(ctx, skillRepo)
+	if err != nil {
+		fmt.Fprintf(errOut, "Error recategorizing skills: %v\n", err)
+		return 1
+	}
+
+	fmt.Fprintf(out, "Recategorized %d skills", result.Updated)
+	if len(result.ByCategory) > 0 {
+		categories := make([]string, 0, len(result.ByCategory))
+		for cat := range result.ByCategory {
+			categories = append(categories, cat)
+		}
+		sort.Strings(categories)
+
+		parts := make([]string, 0, len(categories))
+		for _, cat := range categories {
+			parts = append(parts, fmt.Sprintf("%d %s", result.ByCategory[cat], cat))
+		}
+		fmt.Fprintf(out, " (%s)", strings.Join(parts, ", "))
+	}
+	fmt.Fprintf(out, "\n")
+
+	if result.NoMatch > 0 {
+		fmt.Fprintf(out, "Skipped %d skills with no keyword match\n", result.NoMatch)
+	}
+	if result.Skipped > 0 {
+		fmt.Fprintf(out, "Skipped %d skills already correctly categorized\n", result.Skipped)
+	}
+
+	return 0
+}
+
 // handleNonInteractiveImport performs import without showing the interactive UI.
 func handleNonInteractiveImport(filePath string, _ bool, _ bool, svc *careerservice.Service, out io.Writer, errOut io.Writer) int {
 	if _, err := os.Stat(filePath); err != nil {
@@ -573,6 +623,7 @@ func printHelpTo(out io.Writer) {
 	fmt.Fprintln(out, "  --extract-facts            Re-run fact extraction on all events")
 	fmt.Fprintln(out, "  --show-bursts              Display all existing bursts")
 	fmt.Fprintln(out, "  --show-facts               Display all existing facts")
+	fmt.Fprintln(out, "  --recategorize-skills      Re-categorize existing skills using keyword dictionary")
 	fmt.Fprintln(out, "\nExamples:")
 	fmt.Fprintln(out, "  kariya                                    # Start with default database")
 	fmt.Fprintln(out, "  kariya --db ./events.db                  # Use custom database path")
@@ -585,7 +636,8 @@ func printHelpTo(out io.Writer) {
 	fmt.Fprintln(out, "  kariya --detect-bursts                   # Re-detect all bursts")
 	fmt.Fprintln(out, "  kariya --extract-facts                   # Re-extract all facts")
 	fmt.Fprintln(out, "  kariya --show-bursts                     # List all bursts")
-	fmt.Fprintln(out, "  kariya --show-facts                      # List all facts")
+	fmt.Fprintln(out, "  kariya --show-facts                     # List all facts")
+	fmt.Fprintln(out, "  kariya --recategorize-skills            # Re-categorize skills")
 	fmt.Fprintln(out, "  kariya --version                         # Show version")
 	fmt.Fprintln(out, "\nCSV File Format:")
 	fmt.Fprintln(out, "  The CSV file should have the following columns (in any order):")
