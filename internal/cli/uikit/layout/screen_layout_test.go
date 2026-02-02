@@ -18,7 +18,7 @@ func stripAnsi(s string) string {
 	return ansiRegex.ReplaceAllString(s, "")
 }
 
-// MockLogo implements LogoRenderer for testing
+// MockLogo implements LogoRenderer for testing.
 type MockLogo struct {
 	width   int
 	content string

@@ -228,7 +228,7 @@ var _ = Describe("Intent", func() {
 
 	Describe("Navigation", func() {
 		BeforeEach(func() {
-			for i := 0; i < 5; i++ {
+			for i := range 5 {
 				f := fixtures.Fact("fact-"+string(rune('a'+i)), "event-1")
 				f.Text = "Fact " + string(rune('a'+i))
 				f.RoleFit = "senior_ic"
@@ -275,7 +275,7 @@ var _ = Describe("Intent", func() {
 			})
 
 			It("should not crash when navigating down past last item", func() {
-				for i := 0; i < 10; i++ {
+				for range 10 {
 					intent.Update(tea.KeyMsg{Type: tea.KeyDown})
 				}
 				view := intent.View()
@@ -437,7 +437,4 @@ var _ = Describe("Intent", func() {
 			Expect(intent.GetSelectedIndex()).To(Equal(0))
 		})
 	})
-
-	// Note: This intent doesn't use ScreenResultHandler as it uses
-	// simple state-based navigation rather than the screens package.
 })

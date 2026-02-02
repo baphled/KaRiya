@@ -214,7 +214,7 @@ Test event,,Technical,technical,,`
 
 		It("should report text exceeding character limit", func() {
 			longText := ""
-			for i := 0; i < 2001; i++ {
+			for range 2001 {
 				longText += "a"
 			}
 			csv := "Text,Date,Categories,Tags,Project,Company\n" + longText + ",2024-01,Technical,technical,,"

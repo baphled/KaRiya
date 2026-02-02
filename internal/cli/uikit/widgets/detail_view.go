@@ -318,12 +318,13 @@ func (dv *DetailView) renderField(label, value string) string {
 	// Handle multi-line values
 	if strings.Contains(displayValue, "\n") {
 		lines := strings.Split(displayValue, "\n")
-		result := labelStyle.Render(label+":") + " " + lines[0]
+		var b strings.Builder
+		b.WriteString(labelStyle.Render(label+":") + " " + lines[0])
 		indent := strings.Repeat(" ", len(label)+2) // Indent continuation lines
 		for _, line := range lines[1:] {
-			result += "\n" + indent + line
+			b.WriteString("\n" + indent + line)
 		}
-		return result
+		return b.String()
 	}
 
 	return labelStyle.Render(label+":") + " " + displayValue

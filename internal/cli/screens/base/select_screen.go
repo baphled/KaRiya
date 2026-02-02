@@ -136,7 +136,7 @@ func (s *SelectScreen[T]) WithInitialSelection(index int) *SelectScreen[T] {
 //   - May update selection index.
 //   - May update scroll offset.
 func (s *SelectScreen[T]) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
-	if cmd := s.Screen.HandleWindowSizeMsg(msg); cmd != nil {
+	if cmd := s.HandleWindowSizeMsg(msg); cmd != nil {
 		s.updateVisibleItems()
 		return cmd, nil
 	}

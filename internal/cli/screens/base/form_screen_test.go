@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-// TestFormData is a simple form data structure for testing
+// TestFormData is a simple form data structure for testing.
 type TestFormData struct {
 	Name            string
 	Email           string

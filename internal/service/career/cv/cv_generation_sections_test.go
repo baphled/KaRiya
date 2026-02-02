@@ -69,7 +69,7 @@ var _ = Describe("CVGenerationService - Sections Should Be Populated", func() {
 
 		// THIS IS THE KEY TEST - sections should be populated
 		Expect(cv.Sections).NotTo(BeEmpty(), "CV SECTIONS MUST NOT BE EMPTY when generating from events")
-		Expect(len(cv.Sections)).To(BeNumerically(">", 0), "CV should have at least one section")
+		Expect(cv.Sections).ToNot(BeEmpty(), "CV should have at least one section")
 
 		// Verify sections have content
 		for _, section := range cv.Sections {
@@ -79,13 +79,13 @@ var _ = Describe("CVGenerationService - Sections Should Be Populated", func() {
 			if section.SectionType == "summary" {
 				Expect(section.Summary).NotTo(BeEmpty(), "Summary section should have Summary text")
 			} else {
-				Expect(len(section.Content)).To(BeNumerically(">", 0), "Section should have content groups")
+				Expect(section.Content).ToNot(BeEmpty(), "Section should have content groups")
 			}
 		}
 	})
 })
 
-// TestEventRepository provides test events
+// TestEventRepository provides test events.
 type TestEventRepository struct {
 	events []*career.Event
 }
@@ -118,7 +118,7 @@ func (r *TestEventRepository) LinkSkill(_ context.Context, _ string, _ string) e
 	return nil
 }
 
-// TestFactRepository provides test facts
+// TestFactRepository provides test facts.
 type TestFactRepository struct {
 	facts []*career.Fact
 }

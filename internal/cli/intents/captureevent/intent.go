@@ -152,7 +152,7 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 		case intents.KeyQuit:
 			return tea.Quit
 		case intents.KeyHelp:
-			i.BaseIntent.ToggleHelp()
+			i.ToggleHelp()
 			return nil
 		}
 	}

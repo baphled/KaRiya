@@ -51,7 +51,7 @@ var _ = Describe("MetadataEditorModelNew", func() {
 			Expect(model.GetEvent()).To(Equal(event))
 			Expect(model.IsSubmitted()).To(BeFalse())
 			Expect(model.IsCancelled()).To(BeFalse())
-			Expect(model.GetError()).To(BeNil())
+			Expect(model.GetError()).To(Succeed())
 		})
 
 		It("should initialize with default dimensions", func() {
@@ -102,8 +102,6 @@ var _ = Describe("MetadataEditorModelNew", func() {
 				// Simulate pressing Esc to abort
 				msg := tea.KeyMsg{Type: tea.KeyEsc}
 				model.Update(msg)
-				// Note: Actual abort detection depends on huh form state
-				// We test via IsCancelled() after appropriate interaction
 			})
 		})
 	})
@@ -177,7 +175,7 @@ var _ = Describe("MetadataEditorModelNew", func() {
 		})
 
 		It("should return nil error initially", func() {
-			Expect(model.GetError()).To(BeNil())
+			Expect(model.GetError()).To(Succeed())
 		})
 	})
 
@@ -202,7 +200,7 @@ var _ = Describe("MetadataEditorModelNew", func() {
 			}
 
 			err := forms.ApplyMetadataFormData(event, formData)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(event.Company).To(Equal("New Company"))
 			Expect(event.Project).To(Equal("New Project"))
 			Expect(event.Tags).To(Equal([]string{"frontend", "react"}))

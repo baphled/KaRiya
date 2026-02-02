@@ -259,7 +259,7 @@ var _ = Describe("ViewEventDetailModal", func() {
 		It("shows scroll indicator for tall content", func() {
 			// Create very long text that will overflow
 			longText := ""
-			for i := 0; i < 50; i++ {
+			for range 50 {
 				longText += "Line of text that adds content to make the modal scrollable. "
 			}
 			testEvent.Text = longText
@@ -270,7 +270,7 @@ var _ = Describe("ViewEventDetailModal", func() {
 			// Force viewport initialization by rendering
 			_ = modal.View()
 
-			// Note: The scroll indicator depends on content height vs viewport
+			// The scroll indicator depends on content height vs viewport
 			// We just verify it doesn't crash
 		})
 	})
@@ -279,7 +279,7 @@ var _ = Describe("ViewEventDetailModal", func() {
 		BeforeEach(func() {
 			// Create scrollable content
 			longText := ""
-			for i := 0; i < 100; i++ {
+			for range 100 {
 				longText += "Line of content to make scrollable. "
 			}
 			testEvent.Text = longText

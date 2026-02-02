@@ -1,3 +1,5 @@
+// Package docblocks provides a static analyzer that checks for missing
+// or malformed documentation blocks in Go code.
 package docblocks
 
 import (

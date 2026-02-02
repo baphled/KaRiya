@@ -81,11 +81,12 @@ echo "3. FORBIDDEN COMMENT MARKERS CHECK"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 for file in $ALL_STAGED; do
-    FORBIDDEN=$(grep -n 'TODO\|FIXME\|XXX\|HACK\|NOTE:\|IMPORTANT:\|BUG' "$file" 2>/dev/null | grep -v '_test.go' || true)
+    # IMPORTANT markers are allowed for critical implementation notes
+    FORBIDDEN=$(grep -n 'TODO\|FIXME\|XXX\|HACK\|NOTE:\|BUG' "$file" 2>/dev/null | grep -v '_test.go' || true)
     if [ -n "$FORBIDDEN" ]; then
         echo -e "${RED}❌ Forbidden comment markers found${NC}"
         echo "   File: $file"
-        echo "   Forbidden: TODO, FIXME, XXX, HACK, NOTE, IMPORTANT, BUG"
+        echo "   Forbidden: TODO, FIXME, XXX, HACK, NOTE, BUG"
         echo "   Use task tracking instead or refactor code"
         echo "$FORBIDDEN" | head -3 | sed 's/^/   /'
         VIOLATIONS=$((VIOLATIONS+1))

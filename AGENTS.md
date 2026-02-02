@@ -25,6 +25,34 @@ make session-start   # MUST run first - validates environment, acknowledges rule
 
 ---
 
+## Code Formatting Standards
+
+### Indentation
+
+| File Type | Indentation | Display Width | Tool | Notes |
+|-----------|-------------|---------------|------|-------|
+| **Go (`*.go`)** | **Tabs** | **2 spaces** | `gofmt` | Standard Go convention, enforced by gofmt |
+| **YAML (`*.yml`, `*.yaml`)** | **2 spaces** | 2 spaces | manual | Config files (e.g., `.golangci.yml`) |
+| **Markdown (`*.md`)** | **N/A** | N/A | - | Follow natural document flow |
+| **Makefile** | **Tabs** | 2 spaces | - | Required by make syntax |
+
+### Go Code Formatting
+
+- **Use tabs for indentation** - never use spaces (enforced by gofmt)
+- **Tabs display as 2 spaces** for readability (configured in .editorconfig)
+- The actual character is a tab (`\t`), but editors should render it as 2 spaces wide
+- **Always run `go fmt ./...`** before committing
+- **gofmt is non-negotiable** - it automatically formats code according to Go conventions
+- The `.editorconfig` file at project root configures this for supported editors
+
+### Enforcement
+
+- **CI/CD**: All PRs are checked with `gofmt` via golangci-lint
+- **Pre-commit**: Staged files are automatically checked
+- **Make target**: `make fmt` runs `go fmt ./...`
+
+---
+
 ## Comment Rules (STRICTLY ENFORCED)
 
 ### Philosophy: Code Over Comments
@@ -60,23 +88,23 @@ Comments are ONLY permitted in these locations:
 func (i *Intent) Update(msg tea.Msg) tea.Cmd {
     // Handle screen updates
     cmd, result := i.activeScreen.Update(msg)
-    
+
     // Process the result
     if result != nil {
         return i.handleScreenResult(result)
     }
-    
+
     return cmd
 }
 
 // ✅ GOOD - Extract to well-named methods
 func (i *Intent) Update(msg tea.Msg) tea.Cmd {
     cmd, result := i.delegateToActiveScreen(msg)
-    
+
     if result != nil {
         return i.handleScreenResult(result)
     }
-    
+
     return cmd
 }
 
@@ -127,12 +155,12 @@ func (i *Intent) processModals(msg tea.Msg) tea.Cmd {
     if i.errorModal != nil && i.errorModal.IsVisible() {
         return i.updateErrorModal(msg)
     }
-    
+
     // Help modal handling
     if i.helpModal != nil && i.helpModal.IsVisible() {
         return i.updateHelpModal(msg)
     }
-    
+
     return nil
 }
 
@@ -141,11 +169,11 @@ func (i *Intent) processModals(msg tea.Msg) tea.Cmd {
     if cmd := i.tryUpdateErrorModal(msg); cmd != nil {
         return cmd
     }
-    
+
     if cmd := i.tryUpdateHelpModal(msg); cmd != nil {
         return cmd
     }
-    
+
     return nil
 }
 ```
@@ -159,7 +187,7 @@ case "edit":
     // Extract burst and show edit modal
     burst := actionData["burst"].(*career.Burst)
     i.showEditModal(burst)
-    
+
 case "delete":
     // Show delete confirmation
     i.showDeleteConfirmation()
@@ -383,11 +411,11 @@ type MyIntent struct {
     state      MyState       // State machine enum
     active     bool          // Is intent active
     result     *IntentResult[*MyResult]
-    
+
     // Screens (one per state)
     listScreen   *myfeature.ListScreen
     detailScreen *myfeature.DetailScreen
-    
+
     // Modals (shared across states)
     deleteModal *components.DeleteConfirmModal
 }
@@ -428,7 +456,7 @@ case tea.KeyUp:
 case tea.KeyDown:
     s.table.HandleNavigation("down")
 case tea.KeyPgDown:
-    s.table.HandleNavigation("pgdn")  // Note: pgdn not pgdown
+    s.table.HandleNavigation("pgdn")
 case tea.KeyPgUp:
     s.table.HandleNavigation("pgup")
 case tea.KeyHome:
@@ -478,13 +506,13 @@ func (m *MyModal) View() string {
     if !m.visible {
         return ""
     }
-    
+
     // 2. Nil theme guard (REQUIRED)
     theme := m.theme
     if theme == nil {
         theme = themes.NewDefaultTheme()
     }
-    
+
     // 3. Use UIKit with SOLID background (REQUIRED)
     return containers.NewBox(theme).
         Content(content).
@@ -498,7 +526,7 @@ func (m *MyModal) View() string {
 ```go
 func (i *MyIntent) View() string {
     baseView := i.currentScreen.View()
-    
+
     // Use behaviors.RenderModalOverlay (NOT custom overlay code)
     if i.modal != nil && i.modal.IsVisible() {
         return behaviors.RenderModalOverlay(i.modal, baseView)
@@ -1285,11 +1313,11 @@ type MyIntent struct {
 // ✅ REQUIRE THIS
 type MyIntent struct {
     *BaseIntent
-    
+
     // Explicit typed fields (REQUIRED when using screens)
     listScreen   *myfeature.ListScreen
     detailScreen *myfeature.DetailScreen
-    
+
     // Generic pointer
     activeScreen screens.Screen
 }
@@ -1301,7 +1329,7 @@ type MyIntent struct {
 func (i *MyIntent) Update(msg tea.Msg) tea.Cmd {
     // WRONG: Direct SQL queries
     rows, err := db.Query("SELECT * FROM...")
-    
+
     // WRONG: Complex business logic
     for _, item := range items {
         // Complex processing...
@@ -1312,11 +1340,11 @@ func (i *MyIntent) Update(msg tea.Msg) tea.Cmd {
 func (i *MyIntent) Update(msg tea.Msg) tea.Cmd {
     // Orchestrate, don't implement
     cmd, result := i.listScreen.Update(msg)
-    
+
     if result != nil {
         return i.handleScreenResult(result)
     }
-    
+
     return cmd
 }
 ```
@@ -1355,7 +1383,7 @@ type MyIntent struct {
     context *MyIntentContext  // Reference to context
     state   MyIntentState     // State fields (flattened, NOT wrapped)
     active  bool
-    
+
     // Explicit screen fields
     listScreen   *myfeature.ListScreen
     detailScreen *myfeature.DetailScreen

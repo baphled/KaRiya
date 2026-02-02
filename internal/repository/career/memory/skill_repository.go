@@ -379,7 +379,7 @@ func (r *SkillRepository) GetLastUsedForSkills(_ context.Context) (map[string]ti
 
 	lastUsed := make(map[string]time.Time)
 
-	// Note: This requires access to events, which we don't have in this simple implementation
+	// This requires access to events, which we don't have in this simple implementation
 	// For now, return empty map. In real usage with SetEventRepository, this would work.
 	// The SQL/GORM implementation handles this properly with JOINs.
 

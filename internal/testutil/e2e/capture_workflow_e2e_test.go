@@ -18,7 +18,7 @@ import (
 //
 //	Choose Strategy -> Form -> Submit (with loading modal) -> Enrichment Review -> Complete
 //
-// NOTE: The screens architecture differs from the original PRD workflow:
+// The screens architecture differs from the original PRD workflow:
 // - PRD: Form -> Pre-Save Review -> Submit -> Enrichment -> Enrichment Review
 // - Screens: Form -> Submit (direct) -> Enrichment Review
 //

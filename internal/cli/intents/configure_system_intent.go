@@ -2,6 +2,7 @@ package intents
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/baphled/kariya/internal/cli/configtypes"
@@ -63,7 +64,7 @@ type ConfigureSystemIntent struct {
 // Side effects: reads the configuration file from disk via config.LoadConfig.
 func NewConfigureSystemIntent(ctx context.Context) (*ConfigureSystemIntent, error) {
 	if ctx == nil {
-		return nil, fmt.Errorf("context is required")
+		return nil, errors.New("context is required")
 	}
 
 	// Load configuration from file (or use defaults)

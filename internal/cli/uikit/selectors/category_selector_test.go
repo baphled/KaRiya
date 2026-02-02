@@ -16,7 +16,7 @@ var _ = Describe("CategorySelector", func() {
 	Describe("NewCategorySelector", func() {
 		It("should create a new selector with no selected categories", func() {
 			Expect(selector).NotTo(BeNil())
-			Expect(selector.SelectedCategories()).To(HaveLen(0))
+			Expect(selector.SelectedCategories()).To(BeEmpty())
 		})
 	})
 
@@ -139,7 +139,7 @@ var _ = Describe("CategorySelector", func() {
 
 		It("should return empty when no match", func() {
 			filtered := selector.FilterCategories("xyz")
-			Expect(filtered).To(HaveLen(0))
+			Expect(filtered).To(BeEmpty())
 		})
 
 		It("should filter multiple matches", func() {
@@ -169,7 +169,7 @@ var _ = Describe("CategorySelector", func() {
 		It("should return sorted categories", func() {
 			categories := selector.AvailableCategories()
 			// Check that they're sorted
-			for i := 0; i < len(categories)-1; i++ {
+			for i := range len(categories) - 1 {
 				Expect(categories[i] <= categories[i+1]).To(BeTrue())
 			}
 		})
@@ -178,7 +178,7 @@ var _ = Describe("CategorySelector", func() {
 	Describe("SelectedCategories", func() {
 		It("should return empty slice when no categories selected", func() {
 			categories := selector.SelectedCategories()
-			Expect(categories).To(HaveLen(0))
+			Expect(categories).To(BeEmpty())
 		})
 
 		It("should return selected categories in sorted order", func() {
@@ -203,13 +203,13 @@ var _ = Describe("CategorySelector", func() {
 
 			selector.Clear()
 
-			Expect(selector.SelectedCategories()).To(HaveLen(0))
+			Expect(selector.SelectedCategories()).To(BeEmpty())
 			Expect(selector.IsSelected("technical")).To(BeFalse())
 		})
 
 		It("should work on empty selector", func() {
 			selector.Clear()
-			Expect(selector.SelectedCategories()).To(HaveLen(0))
+			Expect(selector.SelectedCategories()).To(BeEmpty())
 		})
 	})
 
@@ -243,7 +243,7 @@ var _ = Describe("CategorySelector", func() {
 			Expect(selector.SelectCategory("technical")).To(Succeed())
 			err := selector.SetSelected([]string{})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(selector.SelectedCategories()).To(HaveLen(0))
+			Expect(selector.SelectedCategories()).To(BeEmpty())
 		})
 	})
 

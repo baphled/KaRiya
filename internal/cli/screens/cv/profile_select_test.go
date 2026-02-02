@@ -175,9 +175,6 @@ var _ = Describe("ProfileSelectScreen", func() {
 				Expect(result).ToNot(BeNil())
 				Expect(result.Type()).To(Equal(screens.ResultCancel))
 			})
-
-			// Note: 'q' key behavior depends on SelectScreen implementation
-			// If 'q' doesn't trigger cancel, this test should be removed or SelectScreen updated
 		})
 
 		Context("window resize", func() {

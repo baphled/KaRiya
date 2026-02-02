@@ -76,7 +76,7 @@ func (is *ImportService) PrepareImport(ctx context.Context, reader interface{}) 
 	// Try to convert reader to io.Reader
 	ioReader, ok := reader.(interface{ Read([]byte) (int, error) })
 	if !ok {
-		return nil, fmt.Errorf("invalid reader type")
+		return nil, errors.New("invalid reader type")
 	}
 
 	// Parse CSV

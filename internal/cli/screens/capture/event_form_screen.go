@@ -146,7 +146,7 @@ func (s *EventFormScreen) Init() tea.Cmd {
 //   - May return ErrorResult on submission error.
 func (s *EventFormScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	// Handle window size via Screen
-	if cmd := s.Screen.HandleWindowSizeMsg(msg); cmd != nil {
+	if cmd := s.HandleWindowSizeMsg(msg); cmd != nil {
 		// Also update CaptureForm's dimensions
 		if wsMsg, ok := msg.(tea.WindowSizeMsg); ok {
 			s.captureForm.Update(wsMsg)

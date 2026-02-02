@@ -379,7 +379,7 @@ var _ = Describe("Text", func() {
 	})
 })
 
-// Helper functions for testing
+// Helper functions for testing.
 func splitLines(s string) []string {
 	var lines []string
 	current := ""

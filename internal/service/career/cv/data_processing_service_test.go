@@ -556,7 +556,7 @@ var _ = Describe("DataProcessingService", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				// Should have 3 groups: Company A (tenure 1), Company B, Company A (tenure 2)
-				Expect(len(result)).To(Equal(3))
+				Expect(result).To(HaveLen(3))
 
 				// Check that Company A has two separate entries
 				companyACount := 0
@@ -586,7 +586,7 @@ var _ = Describe("DataProcessingService", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				// Should have 3 groups: Company A (tenure 1), Freelance, Company A (tenure 2)
-				Expect(len(result)).To(Equal(3))
+				Expect(result).To(HaveLen(3))
 
 				// Check that Company A has two separate entries
 				companyACount := 0

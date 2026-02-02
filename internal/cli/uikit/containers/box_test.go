@@ -215,7 +215,7 @@ var _ = Describe("Box", func() {
 	})
 })
 
-// Helper to split rendered output into lines
+// Helper to split rendered output into lines.
 func splitLines(s string) []string {
 	lines := []string{}
 	current := ""

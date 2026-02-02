@@ -80,7 +80,7 @@ func (s *CompleteScreen) Init() tea.Cmd {
 // Side effects:
 //   - May return SubmitResult on enter/esc/q.
 func (s *CompleteScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
-	if cmd := s.Screen.HandleWindowSizeMsg(msg); cmd != nil {
+	if cmd := s.HandleWindowSizeMsg(msg); cmd != nil {
 		return cmd, nil
 	}
 
@@ -113,7 +113,7 @@ func (s *CompleteScreen) View() string {
 	content.WriteString(primitives.SuccessText("Configuration Updated!", theme).Bold().Render())
 	content.WriteString("\n\n")
 
-	domainText := fmt.Sprintf("Domain: %s", domainLabel)
+	domainText := "Domain: " + domainLabel
 	content.WriteString(primitives.Body(domainText, theme).Render())
 	content.WriteString("\n")
 

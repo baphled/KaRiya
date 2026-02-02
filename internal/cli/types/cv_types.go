@@ -1,4 +1,6 @@
 // Package types provides shared type definitions for the CLI layer.
+//
+//revive:disable:var-naming Package name is intentionally generic for shared CLI types.
 package types
 
 // CVProfile represents a CV generation profile with targeting information.

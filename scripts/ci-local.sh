@@ -113,7 +113,7 @@ run_check "staticcheck" \
 # 4. TESTS (from ci.yml - test job)
 # ============================================
 run_check "Tests with race detector and coverage" \
-    "ginkgo -v --race --cover --coverprofile=coverage.out ./..."
+    "ginkgo -v --race --cover --coverprofile=coverage.out --skip-package=testdata,noinlinecareer/testdata ./..."
 
 # ============================================
 # 5. BUILD (from ci.yml - build job)

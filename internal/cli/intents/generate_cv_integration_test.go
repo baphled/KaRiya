@@ -137,7 +137,7 @@ var _ = Describe("GenerateCV Intent Integration", func() {
 			Expect(initialView).To(ContainSubstring("Profile"))
 
 			// Navigate down through profiles
-			for i := 0; i < 3; i++ {
+			for i := range 3 {
 				cmd := intent.Update(tea.KeyMsg{Type: tea.KeyDown})
 				// Command should not trigger menu return
 				_ = cmd

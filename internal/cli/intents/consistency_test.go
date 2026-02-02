@@ -11,7 +11,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-// testStandardViewConsistency checks that an intent's view follows StandardView patterns
+// testStandardViewConsistency checks that an intent's view follows StandardView patterns.
 func testStandardViewConsistency(intentName, view string) {
 	Expect(view).NotTo(BeEmpty(), "[%s] View is empty", intentName)
 

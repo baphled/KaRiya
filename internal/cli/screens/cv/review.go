@@ -66,7 +66,7 @@ func (s *ReviewScreen) Init() tea.Cmd {
 func (s *ReviewScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		s.Screen.HandleWindowSizeMsg(msg)
+		s.HandleWindowSizeMsg(msg)
 		return nil, nil
 
 	case tea.KeyMsg:

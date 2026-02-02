@@ -194,14 +194,14 @@ var _ = Describe("Modal Adapters", func() {
 			It("should return confirmed=true on 'y' key", func() {
 				result := adapter.HandleUpdate(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
 				Expect(result.Applied).To(BeTrue())
-				Expect(result.Data).To(Equal(true))
+				Expect(result.Data).To(BeTrue())
 				Expect(result.Closed).To(BeTrue())
 			})
 
 			It("should return confirmed=false on 'n' key", func() {
 				result := adapter.HandleUpdate(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
 				Expect(result.Applied).To(BeFalse())
-				Expect(result.Data).To(Equal(false))
+				Expect(result.Data).To(BeFalse())
 				Expect(result.Closed).To(BeTrue())
 			})
 

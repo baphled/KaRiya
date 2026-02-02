@@ -192,7 +192,7 @@ var _ = Describe("Configure Navigation", func() {
 			view := env.GetView()
 			Expect(view).NotTo(BeEmpty())
 
-			for i := 0; i < 10; i++ {
+			for range 10 {
 				env.PressKeyRune('j')
 			}
 			view = env.GetView()

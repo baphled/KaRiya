@@ -247,7 +247,7 @@ func TestModal_AdvanceSpinner(t *testing.T) {
 	initialFrame := modal.spinner.GetFrame()
 
 	// Advance multiple times to ensure it cycles
-	for i := 0; i < 20; i++ {
+	for range 20 {
 		modal.AdvanceSpinner()
 	}
 
@@ -536,7 +536,7 @@ func TestSimpleSpinner(t *testing.T) {
 	}
 
 	// Should cycle back after enough advances
-	for i := 0; i < 20; i++ {
+	for range 20 {
 		spinner.Advance()
 	}
 	// Should not panic and should have valid frame

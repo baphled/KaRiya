@@ -98,7 +98,7 @@ func (s *CVPreviewScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		s.Screen.HandleWindowSizeMsg(msg)
+		s.HandleWindowSizeMsg(msg)
 		s.width = msg.Width
 		s.height = msg.Height
 		s.ready = false
@@ -441,7 +441,7 @@ func (s *CVPreviewScreen) GetCV() *career.CVView {
 
 // getTheme returns the theme from Screen or a default theme.
 func (s *CVPreviewScreen) getTheme() themes.Theme {
-	if t := s.Screen.Theme(); t != nil {
+	if t := s.Theme(); t != nil {
 		if theme, ok := t.(themes.Theme); ok {
 			return theme
 		}

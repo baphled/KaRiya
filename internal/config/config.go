@@ -353,7 +353,7 @@ func applyDefaults(cfg *Config) {
 	if cfg.System.BackupCount == 0 {
 		cfg.System.BackupCount = defaults.System.BackupCount
 	}
-	// Note: AutoBackup is bool, can't distinguish false from unset
+	// AutoBackup is bool, can't distinguish false from unset
 
 	// Profile defaults
 	if cfg.Profile.DefaultRole == "" {
@@ -389,13 +389,13 @@ func applyDefaults(cfg *Config) {
 	if cfg.Export.DefaultDestination == "" {
 		cfg.Export.DefaultDestination = defaults.Export.DefaultDestination
 	}
-	// Note: AutoOpen is bool, can't distinguish false from unset
+	// AutoOpen is bool, can't distinguish false from unset
 
 	// Display defaults
 	if cfg.Display.Theme == "" {
 		cfg.Display.Theme = defaults.Display.Theme
 	}
-	// Note: Animations is bool, can't distinguish false from unset
+	// Animations is bool, can't distinguish false from unset
 
 	// Scoring defaults (auto-migration for configs without scoring section)
 	applyScoringDefaults(cfg, defaults)

@@ -224,7 +224,7 @@ var _ = Describe("GenerateCV Navigation", func() {
 			Expect(view).NotTo(BeEmpty())
 
 			// Navigate to bottom
-			for i := 0; i < 10; i++ {
+			for range 10 {
 				env.PressKeyRune('j')
 			}
 			view = env.GetView()

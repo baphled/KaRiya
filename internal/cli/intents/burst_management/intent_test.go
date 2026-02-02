@@ -297,10 +297,7 @@ var _ = Describe("Intent Methods", func() {
 			})
 
 			It("should prioritize error modal over delete modal in view", func() {
-				// Create both error and delete modals.
 				intent.ShowErrorModal("Error Modal", "This is an error")
-				// Note: delete modal is created internally during delete flow
-				// For now, just verify error modal is visible.
 
 				view := intent.View()
 				Expect(view).To(ContainSubstring("Error Modal"))
@@ -311,9 +308,6 @@ var _ = Describe("Intent Methods", func() {
 			It("should have no delete modal visible initially", func() {
 				Expect(intent.HasVisibleDeleteModal()).To(BeFalse())
 			})
-
-			// Delete modal is created internally during delete flow.
-			// We'll test this through the delete action in handlers.
 		})
 
 		Describe("Modal Registry Integration", func() {
@@ -556,7 +550,7 @@ var _ = Describe("Intent Methods", func() {
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
 
 			// Burst should be deleted - filtered bursts should be empty.
-			Expect(intent.GetFilteredBursts()).To(HaveLen(0))
+			Expect(intent.GetFilteredBursts()).To(BeEmpty())
 			// Should return to list view with no modals.
 			Expect(intent.GetState()).To(Equal(burst_management.StateList))
 			Expect(intent.HasVisibleDeleteModal()).To(BeFalse())
@@ -1480,7 +1474,7 @@ var _ = Describe("Intent Methods", func() {
 			burst.Description = "Test"
 			err := ctx.CreateBurst(burst)
 			// Without repository, should return nil (no-op).
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should handle UpdateBurst without repository", func() {
@@ -1489,13 +1483,13 @@ var _ = Describe("Intent Methods", func() {
 			burst.Description = "Test"
 			err := ctx.UpdateBurst(burst)
 			// Without repository, should return nil (no-op).
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should handle DeleteBurst without repository", func() {
 			err := ctx.DeleteBurst("burst-1")
 			// Without repository, should return nil (no-op).
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 
@@ -1693,7 +1687,7 @@ var _ = Describe("Intent Methods", func() {
 			burst.Name = "New Burst"
 			burst.Description = "Test burst"
 			err := ctx.CreateBurst(burst)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 
 			// Verify it was created.
 			bursts, _ := repo.List(ctx.Context, *fixtures.BurstListFilters())
@@ -1707,7 +1701,7 @@ var _ = Describe("Intent Methods", func() {
 			burst.Description = ""
 			burst.EventIDs = []string{}
 			err := ctx.CreateBurst(burst)
-			Expect(err).NotTo(BeNil())
+			Expect(err).To(HaveOccurred())
 		})
 
 		It("should update burst with repository", func() {
@@ -1720,7 +1714,7 @@ var _ = Describe("Intent Methods", func() {
 			// Update.
 			burst.Name = "Updated Name"
 			err := ctx.UpdateBurst(burst)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 
 			// Verify update.
 			updated, _ := repo.GetByID(ctx.Context, "burst-1")
@@ -1733,7 +1727,7 @@ var _ = Describe("Intent Methods", func() {
 			burst.Description = ""
 			burst.EventIDs = []string{}
 			err := ctx.UpdateBurst(burst)
-			Expect(err).NotTo(BeNil())
+			Expect(err).To(HaveOccurred())
 		})
 
 		It("should delete burst with repository", func() {
@@ -1745,11 +1739,11 @@ var _ = Describe("Intent Methods", func() {
 
 			// Delete.
 			err := ctx.DeleteBurst("burst-1")
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 
 			// Verify deletion.
 			bursts, _ := repo.List(ctx.Context, *fixtures.BurstListFilters())
-			Expect(bursts).To(HaveLen(0))
+			Expect(bursts).To(BeEmpty())
 		})
 
 		It("should load bursts from repository", func() {
@@ -1758,7 +1752,7 @@ var _ = Describe("Intent Methods", func() {
 			_ = repo.Create(ctx.Context, fixtures.Burst("b2", "e3", "e4"))
 
 			err := ctx.LoadBursts()
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(ctx.Bursts).To(HaveLen(2))
 		})
 	})
@@ -1806,7 +1800,7 @@ var _ = Describe("Intent Methods", func() {
 
 			// Burst should be deleted from repository.
 			bursts, _ := repo.List(ctx.Context, *fixtures.BurstListFilters())
-			Expect(bursts).To(HaveLen(0))
+			Expect(bursts).To(BeEmpty())
 		})
 
 		It("should handle delete error gracefully", func() {
@@ -1984,7 +1978,7 @@ var _ = Describe("Intent Methods", func() {
 			suggestionsMsg, ok := msg.(burst_management.BurstSuggestionsLoadedMsg)
 			Expect(ok).To(BeTrue())
 			Expect(suggestionsMsg.Suggestions).To(HaveLen(1))
-			Expect(suggestionsMsg.Error).To(BeNil())
+			Expect(suggestionsMsg.Error).ToNot(HaveOccurred())
 		})
 
 		It("should handle startBurstDetection with list events error", func() {
@@ -2000,7 +1994,7 @@ var _ = Describe("Intent Methods", func() {
 			// Should be error message.
 			suggestionsMsg, ok := msg.(burst_management.BurstSuggestionsLoadedMsg)
 			Expect(ok).To(BeTrue())
-			Expect(suggestionsMsg.Error).NotTo(BeNil())
+			Expect(suggestionsMsg.Error).To(HaveOccurred())
 		})
 
 		It("should handle startBurstDetection with suggest error", func() {
@@ -2016,7 +2010,7 @@ var _ = Describe("Intent Methods", func() {
 			// Should be error message.
 			suggestionsMsg, ok := msg.(burst_management.BurstSuggestionsLoadedMsg)
 			Expect(ok).To(BeTrue())
-			Expect(suggestionsMsg.Error).NotTo(BeNil())
+			Expect(suggestionsMsg.Error).To(HaveOccurred())
 		})
 
 		It("should handle startBurstDetection with no events", func() {
@@ -2032,7 +2026,7 @@ var _ = Describe("Intent Methods", func() {
 			// Should be error message (no unassigned events available).
 			suggestionsMsg, ok := msg.(burst_management.BurstSuggestionsLoadedMsg)
 			Expect(ok).To(BeTrue())
-			Expect(suggestionsMsg.Error).NotTo(BeNil())
+			Expect(suggestionsMsg.Error).To(HaveOccurred())
 			Expect(suggestionsMsg.Error.Error()).To(ContainSubstring("no unassigned events"))
 		})
 
@@ -2067,7 +2061,7 @@ var _ = Describe("Intent Methods", func() {
 			// Should succeed with suggestions from unassigned events only.
 			suggestionsMsg, ok := msg.(burst_management.BurstSuggestionsLoadedMsg)
 			Expect(ok).To(BeTrue())
-			Expect(suggestionsMsg.Error).To(BeNil())
+			Expect(suggestionsMsg.Error).ToNot(HaveOccurred())
 			Expect(suggestionsMsg.Suggestions).To(HaveLen(1))
 		})
 
@@ -2095,7 +2089,7 @@ var _ = Describe("Intent Methods", func() {
 			// Should be error message (no unassigned events).
 			suggestionsMsg, ok := msg.(burst_management.BurstSuggestionsLoadedMsg)
 			Expect(ok).To(BeTrue())
-			Expect(suggestionsMsg.Error).NotTo(BeNil())
+			Expect(suggestionsMsg.Error).To(HaveOccurred())
 			Expect(suggestionsMsg.Error.Error()).To(ContainSubstring("no unassigned events"))
 		})
 	})
@@ -2333,7 +2327,7 @@ var _ = Describe("Intent Methods", func() {
 			extractionMsg, ok := msg.(burst_management.FactExtractionCompleteMsg)
 			Expect(ok).To(BeTrue())
 			Expect(extractionMsg.Facts).To(HaveLen(2))
-			Expect(extractionMsg.Error).To(BeNil())
+			Expect(extractionMsg.Error).ToNot(HaveOccurred())
 		})
 
 		It("should handle extractFactsForBurst with extraction error via suggestion acceptance", func() {
@@ -2358,7 +2352,7 @@ var _ = Describe("Intent Methods", func() {
 			// Should be error.
 			extractionMsg, ok := msg.(burst_management.FactExtractionCompleteMsg)
 			Expect(ok).To(BeTrue())
-			Expect(extractionMsg.Error).NotTo(BeNil())
+			Expect(extractionMsg.Error).To(HaveOccurred())
 		})
 
 		It("should handle extractFactsForBurst with save error via suggestion acceptance (skips failed saves)", func() {
@@ -2387,8 +2381,8 @@ var _ = Describe("Intent Methods", func() {
 			// Save errors are skipped, so Facts will be empty but no error.
 			extractionMsg, ok := msg.(burst_management.FactExtractionCompleteMsg)
 			Expect(ok).To(BeTrue())
-			Expect(extractionMsg.Error).To(BeNil())
-			Expect(extractionMsg.Facts).To(HaveLen(0)) // No facts saved due to error.
+			Expect(extractionMsg.Error).ToNot(HaveOccurred())
+			Expect(extractionMsg.Facts).To(BeEmpty()) // No facts saved due to error.
 		})
 
 		It("should show re-extract confirmation when facts already exist", func() {

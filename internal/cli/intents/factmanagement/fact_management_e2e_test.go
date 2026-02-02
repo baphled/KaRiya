@@ -215,9 +215,6 @@ var _ = Describe("FactManagement E2E", func() {
 		})
 
 		Context("Editor Global Keys", func() {
-			// Note: q is not a global key - this prevents accidental exits.
-			// Users must press escape to go back, then navigate to main menu to quit.
-
 			It("should toggle help from editor state", func() {
 				By("Opening editor")
 				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
@@ -267,7 +264,7 @@ var _ = Describe("FactManagement E2E", func() {
 				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
 
 				By("Verifying fact was deleted")
-				Expect(len(mockRepo.facts)).To(Equal(2))
+				Expect(mockRepo.facts).To(HaveLen(2))
 
 				By("Verifying back at list state")
 				view := intent.View()
@@ -282,7 +279,7 @@ var _ = Describe("FactManagement E2E", func() {
 				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
 
 				By("Verifying fact was not deleted")
-				Expect(len(mockRepo.facts)).To(Equal(3))
+				Expect(mockRepo.facts).To(HaveLen(3))
 
 				By("Verifying back at view state")
 				view := intent.View()
@@ -300,7 +297,7 @@ var _ = Describe("FactManagement E2E", func() {
 				intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
 
 				By("Verifying fact was not deleted")
-				Expect(len(mockRepo.facts)).To(Equal(3))
+				Expect(mockRepo.facts).To(HaveLen(3))
 			})
 		})
 
@@ -331,7 +328,7 @@ var _ = Describe("FactManagement E2E", func() {
 				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
 
 				By("Verifying fact was deleted")
-				Expect(len(mockRepo.facts)).To(Equal(2))
+				Expect(mockRepo.facts).To(HaveLen(2))
 			})
 		})
 
@@ -347,7 +344,7 @@ var _ = Describe("FactManagement E2E", func() {
 				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
 
 				By("Verifying fact was not deleted")
-				Expect(len(mockRepo.facts)).To(Equal(3))
+				Expect(mockRepo.facts).To(HaveLen(3))
 
 				By("Verifying result has error status")
 				result := intent.Result()
@@ -531,7 +528,7 @@ var _ = Describe("FactManagement E2E", func() {
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
 
 			By("Verifying fact was deleted")
-			Expect(len(mockRepo.facts)).To(Equal(2))
+			Expect(mockRepo.facts).To(HaveLen(2))
 		})
 
 		It("should open and cancel edit form", func() {
@@ -640,7 +637,7 @@ var _ = Describe("FactManagement E2E", func() {
 				newFact.RoleFit = "senior_ic"
 				err = intentCtx.CreateFact(newFact)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(len(intentCtx.Facts)).To(Equal(initialCount + 1))
+				Expect(intentCtx.Facts).To(HaveLen(initialCount + 1))
 				Expect(intentCtx.TotalFacts).To(Equal(initialCount + 1))
 			})
 
@@ -733,7 +730,7 @@ var _ = Describe("FactManagement E2E", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				pageFacts := intentCtx.GetPageFacts()
-				Expect(len(pageFacts)).To(Equal(2))
+				Expect(pageFacts).To(HaveLen(2))
 			})
 		})
 	})

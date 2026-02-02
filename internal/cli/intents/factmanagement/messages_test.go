@@ -109,7 +109,7 @@ var _ = Describe("Messages", func() {
 				Message: "Invalid input",
 				Err:     nil,
 			}
-			Expect(msg.Err).To(BeNil())
+			Expect(msg.Err).ToNot(HaveOccurred())
 		})
 	})
 })

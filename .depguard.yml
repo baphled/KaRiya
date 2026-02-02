@@ -1,0 +1,10 @@
+main:
+  files:
+    - $all
+  list-mode: strict
+  allow:
+    - $gostd
+    - github.com/baphled/kariya
+    - github.com/charmbracelet
+    - github.com/onsi/ginkgo/v2
+    - github.com/onsi/gomega

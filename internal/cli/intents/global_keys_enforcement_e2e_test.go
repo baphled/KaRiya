@@ -194,8 +194,6 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 					result := intent.Result()
 					Expect(result).NotTo(BeNil(),
 						"%s: Root state escape should produce result", name)
-					// Note: Some intents may return Completed instead of Cancelled
-					// That's acceptable as long as intent becomes inactive
 				},
 				Entry("GenerateCV", "GenerateCV", func() (Intent, error) {
 					return NewGenerateCVIntent(&GenerateCVContext{
@@ -210,8 +208,6 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 						},
 					})
 				}),
-				// BrowseTimeline moved to browse_timeline subpackage - has own tests
-				// CaptureEvent moved to captureevent subpackage - has own tests
 			)
 		})
 
@@ -241,8 +237,6 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 						},
 					})
 				}),
-				// BrowseTimeline moved to browse_timeline subpackage - has own tests
-				// CaptureEvent moved to captureevent subpackage - has own tests
 			)
 		})
 
@@ -281,31 +275,7 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 						},
 					})
 				}),
-				// BrowseTimeline moved to browse_timeline subpackage - has own tests
-				// CaptureEvent moved to captureevent subpackage - has own tests
 			)
 		})
 	})
-
-	// =========================================================================
-	// PART 3: CONTEXT-AWARE NAVIGATION
-	// =========================================================================
-	//
-	// Some intents behave differently based on context (edit vs new).
-	// This is the correct pattern - don't hard-code state transitions.
-	// =========================================================================
-
-	Describe("Context-Aware Navigation", func() {
-		// CaptureEvent Edit vs New tests moved to captureevent subpackage.
-		// See: internal/cli/intents/captureevent/global_keys_test.go
-
-		// FactManagement moved to factmanagement subpackage - has own tests.
-		// See: internal/cli/intents/factmanagement/intent_test.go
-	})
-
-	// =========================================================================
-	// PART 4: FUTURE ENFORCEMENT
-	// NOTE: Additional intents (ExportArtifact, ConfigureSystem, ImportWizard,
-	// MetadataEditor, BulkOperations) will be added to the DescribeTable when
-	// their migration to the new architecture is complete.
 })

@@ -312,7 +312,7 @@ var _ = Describe("ConfigureSystem Intent", func() {
 			// Get system settings
 			settings := intent.getSettingsForDomain(DomainSystem)
 			Expect(settings).NotTo(BeNil())
-			Expect(len(settings)).To(BeNumerically(">", 0))
+			Expect(settings).ToNot(BeEmpty())
 
 			// Should have actual config settings (not sample data)
 			var hasLogLevel, hasDataDir bool

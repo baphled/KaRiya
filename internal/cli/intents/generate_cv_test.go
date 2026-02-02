@@ -302,7 +302,7 @@ var _ = Describe("GenerateCVIntent", func() {
 			view := intent.View()
 			Expect(view).To(ContainSubstring("CV Generation Failed"))
 			// Error should be cleared
-			Expect(intent.state.generationError).To(BeNil())
+			Expect(intent.state.generationError).ToNot(HaveOccurred())
 			// Second render should not show error
 			view = intent.View()
 			Expect(view).NotTo(ContainSubstring("CV Generation Failed"))

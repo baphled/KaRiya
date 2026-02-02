@@ -15,6 +15,7 @@ func NewClassifier() *Classifier {
 }
 
 // ClassifyRoleFit determines the role fit for a fact based on keywords.
+//
 // Deprecated: Use ClassifyRoleFitWithCategories instead for more accurate classification.
 func (c *Classifier) ClassifyRoleFit(text string) career.RoleFit {
 	return c.ClassifyRoleFitWithCategories(text, nil)

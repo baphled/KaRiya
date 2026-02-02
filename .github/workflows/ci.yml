@@ -89,12 +89,12 @@ jobs:
           cache: true
 
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v7
         with:
-          version: v1.64.8
-          install-mode: goinstall
-          args: --timeout=5m
+          version: v2.8.0
+          install-mode: binary
           only-new-issues: true
+          args: --timeout=5m
 
   # Docblocks enforcement (structured doc comments on exports)
   docblocks:
@@ -173,7 +173,7 @@ jobs:
         run: go install github.com/onsi/ginkgo/v2/ginkgo@latest
 
       - name: Run tests
-        run: ginkgo -v --race --cover --coverprofile=coverage.out --skip-package=testdata ./...
+        run: ginkgo -v --race --cover --coverprofile=coverage.out --skip-package=testdata,noinlinecareer/testdata ./...
 
       - name: Upload coverage to Codecov
         if: matrix.os == 'ubuntu-latest'

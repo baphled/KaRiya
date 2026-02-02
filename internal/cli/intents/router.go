@@ -1,6 +1,7 @@
 package intents
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 
@@ -226,7 +227,7 @@ func (r *DefaultIntentRouter) Back() (tea.Cmd, error) {
 	defer r.mu.Unlock()
 
 	if len(r.intentHistory) == 0 {
-		return nil, fmt.Errorf("no previous intent to go back to")
+		return nil, errors.New("no previous intent to go back to")
 	}
 
 	// Pop the previous intent from history.

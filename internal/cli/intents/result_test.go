@@ -15,7 +15,7 @@ var _ = Describe("IntentResult", func() {
 
 			Expect(result.Status).To(Equal(intents.Completed))
 			Expect(result.Data).To(Equal("test data"))
-			Expect(result.Error).To(BeNil())
+			Expect(result.Error).ToNot(HaveOccurred())
 			Expect(result.IsSuccessful()).To(BeTrue())
 		})
 
@@ -24,7 +24,7 @@ var _ = Describe("IntentResult", func() {
 
 			Expect(result.Status).To(Equal(intents.Completed))
 			Expect(result.Data).To(Equal(""))
-			Expect(result.Error).To(BeNil())
+			Expect(result.Error).ToNot(HaveOccurred())
 			Expect(result.IsSuccessful()).To(BeTrue())
 		})
 	})
@@ -46,7 +46,7 @@ var _ = Describe("IntentResult", func() {
 
 			Expect(result.Status).To(Equal(intents.Failed))
 			Expect(result.IsFailed()).To(BeTrue())
-			Expect(result.Error).NotTo(BeNil())
+			Expect(result.Error).To(HaveOccurred())
 			Expect(result.Error.Code).To(Equal("test_code"))
 			Expect(result.Error.Cause).To(Equal(cause))
 			Expect(result.IsSuccessful()).To(BeFalse())
@@ -60,7 +60,7 @@ var _ = Describe("IntentResult", func() {
 
 			Expect(result.Status).To(Equal(intents.Partial))
 			Expect(result.Data).To(Equal(data))
-			Expect(result.Error).NotTo(BeNil())
+			Expect(result.Error).To(HaveOccurred())
 			Expect(result.IsSuccessful()).To(BeTrue())
 		})
 	})
@@ -141,12 +141,12 @@ var _ = Describe("IntentResult", func() {
 	Describe("IsValid", func() {
 		It("should return nil for completed result", func() {
 			result := intents.NewCompletedResult("data")
-			Expect(result.IsValid()).To(BeNil())
+			Expect(result.IsValid()).To(Succeed())
 		})
 
 		It("should return nil for cancelled result", func() {
 			result := intents.NewCancelledResult[string]()
-			Expect(result.IsValid()).To(BeNil())
+			Expect(result.IsValid()).To(Succeed())
 		})
 
 		It("should return error for failed result without error", func() {
@@ -156,7 +156,7 @@ var _ = Describe("IntentResult", func() {
 
 		It("should return nil for failed result with error", func() {
 			result := intents.NewFailedResult[string]("code", "message", nil)
-			Expect(result.IsValid()).To(BeNil())
+			Expect(result.IsValid()).To(Succeed())
 		})
 
 		It("should return error for partial result without error", func() {
@@ -166,7 +166,7 @@ var _ = Describe("IntentResult", func() {
 
 		It("should return nil for partial result with error", func() {
 			result := intents.NewPartialResult("data", "code", "message")
-			Expect(result.IsValid()).To(BeNil())
+			Expect(result.IsValid()).To(Succeed())
 		})
 	})
 })

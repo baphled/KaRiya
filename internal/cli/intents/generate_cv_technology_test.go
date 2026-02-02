@@ -103,22 +103,20 @@ var _ = Describe("GenerateCV Technology Extraction", func() {
 				// Should be TechnologiesExtractedMsg
 				extractedMsg, ok := msg.(TechnologiesExtractedMsg)
 				Expect(ok).To(BeTrue(), "Expected TechnologiesExtractedMsg")
-				Expect(extractedMsg.Error).To(BeNil())
+				Expect(extractedMsg.Error).ToNot(HaveOccurred())
 
 				// Should have extracted technologies
 				// PostgreSQL has 2 events (event-1, event-2) - below threshold
 				// Ruby has 1 event (event-1) - below threshold
 				// React has 0 events - below threshold
 				// So filtered list should be empty
-				Expect(extractedMsg.Technologies).To(HaveLen(0))
+				Expect(extractedMsg.Technologies).To(BeEmpty())
 			})
 
 			It("should provide focus area suggestion", func() {
-				// Add more events to meet threshold
-				for i := 0; i < 5; i++ {
+				for i := range 5 {
 					event := fixtures.EventWith("event-extra-"+string(rune(i+'0')), "Extra Event", "Test Co", "")
 					event.Skills = []string{"skill-ruby", "skill-postgres"}
-					//nolint:errcheck // Test setup - error handling not relevant.
 					eventRepo.Create(testContext, event)
 					ctx.Events = append(ctx.Events, event)
 				}
@@ -476,8 +474,7 @@ var _ = Describe("GenerateCV Technology Extraction", func() {
 					&ExtractedTechnology{ID: "skill-6", Name: "Tech6", Category: "test", EventCount: 3},
 				)
 
-				// Select 6 technologies
-				for i := 0; i < 6; i++ {
+				for i := range 6 {
 					intent.state.technologySelected[i] = true
 				}
 

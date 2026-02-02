@@ -90,7 +90,7 @@ var _ = Describe("Fact", func() {
 
 		It("should reject fact with text exceeding 2000 characters", func() {
 			longText := ""
-			for i := 0; i < 2001; i++ {
+			for range 2001 {
 				longText += "a"
 			}
 

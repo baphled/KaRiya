@@ -2,6 +2,7 @@ package cv
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -78,7 +79,7 @@ func (svc *DefaultCVGenerationService) GenerateCVFromConfig(ctx context.Context,
 	}
 
 	if config == nil {
-		return nil, fmt.Errorf("configuration cannot be nil")
+		return nil, errors.New("configuration cannot be nil")
 	}
 
 	// Validate configuration

@@ -186,7 +186,6 @@ func (sb *DefaultSectionBuilder) buildProjectsSection(
 		content = append(content, &career.SectionContentGroup{
 			Header:  group.header,
 			Bullets: bullets,
-			// Note: Projects don't have dates (StartDate/EndDate intentionally omitted)
 		})
 	}
 
