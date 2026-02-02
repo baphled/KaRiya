@@ -51,14 +51,14 @@ type EventDetailScreen struct {
 
 // NewTimelineEventDetailScreen creates a new event detail screen.
 //
-// The screen:
-// - Displays all event fields in a formatted layout
-// - Shows optional fields only when present
-// - Provides edit and delete actions
-// - Supports back navigation
+// Expected:
+//   - event must be valid.
 //
-// Parameters:
-//   - event: The career event to display
+// Returns:
+//   - A fully initialized EventDetailScreen ready for use.
+//
+// Side effects:
+//   - None.
 func NewTimelineEventDetailScreen(event *career.Event) *EventDetailScreen {
 	return &EventDetailScreen{
 		Screen: base.NewBaseScreen(),
@@ -67,6 +67,17 @@ func NewTimelineEventDetailScreen(event *career.Event) *EventDetailScreen {
 }
 
 // Update handles messages and actions.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - tea.Cmd: command to execute.
+//   - screens.ScreenResult: result indicating user action.
+//
+// Side effects:
+//   - May return CancelResult on escape/backspace.
+//   - May return NavigateResult with action data.
 func (s *EventDetailScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -100,7 +111,12 @@ func (s *EventDetailScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) 
 }
 
 // RenderContent returns just the content (event detail card) without StandardView wrapper.
-// This allows the intent to wrap it with proper breadcrumbs and themed footer.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *EventDetailScreen) RenderContent() string {
 	if s.event == nil {
 		return "No event selected."
@@ -137,6 +153,12 @@ func (s *EventDetailScreen) RenderContent() string {
 }
 
 // View renders the event detail screen using StandardView.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *EventDetailScreen) View() string {
 	content := s.RenderContent()
 
@@ -163,6 +185,12 @@ func (s *EventDetailScreen) View() string {
 }
 
 // GetEvent returns the event being displayed.
+//
+// Returns:
+//   - A fully initialized career.Event ready for use.
+//
+// Side effects:
+//   - None.
 func (s *EventDetailScreen) GetEvent() *career.Event {
 	return s.event
 }

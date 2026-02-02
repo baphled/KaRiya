@@ -51,6 +51,15 @@ type SkillDetailScreen struct {
 }
 
 // NewSkillDetailScreen creates a new skill detail screen.
+//
+// Expected:
+//   - skill must be valid.
+//
+// Returns:
+//   - A fully initialized SkillDetailScreen ready for use.
+//
+// Side effects:
+//   - None.
 func NewSkillDetailScreen(skill *career.Skill) *SkillDetailScreen {
 	return &SkillDetailScreen{
 		Screen: base.NewBaseScreen(),
@@ -59,6 +68,17 @@ func NewSkillDetailScreen(skill *career.Skill) *SkillDetailScreen {
 }
 
 // Update handles messages and returns result for actions.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - tea.Cmd: command to execute.
+//   - screens.ScreenResult: result indicating user action.
+//
+// Side effects:
+//   - May return CancelResult on escape.
+//   - May return NavigateResult with action data.
 func (s *SkillDetailScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -95,6 +115,12 @@ func (s *SkillDetailScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) 
 }
 
 // View renders the skill detail screen.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *SkillDetailScreen) View() string {
 	// Get theme for styling (fall back to default if not set).
 	var th themes.Theme
@@ -186,6 +212,12 @@ func (s *SkillDetailScreen) getCategoryColor(category string) lipgloss.Color {
 }
 
 // GetSkill returns the skill being displayed.
+//
+// Returns:
+//   - A fully initialized career.Skill ready for use.
+//
+// Side effects:
+//   - None.
 func (s *SkillDetailScreen) GetSkill() *career.Skill {
 	return s.skill
 }

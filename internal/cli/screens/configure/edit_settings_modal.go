@@ -37,6 +37,18 @@ type EditSettingsModal struct {
 }
 
 // NewEditSettingsModal creates a new edit settings modal.
+//
+// Expected:
+//   - domain must be a valid ConfigurationDomain.
+//   - settings must be a valid slice of ConfigurationSetting.
+//   - width must be a positive integer.
+//   - height must be a positive integer.
+//
+// Returns:
+//   - A fully initialized EditSettingsModal ready for use.
+//
+// Side effects:
+//   - Initializes form data from settings.
 func NewEditSettingsModal(
 	domain configtypes.ConfigurationDomain,
 	settings []*configtypes.ConfigurationSetting,
@@ -173,6 +185,12 @@ func (m *EditSettingsModal) createFieldForSetting(setting *configtypes.Configura
 }
 
 // Init initializes the modal.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (m *EditSettingsModal) Init() tea.Cmd {
 	if m.form != nil {
 		return m.form.Init()
@@ -181,6 +199,15 @@ func (m *EditSettingsModal) Init() tea.Cmd {
 }
 
 // Update handles messages.
+//
+// Expected:
+//   - msg must be valid.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (m *EditSettingsModal) Update(msg tea.Msg) tea.Cmd {
 	if !m.visible {
 		return nil
@@ -229,6 +256,12 @@ func (m *EditSettingsModal) Update(msg tea.Msg) tea.Cmd {
 }
 
 // View renders the modal content.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *EditSettingsModal) View() string {
 	if !m.visible {
 		return ""
@@ -270,6 +303,15 @@ func (m *EditSettingsModal) View() string {
 }
 
 // Render renders the modal at the specified dimensions.
+//
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *EditSettingsModal) Render(width, height int) string {
 	m.width = width
 	m.height = height
@@ -277,21 +319,45 @@ func (m *EditSettingsModal) Render(width, height int) string {
 }
 
 // IsVisible returns whether the modal is visible.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *EditSettingsModal) IsVisible() bool {
 	return m.visible
 }
 
 // IsCompleted returns whether the form was completed (submitted).
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *EditSettingsModal) IsCompleted() bool {
 	return m.completed
 }
 
 // IsCancelled returns whether the modal was cancelled.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *EditSettingsModal) IsCancelled() bool {
 	return m.cancelled
 }
 
 // GetChanges returns the map of changed settings.
+//
+// Returns:
+//   - A map[string]interface{} value.
+//
+// Side effects:
+//   - None.
 func (m *EditSettingsModal) GetChanges() map[string]interface{} {
 	changes := make(map[string]interface{})
 
@@ -328,12 +394,21 @@ func (m *EditSettingsModal) GetChanges() map[string]interface{} {
 }
 
 // SetTheme updates the theme.
+//
+// Expected:
+//   - th must be a valid theme instance (can be nil).
+//
+// Side effects:
+//   - None.
 func (m *EditSettingsModal) SetTheme(theme themes.Theme) {
 	m.theme = theme
 	m.rebuildForm()
 }
 
 // Show makes the modal visible.
+//
+// Side effects:
+//   - None.
 func (m *EditSettingsModal) Show() {
 	m.visible = true
 	m.completed = false
@@ -341,6 +416,9 @@ func (m *EditSettingsModal) Show() {
 }
 
 // Hide hides the modal.
+//
+// Side effects:
+//   - None.
 func (m *EditSettingsModal) Hide() {
 	m.visible = false
 }

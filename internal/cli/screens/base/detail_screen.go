@@ -86,11 +86,16 @@ type DetailScreen[T any] struct {
 //   - renderer: Function that renders the data as a string for given dimensions
 //   - data: The data structure to display
 //
-// Default behavior:
-//   - Escape key goes back (CancelResult)
-//   - Enter key confirms (NavigateResult with "confirm")
-//   - Up/Down and j/k scroll the content
-//   - g/G jump to top/bottom
+// Expected:
+//   - breadcrumbs must be a valid slice of strings.
+//   - renderer must be a valid ContentRenderer function.
+//   - data must be a valid T pointer.
+//
+// Returns:
+//   - A fully initialized DetailScreen[T] ready for use.
+//
+// Side effects:
+//   - None.
 func NewBaseDetailScreen[T any](
 	breadcrumbs []string,
 	renderer ContentRenderer[T],
@@ -108,6 +113,17 @@ func NewBaseDetailScreen[T any](
 }
 
 // Update handles messages and returns result when user takes action.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - tea.Cmd: command to execute.
+//   - screens.ScreenResult: result indicating user action.
+//
+// Side effects:
+//   - May update scroll offset.
+//   - May return CancelResult or NavigateResult.
 func (s *DetailScreen[T]) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -165,7 +181,12 @@ func (s *DetailScreen[T]) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 }
 
 // RenderContent returns the detail content without StandardView wrapper.
-// This allows intents to wrap in their own StandardView with custom breadcrumbs/help.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *DetailScreen[T]) RenderContent() string {
 	// Render content with current dimensions
 	content := ""
@@ -180,31 +201,57 @@ func (s *DetailScreen[T]) RenderContent() string {
 }
 
 // View renders the detail screen using StandardView.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *DetailScreen[T]) View() string {
 	// Use Screen's CreateView helper for StandardView integration
 	return s.CreateView(s.breadcrumbs, s.RenderContent(), s.footer)
 }
 
 // SetFooter updates the footer help text.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Side effects:
+//   - None.
 func (s *DetailScreen[T]) SetFooter(footer string) {
 	s.footer = footer
 }
 
 // GetData returns the data structure being displayed.
 //
-// This allows the intent to access the data after the screen completes.
+// Returns:
+//   - A T value.
+//
+// Side effects:
+//   - None.
 func (s *DetailScreen[T]) GetData() T {
 	return s.data
 }
 
 // GetScrollOffset returns the current scroll offset.
+//
+// Returns:
+//   - A int value.
+//
+// Side effects:
+//   - None.
 func (s *DetailScreen[T]) GetScrollOffset() int {
 	return s.scrollOffset
 }
 
 // SetScrollOffset sets the scroll offset.
 //
-// This is useful for restoring scroll position when navigating back.
+// Expected:
+//   - int must be valid.
+//
+// Side effects:
+//   - None.
 func (s *DetailScreen[T]) SetScrollOffset(offset int) {
 	if offset < 0 {
 		offset = 0
@@ -214,33 +261,22 @@ func (s *DetailScreen[T]) SetScrollOffset(offset int) {
 
 // AddAction registers a custom action key.
 //
-// When the user presses the specified key, a NavigateResult is returned
-// with the action name as data.
+// Expected:
+//   - Must be a valid string.
 //
-// Example:
-//
-//	screen.AddAction("e", "edit")   // Pressing 'e' returns NavigateResult{Data: "edit"}
-//	screen.AddAction("d", "delete") // Pressing 'd' returns NavigateResult{Data: "delete"}
-//
-// The intent can then handle these actions:
-//
-//	if result.Type() == screens.ResultNavigate {
-//	    action := result.Data().(string)
-//	    switch action {
-//	    case "edit":
-//	        // Transition to edit screen
-//	    case "delete":
-//	        // Show delete confirmation
-//	    }
-//	}
+// Side effects:
+//   - None.
 func (s *DetailScreen[T]) AddAction(key, action string) {
 	s.actions[key] = action
 }
 
 // RestoreFromMetadata restores screen state from metadata.
 //
-// This is useful when navigating back to this screen from another screen.
-// The metadata should contain the scroll_offset key.
+// Expected:
+//   - Must be a valid string.
+//
+// Side effects:
+//   - None.
 func (s *DetailScreen[T]) RestoreFromMetadata(metadata map[string]interface{}) {
 	if offset, ok := metadata["scroll_offset"]; ok {
 		if offsetInt, ok := offset.(int); ok {

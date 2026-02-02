@@ -22,10 +22,24 @@ type staticViewModel struct {
 // View returns the pre-rendered string content stored in this model. It satisfies the
 // overlay.Viewable interface so that static markup (such as a modal or background view)
 // can be composed via bubbletea-overlay without requiring a full Bubble Tea model.
+//
+// Returns:
+//   - string: the pre-rendered content.
+//
+// Side effects:
+//   - None.
 func (m staticViewModel) View() string { return m.content }
 
 // RenderOverlayModal renders a modal view over a background using bubbletea-overlay.
-// This is a helper for modals that need overlay rendering.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func RenderOverlayModal(modalView, backgroundView string) string {
 	modalContent := staticViewModel{content: modalView}
 	bgModel := staticViewModel{content: backgroundView}
@@ -43,7 +57,16 @@ func RenderOverlayModal(modalView, backgroundView string) string {
 }
 
 // RenderEventDetailContent renders career event details as formatted content.
-// This is used by the DetailModal for event viewing.
+//
+// Expected:
+//   - event must be valid.
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func RenderEventDetailContent(event *career.Event, theme themes.Theme) string {
 	if event == nil {
 		return "No event selected."
@@ -78,7 +101,16 @@ func RenderEventDetailContent(event *career.Event, theme themes.Theme) string {
 }
 
 // RenderSkillsContent renders a list of skills as formatted content.
-// This is used by the DetailModal for skills viewing.
+//
+// Expected:
+//   - skill must be valid.
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func RenderSkillsContent(skills []*career.Skill, theme themes.Theme) string {
 	if len(skills) == 0 {
 		return primitives.Muted("No skills associated with this event.", theme).Italic().Render()

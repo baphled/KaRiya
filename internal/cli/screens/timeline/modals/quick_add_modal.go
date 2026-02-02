@@ -35,7 +35,15 @@ type QuickAddModal struct {
 }
 
 // NewQuickAddModal creates a new quick add event modal.
-// width, height: terminal dimensions for responsive sizing
+//
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized QuickAddModal ready for use.
+//
+// Side effects:
+//   - None.
 func NewQuickAddModal(width, height int) *QuickAddModal {
 	formData := forms.NewCaptureEventFormData()
 	// Default date to today.
@@ -71,6 +79,12 @@ func (m *QuickAddModal) buildForm() {
 }
 
 // Init initializes the modal and its form.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (m *QuickAddModal) Init() tea.Cmd {
 	if m.form == nil {
 		return nil
@@ -80,10 +94,17 @@ func (m *QuickAddModal) Init() tea.Cmd {
 
 // Update handles messages for the quick add event modal.
 //
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
 // Returns:
-//   - tea.Cmd: command to execute
-//   - bool: true if form completed successfully
-//   - *QuickAddData: event data if completed, nil otherwise
+//   - tea.Cmd: command to execute.
+//   - bool: true if form completed successfully.
+//   - *QuickAddData: event data if completed, nil otherwise.
+//
+// Side effects:
+//   - May hide modal on completion or cancellation.
+//   - May rebuild form on window resize.
 func (m *QuickAddModal) Update(msg tea.Msg) (tea.Cmd, bool, *QuickAddData) {
 	if !m.visible {
 		return nil, false, nil
@@ -131,8 +152,12 @@ func (m *QuickAddModal) Update(msg tea.Msg) (tea.Cmd, bool, *QuickAddData) {
 }
 
 // View renders the quick add event modal with proper chrome (border, background)
-// for overlay compositing. The chrome provides a solid background so the modal
-// doesn't show the background layer through.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *QuickAddModal) View() string {
 	if !m.visible {
 		return ""
@@ -148,16 +173,28 @@ func (m *QuickAddModal) View() string {
 }
 
 // IsVisible returns whether the modal is currently visible.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *QuickAddModal) IsVisible() bool {
 	return m.visible
 }
 
 // Show makes the modal visible.
+//
+// Side effects:
+//   - None.
 func (m *QuickAddModal) Show() {
 	m.visible = true
 }
 
 // Hide hides the modal.
+//
+// Side effects:
+//   - None.
 func (m *QuickAddModal) Hide() {
 	m.visible = false
 }
@@ -170,7 +207,12 @@ type QuickAddData struct {
 }
 
 // ToCareerEvent converts the form data to a Event domain object.
-// Returns a new Event ready to be saved.
+//
+// Returns:
+//   - A fully initialized career.Event ready for use.
+//
+// Side effects:
+//   - None.
 func (d *QuickAddData) ToCareerEvent() *career.Event {
 	// Parse date or default to today.
 	eventDate, err := forms.ParseDateString(d.Date)

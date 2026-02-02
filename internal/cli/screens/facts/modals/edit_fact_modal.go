@@ -19,6 +19,12 @@ type EditResult struct {
 }
 
 // HasChanges returns true if there are any changes.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (r *EditResult) HasChanges() bool {
 	return len(r.Changes) > 0
 }
@@ -35,6 +41,15 @@ type EditFactModal struct {
 }
 
 // NewEditFactModal creates a new fact editing modal using huh forms.
+//
+// Expected:
+//   - fact must be valid.
+//
+// Returns:
+//   - A fully initialized EditFactModal ready for use.
+//
+// Side effects:
+//   - None.
 func NewEditFactModal(fact *career.Fact) *EditFactModal {
 	originalCopy := *fact
 
@@ -61,11 +76,26 @@ func NewEditFactModal(fact *career.Fact) *EditFactModal {
 }
 
 // Init initializes the modal's form and returns the init command.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (m *EditFactModal) Init() tea.Cmd {
 	return m.form.Init()
 }
 
 // Update handles user input for fact editing.
+//
+// Expected:
+//   - msg must be valid.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (m *EditFactModal) Update(msg tea.Msg) tea.Cmd {
 	if wsm, ok := msg.(tea.WindowSizeMsg); ok {
 		m.width = wsm.Width
@@ -94,6 +124,12 @@ func (m *EditFactModal) Update(msg tea.Msg) tea.Cmd {
 }
 
 // View renders the fact editing modal with professional styling.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *EditFactModal) View() string {
 	if m.result != nil && m.result.Accepted {
 		return ""
@@ -122,21 +158,45 @@ func (m *EditFactModal) View() string {
 }
 
 // Result returns the modal result when editing is complete.
+//
+// Returns:
+//   - A fully initialized EditResult ready for use.
+//
+// Side effects:
+//   - None.
 func (m *EditFactModal) Result() *EditResult {
 	return m.result
 }
 
 // IsComplete returns true if the modal has finished.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *EditFactModal) IsComplete() bool {
 	return m.result != nil
 }
 
 // GetTitle returns the modal title for overlay rendering.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *EditFactModal) GetTitle() string {
 	return "Edit Fact"
 }
 
 // GetContent returns just the form content without the modal container.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *EditFactModal) GetContent() string {
 	if m.result != nil && m.result.Accepted {
 		return ""
@@ -145,6 +205,12 @@ func (m *EditFactModal) GetContent() string {
 }
 
 // GetFooter returns the footer instructions for the modal.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *EditFactModal) GetFooter() string {
 	return "Enter: Confirm  |  Esc: Cancel  |  Tab: Next Field  |  Shift+Tab: Previous"
 }

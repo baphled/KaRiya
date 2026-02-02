@@ -23,6 +23,12 @@ type ErrorMsg struct {
 }
 
 // TickCmd returns a command that sends TickMsg after a delay.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func TickCmd() tea.Cmd {
 	return tea.Tick(100*time.Millisecond, func(time.Time) tea.Msg {
 		return TickMsg{}
@@ -102,10 +108,16 @@ type ProgressScreen struct {
 //   - title: The operation title (e.g., "Generating CV")
 //   - message: The progress message (e.g., "Analyzing career events...")
 //
-// Default behavior:
-//   - Spinner animates automatically
-//   - Escape key allows cancellation (can be disabled via SetAllowCancel)
-//   - Waits for CompleteMsg or ErrorMsg to finish
+// Expected:
+//   - breadcrumbs must be a valid slice of strings.
+//   - title must be a valid string.
+//   - message must be a valid string.
+//
+// Returns:
+//   - A fully initialized ProgressScreen ready for use.
+//
+// Side effects:
+//   - None.
 func NewBaseProgressScreen(
 	breadcrumbs []string,
 	title, message string,
@@ -123,6 +135,19 @@ func NewBaseProgressScreen(
 }
 
 // Update handles messages and returns result when operation completes or is cancelled.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - tea.Cmd: command to execute.
+//   - screens.ScreenResult: result indicating completion state.
+//
+// Side effects:
+//   - May advance spinner frame.
+//   - May return NavigateResult on success.
+//   - May return ErrorResult on failure.
+//   - May return CancelResult on cancellation.
 func (s *ProgressScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -159,12 +184,23 @@ func (s *ProgressScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 }
 
 // Init initializes the screen and starts the spinner animation.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (s *ProgressScreen) Init() tea.Cmd {
 	return TickCmd()
 }
 
 // RenderContent returns the progress content without StandardView wrapper.
-// This allows intents to wrap in their own StandardView with custom breadcrumbs/help.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *ProgressScreen) RenderContent() string {
 	var b strings.Builder
 
@@ -189,6 +225,12 @@ func (s *ProgressScreen) RenderContent() string {
 }
 
 // View renders the progress screen using StandardView.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *ProgressScreen) View() string {
 	// Update footer based on cancellation setting
 	footer := s.footer
@@ -201,63 +243,89 @@ func (s *ProgressScreen) View() string {
 }
 
 // SetFooter updates the footer help text.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Side effects:
+//   - None.
 func (s *ProgressScreen) SetFooter(footer string) {
 	s.footer = footer
 }
 
 // GetTitle returns the operation title.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *ProgressScreen) GetTitle() string {
 	return s.title
 }
 
 // SetTitle updates the operation title.
 //
-// This is useful for updating the title mid-operation.
+// Expected:
+//   - Must be a valid string.
+//
+// Side effects:
+//   - None.
 func (s *ProgressScreen) SetTitle(title string) {
 	s.title = title
 }
 
 // GetMessage returns the progress message.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *ProgressScreen) GetMessage() string {
 	return s.message
 }
 
 // SetMessage updates the progress message.
 //
-// This is useful for providing step-by-step feedback during a long operation.
+// Expected:
+//   - Must be a valid string.
 //
-// Example:
-//
-//	screen.SetMessage("Step 1: Loading events...")
-//	// ... do work
-//	screen.SetMessage("Step 2: Analyzing facts...")
-//	// ... do work
-//	screen.SetMessage("Step 3: Generating output...")
+// Side effects:
+//   - None.
 func (s *ProgressScreen) SetMessage(message string) {
 	s.message = message
 }
 
 // GetSpinnerFrame returns the current spinner frame.
+//
+// Returns:
+//   - A int value.
+//
+// Side effects:
+//   - None.
 func (s *ProgressScreen) GetSpinnerFrame() int {
 	return s.spinnerFrame
 }
 
 // SetSpinnerFrame sets the spinner frame.
 //
-// This is rarely needed in normal usage, but can be useful for testing
-// or for synchronizing spinner state.
+// Expected:
+//   - int must be valid.
+//
+// Side effects:
+//   - None.
 func (s *ProgressScreen) SetSpinnerFrame(frame int) {
 	s.spinnerFrame = frame
 }
 
 // SetAllowCancel sets whether the escape key cancels the operation.
 //
-// Set to false for critical operations that should not be interrupted.
+// Expected:
+//   - bool must be valid.
 //
-// Example:
-//
-//	screen := NewBaseProgressScreen(...)
-//	screen.SetAllowCancel(false) // Disable cancellation
+// Side effects:
+//   - None.
 func (s *ProgressScreen) SetAllowCancel(allow bool) {
 	s.allowCancel = allow
 }

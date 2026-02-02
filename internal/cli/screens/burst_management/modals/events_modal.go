@@ -21,6 +21,18 @@ type BurstEventsModal struct {
 }
 
 // NewBurstEventsModal creates a new burst events modal.
+//
+// Expected:
+//   - burstid must be a valid string.
+//   - burstname must be a valid string.
+//   - events must be a valid slice of *career.Event.
+//   - theme must be a valid Theme instance (can be nil).
+//
+// Returns:
+//   - A fully initialized BurstEventsModal ready for use.
+//
+// Side effects:
+//   - None.
 func NewBurstEventsModal(burstID string, burstName string, events []*career.Event, theme themes.Theme) *BurstEventsModal {
 	if theme == nil {
 		theme = themes.NewDefaultTheme()
@@ -43,41 +55,89 @@ func NewBurstEventsModal(burstID string, burstName string, events []*career.Even
 }
 
 // Init initializes the modal.
+//
+// Returns:
+//   - tea.Cmd: command from underlying modal.
+//
+// Side effects:
+//   - None.
 func (m *BurstEventsModal) Init() tea.Cmd {
 	return m.modal.Init()
 }
 
 // Update handles keyboard input and window sizing.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - tea.Model: the updated model.
+//   - tea.Cmd: command to execute.
+//
+// Side effects:
+//   - Delegates to underlying modal.
 func (m *BurstEventsModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m.modal.Update(msg)
 }
 
 // View renders the modal content.
+//
+// Returns:
+//   - string: the rendered modal view.
+//
+// Side effects:
+//   - None.
 func (m *BurstEventsModal) View() string {
 	return m.modal.View()
 }
 
 // IsVisible returns whether the modal is currently visible.
+//
+// Returns:
+//   - bool: true if modal is visible.
+//
+// Side effects:
+//   - None.
 func (m *BurstEventsModal) IsVisible() bool {
 	return m.modal.IsVisible()
 }
 
 // Show makes the modal visible.
+//
+// Side effects:
+//   - Shows underlying modal.
 func (m *BurstEventsModal) Show() {
 	m.modal.Show()
 }
 
 // Hide hides the modal.
+//
+// Side effects:
+//   - Hides underlying modal.
 func (m *BurstEventsModal) Hide() {
 	m.modal.Hide()
 }
 
 // SetDimensions sets the terminal dimensions.
+//
+// Expected:
+//   - width must be a positive integer.
+//   - height must be a positive integer.
+//
+// Side effects:
+//   - Updates underlying modal dimensions.
 func (m *BurstEventsModal) SetDimensions(width, height int) {
 	m.modal.SetDimensions(width, height)
 }
 
 // SetEvents updates the events being displayed.
+//
+// Expected:
+//   - events must be a non-nil slice of *career.Event.
+//
+// Side effects:
+//   - Updates internal events reference.
+//   - Regenerates modal content.
 func (m *BurstEventsModal) SetEvents(events []*career.Event) {
 	m.events = events
 	content := renderEventsContent(events, m.theme)
@@ -86,6 +146,12 @@ func (m *BurstEventsModal) SetEvents(events []*career.Event) {
 }
 
 // GetBurstID returns the burst ID this modal is showing events for.
+//
+// Returns:
+//   - string: the burst ID.
+//
+// Side effects:
+//   - None.
 func (m *BurstEventsModal) GetBurstID() string {
 	return m.burstID
 }

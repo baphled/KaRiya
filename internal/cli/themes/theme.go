@@ -88,7 +88,17 @@ type BaseTheme struct {
 }
 
 // NewBaseTheme creates a new BaseTheme with the given parameters.
-// It automatically generates styles from the provided palette.
+//
+// Expected:
+//   - Must be a valid string.
+//   - bool must be valid.
+//   - colorpalette must be valid.
+//
+// Returns:
+//   - A fully initialized BaseTheme ready for use.
+//
+// Side effects:
+//   - None.
 func NewBaseTheme(name, description, author string, isDark bool, palette *ColorPalette) *BaseTheme {
 	return &BaseTheme{
 		name:        name,
@@ -101,91 +111,199 @@ func NewBaseTheme(name, description, author string, isDark bool, palette *ColorP
 }
 
 // Name returns the theme's identifier.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (t *BaseTheme) Name() string {
 	return t.name
 }
 
 // Description returns a human-readable description of the theme.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (t *BaseTheme) Description() string {
 	return t.description
 }
 
 // Author returns the theme's author.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (t *BaseTheme) Author() string {
 	return t.author
 }
 
 // IsDark returns true if this is a dark theme.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (t *BaseTheme) IsDark() bool {
 	return t.isDark
 }
 
 // Palette returns the theme's color palette.
+//
+// Returns:
+//   - A fully initialized ColorPalette ready for use.
+//
+// Side effects:
+//   - None.
 func (t *BaseTheme) Palette() *ColorPalette {
 	return t.palette
 }
 
 // Styles returns the pre-composed styles for this theme.
+//
+// Returns:
+//   - A fully initialized StyleSet ready for use.
+//
+// Side effects:
+//   - None.
 func (t *BaseTheme) Styles() *StyleSet {
 	return t.styles
 }
 
 // PrimaryColor returns the primary accent color.
+//
+// Returns:
+//   - A lipgloss.Color value.
+//
+// Side effects:
+//   - None.
 func (t *BaseTheme) PrimaryColor() lipgloss.Color {
 	return t.palette.Primary
 }
 
 // SecondaryColor returns the secondary accent color.
+//
+// Returns:
+//   - A lipgloss.Color value.
+//
+// Side effects:
+//   - None.
 func (t *BaseTheme) SecondaryColor() lipgloss.Color {
 	return t.palette.Secondary
 }
 
 // AccentColor returns the tertiary/accent color.
+//
+// Returns:
+//   - A lipgloss.Color value.
+//
+// Side effects:
+//   - None.
 func (t *BaseTheme) AccentColor() lipgloss.Color {
 	return t.palette.Tertiary
 }
 
 // BackgroundColor returns the primary background color.
+//
+// Returns:
+//   - A lipgloss.Color value.
+//
+// Side effects:
+//   - None.
 func (t *BaseTheme) BackgroundColor() lipgloss.Color {
 	return t.palette.Background
 }
 
 // ForegroundColor returns the primary foreground/text color.
+//
+// Returns:
+//   - A lipgloss.Color value.
+//
+// Side effects:
+//   - None.
 func (t *BaseTheme) ForegroundColor() lipgloss.Color {
 	return t.palette.Foreground
 }
 
 // MutedColor returns the muted/disabled text color.
+//
+// Returns:
+//   - A lipgloss.Color value.
+//
+// Side effects:
+//   - None.
 func (t *BaseTheme) MutedColor() lipgloss.Color {
 	return t.palette.ForegroundMuted
 }
 
 // SuccessColor returns the success status color.
+//
+// Returns:
+//   - A lipgloss.Color value.
+//
+// Side effects:
+//   - None.
 func (t *BaseTheme) SuccessColor() lipgloss.Color {
 	return t.palette.Success
 }
 
 // WarningColor returns the warning status color.
+//
+// Returns:
+//   - A lipgloss.Color value.
+//
+// Side effects:
+//   - None.
 func (t *BaseTheme) WarningColor() lipgloss.Color {
 	return t.palette.Warning
 }
 
 // ErrorColor returns the error status color.
+//
+// Returns:
+//   - A lipgloss.Color value.
+//
+// Side effects:
+//   - None.
 func (t *BaseTheme) ErrorColor() lipgloss.Color {
 	return t.palette.Error
 }
 
 // InfoColor returns the info status color.
+//
+// Returns:
+//   - A lipgloss.Color value.
+//
+// Side effects:
+//   - None.
 func (t *BaseTheme) InfoColor() lipgloss.Color {
 	return t.palette.Info
 }
 
 // BorderColor returns the default border color.
+//
+// Returns:
+//   - A lipgloss.Color value.
+//
+// Side effects:
+//   - None.
 func (t *BaseTheme) BorderColor() lipgloss.Color {
 	return t.palette.Border
 }
 
 // BorderActiveColor returns the active/focused border color.
+//
+// Returns:
+//   - A lipgloss.Color value.
+//
+// Side effects:
+//   - None.
 func (t *BaseTheme) BorderActiveColor() lipgloss.Color {
 	return t.palette.BorderActive
 }

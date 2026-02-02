@@ -7,7 +7,15 @@ import (
 )
 
 // IsProfileComplete checks if the profile has all required fields.
-// Required fields are Name and Email - without these, CV generation cannot work.
+//
+// Expected:
+//   - config must be a valid configuration object.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func IsProfileComplete(cfg *config.Config) bool {
 	if cfg == nil {
 		return false

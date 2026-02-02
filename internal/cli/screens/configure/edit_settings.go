@@ -51,6 +51,16 @@ type EditSettingsScreen struct {
 }
 
 // NewEditSettingsScreen creates a new edit settings screen.
+//
+// Expected:
+//   - config must be a valid configuration object.
+//   - config must be a valid configuration object.
+//
+// Returns:
+//   - A fully initialized EditSettingsScreen ready for use.
+//
+// Side effects:
+//   - None.
 func NewEditSettingsScreen(domain configtypes.ConfigurationDomain, settings []*configtypes.ConfigurationSetting) *EditSettingsScreen {
 	formData := &SettingsFormData{
 		Values:          make(map[string]*string),
@@ -177,6 +187,12 @@ func (s *EditSettingsScreen) createFieldForSetting(setting *configtypes.Configur
 // Screen interface implementation
 
 // Init initializes the screen.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (s *EditSettingsScreen) Init() tea.Cmd {
 	if s.form != nil {
 		return s.form.Init()
@@ -185,6 +201,17 @@ func (s *EditSettingsScreen) Init() tea.Cmd {
 }
 
 // Update handles messages.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - tea.Cmd: command to execute.
+//   - screens.ScreenResult: result indicating form state.
+//
+// Side effects:
+//   - May rebuild form on window resize.
+//   - May return CancelResult or SubmitResult.
 func (s *EditSettingsScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -221,6 +248,12 @@ func (s *EditSettingsScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult)
 }
 
 // View renders the screen using UIKit layout.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *EditSettingsScreen) View() string {
 	domainLabel := formatDomainLabel(s.domain)
 
@@ -252,12 +285,24 @@ func (s *EditSettingsScreen) View() string {
 }
 
 // SetTerminalInfo updates terminal dimensions.
+//
+// Expected:
+//   - int must be valid.
+//
+// Side effects:
+//   - None.
 func (s *EditSettingsScreen) SetTerminalInfo(width, height int) {
 	s.termInfo = &terminal.Info{Width: width, Height: height}
 	s.rebuildForm()
 }
 
 // SetTheme updates the theme.
+//
+// Expected:
+//   - interface{} must be valid.
+//
+// Side effects:
+//   - None.
 func (s *EditSettingsScreen) SetTheme(theme interface{}) {
 	if t, ok := theme.(themes.Theme); ok {
 		s.theme = t
@@ -266,6 +311,13 @@ func (s *EditSettingsScreen) SetTheme(theme interface{}) {
 }
 
 // SetLogo updates the logo.
+//
+// Expected:
+//   - interface{} must be valid.
+//   - int must be valid.
+//
+// Side effects:
+//   - None.
 func (s *EditSettingsScreen) SetLogo(logo interface{}, _ int) {
 	if l, ok := logo.(layout.LogoRenderer); ok {
 		s.logo = l
@@ -273,6 +325,12 @@ func (s *EditSettingsScreen) SetLogo(logo interface{}, _ int) {
 }
 
 // GetChanges returns the map of changed settings.
+//
+// Returns:
+//   - A map[string]interface{} value.
+//
+// Side effects:
+//   - None.
 func (s *EditSettingsScreen) GetChanges() map[string]interface{} {
 	changes := make(map[string]interface{})
 
@@ -309,6 +367,12 @@ func (s *EditSettingsScreen) GetChanges() map[string]interface{} {
 }
 
 // GetFormData returns the current form data.
+//
+// Returns:
+//   - A fully initialized SettingsFormData ready for use.
+//
+// Side effects:
+//   - None.
 func (s *EditSettingsScreen) GetFormData() *SettingsFormData {
 	return s.formData
 }

@@ -39,9 +39,15 @@ type CompleteScreen struct {
 
 // NewCompleteScreen creates a new complete screen.
 //
-// Parameters:
-//   - domain: The configuration domain that was modified
-//   - changeCount: Number of settings that were changed
+// Expected:
+//   - config must be a valid configuration object.
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized CompleteScreen ready for use.
+//
+// Side effects:
+//   - None.
 func NewCompleteScreen(domain configtypes.ConfigurationDomain, changeCount int) *CompleteScreen {
 	return &CompleteScreen{
 		Screen:      base.NewBaseScreen(),
@@ -52,11 +58,27 @@ func NewCompleteScreen(domain configtypes.ConfigurationDomain, changeCount int) 
 }
 
 // Init initializes the screen.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (s *CompleteScreen) Init() tea.Cmd {
 	return nil
 }
 
 // Update handles messages.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - tea.Cmd: command to execute.
+//   - screens.ScreenResult: result indicating dismissal.
+//
+// Side effects:
+//   - May return SubmitResult on enter/esc/q.
 func (s *CompleteScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	if cmd := s.Screen.HandleWindowSizeMsg(msg); cmd != nil {
 		return cmd, nil
@@ -76,6 +98,12 @@ func (s *CompleteScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 }
 
 // View renders the screen using UIKit layout and Screen.CreateView().
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *CompleteScreen) View() string {
 	theme := s.getTheme()
 	domainLabel := formatDomainLabel(s.domain)
@@ -114,6 +142,12 @@ func (s *CompleteScreen) getTheme() themes.Theme {
 }
 
 // SetTheme updates the theme.
+//
+// Expected:
+//   - interface{} must be valid.
+//
+// Side effects:
+//   - None.
 func (s *CompleteScreen) SetTheme(theme interface{}) {
 	if t, ok := theme.(themes.Theme); ok {
 		s.theme = t

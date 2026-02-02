@@ -27,6 +27,16 @@ type ConfirmModal struct {
 }
 
 // NewConfirmModal creates a new confirmation modal.
+//
+// Expected:
+//   - Must be a valid string.
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized ConfirmModal ready for use.
+//
+// Side effects:
+//   - None.
 func NewConfirmModal(title, message string, width, height int) *ConfirmModal {
 	return &ConfirmModal{
 		title:   title,
@@ -39,11 +49,26 @@ func NewConfirmModal(title, message string, width, height int) *ConfirmModal {
 }
 
 // Init initializes the modal.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (m *ConfirmModal) Init() tea.Cmd {
 	return nil
 }
 
 // Update handles messages.
+//
+// Expected:
+//   - msg must be valid.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (m *ConfirmModal) Update(msg tea.Msg) tea.Cmd {
 	if !m.visible {
 		return nil
@@ -73,6 +98,12 @@ func (m *ConfirmModal) Update(msg tea.Msg) tea.Cmd {
 }
 
 // View renders the modal content.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *ConfirmModal) View() string {
 	if !m.visible {
 		return ""
@@ -110,6 +141,15 @@ func (m *ConfirmModal) View() string {
 }
 
 // Render renders the modal at the specified dimensions.
+//
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *ConfirmModal) Render(width, height int) string {
 	m.width = width
 	m.height = height
@@ -117,26 +157,53 @@ func (m *ConfirmModal) Render(width, height int) string {
 }
 
 // IsVisible returns whether the modal is visible.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *ConfirmModal) IsVisible() bool {
 	return m.visible
 }
 
 // IsConfirmed returns whether the user confirmed.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *ConfirmModal) IsConfirmed() bool {
 	return m.confirmed
 }
 
 // IsCancelled returns whether the modal was cancelled.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *ConfirmModal) IsCancelled() bool {
 	return m.cancelled
 }
 
 // SetTheme updates the theme.
+//
+// Expected:
+//   - th must be a valid theme instance (can be nil).
+//
+// Side effects:
+//   - None.
 func (m *ConfirmModal) SetTheme(theme themes.Theme) {
 	m.theme = theme
 }
 
 // Show makes the modal visible.
+//
+// Side effects:
+//   - None.
 func (m *ConfirmModal) Show() {
 	m.visible = true
 	m.confirmed = false
@@ -144,6 +211,9 @@ func (m *ConfirmModal) Show() {
 }
 
 // Hide hides the modal.
+//
+// Side effects:
+//   - None.
 func (m *ConfirmModal) Hide() {
 	m.visible = false
 }

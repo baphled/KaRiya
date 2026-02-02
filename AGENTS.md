@@ -20,7 +20,8 @@ make session-start   # MUST run first - validates environment, acknowledges rule
 6. **One task** - One logical change per commit
 7. **Senior Engineer Identity** - Apply SOLID, DRY, KISS, YAGNI principles
 8. **Architecture Compliance** - Follow layer hierarchy, no shortcuts
-9. **Comment Hygiene** - No TODO/FIXME/HACK/XXX in merged code, no inline comments
+9. **Documentation** - REQUIRED for all exported symbols (doc.go, godoc, Expected/Returns/Side effects)
+10. **Comment Hygiene** - No temporary markers in merged code, no inline comments
 
 ---
 
@@ -188,6 +189,96 @@ case "delete":
 | `BUG` | Bug marker | Fix the bug or create a tracked issue |
 
 **No exceptions.** All markers are forbidden.
+
+---
+
+## Package Documentation Rules (STRICTLY ENFORCED)
+
+### Required: doc.go Files
+
+**Every package MUST have a doc.go file** with package-level documentation.
+
+```go
+// Package behaviors provides embeddable components for table-based UIs.
+//
+// # Overview
+//
+// The behaviors package offers composable, type-safe components...
+//
+// # Usage Example
+//
+//	table := behaviors.NewTableBehavior(...)
+//
+package behaviors
+```
+
+**Rules:**
+- File must be named `doc.go`
+- Must start with `// Package <name> provides...`
+- Must end with `package <name>`
+- Must include blank line at end of file
+- Use markdown-style headers (`# Section`)
+- Include usage examples where helpful
+
+**Enforcement:** `make check-docblocks` validates all packages
+
+---
+
+### Required: Type Documentation
+
+**Every exported type MUST have a godoc comment** starting with the type name.
+
+```go
+// TableBehavior[T] provides data binding, pagination, navigation, filtering, and sorting
+// for table-based list views. It implements the ListNavigator interface and can be
+// embedded in intents to eliminate boilerplate table management code.
+//
+// Usage:
+//
+//	table := behaviors.NewTableBehavior(theme, columns, formatter).
+//	    PageSize(20).
+//	    EmptyMessage("No items found")
+type TableBehavior[T any] struct {
+    // ... fields (no inline comments)
+}
+```
+
+**Rules:**
+- Comment must start with type name
+- Explain purpose and behavior
+- Include usage examples in code blocks
+- No field-level comments (explain in type godoc)
+
+---
+
+### Required: Function Documentation
+
+**Every exported function MUST have structured documentation** with required sections.
+
+```go
+// NewTableBehavior creates a new table behavior with the given configuration.
+//
+// Expected:
+//   - themeObj must be a valid theme instance.
+//   - columns must define at least one column.
+//   - formatter must be a non-nil function.
+//
+// Returns:
+//   - A fully initialized TableBehavior ready for use.
+//
+// Side effects:
+//   - None.
+func NewTableBehavior[T any](themeObj themes.Theme, columns []ColumnDef, formatter RowFormatter[T]) *TableBehavior[T] {
+    // ... implementation
+}
+```
+
+**Required Sections:**
+- **Expected:** Input parameter requirements (only if function has parameters)
+- **Returns:** Return value description (only if function returns values)
+- **Side effects:** Any side effects (always required, even if "None")
+
+**Enforcement:** `make check-docblocks` validates documentation structure
 
 ---
 
@@ -951,6 +1042,13 @@ make generate-state-matrix  # Generate state matrix
 | `make review-commit` | Review staged changes |
 | `make pre-pr` | Validate before PR |
 
+### Documentation Helpers
+| Command | Purpose |
+|---------|---------|
+| `scripts/fix-doc-blocks.sh file.go` | Add missing Expected/Returns/Side effects sections |
+| `cat file.go | scripts/fix-doc-blocks.sh` | Process from stdin |
+| `scripts/fix-doc-blocks.sh -i file.go` | Edit file in place |
+
 ### Task Management
 | Command | Purpose |
 |---------|---------|
@@ -1302,19 +1400,38 @@ case KeyHelp:
 Before committing, the AI agent **MUST** run:
 
 ```bash
+# Documentation check (REQUIRED - blocks commits without proper docs)
+make check-docblocks
+
 # Architecture validation (REQUIRED)
 make check-intent-architecture
 
-# Full compliance check (REQUIRED)
+# Full compliance check (REQUIRED - includes docblocks)
 make check-compliance
 
 # Comprehensive linting (RECOMMENDED)
 make golangci-lint
 ```
 
-**These checks are automatically run by the pre-commit hook and will BLOCK commits with violations.**
+**These checks are automatically run by:**
+1. **Pre-commit hook** (`.git-hooks/pre-commit`) - Runs automatically on `git commit`
+2. **CI/CD pipeline** - Validates all PRs
+
+**Violations will BLOCK commits.**
 
 ---
+
+**Documentation Enforcement Details:**
+
+- Every package MUST have a `doc.go` file
+- Every exported function/method MUST have `Expected:`, `Returns:`, and `Side effects:` sections
+- Every exported type MUST have a godoc comment starting with the type name
+- The pre-commit hook checks for documentation violations and will fail if documentation is missing
+
+**To skip documentation check (NOT RECOMMENDED):**
+```bash
+SKIP_DOC_CHECK=1 git commit
+```
 
 **Refusal Template** (Use when violations detected):
 ```

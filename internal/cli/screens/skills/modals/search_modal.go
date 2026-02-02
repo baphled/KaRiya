@@ -26,6 +26,16 @@ type SearchModal struct {
 }
 
 // NewSearchModal creates a new skill search modal.
+//
+// Expected:
+//   - Must be a valid string.
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized SearchModal ready for use.
+//
+// Side effects:
+//   - None.
 func NewSearchModal(currentSearch string, width, height int) *SearchModal {
 	formData := &SearchFormData{
 		SearchText: currentSearch,
@@ -70,19 +80,29 @@ func (m *SearchModal) rebuildForm() {
 }
 
 // Init initializes the modal.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (m *SearchModal) Init() tea.Cmd {
 	m.visible = true
 	return m.form.Init()
 }
 
 // Update handles messages for the search modal.
-// Returns (cmd, applied, searchData).
-// - cmd: Command to execute
-// - applied: true if user confirmed search (Enter), false if cancelled (Esc)
-// - searchData: The search text if applied=true, nil otherwise
 //
-// CRITICAL: Takes tea.Msg (not tea.KeyMsg) to allow huh forms to process
-// Tab and Enter keys correctly. Huh forms require full tea.Msg interface.
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - tea.Cmd: command to execute.
+//   - bool: true if form completed successfully.
+//   - *SearchFormData: search data if completed, nil otherwise.
+//
+// Side effects:
+//   - May hide modal on completion or cancellation.
 func (m *SearchModal) Update(msg tea.Msg) (tea.Cmd, bool, *SearchFormData) {
 	// Handle WindowSizeMsg for responsive sizing.
 	if wsm, ok := msg.(tea.WindowSizeMsg); ok {
@@ -116,6 +136,12 @@ func (m *SearchModal) Update(msg tea.Msg) (tea.Cmd, bool, *SearchFormData) {
 }
 
 // View renders the search modal.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *SearchModal) View() string {
 	if !m.visible {
 		return ""
@@ -147,21 +173,39 @@ func (m *SearchModal) View() string {
 }
 
 // IsVisible returns whether the modal is currently visible.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *SearchModal) IsVisible() bool {
 	return m.visible
 }
 
 // Show makes the modal visible.
+//
+// Side effects:
+//   - None.
 func (m *SearchModal) Show() {
 	m.visible = true
 }
 
 // Hide hides the modal.
+//
+// Side effects:
+//   - None.
 func (m *SearchModal) Hide() {
 	m.visible = false
 }
 
 // SetSize updates the modal's dimensions and rebuilds the form.
+//
+// Expected:
+//   - int must be valid.
+//
+// Side effects:
+//   - None.
 func (m *SearchModal) SetSize(width, height int) {
 	m.width = width
 	m.height = height
@@ -169,12 +213,26 @@ func (m *SearchModal) SetSize(width, height int) {
 }
 
 // GetSearchText returns the current search text.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *SearchModal) GetSearchText() string {
 	return m.formData.SearchText
 }
 
 // RenderOverlay renders the search modal as an overlay on top of the base view.
-// This follows the bubbletea-overlay pattern used in BrowseTimeline modals.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *SearchModal) RenderOverlay(baseView string) string {
 	if !m.visible {
 		return baseView

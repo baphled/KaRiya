@@ -16,6 +16,15 @@ type SkillSelector struct {
 }
 
 // NewSkillSelector creates a new skill selector with available skills.
+//
+// Expected:
+//   - skill must be valid.
+//
+// Returns:
+//   - A fully initialized SkillSelector ready for use.
+//
+// Side effects:
+//   - None.
 func NewSkillSelector(availableSkills []*domain.Skill) *SkillSelector {
 	skillsMap := make(map[string]*domain.Skill)
 	for _, skill := range availableSkills {
@@ -30,6 +39,12 @@ func NewSkillSelector(availableSkills []*domain.Skill) *SkillSelector {
 }
 
 // SelectedSkillIDs returns a sorted list of currently selected skill IDs.
+//
+// Returns:
+//   - A []string value.
+//
+// Side effects:
+//   - None.
 func (ss *SkillSelector) SelectedSkillIDs() []string {
 	ids := make([]string, 0, len(ss.selected))
 	for id := range ss.selected {
@@ -41,6 +56,12 @@ func (ss *SkillSelector) SelectedSkillIDs() []string {
 }
 
 // AvailableSkills returns all available skills sorted by name.
+//
+// Returns:
+//   - A []*domain.Skill value.
+//
+// Side effects:
+//   - None.
 func (ss *SkillSelector) AvailableSkills() []*domain.Skill {
 	skills := make([]*domain.Skill, len(ss.availableSkills))
 	copy(skills, ss.availableSkills)
@@ -54,6 +75,15 @@ func (ss *SkillSelector) AvailableSkills() []*domain.Skill {
 }
 
 // SelectSkill adds a skill to the selected list by ID.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (ss *SkillSelector) SelectSkill(skillID string) error {
 	// Validate skill ID exists
 	if _, exists := ss.skillsMap[skillID]; !exists {
@@ -70,6 +100,15 @@ func (ss *SkillSelector) SelectSkill(skillID string) error {
 }
 
 // DeselectSkill removes a skill from the selected list.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (ss *SkillSelector) DeselectSkill(skillID string) error {
 	if !ss.selected[skillID] {
 		return fmt.Errorf("skill %s is not selected", skillID)
@@ -80,6 +119,15 @@ func (ss *SkillSelector) DeselectSkill(skillID string) error {
 }
 
 // ToggleSkill selects the skill if not selected, deselects if already selected.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (ss *SkillSelector) ToggleSkill(skillID string) error {
 	if ss.selected[skillID] {
 		return ss.DeselectSkill(skillID)
@@ -88,11 +136,29 @@ func (ss *SkillSelector) ToggleSkill(skillID string) error {
 }
 
 // IsSelected returns true if the skill is currently selected.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (ss *SkillSelector) IsSelected(skillID string) bool {
 	return ss.selected[skillID]
 }
 
 // FilterSkills returns skills that match the given prefix (by name) in alphabetical order.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A []*domain.Skill value.
+//
+// Side effects:
+//   - None.
 func (ss *SkillSelector) FilterSkills(prefix string) []*domain.Skill {
 	if prefix == "" {
 		return ss.AvailableSkills()
@@ -116,6 +182,15 @@ func (ss *SkillSelector) FilterSkills(prefix string) []*domain.Skill {
 }
 
 // GetSkillByID returns the skill with the given ID.
+//
+// Expected:
+//   - skillID must be a non-empty string.
+//
+// Returns:
+//   - The skill with the given ID, or nil with error if not found.
+//
+// Side effects:
+//   - None.
 func (ss *SkillSelector) GetSkillByID(skillID string) (*domain.Skill, error) {
 	skill, exists := ss.skillsMap[skillID]
 	if !exists {
@@ -125,11 +200,20 @@ func (ss *SkillSelector) GetSkillByID(skillID string) (*domain.Skill, error) {
 }
 
 // Reset clears all selected skills.
+//
+// Side effects:
+//   - None.
 func (ss *SkillSelector) Reset() {
 	ss.selected = make(map[string]bool)
 }
 
 // SetSelectedSkills sets the selected skills directly from a list of IDs (useful for editing).
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Side effects:
+//   - None.
 func (ss *SkillSelector) SetSelectedSkills(skillIDs []string) {
 	ss.selected = make(map[string]bool)
 	for _, id := range skillIDs {

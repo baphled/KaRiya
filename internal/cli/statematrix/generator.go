@@ -102,6 +102,16 @@ func generateMermaidDiagram(component ComponentInfo) string {
 }
 
 // GenerateMarkdown generates the STATE_MATRIX.md file.
+//
+// Expected:
+//   - statematrix must be valid.
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func GenerateMarkdown(matrix *StateMatrix, path string) error {
 	// Ensure matrix has timestamp
 	if matrix.GeneratedAt.IsZero() {
@@ -214,6 +224,16 @@ func GenerateMarkdown(matrix *StateMatrix, path string) error {
 }
 
 // GenerateJSON generates the state_matrix.json file.
+//
+// Expected:
+//   - statematrix must be valid.
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func GenerateJSON(matrix *StateMatrix, path string) error {
 	// Ensure matrix has timestamp
 	if matrix.GeneratedAt.IsZero() {

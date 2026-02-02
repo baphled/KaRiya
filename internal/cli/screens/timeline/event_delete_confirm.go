@@ -48,14 +48,14 @@ type EventDeleteConfirmScreen struct {
 
 // NewEventDeleteConfirmScreen creates a new event deletion confirmation screen.
 //
-// The screen:
-// - Displays event text (truncated to 60 chars) in the confirmation message
-// - Uses "Delete" / "Cancel" button text
-// - Defaults to "No" (Cancel) for safety
-// - Supports standard navigation: ←→/hl to toggle, y/n for direct, Enter to confirm
+// Expected:
+//   - event must be valid.
 //
-// Parameters:
-//   - event: The event to delete
+// Returns:
+//   - A fully initialized EventDeleteConfirmScreen ready for use.
+//
+// Side effects:
+//   - None.
 func NewEventDeleteConfirmScreen(event *career.Event) *EventDeleteConfirmScreen {
 	breadcrumbs := []string{"Main Menu", "Timeline", "Delete Confirmation"}
 	title := "Delete Event"
@@ -81,6 +81,12 @@ func NewEventDeleteConfirmScreen(event *career.Event) *EventDeleteConfirmScreen 
 }
 
 // GetEvent returns the event being considered for deletion.
+//
+// Returns:
+//   - A fully initialized career.Event ready for use.
+//
+// Side effects:
+//   - None.
 func (s *EventDeleteConfirmScreen) GetEvent() *career.Event {
 	return s.event
 }

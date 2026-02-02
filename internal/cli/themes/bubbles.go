@@ -10,8 +10,15 @@ import (
 )
 
 // NewThemedListStyles creates theme-aware list.Styles for use with bubbles/list.
-// These styles apply to the list chrome (title, filter, pagination, etc.)
-// For item styling, use NewThemedListDelegate.
+//
+// Expected:
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A list.Styles value.
+//
+// Side effects:
+//   - None.
 func NewThemedListStyles(theme Theme) list.Styles {
 	// Return default styles if theme is nil
 	if theme == nil {
@@ -76,6 +83,15 @@ func NewThemedListStyles(theme Theme) list.Styles {
 }
 
 // NewThemedTableStyles creates theme-aware table.Styles for use with bubbles/table.
+//
+// Expected:
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A table.Styles value.
+//
+// Side effects:
+//   - None.
 func NewThemedTableStyles(theme Theme) table.Styles {
 	// Return default styles if theme is nil
 	if theme == nil {
@@ -110,7 +126,15 @@ func NewThemedTableStyles(theme Theme) table.Styles {
 }
 
 // NewThemedProgress creates a theme-aware progress.Model for use with bubbles/progress.
-// The progress bar uses a gradient from the theme's primary to secondary color.
+//
+// Expected:
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A progress.Model value.
+//
+// Side effects:
+//   - None.
 func NewThemedProgress(theme Theme) progress.Model {
 	// Create default progress model if theme is nil
 	if theme == nil {
@@ -131,6 +155,15 @@ func NewThemedProgress(theme Theme) progress.Model {
 }
 
 // NewThemedSpinner creates a theme-aware spinner.Model for use with bubbles/spinner.
+//
+// Expected:
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A spinner.Model value.
+//
+// Side effects:
+//   - None.
 func NewThemedSpinner(theme Theme) spinner.Model {
 	s := spinner.New()
 	s.Spinner = spinner.Dot
@@ -145,6 +178,15 @@ func NewThemedSpinner(theme Theme) spinner.Model {
 }
 
 // NewThemedHelpStyles creates theme-aware help.Styles for use with bubbles/help.
+//
+// Expected:
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A help.Styles value.
+//
+// Side effects:
+//   - None.
 func NewThemedHelpStyles(theme Theme) help.Styles {
 	// Return default styles if theme is nil
 	if theme == nil {
@@ -182,7 +224,16 @@ func NewThemedHelpStyles(theme Theme) help.Styles {
 }
 
 // ApplyThemeToList applies theme styling to an existing list.Model.
-// This is useful for updating an already-created list with a new theme.
+//
+// Expected:
+//   - model must be valid.
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A list.Model value.
+//
+// Side effects:
+//   - None.
 func ApplyThemeToList(l list.Model, theme Theme) list.Model {
 	if theme == nil {
 		return l
@@ -193,7 +244,16 @@ func ApplyThemeToList(l list.Model, theme Theme) list.Model {
 }
 
 // ApplyThemeToTable applies theme styling to an existing table.Model.
-// This is useful for updating an already-created table with a new theme.
+//
+// Expected:
+//   - model must be valid.
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A table.Model value.
+//
+// Side effects:
+//   - None.
 func ApplyThemeToTable(t table.Model, theme Theme) table.Model {
 	if theme == nil {
 		return t
@@ -204,7 +264,15 @@ func ApplyThemeToTable(t table.Model, theme Theme) table.Model {
 }
 
 // NewThemedListDelegate creates a theme-aware list.DefaultDelegate.
-// Use this when creating new lists that need themed item rendering.
+//
+// Expected:
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A list.DefaultDelegate value.
+//
+// Side effects:
+//   - None.
 func NewThemedListDelegate(theme Theme) list.DefaultDelegate {
 	d := list.NewDefaultDelegate()
 

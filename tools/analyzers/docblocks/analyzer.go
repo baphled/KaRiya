@@ -25,9 +25,13 @@ var Analyzer = &analysis.Analyzer{
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
+	hasDocGo := false
 	for _, file := range pass.Files {
 		if isTestFile(pass, file) {
 			continue
+		}
+		if isDocGoFile(pass, file) {
+			hasDocGo = true
 		}
 		for _, decl := range file.Decls {
 			switch d := decl.(type) {
@@ -38,6 +42,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 			}
 		}
 	}
+	checkPackageDoc(pass, hasDocGo)
 	return nil, nil //nolint:nilnil // go/analysis framework requires (interface{}, error) return
 }
 
@@ -190,6 +195,22 @@ func isExcludedFuncName(name string) bool {
 func isTestFile(pass *analysis.Pass, file *ast.File) bool {
 	filename := pass.Fset.Position(file.Pos()).Filename
 	return strings.HasSuffix(filename, "_test.go")
+}
+
+func isDocGoFile(pass *analysis.Pass, file *ast.File) bool {
+	filename := pass.Fset.Position(file.Pos()).Filename
+	return strings.HasSuffix(filename, "doc.go")
+}
+
+func checkPackageDoc(pass *analysis.Pass, hasDocGo bool) {
+	pkgName := pass.Pkg.Name()
+	// Skip test packages and main packages
+	if strings.HasSuffix(pkgName, "_test") || pkgName == "main" {
+		return
+	}
+	if !hasDocGo {
+		pass.Reportf(token.NoPos, "package %s missing doc.go file with package-level documentation", pkgName)
+	}
 }
 
 func specDoc(specDoc *ast.CommentGroup, declDoc *ast.CommentGroup) *ast.CommentGroup {

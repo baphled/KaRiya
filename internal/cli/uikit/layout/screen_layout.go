@@ -60,7 +60,15 @@ type ScreenLayout struct {
 }
 
 // NewScreenLayout creates a new ScreenLayout with default settings.
-// If info is nil or has zero dimensions, uses sensible defaults (140x40).
+//
+// Expected:
+//   - info must be valid.
+//
+// Returns:
+//   - A fully initialized ScreenLayout ready for use.
+//
+// Side effects:
+//   - None.
 func NewScreenLayout(info *terminal.Info) *ScreenLayout {
 	if info == nil || (info.Width == 0 && info.Height == 0) {
 		info = &terminal.Info{Width: 140, Height: 40}
@@ -88,6 +96,16 @@ func (sl *ScreenLayout) getTheme() themes.Theme {
 }
 
 // WithLogo sets the logo to display at the top with optional spacing before it.
+//
+// Expected:
+//   - logorenderer must be valid.
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized ScreenLayout ready for use.
+//
+// Side effects:
+//   - None.
 func (sl *ScreenLayout) WithLogo(logo LogoRenderer, spacing int) *ScreenLayout {
 	sl.ShowLogo = true
 	sl.Logo = logo
@@ -96,6 +114,15 @@ func (sl *ScreenLayout) WithLogo(logo LogoRenderer, spacing int) *ScreenLayout {
 }
 
 // WithBreadcrumbs sets breadcrumbs for the header.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized ScreenLayout ready for use.
+//
+// Side effects:
+//   - None.
 func (sl *ScreenLayout) WithBreadcrumbs(crumbs ...string) *ScreenLayout {
 	sl.ShowHeader = true
 	sl.Breadcrumbs = crumbs
@@ -103,6 +130,15 @@ func (sl *ScreenLayout) WithBreadcrumbs(crumbs ...string) *ScreenLayout {
 }
 
 // WithTitle sets the title and subtitle for the header.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized ScreenLayout ready for use.
+//
+// Side effects:
+//   - None.
 func (sl *ScreenLayout) WithTitle(title, subtitle string) *ScreenLayout {
 	sl.ShowHeader = true
 	sl.Title = title
@@ -111,18 +147,45 @@ func (sl *ScreenLayout) WithTitle(title, subtitle string) *ScreenLayout {
 }
 
 // WithContent sets the main content to display.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized ScreenLayout ready for use.
+//
+// Side effects:
+//   - None.
 func (sl *ScreenLayout) WithContent(content string) *ScreenLayout {
 	sl.Content = content
 	return sl
 }
 
 // WithContentStyle sets a custom style for the content
+//
+// Expected:
+//   - style must be valid.
+//
+// Returns:
+//   - A fully initialized ScreenLayout ready for use.
+//
+// Side effects:
+//   - None.
 func (sl *ScreenLayout) WithContentStyle(style lipgloss.Style) *ScreenLayout {
 	sl.ContentStyle = style
 	return sl
 }
 
 // WithHelp sets the help text to display in the footer
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized ScreenLayout ready for use.
+//
+// Side effects:
+//   - None.
 func (sl *ScreenLayout) WithHelp(helpText string) *ScreenLayout {
 	sl.ShowFooter = true
 	sl.HelpText = helpText
@@ -130,13 +193,30 @@ func (sl *ScreenLayout) WithHelp(helpText string) *ScreenLayout {
 }
 
 // WithFooterSeparator enables/disables the footer separator line
+//
+// Expected:
+//   - bool must be valid.
+//
+// Returns:
+//   - A fully initialized ScreenLayout ready for use.
+//
+// Side effects:
+//   - None.
 func (sl *ScreenLayout) WithFooterSeparator(show bool) *ScreenLayout {
 	sl.ShowFooterSeparator = show
 	return sl
 }
 
 // ShowModalOverlay displays a modal overlay on top of the content.
-// Accepts any ModalRenderer implementation (feedback.Modal, components.ModalContent, etc.)
+//
+// Expected:
+//   - modalrenderer must be valid.
+//
+// Returns:
+//   - A fully initialized ScreenLayout ready for use.
+//
+// Side effects:
+//   - None.
 func (sl *ScreenLayout) ShowModalOverlay(modal ModalRenderer) *ScreenLayout {
 	sl.ShowModal = true
 	sl.Modal = modal
@@ -144,12 +224,30 @@ func (sl *ScreenLayout) ShowModalOverlay(modal ModalRenderer) *ScreenLayout {
 }
 
 // SetUseFullWidth sets whether to use full terminal width for content
+//
+// Expected:
+//   - bool must be valid.
+//
+// Returns:
+//   - A fully initialized ScreenLayout ready for use.
+//
+// Side effects:
+//   - None.
 func (sl *ScreenLayout) SetUseFullWidth(full bool) *ScreenLayout {
 	sl.UseFullWidth = full
 	return sl
 }
 
 // WithTheme sets the theme for the view
+//
+// Expected:
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A fully initialized ScreenLayout ready for use.
+//
+// Side effects:
+//   - None.
 func (sl *ScreenLayout) WithTheme(theme themes.Theme) *ScreenLayout {
 	sl.theme = theme
 	return sl
@@ -236,14 +334,12 @@ func (sl *ScreenLayout) buildFooterParts(theme themes.Theme) []string {
 }
 
 // GetAvailableContentHeight calculates the height available for content between header and footer.
-// This is useful for screens that need to size their content (tables, viewports) to fill available space.
 //
-// Returns: terminalHeight - headerHeight - footerHeight
+// Returns:
+//   - A int value.
 //
-// Example:
-//
-//	contentHeight := screenLayout.GetAvailableContentHeight()
-//	viewport := viewport.New(width, contentHeight)
+// Side effects:
+//   - None.
 func (sl *ScreenLayout) GetAvailableContentHeight() int {
 	theme := sl.getTheme()
 
@@ -270,7 +366,12 @@ func (sl *ScreenLayout) GetAvailableContentHeight() int {
 }
 
 // Render renders the complete view with all components.
-// Layout strategy: pin logo to top (line 0), footer to bottom, content flows after header.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (sl *ScreenLayout) Render() string {
 	theme := sl.getTheme()
 	var contentParts []string

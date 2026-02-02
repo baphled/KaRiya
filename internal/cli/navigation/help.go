@@ -13,14 +13,30 @@ type HelpText struct {
 }
 
 // GetHelpText returns a formatted string displaying navigation keys with descriptions.
-// When compact is true, returns abbreviated format suitable for footers.
+//
+// Expected:
+//   - []navigationkey must be valid.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func GetHelpText(keys []NavigationKey) string {
 	return GetHelpTextCompact(keys, false)
 }
 
 // GetHelpTextCompact returns formatted help text with optional compact formatting.
-// If compact is true, returns short format (Key: Description | Key: Description).
-// If compact is false, returns full format with one key per line.
+//
+// Expected:
+//   - []navigationkey must be valid.
+//   - bool must be valid.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func GetHelpTextCompact(keys []NavigationKey, compact bool) string {
 	if len(keys) == 0 {
 		return ""
@@ -48,7 +64,15 @@ func GetHelpTextCompact(keys []NavigationKey, compact bool) string {
 }
 
 // GetContextualHelp returns help text for a specific screen context
-// Context can be "form", "list", "metadata_review", "bulk_operations", etc.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func GetContextualHelp(context string) string {
 	contextKeyMap := map[string][]NavigationKey{
 		"form": {
@@ -119,16 +143,34 @@ func GetContextualHelp(context string) string {
 }
 
 // GetFullHelp returns comprehensive help text for all navigation keys.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func GetFullHelp() string {
 	return GetHelpTextCompact(AllNavigationKeys(), false)
 }
 
 // GetCompactHelp returns compact help text for all navigation keys (suitable for footers).
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func GetCompactHelp() string {
 	return GetHelpTextCompact(AllNavigationKeys(), true)
 }
 
 // GetGroupedHelp returns help text organized by key groups.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func GetGroupedHelp() string {
 	groups := map[string][]NavigationKey{
 		"Navigation": {KeyUp, KeyDown, KeyLeft, KeyRight},

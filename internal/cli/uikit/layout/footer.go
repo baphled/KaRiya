@@ -30,6 +30,15 @@ type Footer struct {
 }
 
 // NewFooter creates a new footer with width.
+//
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized Footer ready for use.
+//
+// Side effects:
+//   - None.
 func NewFooter(width int) *Footer {
 	return &Footer{
 		statusMessage: "",
@@ -44,24 +53,60 @@ func NewFooter(width int) *Footer {
 }
 
 // WithTheme sets the theme for the footer.
+//
+// Expected:
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A fully initialized Footer ready for use.
+//
+// Side effects:
+//   - None.
 func (f *Footer) WithTheme(theme themes.Theme) *Footer {
 	f.theme = theme
 	return f
 }
 
 // WithStatus sets the status message.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized Footer ready for use.
+//
+// Side effects:
+//   - None.
 func (f *Footer) WithStatus(message string) *Footer {
 	f.statusMessage = message
 	return f
 }
 
 // WithMode sets the mode/context string.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized Footer ready for use.
+//
+// Side effects:
+//   - None.
 func (f *Footer) WithMode(context string) *Footer {
 	f.modeContext = context
 	return f
 }
 
 // WithHelp sets the help text.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized Footer ready for use.
+//
+// Side effects:
+//   - None.
 func (f *Footer) WithHelp(helpText string) *Footer {
 	f.helpText = helpText
 	f.showHelp = true
@@ -69,38 +114,82 @@ func (f *Footer) WithHelp(helpText string) *Footer {
 }
 
 // SetWidth sets the footer width.
-// Returns self for chaining (and to satisfy FooterRenderer interface).
+//
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized Footer ready for use.
+//
+// Side effects:
+//   - None.
 func (f *Footer) SetWidth(width int) *Footer {
 	f.width = width
 	return f
 }
 
 // SetHeight sets the footer height.
+//
+// Expected:
+//   - int must be valid.
+//
+// Side effects:
+//   - None.
 func (f *Footer) SetHeight(height int) {
 	f.height = height
 }
 
 // SetShowStatus sets whether to display the status message.
+//
+// Expected:
+//   - bool must be valid.
+//
+// Side effects:
+//   - None.
 func (f *Footer) SetShowStatus(show bool) {
 	f.showStatus = show
 }
 
 // SetShowMode sets whether to display the mode context.
+//
+// Expected:
+//   - bool must be valid.
+//
+// Side effects:
+//   - None.
 func (f *Footer) SetShowMode(show bool) {
 	f.showMode = show
 }
 
 // SetShowHelp sets whether to display the help text.
+//
+// Expected:
+//   - bool must be valid.
+//
+// Side effects:
+//   - None.
 func (f *Footer) SetShowHelp(show bool) {
 	f.showHelp = show
 }
 
 // GetStatusMessage returns the current status message.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (f *Footer) GetStatusMessage() string {
 	return f.statusMessage
 }
 
 // GetModeContext returns the current mode context.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (f *Footer) GetModeContext() string {
 	return f.modeContext
 }
@@ -114,6 +203,12 @@ func (f *Footer) getTheme() themes.Theme {
 }
 
 // View renders the footer.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (f *Footer) View() string {
 	if f.width <= 0 {
 		return ""

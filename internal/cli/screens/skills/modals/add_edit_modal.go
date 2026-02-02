@@ -46,8 +46,16 @@ type AddEditModal struct {
 }
 
 // NewAddEditModal creates a new skill add/edit modal with the given
-// terminal dimensions. If skill is nil, creates a form for adding a new skill.
-// If skill is provided, creates a form for editing with pre-populated fields.
+//
+// Expected:
+//   - skill must be valid.
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized AddEditModal ready for use.
+//
+// Side effects:
+//   - None.
 func NewAddEditModal(skill *career.Skill, width, height int) *AddEditModal {
 	// Initialize form data from existing skill or empty
 	formData := &forms.SkillFormData{}
@@ -86,6 +94,12 @@ func (m *AddEditModal) buildForm() {
 }
 
 // Init initializes the modal and its form.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (m *AddEditModal) Init() tea.Cmd {
 	if m.form == nil {
 		return nil
@@ -95,10 +109,17 @@ func (m *AddEditModal) Init() tea.Cmd {
 
 // Update handles messages for the skill add/edit modal.
 //
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
 // Returns:
-//   - tea.Cmd: command to execute
-//   - bool: true if form completed successfully
-//   - *SkillEditData: skill data if completed, nil otherwise
+//   - tea.Cmd: command to execute.
+//   - bool: true if form completed successfully.
+//   - *SkillEditData: skill data if completed, nil otherwise.
+//
+// Side effects:
+//   - May hide modal on completion or cancellation.
+//   - May rebuild form on window resize.
 func (m *AddEditModal) Update(msg tea.Msg) (tea.Cmd, bool, *SkillEditData) {
 	if !m.visible {
 		return nil, false, nil
@@ -145,7 +166,12 @@ func (m *AddEditModal) Update(msg tea.Msg) (tea.Cmd, bool, *SkillEditData) {
 }
 
 // View renders the skill add/edit modal with proper chrome (border, background)
-// for overlay compositing.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *AddEditModal) View() string {
 	if !m.visible {
 		return ""
@@ -175,26 +201,50 @@ func (m *AddEditModal) View() string {
 }
 
 // IsVisible returns whether the modal is currently visible.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *AddEditModal) IsVisible() bool {
 	return m.visible
 }
 
 // IsEditMode returns true if editing an existing skill, false if adding new.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *AddEditModal) IsEditMode() bool {
 	return m.originalSkill != nil
 }
 
 // Show makes the modal visible.
+//
+// Side effects:
+//   - None.
 func (m *AddEditModal) Show() {
 	m.visible = true
 }
 
 // Hide hides the modal.
+//
+// Side effects:
+//   - None.
 func (m *AddEditModal) Hide() {
 	m.visible = false
 }
 
 // GetOriginalSkill returns the original skill being edited (nil for add mode).
+//
+// Returns:
+//   - A fully initialized career.Skill ready for use.
+//
+// Side effects:
+//   - None.
 func (m *AddEditModal) GetOriginalSkill() *career.Skill {
 	return m.originalSkill
 }
@@ -208,8 +258,15 @@ type SkillEditData struct {
 }
 
 // ToSkill converts the form data to a Skill domain object.
-// skillID: the ID of the skill being updated (empty string for new skills)
-// Returns a Skill ready to be saved.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized career.Skill ready for use.
+//
+// Side effects:
+//   - None.
 func (d *SkillEditData) ToSkill(skillID string) *career.Skill {
 	skill := &career.Skill{
 		ID:       skillID,

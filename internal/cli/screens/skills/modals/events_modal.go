@@ -87,6 +87,17 @@ func eventRowFormatter(event *career.Event, _ int) []string {
 }
 
 // NewEventsModal creates a new events modal for a skill.
+//
+// Expected:
+//   - Must be a valid string.
+//   - event must be valid.
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A fully initialized EventsModal ready for use.
+//
+// Side effects:
+//   - None.
 func NewEventsModal(skillID, skillName string, events []*career.Event, theme themes.Theme) *EventsModal {
 	// Filter out nil events.
 	filteredEvents := make([]*career.Event, 0, len(events))
@@ -130,11 +141,29 @@ func NewEventsModal(skillID, skillName string, events []*career.Event, theme the
 }
 
 // Init initializes the modal (implements tea.Model for bubbletea-overlay).
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (m *EventsModal) Init() tea.Cmd {
 	return nil
 }
 
 // Update handles keyboard input and window sizing.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - tea.Model: the updated model.
+//   - tea.Cmd: command to execute.
+//
+// Side effects:
+//   - May update dimensions.
+//   - May hide modal.
+//   - May set selected event.
 func (m *EventsModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if !m.visible {
 		return m, nil
@@ -192,6 +221,12 @@ func (m *EventsModal) updateTableDimensions() {
 }
 
 // View renders the modal content with data table.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *EventsModal) View() string {
 	if !m.visible {
 		return ""
@@ -260,6 +295,12 @@ func (m *EventsModal) View() string {
 }
 
 // SetDimensions updates the modal's available dimensions.
+//
+// Expected:
+//   - int must be valid.
+//
+// Side effects:
+//   - None.
 func (m *EventsModal) SetDimensions(width, height int) {
 	m.width = width
 	m.height = height
@@ -267,6 +308,9 @@ func (m *EventsModal) SetDimensions(width, height int) {
 }
 
 // Show makes the modal visible.
+//
+// Side effects:
+//   - None.
 func (m *EventsModal) Show() {
 	m.visible = true
 	m.selectedEvent = nil
@@ -274,26 +318,53 @@ func (m *EventsModal) Show() {
 }
 
 // Hide hides the modal.
+//
+// Side effects:
+//   - None.
 func (m *EventsModal) Hide() {
 	m.visible = false
 }
 
 // IsVisible returns whether the modal is currently visible.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *EventsModal) IsVisible() bool {
 	return m.visible
 }
 
 // GetSkillID returns the skill ID this modal is showing events for.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *EventsModal) GetSkillID() string {
 	return m.skillID
 }
 
 // GetSkillName returns the skill name this modal is showing events for.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *EventsModal) GetSkillName() string {
 	return m.skillName
 }
 
 // SetEvents updates the events being displayed.
+//
+// Expected:
+//   - event must be valid.
+//
+// Side effects:
+//   - None.
 func (m *EventsModal) SetEvents(events []*career.Event) {
 	// Filter out nil events.
 	filteredEvents := make([]*career.Event, 0, len(events))
@@ -309,21 +380,42 @@ func (m *EventsModal) SetEvents(events []*career.Event) {
 }
 
 // HasSelection returns true if the user selected an event.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *EventsModal) HasSelection() bool {
 	return m.selectedEvent != nil
 }
 
 // GetSelectedEvent returns the selected event (nil if none selected).
+//
+// Returns:
+//   - A fully initialized career.Event ready for use.
+//
+// Side effects:
+//   - None.
 func (m *EventsModal) GetSelectedEvent() *career.Event {
 	return m.selectedEvent
 }
 
 // ClearSelection clears any previous selection.
+//
+// Side effects:
+//   - None.
 func (m *EventsModal) ClearSelection() {
 	m.selectedEvent = nil
 }
 
 // GetSelectedIndex returns the current selection index.
+//
+// Returns:
+//   - A int value.
+//
+// Side effects:
+//   - None.
 func (m *EventsModal) GetSelectedIndex() int {
 	return m.table.GetSelectedIndex()
 }

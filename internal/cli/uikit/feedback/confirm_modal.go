@@ -52,7 +52,15 @@ type ConfirmModal struct {
 }
 
 // NewConfirmModal creates a new confirmation modal with the given title and message.
-// The modal is visible by default and uses ConfirmDefault variant.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized ConfirmModal ready for use.
+//
+// Side effects:
+//   - None.
 func NewConfirmModal(title, message string) *ConfirmModal {
 	return &ConfirmModal{
 		title:     title,
@@ -67,14 +75,30 @@ func NewConfirmModal(title, message string) *ConfirmModal {
 }
 
 // WithVariant sets the visual variant of the confirmation modal.
-// Returns the modal for method chaining.
+//
+// Expected:
+//   - confirmvariant must be valid.
+//
+// Returns:
+//   - A fully initialized ConfirmModal ready for use.
+//
+// Side effects:
+//   - None.
 func (m *ConfirmModal) WithVariant(variant ConfirmVariant) *ConfirmModal {
 	m.variant = variant
 	return m
 }
 
 // WithTheme sets the theme for the modal.
-// Returns the modal for method chaining.
+//
+// Expected:
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A fully initialized ConfirmModal ready for use.
+//
+// Side effects:
+//   - None.
 func (m *ConfirmModal) WithTheme(theme themes.Theme) *ConfirmModal {
 	m.theme = theme
 	return m
@@ -89,19 +113,27 @@ func (m *ConfirmModal) getTheme() themes.Theme {
 }
 
 // Init initializes the modal (required by BubbleTea lifecycle).
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (m *ConfirmModal) Init() tea.Cmd {
 	return nil
 }
 
 // Update handles keyboard input for the confirmation modal.
 //
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
 // Returns:
 //   - tea.Cmd: command to execute (usually nil)
 //   - bool: true if user confirmed, false otherwise
 //
-// The modal closes on:
-//   - 'y', 'Y', or Enter: confirms action (returns true)
-//   - 'n', 'N', or Esc: cancels action (returns false)
+// Side effects:
+//   - May close modal and set confirmed state.
 func (m *ConfirmModal) Update(msg tea.Msg) (tea.Cmd, bool) {
 	if !m.visible {
 		return nil, false
@@ -133,7 +165,12 @@ func (m *ConfirmModal) Update(msg tea.Msg) (tea.Cmd, bool) {
 }
 
 // View renders the confirmation modal as a centered box.
-// Returns empty string if modal is not visible.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *ConfirmModal) View() string {
 	if !m.visible {
 		return ""
@@ -207,29 +244,52 @@ func (m *ConfirmModal) getBoxVariant() containers.BoxVariant {
 }
 
 // IsVisible returns whether the modal is currently visible.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *ConfirmModal) IsVisible() bool {
 	return m.visible
 }
 
 // WasConfirmed returns whether the user confirmed the action.
-// Only meaningful after the modal is closed.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *ConfirmModal) WasConfirmed() bool {
 	return m.confirmed
 }
 
 // Show makes the modal visible and resets the confirmed state.
+//
+// Side effects:
+//   - None.
 func (m *ConfirmModal) Show() {
 	m.visible = true
 	m.confirmed = false
 }
 
 // Hide hides the modal without confirming.
+//
+// Side effects:
+//   - None.
 func (m *ConfirmModal) Hide() {
 	m.visible = false
 	m.confirmed = false
 }
 
 // SetDimensions sets the terminal dimensions for responsive sizing.
+//
+// Expected:
+//   - int must be valid.
+//
+// Side effects:
+//   - None.
 func (m *ConfirmModal) SetDimensions(width, height int) {
 	m.width = width
 	m.height = height

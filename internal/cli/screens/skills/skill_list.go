@@ -93,6 +93,15 @@ type SkillsListScreen struct {
 }
 
 // NewSkillsListScreen creates a new skills list screen.
+//
+// Expected:
+//   - skill must be valid.
+//
+// Returns:
+//   - A fully initialized SkillsListScreen ready for use.
+//
+// Side effects:
+//   - None.
 func NewSkillsListScreen(skills []*career.Skill) *SkillsListScreen {
 	// Create table columns matching legacy format
 	columns := []behaviors.ColumnDef{
@@ -131,6 +140,17 @@ func NewSkillsListScreen(skills []*career.Skill) *SkillsListScreen {
 }
 
 // Update handles messages and returns result for actions.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - tea.Cmd: command to execute.
+//   - screens.ScreenResult: result indicating navigation or action.
+//
+// Side effects:
+//   - May update table selection.
+//   - May return CancelResult or NavigateResult.
 func (s *SkillsListScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -228,12 +248,23 @@ func (s *SkillsListScreen) handleDeleteAction() (tea.Cmd, screens.ScreenResult) 
 }
 
 // RenderContent returns just the content (table) without StandardView wrapper.
-// This allows intents to apply their own StandardView with custom breadcrumbs.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *SkillsListScreen) RenderContent() string {
 	return s.tableBehavior.Render()
 }
 
 // View renders the skills list screen.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *SkillsListScreen) View() string {
 	// Render table via behavior.
 	content := s.RenderContent()
@@ -274,6 +305,12 @@ func (s *SkillsListScreen) View() string {
 }
 
 // SetTheme applies theme to the table behavior.
+//
+// Expected:
+//   - interface{} must be valid.
+//
+// Side effects:
+//   - None.
 func (s *SkillsListScreen) SetTheme(theme interface{}) {
 	s.Screen.SetTheme(theme)
 	// Apply theme to table behavior if available
@@ -283,6 +320,12 @@ func (s *SkillsListScreen) SetTheme(theme interface{}) {
 }
 
 // SetEventCounts sets the event counts for skills (used for displaying event count column).
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Side effects:
+//   - None.
 func (s *SkillsListScreen) SetEventCounts(counts map[string]int) {
 	// Update the shared eventCounts map
 	for k, v := range counts {
@@ -312,11 +355,23 @@ func (s *SkillsListScreen) SetEventCounts(counts map[string]int) {
 }
 
 // GetSelectedIndex returns the currently selected index.
+//
+// Returns:
+//   - A int value.
+//
+// Side effects:
+//   - None.
 func (s *SkillsListScreen) GetSelectedIndex() int {
 	return s.tableBehavior.GetSelectedIndex()
 }
 
 // SetSelectedIndex sets the currently selected index.
+//
+// Expected:
+//   - int must be valid.
+//
+// Side effects:
+//   - None.
 func (s *SkillsListScreen) SetSelectedIndex(index int) {
 	s.tableBehavior.SetSelectedIndex(index)
 }

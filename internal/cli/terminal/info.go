@@ -55,6 +55,12 @@ const (
 )
 
 // NewInfo creates a new Info instance with default values.
+//
+// Returns:
+//   - A fully initialized Info ready for use.
+//
+// Side effects:
+//   - None.
 func NewInfo() *Info {
 	return &Info{
 		Width:   0,
@@ -64,6 +70,12 @@ func NewInfo() *Info {
 }
 
 // Update updates the terminal info from a WindowSizeMsg.
+//
+// Expected:
+//   - windowsizemsg must be valid.
+//
+// Side effects:
+//   - None.
 func (i *Info) Update(msg tea.WindowSizeMsg) {
 	i.Width = msg.Width
 	i.Height = msg.Height
@@ -72,6 +84,12 @@ func (i *Info) Update(msg tea.WindowSizeMsg) {
 }
 
 // GetCategory returns the size category based on terminal width.
+//
+// Returns:
+//   - A SizeCategory value.
+//
+// Side effects:
+//   - None.
 func (i *Info) GetCategory() SizeCategory {
 	if !i.IsValid {
 		return SizeNormal
@@ -92,6 +110,16 @@ func (i *Info) GetCategory() SizeCategory {
 }
 
 // GetSafeDimensions returns dimensions with enforced minimums and fallback to defaults.
+//
+// Expected:
+//   - config must be a valid Config object.
+//
+// Returns:
+//   - A width value with enforced minimums.
+//   - A height value with enforced minimums.
+//
+// Side effects:
+//   - None.
 func (i *Info) GetSafeDimensions(config Config) (width, height int) {
 	if !i.IsValid {
 		return config.DefaultWidth, config.DefaultHeight
@@ -103,6 +131,15 @@ func (i *Info) GetSafeDimensions(config Config) (width, height int) {
 }
 
 // CanRender returns true if the terminal can render content at minimum size.
+//
+// Expected:
+//   - config must be a valid configuration object.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (i *Info) CanRender(config Config) bool {
 	if !i.IsValid {
 		return true
@@ -112,6 +149,16 @@ func (i *Info) CanRender(config Config) bool {
 
 // ContentArea calculates available space after accounting for margins.
 // Returns width and height with enforced minimums.
+//
+// Expected:
+//   - margins must be a valid Margins object.
+//
+// Returns:
+//   - A width value for content area.
+//   - A height value for content area.
+//
+// Side effects:
+//   - None.
 func (i *Info) ContentArea(margins Margins) (width, height int) {
 	safeWidth, safeHeight := i.GetSafeDimensions(DefaultConfig)
 

@@ -41,6 +41,18 @@ type ReviewChangesScreen struct {
 }
 
 // NewReviewChangesScreen creates a new review changes screen.
+//
+// Expected:
+//   - domain must be a valid ConfigurationDomain.
+//   - changes must be a valid map of setting changes.
+//   - original must be a valid map of original values.
+//   - labels must be a valid map of setting labels.
+//
+// Returns:
+//   - A fully initialized ReviewChangesScreen ready for use.
+//
+// Side effects:
+//   - None.
 func NewReviewChangesScreen(
 	domain configtypes.ConfigurationDomain,
 	changes map[string]interface{},
@@ -58,11 +70,28 @@ func NewReviewChangesScreen(
 }
 
 // Init initializes the screen.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (s *ReviewChangesScreen) Init() tea.Cmd {
 	return nil
 }
 
 // Update handles messages.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - A tea.Cmd value.
+//   - A screens.ScreenResult value.
+//
+// Side effects:
+//   - May return CancelResult on Escape.
+//   - May return NavigateResult on Enter, c, or y.
 func (s *ReviewChangesScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -88,6 +117,12 @@ func (s *ReviewChangesScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult
 }
 
 // View renders the screen using UIKit layout.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *ReviewChangesScreen) View() string {
 	domainLabel := formatDomainLabel(s.domain)
 
@@ -193,11 +228,23 @@ func truncate(s string, maxLen int) string {
 }
 
 // SetTerminalInfo updates terminal dimensions.
+//
+// Expected:
+//   - int must be valid.
+//
+// Side effects:
+//   - None.
 func (s *ReviewChangesScreen) SetTerminalInfo(width, height int) {
 	s.termInfo = &terminal.Info{Width: width, Height: height}
 }
 
 // SetTheme updates the theme.
+//
+// Expected:
+//   - interface{} must be valid.
+//
+// Side effects:
+//   - None.
 func (s *ReviewChangesScreen) SetTheme(theme interface{}) {
 	if t, ok := theme.(themes.Theme); ok {
 		s.theme = t
@@ -205,6 +252,13 @@ func (s *ReviewChangesScreen) SetTheme(theme interface{}) {
 }
 
 // SetLogo updates the logo.
+//
+// Expected:
+//   - interface{} must be valid.
+//   - int must be valid.
+//
+// Side effects:
+//   - None.
 func (s *ReviewChangesScreen) SetLogo(logo interface{}, _ int) {
 	if l, ok := logo.(layout.LogoRenderer); ok {
 		s.logo = l
@@ -212,11 +266,23 @@ func (s *ReviewChangesScreen) SetLogo(logo interface{}, _ int) {
 }
 
 // GetChanges returns the changes map.
+//
+// Returns:
+//   - A map[string]interface{} value.
+//
+// Side effects:
+//   - None.
 func (s *ReviewChangesScreen) GetChanges() map[string]interface{} {
 	return s.changes
 }
 
 // HasChanges returns true if there are any changes.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (s *ReviewChangesScreen) HasChanges() bool {
 	return len(s.changes) > 0
 }

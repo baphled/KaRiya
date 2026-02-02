@@ -15,6 +15,17 @@ type Services struct {
 }
 
 // InitServices initializes all CV-related services.
+//
+// Expected:
+//   - service must be valid.
+//   - config must be a valid configuration object.
+//   - logger must be valid.
+//
+// Returns:
+//   - A fully initialized Services ready for use.
+//
+// Side effects:
+//   - None.
 func InitServices(careerService *careerservice.Service, cfg *config.Config, log *logger.Logger) *Services {
 	configMgr := initConfigManager(log)
 	cvGenService := initCVGenerationService(careerService, configMgr, &cfg.Scoring, log)

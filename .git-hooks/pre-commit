@@ -97,18 +97,33 @@ if [ -n "$COVERAGE_FILES" ]; then
 fi
 
 # Check for forbidden comment markers (only in added lines)
-# Variable is split to avoid self-matching during diff checks
+# Skip check for AGENTS.md and .git-hooks/pre-commit as they document the rules
 FORBIDDEN_MARKERS="TO""DO|FIX""ME|XX""X|HA""CK|\bNO""TE\b|\bIMPOR""TANT\b|\bBU""G\b"
-if git diff --cached | grep '^+' | grep -v '^+++' | grep -E "$FORBIDDEN_MARKERS" | grep -v '_test.go' > /dev/null 2>&1; then
-    echo -e "${RED}❌ ERROR: Forbidden comment markers detected${NC}"
-    echo ""
-    echo "Found: TODO, FIXME, XXX, HACK, NOTE (standalone), IMPORTANT (standalone), or BUG"
-    echo ""
-    git diff --cached | grep '^+' | grep -v '^+++' | grep -E "$FORBIDDEN_MARKERS" | grep -v '_test.go' | head -5
-    echo ""
-    echo "Action: Complete the work, create an issue, or refactor the code"
-    echo "See: Comment Rules in AGENTS.md"
-    exit 1
+
+# Get list of staged Go files (excluding test files)
+STAGED_GO=$(git diff --cached --name-only | grep '\.go$' | grep -v '_test.go' || true)
+
+if [ -n "$STAGED_GO" ]; then
+    for file in $STAGED_GO; do
+        # Skip documentation files
+        if [[ "$file" == "AGENTS.md" ]] || [[ "$file" == ".git-hooks/pre-commit" ]]; then
+            continue
+        fi
+        
+        # Check for forbidden markers in STAGED content of this file only
+        STAGED_CONTENT=$(git diff --cached -- "$file" | grep '^+' | grep -v '^+++' || true)
+        if echo "$STAGED_CONTENT" | grep -E "$FORBIDDEN_MARKERS" > /dev/null 2>&1; then
+            echo -e "${RED}❌ ERROR: Forbidden comment markers detected in $file${NC}"
+            echo ""
+            echo "Found: forbidden comment markers (TODO, FIXME, XXX, HACK, etc.)"
+            echo ""
+            echo "$STAGED_CONTENT" | grep -E "$FORBIDDEN_MARKERS" | head -3
+            echo ""
+            echo "Action: Complete the work, create an issue, or refactor the code"
+            echo "See: Comment Rules in AGENTS.md"
+            exit 1
+        fi
+    done
 fi
 
 # Check for debug statements (only in added lines)
@@ -231,6 +246,40 @@ if [ "$SKIP_PATTERN_CHECK" != "1" ]; then
             fi
         fi
     fi
+fi
+
+# Documentation check (doc.go files and function documentation) - REQUIRED
+if [ "$SKIP_DOC_CHECK" != "1" ]; then
+    echo "Running documentation check..."
+    STAGED_GO=$(git diff --cached --name-only | grep '\.go$' | grep -v '_test.go' || true)
+    if [ -n "$STAGED_GO" ]; then
+        # Build docblocks analyzer if needed
+        if [ ! -f "./bin/docblocks" ]; then
+            echo "Building docblocks analyzer..."
+            go build -o ./bin/docblocks ./cmd/docblocks > /dev/null 2>&1
+        fi
+        
+        # Run docblocks analyzer on staged packages
+        STAGED_PACKAGES=$(echo "$STAGED_GO" | xargs -I{} dirname {} | sort -u | sed 's|^|./|' | sed 's|$|/...|')
+        if ! go vet -vettool=./bin/docblocks $STAGED_PACKAGES 2>/dev/null; then
+            echo -e "${RED}❌ ERROR: Documentation violations found${NC}"
+            echo ""
+            echo "Documentation required for all exported symbols:"
+            echo "  - Package doc.go file with package-level documentation"
+            echo "  - Function/Method: Expected, Returns, Side effects sections"
+            echo "  - Type: Godoc comment starting with type name"
+            echo ""
+            echo "Run 'make check-docblocks' for details."
+            echo ""
+            echo "To skip: SKIP_DOC_CHECK=1 git commit"
+            echo ""
+            echo "Note: Documentation is REQUIRED - this check cannot be bypassed for Go code."
+            exit 1
+        fi
+    fi
+    echo -e "${GREEN}✅ Documentation check passed${NC}"
+else
+    echo -e "${YELLOW}⚠️  Documentation check skipped (SKIP_DOC_CHECK=1)${NC}"
 fi
 
 echo ""
