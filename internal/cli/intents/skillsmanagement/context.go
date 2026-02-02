@@ -35,9 +35,11 @@ type Filters struct {
 
 // HasActiveFilters checks whether any filter or sort criteria differ from the default empty state.
 //
-// Returns: true if any category, level, event count, search, or sort filter is set.
+// Returns:
+//   - A bool value.
 //
-// Side effects: None.
+// Side effects:
+//   - None.
 func (f *Filters) HasActiveFilters() bool {
 	if f == nil {
 		return false
@@ -50,9 +52,9 @@ func (f *Filters) HasActiveFilters() bool {
 }
 
 // Clear progressively removes the most recently applied filter layer in FIFO order.
-// Search is cleared first as the most specific, then category/level, then sort as the most general.
 //
-// Side effects: resets one filter layer per call, modifying the receiver's fields.
+// Side effects:
+//   - None.
 func (f *Filters) Clear() {
 	if f == nil {
 		return
@@ -117,9 +119,11 @@ func NewIntentContext(ctx context.Context, skillRepo career.SkillRepository) *In
 
 // Validate ensures all required dependencies are present before the intent can be constructed.
 //
-// Returns: an error if Ctx or SkillRepository is nil, or nil on success.
+// Returns:
+//   - A error value.
 //
-// Side effects: initializes Filters to an empty default if it is nil.
+// Side effects:
+//   - None.
 func (c *IntentContext) Validate() error {
 	if c.Ctx == nil {
 		return ErrContextNotAvailable

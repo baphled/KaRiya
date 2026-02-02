@@ -18,6 +18,15 @@ type LengthFormatConfig struct {
 }
 
 // GetLengthFormatConfig returns the configuration for a length format.
+//
+// Expected:
+//   - lengthformat must be valid.
+//
+// Returns:
+//   - A fully initialized LengthFormatConfig ready for use.
+//
+// Side effects:
+//   - None.
 func GetLengthFormatConfig(format LengthFormat) *LengthFormatConfig {
 	configs := getLengthFormatConfigMap()
 	if config, exists := configs[format]; exists {
@@ -40,6 +49,12 @@ func GetLengthFormatConfig(format LengthFormat) *LengthFormatConfig {
 }
 
 // ListLengthFormatConfigs returns all length format configurations.
+//
+// Returns:
+//   - A []*LengthFormatConfig value.
+//
+// Side effects:
+//   - None.
 func ListLengthFormatConfigs() []*LengthFormatConfig {
 	return []*LengthFormatConfig{
 		GetLengthFormatConfig(LengthFull),
@@ -50,6 +65,15 @@ func ListLengthFormatConfigs() []*LengthFormatConfig {
 }
 
 // ShouldIncludeEvent returns true if an event date falls within the MaxYearsHistory limit.
+//
+// Expected:
+//   - time must be valid.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (c *LengthFormatConfig) ShouldIncludeEvent(eventDate time.Time) bool {
 	if c.MaxYearsHistory == nil {
 		return true
@@ -60,6 +84,15 @@ func (c *LengthFormatConfig) ShouldIncludeEvent(eventDate time.Time) bool {
 }
 
 // ShouldIncludeEventByYear returns true if an event year falls within the MaxYearsHistory limit.
+//
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (c *LengthFormatConfig) ShouldIncludeEventByYear(year int) bool {
 	if c.MaxYearsHistory == nil {
 		return true
@@ -71,7 +104,15 @@ func (c *LengthFormatConfig) ShouldIncludeEventByYear(year int) bool {
 }
 
 // FilterCompaniesByLimit returns companies limited to MaxCompanies.
-// Companies should be pre-sorted by relevance/recency before calling.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A []string value.
+//
+// Side effects:
+//   - None.
 func (c *LengthFormatConfig) FilterCompaniesByLimit(companies []string) []string {
 	if c.MaxCompanies == nil || len(companies) <= *c.MaxCompanies {
 		return companies
@@ -80,6 +121,15 @@ func (c *LengthFormatConfig) FilterCompaniesByLimit(companies []string) []string
 }
 
 // GetEffectiveBulletLimit returns the bullet limit per job, using default if not specified.
+//
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A int value.
+//
+// Side effects:
+//   - None.
 func (c *LengthFormatConfig) GetEffectiveBulletLimit(defaultLimit int) int {
 	if c.MaxBulletsPerJob == nil {
 		return defaultLimit
@@ -88,6 +138,15 @@ func (c *LengthFormatConfig) GetEffectiveBulletLimit(defaultLimit int) int {
 }
 
 // MeetsConfidenceThreshold returns true if a bullet's confidence meets the minimum threshold.
+//
+// Expected:
+//   - float64 must be valid.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (c *LengthFormatConfig) MeetsConfidenceThreshold(confidence float64) bool {
 	return confidence >= c.MinConfidence
 }

@@ -33,6 +33,12 @@ type TestMockRepository struct {
 }
 
 // NewTestMockRepository creates a new behavior-based mock repository.
+//
+// Returns:
+//   - A fully initialized TestMockRepository ready for use.
+//
+// Side effects:
+//   - None.
 func NewTestMockRepository() *TestMockRepository {
 	return &TestMockRepository{
 		getByIDEvents: make(map[string]*career.Event),
@@ -41,27 +47,60 @@ func NewTestMockRepository() *TestMockRepository {
 }
 
 // SetCreateBehavior sets the error for Create calls.
+//
+// Expected:
+//   - error must be valid.
+//
+// Side effects:
+//   - None.
 func (m *TestMockRepository) SetCreateBehavior(err error) {
 	m.createErr = err
 }
 
 // SetUpdateBehavior sets the error for Update calls.
+//
+// Expected:
+//   - error must be valid.
+//
+// Side effects:
+//   - None.
 func (m *TestMockRepository) SetUpdateBehavior(err error) {
 	m.updateErr = err
 }
 
 // SetDeleteBehavior sets the error for Delete calls.
+//
+// Expected:
+//   - error must be valid.
+//
+// Side effects:
+//   - None.
 func (m *TestMockRepository) SetDeleteBehavior(err error) {
 	m.deleteErr = err
 }
 
 // SetGetByIDBehavior sets the event and error for GetByID calls.
+//
+// Expected:
+//   - event must be valid.
+//   - error must be valid.
+//
+// Side effects:
+//   - None.
 func (m *TestMockRepository) SetGetByIDBehavior(event *career.Event, err error) {
 	m.getByIDEvent = event
 	m.getByIDErr = err
 }
 
 // SetEventByID sets a specific event to be returned for a given ID.
+//
+// Expected:
+//   - Must be a valid string.
+//   - event must be valid.
+//   - error must be valid.
+//
+// Side effects:
+//   - None.
 func (m *TestMockRepository) SetEventByID(eventID string, event *career.Event, err error) {
 	if event != nil {
 		m.getByIDEvents[eventID] = event
@@ -72,30 +111,71 @@ func (m *TestMockRepository) SetEventByID(eventID string, event *career.Event, e
 }
 
 // SetListBehavior sets the events and error for List calls.
+//
+// Expected:
+//   - event must be valid.
+//   - error must be valid.
+//
+// Side effects:
+//   - None.
 func (m *TestMockRepository) SetListBehavior(events []*career.Event, err error) {
 	m.listEvents = events
 	m.listErr = err
 }
 
 // SetCountBehavior sets the count and error for Count calls.
+//
+// Expected:
+//   - int must be valid.
+//   - error must be valid.
+//
+// Side effects:
+//   - None.
 func (m *TestMockRepository) SetCountBehavior(count int, err error) {
 	m.countResult = count
 	m.countErr = err
 }
 
 // Create implements EventRepository interface.
+//
+// Expected:
+//   - event must be valid.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (m *TestMockRepository) Create(_ context.Context, _ *career.Event) error {
 	m.createCalled = true
 	return m.createErr
 }
 
 // Update implements EventRepository interface.
+//
+// Expected:
+//   - event must be valid.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (m *TestMockRepository) Update(_ context.Context, _ *career.Event) error {
 	m.updateCalled = true
 	return m.updateErr
 }
 
 // Delete implements EventRepository interface.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (m *TestMockRepository) Delete(_ context.Context, _ string) error {
 	m.deleteCalled = true
 	return m.deleteErr
@@ -130,36 +210,82 @@ func (m *TestMockRepository) Count(_ context.Context, _ repo.EventListFilters) (
 }
 
 // CreateCalled returns whether Create was called.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *TestMockRepository) CreateCalled() bool {
 	return m.createCalled
 }
 
 // UpdateCalled returns whether Update was called.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *TestMockRepository) UpdateCalled() bool {
 	return m.updateCalled
 }
 
 // DeleteCalled returns whether Delete was called.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *TestMockRepository) DeleteCalled() bool {
 	return m.deleteCalled
 }
 
 // GetByIDCalled returns whether GetByID was called.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *TestMockRepository) GetByIDCalled() bool {
 	return m.getByIDCalled
 }
 
 // ListCalled returns whether List was called.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *TestMockRepository) ListCalled() bool {
 	return m.listCalled
 }
 
 // CountCalled returns whether Count was called.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *TestMockRepository) CountCalled() bool {
 	return m.countCalled
 }
 
 // LinkSkill implements EventRepository interface.
+//
+// Expected:
+//   - Must be a valid string.
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (m *TestMockRepository) LinkSkill(_ context.Context, _ string, _ string) error {
 	return nil
 }

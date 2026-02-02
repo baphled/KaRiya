@@ -1,4 +1,4 @@
-.PHONY: test test-race coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance check-docblocks check-fixtures check-patterns check-patterns-quiet check-patterns-strict check-intent-architecture check-intent-architecture-files golangci-lint install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ai-commit ci-local ci-install-tools gosec session-start session-end session-reset check-session verify-hooks tdd-check tdd-red tdd-green tdd-refactor tdd-document pre-task what-to-use generate-diagrams generate-state-matrix generate-docs diagrams fix-docs new-feature new-bug new-intent
+.PHONY: test test-race coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance check-docblocks check-fixtures check-patterns check-patterns-quiet check-patterns-strict check-intent-architecture check-intent-architecture-files golangci-lint install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ai-commit ci-local ci-install-tools gosec session-start session-end session-reset check-session verify-hooks tdd-check tdd-red tdd-green tdd-refactor tdd-document pre-task what-to-use generate-diagrams generate-state-matrix generate-docs diagrams fix-docs fix-all-docs validate-documentation create-doc-go
 
 # Run all tests in verbose mode (race detection in CI only)
 test:
@@ -98,6 +98,29 @@ check-docblocks:
 		./tools/analyzers/docblocks/...
 	@echo "✅ Docblocks: all checks passed."
 
+# Validate documentation across the codebase (comprehensive check)
+validate-documentation:
+	@echo "Running comprehensive documentation validation..."
+	@bash scripts/validate-documentation.sh
+
+# Create missing doc.go files
+create-doc-go:
+	@echo "Creating missing doc.go files..."
+	@bash scripts/create-doc-go-files.sh
+
+# Fix documentation blocks in all Go files
+fix-all-documentation:
+	@echo "Fixing documentation blocks..."
+	@find . -name "*.go" -not -path "./vendor/*" -not -path "./.git/*" -not -name "*_test.go" -not -name "doc.go" | \
+		while read -r file; do \
+			if [ -s "$$file" ]; then \
+				echo "Processing $$file..."; \
+				./scripts/fix-doc-blocks.sh "$$file" > "$$file.tmp" && \
+				mv "$$file.tmp" "$$file" || true; \
+			fi; \
+		done
+	@echo "✅ Documentation blocks fixed"
+
 # Check fixture usage enforcement (no inline career.* structs in test files)
 # Build noinlinecareer analyzer only when source changes (cached build)
 bin/noinlinecareer: cmd/noinlinecareer/main.go tools/analyzers/noinlinecareer/analyzer.go
@@ -113,7 +136,7 @@ check-fixtures: bin/noinlinecareer
 	@echo "✅ Fixture usage: all checks passed."
 
 # Check full project compliance (all rules)
-check-compliance: staticcheck check-intent-architecture check-docblocks check-fixtures
+check-compliance: staticcheck check-intent-architecture validate-documentation check-fixtures
 	@bash scripts/check-compliance.sh
 
 # Install all CI tools locally
@@ -581,7 +604,7 @@ generate-docs: generate-diagrams generate-state-matrix
 # Alias for convenience
 diagrams: generate-diagrams
 
-# Fix documentation blocks in Go files (add Expected/Returns/Side effects)
+# Fix documentation blocks in a single Go file
 # Usage: make fix-docs FILE=path/to/file.go
 fix-docs:
 	@if [ -z "$(FILE)" ]; then \

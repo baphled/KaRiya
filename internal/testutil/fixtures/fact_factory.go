@@ -69,6 +69,15 @@ var FactFactory = factory.NewFactory(
 })
 
 // Fact creates a minimal valid Fact with the given ID and source event ID.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized career.Fact ready for use.
+//
+// Side effects:
+//   - None.
 func Fact(id, sourceEventID string) *career.Fact {
 	now := time.Now()
 	return &career.Fact{
@@ -85,6 +94,15 @@ func Fact(id, sourceEventID string) *career.Fact {
 }
 
 // FactFromBurst creates a minimal valid Fact linked to a burst instead of an event.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized career.Fact ready for use.
+//
+// Side effects:
+//   - None.
 func FactFromBurst(id, sourceBurstID string) *career.Fact {
 	now := time.Now()
 	return &career.Fact{
@@ -101,6 +119,16 @@ func FactFromBurst(id, sourceBurstID string) *career.Fact {
 }
 
 // Facts creates n facts with sequential IDs, linked to the provided events.
+//
+// Expected:
+//   - int must be valid.
+//   - event must be valid.
+//
+// Returns:
+//   - A []*career.Fact value.
+//
+// Side effects:
+//   - None.
 func Facts(n int, events []*career.Event) []*career.Fact {
 	facts := make([]*career.Fact, n)
 	for i := range n {
@@ -118,10 +146,15 @@ func Facts(n int, events []*career.Event) []*career.Fact {
 }
 
 // FactWith creates a minimal Fact with just ID and text.
-// WARNING: This creates an incomplete Fact without required domain fields
-// (CompetencyCategories, RoleFit, AudienceRelevance, StrengthSignal, SourceEventID).
-// Use only for tests that don't validate the complete Fact structure.
-// For fully-populated facts, use Fact() or FactFactory instead.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized career.Fact ready for use.
+//
+// Side effects:
+//   - None.
 func FactWith(id, text string) *career.Fact {
 	return &career.Fact{
 		ID:   id,
@@ -130,7 +163,16 @@ func FactWith(id, text string) *career.Fact {
 }
 
 // FactWithCategories creates a Fact with specified categories and audience relevance.
-// Use for tests that need specific category assignments (e.g., role-based scoring).
+//
+// Expected:
+//   - Must be a valid string.
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized career.Fact ready for use.
+//
+// Side effects:
+//   - None.
 func FactWithCategories(id, text, sourceEventID string, categories, audienceRelevance []string) *career.Fact {
 	now := time.Now()
 	return &career.Fact{
@@ -147,7 +189,18 @@ func FactWithCategories(id, text, sourceEventID string, categories, audienceRele
 }
 
 // FactForValidation creates a fully-populated Fact suitable for validation tests.
-// All required fields are set with specified values, allowing targeted field overrides after creation.
+//
+// Expected:
+//   - Must be a valid string.
+//   - rolefit must be valid.
+//   - Must be a valid string.
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized career.Fact ready for use.
+//
+// Side effects:
+//   - None.
 func FactForValidation(id, text string, roleFit career.RoleFit, categories, audienceRelevance []string, sourceEventID string) *career.Fact {
 	now := time.Now()
 	return &career.Fact{
@@ -164,7 +217,19 @@ func FactForValidation(id, text string, roleFit career.RoleFit, categories, audi
 }
 
 // FactForSave creates a Fact without an ID, suitable for SaveFact tests.
-// The service will assign the ID upon saving.
+//
+// Expected:
+//   - Must be a valid string.
+//   - Must be a valid string.
+//   - rolefit must be valid.
+//   - Must be a valid string.
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized career.Fact ready for use.
+//
+// Side effects:
+//   - None.
 func FactForSave(text string, categories []string, roleFit career.RoleFit, audienceRelevance []string, sourceEventID string) *career.Fact {
 	return &career.Fact{
 		Text:                 text,

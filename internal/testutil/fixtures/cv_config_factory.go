@@ -30,6 +30,15 @@ var CVConfigFactory = factory.NewFactory(
 })
 
 // CVConfig creates a minimal valid CVConfig with the given name.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized career.CVConfig ready for use.
+//
+// Side effects:
+//   - None.
 func CVConfig(name string) *career.CVConfig {
 	now := time.Now()
 	return &career.CVConfig{
@@ -42,6 +51,15 @@ func CVConfig(name string) *career.CVConfig {
 }
 
 // CVConfigWith creates a CVConfig with custom key fields.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized career.CVConfig ready for use.
+//
+// Side effects:
+//   - None.
 func CVConfigWith(name, targetRole, targetAudience string) *career.CVConfig {
 	now := time.Now()
 	return &career.CVConfig{
@@ -54,6 +72,16 @@ func CVConfigWith(name, targetRole, targetAudience string) *career.CVConfig {
 }
 
 // CVConfigWithTech creates a CVConfig with technology focus settings.
+//
+// Expected:
+//   - Must be a valid string.
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized career.CVConfig ready for use.
+//
+// Side effects:
+//   - None.
 func CVConfigWithTech(name, techFocus, focusArea string, technologies []string) *career.CVConfig {
 	cfg := CVConfig(name)
 	cfg.TechnologyFocus = techFocus
@@ -63,6 +91,16 @@ func CVConfigWithTech(name, techFocus, focusArea string, technologies []string) 
 }
 
 // CVConfigWithFilters creates a CVConfig with event filters.
+//
+// Expected:
+//   - Must be a valid string.
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized career.CVConfig ready for use.
+//
+// Side effects:
+//   - None.
 func CVConfigWithFilters(name string, filters map[string]interface{}) *career.CVConfig {
 	cfg := CVConfig(name)
 	cfg.EventFilters = filters
@@ -70,6 +108,16 @@ func CVConfigWithFilters(name string, filters map[string]interface{}) *career.CV
 }
 
 // CVConfigWithFormat creates a CVConfig with length and skills format settings.
+//
+// Expected:
+//   - Must be a valid string.
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized career.CVConfig ready for use.
+//
+// Side effects:
+//   - None.
 func CVConfigWithFormat(name, lengthFormat, skillsFormat string, skillsLimit int) *career.CVConfig {
 	cfg := CVConfig(name)
 	cfg.LengthFormat = lengthFormat

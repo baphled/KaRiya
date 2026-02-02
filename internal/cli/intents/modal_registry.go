@@ -53,10 +53,9 @@ type ModalRegistry struct {
 }
 
 // NewModalRegistry creates a new empty modal registry with pre-allocated
-// capacity for a typical number of modals.
 //
 // Returns:
-//   - An initialized ModalRegistry ready to accept modal registrations.
+//   - A fully initialized ModalRegistry ready for use.
 //
 // Side effects:
 //   - None.
@@ -67,13 +66,12 @@ func NewModalRegistry() *ModalRegistry {
 }
 
 // Register adds a modal to the registry in priority order, where the first
-// registered modal has the highest priority during visibility resolution.
 //
 // Expected:
-//   - modal is the ManagedModal to register; nil values are silently ignored.
+//   - managedmodal must be valid.
 //
 // Side effects:
-//   - Appends the modal to the internal priority-ordered collection.
+//   - None.
 func (r *ModalRegistry) Register(modal ManagedModal) {
 	if modal != nil {
 		r.modals = append(r.modals, modal)
@@ -81,19 +79,17 @@ func (r *ModalRegistry) Register(modal ManagedModal) {
 }
 
 // Clear removes all modals from the registry while retaining the
-// underlying slice capacity for efficient re-registration.
 //
 // Side effects:
-//   - Removes all previously registered modals from the collection.
+//   - None.
 func (r *ModalRegistry) Clear() {
 	r.modals = r.modals[:0]
 }
 
 // GetFirstVisible locates the highest-priority modal that is currently
-// visible, enforcing the "one modal at a time" rendering principle.
 //
 // Returns:
-//   - The first visible ManagedModal in priority order, or nil if none is visible.
+//   - A ManagedModal value.
 //
 // Side effects:
 //   - None.
@@ -107,10 +103,9 @@ func (r *ModalRegistry) GetFirstVisible() ManagedModal {
 }
 
 // HasVisibleModal checks whether any registered modal is currently displayed,
-// useful for determining if input should be routed to a modal.
 //
 // Returns:
-//   - True if at least one registered modal is visible, false otherwise.
+//   - A bool value.
 //
 // Side effects:
 //   - None.

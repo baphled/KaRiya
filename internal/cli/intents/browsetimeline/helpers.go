@@ -147,13 +147,12 @@ func (i *Intent) removeEventFromList(eventID string) {
 }
 
 // RefreshData re-applies current filters and rebuilds the timeline screen
-// to reflect changes in the underlying event data.
 //
 // Returns:
-//   - Always nil; the screen transition is handled internally.
+//   - A tea.Cmd value.
 //
 // Side effects:
-//   - Re-applies filters and transitions to a new timeline list screen.
+//   - None.
 func (i *Intent) RefreshData() tea.Cmd {
 	i.applyFilters()
 	i.transitionToScreen(timeline.NewTimelineEventListScreen(i.filteredEvents))
@@ -161,10 +160,9 @@ func (i *Intent) RefreshData() tea.Cmd {
 }
 
 // HasVisibleSkillsModal checks whether the skills detail modal is currently
-// displayed to the user.
 //
 // Returns:
-//   - True if the skills modal exists and is visible, false otherwise.
+//   - A bool value.
 //
 // Side effects:
 //   - None.
@@ -173,10 +171,9 @@ func (i *Intent) HasVisibleSkillsModal() bool {
 }
 
 // HasVisibleErrorModal checks whether an error modal is currently displayed
-// to the user.
 //
 // Returns:
-//   - True if the error modal exists, false otherwise.
+//   - A bool value.
 //
 // Side effects:
 //   - None.
@@ -185,10 +182,9 @@ func (i *Intent) HasVisibleErrorModal() bool {
 }
 
 // HasVisibleQuickAddModal checks whether the quick-add event modal is currently
-// displayed to the user.
 //
 // Returns:
-//   - True if the quick add modal exists and is visible, false otherwise.
+//   - A bool value.
 //
 // Side effects:
 //   - None.
@@ -197,10 +193,9 @@ func (i *Intent) HasVisibleQuickAddModal() bool {
 }
 
 // HasVisibleEditModal checks whether the event edit modal is currently
-// displayed to the user.
 //
 // Returns:
-//   - True if the edit modal exists and is visible, false otherwise.
+//   - A bool value.
 //
 // Side effects:
 //   - None.
@@ -209,14 +204,12 @@ func (i *Intent) HasVisibleEditModal() bool {
 }
 
 // ShowErrorModal presents an error overlay to the user, taking highest
-// priority over all other modals in the update cycle.
 //
 // Expected:
-//   - title must be a non-empty human-readable heading.
-//   - message must describe the error for the user.
+//   - Must be a valid string.
 //
 // Side effects:
-//   - Creates and assigns a new error modal that blocks other modal interactions.
+//   - None.
 func (i *Intent) ShowErrorModal(title, message string) {
 	i.errorModal = feedback.NewErrorModal(title, message)
 }

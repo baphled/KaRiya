@@ -42,9 +42,11 @@ type DefaultIntentRouter struct {
 
 // NewDefaultIntentRouter creates a new intent router with empty registries and default terminal info.
 //
-// Returns: a fully initialized router ready for intent registration.
+// Returns:
+//   - A fully initialized DefaultIntentRouter ready for use.
 //
-// Side effects: allocates a new ThemeManager and terminal Info.
+// Side effects:
+//   - None.
 func NewDefaultIntentRouter() *DefaultIntentRouter {
 	return &DefaultIntentRouter{
 		intents:        make(map[string]func() Intent),
@@ -76,12 +78,16 @@ func (r *DefaultIntentRouter) RegisterIntent(name string, factory func() Intent)
 }
 
 // RegisterResultHandler registers a callback invoked when the named intent completes,
-// allowing the root model to react to intent results.
 //
-// Expected: intentName must correspond to a registered intent; handler must not be nil.
+// Expected:
+//   - Must be a valid string.
+//   - intentresult[interface{}] must be valid.
 //
-// Side effects: stores the handler in the result handlers map under a write lock;
-// overwrites any previously registered handler for the same intent name.
+// Returns:
+//   - A tea.Cmd) value.
+//
+// Side effects:
+//   - None.
 func (r *DefaultIntentRouter) RegisterResultHandler(intentName string, handler func(result *IntentResult[interface{}]) tea.Cmd) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -146,9 +152,11 @@ func (r *DefaultIntentRouter) ActivateIntent(name string, _ map[string]interface
 
 // GetActiveIntent provides access to the currently active intent for external inspection or testing.
 //
-// Returns: the active intent, or nil if no intent has been activated.
+// Returns:
+//   - A Intent value.
 //
-// Side effects: acquires a read lock for thread-safe access.
+// Side effects:
+//   - None.
 func (r *DefaultIntentRouter) GetActiveIntent() Intent {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -201,9 +209,11 @@ func (r *DefaultIntentRouter) HandleMessage(msg tea.Msg) (tea.Cmd, interface{}) 
 
 // View renders the active intent's UI for display in the terminal.
 //
-// Returns: the rendered string from the active intent, or a placeholder if no intent is active.
+// Returns:
+//   - A string value.
 //
-// Side effects: acquires a read lock for thread-safe access.
+// Side effects:
+//   - None.
 func (r *DefaultIntentRouter) View() string {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -243,9 +253,11 @@ func (r *DefaultIntentRouter) Back() (tea.Cmd, error) {
 
 // GetHistory provides a snapshot of the navigation history for inspection or testing.
 //
-// Returns: a defensive copy of the intent history slice, safe for external mutation.
+// Returns:
+//   - A []Intent value.
 //
-// Side effects: acquires a read lock for thread-safe access.
+// Side effects:
+//   - None.
 func (r *DefaultIntentRouter) GetHistory() []Intent {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -256,11 +268,12 @@ func (r *DefaultIntentRouter) GetHistory() []Intent {
 }
 
 // GetHistoryDepth reports how many intents deep the user is in the navigation stack,
-// useful for displaying breadcrumb depth or determining if back navigation is available.
 //
-// Returns: the total number of intents in the stack (history plus active), or 0 if no intent is active.
+// Returns:
+//   - A int value.
 //
-// Side effects: acquires a read lock for thread-safe access.
+// Side effects:
+//   - None.
 func (r *DefaultIntentRouter) GetHistoryDepth() int {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -272,12 +285,12 @@ func (r *DefaultIntentRouter) GetHistoryDepth() int {
 }
 
 // UpdateTerminalInfo synchronizes the router's terminal dimensions with the latest window state.
-// The root app should call this when it receives a WindowSizeMsg.
 //
-// Expected: info must be a valid, non-nil terminal.Info with current dimensions.
+// Expected:
+//   - info must be valid.
 //
-// Side effects: replaces the stored terminal info and propagates the update to the active
-// intent if it implements TerminalAwareIntent.
+// Side effects:
+//   - None.
 func (r *DefaultIntentRouter) UpdateTerminalInfo(info *terminal.Info) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -294,9 +307,11 @@ func (r *DefaultIntentRouter) UpdateTerminalInfo(info *terminal.Info) {
 
 // GetTerminalInfo provides access to the cached terminal dimensions for layout calculations.
 //
-// Returns: the current terminal info held by the router.
+// Returns:
+//   - A fully initialized terminal.Info ready for use.
 //
-// Side effects: acquires a read lock for thread-safe access.
+// Side effects:
+//   - None.
 func (r *DefaultIntentRouter) GetTerminalInfo() *terminal.Info {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -306,9 +321,11 @@ func (r *DefaultIntentRouter) GetTerminalInfo() *terminal.Info {
 
 // SetLogo configures the shared logo model used by all intents for consistent branding.
 //
-// Expected: logo should be a valid LogoModel; nil disables logo propagation.
+// Expected:
+//   - logomodel must be valid.
 //
-// Side effects: stores the logo and propagates it to the active intent if it supports SetLogo.
+// Side effects:
+//   - None.
 func (r *DefaultIntentRouter) SetLogo(logo LogoModel) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -325,9 +342,11 @@ func (r *DefaultIntentRouter) SetLogo(logo LogoModel) {
 
 // GetLogo provides access to the shared logo model for external rendering or inspection.
 //
-// Returns: the currently configured LogoModel, or nil if none has been set.
+// Returns:
+//   - A LogoModel value.
 //
-// Side effects: acquires a read lock for thread-safe access.
+// Side effects:
+//   - None.
 func (r *DefaultIntentRouter) GetLogo() LogoModel {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -337,10 +356,11 @@ func (r *DefaultIntentRouter) GetLogo() LogoModel {
 
 // SetThemeManager configures the theme system used by the router and all managed intents.
 //
-// Expected: tm should be a valid, initialized ThemeManager; nil disables theme propagation.
+// Expected:
+//   - th must be a valid theme instance (can be nil).
 //
-// Side effects: stores the theme manager and propagates it to the active intent if it
-// supports SetThemeManager.
+// Side effects:
+//   - None.
 func (r *DefaultIntentRouter) SetThemeManager(tm *themes.ThemeManager) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -357,9 +377,11 @@ func (r *DefaultIntentRouter) SetThemeManager(tm *themes.ThemeManager) {
 
 // GetThemeManager provides access to the router's theme manager for theme queries or configuration.
 //
-// Returns: the current ThemeManager, or nil if none has been set.
+// Returns:
+//   - A fully initialized themes.ThemeManager ready for use.
 //
-// Side effects: acquires a read lock for thread-safe access.
+// Side effects:
+//   - None.
 func (r *DefaultIntentRouter) GetThemeManager() *themes.ThemeManager {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -368,11 +390,12 @@ func (r *DefaultIntentRouter) GetThemeManager() *themes.ThemeManager {
 }
 
 // Theme provides a convenience accessor for the active theme without requiring direct
-// ThemeManager interaction.
 //
-// Returns: the currently active theme, or nil if no ThemeManager has been configured.
+// Returns:
+//   - A themes.Theme value.
 //
-// Side effects: acquires a read lock for thread-safe access.
+// Side effects:
+//   - None.
 func (r *DefaultIntentRouter) Theme() themes.Theme {
 	r.mu.RLock()
 	defer r.mu.RUnlock()

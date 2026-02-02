@@ -19,6 +19,12 @@ type Burst struct {
 }
 
 // Validate checks if the Burst meets all defined criteria.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (b *Burst) Validate() error {
 	// Validate ID
 	if err := b.validateID(); err != nil {

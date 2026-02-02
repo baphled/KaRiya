@@ -22,6 +22,15 @@ func NewGormDB(sqlDB *sql.DB) (*gorm.DB, error) {
 }
 
 // NewRepositoriesFromDB creates all SQL repositories from a GORM database connection.
+//
+// Expected:
+//   - db must be valid.
+//
+// Returns:
+//   - A fully initialized career.Repositories ready for use.
+//
+// Side effects:
+//   - None.
 func NewRepositoriesFromDB(db *gorm.DB) *career.Repositories {
 	return &career.Repositories{
 		Event: NewEventRepository(db),

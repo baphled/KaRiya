@@ -253,28 +253,50 @@ if [ "$SKIP_DOC_CHECK" != "1" ]; then
     echo "Running documentation check..."
     STAGED_GO=$(git diff --cached --name-only | grep '\.go$' | grep -v '_test.go' || true)
     if [ -n "$STAGED_GO" ]; then
-        # Build docblocks analyzer if needed
-        if [ ! -f "./bin/docblocks" ]; then
-            echo "Building docblocks analyzer..."
-            go build -o ./bin/docblocks ./cmd/docblocks > /dev/null 2>&1
-        fi
-        
-        # Run docblocks analyzer on staged packages
-        STAGED_PACKAGES=$(echo "$STAGED_GO" | xargs -I{} dirname {} | sort -u | sed 's|^|./|' | sed 's|$|/...|')
-        if ! go vet -vettool=./bin/docblocks $STAGED_PACKAGES 2>/dev/null; then
-            echo -e "${RED}❌ ERROR: Documentation violations found${NC}"
-            echo ""
-            echo "Documentation required for all exported symbols:"
-            echo "  - Package doc.go file with package-level documentation"
-            echo "  - Function/Method: Expected, Returns, Side effects sections"
-            echo "  - Type: Godoc comment starting with type name"
-            echo ""
-            echo "Run 'make check-docblocks' for details."
-            echo ""
-            echo "To skip: SKIP_DOC_CHECK=1 git commit"
-            echo ""
-            echo "Note: Documentation is REQUIRED - this check cannot be bypassed for Go code."
-            exit 1
+        # Run comprehensive documentation validation
+        if [ -f "scripts/validate-documentation.sh" ]; then
+            echo "Validating documentation structure..."
+            if ! bash scripts/validate-documentation.sh --verbose 2>/dev/null; then
+                echo -e "${RED}❌ ERROR: Documentation violations found${NC}"
+                echo ""
+                echo "Documentation required for all exported symbols:"
+                echo "  - Package doc.go file with package-level documentation"
+                echo "  - Function/Method: Expected, Returns, Side effects sections"
+                echo "  - Type: Godoc comment starting with type name"
+                echo "  - No inline comments (except in e2e test files)"
+                echo ""
+                echo "Run 'make check-docblocks' for structured section validation."
+                echo "Run 'scripts/validate-documentation.sh --fix' to attempt automatic fixes."
+                echo ""
+                echo "To skip: SKIP_DOC_CHECK=1 git commit"
+                echo ""
+                echo "Note: Documentation is REQUIRED - this check cannot be bypassed for Go code."
+                exit 1
+            fi
+        else
+            # Fallback to docblocks analyzer only
+            if [ ! -f "./bin/docblocks" ]; then
+                echo "Building docblocks analyzer..."
+                go build -o ./bin/docblocks ./cmd/docblocks > /dev/null 2>&1
+            fi
+            
+            # Run docblocks analyzer on staged packages
+            STAGED_PACKAGES=$(echo "$STAGED_GO" | xargs -I{} dirname {} | sort -u | sed 's|^|./|' | sed 's|$|/...|')
+            if ! go vet -vettool=./bin/docblocks $STAGED_PACKAGES 2>/dev/null; then
+                echo -e "${RED}❌ ERROR: Documentation violations found${NC}"
+                echo ""
+                echo "Documentation required for all exported symbols:"
+                echo "  - Package doc.go file with package-level documentation"
+                echo "  - Function/Method: Expected, Returns, Side effects sections"
+                echo "  - Type: Godoc comment starting with type name"
+                echo ""
+                echo "Run 'make check-docblocks' for details."
+                echo ""
+                echo "To skip: SKIP_DOC_CHECK=1 git commit"
+                echo ""
+                echo "Note: Documentation is REQUIRED - this check cannot be bypassed for Go code."
+                exit 1
+            fi
         fi
     fi
     echo -e "${GREEN}✅ Documentation check passed${NC}"

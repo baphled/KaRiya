@@ -97,12 +97,12 @@ func NewConfigureSystemIntent(ctx context.Context) (*ConfigureSystemIntent, erro
 }
 
 // Init prepares the intent for its first render cycle by propagating the theme
-// and terminal dimensions to the domain selection screen.
 //
-// Returns: a tea.Cmd from the domain screen's own Init, or nil if no initial
-// command is needed.
+// Returns:
+//   - A tea.Cmd value.
 //
-// Side effects: mutates the domain screen's theme and terminal size state.
+// Side effects:
+//   - None.
 func (c *ConfigureSystemIntent) Init() tea.Cmd {
 	// Set theme on domain screen
 	if theme := c.Theme(); theme != nil {
@@ -453,12 +453,12 @@ func (c *ConfigureSystemIntent) getSettingsForDomain(domain configtypes.Configur
 }
 
 // View composes the visible UI by layering the domain selection screen with
-// breadcrumbs, help footer, and at most one modal overlay for the active
-// workflow step.
 //
-// Returns: the fully rendered string ready for terminal output.
+// Returns:
+//   - A string value.
 //
-// Side effects: None.
+// Side effects:
+//   - None.
 func (c *ConfigureSystemIntent) View() string {
 	width, height := c.getDimensions()
 
@@ -606,12 +606,12 @@ func (c *ConfigureSystemIntent) getContextHelp() string {
 }
 
 // Result reports the outcome of the configuration workflow once the intent
-// is no longer active.
 //
-// Returns: a Completed result with the saved configuration data, a Cancelled
-// result if the user backed out, or nil while the intent is still active.
+// Returns:
+//   - A fully initialized IntentResult[interface{}] ready for use.
 //
-// Side effects: None.
+// Side effects:
+//   - None.
 func (c *ConfigureSystemIntent) Result() *IntentResult[interface{}] {
 	if !c.active && c.result != nil {
 		return &IntentResult[interface{}]{
@@ -634,23 +634,23 @@ func (c *ConfigureSystemIntent) setCancelled() {
 }
 
 // IsActive indicates whether the configuration workflow is still in progress
-// and accepting user input.
 //
-// Returns: true while the user is interacting with the workflow, false after
-// completion or cancellation.
+// Returns:
+//   - A bool value.
 //
-// Side effects: None.
+// Side effects:
+//   - None.
 func (c *ConfigureSystemIntent) IsActive() bool {
 	return c.active
 }
 
 // GetState reports the intent's current lifecycle phase by inspecting which
-// modal is active. Intended for test assertions.
 //
-// Returns: the ConfigurationState corresponding to the currently visible modal,
-// or ConfigStateSelectDomain when no modal is open.
+// Returns:
+//   - A ConfigurationState value.
 //
-// Side effects: None.
+// Side effects:
+//   - None.
 func (c *ConfigureSystemIntent) GetState() ConfigurationState {
 	if c.resultModal != nil {
 		if c.result != nil && c.result.Success {
@@ -674,24 +674,23 @@ func (c *ConfigureSystemIntent) GetState() ConfigurationState {
 }
 
 // GetDomain exposes the domain the user most recently selected for editing.
-// Intended for test assertions.
 //
-// Returns: the currently selected ConfigurationDomain, or the zero value if no
-// domain has been chosen yet.
+// Returns:
+//   - A ConfigurationDomain value.
 //
-// Side effects: None.
+// Side effects:
+//   - None.
 func (c *ConfigureSystemIntent) GetDomain() ConfigurationDomain {
 	return c.selectedDomain
 }
 
 // GetChanges exposes the pending configuration modifications that have been
-// collected from the edit form but not yet persisted. Intended for test
-// assertions.
 //
-// Returns: a ConfigurationChanges snapshot of the selected domain and modified
-// key-value pairs, or nil if no changes are pending.
+// Returns:
+//   - A fully initialized ConfigurationChanges ready for use.
 //
-// Side effects: None.
+// Side effects:
+//   - None.
 func (c *ConfigureSystemIntent) GetChanges() *ConfigurationChanges {
 	if c.pendingChanges == nil {
 		return nil
@@ -703,25 +702,23 @@ func (c *ConfigureSystemIntent) GetChanges() *ConfigurationChanges {
 }
 
 // GetResult exposes the final outcome of the save operation. Intended for test
-// assertions.
 //
-// Returns: the ConfigureSystemResult populated after a save attempt, or nil if
-// no save has been attempted yet.
+// Returns:
+//   - A fully initialized ConfigureSystemResult ready for use.
 //
-// Side effects: None.
+// Side effects:
+//   - None.
 func (c *ConfigureSystemIntent) GetResult() *ConfigureSystemResult {
 	return c.result
 }
 
 // SetState forces the intent into a specific workflow phase by tearing down all
-// existing modals and constructing the modal appropriate for the target state.
-// Intended for test setup.
 //
-// Expected: state must be a valid ConfigurationState constant. For
-// ConfigStateEditSettings a domain must already be selected; for
-// ConfigStateReviewChanges pending changes must exist.
+// Expected:
+//   - config must be a valid configuration object.
 //
-// Side effects: replaces all modal instances and may mutate the result field.
+// Side effects:
+//   - None.
 func (c *ConfigureSystemIntent) SetState(state ConfigurationState) {
 	// Clear all modals first
 	c.editModal = nil
@@ -753,12 +750,12 @@ func (c *ConfigureSystemIntent) SetState(state ConfigurationState) {
 }
 
 // SetDomain overrides the currently selected configuration domain. Intended for
-// test setup.
 //
-// Expected: domain should be one of the recognised ConfigurationDomain constants
-// (DomainSystem, DomainProfile, DomainExport, DomainUI).
+// Expected:
+//   - config must be a valid configuration object.
 //
-// Side effects: mutates the selectedDomain field.
+// Side effects:
+//   - None.
 func (c *ConfigureSystemIntent) SetDomain(domain ConfigurationDomain) {
 	c.selectedDomain = domain
 }
@@ -766,32 +763,34 @@ func (c *ConfigureSystemIntent) SetDomain(domain ConfigurationDomain) {
 // Testing helpers
 
 // GetSavingModal exposes the spinner modal displayed while the configuration is
-// being persisted. Intended for test assertions.
 //
-// Returns: the active saving Modal, or nil when no save is in progress.
+// Returns:
+//   - A fully initialized feedback.Modal ready for use.
 //
-// Side effects: None.
+// Side effects:
+//   - None.
 func (c *ConfigureSystemIntent) GetSavingModal() *feedback.Modal {
 	return c.savingModal
 }
 
 // GetResultModal exposes the success or error modal shown after a save attempt
-// completes. Intended for test assertions.
 //
-// Returns: the active result Modal, or nil when no result has been displayed.
+// Returns:
+//   - A fully initialized feedback.Modal ready for use.
 //
-// Side effects: None.
+// Side effects:
+//   - None.
 func (c *ConfigureSystemIntent) GetResultModal() *feedback.Modal {
 	return c.resultModal
 }
 
 // RenderDomainContent produces the raw domain selection list without the
-// surrounding screen layout, useful for snapshot comparisons. Intended for test
-// assertions.
 //
-// Returns: the rendered string of the domain screen's inner content.
+// Returns:
+//   - A string value.
 //
-// Side effects: None.
+// Side effects:
+//   - None.
 func (c *ConfigureSystemIntent) RenderDomainContent() string {
 	return c.domainScreen.RenderContent()
 }

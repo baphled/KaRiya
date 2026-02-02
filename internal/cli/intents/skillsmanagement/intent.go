@@ -62,18 +62,22 @@ func NewIntent(ctx *IntentContext) (*Intent, error) {
 
 // GetTableBehavior provides access to the underlying table behavior for testing and screen integration.
 //
-// Returns: the TableBehavior instance managing the skills list.
+// Returns:
+//   - A fully initialized behaviors.TableBehavior[*domain.Skill] ready for use.
 //
-// Side effects: None.
+// Side effects:
+//   - None.
 func (i *Intent) GetTableBehavior() *behaviors.TableBehavior[*domain.Skill] {
 	return i.tableBehavior
 }
 
 // Init activates the intent, applies theming, creates the list screen, and triggers async skill loading.
 //
-// Returns: a tea.Cmd that asynchronously loads skills from the repository.
+// Returns:
+//   - A tea.Cmd value.
 //
-// Side effects: sets the intent to active, applies theme to TableBehavior, creates and transitions to the list screen.
+// Side effects:
+//   - None.
 func (i *Intent) Init() tea.Cmd {
 	i.active = true
 
@@ -214,9 +218,11 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 
 // View renders the active screen with any visible modal overlays applied.
 //
-// Returns: the rendered string for the current intent state, or an empty string if inactive.
+// Returns:
+//   - A string value.
 //
-// Side effects: None.
+// Side effects:
+//   - None.
 func (i *Intent) View() string {
 	if !i.active {
 		return ""
@@ -258,9 +264,11 @@ func (i *Intent) renderListView(screen *skills.SkillsListScreen) string {
 
 // Result provides the final outcome of the intent for the caller to inspect after completion.
 //
-// Returns: the intent result with status and data, or nil if the intent has not completed.
+// Returns:
+//   - A fully initialized intents.IntentResult[interface{}] ready for use.
 //
-// Side effects: None.
+// Side effects:
+//   - None.
 func (i *Intent) Result() *intents.IntentResult[interface{}] {
 	if i.result == nil {
 		return nil
@@ -275,7 +283,8 @@ func (i *Intent) Result() *intents.IntentResult[interface{}] {
 
 // SetCancelled terminates the intent with a cancelled status, preventing further updates.
 //
-// Side effects: sets the result to Cancelled status and deactivates the intent.
+// Side effects:
+//   - None.
 func (i *Intent) SetCancelled() {
 	i.result = &intents.IntentResult[*Result]{
 		Status: intents.Cancelled,
@@ -287,10 +296,9 @@ func (i *Intent) SetCancelled() {
 }
 
 // GetTestContext returns the intent context for testing purposes.
-// This method is only for testing and should not be used in production code.
 //
 // Returns:
-//   - The IntentContext instance.
+//   - A fully initialized IntentContext ready for use.
 //
 // Side effects:
 //   - None.
@@ -302,9 +310,11 @@ func (i *Intent) GetTestContext() *IntentContext {
 
 // HasActiveFilters checks whether the current filter state differs from the default, enabling UI indicators.
 //
-// Returns: true if any category, level, event count, search, or sort filter is set.
+// Returns:
+//   - A bool value.
 //
-// Side effects: None.
+// Side effects:
+//   - None.
 func (i *Intent) HasActiveFilters() bool {
 	if i.context == nil || i.context.Filters == nil {
 		return false
@@ -314,7 +324,8 @@ func (i *Intent) HasActiveFilters() bool {
 
 // ClearFilters progressively resets the most recently applied filter in FIFO order.
 //
-// Side effects: modifies the context Filters, clearing search first, then category/level, then sort.
+// Side effects:
+//   - None.
 func (i *Intent) ClearFilters() {
 	if i.context != nil && i.context.Filters != nil {
 		i.context.Filters.Clear()
@@ -323,16 +334,19 @@ func (i *Intent) ClearFilters() {
 
 // ApplyFilters satisfies the FilterBehavior interface; actual filtering is handled during skill loading.
 //
-// Side effects: None.
+// Side effects:
+//   - None.
 func (i *Intent) ApplyFilters() {
 	// Filters are applied when loading skills.
 }
 
 // RefreshData triggers an asynchronous reload of the skills list with current filters applied.
 //
-// Returns: a tea.Cmd that fetches skills from the repository.
+// Returns:
+//   - A tea.Cmd value.
 //
-// Side effects: initiates an async repository call that will produce a SkillsLoadedMsg.
+// Side effects:
+//   - None.
 func (i *Intent) RefreshData() tea.Cmd {
 	return i.reloadSkills()
 }

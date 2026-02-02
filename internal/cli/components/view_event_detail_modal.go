@@ -52,8 +52,16 @@ type ViewEventDetailModal struct {
 }
 
 // NewViewEventDetailModal creates a new event detail modal.
-// By default, shows the "s: Skills" option in the footer.
-// Use WithShowSkillsOption(false) to hide this option.
+//
+// Expected:
+//   - event must be valid.
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A fully initialized ViewEventDetailModal ready for use.
+//
+// Side effects:
+//   - None.
 func NewViewEventDetailModal(event *career.Event, theme themes.Theme) *ViewEventDetailModal {
 	// Ensure theme is not nil at initialization (UIKit pattern)
 	if theme == nil {
@@ -71,14 +79,27 @@ func NewViewEventDetailModal(event *career.Event, theme themes.Theme) *ViewEvent
 }
 
 // WithShowSkillsOption sets whether to show the "s: Skills" option in the footer.
-// This should be set to false when viewing events from the ManageSkills workflow,
-// since the user is already in a skills context.
+//
+// Expected:
+//   - bool must be valid.
+//
+// Returns:
+//   - A fully initialized ViewEventDetailModal ready for use.
+//
+// Side effects:
+//   - None.
 func (m *ViewEventDetailModal) WithShowSkillsOption(show bool) *ViewEventDetailModal {
 	m.showSkillsOption = show
 	return m
 }
 
 // Init initializes the modal (implements tea.Model for bubbletea-overlay).
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (m *ViewEventDetailModal) Init() tea.Cmd {
 	return nil
 }
@@ -119,6 +140,12 @@ func (m *ViewEventDetailModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 // View renders the modal content with solid background and scrolling.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *ViewEventDetailModal) View() string {
 	if !m.visible {
 		return ""
@@ -202,12 +229,21 @@ func (m *ViewEventDetailModal) View() string {
 }
 
 // SetDimensions updates the modal's available dimensions.
+//
+// Expected:
+//   - int must be valid.
+//
+// Side effects:
+//   - None.
 func (m *ViewEventDetailModal) SetDimensions(width, height int) {
 	m.width = width
 	m.height = height
 }
 
 // Show makes the modal visible.
+//
+// Side effects:
+//   - None.
 func (m *ViewEventDetailModal) Show() {
 	m.visible = true
 	m.action = ""
@@ -215,22 +251,42 @@ func (m *ViewEventDetailModal) Show() {
 }
 
 // Hide hides the modal.
+//
+// Side effects:
+//   - None.
 func (m *ViewEventDetailModal) Hide() {
 	m.visible = false
 }
 
 // IsVisible returns whether the modal is currently visible.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *ViewEventDetailModal) IsVisible() bool {
 	return m.visible
 }
 
 // GetAction returns the action selected by the user ("", "edit", or "delete").
-// Should be called after the modal is hidden to determine what action to take.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *ViewEventDetailModal) GetAction() string {
 	return m.action
 }
 
 // SetEvent updates the event being displayed (useful for reusing the modal).
+//
+// Expected:
+//   - event must be valid.
+//
+// Side effects:
+//   - None.
 func (m *ViewEventDetailModal) SetEvent(event *career.Event) {
 	m.event = event
 	m.action = ""

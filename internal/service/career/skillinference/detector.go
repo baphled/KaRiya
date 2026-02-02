@@ -38,7 +38,16 @@ type DefaultSkillInferenceService struct {
 }
 
 // NewSkillInferenceService creates a new skill inference service.
-// Requires repositories for skill persistence and event linking.
+//
+// Expected:
+//   - skillrepository must be valid.
+//   - eventrepository must be valid.
+//
+// Returns:
+//   - A SkillInferenceService value.
+//
+// Side effects:
+//   - None.
 func NewSkillInferenceService(skillRepo SkillRepository, eventRepo EventRepository) SkillInferenceService {
 	return &DefaultSkillInferenceService{
 		skillRepo:  skillRepo,

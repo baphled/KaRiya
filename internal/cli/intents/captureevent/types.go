@@ -109,9 +109,10 @@ type ReviewInferredEventState struct {
 // IsActive reports whether this intent is currently running.
 //
 // Returns:
-//   - true if the intent has not yet completed, cancelled, or failed.
+//   - A bool value.
 //
-// Side effects: None.
+// Side effects:
+//   - None.
 func (i *Intent) IsActive() bool {
 	return i.active
 }
@@ -119,10 +120,10 @@ func (i *Intent) IsActive() bool {
 // GetResult returns the typed intent result, or nil if not yet complete.
 //
 // Returns:
-//   - The IntentResult containing status, data, and error information.
-//   - nil if the intent is still active.
+//   - A fully initialized intents.IntentResult[*Result] ready for use.
 //
-// Side effects: None.
+// Side effects:
+//   - None.
 func (i *Intent) GetResult() *intents.IntentResult[*Result] {
 	return i.result
 }
@@ -130,9 +131,10 @@ func (i *Intent) GetResult() *intents.IntentResult[*Result] {
 // GetState returns the current workflow step as a string.
 //
 // Returns:
-//   - The State value cast to string (e.g. "choose_strategy", "form").
+//   - A string value.
 //
-// Side effects: None.
+// Side effects:
+//   - None.
 func (i *Intent) GetState() string {
 	return string(i.currentState)
 }
@@ -140,9 +142,10 @@ func (i *Intent) GetState() string {
 // GetForm returns the capture form model instance.
 //
 // Returns:
-//   - The CaptureForm, or nil if the intent is nil.
+//   - A fully initialized models.CaptureForm ready for use.
 //
-// Side effects: None.
+// Side effects:
+//   - None.
 func (i *Intent) GetForm() *models.CaptureForm {
 	if i == nil {
 		return nil
@@ -153,10 +156,10 @@ func (i *Intent) GetForm() *models.CaptureForm {
 // SetStateForTesting sets the current workflow state for cross-package tests.
 //
 // Expected:
-//   - Only called from test code.
+//   - state must be valid.
 //
 // Side effects:
-//   - Directly mutates the internal state machine.
+//   - None.
 func (i *Intent) SetStateForTesting(state State) {
 	i.currentState = state
 }
@@ -164,9 +167,10 @@ func (i *Intent) SetStateForTesting(state State) {
 // GetReviewState returns the review sub-flow state for test assertions.
 //
 // Returns:
-//   - The ReviewInferredEventState, or nil if the intent is nil.
+//   - A fully initialized ReviewInferredEventState ready for use.
 //
-// Side effects: None.
+// Side effects:
+//   - None.
 func (i *Intent) GetReviewState() *ReviewInferredEventState {
 	return i.reviewState
 }

@@ -96,7 +96,7 @@ func (m *BurstDetailModal) updateFooterBadges() {
 //   - A tea.Cmd value.
 //
 // Side effects:
-//   - Updates footer badges.
+//   - None.
 func (m *BurstDetailModal) Init() tea.Cmd {
 	m.updateFooterBadges()
 	return m.modal.Init()
@@ -120,7 +120,7 @@ func (m *BurstDetailModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // View renders the modal content.
 //
 // Returns:
-//   - string: the rendered modal view.
+//   - A string value.
 //
 // Side effects:
 //   - None.
@@ -131,7 +131,7 @@ func (m *BurstDetailModal) View() string {
 // IsVisible returns whether the modal is currently visible.
 //
 // Returns:
-//   - bool: true if modal is visible.
+//   - A bool value.
 //
 // Side effects:
 //   - None.
@@ -142,7 +142,7 @@ func (m *BurstDetailModal) IsVisible() bool {
 // Show makes the modal visible.
 //
 // Side effects:
-//   - Sets modal visibility to true.
+//   - None.
 func (m *BurstDetailModal) Show() {
 	m.modal.Show()
 }
@@ -150,7 +150,7 @@ func (m *BurstDetailModal) Show() {
 // Hide hides the modal.
 //
 // Side effects:
-//   - Sets modal visibility to false.
+//   - None.
 func (m *BurstDetailModal) Hide() {
 	m.modal.Hide()
 }
@@ -158,11 +158,10 @@ func (m *BurstDetailModal) Hide() {
 // SetDimensions sets the terminal dimensions.
 //
 // Expected:
-//   - width must be a positive integer.
-//   - height must be a positive integer.
+//   - int must be valid.
 //
 // Side effects:
-//   - Updates underlying modal dimensions.
+//   - None.
 func (m *BurstDetailModal) SetDimensions(width, height int) {
 	m.modal.SetDimensions(width, height)
 }
@@ -170,11 +169,10 @@ func (m *BurstDetailModal) SetDimensions(width, height int) {
 // SetBurst updates the burst being displayed.
 //
 // Expected:
-//   - burst must be a non-nil *career.Burst pointer.
+//   - burst must be valid.
 //
 // Side effects:
-//   - Updates internal burst reference.
-//   - Regenerates modal content.
+//   - None.
 func (m *BurstDetailModal) SetBurst(burst *career.Burst) {
 	m.burst = burst
 	content := renderBurstDetailContent(burst, m.theme)
@@ -184,7 +182,7 @@ func (m *BurstDetailModal) SetBurst(burst *career.Burst) {
 // GetBurst returns the burst being displayed.
 //
 // Returns:
-//   - *career.Burst: the current burst.
+//   - A fully initialized career.Burst ready for use.
 //
 // Side effects:
 //   - None.

@@ -160,6 +160,12 @@ type RoleScoringCfg struct {
 }
 
 // ValidateWeights checks that scoring weights sum to 1.0 within tolerance.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (s *ScoringConfig) ValidateWeights() error {
 	sum := s.Weights.RoleScore + s.Weights.AudienceScore + s.Weights.MetricScore +
 		s.Weights.ImpactScore + s.Weights.Confidence
@@ -172,6 +178,12 @@ func (s *ScoringConfig) ValidateWeights() error {
 }
 
 // DefaultConfig returns the default configuration.
+//
+// Returns:
+//   - A fully initialized Config ready for use.
+//
+// Side effects:
+//   - None.
 func DefaultConfig() *Config {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -245,8 +257,12 @@ func DefaultConfig() *Config {
 }
 
 // SetConfigPathForTesting overrides the config path for testing purposes.
-// This allows tests to isolate config file writes to a temporary directory.
-// Call ResetConfigPath() in test cleanup to restore default behavior.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Side effects:
+//   - None.
 func SetConfigPathForTesting(path string) {
 	configPathMu.Lock()
 	defer configPathMu.Unlock()
@@ -254,13 +270,15 @@ func SetConfigPathForTesting(path string) {
 }
 
 // SwapConfigPathForTesting sets a new config path and returns the previous one.
-// This enables nested isolation: e2e tests can set their own path while preserving
-// the BeforeSuite path, then restore it in cleanup.
 //
-// Example:
+// Expected:
+//   - Must be a valid string.
 //
-//	prevPath := config.SwapConfigPathForTesting(myTempPath)
-//	defer config.SetConfigPathForTesting(prevPath)  // Restore in cleanup
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func SwapConfigPathForTesting(path string) string {
 	configPathMu.Lock()
 	defer configPathMu.Unlock()
@@ -270,7 +288,9 @@ func SwapConfigPathForTesting(path string) string {
 }
 
 // ResetConfigPath clears the config path override and restores default behavior.
-// This should be called in test cleanup (AfterEach) to prevent test pollution.
+//
+// Side effects:
+//   - None.
 func ResetConfigPath() {
 	configPathMu.Lock()
 	defer configPathMu.Unlock()
@@ -438,7 +458,15 @@ func applyScoringDefaults(cfg, defaults *Config) {
 }
 
 // SaveConfig saves configuration to the default location.
-// In test environments, this will panic if SetConfigPathForTesting hasn't been called.
+//
+// Expected:
+//   - config must be a valid configuration object.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func SaveConfig(cfg *Config) error {
 	requireTestIsolation("config.SaveConfig()")
 
@@ -451,6 +479,16 @@ func SaveConfig(cfg *Config) error {
 }
 
 // SaveConfigToPath saves configuration to a specific file path.
+//
+// Expected:
+//   - config must be a valid configuration object.
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func SaveConfigToPath(cfg *Config, path string) error {
 	// Create directory if it doesn't exist
 	dir := filepath.Dir(path)

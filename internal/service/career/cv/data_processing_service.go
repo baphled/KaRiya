@@ -38,6 +38,15 @@ type DefaultDataProcessingService struct {
 }
 
 // NewDataProcessingService creates a new data processing service.
+//
+// Expected:
+//   - logger must be valid.
+//
+// Returns:
+//   - A DataProcessingService value.
+//
+// Side effects:
+//   - None.
 func NewDataProcessingService(log *logger.Logger) DataProcessingService {
 	return &DefaultDataProcessingService{
 		logger: log,

@@ -1,6 +1,6 @@
-# Go Documentation & Comment Rules
+# KaRiya Documentation Guide
 
-This document defines the **mandatory** documentation, comment, and naming standards for Go code in this project. These rules are enforced by `golangci-lint` (via `stylecheck`, `revive`, `godot`), the custom `docblocks` analyzer (via `go vet`), and manual code review.
+This guide defines the **mandatory** documentation standards for all Go code in the KaRiya project. These rules are enforced by `golangci-lint`, the custom `docblocks` analyzer, and manual code review.
 
 > **Guiding Principle**: Documentation explains *why and what* at boundaries. Code explains *how* through structure and naming.
 

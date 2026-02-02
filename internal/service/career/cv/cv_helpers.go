@@ -41,10 +41,12 @@ type NarrativeProfileData struct {
 }
 
 // DefaultNarrativeProfile returns an empty narrative profile data.
-// This is used as a base when no profile is configured.
-// Personal fields (Name, Email, etc.) should be provided via onboarding.
-// Inferred fields (CoreStrengths, ValuePropositions, Technologies) should be
-// populated by ProfileInferenceService from the user's career data.
+//
+// Returns:
+//   - A fully initialized NarrativeProfileData ready for use.
+//
+// Side effects:
+//   - None.
 func DefaultNarrativeProfile() *NarrativeProfileData {
 	return &NarrativeProfileData{
 		Name:              "",
@@ -62,9 +64,15 @@ func DefaultNarrativeProfile() *NarrativeProfileData {
 }
 
 // NarrativeProfileFromConfig creates a NarrativeProfileData from config.ProfileConfig.
-// Empty fields remain empty - they should be populated by ProfileInferenceService
-// from the user's career data (events, facts, skills) rather than falling back
-// to hardcoded defaults.
+//
+// Expected:
+//   - config must be a valid configuration object.
+//
+// Returns:
+//   - A fully initialized NarrativeProfileData ready for use.
+//
+// Side effects:
+//   - None.
 func NarrativeProfileFromConfig(cfg *config.ProfileConfig) *NarrativeProfileData {
 	if cfg == nil {
 		return DefaultNarrativeProfile()

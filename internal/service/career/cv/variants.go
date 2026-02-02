@@ -43,7 +43,15 @@ const (
 )
 
 // MapUILengthToFormat maps UI form values to service layer LengthFormat constants.
-// This bridges the gap between user-facing form options and internal service types.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A LengthFormat value.
+//
+// Side effects:
+//   - None.
 func MapUILengthToFormat(uiLength string) LengthFormat {
 	switch uiLength {
 	case "1_page":

@@ -28,6 +28,12 @@ type BurstServiceMock struct {
 }
 
 // NewBurstServiceMock creates a new configurable BurstService mock.
+//
+// Returns:
+//   - A fully initialized BurstServiceMock ready for use.
+//
+// Side effects:
+//   - None.
 func NewBurstServiceMock() *BurstServiceMock {
 	return &BurstServiceMock{
 		events: []*career.Event{},
@@ -36,76 +42,184 @@ func NewBurstServiceMock() *BurstServiceMock {
 }
 
 // SetEvents configures the events returned by GetEventByID and ListEvents.
+//
+// Expected:
+//   - event must be valid.
+//
+// Returns:
+//   - A fully initialized BurstServiceMock ready for use.
+//
+// Side effects:
+//   - None.
 func (m *BurstServiceMock) SetEvents(events []*career.Event) *BurstServiceMock {
 	m.events = events
 	return m
 }
 
 // SetSuggestions configures the suggestions returned by SuggestBursts.
+//
+// Expected:
+//   - burstsuggestion must be valid.
+//
+// Returns:
+//   - A fully initialized BurstServiceMock ready for use.
+//
+// Side effects:
+//   - None.
 func (m *BurstServiceMock) SetSuggestions(suggestions []burstfact.BurstSuggestion) *BurstServiceMock {
 	m.suggestions = suggestions
 	return m
 }
 
 // SetSuggestError configures an error to be returned by SuggestBursts.
+//
+// Expected:
+//   - error must be valid.
+//
+// Returns:
+//   - A fully initialized BurstServiceMock ready for use.
+//
+// Side effects:
+//   - None.
 func (m *BurstServiceMock) SetSuggestError(err error) *BurstServiceMock {
 	m.suggestError = err
 	return m
 }
 
 // SetExtractedFacts configures the facts returned by ExtractFactsFromBurst.
+//
+// Expected:
+//   - fact must be valid.
+//
+// Returns:
+//   - A fully initialized BurstServiceMock ready for use.
+//
+// Side effects:
+//   - None.
 func (m *BurstServiceMock) SetExtractedFacts(facts []career.Fact) *BurstServiceMock {
 	m.extractedFacts = facts
 	return m
 }
 
 // SetExtractError configures an error to be returned by ExtractFactsFromBurst.
+//
+// Expected:
+//   - error must be valid.
+//
+// Returns:
+//   - A fully initialized BurstServiceMock ready for use.
+//
+// Side effects:
+//   - None.
 func (m *BurstServiceMock) SetExtractError(err error) *BurstServiceMock {
 	m.extractError = err
 	return m
 }
 
 // SetListEventsError configures an error to be returned by ListEvents.
+//
+// Expected:
+//   - error must be valid.
+//
+// Returns:
+//   - A fully initialized BurstServiceMock ready for use.
+//
+// Side effects:
+//   - None.
 func (m *BurstServiceMock) SetListEventsError(err error) *BurstServiceMock {
 	m.listEventsError = err
 	return m
 }
 
 // SetSaveFactError configures an error to be returned by SaveFact.
+//
+// Expected:
+//   - error must be valid.
+//
+// Returns:
+//   - A fully initialized BurstServiceMock ready for use.
+//
+// Side effects:
+//   - None.
 func (m *BurstServiceMock) SetSaveFactError(err error) *BurstServiceMock {
 	m.saveFactError = err
 	return m
 }
 
 // SetConfirmError configures an error to be returned by ConfirmBurst.
+//
+// Expected:
+//   - error must be valid.
+//
+// Returns:
+//   - A fully initialized BurstServiceMock ready for use.
+//
+// Side effects:
+//   - None.
 func (m *BurstServiceMock) SetConfirmError(err error) *BurstServiceMock {
 	m.confirmError = err
 	return m
 }
 
 // GetConfirmCallCount returns how many times ConfirmBurst was called.
+//
+// Returns:
+//   - A int value.
+//
+// Side effects:
+//   - None.
 func (m *BurstServiceMock) GetConfirmCallCount() int {
 	return m.confirmCallCount
 }
 
 // SetFactsForBurst configures facts to be returned for a specific burst ID.
+//
+// Expected:
+//   - Must be a valid string.
+//   - fact must be valid.
+//
+// Returns:
+//   - A fully initialized BurstServiceMock ready for use.
+//
+// Side effects:
+//   - None.
 func (m *BurstServiceMock) SetFactsForBurst(burstID string, facts []*career.Fact) *BurstServiceMock {
 	m.facts[burstID] = facts
 	return m
 }
 
 // GetExtractCallCount returns how many times ExtractFactsFromBurst was called.
+//
+// Returns:
+//   - A int value.
+//
+// Side effects:
+//   - None.
 func (m *BurstServiceMock) GetExtractCallCount() int {
 	return m.extractCallCount
 }
 
 // GetSavedFacts returns all facts that were saved via SaveFact.
+//
+// Returns:
+//   - A []*career.Fact value.
+//
+// Side effects:
+//   - None.
 func (m *BurstServiceMock) GetSavedFacts() []*career.Fact {
 	return m.savedFacts
 }
 
 // ConfirmBurst implements BurstService.
-// Mirrors the real service: sets Confirmed, ConfirmedAt, and UpdatedAt.
+//
+// Expected:
+//   - burst must be valid.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (m *BurstServiceMock) ConfirmBurst(_ context.Context, burst *career.Burst) error {
 	m.confirmCallCount++
 	if m.confirmError != nil {
@@ -156,6 +270,15 @@ func (m *BurstServiceMock) ExtractFactsFromBurst(_ context.Context, _ *career.Bu
 }
 
 // SaveFact implements BurstService.
+//
+// Expected:
+//   - fact must be valid.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (m *BurstServiceMock) SaveFact(_ context.Context, fact *career.Fact) error {
 	if m.saveFactError != nil {
 		return m.saveFactError
@@ -187,6 +310,12 @@ type BurstRepositoryMock struct {
 }
 
 // NewBurstRepositoryMock creates a new configurable BurstRepository mock.
+//
+// Returns:
+//   - A fully initialized BurstRepositoryMock ready for use.
+//
+// Side effects:
+//   - None.
 func NewBurstRepositoryMock() *BurstRepositoryMock {
 	return &BurstRepositoryMock{
 		bursts: make(map[string]*career.Burst),
@@ -194,36 +323,90 @@ func NewBurstRepositoryMock() *BurstRepositoryMock {
 }
 
 // SetCreateError configures an error to be returned by Create.
+//
+// Expected:
+//   - error must be valid.
+//
+// Returns:
+//   - A fully initialized BurstRepositoryMock ready for use.
+//
+// Side effects:
+//   - None.
 func (m *BurstRepositoryMock) SetCreateError(err error) *BurstRepositoryMock {
 	m.createError = err
 	return m
 }
 
 // SetUpdateError configures an error to be returned by Update.
+//
+// Expected:
+//   - error must be valid.
+//
+// Returns:
+//   - A fully initialized BurstRepositoryMock ready for use.
+//
+// Side effects:
+//   - None.
 func (m *BurstRepositoryMock) SetUpdateError(err error) *BurstRepositoryMock {
 	m.updateError = err
 	return m
 }
 
 // SetDeleteError configures an error to be returned by Delete.
+//
+// Expected:
+//   - error must be valid.
+//
+// Returns:
+//   - A fully initialized BurstRepositoryMock ready for use.
+//
+// Side effects:
+//   - None.
 func (m *BurstRepositoryMock) SetDeleteError(err error) *BurstRepositoryMock {
 	m.deleteError = err
 	return m
 }
 
 // SetGetError configures an error to be returned by GetByID.
+//
+// Expected:
+//   - error must be valid.
+//
+// Returns:
+//   - A fully initialized BurstRepositoryMock ready for use.
+//
+// Side effects:
+//   - None.
 func (m *BurstRepositoryMock) SetGetError(err error) *BurstRepositoryMock {
 	m.getError = err
 	return m
 }
 
 // SetListError configures an error to be returned by List.
+//
+// Expected:
+//   - error must be valid.
+//
+// Returns:
+//   - A fully initialized BurstRepositoryMock ready for use.
+//
+// Side effects:
+//   - None.
 func (m *BurstRepositoryMock) SetListError(err error) *BurstRepositoryMock {
 	m.listError = err
 	return m
 }
 
 // AddBurst adds a burst to the mock repository (for test setup).
+//
+// Expected:
+//   - burst must be valid.
+//
+// Returns:
+//   - A fully initialized BurstRepositoryMock ready for use.
+//
+// Side effects:
+//   - None.
 func (m *BurstRepositoryMock) AddBurst(burst *career.Burst) *BurstRepositoryMock {
 	if burst.ID == "" {
 		burst.ID = fmt.Sprintf("burst-%d", len(m.bursts)+1)
@@ -233,21 +416,48 @@ func (m *BurstRepositoryMock) AddBurst(burst *career.Burst) *BurstRepositoryMock
 }
 
 // GetCreateCalls returns how many times Create was called.
+//
+// Returns:
+//   - A int value.
+//
+// Side effects:
+//   - None.
 func (m *BurstRepositoryMock) GetCreateCalls() int {
 	return m.createCalls
 }
 
 // GetUpdateCalls returns how many times Update was called.
+//
+// Returns:
+//   - A int value.
+//
+// Side effects:
+//   - None.
 func (m *BurstRepositoryMock) GetUpdateCalls() int {
 	return m.updateCalls
 }
 
 // GetDeleteCalls returns how many times Delete was called.
+//
+// Returns:
+//   - A int value.
+//
+// Side effects:
+//   - None.
 func (m *BurstRepositoryMock) GetDeleteCalls() int {
 	return m.deleteCalls
 }
 
 // Create implements BurstRepository.
+//
+// Expected:
+//   - burst must be valid.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (m *BurstRepositoryMock) Create(_ context.Context, burst *career.Burst) error {
 	m.createCalls++
 	if m.createError != nil {
@@ -272,6 +482,15 @@ func (m *BurstRepositoryMock) GetByID(_ context.Context, id string) (*career.Bur
 }
 
 // Update implements BurstRepository.
+//
+// Expected:
+//   - burst must be valid.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (m *BurstRepositoryMock) Update(_ context.Context, burst *career.Burst) error {
 	m.updateCalls++
 	if m.updateError != nil {
@@ -285,6 +504,15 @@ func (m *BurstRepositoryMock) Update(_ context.Context, burst *career.Burst) err
 }
 
 // Delete implements BurstRepository.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (m *BurstRepositoryMock) Delete(_ context.Context, id string) error {
 	m.deleteCalls++
 	if m.deleteError != nil {

@@ -17,13 +17,26 @@ type EventSimilarityInput struct {
 type SimilarityScorer struct{}
 
 // NewSimilarityScorer creates a new SimilarityScorer instance.
+//
+// Returns:
+//   - A fully initialized SimilarityScorer ready for use.
+//
+// Side effects:
+//   - None.
 func NewSimilarityScorer() *SimilarityScorer {
 	return &SimilarityScorer{}
 }
 
 // TextSimilarity computes similarity between two event texts using token overlap.
-// Returns a score from 0.0 (completely different) to 1.0 (identical)
-// Algorithm: Jaccard similarity on word tokens.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A float64 value.
+//
+// Side effects:
+//   - None.
 func (s *SimilarityScorer) TextSimilarity(text1, text2 string) float64 {
 	if text1 == text2 {
 		return 1.0
@@ -54,8 +67,15 @@ func (s *SimilarityScorer) TextSimilarity(text1, text2 string) float64 {
 }
 
 // KeywordOverlapScore computes similarity based on shared keywords/tags.
-// Returns a score from 0.0 (no overlap) to 1.0 (identical keywords)
-// Algorithm: Jaccard similarity on keyword sets.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A float64 value.
+//
+// Side effects:
+//   - None.
 func (s *SimilarityScorer) KeywordOverlapScore(keywords1, keywords2 []string) float64 {
 	if len(keywords1) == 0 && len(keywords2) == 0 {
 		return 1.0
@@ -89,7 +109,15 @@ func (s *SimilarityScorer) KeywordOverlapScore(keywords1, keywords2 []string) fl
 }
 
 // CompanyMatchScore returns 1.0 if companies match (case-insensitive), 0.0 otherwise.
-// Treats empty companies as matching (no company specified).
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A float64 value.
+//
+// Side effects:
+//   - None.
 func (s *SimilarityScorer) CompanyMatchScore(company1, company2 string) float64 {
 	if company1 == "" && company2 == "" {
 		return 1.0
@@ -107,7 +135,15 @@ func (s *SimilarityScorer) CompanyMatchScore(company1, company2 string) float64 
 }
 
 // ProjectMatchScore returns 1.0 if projects match (case-insensitive), 0.0 otherwise.
-// Treats empty projects as matching (no project specified).
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A float64 value.
+//
+// Side effects:
+//   - None.
 func (s *SimilarityScorer) ProjectMatchScore(project1, project2 string) float64 {
 	if project1 == "" && project2 == "" {
 		return 1.0
@@ -125,13 +161,15 @@ func (s *SimilarityScorer) ProjectMatchScore(project1, project2 string) float64 
 }
 
 // CombinedSimilarityScore computes weighted similarity across all event components.
-// Weights:
-//   - Text similarity: 50% (most important for semantic relevance)
-//   - Keyword overlap: 20% (tag-based classification)
-//   - Company match: 15% (organizational context)
-//   - Project match: 15% (project scope)
 //
-// Returns a score from 0.0 to 1.0.
+// Expected:
+//   - eventsimilarityinput must be valid.
+//
+// Returns:
+//   - A float64 value.
+//
+// Side effects:
+//   - None.
 func (s *SimilarityScorer) CombinedSimilarityScore(event1, event2 EventSimilarityInput) float64 {
 	textScore := s.TextSimilarity(event1.Text, event2.Text)
 	keywordScore := s.KeywordOverlapScore(event1.Keywords, event2.Keywords)

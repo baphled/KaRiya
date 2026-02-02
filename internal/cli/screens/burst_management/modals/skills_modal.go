@@ -57,7 +57,7 @@ func NewBurstSkillsModal(burstID string, burstName string, skills []*career.Skil
 // Init initializes the modal.
 //
 // Returns:
-//   - tea.Cmd: command from underlying modal.
+//   - A tea.Cmd value.
 //
 // Side effects:
 //   - None.
@@ -83,7 +83,7 @@ func (m *BurstSkillsModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // View renders the modal content.
 //
 // Returns:
-//   - string: the rendered modal view.
+//   - A string value.
 //
 // Side effects:
 //   - None.
@@ -94,7 +94,7 @@ func (m *BurstSkillsModal) View() string {
 // IsVisible returns whether the modal is currently visible.
 //
 // Returns:
-//   - bool: true if modal is visible.
+//   - A bool value.
 //
 // Side effects:
 //   - None.
@@ -105,7 +105,7 @@ func (m *BurstSkillsModal) IsVisible() bool {
 // Show makes the modal visible.
 //
 // Side effects:
-//   - Shows underlying modal.
+//   - None.
 func (m *BurstSkillsModal) Show() {
 	m.modal.Show()
 }
@@ -113,7 +113,7 @@ func (m *BurstSkillsModal) Show() {
 // Hide hides the modal.
 //
 // Side effects:
-//   - Hides underlying modal.
+//   - None.
 func (m *BurstSkillsModal) Hide() {
 	m.modal.Hide()
 }
@@ -121,11 +121,10 @@ func (m *BurstSkillsModal) Hide() {
 // SetDimensions sets the terminal dimensions.
 //
 // Expected:
-//   - width must be a positive integer.
-//   - height must be a positive integer.
+//   - int must be valid.
 //
 // Side effects:
-//   - Updates underlying modal dimensions.
+//   - None.
 func (m *BurstSkillsModal) SetDimensions(width, height int) {
 	m.modal.SetDimensions(width, height)
 }
@@ -133,11 +132,10 @@ func (m *BurstSkillsModal) SetDimensions(width, height int) {
 // SetSkills updates the skills being displayed.
 //
 // Expected:
-//   - skills must be a non-nil slice of *career.Skill.
+//   - skill must be valid.
 //
 // Side effects:
-//   - Updates internal skills reference.
-//   - Regenerates modal content.
+//   - None.
 func (m *BurstSkillsModal) SetSkills(skills []*career.Skill) {
 	m.skills = skills
 	content := renderSkillsContent(skills, m.theme)
@@ -148,7 +146,7 @@ func (m *BurstSkillsModal) SetSkills(skills []*career.Skill) {
 // GetBurstID returns the burst ID this modal is showing skills for.
 //
 // Returns:
-//   - string: the burst ID.
+//   - A string value.
 //
 // Side effects:
 //   - None.

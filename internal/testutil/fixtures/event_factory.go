@@ -79,7 +79,15 @@ var EventFactory = factory.NewFactory(
 })
 
 // Event creates a minimal valid Event with the given ID.
-// Use this for simple tests that just need a valid event.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized career.Event ready for use.
+//
+// Side effects:
+//   - None.
 func Event(id string) *career.Event {
 	now := time.Now()
 	return &career.Event{
@@ -92,7 +100,15 @@ func Event(id string) *career.Event {
 }
 
 // EventWith creates a Event with custom fields.
-// Unspecified fields get sensible defaults.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized career.Event ready for use.
+//
+// Side effects:
+//   - None.
 func EventWith(id, text, company, project string) *career.Event {
 	now := time.Now()
 	return &career.Event{
@@ -107,6 +123,15 @@ func EventWith(id, text, company, project string) *career.Event {
 }
 
 // Events creates n events with sequential IDs (event-1, event-2, etc.)
+//
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A []*career.Event value.
+//
+// Side effects:
+//   - None.
 func Events(n int) []*career.Event {
 	events := make([]*career.Event, n)
 	for i := range n {
@@ -120,17 +145,43 @@ func Events(n int) []*career.Event {
 }
 
 // EventVal creates a minimal valid Event value (not pointer) with the given ID.
-// Use this for tests that require value types rather than pointers.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A career.Event value.
+//
+// Side effects:
+//   - None.
 func EventVal(id string) career.Event {
 	return *Event(id)
 }
 
 // EventValWith creates a Event value with custom fields.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A career.Event value.
+//
+// Side effects:
+//   - None.
 func EventValWith(id, text, company, project string) career.Event {
 	return *EventWith(id, text, company, project)
 }
 
 // EventVals creates n events as values with sequential IDs.
+//
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A []career.Event value.
+//
+// Side effects:
+//   - None.
 func EventVals(n int) []career.Event {
 	events := make([]career.Event, n)
 	for i := range n {
@@ -144,7 +195,16 @@ func EventVals(n int) []career.Event {
 }
 
 // EventWithCategories creates a Event with specified categories.
-// Use for tests that need specific category assignments (e.g., role-based scoring).
+//
+// Expected:
+//   - Must be a valid string.
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized career.Event ready for use.
+//
+// Side effects:
+//   - None.
 func EventWithCategories(id, text string, categories []string) *career.Event {
 	now := time.Now()
 	return &career.Event{

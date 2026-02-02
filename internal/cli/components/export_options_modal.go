@@ -39,7 +39,15 @@ type ExportData struct {
 }
 
 // NewExportOptionsModal creates a new export options modal
-// with the given terminal dimensions for responsive sizing.
+//
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized ExportOptionsModal ready for use.
+//
+// Side effects:
+//   - None.
 func NewExportOptionsModal(width, height int) *ExportOptionsModal {
 	modal := &ExportOptionsModal{
 		data: &ExportData{
@@ -99,6 +107,12 @@ func (m *ExportOptionsModal) buildForm() {
 }
 
 // Init initializes the export options modal and its form.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (m *ExportOptionsModal) Init() tea.Cmd {
 	if m.form == nil {
 		return nil
@@ -107,6 +121,15 @@ func (m *ExportOptionsModal) Init() tea.Cmd {
 }
 
 // Update handles messages for the export options modal.
+//
+// Expected:
+//   - msg must be valid.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (m *ExportOptionsModal) Update(msg tea.Msg) tea.Cmd {
 	if !m.visible {
 		return nil
@@ -148,6 +171,12 @@ func (m *ExportOptionsModal) Update(msg tea.Msg) tea.Cmd {
 }
 
 // View renders the export options modal.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *ExportOptionsModal) View() string {
 	if !m.visible {
 		return ""
@@ -218,41 +247,80 @@ func (m *ExportOptionsModal) buildFooter() string {
 }
 
 // Show makes the modal visible.
+//
+// Side effects:
+//   - None.
 func (m *ExportOptionsModal) Show() {
 	m.visible = true
 }
 
 // Hide makes the modal invisible.
+//
+// Side effects:
+//   - None.
 func (m *ExportOptionsModal) Hide() {
 	m.visible = false
 }
 
 // IsVisible returns whether the modal is currently visible.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *ExportOptionsModal) IsVisible() bool {
 	return m.visible
 }
 
 // IsCompleted returns whether the form has been completed.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *ExportOptionsModal) IsCompleted() bool {
 	return m.completed
 }
 
 // GetExportData returns the export configuration data.
+//
+// Returns:
+//   - A fully initialized ExportData ready for use.
+//
+// Side effects:
+//   - None.
 func (m *ExportOptionsModal) GetExportData() *ExportData {
 	return m.data
 }
 
 // SetFormat sets the export format.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Side effects:
+//   - None.
 func (m *ExportOptionsModal) SetFormat(format string) {
 	m.data.Format = format
 }
 
 // SetLocation sets the save location.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Side effects:
+//   - None.
 func (m *ExportOptionsModal) SetLocation(location string) {
 	m.data.Location = location
 }
 
 // Complete marks the modal as completed and hides it.
+//
+// Side effects:
+//   - None.
 func (m *ExportOptionsModal) Complete() {
 	m.completed = true
 	m.visible = false

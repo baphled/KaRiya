@@ -23,11 +23,29 @@ type BurstRepository struct {
 }
 
 // NewBurstRepository creates a new SQL burst repository.
+//
+// Expected:
+//   - db must be valid.
+//
+// Returns:
+//   - A fully initialized BurstRepository ready for use.
+//
+// Side effects:
+//   - None.
 func NewBurstRepository(db *gorm.DB) *BurstRepository {
 	return &BurstRepository{db: db}
 }
 
 // Create adds a new burst to the database.
+//
+// Expected:
+//   - burst must be valid.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (r *BurstRepository) Create(ctx context.Context, burst *career.Burst) error {
 	if burst.ID == "" {
 		burst.ID = uuid.New().String()
@@ -54,6 +72,15 @@ func (r *BurstRepository) GetByID(ctx context.Context, id string) (*career.Burst
 }
 
 // Update modifies an existing burst.
+//
+// Expected:
+//   - burst must be valid.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (r *BurstRepository) Update(ctx context.Context, burst *career.Burst) error {
 	// Check if record exists first.
 	var count int64
@@ -69,6 +96,15 @@ func (r *BurstRepository) Update(ctx context.Context, burst *career.Burst) error
 }
 
 // Delete removes a burst from the database.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (r *BurstRepository) Delete(ctx context.Context, id string) error {
 	result := r.db.WithContext(ctx).Delete(&models.Burst{}, "id = ?", id)
 	if result.RowsAffected == 0 {

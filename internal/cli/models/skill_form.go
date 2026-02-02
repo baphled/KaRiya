@@ -23,6 +23,12 @@ type SkillForm struct {
 }
 
 // NewSkillForm creates a new skill form.
+//
+// Returns:
+//   - A fully initialized SkillForm ready for use.
+//
+// Side effects:
+//   - None.
 func NewSkillForm() *SkillForm {
 	m := &SkillForm{
 		BaseStandardModel: NewBaseStandardModel(),
@@ -36,6 +42,15 @@ func NewSkillForm() *SkillForm {
 }
 
 // NewSkillFormWithData creates a new skill form with existing data.
+//
+// Expected:
+//   - skill must be valid.
+//
+// Returns:
+//   - A fully initialized SkillForm ready for use.
+//
+// Side effects:
+//   - None.
 func NewSkillFormWithData(skill *career.Skill) *SkillForm {
 	m := &SkillForm{
 		BaseStandardModel: NewBaseStandardModel(),
@@ -58,6 +73,12 @@ func (m *SkillForm) rebuildForm() {
 }
 
 // Init initializes the form.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (m *SkillForm) Init() tea.Cmd {
 	return m.form.Init()
 }
@@ -97,6 +118,12 @@ func (m *SkillForm) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 // View renders the form.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *SkillForm) View() string {
 	return m.form.View()
 }
@@ -112,11 +139,23 @@ func (m *SkillForm) submitForm() tea.Cmd {
 }
 
 // GetFormData returns the current form data.
+//
+// Returns:
+//   - A fully initialized forms.SkillFormData ready for use.
+//
+// Side effects:
+//   - None.
 func (m *SkillForm) GetFormData() *forms.SkillFormData {
 	return m.formData
 }
 
 // SetFormData sets the form data and rebuilds the form.
+//
+// Expected:
+//   - skillformdata must be valid.
+//
+// Side effects:
+//   - None.
 func (m *SkillForm) SetFormData(data *forms.SkillFormData) {
 	m.formData = data
 	m.rebuildForm()

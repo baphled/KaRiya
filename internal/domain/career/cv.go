@@ -25,6 +25,12 @@ type CVView struct {
 }
 
 // Validate checks if the CVView meets all defined criteria.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (cv *CVView) Validate() error {
 	// Validate ID
 	if err := cv.validateID(); err != nil {
@@ -129,6 +135,12 @@ type CVSection struct {
 }
 
 // Validate checks if the CVSection meets all defined criteria.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (cs *CVSection) Validate() error {
 	// Validate ID
 	if err := cs.validateID(); err != nil {
@@ -229,6 +241,12 @@ type CVBullet struct {
 }
 
 // Validate checks if the CVBullet meets all defined criteria.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (cb *CVBullet) Validate() error {
 	// Validate ID
 	if err := cb.validateID(); err != nil {
@@ -398,6 +416,12 @@ type CVConfig struct {
 }
 
 // Validate checks if the CVConfig meets all defined criteria.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (cc *CVConfig) Validate() error {
 	// Validate name
 	if err := cc.validateName(); err != nil {
@@ -468,6 +492,15 @@ func (cc *CVConfig) ToJSON() ([]byte, error) {
 }
 
 // FromJSON populates CVConfig from JSON bytes.
+//
+// Expected:
+//   - []byte must be valid.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (cc *CVConfig) FromJSON(data []byte) error {
 	return json.Unmarshal(data, cc)
 }
@@ -475,7 +508,15 @@ func (cc *CVConfig) FromJSON(data []byte) error {
 // Validation Helper Functions
 
 // IsAspirationLanguage checks if text contains aspirational language
-// Aspirational language includes: "will", "hoping", "aiming", "trying", "working towards", "in progress", etc.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func IsAspirationLanguage(text string) bool {
 	lowerText := strings.ToLower(text)
 
@@ -502,7 +543,15 @@ func IsAspirationLanguage(text string) bool {
 }
 
 // IsSingleClaimBullet checks if a bullet contains a single, focused claim
-// Multiple claims are indicated by: "and", "while", "also", "in addition", etc.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func IsSingleClaimBullet(text string) bool {
 	lowerText := strings.ToLower(text)
 
@@ -529,8 +578,15 @@ func IsSingleClaimBullet(text string) bool {
 }
 
 // HasInferredMetrics checks if text contains inferred or assumed metrics.
-// Inferred metrics are vague quantifiers without specific numbers or context
-// "improved", "increased", "decreased" are valid action verbs when used with specific metrics.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func HasInferredMetrics(text string) bool {
 	lowerText := strings.ToLower(text)
 
@@ -562,7 +618,16 @@ func HasInferredMetrics(text string) bool {
 }
 
 // IsRoleInflation checks if text exaggerates the scope of work for a given role.
-// This is a placeholder function - real implementation would need role context.
+//
+// Expected:
+//   - Must be a valid string.
+//   - Must be a valid string.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func IsRoleInflation(text string, targetRole string) bool {
 	lowerText := strings.ToLower(text)
 	lowerRole := strings.ToLower(targetRole)

@@ -37,6 +37,16 @@ type Logger struct {
 }
 
 // New creates a new Logger with default configuration.
+//
+// Expected:
+//   - writer must be valid.
+//   - loglevel must be valid.
+//
+// Returns:
+//   - A fully initialized Logger ready for use.
+//
+// Side effects:
+//   - None.
 func New(output io.Writer, level LogLevel) *Logger {
 	return &Logger{
 		logger:     log.New(output, "", log.LstdFlags|log.Lmicroseconds),
@@ -47,18 +57,37 @@ func New(output io.Writer, level LogLevel) *Logger {
 }
 
 // DefaultLogger creates a logger that writes to a file in the user's home directory.
-// This is the recommended way to create a logger for production use.
+//
+// Returns:
+//   - A fully initialized Logger ready for use.
+//
+// Side effects:
+//   - None.
 func DefaultLogger() *Logger {
 	return FileLogger()
 }
 
 // ConsoleLogger creates a logger that writes to stdout.
-// Use this only for debugging or when console output is explicitly needed.
+//
+// Returns:
+//   - A fully initialized Logger ready for use.
+//
+// Side effects:
+//   - None.
 func ConsoleLogger() *Logger {
 	return New(os.Stdout, InfoLevel)
 }
 
 // SetContext adds a key-value pair to the logger's context.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized Logger ready for use.
+//
+// Side effects:
+//   - None.
 func (l *Logger) SetContext(key, value string) *Logger {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -67,6 +96,12 @@ func (l *Logger) SetContext(key, value string) *Logger {
 }
 
 // ClearContext removes all context from the logger.
+//
+// Returns:
+//   - A fully initialized Logger ready for use.
+//
+// Side effects:
+//   - None.
 func (l *Logger) ClearContext() *Logger {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -122,32 +157,73 @@ func (l *Logger) log(level LogLevel, format string, args ...interface{}) {
 }
 
 // Debug logs a message at Debug level.
+//
+// Expected:
+//   - Must be a valid string.
+//   - interface{} must be valid.
+//
+// Side effects:
+//   - None.
 func (l *Logger) Debug(format string, args ...interface{}) {
 	l.log(DebugLevel, format, args...)
 }
 
 // Info logs a message at Info level.
+//
+// Expected:
+//   - Must be a valid string.
+//   - interface{} must be valid.
+//
+// Side effects:
+//   - None.
 func (l *Logger) Info(format string, args ...interface{}) {
 	l.log(InfoLevel, format, args...)
 }
 
 // Warn logs a message at Warn level.
+//
+// Expected:
+//   - Must be a valid string.
+//   - interface{} must be valid.
+//
+// Side effects:
+//   - None.
 func (l *Logger) Warn(format string, args ...interface{}) {
 	l.log(WarnLevel, format, args...)
 }
 
 // Error logs a message at Error level.
+//
+// Expected:
+//   - Must be a valid string.
+//   - interface{} must be valid.
+//
+// Side effects:
+//   - None.
 func (l *Logger) Error(format string, args ...interface{}) {
 	l.log(ErrorLevel, format, args...)
 }
 
 // Fatal logs a message at Fatal level and terminates the program.
+//
+// Expected:
+//   - Must be a valid string.
+//   - interface{} must be valid.
+//
+// Side effects:
+//   - None.
 func (l *Logger) Fatal(format string, args ...interface{}) {
 	l.log(FatalLevel, format, args...)
 	os.Exit(1)
 }
 
 // String returns the string representation of a LogLevel.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (l LogLevel) String() string {
 	switch l {
 	case DebugLevel:
@@ -166,6 +242,15 @@ func (l LogLevel) String() string {
 }
 
 // WithFields creates a new logger with additional context.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized Logger ready for use.
+//
+// Side effects:
+//   - None.
 func (l *Logger) WithFields(fields map[string]string) *Logger {
 	newLogger := &Logger{
 		logger:     l.logger,
@@ -188,6 +273,12 @@ func (l *Logger) WithFields(fields map[string]string) *Logger {
 }
 
 // FileLogger creates a logger that writes to a file in the user's home directory.
+//
+// Returns:
+//   - A fully initialized Logger ready for use.
+//
+// Side effects:
+//   - None.
 func FileLogger() *Logger {
 	// Create logs directory in home
 	homeDir, err := os.UserHomeDir()

@@ -27,6 +27,15 @@ var CVSectionFactory = factory.NewFactory(
 })
 
 // CVSection creates a minimal valid CVSection with the given ID and CV view ID.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized career.CVSection ready for use.
+//
+// Side effects:
+//   - None.
 func CVSection(id, cvViewID string) *career.CVSection {
 	return &career.CVSection{
 		ID:          id,
@@ -38,6 +47,16 @@ func CVSection(id, cvViewID string) *career.CVSection {
 }
 
 // CVSectionWith creates a CVSection with custom fields.
+//
+// Expected:
+//   - Must be a valid string.
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized career.CVSection ready for use.
+//
+// Side effects:
+//   - None.
 func CVSectionWith(id, cvViewID, sectionType, title string, order int) *career.CVSection {
 	return &career.CVSection{
 		ID:          id,
@@ -49,6 +68,16 @@ func CVSectionWith(id, cvViewID, sectionType, title string, order int) *career.C
 }
 
 // CVSectionWithContent creates a CVSection with content groups.
+//
+// Expected:
+//   - Must be a valid string.
+//   - sectioncontentgroup must be valid.
+//
+// Returns:
+//   - A fully initialized career.CVSection ready for use.
+//
+// Side effects:
+//   - None.
 func CVSectionWithContent(id, cvViewID string, content []*career.SectionContentGroup) *career.CVSection {
 	section := CVSection(id, cvViewID)
 	section.Content = content
@@ -56,6 +85,15 @@ func CVSectionWithContent(id, cvViewID string, content []*career.SectionContentG
 }
 
 // CVSectionWithSummary creates a summary-type CVSection.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized career.CVSection ready for use.
+//
+// Side effects:
+//   - None.
 func CVSectionWithSummary(id, cvViewID, summary string) *career.CVSection {
 	return &career.CVSection{
 		ID:          id,
@@ -68,6 +106,16 @@ func CVSectionWithSummary(id, cvViewID, summary string) *career.CVSection {
 }
 
 // CVSections creates n sections for a given CV view.
+//
+// Expected:
+//   - int must be valid.
+//   - Must be a valid string.
+//
+// Returns:
+//   - A []*career.CVSection value.
+//
+// Side effects:
+//   - None.
 func CVSections(n int, cvViewID string) []*career.CVSection {
 	sectionTypes := []string{"experience", "projects", "skills", "summary"}
 	sections := make([]*career.CVSection, n)

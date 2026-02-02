@@ -10,12 +10,26 @@ import (
 type TemporalGrouper struct{}
 
 // NewTemporalGrouper creates a new TemporalGrouper instance.
+//
+// Returns:
+//   - A fully initialized TemporalGrouper ready for use.
+//
+// Side effects:
+//   - None.
 func NewTemporalGrouper() *TemporalGrouper {
 	return &TemporalGrouper{}
 }
 
 // IsTemporallyRelated checks if two events are within 6 months of each other.
-// Returns true if the absolute difference between dates is ≤ 6 months.
+//
+// Expected:
+//   - time must be valid.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (tg *TemporalGrouper) IsTemporallyRelated(date1, date2 time.Time) bool {
 	if date1.IsZero() || date2.IsZero() {
 		return false
@@ -26,9 +40,15 @@ func (tg *TemporalGrouper) IsTemporallyRelated(date1, date2 time.Time) bool {
 }
 
 // MonthsDifference calculates the absolute number of months between two dates.
-// Returns the difference as an integer number of months (always positive)
-// If date2 has remaining days after reaching the month anniversary from date1,
-// those days are counted as requiring an additional month (ceiling semantics).
+//
+// Expected:
+//   - time must be valid.
+//
+// Returns:
+//   - A int value.
+//
+// Side effects:
+//   - None.
 func (tg *TemporalGrouper) MonthsDifference(date1, date2 time.Time) int {
 	// Ensure date1 is earlier than date2 for consistent calculation
 	if date1.After(date2) {
@@ -87,8 +107,15 @@ func (tg *TemporalGrouper) daysInMonth(year int, month time.Month) int {
 }
 
 // GroupEventsByTemporal groups events into clusters where each cluster contains
-// events that are within 6 months of each other in chronological order.
-// Events are sorted chronologically before grouping.
+//
+// Expected:
+//   - time must be valid.
+//
+// Returns:
+//   - A [][]time.Time value.
+//
+// Side effects:
+//   - None.
 func (tg *TemporalGrouper) GroupEventsByTemporal(events []time.Time) [][]time.Time {
 	if len(events) == 0 {
 		return [][]time.Time{}

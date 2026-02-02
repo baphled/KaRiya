@@ -34,6 +34,12 @@ type BurstDetector struct {
 }
 
 // NewBurstDetector creates a new burst detector.
+//
+// Returns:
+//   - A fully initialized BurstDetector ready for use.
+//
+// Side effects:
+//   - None.
 func NewBurstDetector() *BurstDetector {
 	return &BurstDetector{
 		similarityScorer: NewSimilarityScorer(),
@@ -252,6 +258,15 @@ func (bd *BurstDetector) clusterToSuggestion(
 }
 
 // ValidateSuggestion checks if a burst suggestion is valid.
+//
+// Expected:
+//   - burstsuggestion must be valid.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (bd *BurstDetector) ValidateSuggestion(suggestion BurstSuggestion) error {
 	if len(suggestion.EventIDs) < 2 {
 		return errors.New("burst must have at least 2 events")

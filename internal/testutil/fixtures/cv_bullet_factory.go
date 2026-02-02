@@ -37,6 +37,15 @@ var CVBulletFactory = factory.NewFactory(
 })
 
 // CVBullet creates a minimal valid CVBullet with the given ID and section ID.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized career.CVBullet ready for use.
+//
+// Side effects:
+//   - None.
 func CVBullet(id, sectionID string) *career.CVBullet {
 	return &career.CVBullet{
 		ID:              id,
@@ -50,6 +59,15 @@ func CVBullet(id, sectionID string) *career.CVBullet {
 }
 
 // CVBulletWith creates a CVBullet with custom text.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized career.CVBullet ready for use.
+//
+// Side effects:
+//   - None.
 func CVBulletWith(id, sectionID, text string) *career.CVBullet {
 	return &career.CVBullet{
 		ID:              id,
@@ -63,6 +81,16 @@ func CVBulletWith(id, sectionID, text string) *career.CVBullet {
 }
 
 // CVBulletWithScores creates a CVBullet with all scoring fields populated.
+//
+// Expected:
+//   - Must be a valid string.
+//   - float64 must be valid.
+//
+// Returns:
+//   - A fully initialized career.CVBullet ready for use.
+//
+// Side effects:
+//   - None.
 func CVBulletWithScores(id, sectionID, text string, rank, confidence, roleScore, audienceScore float64) *career.CVBullet {
 	return &career.CVBullet{
 		ID:              id,
@@ -78,6 +106,16 @@ func CVBulletWithScores(id, sectionID, text string, rank, confidence, roleScore,
 }
 
 // CVBulletWithSources creates a CVBullet with specific source event and fact IDs.
+//
+// Expected:
+//   - Must be a valid string.
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized career.CVBullet ready for use.
+//
+// Side effects:
+//   - None.
 func CVBulletWithSources(id, sectionID, text string, eventIDs, factIDs []string) *career.CVBullet {
 	return &career.CVBullet{
 		ID:              id,
@@ -92,6 +130,16 @@ func CVBulletWithSources(id, sectionID, text string, eventIDs, factIDs []string)
 }
 
 // CVBullets creates n bullets for a given section.
+//
+// Expected:
+//   - int must be valid.
+//   - Must be a valid string.
+//
+// Returns:
+//   - A []*career.CVBullet value.
+//
+// Side effects:
+//   - None.
 func CVBullets(n int, sectionID string) []*career.CVBullet {
 	bullets := make([]*career.CVBullet, n)
 	for i := range n {
@@ -106,6 +154,15 @@ func CVBullets(n int, sectionID string) []*career.CVBullet {
 }
 
 // CVBulletVal creates a CVBullet value (not pointer) with the given ID and section ID.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A career.CVBullet value.
+//
+// Side effects:
+//   - None.
 func CVBulletVal(id, sectionID string) career.CVBullet {
 	return *CVBullet(id, sectionID)
 }

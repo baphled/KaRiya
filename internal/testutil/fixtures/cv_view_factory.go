@@ -34,6 +34,15 @@ var CVViewFactory = factory.NewFactory(
 })
 
 // CVView creates a minimal valid CVView with the given ID.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized career.CVView ready for use.
+//
+// Side effects:
+//   - None.
 func CVView(id string) *career.CVView {
 	return &career.CVView{
 		ID:               id,
@@ -47,6 +56,15 @@ func CVView(id string) *career.CVView {
 }
 
 // CVViewWith creates a CVView with custom key fields.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized career.CVView ready for use.
+//
+// Side effects:
+//   - None.
 func CVViewWith(id, name, targetRole, targetAudience string) *career.CVView {
 	return &career.CVView{
 		ID:               id,
@@ -60,6 +78,16 @@ func CVViewWith(id, name, targetRole, targetAudience string) *career.CVView {
 }
 
 // CVViewWithSections creates a CVView with attached sections.
+//
+// Expected:
+//   - Must be a valid string.
+//   - cvsection must be valid.
+//
+// Returns:
+//   - A fully initialized career.CVView ready for use.
+//
+// Side effects:
+//   - None.
 func CVViewWithSections(id string, sections []*career.CVSection) *career.CVView {
 	cv := CVView(id)
 	cv.Sections = sections
@@ -67,6 +95,16 @@ func CVViewWithSections(id string, sections []*career.CVSection) *career.CVView 
 }
 
 // CVViewWithCounts creates a CVView with specific source counts.
+//
+// Expected:
+//   - Must be a valid string.
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized career.CVView ready for use.
+//
+// Side effects:
+//   - None.
 func CVViewWithCounts(id string, eventCount, factCount int) *career.CVView {
 	cv := CVView(id)
 	cv.SourceEventCount = eventCount
@@ -75,6 +113,16 @@ func CVViewWithCounts(id string, eventCount, factCount int) *career.CVView {
 }
 
 // CVViewWithFilters creates a CVView with event filters.
+//
+// Expected:
+//   - Must be a valid string.
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized career.CVView ready for use.
+//
+// Side effects:
+//   - None.
 func CVViewWithFilters(id string, filters map[string]interface{}) *career.CVView {
 	cv := CVView(id)
 	cv.EventFilters = filters

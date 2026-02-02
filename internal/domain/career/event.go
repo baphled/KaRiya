@@ -23,6 +23,12 @@ type Event struct {
 }
 
 // Validate checks if the Event meets all defined criteria.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (ce *Event) Validate() error {
 	// Validate text
 	if err := ce.validateText(); err != nil {

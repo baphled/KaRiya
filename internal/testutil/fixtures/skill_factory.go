@@ -31,6 +31,15 @@ var SkillFactory = factory.NewFactory(
 })
 
 // Skill creates a minimal valid Skill with the given ID.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized career.Skill ready for use.
+//
+// Side effects:
+//   - None.
 func Skill(id string) *career.Skill {
 	now := time.Now()
 	return &career.Skill{
@@ -44,6 +53,15 @@ func Skill(id string) *career.Skill {
 }
 
 // SkillWith creates a Skill with custom key fields.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized career.Skill ready for use.
+//
+// Side effects:
+//   - None.
 func SkillWith(id, name, category, level string) *career.Skill {
 	now := time.Now()
 	return &career.Skill{
@@ -57,6 +75,16 @@ func SkillWith(id, name, category, level string) *career.Skill {
 }
 
 // SkillWithYears creates a Skill with years of experience set.
+//
+// Expected:
+//   - Must be a valid string.
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized career.Skill ready for use.
+//
+// Side effects:
+//   - None.
 func SkillWithYears(id, name, category string, years int) *career.Skill {
 	now := time.Now()
 	return &career.Skill{
@@ -71,6 +99,15 @@ func SkillWithYears(id, name, category string, years int) *career.Skill {
 }
 
 // Skills creates n skills with sequential IDs.
+//
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A []*career.Skill value.
+//
+// Side effects:
+//   - None.
 func Skills(n int) []*career.Skill {
 	skills := make([]*career.Skill, n)
 	for i := range n {

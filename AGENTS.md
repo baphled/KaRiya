@@ -20,62 +20,7 @@ make session-start   # MUST run first - validates environment, acknowledges rule
 6. **One task** - One logical change per commit
 7. **Senior Engineer Identity** - Apply SOLID, DRY, KISS, YAGNI principles
 8. **Architecture Compliance** - Follow layer hierarchy, no shortcuts
-9. **Documentation** - REQUIRED for all exported symbols (doc.go, godoc, Expected/Returns/Side effects)
-10. **Comment Hygiene** - No temporary markers in merged code, no inline comments
-
----
-
-## Code Formatting Standards
-
-### Indentation
-
-| File Type | Indentation | Display Width | Tool | Notes |
-|-----------|-------------|---------------|------|-------|
-| **Go (`*.go`)** | **Tabs** | **2 spaces** | `gofmt` | Standard Go convention, enforced by gofmt |
-| **YAML (`*.yml`, `*.yaml`)** | **2 spaces** | 2 spaces | manual | Config files (e.g., `.golangci.yml`) |
-| **Markdown (`*.md`)** | **N/A** | N/A | - | Follow natural document flow |
-| **Makefile** | **Tabs** | 2 spaces | - | Required by make syntax |
-
-### Go Code Formatting
-
-- **Use tabs for indentation** - never use spaces (enforced by gofmt)
-- **Tabs display as 2 spaces** for readability (configured in .editorconfig)
-- The actual character is a tab (`\t`), but editors should render it as 2 spaces wide
-- **Always run `go fmt ./...`** before committing
-- **gofmt is non-negotiable** - it automatically formats code according to Go conventions
-- The `.editorconfig` file at project root configures this for supported editors
-
-### Enforcement
-
-- **CI/CD**: All PRs are checked with `gofmt` via golangci-lint
-- **Pre-commit**: Staged files are automatically checked
-- **Make target**: `make fmt` runs `go fmt ./...`
-
----
-
-## Comment Rules (STRICTLY ENFORCED)
-
-### Philosophy: Code Over Comments
-
-**Write self-documenting code.** Use clear variable names, extract methods, and apply SOLID principles instead of explaining what code does.
-
-**Comments should explain WHY, never WHAT.** If you need a comment to explain what code does, the code needs refactoring.
-
----
-
-### Allowed Comment Locations (ONLY)
-
-Comments are ONLY permitted in these locations:
-
-| Location | Purpose | Example |
-|----------|---------|---------|
-| **Package documentation** | Describe package purpose | `// Package intents implements...` |
-| **Type documentation** | Describe type/struct (godoc) | `// BrowseTimelineIntent manages...` |
-| **Public function documentation** | Describe exported functions (godoc) | `// NewIntent creates a new...` |
-| **Constant/variable groups** | Document const/var blocks | `// State constants for...` |
-| **Complex algorithms** | Explain non-obvious "why" | `// Using binary search because...` |
-
-**All other comments are FORBIDDEN.**
+9. **Documentation** - REQUIRED for all exported symbols (see [Documentation Guide](docs/conventions/GO_DOCUMENTATION_RULES.md))
 
 ---
 
@@ -88,23 +33,23 @@ Comments are ONLY permitted in these locations:
 func (i *Intent) Update(msg tea.Msg) tea.Cmd {
     // Handle screen updates
     cmd, result := i.activeScreen.Update(msg)
-
+    
     // Process the result
     if result != nil {
         return i.handleScreenResult(result)
     }
-
+    
     return cmd
 }
 
 // ✅ GOOD - Extract to well-named methods
 func (i *Intent) Update(msg tea.Msg) tea.Cmd {
     cmd, result := i.delegateToActiveScreen(msg)
-
+    
     if result != nil {
         return i.handleScreenResult(result)
     }
-
+    
     return cmd
 }
 
@@ -155,12 +100,12 @@ func (i *Intent) processModals(msg tea.Msg) tea.Cmd {
     if i.errorModal != nil && i.errorModal.IsVisible() {
         return i.updateErrorModal(msg)
     }
-
+    
     // Help modal handling
     if i.helpModal != nil && i.helpModal.IsVisible() {
         return i.updateHelpModal(msg)
     }
-
+    
     return nil
 }
 
@@ -169,11 +114,11 @@ func (i *Intent) processModals(msg tea.Msg) tea.Cmd {
     if cmd := i.tryUpdateErrorModal(msg); cmd != nil {
         return cmd
     }
-
+    
     if cmd := i.tryUpdateHelpModal(msg); cmd != nil {
         return cmd
     }
-
+    
     return nil
 }
 ```
@@ -187,7 +132,7 @@ case "edit":
     // Extract burst and show edit modal
     burst := actionData["burst"].(*career.Burst)
     i.showEditModal(burst)
-
+    
 case "delete":
     // Show delete confirmation
     i.showDeleteConfirmation()
@@ -256,20 +201,7 @@ package behaviors
 
 **Every exported type MUST have a godoc comment** starting with the type name.
 
-```go
-// TableBehavior[T] provides data binding, pagination, navigation, filtering, and sorting
-// for table-based list views. It implements the ListNavigator interface and can be
-// embedded in intents to eliminate boilerplate table management code.
-//
-// Usage:
-//
-//	table := behaviors.NewTableBehavior(theme, columns, formatter).
-//	    PageSize(20).
-//	    EmptyMessage("No items found")
-type TableBehavior[T any] struct {
-    // ... fields (no inline comments)
-}
-```
+See [Documentation Guide](docs/conventions/GO_DOCUMENTATION_RULES.md) for comprehensive examples and requirements.
 
 **Rules:**
 - Comment must start with type name
@@ -283,23 +215,7 @@ type TableBehavior[T any] struct {
 
 **Every exported function MUST have structured documentation** with required sections.
 
-```go
-// NewTableBehavior creates a new table behavior with the given configuration.
-//
-// Expected:
-//   - themeObj must be a valid theme instance.
-//   - columns must define at least one column.
-//   - formatter must be a non-nil function.
-//
-// Returns:
-//   - A fully initialized TableBehavior ready for use.
-//
-// Side effects:
-//   - None.
-func NewTableBehavior[T any](themeObj themes.Theme, columns []ColumnDef, formatter RowFormatter[T]) *TableBehavior[T] {
-    // ... implementation
-}
-```
+See [Documentation Guide](docs/conventions/GO_DOCUMENTATION_RULES.md) for comprehensive examples and requirements.
 
 **Required Sections:**
 - **Expected:** Input parameter requirements (only if function has parameters)
@@ -331,10 +247,7 @@ Regular test files (`*_test.go`) MUST NOT use inline comments. Use well-named va
 
 When writing allowed comments:
 
-1. **Use complete sentences** - Comments should end with a period.
-2. **Explain WHY, not WHAT** - The code shows what; comments explain why.
-3. **Keep above code** - Never beside it (except in tests).
-4. **Be concise** - If it takes a paragraph, refactor the code instead.
+See [Documentation Guide](docs/conventions/GO_DOCUMENTATION_RULES.md) for comprehensive examples and requirements.
 
 ---
 
@@ -411,11 +324,11 @@ type MyIntent struct {
     state      MyState       // State machine enum
     active     bool          // Is intent active
     result     *IntentResult[*MyResult]
-
+    
     // Screens (one per state)
     listScreen   *myfeature.ListScreen
     detailScreen *myfeature.DetailScreen
-
+    
     // Modals (shared across states)
     deleteModal *components.DeleteConfirmModal
 }
@@ -456,7 +369,7 @@ case tea.KeyUp:
 case tea.KeyDown:
     s.table.HandleNavigation("down")
 case tea.KeyPgDown:
-    s.table.HandleNavigation("pgdn")
+    s.table.HandleNavigation("pgdn")  // Note: pgdn not pgdown
 case tea.KeyPgUp:
     s.table.HandleNavigation("pgup")
 case tea.KeyHome:
@@ -506,13 +419,13 @@ func (m *MyModal) View() string {
     if !m.visible {
         return ""
     }
-
+    
     // 2. Nil theme guard (REQUIRED)
     theme := m.theme
     if theme == nil {
         theme = themes.NewDefaultTheme()
     }
-
+    
     // 3. Use UIKit with SOLID background (REQUIRED)
     return containers.NewBox(theme).
         Content(content).
@@ -526,7 +439,7 @@ func (m *MyModal) View() string {
 ```go
 func (i *MyIntent) View() string {
     baseView := i.currentScreen.View()
-
+    
     // Use behaviors.RenderModalOverlay (NOT custom overlay code)
     if i.modal != nil && i.modal.IsVisible() {
         return behaviors.RenderModalOverlay(i.modal, baseView)
@@ -1313,11 +1226,11 @@ type MyIntent struct {
 // ✅ REQUIRE THIS
 type MyIntent struct {
     *BaseIntent
-
+    
     // Explicit typed fields (REQUIRED when using screens)
     listScreen   *myfeature.ListScreen
     detailScreen *myfeature.DetailScreen
-
+    
     // Generic pointer
     activeScreen screens.Screen
 }
@@ -1329,7 +1242,7 @@ type MyIntent struct {
 func (i *MyIntent) Update(msg tea.Msg) tea.Cmd {
     // WRONG: Direct SQL queries
     rows, err := db.Query("SELECT * FROM...")
-
+    
     // WRONG: Complex business logic
     for _, item := range items {
         // Complex processing...
@@ -1340,11 +1253,11 @@ func (i *MyIntent) Update(msg tea.Msg) tea.Cmd {
 func (i *MyIntent) Update(msg tea.Msg) tea.Cmd {
     // Orchestrate, don't implement
     cmd, result := i.listScreen.Update(msg)
-
+    
     if result != nil {
         return i.handleScreenResult(result)
     }
-
+    
     return cmd
 }
 ```
@@ -1383,7 +1296,7 @@ type MyIntent struct {
     context *MyIntentContext  // Reference to context
     state   MyIntentState     // State fields (flattened, NOT wrapped)
     active  bool
-
+    
     // Explicit screen fields
     listScreen   *myfeature.ListScreen
     detailScreen *myfeature.DetailScreen

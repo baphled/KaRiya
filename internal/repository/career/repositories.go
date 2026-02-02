@@ -15,11 +15,23 @@ type Repositories struct {
 }
 
 // SetCloser sets the closer used to release underlying resources (e.g. database connections).
+//
+// Expected:
+//   - closer must be valid.
+//
+// Side effects:
+//   - None.
 func (r *Repositories) SetCloser(c io.Closer) {
 	r.closer = c
 }
 
 // Close releases underlying resources.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (r *Repositories) Close() error {
 	if r.closer != nil {
 		return r.closer.Close()

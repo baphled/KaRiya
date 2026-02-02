@@ -10,12 +10,10 @@ import (
 // Init bootstraps the intent by loading burst data and transitioning to the list screen.
 //
 // Returns:
-//   - Always nil; the initial screen transition is performed synchronously.
+//   - A tea.Cmd value.
 //
 // Side effects:
-//   - Loads bursts from the repository into filteredBursts.
-//   - Sets the initial selectedBurst to the first burst if available.
-//   - Transitions the intent to StateList with a new BurstListScreen.
+//   - None.
 func (i *Intent) Init() tea.Cmd {
 	// Load bursts from repository if available.
 	if err := i.context.LoadBursts(); err != nil {
@@ -103,10 +101,10 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 // View composes the visual output by rendering the active screen with breadcrumbs, help text, and any modal overlays.
 //
 // Returns:
-//   - A fully rendered string representing the current intent UI, including any visible modal overlay.
+//   - A string value.
 //
 // Side effects:
-//   - Rebuilds the modal registry on each call to ensure overlay state is current.
+//   - None.
 func (i *Intent) View() string {
 	if !i.active {
 		return "BurstManagement intent is not active"
@@ -141,10 +139,9 @@ func (i *Intent) renderWithScreen(screen screens.Screen) string {
 }
 
 // GetTestContext returns the intent context for testing purposes.
-// This method is only for testing and should not be used in production code.
 //
 // Returns:
-//   - The IntentContext instance.
+//   - A fully initialized IntentContext ready for use.
 //
 // Side effects:
 //   - None.

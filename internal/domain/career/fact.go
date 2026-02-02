@@ -52,6 +52,12 @@ type Fact struct {
 }
 
 // Validate checks if the Fact meets all defined criteria.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (f *Fact) Validate() error {
 	// Validate ID
 	if err := f.validateID(); err != nil {

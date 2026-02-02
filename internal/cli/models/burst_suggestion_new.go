@@ -66,6 +66,12 @@ func NewBurstSuggestionModelNew(
 }
 
 // Init initializes the model.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (m *BurstSuggestionModelNew) Init() tea.Cmd {
 	return nil
 }
@@ -276,6 +282,12 @@ func (m *BurstSuggestionModelNew) rejectCurrent() (tea.Model, tea.Cmd) {
 }
 
 // View renders the burst suggestion screen
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *BurstSuggestionModelNew) View() string {
 	if len(m.suggestions) == 0 {
 		return containers.NewBox(m.getTheme()).
@@ -492,21 +504,45 @@ func (m *BurstSuggestionModelNew) renderRelatedEvents(suggestion burstfact.Burst
 }
 
 // GetConfirmed returns the list of confirmed suggestions
+//
+// Returns:
+//   - A []burstfact.BurstSuggestion value.
+//
+// Side effects:
+//   - None.
 func (m *BurstSuggestionModelNew) GetConfirmed() []burstfact.BurstSuggestion {
 	return m.confirmed
 }
 
 // GetRejected returns the list of rejected suggestions
+//
+// Returns:
+//   - A []burstfact.BurstSuggestion value.
+//
+// Side effects:
+//   - None.
 func (m *BurstSuggestionModelNew) GetRejected() []burstfact.BurstSuggestion {
 	return m.rejected
 }
 
 // IsDone returns true if all suggestions have been processed
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *BurstSuggestionModelNew) IsDone() bool {
 	return len(m.confirmed)+len(m.rejected) == len(m.suggestions)
 }
 
 // GetTitle returns the modal title for overlay rendering.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *BurstSuggestionModelNew) GetTitle() string {
 	if m.editing {
 		return "Edit Burst Name & Description"
@@ -515,7 +551,12 @@ func (m *BurstSuggestionModelNew) GetTitle() string {
 }
 
 // GetContent returns the view content without wrapper for overlay rendering.
-// This allows parent intents to compose the modal as an overlay.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *BurstSuggestionModelNew) GetContent() string {
 	if len(m.suggestions) == 0 {
 		return "No burst suggestions available"
@@ -552,6 +593,12 @@ func (m *BurstSuggestionModelNew) GetContent() string {
 }
 
 // GetFooter returns the footer instructions for the modal.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *BurstSuggestionModelNew) GetFooter() string {
 	if m.editing {
 		return "Tab: Navigate | Enter: Save | Esc: Cancel"
