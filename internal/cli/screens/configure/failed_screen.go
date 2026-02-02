@@ -82,7 +82,7 @@ func (s *FailedScreen) Init() tea.Cmd {
 // Side effects:
 //   - May return CancelResult or NavigateResult.
 func (s *FailedScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
-	if cmd := s.Screen.HandleWindowSizeMsg(msg); cmd != nil {
+	if cmd := s.HandleWindowSizeMsg(msg); cmd != nil {
 		return cmd, nil
 	}
 

@@ -124,7 +124,8 @@ var _ = Describe("SelectScreen", func() {
 
 		It("should not go below first item (boundary check)", func() {
 			// Press Up multiple times at index 0
-			for i := 0; i < 5; i++ {
+			for i := range 5 {
+				_ = i
 				screen.Update(tea.KeyMsg{Type: tea.KeyUp})
 			}
 
@@ -138,7 +139,8 @@ var _ = Describe("SelectScreen", func() {
 
 		It("should not go above last item (boundary check)", func() {
 			// Press Down multiple times past the end
-			for i := 0; i < 10; i++ {
+			for i := range 10 {
+				_ = i
 				screen.Update(tea.KeyMsg{Type: tea.KeyDown})
 			}
 
@@ -182,7 +184,8 @@ var _ = Describe("SelectScreen", func() {
 
 		It("should jump to top with 'g' key", func() {
 			// Move to somewhere in the middle
-			for i := 0; i < 3; i++ {
+			for i := range 3 {
+				_ = i
 				screen.Update(tea.KeyMsg{Type: tea.KeyDown})
 			}
 
@@ -266,8 +269,7 @@ var _ = Describe("SelectScreen", func() {
 		})
 
 		It("should include current index in cancel metadata", func() {
-			// Move to Item D (index 3)
-			for i := 0; i < 3; i++ {
+			for range 3 {
 				screen.Update(tea.KeyMsg{Type: tea.KeyDown})
 			}
 
@@ -459,9 +461,8 @@ var _ = Describe("SelectScreen", func() {
 		var largeScreen *base.SelectScreen[string]
 
 		BeforeEach(func() {
-			// Create a list with 50 items
 			largeItems := make([]string, 50)
-			for i := 0; i < 50; i++ {
+			for i := range 50 {
 				largeItems[i] = "Item " + string(rune('A'+i%26)) + string(rune('0'+i/26))
 			}
 
@@ -488,8 +489,7 @@ var _ = Describe("SelectScreen", func() {
 		})
 
 		It("should scroll as user navigates", func() {
-			// Navigate far down
-			for i := 0; i < 30; i++ {
+			for range 30 {
 				largeScreen.Update(tea.KeyMsg{Type: tea.KeyDown})
 			}
 

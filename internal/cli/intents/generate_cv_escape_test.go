@@ -181,9 +181,6 @@ var _ = Describe("GenerateCV - Escape Key Behavior", func() {
 	})
 
 	Describe("View Methods", func() {
-		// Note: Footer text (including "Main menu") is now rendered by StandardView,
-		// not by individual View() methods. These tests verified old behavior.
-
 		It("should show 'm' in SelectProfile footer", func() {
 			intent.state.currentState = GenerateCVStateSelectProfile
 			view := intent.View()

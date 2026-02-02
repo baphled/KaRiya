@@ -37,7 +37,7 @@ var _ = Describe("CLI Event Service", func() {
 			err := cliEventService.CaptureEvent(ctx, eventText, eventDate, mode)
 
 			// Assertions
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should capture an event with optional configurations", func() {
@@ -58,7 +58,7 @@ var _ = Describe("CLI Event Service", func() {
 			)
 
 			// Assertions
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 
@@ -69,14 +69,14 @@ var _ = Describe("CLI Event Service", func() {
 			// Create a test event directly via repository
 			event := fixtures.Event("test-list-1")
 			err := repo.Create(ctx, event)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 
 			// List events using CLI service
 			filters := fixtures.EventListFilters()
 			events, err := cliEventService.ListEvents(ctx, filters)
 
 			// Assertions
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(events).ToNot(BeNil())
 		})
 	})
@@ -88,14 +88,14 @@ var _ = Describe("CLI Event Service", func() {
 			// Create a test event
 			event := fixtures.EventWith("", "Completed important milestone", "", "")
 			err := careerSvc.CaptureEvent(ctx, event, careerservice.ManualEntry)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			eventID := event.ID
 
 			// Get event by ID using CLI service
 			retrievedEvent, err := cliEventService.GetEventByID(ctx, eventID)
 
 			// Assertions
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(retrievedEvent).ToNot(BeNil())
 			Expect(retrievedEvent.ID).To(Equal(eventID))
 			Expect(retrievedEvent.Text).To(Equal("Completed important milestone"))
@@ -123,7 +123,7 @@ var _ = Describe("UpdateEventMetadata", func() {
 		originalEvent := fixtures.EventWith("test-event-1", "Original text", "", "")
 		originalEvent.Date = time.Now().Add(-24 * time.Hour)
 		err := repo.Create(ctx, originalEvent)
-		Expect(err).To(BeNil())
+		Expect(err).ToNot(HaveOccurred())
 
 		// Update metadata
 		updatedEvent := fixtures.EventWith("test-event-1", "This should be ignored", "NewCompany", "NewProject")
@@ -131,11 +131,11 @@ var _ = Describe("UpdateEventMetadata", func() {
 		updatedEvent.Categories = []string{"Technical"}
 
 		err = cliSvc.UpdateEventMetadata(ctx, updatedEvent)
-		Expect(err).To(BeNil())
+		Expect(err).ToNot(HaveOccurred())
 
 		// Verify metadata was updated
 		retrieved, err := svc.GetEventByID(ctx, "test-event-1")
-		Expect(err).To(BeNil())
+		Expect(err).ToNot(HaveOccurred())
 		Expect(retrieved.Company).To(Equal("NewCompany"))
 		Expect(retrieved.Project).To(Equal("NewProject"))
 		Expect(retrieved.Tags).To(ContainElements("technical", "leadership"))
@@ -147,20 +147,20 @@ var _ = Describe("UpdateEventMetadata", func() {
 
 	It("should return error when event is nil", func() {
 		err := cliSvc.UpdateEventMetadata(ctx, nil)
-		Expect(err).NotTo(BeNil())
+		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("event cannot be nil"))
 	})
 
 	It("should return error when event ID is empty", func() {
 		event := fixtures.EventWith("", "Test", "Company", "")
 		err := cliSvc.UpdateEventMetadata(ctx, event)
-		Expect(err).NotTo(BeNil())
+		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("event ID cannot be empty"))
 	})
 
 	It("should return error when event does not exist", func() {
 		event := fixtures.EventWith("non-existent", "", "Company", "")
 		err := cliSvc.UpdateEventMetadata(ctx, event)
-		Expect(err).NotTo(BeNil())
+		Expect(err).To(HaveOccurred())
 	})
 })

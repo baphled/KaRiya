@@ -240,7 +240,7 @@ var _ = Describe("YAMLConfigManager", func() {
 
 			loaded, err := manager.ListConfigs(ctx)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(loaded)).To(Equal(3))
+			Expect(loaded).To(HaveLen(3))
 
 			names := make(map[string]bool)
 			for _, config := range loaded {
@@ -255,7 +255,7 @@ var _ = Describe("YAMLConfigManager", func() {
 		It("should return empty list for empty directory", func() {
 			loaded, err := manager.ListConfigs(ctx)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(loaded)).To(Equal(0))
+			Expect(loaded).To(BeEmpty())
 		})
 
 		It("should skip non-YAML files", func() {
@@ -272,7 +272,7 @@ var _ = Describe("YAMLConfigManager", func() {
 			// List should only return the YAML config
 			loaded, err := manager.ListConfigs(ctx)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(loaded)).To(Equal(1))
+			Expect(loaded).To(HaveLen(1))
 			Expect(loaded[0].Name).To(Equal("config1"))
 		})
 
@@ -288,7 +288,7 @@ var _ = Describe("YAMLConfigManager", func() {
 			// List should return valid configs and skip invalid ones
 			loaded, err := manager.ListConfigs(ctx)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(loaded)).To(Equal(1))
+			Expect(loaded).To(HaveLen(1))
 			Expect(loaded[0].Name).To(Equal("config1"))
 		})
 
@@ -375,7 +375,7 @@ var _ = Describe("YAMLConfigManager", func() {
 			Expect(loaded.Name).To(Equal(originalConfig.Name))
 			Expect(loaded.TargetRole).To(Equal(originalConfig.TargetRole))
 			Expect(loaded.TargetAudience).To(Equal(originalConfig.TargetAudience))
-			// Note: YAML unmarshaling converts []string to []interface{}, so just verify keys exist
+
 			Expect(loaded.EventFilters).To(HaveKey("tags"))
 			Expect(loaded.EventFilters).To(HaveKey("companies"))
 			Expect(loaded.EventFilters).To(HaveKey("minDate"))

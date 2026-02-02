@@ -194,7 +194,7 @@ func (s *DetailScreen[T]) RenderContent() string {
 		content = s.contentRenderer(s.data, s.Width(), s.Height())
 	}
 
-	// NOTE: Scroll offset to be applied when content slicing is implemented.
+	// Scroll offset to be applied when content slicing is implemented.
 	// For now, just render the full content.
 
 	return content

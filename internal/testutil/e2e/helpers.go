@@ -315,7 +315,8 @@ func GetSharedEnv(t TestingT) *TestEnv {
 }
 
 // GetSharedEnvWithOnboarding returns the shared test environment for onboarding tests.
-// NOTE: Since onboarding is now a separate pre-app phase, tests that need to test
+//
+// Since onboarding is now a separate pre-app phase, tests that need to test
 // the onboarding UI should use bootstrap.NewOnboardingTestModel() directly.
 // This function returns a normal test environment - use GetOnboardingTestModel()
 // to get the onboarding model for testing.
@@ -376,7 +377,7 @@ func (e *TestEnv) resetDatabase() {
 // This forces onboarding to appear regardless of the user's config file.
 //
 // IMPORTANT: This function isolates config file writes to a temporary directory
-// to prevent tests from polluting the user's real config file (BUG-007 fix).
+// to prevent tests from polluting the user's real config file.
 //
 // Works with both *testing.T and GinkgoT().
 func SetupWithOnboarding(t TestingT) *TestEnv {
@@ -432,7 +433,8 @@ func SetupWithOnboarding(t TestingT) *TestEnv {
 	cliService := service.NewCLIEventService(svc)
 
 	// Create bootstrap result (skipping onboarding for main app)
-	// NOTE: For testing onboarding UI, use GetOnboardingTestModel() instead
+	//
+	// For testing onboarding UI, use GetOnboardingTestModel() instead
 	log := logger.DefaultLogger()
 	bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
 
@@ -554,12 +556,10 @@ func (e *TestEnv) Cleanup() {
 // ============================================================================
 
 // SelectIntent navigates to and selects a menu item by its index (0-based).
-// Returns the environment for method chaining.
 func (e *TestEnv) SelectIntent(index int) *TestEnv {
 	e.T.Helper()
 
-	// Navigate to the menu item
-	for i := 0; i < index; i++ {
+	for range index {
 		e.PressKeyRune('j')
 	}
 
@@ -573,7 +573,7 @@ func (e *TestEnv) SelectIntent(index int) *TestEnv {
 // Valid names: "capture_event", "browse_timeline", "manage_skills", "generate_cv",
 // "configure_system", "burst_management", "fact_management"
 //
-// NOTE: This order must match the menu items defined in internal/cli/app/app.go.
+// IMPORTANT: This order must match the menu items defined in internal/cli/app/app.go.
 func (e *TestEnv) SelectIntentByName(name string) *TestEnv {
 	e.T.Helper()
 
@@ -601,7 +601,11 @@ func (e *TestEnv) PressKey(key tea.KeyType) *TestEnv {
 	e.T.Helper()
 
 	modelInterface, cmd := e.Model.Update(tea.KeyMsg{Type: key})
-	e.Model = modelInterface.(*app.Model)
+	var ok bool
+	e.Model, ok = modelInterface.(*app.Model)
+	if !ok {
+		e.T.Fatalf("expected *app.Model, got %T", modelInterface)
+	}
 
 	// Execute any returned command
 	e.executeCmd(cmd)
@@ -615,7 +619,11 @@ func (e *TestEnv) PressKeyRune(r rune) *TestEnv {
 	e.T.Helper()
 
 	modelInterface, cmd := e.Model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{r}})
-	e.Model = modelInterface.(*app.Model)
+	var ok bool
+	e.Model, ok = modelInterface.(*app.Model)
+	if !ok {
+		e.T.Fatalf("expected *app.Model, got %T", modelInterface)
+	}
 
 	// Execute any returned command
 	e.executeCmd(cmd)
@@ -756,19 +764,31 @@ func (e *TestEnv) processCmdResult(msg tea.Msg) {
 	case models.SubmitMsg:
 		// Form submission - essential for form → review state transition
 		modelInterface, nextCmd := e.Model.Update(msg)
-		e.Model = modelInterface.(*app.Model)
+		var ok bool
+		e.Model, ok = modelInterface.(*app.Model)
+		if !ok {
+			e.T.Fatalf("expected *app.Model, got %T", modelInterface)
+		}
 		// Recursively execute any returned command
 		e.executeCmd(nextCmd)
 
 	case captureevent.SubmitCompleteMsg, captureevent.SubmitErrorMsg:
 		// Submit completion - essential for submit → complete state transition
 		modelInterface, nextCmd := e.Model.Update(msg)
-		e.Model = modelInterface.(*app.Model)
+		model, ok := modelInterface.(*app.Model)
+		if !ok {
+			e.T.Fatalf("expected *app.Model, got %T", modelInterface)
+		}
+		e.Model = model
 		// For SubmitCompleteMsg, immediately send DismissModalMsg to skip the 2s timer
 		if _, ok := msg.(captureevent.SubmitCompleteMsg); ok {
 			// Skip the tea.Tick timer by directly sending DismissModalMsg
 			modelInterface, nextCmd = e.Model.Update(captureevent.DismissModalMsg{})
-			e.Model = modelInterface.(*app.Model)
+			model, ok = modelInterface.(*app.Model)
+			if !ok {
+				e.T.Fatalf("expected *app.Model, got %T", modelInterface)
+			}
+			e.Model = model
 		}
 		// Recursively execute any returned command
 		e.executeCmd(nextCmd)
@@ -776,14 +796,22 @@ func (e *TestEnv) processCmdResult(msg tea.Msg) {
 	case captureevent.DismissModalMsg:
 		// Modal dismissal - essential for success modal → enrichment review transition
 		modelInterface, nextCmd := e.Model.Update(msg)
-		e.Model = modelInterface.(*app.Model)
+		var ok bool
+		e.Model, ok = modelInterface.(*app.Model)
+		if !ok {
+			e.T.Fatalf("expected *app.Model, got %T", modelInterface)
+		}
 		// Recursively execute any returned command
 		e.executeCmd(nextCmd)
 
 	case intents.ConfigCompleteMsg:
 		// Configuration save completion - essential for saving → complete state transition
 		modelInterface, nextCmd := e.Model.Update(msg)
-		e.Model = modelInterface.(*app.Model)
+		var ok bool
+		e.Model, ok = modelInterface.(*app.Model)
+		if !ok {
+			e.T.Fatalf("expected *app.Model, got %T", modelInterface)
+		}
 		// Recursively execute any returned command
 		e.executeCmd(nextCmd)
 	default:
@@ -799,7 +827,11 @@ func (e *TestEnv) SendMessage(msg tea.Msg) *TestEnv {
 	e.T.Helper()
 
 	modelInterface, cmd := e.Model.Update(msg)
-	e.Model = modelInterface.(*app.Model)
+	var ok bool
+	e.Model, ok = modelInterface.(*app.Model)
+	if !ok {
+		e.T.Fatalf("expected *app.Model, got %T", modelInterface)
+	}
 	e.executeCmd(cmd)
 
 	return e
@@ -1147,7 +1179,8 @@ func (e *TestEnv) IsInMenuState() bool {
 // ============================================================================
 
 // IsInOnboardingState checks if the application is currently showing the onboarding wizard.
-// NOTE: Since onboarding is now a separate pre-app phase, this always returns false.
+//
+// Since onboarding is now a separate pre-app phase, this always returns false.
 // To test onboarding, use GetOnboardingTestModel() instead.
 func (e *TestEnv) IsInOnboardingState() bool {
 	// Onboarding is now a separate program that runs before the main app.
@@ -1186,13 +1219,17 @@ func (e *TestEnv) InitModel() *TestEnv {
 // This is needed because huh forms use internal messages (nextGroupMsg) to transition
 // between groups. These messages must be processed for the form to advance.
 //
-// Note: This method loops to process messages but has a safety limit to prevent infinite loops.
+// This method loops to process messages but has a safety limit to prevent infinite loops.
 func (e *TestEnv) PressEnterWithFormProcessing() *TestEnv {
 	e.T.Helper()
 
 	// Send Enter key
 	modelInterface, cmd := e.Model.Update(tea.KeyMsg{Type: tea.KeyEnter})
-	e.Model = modelInterface.(*app.Model)
+	var ok bool
+	e.Model, ok = modelInterface.(*app.Model)
+	if !ok {
+		e.T.Fatalf("expected *app.Model, got %T", modelInterface)
+	}
 
 	// Process all resulting messages (including internal form messages)
 	// This allows huh's group transitions to complete
@@ -1226,7 +1263,11 @@ func (e *TestEnv) processFormCmds(cmd tea.Cmd, maxDepth int) {
 		// Process the message and any follow-up commands
 		// This includes internal huh messages like nextGroupMsg
 		modelInterface, nextCmd := e.Model.Update(msg)
-		e.Model = modelInterface.(*app.Model)
+		var ok bool
+		e.Model, ok = modelInterface.(*app.Model)
+		if !ok {
+			e.T.Fatalf("expected *app.Model, got %T", modelInterface)
+		}
 		e.processFormCmds(nextCmd, maxDepth-1)
 	}
 }

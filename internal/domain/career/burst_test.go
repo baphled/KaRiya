@@ -137,7 +137,8 @@ var _ = Describe("Burst", func() {
 
 		It("should reject burst with name exceeding 200 characters", func() {
 			longName := ""
-			for i := 0; i < 201; i++ {
+			for i := range 201 {
+				_ = i
 				longName += "a"
 			}
 
@@ -154,7 +155,8 @@ var _ = Describe("Burst", func() {
 
 		It("should accept burst with name at 200 character limit", func() {
 			name := ""
-			for i := 0; i < 200; i++ {
+			for i := range 200 {
+				_ = i
 				name += "a"
 			}
 
@@ -170,7 +172,8 @@ var _ = Describe("Burst", func() {
 
 		It("should reject burst with description exceeding 1000 characters", func() {
 			longDesc := ""
-			for i := 0; i < 1001; i++ {
+			for i := range 1001 {
+				_ = i
 				longDesc += "a"
 			}
 
@@ -188,7 +191,7 @@ var _ = Describe("Burst", func() {
 
 		It("should accept burst with description at 1000 character limit", func() {
 			desc := ""
-			for i := 0; i < 1000; i++ {
+			for range 1000 {
 				desc += "a"
 			}
 
@@ -217,7 +220,7 @@ var _ = Describe("Burst", func() {
 
 		It("should accept burst with many event IDs", func() {
 			eventIDs := []string{}
-			for i := 0; i < 50; i++ {
+			for i := range 50 {
 				eventIDs = append(eventIDs, "event-"+string(rune(i)))
 			}
 

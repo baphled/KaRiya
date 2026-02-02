@@ -22,7 +22,7 @@ import (
 // - Solid background to prevent transparency issues
 // - Uses bubbletea-overlay for compositing
 //
-// Note: This modal is purely for viewing. To edit or delete, use the 'e' or 'd' shortcuts
+// This modal is purely for viewing. To edit or delete, use the 'e' or 'd' shortcuts
 // directly from the timeline list, or access edit/delete from the timeline context menu.
 //
 // Usage:

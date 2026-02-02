@@ -131,7 +131,7 @@ var _ = Describe("EventRepository", func() {
 
 	Describe("List", func() {
 		It("should list events with no filters", func() {
-			for i := 0; i < 5; i++ {
+			for range 5 {
 				event := fixtures.EventFactory.MustCreate().(*career.Event)
 				event.ID = "" // Clear to test auto-generation
 				err := repo.Create(ctx, event)
@@ -167,7 +167,7 @@ var _ = Describe("EventRepository", func() {
 
 		It("should filter events by date range", func() {
 			baseDate := time.Now()
-			for i := 0; i < 10; i++ {
+			for i := range 10 {
 				event := fixtures.EventWith("", fmt.Sprintf("Event %d", i), "Test Company", "")
 				event.Date = baseDate.AddDate(0, 0, -i*30)
 				event.Tags = []string{"project"}
@@ -187,7 +187,7 @@ var _ = Describe("EventRepository", func() {
 
 	Describe("Count", func() {
 		It("should count events with no filters", func() {
-			for i := 0; i < 5; i++ {
+			for range 5 {
 				event := fixtures.EventFactory.MustCreate().(*career.Event)
 				event.ID = "" // Clear to test auto-generation
 				err := repo.Create(ctx, event)
@@ -301,7 +301,7 @@ var _ = Describe("EventRepository", func() {
 			createdEvents := make(map[string]bool)
 
 			wg.Add(eventCount)
-			for i := 0; i < eventCount; i++ {
+			for range eventCount {
 				go func() {
 					defer wg.Done()
 

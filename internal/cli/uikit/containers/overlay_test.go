@@ -107,7 +107,7 @@ var _ = Describe("Overlay", func() {
 			Expect(rendered).To(ContainSubstring("Text"))
 
 			// Verify we have proper line count
-			Expect(len(lines)).To(BeNumerically(">=", 1))
+			Expect(lines).ToNot(BeEmpty())
 		})
 
 		It("should use custom dim character", func() {
@@ -138,11 +138,11 @@ var _ = Describe("Overlay", func() {
 	})
 })
 
-// Helper to strip all ANSI codes including CSI sequences
+// Helper to strip all ANSI codes including CSI sequences.
 func stripAllANSI(s string) string {
 	result := ""
 	inEscape := false
-	for i := 0; i < len(s); i++ {
+	for i := range len(s) {
 		if s[i] == '\x1b' {
 			inEscape = true
 			continue

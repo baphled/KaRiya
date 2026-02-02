@@ -7,12 +7,12 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-// Helper to create a tea.KeyMsg for testing
+// Helper to create a tea.KeyMsg for testing.
 func keyMsg(k string) tea.KeyMsg {
 	return tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(k)}
 }
 
-// Helper to create special key messages
+// Helper to create special key messages.
 func specialKeyMsg(keyType tea.KeyType) tea.KeyMsg {
 	return tea.KeyMsg{Type: keyType}
 }
@@ -244,7 +244,7 @@ var _ = Describe("KeyMaps", func() {
 
 			It("should implement FullHelp", func() {
 				fullHelp := keyMap.FullHelp()
-				Expect(len(fullHelp)).To(BeNumerically(">=", 1))
+				Expect(fullHelp).ToNot(BeEmpty())
 			})
 		})
 	})
@@ -336,7 +336,7 @@ var _ = Describe("KeyMaps", func() {
 
 			It("should implement FullHelp", func() {
 				fullHelp := keyMap.FullHelp()
-				Expect(len(fullHelp)).To(BeNumerically(">=", 1))
+				Expect(fullHelp).ToNot(BeEmpty())
 			})
 		})
 	})

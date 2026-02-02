@@ -22,8 +22,6 @@ var _ = Describe("Reproducibility", func() {
 		fixtures.SetSeed(12345)
 		event2 := fixtures.EventFactory.MustCreate().(*career.Event)
 
-		// With same seed, random parts should match
-		// Note: IDs are sequential so they reset with new factory
 		Expect(event1.Company).To(Equal(event2.Company))
 		Expect(event1.Project).To(Equal(event2.Project))
 	})

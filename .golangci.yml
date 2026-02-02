@@ -281,7 +281,6 @@ linters:
         - HACK
         - XXX
         - NOTE
-        - IMPORTANT
         - BUG
 
     # ---------------------------------------------------------------------------
@@ -1382,6 +1381,14 @@ linters:
       - path: 'internal/cli/intents/modal_(.*)\.go'
         linters:
           - revive
+
+    # -------------------------------------------------------------------------
+    # C28: PACKAGE NAMING - Types package name is intentional
+    # -------------------------------------------------------------------------
+      - path: 'internal/cli/types/export_types\.go'
+        linters:
+          - revive
+        text: "var-naming: avoid meaningless package names"
 
 # =============================================================================
 # FORMATTERS (v2 - separated from linters)

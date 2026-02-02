@@ -8,7 +8,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-// TestDetailData is a simple data structure for testing detail views
+// TestDetailData is a simple data structure for testing detail views.
 type TestDetailData struct {
 	Title       string
 	Description string

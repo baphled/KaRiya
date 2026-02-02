@@ -11,7 +11,7 @@ import (
 // createBenchmarkEvents creates n test events for benchmarking.
 func createBenchmarkEvents(n int) []*career.Event {
 	events := make([]*career.Event, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		events[i] = fixtures.EventWith(fmt.Sprintf("event-%d", i), "Benchmark event", "BenchCorp", "")
 	}
 	return events
@@ -27,7 +27,7 @@ func BenchmarkBrowseTimelineInit(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		intent, _ := NewIntent(ctx)
 		_ = intent.Init()
 	}
@@ -45,7 +45,7 @@ func BenchmarkBrowseTimelineView(b *testing.B) {
 	intent.Init()
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = intent.View()
 	}
 }
@@ -59,7 +59,7 @@ func BenchmarkBrowseTimelineInitEmpty(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		intent, _ := NewIntent(ctx)
 		_ = intent.Init()
 	}
@@ -75,7 +75,7 @@ func BenchmarkBrowseTimelineInitLarge(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		intent, _ := NewIntent(ctx)
 		_ = intent.Init()
 	}

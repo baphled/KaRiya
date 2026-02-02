@@ -186,7 +186,7 @@ var _ = Describe("Intent", func() {
 			})
 
 			It("should not crash when navigating down past last item", func() {
-				for i := 0; i < 10; i++ {
+				for range 10 {
 					intent.Update(tea.KeyMsg{Type: tea.KeyDown})
 				}
 				view := intent.View()

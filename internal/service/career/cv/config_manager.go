@@ -3,7 +3,6 @@ package cv
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sync"
 	"time"
 
@@ -129,7 +128,7 @@ func (m *MemoryConfigManager) ListConfigs(_ context.Context) ([]*career.CVConfig
 
 // GetConfigPath returns the file path for a configuration name.
 func (m *MemoryConfigManager) GetConfigPath(name string) string {
-	return fmt.Sprintf("memory://%s", name)
+	return "memory://" + name
 }
 
 // ConfigExists checks if a configuration exists.

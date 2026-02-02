@@ -198,7 +198,7 @@ func (l *Logo) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if l.animated && l.fadeProgress < 1.0 {
 			l.fadeProgress += 0.1
 			if l.fadeProgress < 1.0 {
-				return l, l.tick() //nolint:gocritic // evalOrder false positive - tick() doesn't modify l
+				return l, l.tick()
 			}
 			l.fadeProgress = 1.0
 		}

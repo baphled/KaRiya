@@ -114,7 +114,8 @@ var _ = Describe("E2E BrowseTimeline Workflow", func() {
 			view := env.GetView()
 			Expect(view).NotTo(BeEmpty())
 
-			for i := 0; i < 10; i++ {
+			for i := range 10 {
+				_ = i
 				env.PressKeyRune('j')
 			}
 			view = env.GetView()

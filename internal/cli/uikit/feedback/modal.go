@@ -372,11 +372,12 @@ func (m *Modal) Render(terminalWidth, terminalHeight int) string {
 	// Add dismissal hint.
 	if m.Cancellable {
 		contentParts = append(contentParts, "")
-		if m.Type == ModalError {
+		switch m.Type {
+		case ModalError:
 			contentParts = append(contentParts, "Press Esc to dismiss")
-		} else if m.Type == ModalLoading {
+		case ModalLoading:
 			contentParts = append(contentParts, "Press Esc to cancel")
-		} else {
+		default:
 			contentParts = append(contentParts, "Press Esc to close")
 		}
 	}
@@ -414,7 +415,8 @@ func (m *Modal) Render(terminalWidth, terminalHeight int) string {
 	}
 
 	// Create modal box style.
-	// Note: Width sets the content+padding width. Border is added outside.
+	//
+	// Width sets the content+padding width. Border is added outside.
 	// We don't use MaxWidth as it would truncate the border characters.
 	boxStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).

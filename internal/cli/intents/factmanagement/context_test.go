@@ -245,7 +245,7 @@ var _ = Describe("Context", func() {
 
 			BeforeEach(func() {
 				testFacts = make([]*career.Fact, 25)
-				for i := 0; i < 25; i++ {
+				for i := range 25 {
 					testFacts[i] = fixtures.FactWith("fact-"+string(rune('a'+i)), "Test fact "+string(rune('a'+i)))
 				}
 			})

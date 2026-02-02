@@ -1,6 +1,9 @@
 package selectors
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // AudienceRelevanceSelector manages selection of audience types for facts.
 type AudienceRelevanceSelector struct {
@@ -75,13 +78,13 @@ func (a *AudienceRelevanceSelector) IsSelected(audience string) bool {
 // Side effects:
 //   - None.
 func (a *AudienceRelevanceSelector) Render() string {
-	var result string
+	var b strings.Builder
 	for _, opt := range a.options {
 		if a.selected[opt] {
-			result += fmt.Sprintf("[✓ %s] ", opt)
+			b.WriteString(fmt.Sprintf("[✓ %s] ", opt))
 		} else {
-			result += fmt.Sprintf("[ %s ] ", opt)
+			b.WriteString(fmt.Sprintf("[ %s ] ", opt))
 		}
 	}
-	return result
+	return b.String()
 }

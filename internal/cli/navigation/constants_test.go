@@ -149,7 +149,7 @@ var _ = Describe("Navigation Constants", func() {
 
 		It("should have exactly 19 descriptions matching 19 keys", func() {
 			keys := AllNavigationKeys()
-			Expect(len(KeyDescription)).To(Equal(len(keys)))
+			Expect(KeyDescription).To(HaveLen(len(keys)))
 		})
 	})
 })

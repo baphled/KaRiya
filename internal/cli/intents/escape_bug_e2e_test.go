@@ -102,7 +102,4 @@ var _ = Describe("E2E - Escape Key Navigation (TUI Standards Validation)", func(
 			})
 		})
 	})
-
-	// Note: 'm' key behavior is tested separately in existing test suites
-	// This bug focuses specifically on escape key navigation per TUI Standards
 })

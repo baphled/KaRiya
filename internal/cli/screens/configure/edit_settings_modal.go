@@ -1,6 +1,7 @@
 package configure
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -146,7 +147,7 @@ func (m *EditSettingsModal) createFieldForSetting(setting *configtypes.Configura
 				}
 				_, err := strconv.Atoi(val)
 				if err != nil {
-					return fmt.Errorf("must be a number")
+					return errors.New("must be a number")
 				}
 				return nil
 			})

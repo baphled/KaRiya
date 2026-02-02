@@ -203,7 +203,7 @@ var _ = Describe("E2E GenerateCV Wizard Workflow", func() {
 			env.SelectIntentByName("generate_cv")
 
 			// Rapid Esc presses
-			for i := 0; i < 5; i++ {
+			for range 5 {
 				env.Cancel()
 			}
 
@@ -372,13 +372,13 @@ var _ = Describe("E2E GenerateCV Wizard Workflow", func() {
 			env.SelectIntentByName("generate_cv")
 
 			// Rapid navigation
-			for i := 0; i < 10; i++ {
+			for range 10 {
 				env.NavigateDown()
 			}
-			for i := 0; i < 10; i++ {
+			for range 10 {
 				env.NavigateUp()
 			}
-			for i := 0; i < 5; i++ {
+			for range 5 {
 				env.Tab()
 			}
 

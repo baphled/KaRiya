@@ -159,9 +159,6 @@ var _ = Describe("App Unit Tests", func() {
 				Expect(view).NotTo(ContainSubstring("Keyboard Reference"))
 			})
 
-			// Note: 'h' key is vim-style left navigation, not help
-			// Help is toggled only with '?' key per KEYBOARD_REFERENCE.md
-
 			It("should show navigation shortcuts in help", func() {
 				// Show help
 				msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("?")}
@@ -188,11 +185,6 @@ var _ = Describe("App Unit Tests", func() {
 		})
 
 		Context("home/esc/escape keys", func() {
-			// NOTE: After removing app-level escape interceptor, escape is now
-			// handled by intents themselves. Intents return Cancelled result,
-			// which causes app to return to menu. These tests verify the intent
-			// properly handles escape and returns the appropriate result.
-
 			It("should forward escape to intent (intent returns to menu)", func() {
 				// Activate an intent
 				newModel, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
@@ -540,7 +532,7 @@ var _ = Describe("App Unit Tests", func() {
 		It("should show info modal when visible in menu state", func() {
 			// Navigate to generate_cv without any events to trigger info modal.
 			// First, navigate down to "Generate CV" (index 3).
-			for i := 0; i < 3; i++ {
+			for range 3 {
 				model.Update(tea.KeyMsg{Type: tea.KeyDown})
 			}
 			// Press enter to select - should show info modal since no events.
@@ -605,7 +597,7 @@ var _ = Describe("App Unit Tests", func() {
 		It("should not move down when at bottom of menu", func() {
 			// Move to bottom of menu.
 			menuItems := model.GetMenuItems()
-			for i := 0; i < len(menuItems)-1; i++ {
+			for range len(menuItems) - 1 {
 				model.Update(tea.KeyMsg{Type: tea.KeyDown})
 			}
 			// Try moving down again - should stay at bottom.
@@ -640,7 +632,7 @@ var _ = Describe("App Unit Tests", func() {
 	Describe("handleMenuSelection - Edge Cases", func() {
 		It("should show info modal when selecting generate_cv without events", func() {
 			// Navigate to generate_cv (index 3).
-			for i := 0; i < 3; i++ {
+			for range 3 {
 				model.Update(tea.KeyMsg{Type: tea.KeyDown})
 			}
 			// Select it.
@@ -660,7 +652,7 @@ var _ = Describe("App Unit Tests", func() {
 	Describe("handleKeyMsg - Info Modal", func() {
 		It("should dismiss info modal on any key press", func() {
 			// First trigger info modal by selecting generate_cv without events.
-			for i := 0; i < 3; i++ {
+			for range 3 {
 				model.Update(tea.KeyMsg{Type: tea.KeyDown})
 			}
 			model.Update(tea.KeyMsg{Type: tea.KeyEnter})
@@ -865,7 +857,7 @@ var _ = Describe("App Unit Tests", func() {
 
 		It("should activate configure_system intent", func() {
 			// Navigate to configure_system (index 4).
-			for i := 0; i < 4; i++ {
+			for range 4 {
 				model.Update(tea.KeyMsg{Type: tea.KeyDown})
 			}
 			newModel, cmd := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
@@ -877,7 +869,7 @@ var _ = Describe("App Unit Tests", func() {
 
 		It("should activate burst_management intent", func() {
 			// Navigate to burst_management (index 5).
-			for i := 0; i < 5; i++ {
+			for range 5 {
 				model.Update(tea.KeyMsg{Type: tea.KeyDown})
 			}
 			newModel, cmd := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
@@ -889,7 +881,7 @@ var _ = Describe("App Unit Tests", func() {
 
 		It("should activate fact_management intent", func() {
 			// Navigate to fact_management (index 6).
-			for i := 0; i < 6; i++ {
+			for range 6 {
 				model.Update(tea.KeyMsg{Type: tea.KeyDown})
 			}
 			newModel, cmd := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
@@ -944,7 +936,7 @@ var _ = Describe("App Unit Tests", func() {
 
 		It("should handle rapid key presses", func() {
 			// Simulate rapid navigation
-			for i := 0; i < 10; i++ {
+			for range 10 {
 				msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")}
 				newModel, _ := model.Update(msg)
 				model = newModel.(*app.Model)
@@ -1059,7 +1051,8 @@ var _ = Describe("IntentRegistrar DI Tests", func() {
 			model = newModel.(*app.Model)
 
 			// ActivateIntent should fail, model should stay in menu state.
-			// Note: The state is set to Intent BEFORE ActivateIntent is called,
+			//
+			// The state is set to Intent BEFORE ActivateIntent is called,
 			// so we need to check if the error path resets state or handles gracefully.
 			Expect(model).NotTo(BeNil())
 			// The cmd should be nil or a no-op when activation fails.
@@ -1083,7 +1076,7 @@ var _ = Describe("IntentRegistrar DI Tests", func() {
 			router := intents.NewDefaultIntentRouter()
 			err := registrar.RegisterAll(context.Background(), router)
 
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should return error on duplicate registration", func() {
@@ -1102,11 +1095,11 @@ var _ = Describe("IntentRegistrar DI Tests", func() {
 
 			// First registration should succeed.
 			err := registrar.RegisterAll(context.Background(), router)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 
 			// Second registration should fail (duplicate).
 			err = registrar.RegisterAll(context.Background(), router)
-			Expect(err).NotTo(BeNil())
+			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("already registered"))
 		})
 	})
@@ -1223,11 +1216,11 @@ var _ = Describe("IntentRegistrar DI Tests", func() {
 
 			router := intents.NewDefaultIntentRouter()
 			err := registrar.RegisterAll(context.Background(), router)
-			Expect(err).To(BeNil()) // Registration succeeds, factory failure happens on activation.
+			Expect(err).ToNot(HaveOccurred()) // Registration succeeds, factory failure happens on activation.
 
 			// Now try to activate - the factory will fail and return nil.
 			_, err = router.ActivateIntent("capture_event", nil)
-			Expect(err).NotTo(BeNil()) // Factory returned nil.
+			Expect(err).To(HaveOccurred()) // Factory returned nil.
 			Expect(err.Error()).To(ContainSubstring("factory returned nil"))
 		})
 
@@ -1246,7 +1239,7 @@ var _ = Describe("IntentRegistrar DI Tests", func() {
 
 			// Activation will fail because factory returns nil.
 			_, err := router.ActivateIntent("browse_timeline", nil)
-			Expect(err).NotTo(BeNil())
+			Expect(err).To(HaveOccurred())
 		})
 
 		It("should handle generate_cv factory failure", func() {
@@ -1262,7 +1255,7 @@ var _ = Describe("IntentRegistrar DI Tests", func() {
 			registrar.RegisterAll(context.Background(), router)
 
 			_, err := router.ActivateIntent("generate_cv", nil)
-			Expect(err).NotTo(BeNil())
+			Expect(err).To(HaveOccurred())
 		})
 
 		It("should handle configure_system factory failure", func() {
@@ -1296,7 +1289,7 @@ var _ = Describe("IntentRegistrar DI Tests", func() {
 			registrar.RegisterAll(context.Background(), router)
 
 			_, err := router.ActivateIntent("burst_management", nil)
-			Expect(err).NotTo(BeNil())
+			Expect(err).To(HaveOccurred())
 		})
 
 		It("should handle fact_management factory failure", func() {
@@ -1312,7 +1305,7 @@ var _ = Describe("IntentRegistrar DI Tests", func() {
 			registrar.RegisterAll(context.Background(), router)
 
 			_, err := router.ActivateIntent("fact_management", nil)
-			Expect(err).NotTo(BeNil())
+			Expect(err).To(HaveOccurred())
 		})
 
 		It("should wire SkillInferenceService into BurstManagement intent context", func() {

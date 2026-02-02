@@ -157,7 +157,7 @@ func (e *Extractor) generateFactTextFromBurst(burst *career.Burst, events []*car
 			return fmt.Sprintf("Led initiative on %s project at %s", firstEvent.Project, firstEvent.Company)
 		}
 		if firstEvent.Company != "" {
-			return fmt.Sprintf("Multiple achievements at %s", firstEvent.Company)
+			return "Multiple achievements at " + firstEvent.Company
 		}
 	}
 

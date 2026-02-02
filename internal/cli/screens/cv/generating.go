@@ -67,7 +67,7 @@ func (s *GeneratingScreen) Init() tea.Cmd {
 func (s *GeneratingScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		s.Screen.HandleWindowSizeMsg(msg)
+		s.HandleWindowSizeMsg(msg)
 		return nil, nil
 
 	case tea.KeyMsg:

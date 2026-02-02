@@ -151,7 +151,7 @@ var _ = Describe("BaseIntent", func() {
 	Describe("Error State", func() {
 		It("should not have error initially", func() {
 			Expect(base.HasError()).To(BeFalse())
-			Expect(base.GetError()).To(BeNil())
+			Expect(base.GetError()).To(Succeed())
 		})
 
 		It("should set and get error", func() {
@@ -165,7 +165,7 @@ var _ = Describe("BaseIntent", func() {
 			base.SetError(errors.New("test error"))
 			base.ClearError()
 			Expect(base.HasError()).To(BeFalse())
-			Expect(base.GetError()).To(BeNil())
+			Expect(base.GetError()).To(Succeed())
 		})
 	})
 

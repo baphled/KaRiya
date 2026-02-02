@@ -666,7 +666,7 @@ var _ = Describe("BurstManagement E2E Workflow Tests", func() {
 			_ = intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
 
 			// Burst should be created immediately (no need for SuggestionReviewCompleteMsg).
-			Expect(len(intent.GetFilteredBursts())).To(Equal(initialBurstCount + 1))
+			Expect(intent.GetFilteredBursts()).To(HaveLen(initialBurstCount + 1))
 
 			// Verify the created burst.
 			newBurst := intent.GetFilteredBursts()[initialBurstCount]
@@ -781,7 +781,7 @@ var _ = Describe("BurstManagement E2E Workflow Tests", func() {
 			Expect(modal.IsVisible()).To(BeFalse())
 
 			// No burst should be created
-			Expect(len(intent.GetFilteredBursts())).To(Equal(initialBurstCount))
+			Expect(intent.GetFilteredBursts()).To(HaveLen(initialBurstCount))
 		})
 
 		It("should display suggestion details correctly", func() {
@@ -973,7 +973,7 @@ var _ = Describe("Burst Suggestion Integration E2E", func() {
 			}
 			intent.Update(completeMsg)
 
-			Expect(len(intent.GetFilteredBursts())).To(Equal(1))
+			Expect(intent.GetFilteredBursts()).To(HaveLen(1))
 
 			allBursts, err := burstRepo.List(context.Background(), *fixtures.BurstListFilters())
 			Expect(err).NotTo(HaveOccurred())
@@ -1097,7 +1097,7 @@ var _ = Describe("Burst Suggestion Integration E2E", func() {
 			}
 			intent.Update(completeMsg)
 
-			Expect(len(intent.GetFilteredBursts())).To(Equal(0))
+			Expect(intent.GetFilteredBursts()).To(BeEmpty())
 		})
 
 		It("should preserve partial accepts when cancelled", func() {
@@ -2467,7 +2467,7 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 
 				// Burst should still exist.
 				finalBursts, _ := burstRepo.List(context.Background(), *fixtures.BurstListFilters())
-				Expect(len(finalBursts)).To(Equal(initialCount))
+				Expect(finalBursts).To(HaveLen(initialCount))
 			})
 
 			It("BUG: should stay on burst list when escape is pressed on delete modal", func() {
@@ -3607,7 +3607,7 @@ var _ = Describe("User Journey: Edge Cases and Boundary Conditions", func() {
 			// Create many event IDs.
 			eventIDs := make([]string, 50)
 			events := make([]*career.Event, 50)
-			for i := 0; i < 50; i++ {
+			for i := range 50 {
 				eventIDs[i] = fmt.Sprintf("e%d", i+1)
 				events[i] = fixtures.EventWith(eventIDs[i], fmt.Sprintf("Event %d description", i+1), "", "")
 			}
@@ -3878,8 +3878,6 @@ var _ = Describe("User Journey: Suggestion Review Workflow", func() {
 	})
 })
 
-// User Journey E2E Tests - Intent Initialization Edge Cases.
-// Note: Manual "Add New Burst" tests were removed. Bursts are created via AI suggestions only.
 var _ = Describe("User Journey: Intent Initialization", func() {
 	Describe("When creating intent with nil context", func() {
 		It("should return an error", func() {

@@ -476,7 +476,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(mockBulletGen.ReceivedAchievements).NotTo(BeNil())
-				Expect(len(mockBulletGen.ReceivedAchievements)).To(BeNumerically(">", 0))
+				Expect(mockBulletGen.ReceivedAchievements).ToNot(BeEmpty())
 			})
 
 			It("should handle ExtractAchievements errors gracefully", func() {
@@ -598,7 +598,7 @@ func NewCountingRepository(count int) *CountingRepository {
 
 func (r *CountingRepository) List(ctx context.Context, filters careerrepo.EventListFilters) ([]*career.Event, error) {
 	events := make([]*career.Event, r.count)
-	for i := 0; i < r.count; i++ {
+	for i := range r.count {
 		events[i] = fixtures.EventWith(uuid.New().String(), "Sample event", "", "")
 	}
 	return events, nil
@@ -676,7 +676,7 @@ func NewCountingFactRepository(count int) *CountingFactRepository {
 
 func (r *CountingFactRepository) List(ctx context.Context, filters careerrepo.FactListFilters) ([]*career.Fact, error) {
 	facts := make([]*career.Fact, r.count)
-	for i := 0; i < r.count; i++ {
+	for i := range r.count {
 		facts[i] = fixtures.FactWith(uuid.New().String(), "Sample fact")
 	}
 	return facts, nil
@@ -710,7 +710,7 @@ func (r *CountingFactRepository) GetBySourceBurstID(ctx context.Context, burstID
 	return []*career.Fact{}, nil
 }
 
-// EmptyBulletGenerator implements BulletGenerator for tests
+// EmptyBulletGenerator implements BulletGenerator for tests.
 type EmptyBulletGenerator struct{}
 
 func NewEmptyBulletGenerator() *EmptyBulletGenerator {
@@ -751,7 +751,7 @@ func (b *EmptySectionBuilder) BuildSections(ctx context.Context, bullets []*care
 	return []*career.CVSection{}, nil
 }
 
-// MockDataProcessingService for testing achievement extraction
+// MockDataProcessingService for testing achievement extraction.
 type MockDataProcessingService struct {
 	ExtractAchievementsCalls int
 	AchievementsToReturn     []*Achievement
@@ -788,7 +788,7 @@ func (m *MockDataProcessingService) ExtractProjectsFromEvents(ctx context.Contex
 	return nil, nil //nolint:nilnil // test stub
 }
 
-// MockEventRepository for testing with specific events
+// MockEventRepository for testing with specific events.
 type MockEventRepository struct {
 	events []*career.Event
 }
@@ -830,7 +830,7 @@ func (r *MockEventRepository) LinkSkill(_ context.Context, _ string, _ string) e
 	return nil
 }
 
-// MockBulletGenerator for testing bullet generation with achievements
+// MockBulletGenerator for testing bullet generation with achievements.
 type MockBulletGenerator struct {
 	ReceivedAchievements []*Achievement
 }

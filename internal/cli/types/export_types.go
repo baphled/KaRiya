@@ -1,3 +1,5 @@
+// Package types defines export-related types for the CLI export wizard.
+// These types identify which category of career data the user wants to export.
 package types
 
 // ExportArtifactType identifies which category of career data the user wants

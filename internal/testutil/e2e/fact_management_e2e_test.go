@@ -109,7 +109,7 @@ var _ = Describe("E2E FactManagement Workflow", func() {
 			view := env.GetView()
 			Expect(view).NotTo(BeEmpty())
 
-			for i := 0; i < 5; i++ {
+			for range 5 {
 				env.PressKeyRune('j')
 			}
 			view = env.GetView()

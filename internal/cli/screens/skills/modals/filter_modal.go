@@ -1,7 +1,7 @@
 package modals
 
 import (
-	"fmt"
+	"errors"
 	"strconv"
 	"strings"
 
@@ -165,10 +165,10 @@ func (m *FilterModal) buildYearsInput(title, placeholder string, value *string) 
 			}
 			years, err := strconv.Atoi(s)
 			if err != nil {
-				return fmt.Errorf("must be a number")
+				return errors.New("must be a number")
 			}
 			if years < 0 {
-				return fmt.Errorf("must be positive")
+				return errors.New("must be positive")
 			}
 			return nil
 		},

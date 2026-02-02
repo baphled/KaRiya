@@ -31,8 +31,6 @@ var _ = Describe("EventFormScreen", func() {
 	)
 
 	BeforeEach(func() {
-		// Note: CLIEventService is only needed for form submission
-		// For screen tests, we can pass nil since we're testing screen behavior
 		cliService = nil
 
 		breadcrumbs := []string{"Main Menu", "Capture Event", "Form"}

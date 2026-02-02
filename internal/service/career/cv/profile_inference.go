@@ -253,7 +253,7 @@ func (s *ProfileInferenceService) sortByCount(counts map[string]int) []string {
 		categories = append(categories, cat)
 	}
 
-	for i := 0; i < len(categories)-1; i++ {
+	for i := range len(categories) - 1 {
 		for j := i + 1; j < len(categories); j++ {
 			if counts[categories[j]] > counts[categories[i]] {
 				categories[i], categories[j] = categories[j], categories[i]

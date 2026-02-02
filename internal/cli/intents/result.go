@@ -1,6 +1,9 @@
 package intents
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 // ResultStatus represents the outcome of an intent execution.
 type ResultStatus string
@@ -356,19 +359,19 @@ func (r *IntentResult[T]) IsValid() error {
 
 	case Cancelled:
 		if r.Error != nil {
-			return fmt.Errorf("cancelled result should not have error")
+			return errors.New("cancelled result should not have error")
 		}
 		return nil
 
 	case Failed:
 		if r.Error == nil {
-			return fmt.Errorf("failed result must have error")
+			return errors.New("failed result must have error")
 		}
 		return nil
 
 	case Partial:
 		if r.Error == nil {
-			return fmt.Errorf("partial result must have error")
+			return errors.New("partial result must have error")
 		}
 		return nil
 

@@ -2,6 +2,7 @@ package cv
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/baphled/kariya/internal/domain/career"
@@ -36,7 +37,7 @@ func (ts *TraceabilityService) GetBulletSources(
 	bullet *career.CVBullet,
 ) ([]*career.Event, []*career.Fact, error) {
 	if bullet == nil {
-		return nil, nil, fmt.Errorf("bullet cannot be nil")
+		return nil, nil, errors.New("bullet cannot be nil")
 	}
 
 	ts.logger.Info(

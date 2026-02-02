@@ -28,7 +28,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 	It("should return empty sections for no bullets", func() {
 		sections, err := builder.BuildSections(ctx, []*career.CVBullet{}, []*career.Event{}, []*career.Fact{}, "principal", &SkillsFormatConfig{Format: "flat", Limit: 0, SelectedTechnologies: nil})
 		Expect(err).NotTo(HaveOccurred())
-		Expect(len(sections)).To(Equal(0))
+		Expect(sections).To(BeEmpty())
 	})
 
 	It("should create experience section from bullets", func() {
@@ -41,7 +41,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 
 		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(len(sections)).To(BeNumerically(">", 0))
+		Expect(sections).ToNot(BeEmpty())
 
 		// Find experience section (order changed: summary is first for principal)
 		var expSection *career.CVSection
@@ -53,9 +53,9 @@ var _ = Describe("DefaultSectionBuilder", func() {
 		}
 		Expect(expSection).NotTo(BeNil())
 		Expect(expSection.Title).To(Equal("Experience"))
-		Expect(len(expSection.Content)).To(BeNumerically(">", 0))
+		Expect(expSection.Content).ToNot(BeEmpty())
 		Expect(expSection.Content[0].Header).To(Equal("TechCorp"))
-		Expect(len(expSection.Content[0].Bullets)).To(Equal(1))
+		Expect(expSection.Content[0].Bullets).To(HaveLen(1))
 		Expect(expSection.Content[0].Bullets[0].Text).To(Equal("Implemented authentication system"))
 	})
 
@@ -70,7 +70,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 
 		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(len(sections)).To(BeNumerically(">", 0))
+		Expect(sections).ToNot(BeEmpty())
 
 		// Should have skills section
 		var skillsSection *career.CVSection
@@ -82,7 +82,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 		}
 		Expect(skillsSection).NotTo(BeNil())
 		Expect(skillsSection.Title).To(Equal("Technical Skills"))
-		Expect(len(skillsSection.Content)).To(BeNumerically(">", 0))
+		Expect(skillsSection.Content).ToNot(BeEmpty())
 		// Skills section should have technical skills with counts
 		hasSkill := false
 		for _, group := range skillsSection.Content {
@@ -202,7 +202,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 		Expect(expSection).NotTo(BeNil())
 
 		// Experience section should have two content groups (one per company)
-		Expect(len(expSection.Content)).To(Equal(2))
+		Expect(expSection.Content).To(HaveLen(2))
 
 		// Collect company headers
 		companies := []string{}
@@ -237,7 +237,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 
 		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(len(sections)).To(BeNumerically(">", 0))
+		Expect(sections).ToNot(BeEmpty())
 
 		// Should have projects section instead of experience
 		var projectsSection *career.CVSection
@@ -248,7 +248,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 			}
 		}
 		Expect(projectsSection).NotTo(BeNil())
-		Expect(len(projectsSection.Content)).To(BeNumerically(">", 0))
+		Expect(projectsSection.Content).ToNot(BeEmpty())
 		Expect(projectsSection.Content[0].Header).To(Equal("MyProject"))
 		Expect(projectsSection.Content[0].Bullets[0].Text).To(Equal("Feature"))
 	})
@@ -319,7 +319,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 			Expect(expSection).NotTo(BeNil())
 
 			// Should have 3 content groups: Company A (tenure 1), Company B, Company A (tenure 2)
-			Expect(len(expSection.Content)).To(Equal(3))
+			Expect(expSection.Content).To(HaveLen(3))
 
 			// Count Company A entries
 			companyACount := 0
@@ -369,7 +369,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 			Expect(expSection).NotTo(BeNil())
 
 			// Should have 3 groups
-			Expect(len(expSection.Content)).To(Equal(3))
+			Expect(expSection.Content).To(HaveLen(3))
 		})
 
 		It("should order experience entries by most recent first", func() {

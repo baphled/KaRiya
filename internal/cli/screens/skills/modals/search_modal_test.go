@@ -290,7 +290,7 @@ var _ = Describe("SearchModal", func() {
 			// Modal should not span full width
 			// With 100 char terminal, modal should be ~60 chars + padding/border
 			lines := strings.Split(view, "\n")
-			Expect(len(lines)).To(BeNumerically(">", 0))
+			Expect(lines).ToNot(BeEmpty())
 
 			// Find the widest line (should be border)
 			// Use lipgloss.Width for ANSI-safe width calculation

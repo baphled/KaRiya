@@ -34,7 +34,6 @@ var _ = Describe("CVConfigWizardModal", func() {
 
 				config := modal.GetConfigData()
 				Expect(config).NotTo(BeNil())
-				// Note: huh.Select automatically selects first option
 				// ProfileID will be empty string (from "(No profiles available)", "") option
 				Expect(config.ProfileID).To(Equal(""))
 				// Audience will be "hiring_manager" (first option)
@@ -176,7 +175,7 @@ var _ = Describe("CVConfigWizardModal", func() {
 				modal.Update(tea.KeyMsg{Type: tea.KeyEsc})
 
 				// Should be at previous step
-				// Note: If TECH step is not available, it will skip from step 2 to step 0
+				// If TECH step is not available, it will skip from step 2 to step 0
 				if modal.AreTechsAvailable() {
 					Expect(modal.GetCurrentStep()).To(Equal(initialStep - 1))
 				} else {
@@ -476,8 +475,7 @@ var _ = Describe("CVConfigWizardModal", func() {
 		})
 
 		It("should handle rapid key presses gracefully", func() {
-			// Simulate rapid key presses
-			for i := 0; i < 10; i++ {
+			for range 10 {
 				modal.Update(tea.KeyMsg{Type: tea.KeyEnter})
 			}
 

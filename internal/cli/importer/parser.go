@@ -247,7 +247,7 @@ func (p *CSVParser) parseRow(rowNumber int, rawData map[string]string, _ map[str
 	} else {
 		parsedDate, err := p.parseDate(dateStr)
 		if err != nil {
-			parsedRow.ValidationErrors = append(parsedRow.ValidationErrors, fmt.Sprintf("Invalid date format: %s", dateStr))
+			parsedRow.ValidationErrors = append(parsedRow.ValidationErrors, "Invalid date format: "+dateStr)
 			parsedRow.IsValid = false
 		} else {
 			event.Date = parsedDate

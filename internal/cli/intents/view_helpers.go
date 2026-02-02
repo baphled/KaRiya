@@ -134,7 +134,7 @@ func extractErrorTitle(err error) string {
 	}
 
 	// Check for wrapped errors
-	var unwrapped error = err
+	var unwrapped = err
 	for unwrapped != nil {
 		if msg := unwrapped.Error(); msg != errMsg {
 			// Try to extract from unwrapped error
@@ -366,8 +366,6 @@ func HandleGlobalKeys(msg tea.KeyMsg) GlobalKeyResult {
 	globalKeys := navigation.DefaultGlobalKeyMap()
 
 	switch {
-	// Note: Quit (q) is intentionally NOT handled here.
-	// Users should only be able to quit from the main menu to prevent accidental exits.
 	case key.Matches(msg, globalKeys.Help):
 		return KeyHelp
 	case key.Matches(msg, globalKeys.Back):

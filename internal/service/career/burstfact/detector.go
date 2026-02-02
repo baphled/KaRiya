@@ -2,6 +2,7 @@ package burstfact
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -253,11 +254,11 @@ func (bd *BurstDetector) clusterToSuggestion(
 // ValidateSuggestion checks if a burst suggestion is valid.
 func (bd *BurstDetector) ValidateSuggestion(suggestion BurstSuggestion) error {
 	if len(suggestion.EventIDs) < 2 {
-		return fmt.Errorf("burst must have at least 2 events")
+		return errors.New("burst must have at least 2 events")
 	}
 
 	if suggestion.ConfidenceScore < 0.0 || suggestion.ConfidenceScore > 1.0 {
-		return fmt.Errorf("confidence score must be between 0.0 and 1.0")
+		return errors.New("confidence score must be between 0.0 and 1.0")
 	}
 
 	// Check for duplicate event IDs
@@ -282,13 +283,13 @@ func (bd *BurstDetector) generateBurstName(cluster []career.Event) string {
 	commonWords := bd.extractCommonWords(cluster)
 	if len(commonWords) > 0 {
 		// Use the most common meaningful word
-		return fmt.Sprintf("%s Initiative", commonWords[0])
+		return commonWords[0] + " Initiative"
 	}
 
 	// Fallback to project-based naming
 	projects := bd.extractProjects(cluster)
 	if len(projects) > 0 {
-		return fmt.Sprintf("%s Project", projects[0])
+		return projects[0] + " Project"
 	}
 
 	// Final fallback
@@ -316,7 +317,7 @@ func (bd *BurstDetector) generateBurstDescription(cluster []career.Event) string
 
 	if len(companies) > 0 {
 		if len(companies) == 1 {
-			parts = append(parts, fmt.Sprintf("at %s", companies[0]))
+			parts = append(parts, "at "+companies[0])
 		} else {
 			parts = append(parts, fmt.Sprintf("across %s and other organizations", companies[0]))
 		}

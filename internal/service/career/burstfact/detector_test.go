@@ -38,7 +38,7 @@ var _ = Describe("BurstDetector", func() {
 			matrix := detector.buildSimilarityMatrix(events)
 			Expect(matrix).NotTo(BeNil())
 			Expect(matrix["1"]).NotTo(BeNil())
-			Expect(len(matrix)).To(Equal(2))
+			Expect(matrix).To(HaveLen(2))
 		})
 
 		It("should find clusters of similar events", func() {
@@ -49,7 +49,7 @@ var _ = Describe("BurstDetector", func() {
 
 			matrix := detector.buildSimilarityMatrix(events)
 			clusters := detector.findClusters(events, matrix, 0.3)
-			Expect(len(clusters)).To(BeNumerically(">", 0))
+			Expect(clusters).ToNot(BeEmpty())
 		})
 
 		It("should convert cluster to suggestion with confidence score", func() {
@@ -90,12 +90,12 @@ var _ = Describe("BurstDetector", func() {
 			}
 			suggestions, err := detector.DetectBursts(ctx, events, opts)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(suggestions)).To(Equal(0))
+			Expect(suggestions).To(BeEmpty())
 		})
 
 		It("should limit results to MaxSuggestionsCount", func() {
 			events := make([]career.Event, 15)
-			for i := 0; i < 15; i++ {
+			for i := range 15 {
 				events[i] = fixtures.EventValWith(string(rune(48+i)), "Backend infrastructure work", "TechCorp", "")
 			}
 
@@ -107,7 +107,7 @@ var _ = Describe("BurstDetector", func() {
 
 		It("should return all suggestions when MaxSuggestionsCount is 0 (no limit)", func() {
 			events := make([]career.Event, 15)
-			for i := 0; i < 15; i++ {
+			for i := range 15 {
 				events[i] = fixtures.EventValWith(string(rune(48+i)), "Backend infrastructure work", "TechCorp", "")
 			}
 
@@ -119,7 +119,7 @@ var _ = Describe("BurstDetector", func() {
 			suggestions, err := detector.DetectBursts(ctx, events, opts)
 			Expect(err).NotTo(HaveOccurred())
 			// With no limit, we should get all detected suggestions (more than 10 if available).
-			Expect(len(suggestions)).To(BeNumerically(">=", 1))
+			Expect(suggestions).ToNot(BeEmpty())
 		})
 
 		It("should handle empty event list", func() {
@@ -138,7 +138,7 @@ var _ = Describe("BurstDetector", func() {
 			suggestions, err := detector.DetectBursts(ctx, events, nil)
 			Expect(err).NotTo(HaveOccurred())
 
-			for i := 0; i < len(suggestions)-1; i++ {
+			for i := range len(suggestions) - 1 {
 				Expect(suggestions[i].ConfidenceScore).To(BeNumerically(">=",
 					suggestions[i+1].ConfidenceScore,
 				))

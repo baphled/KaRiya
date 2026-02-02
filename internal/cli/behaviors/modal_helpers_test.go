@@ -71,7 +71,7 @@ var _ = Describe("Modal Helpers", func() {
 		It("includes background content", func() {
 			result := behaviors.RenderModalOverlay(modal, background)
 			// Background may be partially visible around the modal
-			Expect(len(result)).To(BeNumerically(">", 0))
+			Expect(result).ToNot(BeEmpty())
 		})
 
 		It("handles empty modal content", func() {

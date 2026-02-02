@@ -57,7 +57,7 @@ var _ = Describe("Messages", func() {
 				Error:  nil,
 			}
 			Expect(msg.Events).To(HaveLen(2))
-			Expect(msg.Error).To(BeNil())
+			Expect(msg.Error).ToNot(HaveOccurred())
 		})
 
 		It("should store error when loading fails", func() {
@@ -81,7 +81,7 @@ var _ = Describe("Messages", func() {
 				Error: nil,
 			}
 			Expect(msg.Facts).To(HaveLen(2))
-			Expect(msg.Error).To(BeNil())
+			Expect(msg.Error).ToNot(HaveOccurred())
 		})
 
 		It("should store error when loading fails", func() {
@@ -90,7 +90,7 @@ var _ = Describe("Messages", func() {
 				Error: errTest,
 			}
 			Expect(msg.Facts).To(BeNil())
-			Expect(msg.Error).NotTo(BeNil())
+			Expect(msg.Error).To(HaveOccurred())
 		})
 	})
 
@@ -105,7 +105,7 @@ var _ = Describe("Messages", func() {
 			}
 			Expect(msg.Burst).To(Equal(burst))
 			Expect(msg.Cancelled).To(BeFalse())
-			Expect(msg.Error).To(BeNil())
+			Expect(msg.Error).ToNot(HaveOccurred())
 		})
 
 		It("should indicate cancellation", func() {
@@ -134,7 +134,7 @@ var _ = Describe("Messages", func() {
 				Error:   nil,
 			}
 			Expect(msg.BurstID).To(Equal("burst-123"))
-			Expect(msg.Error).To(BeNil())
+			Expect(msg.Error).ToNot(HaveOccurred())
 		})
 
 		It("should store error on delete failure", func() {
@@ -142,7 +142,7 @@ var _ = Describe("Messages", func() {
 				BurstID: "burst-123",
 				Error:   errTest,
 			}
-			Expect(msg.Error).NotTo(BeNil())
+			Expect(msg.Error).To(HaveOccurred())
 		})
 	})
 
@@ -162,7 +162,7 @@ var _ = Describe("Messages", func() {
 				Burst: nil,
 				Error: errTest,
 			}
-			Expect(msg.Error).NotTo(BeNil())
+			Expect(msg.Error).To(HaveOccurred())
 		})
 	})
 
@@ -177,7 +177,7 @@ var _ = Describe("Messages", func() {
 				Error: nil,
 			}
 			Expect(msg.Facts).To(HaveLen(2))
-			Expect(msg.Error).To(BeNil())
+			Expect(msg.Error).ToNot(HaveOccurred())
 		})
 
 		It("should store error on extraction failure", func() {
@@ -185,7 +185,7 @@ var _ = Describe("Messages", func() {
 				Facts: nil,
 				Error: errTest,
 			}
-			Expect(msg.Error).NotTo(BeNil())
+			Expect(msg.Error).To(HaveOccurred())
 		})
 
 		It("should store associated burst", func() {
@@ -223,7 +223,7 @@ var _ = Describe("Messages", func() {
 			}
 			Expect(msg.Suggestions).To(HaveLen(1))
 			Expect(msg.Suggestions[0].ConfidenceScore).To(Equal(0.85))
-			Expect(msg.Error).To(BeNil())
+			Expect(msg.Error).ToNot(HaveOccurred())
 		})
 
 		It("should store error when detection fails", func() {
@@ -232,7 +232,7 @@ var _ = Describe("Messages", func() {
 				Error:       errTest,
 			}
 			Expect(msg.Suggestions).To(BeNil())
-			Expect(msg.Error).NotTo(BeNil())
+			Expect(msg.Error).To(HaveOccurred())
 		})
 	})
 
@@ -273,7 +273,7 @@ var _ = Describe("Messages", func() {
 				AcceptedSuggestions: []burstfact.BurstSuggestion{},
 				Cancelled:           false,
 			}
-			Expect(msg.AcceptedSuggestions).To(HaveLen(0))
+			Expect(msg.AcceptedSuggestions).To(BeEmpty())
 			Expect(msg.Cancelled).To(BeFalse())
 		})
 	})

@@ -1,7 +1,7 @@
 package selectors
 
 import (
-	"fmt"
+	"errors"
 	"sort"
 	"strings"
 
@@ -74,17 +74,17 @@ func (ts *TagSelector) AvailableTags() []string {
 func (ts *TagSelector) SelectTag(tag string) error {
 	// Validate tag is allowed
 	if !constants.IsValidEventTag(tag) {
-		return fmt.Errorf("%s is not a valid tag", tag)
+		return errors.New(tag + " is not a valid tag")
 	}
 
 	// Check if already selected
 	if ts.selected[tag] {
-		return fmt.Errorf("tag %s is already selected", tag)
+		return errors.New("tag " + tag + " is already selected")
 	}
 
 	// Check max limit
 	if len(ts.selected) >= 8 {
-		return fmt.Errorf("maximum of 8 tags allowed")
+		return errors.New("maximum of 8 tags allowed")
 	}
 
 	ts.selected[tag] = true
@@ -103,7 +103,7 @@ func (ts *TagSelector) SelectTag(tag string) error {
 //   - None.
 func (ts *TagSelector) DeselectTag(tag string) error {
 	if !ts.selected[tag] {
-		return fmt.Errorf("tag %s is not selected", tag)
+		return errors.New("tag " + tag + " is not selected")
 	}
 
 	delete(ts.selected, tag)

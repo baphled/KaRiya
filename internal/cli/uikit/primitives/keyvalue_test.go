@@ -142,7 +142,7 @@ var _ = Describe("KeyValue", func() {
 	})
 })
 
-// Helper to split rendered output into lines
+// Helper to split rendered output into lines.
 func splitKeyValueLines(s string) []string {
 	return strings.Split(s, "\n")
 }

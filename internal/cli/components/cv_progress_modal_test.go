@@ -40,7 +40,7 @@ var _ = Describe("CVProgressModal", func() {
 		It("should have no error initially", func() {
 			modal = components.NewCVProgressModal("Processing", "Please wait...", true, 120, 40)
 
-			Expect(modal.GetError()).To(BeNil())
+			Expect(modal.GetError()).To(Succeed())
 		})
 	})
 
@@ -126,8 +126,7 @@ var _ = Describe("CVProgressModal", func() {
 		})
 
 		It("should wrap spinner frame after 10 frames", func() {
-			// Advance to frame 9
-			for i := 0; i < 9; i++ {
+			for range 9 {
 				modal.Update(components.SpinnerTickMsg{})
 			}
 			Expect(modal.GetSpinnerFrame()).To(Equal(9))
@@ -337,8 +336,7 @@ var _ = Describe("CVProgressModal", func() {
 		It("should handle rapid spinner ticks", func() {
 			modal = components.NewCVProgressModal("Processing", "Please wait...", true, 120, 40)
 
-			// Rapid ticks should not cause issues
-			for i := 0; i < 100; i++ {
+			for range 100 {
 				modal.Update(components.SpinnerTickMsg{})
 			}
 

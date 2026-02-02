@@ -12,7 +12,7 @@ import (
 
 // BrowseTimeline benchmarks have been moved to internal/cli/intents/browsetimeline/benchmarks_test.go
 
-// BenchmarkGenerateCVInit benchmarks GenerateCV intent initialization
+// BenchmarkGenerateCVInit benchmarks GenerateCV intent initialization.
 func BenchmarkGenerateCVInit(b *testing.B) {
 	ctx := &GenerateCVContext{
 		AvailableProfiles: make([]*CVProfile, 0),
@@ -22,13 +22,13 @@ func BenchmarkGenerateCVInit(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		intent, _ := NewGenerateCVIntent(ctx)
 		_ = intent.Init()
 	}
 }
 
-// BenchmarkGenerateCVView benchmarks GenerateCV intent view rendering
+// BenchmarkGenerateCVView benchmarks GenerateCV intent view rendering.
 func BenchmarkGenerateCVView(b *testing.B) {
 	ctx := &GenerateCVContext{
 		AvailableProfiles: make([]*CVProfile, 0),
@@ -39,29 +39,29 @@ func BenchmarkGenerateCVView(b *testing.B) {
 	intent, _ := NewGenerateCVIntent(ctx)
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = intent.View()
 	}
 }
 
-// BenchmarkConfigureSystemInit benchmarks ConfigureSystem intent initialization
+// BenchmarkConfigureSystemInit benchmarks ConfigureSystem intent initialization.
 func BenchmarkConfigureSystemInit(b *testing.B) {
 	ctx := context.Background()
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		intent, _ := NewConfigureSystemIntent(ctx)
 		_ = intent.Init()
 	}
 }
 
-// BenchmarkConfigureSystemView benchmarks ConfigureSystem intent view rendering
+// BenchmarkConfigureSystemView benchmarks ConfigureSystem intent view rendering.
 func BenchmarkConfigureSystemView(b *testing.B) {
 	ctx := context.Background()
 	intent, _ := NewConfigureSystemIntent(ctx)
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = intent.View()
 	}
 }
@@ -76,16 +76,15 @@ func BenchmarkIntentRouterActivation(b *testing.B) {
 	})
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		//nolint:errcheck // Benchmark loop - error handling not relevant.
+	for range b.N {
 		router.ActivateIntent("test", make(map[string]interface{}))
 	}
 }
 
-// BenchmarkIntentResultCreation benchmarks IntentResult creation
+// BenchmarkIntentResultCreation benchmarks IntentResult creation.
 func BenchmarkIntentResultCreation(b *testing.B) {
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = &IntentResult[interface{}]{
 			Status: Completed,
 			Data:   nil,
@@ -94,7 +93,7 @@ func BenchmarkIntentResultCreation(b *testing.B) {
 	}
 }
 
-// BenchmarkIntentResultMetadata benchmarks IntentResult metadata operations
+// BenchmarkIntentResultMetadata benchmarks IntentResult metadata operations.
 func BenchmarkIntentResultMetadata(b *testing.B) {
 	result := &IntentResult[interface{}]{
 		Status:   Completed,
@@ -104,7 +103,7 @@ func BenchmarkIntentResultMetadata(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		result.WithMetadata("key", "value")
 		_, _ = result.GetMetadata("key")
 	}

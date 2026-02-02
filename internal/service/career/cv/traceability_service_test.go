@@ -110,7 +110,7 @@ var _ = Describe("TraceabilityService", func() {
 			// No error is returned; the service just returns what it can find
 			Expect(err).NotTo(HaveOccurred())
 			// Missing event is skipped, so we get no events
-			Expect(events).To(HaveLen(0))
+			Expect(events).To(BeEmpty())
 			// But the fact is retrieved successfully
 			Expect(facts).To(HaveLen(1))
 			Expect(facts[0].ID).To(Equal(testFact1.ID))
@@ -132,7 +132,7 @@ var _ = Describe("TraceabilityService", func() {
 
 			usage := service.GetEventUsage(ctx, uuid.New().String(), bullets)
 
-			Expect(usage).To(HaveLen(0))
+			Expect(usage).To(BeEmpty())
 		})
 
 		It("should handle multiple bullets using same event", func() {
@@ -161,7 +161,7 @@ var _ = Describe("TraceabilityService", func() {
 
 			usage := service.GetFactUsage(ctx, uuid.New().String(), bullets)
 
-			Expect(usage).To(HaveLen(0))
+			Expect(usage).To(BeEmpty())
 		})
 
 		It("should handle multiple bullets using same fact", func() {

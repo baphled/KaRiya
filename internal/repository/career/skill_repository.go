@@ -76,8 +76,6 @@ var (
 //     ordered by date descending. The skillID parameter is the skill UUID.
 //     Returns the matching []*career.Event slice and nil, or nil and an
 //     error on failure.
-//
-//nolint:interfacebloat // Repository interfaces require CRUD + query + relation methods
 type SkillRepository interface {
 	Create(ctx context.Context, skill *career.Skill) error
 	GetByID(ctx context.Context, id string) (*career.Skill, error)

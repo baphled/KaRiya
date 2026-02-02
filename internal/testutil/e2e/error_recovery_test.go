@@ -64,7 +64,8 @@ var _ = Describe("E2E Error Recovery", func() {
 		It("should handle navigating past list start in Browse", func() {
 			env.SelectIntentByName("browse_timeline")
 			// Press up multiple times at the start
-			for i := 0; i < 5; i++ {
+			for i := range 5 {
+				_ = i
 				env.PressKey(tea.KeyUp)
 			}
 			view := env.GetView()
@@ -74,8 +75,7 @@ var _ = Describe("E2E Error Recovery", func() {
 
 		It("should handle navigating past list end in Browse", func() {
 			env.SelectIntentByName("browse_timeline")
-			// Press down more times than items
-			for i := 0; i < 10; i++ {
+			for range 10 {
 				env.PressKey(tea.KeyDown)
 			}
 			view := env.GetView()
@@ -85,15 +85,13 @@ var _ = Describe("E2E Error Recovery", func() {
 
 		It("should handle vim navigation past boundaries in FactManagement", func() {
 			env.SelectIntentByName("fact_management")
-			// Press k at the start
-			for i := 0; i < 5; i++ {
+			for range 5 {
 				env.PressKeyRune('k')
 			}
 			view := env.GetView()
 			Expect(view).NotTo(ContainSubstring("panic"))
 
-			// Press j past the end
-			for i := 0; i < 10; i++ {
+			for range 10 {
 				env.PressKeyRune('j')
 			}
 			view = env.GetView()
@@ -113,7 +111,7 @@ var _ = Describe("E2E Error Recovery", func() {
 
 		It("should handle rapid navigation in Browse", func() {
 			env.SelectIntentByName("browse_timeline")
-			for i := 0; i < 20; i++ {
+			for range 20 {
 				env.PressKeyRune('j')
 				env.PressKeyRune('k')
 			}
@@ -124,7 +122,7 @@ var _ = Describe("E2E Error Recovery", func() {
 
 		It("should handle rapid Escape presses", func() {
 			env.SelectIntentByName("browse_timeline")
-			for i := 0; i < 5; i++ {
+			for range 5 {
 				env.Cancel()
 			}
 			view := env.GetView()
@@ -232,9 +230,8 @@ var _ = Describe("E2E Error Recovery", func() {
 			env.AssertEventCount(3)
 			env.AssertFactCount(2)
 
-			// Trigger boundary conditions
 			env.SelectIntentByName("browse_timeline")
-			for i := 0; i < 20; i++ {
+			for range 20 {
 				env.PressKey(tea.KeyUp)
 			}
 			env.Cancel()
@@ -247,7 +244,7 @@ var _ = Describe("E2E Error Recovery", func() {
 		It("should maintain data after rapid cancel", func() {
 			env.PopulateTestData(5, 2, 3)
 
-			for i := 0; i < 5; i++ {
+			for range 5 {
 				env.SelectIntentByName("browse_timeline")
 				env.Cancel()
 			}

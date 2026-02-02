@@ -322,7 +322,7 @@ var _ = Describe("Skill Repository", func() {
 			Expect(repo.Create(ctx, skill1)).To(Succeed())
 			Expect(repo.Create(ctx, skill2)).To(Succeed())
 
-			for i := 0; i < 3; i++ {
+			for i := range 3 {
 				event := &models.Event{
 					ID:        "event-" + string(rune('a'+i)),
 					Text:      "Test",

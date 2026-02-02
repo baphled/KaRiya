@@ -16,7 +16,7 @@ import (
 	"github.com/onsi/gomega"
 )
 
-// MockClipboard is a test implementation of ClipboardWriter
+// MockClipboard is a test implementation of ClipboardWriter.
 type MockClipboard struct {
 	Content     string
 	Unsupported bool
