@@ -46,6 +46,8 @@ WARNING_COUNT=0
 log_info() {
     if [[ "$VERBOSE" == "true" ]]; then
         echo -e "${GREEN}[INFO]${NC} $1"
+    else
+        echo -e "${GREEN}✓${NC} $1"
     fi
 }
 
