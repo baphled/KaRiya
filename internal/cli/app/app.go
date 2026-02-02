@@ -307,8 +307,7 @@ func (m *Model) handleEditEventRequest(editMsg intents.RequestEditEventMsg) (tea
 		}
 		return intent
 	}); err != nil {
-		m.logger.Error("Failed to register capture_event_edit intent: %v", err)
-		return m, nil
+		m.logger.Info("capture_event_edit intent already registered, using existing registration: %v", err)
 	}
 
 	cmd, err := m.intentRouter.ActivateIntent("capture_event_edit", make(map[string]interface{}))
