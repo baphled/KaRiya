@@ -20,6 +20,12 @@ type Entry struct {
 	Category string
 }
 
+// TechnologyKeyword is an alias for Entry for backward compatibility.
+// Deprecated: Use Entry instead.
+//
+//nolint:revive // Intentional naming for backward compatibility
+type TechnologyKeyword = Entry
+
 // Keywords is the canonical keyword dictionary mapping technology names to
 // their skill categories. Each entry has a lowercase keyword for matching,
 // a display-friendly skill name, and a category from
@@ -661,4 +667,14 @@ func RecategorizeSkills(ctx context.Context, repo careerRepo.SkillRepository) (*
 	}
 
 	return result, nil
+}
+
+// GetKeywordMap returns a map from keyword to TechnologyKeyword for backward compatibility.
+// Deprecated: Use the keywordIndex map or GetCategoryForSkillName instead.
+func GetKeywordMap() map[string]TechnologyKeyword {
+	result := make(map[string]TechnologyKeyword, len(Keywords))
+	for _, entry := range Keywords {
+		result[entry.Keyword] = entry
+	}
+	return result
 }
