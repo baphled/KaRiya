@@ -47,6 +47,16 @@ type DefaultSectionBuilder struct {
 }
 
 // NewSectionBuilder creates a new SectionBuilder instance.
+//
+// Expected:
+//   - skillrepository must be valid.
+//   - logger must be valid.
+//
+// Returns:
+//   - A fully initialized DefaultSectionBuilder ready for use.
+//
+// Side effects:
+//   - None.
 func NewSectionBuilder(skillRepo careerrepo.SkillRepository, log *logger.Logger) *DefaultSectionBuilder {
 	return &DefaultSectionBuilder{
 		skillRepo: skillRepo,

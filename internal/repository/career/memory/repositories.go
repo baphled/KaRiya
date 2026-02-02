@@ -5,8 +5,12 @@ import (
 )
 
 // NewRepositories creates all in-memory repositories for testing.
-// Cross-links EventRepository and SkillRepository so that
-// EventRepository.LinkSkill syncs with SkillRepository.GetSkillsForEvent.
+//
+// Returns:
+//   - A fully initialized career_repo.Repositories ready for use.
+//
+// Side effects:
+//   - None.
 func NewRepositories() *career_repo.Repositories {
 	eventRepo := NewEventRepository()
 	skillRepo := NewSkillRepository()

@@ -50,6 +50,12 @@ type MemoryConfigManager struct {
 }
 
 // NewMemoryConfigManager creates a new in-memory configuration manager.
+//
+// Returns:
+//   - A fully initialized MemoryConfigManager ready for use.
+//
+// Side effects:
+//   - None.
 func NewMemoryConfigManager() *MemoryConfigManager {
 	return &MemoryConfigManager{
 		configs: make(map[string]*career.CVConfig),
@@ -72,6 +78,15 @@ func (m *MemoryConfigManager) LoadConfig(_ context.Context, name string) (*caree
 }
 
 // SaveConfig saves or updates a configuration.
+//
+// Expected:
+//   - config must be a valid configuration object.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (m *MemoryConfigManager) SaveConfig(_ context.Context, config *career.CVConfig) error {
 	if config == nil {
 		return ErrInvalidConfigName
@@ -100,6 +115,15 @@ func (m *MemoryConfigManager) SaveConfig(_ context.Context, config *career.CVCon
 }
 
 // DeleteConfig deletes a configuration by name.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (m *MemoryConfigManager) DeleteConfig(_ context.Context, name string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -127,6 +151,15 @@ func (m *MemoryConfigManager) ListConfigs(_ context.Context) ([]*career.CVConfig
 }
 
 // GetConfigPath returns the file path for a configuration name.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *MemoryConfigManager) GetConfigPath(name string) string {
 	return "memory://" + name
 }

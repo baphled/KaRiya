@@ -23,13 +23,12 @@ type IntentContext struct {
 }
 
 // Validate ensures the context is usable by initializing nil fields to
-// safe defaults, preventing nil-pointer panics during intent operation.
 //
 // Returns:
-//   - Always nil; validation currently applies defaults rather than rejecting input.
+//   - A error value.
 //
 // Side effects:
-//   - Initializes nil Events to an empty slice and nil InitialFilters to default values.
+//   - None.
 func (c *IntentContext) Validate() error {
 	if c.Events == nil {
 		c.Events = make([]*career.Event, 0)

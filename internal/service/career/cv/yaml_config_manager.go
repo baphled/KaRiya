@@ -96,7 +96,15 @@ func (m *YAMLConfigManager) LoadConfig(ctx context.Context, name string) (*caree
 }
 
 // SaveConfig saves a CV configuration to a YAML file.
-// Creates the directory if needed and uses atomic write (write to temp, then rename).
+//
+// Expected:
+//   - config must be a valid configuration object.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (m *YAMLConfigManager) SaveConfig(ctx context.Context, config *career.CVConfig) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
@@ -176,6 +184,15 @@ func (m *YAMLConfigManager) SaveConfig(ctx context.Context, config *career.CVCon
 }
 
 // DeleteConfig deletes a CV configuration file.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (m *YAMLConfigManager) DeleteConfig(ctx context.Context, name string) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
@@ -256,6 +273,15 @@ func (m *YAMLConfigManager) ListConfigs(ctx context.Context) ([]*career.CVConfig
 }
 
 // GetConfigPath returns the file path for a configuration name.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *YAMLConfigManager) GetConfigPath(name string) string {
 	// Sanitize name to prevent path traversal
 	name = strings.TrimSpace(name)
@@ -324,11 +350,23 @@ func sanitizeFileName(name string) string {
 }
 
 // GetConfigDirectory returns the configuration directory path.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *YAMLConfigManager) GetConfigDirectory() string {
 	return m.configDir
 }
 
 // VerifyDirectory checks if the config directory exists and is writable.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (m *YAMLConfigManager) VerifyDirectory() error {
 	// Check if directory exists
 	info, err := os.Stat(m.configDir)

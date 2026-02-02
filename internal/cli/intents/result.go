@@ -30,10 +30,9 @@ type IntentError struct {
 }
 
 // Error implements the error interface, producing a formatted diagnostic string
-// suitable for logging and debugging.
 //
 // Returns:
-//   - A string containing the code, message, and optional cause.
+//   - A string value.
 //
 // Side effects:
 //   - None.
@@ -190,10 +189,9 @@ func NewPartialResult[T any](data T, code, message string) *IntentResult[T] {
 }
 
 // IsSuccessful indicates the intent produced usable output, either fully (Completed) or
-// with some items rejected (Partial).
 //
 // Returns:
-//   - True if the status is Completed or Partial.
+//   - A bool value.
 //
 // Side effects:
 //   - None.
@@ -202,10 +200,9 @@ func (r *IntentResult[T]) IsSuccessful() bool {
 }
 
 // IsCancelled indicates the user explicitly aborted the intent before it could
-// produce any output, meaning no data was persisted.
 //
 // Returns:
-//   - True if the status is Cancelled.
+//   - A bool value.
 //
 // Side effects:
 //   - None.
@@ -214,10 +211,9 @@ func (r *IntentResult[T]) IsCancelled() bool {
 }
 
 // IsFailed indicates the intent encountered an unrecoverable error and produced
-// no usable output; the Error field contains diagnostic details.
 //
 // Returns:
-//   - True if the status is Failed.
+//   - A bool value.
 //
 // Side effects:
 //   - None.
@@ -226,10 +222,9 @@ func (r *IntentResult[T]) IsFailed() bool {
 }
 
 // IsTerminal indicates the result has reached a final state and no further processing
-// is possible; the intent router uses this to decide whether to tear down the intent.
 //
 // Returns:
-//   - True if the result is Cancelled, Failed, or Successful.
+//   - A bool value.
 //
 // Side effects:
 //   - None.
@@ -277,10 +272,9 @@ func (r *IntentResult[T]) GetMetadata(key string) (interface{}, bool) {
 }
 
 // GetAllMetadata produces a shallow copy of every auxiliary key-value pair attached to the
-// result, safe to mutate without affecting the original.
 //
 // Returns:
-//   - A shallow copy of the metadata map, or an empty map if metadata is nil.
+//   - A map[string]interface{} value.
 //
 // Side effects:
 //   - None.
@@ -344,11 +338,9 @@ func (r *IntentResult[T]) WithData(data T) *IntentResult[T] {
 }
 
 // IsValid enforces the structural invariants each status requires: Completed results
-// need data, Failed and Partial results need an IntentError, and Cancelled results
-// must carry neither data nor error.
 //
 // Returns:
-//   - Nil if the result satisfies its status invariants, or an error describing the violation.
+//   - A error value.
 //
 // Side effects:
 //   - None.

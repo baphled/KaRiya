@@ -19,6 +19,12 @@ type TechnologyInference struct {
 type ProfileInferenceService struct{}
 
 // NewProfileInferenceService creates a new profile inference service.
+//
+// Returns:
+//   - A fully initialized ProfileInferenceService ready for use.
+//
+// Side effects:
+//   - None.
 func NewProfileInferenceService() *ProfileInferenceService {
 	return &ProfileInferenceService{}
 }

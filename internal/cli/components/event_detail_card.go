@@ -17,6 +17,16 @@ type EventDetailCard struct {
 }
 
 // NewEventDetailCard creates a new EventDetailCard component.
+//
+// Expected:
+//   - event must be valid.
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A fully initialized EventDetailCard ready for use.
+//
+// Side effects:
+//   - None.
 func NewEventDetailCard(event *career.Event, theme themes.Theme) *EventDetailCard {
 	return &EventDetailCard{
 		event: event,
@@ -25,6 +35,12 @@ func NewEventDetailCard(event *career.Event, theme themes.Theme) *EventDetailCar
 }
 
 // Render renders the event detail card as a string.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (c *EventDetailCard) Render() string {
 	if c.event == nil {
 		return "No event selected."
@@ -73,7 +89,16 @@ func (c *EventDetailCard) Render() string {
 }
 
 // RenderEventDetailCard is a helper function that creates and renders an event detail card.
-// This is a convenience function for quick usage without creating a struct instance.
+//
+// Expected:
+//   - event must be valid.
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func RenderEventDetailCard(event *career.Event, theme themes.Theme) string {
 	card := NewEventDetailCard(event, theme)
 	return card.Render()

@@ -90,6 +90,12 @@ type BaseStandardModel struct {
 }
 
 // NewBaseStandardModel creates a new instance of BaseStandardModel with initialized fields
+//
+// Returns:
+//   - A fully initialized BaseStandardModel ready for use.
+//
+// Side effects:
+//   - None.
 func NewBaseStandardModel() *BaseStandardModel {
 	return &BaseStandardModel{
 		ctx:               context.Background(),

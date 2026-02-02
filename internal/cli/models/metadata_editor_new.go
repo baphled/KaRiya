@@ -144,6 +144,12 @@ func NewMetadataEditorModelNew(
 }
 
 // Init initializes the model
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (m *MetadataEditorModelNew) Init() tea.Cmd {
 	return m.form.Init()
 }
@@ -227,21 +233,42 @@ func (m *MetadataEditorModelNew) handleFormCompletion() (tea.Model, tea.Cmd) {
 }
 
 // GetEvent returns the edited event
+//
+// Returns:
+//   - A fully initialized career.Event ready for use.
+//
+// Side effects:
+//   - None.
 func (m *MetadataEditorModelNew) GetEvent() *career.Event {
 	return m.event
 }
 
 // IsSubmitted returns true if changes were saved
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *MetadataEditorModelNew) IsSubmitted() bool {
 	return m.submitted
 }
 
 // IsCancelled returns true if operation was cancelled
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *MetadataEditorModelNew) IsCancelled() bool {
 	return m.cancelled
 }
 
 // Revert reverts changes to the original event
+//
+// Side effects:
+//   - None.
 func (m *MetadataEditorModelNew) Revert() {
 	*m.event = *m.originalEvent
 	// Update form data
@@ -249,17 +276,34 @@ func (m *MetadataEditorModelNew) Revert() {
 }
 
 // GetError returns the current error
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (m *MetadataEditorModelNew) GetError() error {
 	return m.err
 }
 
 // GetTitle returns the modal title for overlay rendering.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *MetadataEditorModelNew) GetTitle() string {
 	return "Edit Event Metadata"
 }
 
 // GetContent returns just the form content without header/footer.
-// This allows parent intents to compose the modal as an overlay.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *MetadataEditorModelNew) GetContent() string {
 	formView := m.form.View()
 
@@ -280,11 +324,23 @@ func (m *MetadataEditorModelNew) GetContent() string {
 }
 
 // GetFooter returns the footer instructions for the modal.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *MetadataEditorModelNew) GetFooter() string {
 	return "Enter: Confirm | Esc: Cancel | Tab: Next Field | Shift+Tab: Previous"
 }
 
 // View renders the editor UI
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *MetadataEditorModelNew) View() string {
 	// Render form using huh
 	formView := m.form.View()

@@ -23,21 +23,29 @@ type SkillRepository struct {
 }
 
 // NewSkillRepository creates a new SQL skill repository.
+//
+// Expected:
+//   - db must be valid.
+//
+// Returns:
+//   - A fully initialized SkillRepository ready for use.
+//
+// Side effects:
+//   - None.
 func NewSkillRepository(db *gorm.DB) *SkillRepository {
 	return &SkillRepository{db: db}
 }
 
 // Create persists a new skill to the database.
 //
-// The skill parameter is modified in place: if its ID field is empty a UUID
-// is generated, and CreatedAt and UpdatedAt are both set to the current time
-// regardless of their incoming values. The ctx parameter carries
-// request-scoped deadlines and cancellation signals through to the
-// underlying GORM query.
+// Expected:
+//   - skill must be valid.
 //
-// Returns nil on success. Returns a GORM error if the write fails, for
-// example when a skill with the same name already exists (unique constraint
-// violation).
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (r *SkillRepository) Create(ctx context.Context, skill *career.Skill) error {
 	if skill.ID == "" {
 		skill.ID = uuid.New().String()
@@ -88,12 +96,14 @@ func (r *SkillRepository) GetByName(ctx context.Context, name string) (*career.S
 
 // Update replaces an existing skill record with the values from skill.
 //
-// The skill parameter must have a non-empty ID that matches an existing row.
-// UpdatedAt is overwritten with the current time before saving. All other
-// fields on skill are persisted as-is, fully replacing the previous values.
+// Expected:
+//   - skill must be valid.
 //
-// Returns nil on success. Returns ErrSkillNotFound if no row matches the
-// ID. Returns a GORM error for any other database failure.
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (r *SkillRepository) Update(ctx context.Context, skill *career.Skill) error {
 	var count int64
 	if err := r.db.WithContext(ctx).Model(&models.Skill{}).Where("id = ?", skill.ID).Count(&count).Error; err != nil {
@@ -109,11 +119,14 @@ func (r *SkillRepository) Update(ctx context.Context, skill *career.Skill) error
 
 // Delete removes a skill record identified by id.
 //
-// Returns nil on success. Returns ErrSkillNotFound when no row matches the
-// id. Returns a GORM error for any other database failure. Note that rows
-// in the event_skills junction table that reference this skill are not
-// cascade-deleted; callers should unlink events first if referential
-// integrity is required.
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (r *SkillRepository) Delete(ctx context.Context, id string) error {
 	result := r.db.WithContext(ctx).Delete(&models.Skill{}, "id = ?", id)
 	if result.RowsAffected == 0 {
@@ -235,13 +248,15 @@ func (r *SkillRepository) applyPagination(query *gorm.DB, filters *career_repo.S
 }
 
 // LinkToEvent creates an association between a skill and a career event
-// in the event_skills junction table.
 //
-// The skillID and eventID parameters identify the two rows to link. If the
-// pair already exists the operation is silently ignored via INSERT OR
-// IGNORE, making this method idempotent.
+// Expected:
+//   - Must be a valid string.
 //
-// Returns nil on success or a database error on failure.
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (r *SkillRepository) LinkToEvent(ctx context.Context, skillID, eventID string) error {
 	return r.db.WithContext(ctx).Exec(
 		"INSERT OR IGNORE INTO event_skills (skill_id, event_id) VALUES (?, ?)",
@@ -250,12 +265,15 @@ func (r *SkillRepository) LinkToEvent(ctx context.Context, skillID, eventID stri
 }
 
 // UnlinkFromEvent removes the association between a skill and a career
-// event from the event_skills junction table.
 //
-// The skillID and eventID parameters identify the link to remove. If the
-// pair does not exist the operation succeeds silently.
+// Expected:
+//   - Must be a valid string.
 //
-// Returns nil on success or a database error on failure.
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (r *SkillRepository) UnlinkFromEvent(ctx context.Context, skillID, eventID string) error {
 	return r.db.WithContext(ctx).Exec(
 		"DELETE FROM event_skills WHERE skill_id = ? AND event_id = ?",

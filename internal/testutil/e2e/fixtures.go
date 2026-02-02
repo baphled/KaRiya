@@ -10,7 +10,15 @@ import (
 )
 
 // CreateSampleEvents generates test career events with varied data.
-// Events are created with realistic data spanning multiple dates, companies, and categories.
+//
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A []*career.Event value.
+//
+// Side effects:
+//   - None.
 func CreateSampleEvents(count int) []*career.Event {
 	events := make([]*career.Event, count)
 
@@ -64,7 +72,16 @@ func CreateSampleEvents(count int) []*career.Event {
 }
 
 // CreateSampleBursts generates test bursts linked to the provided events.
-// Each burst groups 2-3 related events together.
+//
+// Expected:
+//   - int must be valid.
+//   - event must be valid.
+//
+// Returns:
+//   - A []*career.Burst value.
+//
+// Side effects:
+//   - None.
 func CreateSampleBursts(count int, events []*career.Event) []*career.Burst {
 	bursts := make([]*career.Burst, count)
 
@@ -111,7 +128,16 @@ func CreateSampleBursts(count int, events []*career.Event) []*career.Burst {
 }
 
 // CreateSampleFacts generates test facts linked to the provided events.
-// Facts have varied competency categories, role fits, and audience relevance.
+//
+// Expected:
+//   - int must be valid.
+//   - event must be valid.
+//
+// Returns:
+//   - A []*career.Fact value.
+//
+// Side effects:
+//   - None.
 func CreateSampleFacts(count int, events []*career.Event) []*career.Fact {
 	facts := make([]*career.Fact, count)
 
@@ -181,6 +207,12 @@ func CreateSampleFacts(count int, events []*career.Event) []*career.Fact {
 }
 
 // CreateSampleProfiles returns a set of CV profiles for testing.
+//
+// Returns:
+//   - A []CVProfile value.
+//
+// Side effects:
+//   - None.
 func CreateSampleProfiles() []CVProfile {
 	return []CVProfile{
 		{
@@ -224,7 +256,15 @@ type CVProfile struct {
 }
 
 // PopulateTestData adds events, bursts, and facts to the test environment.
-// Returns the environment for method chaining.
+//
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) PopulateTestData(eventCount, burstCount, factCount int) *TestEnv {
 	e.T.Helper()
 
@@ -253,6 +293,15 @@ func (e *TestEnv) PopulateTestData(eventCount, burstCount, factCount int) *TestE
 }
 
 // CreateMinimalEvent creates a single minimal valid event for testing.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized career.Event ready for use.
+//
+// Side effects:
+//   - None.
 func CreateMinimalEvent(id string) *career.Event {
 	now := time.Now()
 	return &career.Event{
@@ -265,6 +314,16 @@ func CreateMinimalEvent(id string) *career.Event {
 }
 
 // CreateMinimalBurst creates a single minimal valid burst for testing.
+//
+// Expected:
+//   - Must be a valid string.
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized career.Burst ready for use.
+//
+// Side effects:
+//   - None.
 func CreateMinimalBurst(id string, eventIDs []string) *career.Burst {
 	now := time.Now()
 	return &career.Burst{
@@ -278,6 +337,16 @@ func CreateMinimalBurst(id string, eventIDs []string) *career.Burst {
 }
 
 // CreateMinimalFact creates a single minimal valid fact for testing.
+//
+// Expected:
+//   - Must be a valid string.
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized career.Fact ready for use.
+//
+// Side effects:
+//   - None.
 func CreateMinimalFact(id string, sourceEventID string) *career.Fact {
 	now := time.Now()
 	return &career.Fact{
@@ -294,6 +363,15 @@ func CreateMinimalFact(id string, sourceEventID string) *career.Fact {
 }
 
 // CreateMinimalSkill creates a single minimal valid skill for testing.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized career.Skill ready for use.
+//
+// Side effects:
+//   - None.
 func CreateMinimalSkill(id, name, category string) *career.Skill {
 	now := time.Now()
 	return &career.Skill{
@@ -350,8 +428,15 @@ func allSkillFixtureDefs() []skillFixtureDef {
 }
 
 // CreateSampleSkills generates test skills across all categories.
-// The returned skills derive their categories from constants.AllSkillCategories
-// so the fixture data stays in sync with the canonical category list.
+//
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A []*career.Skill value.
+//
+// Side effects:
+//   - None.
 func CreateSampleSkills(count int) []*career.Skill {
 	defs := allSkillFixtureDefs()
 

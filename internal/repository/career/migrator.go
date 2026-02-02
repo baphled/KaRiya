@@ -12,8 +12,15 @@ import (
 var migrations embed.FS
 
 // RunMigrations executes all pending database migrations.
-// For existing databases (pre-goose), it auto-detects and marks baseline migrations as applied.
-// This ensures smooth migration from the old schema management approach to goose-based migrations.
+//
+// Expected:
+//   - db must be valid.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func RunMigrations(db *sql.DB) error {
 	goose.SetBaseFS(migrations)
 
@@ -166,11 +173,15 @@ func MigrationStatus(db *sql.DB) (int64, error) {
 }
 
 // RunMigrationsForTests is a fast-path migration function for tests that skips.
-// all baseline detection checks. Use this only for fresh test databases.
-// This is significantly faster than RunMigrations() because it:
-// - Skips checking for pre-goose databases
-// - Skips detecting existing tables/columns
-// - Just runs the migrations directly on a known-fresh database.
+//
+// Expected:
+//   - db must be valid.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func RunMigrationsForTests(db *sql.DB) error {
 	goose.SetBaseFS(migrations)
 

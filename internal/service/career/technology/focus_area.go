@@ -24,7 +24,15 @@ type FocusAreaSuggestion struct {
 type Analyzer struct{}
 
 // AnalyzeSkills suggests focus area from skill categories.
-// Analysis is weighted by event count - skills used more frequently have greater influence.
+//
+// Expected:
+//   - []extractedtechnology must be valid.
+//
+// Returns:
+//   - A fully initialized FocusAreaSuggestion ready for use.
+//
+// Side effects:
+//   - None.
 func (a *Analyzer) AnalyzeSkills(techs []*ExtractedTechnology) *FocusAreaSuggestion {
 	// Handle empty case
 	if len(techs) == 0 {

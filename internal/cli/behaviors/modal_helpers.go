@@ -20,7 +20,7 @@ type StaticViewModel struct {
 // View renders the static background content for overlay composition.
 //
 // Returns:
-//   - The pre-rendered content string.
+//   - A string value.
 //
 // Side effects:
 //   - None.

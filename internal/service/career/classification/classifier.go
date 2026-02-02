@@ -34,6 +34,12 @@ type Classifier struct {
 }
 
 // NewClassifier creates a new event classifier.
+//
+// Returns:
+//   - A fully initialized Classifier ready for use.
+//
+// Side effects:
+//   - None.
 func NewClassifier() *Classifier {
 	return &Classifier{
 		categoryKeywords: map[CompetencyCategory][]string{
@@ -91,11 +97,29 @@ func NewClassifier() *Classifier {
 }
 
 // GetCategoryKeywords returns the keyword list for a competency category.
+//
+// Expected:
+//   - competencycategory must be valid.
+//
+// Returns:
+//   - A []string value.
+//
+// Side effects:
+//   - None.
 func (c *Classifier) GetCategoryKeywords(category CompetencyCategory) []string {
 	return c.categoryKeywords[category]
 }
 
 // Classify determines the primary competency category for a career event.
+//
+// Expected:
+//   - event must be valid.
+//
+// Returns:
+//   - A CompetencyCategory value.
+//
+// Side effects:
+//   - None.
 func (c *Classifier) Classify(event *career.Event) CompetencyCategory {
 	if category := c.classifyByTag(event.Tags); category != "" {
 		return category
@@ -123,6 +147,15 @@ func (c *Classifier) Classify(event *career.Event) CompetencyCategory {
 }
 
 // ClassifyMulti returns multiple potential competency categories.
+//
+// Expected:
+//   - event must be valid.
+//
+// Returns:
+//   - A []CompetencyCategory value.
+//
+// Side effects:
+//   - None.
 func (c *Classifier) ClassifyMulti(event *career.Event) []CompetencyCategory {
 	categories := c.classifyTagsMulti(event.Tags)
 	if len(categories) > 0 {

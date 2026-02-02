@@ -39,11 +39,10 @@ type IntentContext struct {
 // Validate ensures the context has all required fields initialized with safe defaults.
 //
 // Returns:
-//   - Always nil; missing optional fields are initialized with defaults rather than rejected.
+//   - A error value.
 //
 // Side effects:
-//   - Initializes Bursts to an empty slice if nil.
-//   - Initializes Context to context.Background() if nil.
+//   - None.
 func (c *IntentContext) Validate() error {
 	if c.Bursts == nil {
 		c.Bursts = make([]*career.Burst, 0)
@@ -57,11 +56,10 @@ func (c *IntentContext) Validate() error {
 // LoadBursts fetches all bursts from the repository and replaces the in-memory burst list.
 //
 // Returns:
-//   - An error if the repository query fails, or nil on success.
-//   - Nil when BurstRepository is not configured (no-op).
+//   - A error value.
 //
 // Side effects:
-//   - Overwrites c.Bursts with the full set of bursts from the repository.
+//   - None.
 func (c *IntentContext) LoadBursts() error {
 	if c.BurstRepository == nil {
 		return nil
@@ -144,8 +142,7 @@ func (c *IntentContext) DeleteBurst(burstID string) error {
 // StartNewBurst initializes a blank burst template and marks the context for creation mode.
 //
 // Side effects:
-//   - Assigns a new empty Burst to EditingBurst.
-//   - Sets IsNewBurst to true.
+//   - None.
 func (c *IntentContext) StartNewBurst() {
 	c.EditingBurst = &career.Burst{
 		ID:          "",
@@ -159,8 +156,7 @@ func (c *IntentContext) StartNewBurst() {
 // CancelEdit discards the in-progress burst edit and resets editing state.
 //
 // Side effects:
-//   - Clears EditingBurst to nil.
-//   - Sets IsNewBurst to false.
+//   - None.
 func (c *IntentContext) CancelEdit() {
 	c.EditingBurst = nil
 	c.IsNewBurst = false

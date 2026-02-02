@@ -218,10 +218,10 @@ func (tb *TableBehavior[T]) SetHeight(height int) *TableBehavior[T] {
 // HidePagination disables the pagination footer below the table.
 //
 // Returns:
-//   - The TableBehavior for method chaining.
+//   - A fully initialized TableBehavior[T] ready for use.
 //
 // Side effects:
-//   - Updates the internal showPagination flag to false.
+//   - None.
 func (tb *TableBehavior[T]) HidePagination() *TableBehavior[T] {
 	tb.showPagination = false
 	return tb
@@ -230,10 +230,10 @@ func (tb *TableBehavior[T]) HidePagination() *TableBehavior[T] {
 // ShowPagination enables the pagination footer below the table.
 //
 // Returns:
-//   - The TableBehavior for method chaining.
+//   - A fully initialized TableBehavior[T] ready for use.
 //
 // Side effects:
-//   - Updates the internal showPagination flag to true.
+//   - None.
 func (tb *TableBehavior[T]) ShowPagination() *TableBehavior[T] {
 	tb.showPagination = true
 	return tb
@@ -265,7 +265,7 @@ func (tb *TableBehavior[T]) SetItems(items []T) *TableBehavior[T] {
 // GetItems retrieves the filtered and sorted item list for rendering.
 //
 // Returns:
-//   - The slice of items currently displayed after applying any active filter and sort.
+//   - A []T value.
 //
 // Side effects:
 //   - None.
@@ -277,7 +277,7 @@ func (tb *TableBehavior[T]) GetItems() []T {
 // GetSelectedItem retrieves the item at the current cursor position within the filtered list.
 //
 // Returns:
-//   - A pointer to the currently selected item, or nil if the display list is empty or the index is out of range.
+//   - A fully initialized T ready for use.
 //
 // Side effects:
 //   - None.
@@ -295,7 +295,7 @@ func (tb *TableBehavior[T]) GetSelectedItem() *T {
 // GetSelectedIndex reports the cursor position within the display list.
 //
 // Returns:
-//   - The zero-based index of the currently selected item in the display list.
+//   - A int value.
 //
 // Side effects:
 //   - None.
@@ -306,7 +306,7 @@ func (tb *TableBehavior[T]) GetSelectedIndex() int {
 // IsEmpty checks whether the table has any items after filtering.
 //
 // Returns:
-//   - True if the display list contains zero items, false otherwise.
+//   - A bool value.
 //
 // Side effects:
 //   - None.
@@ -318,7 +318,7 @@ func (tb *TableBehavior[T]) IsEmpty() bool {
 // Count reports the size of the filtered item list.
 //
 // Returns:
-//   - The number of items in the display list after filtering and sorting.
+//   - A int value.
 //
 // Side effects:
 //   - None.
@@ -330,7 +330,7 @@ func (tb *TableBehavior[T]) Count() int {
 // TotalCount reports the size of the original unfiltered data set.
 //
 // Returns:
-//   - The total number of items in the original unfiltered list.
+//   - A int value.
 //
 // Side effects:
 //   - None.
@@ -343,7 +343,7 @@ func (tb *TableBehavior[T]) TotalCount() int {
 // GetTotalItems implements ListNavigator.
 //
 // Returns:
-//   - The number of displayed items (equivalent to Count).
+//   - A int value.
 //
 // Side effects:
 //   - None.
@@ -354,10 +354,10 @@ func (tb *TableBehavior[T]) GetTotalItems() int {
 // SetSelectedIndex implements ListNavigator.
 //
 // Expected:
-//   - idx is clamped to the valid range of display items.
+//   - int must be valid.
 //
 // Side effects:
-//   - Updates the selected index, syncs the underlying table rows, and adjusts viewport scrolling if enabled.
+//   - None.
 func (tb *TableBehavior[T]) SetSelectedIndex(idx int) {
 	tb.refreshDisplayItems()
 
@@ -399,7 +399,7 @@ func (tb *TableBehavior[T]) SetSelectedIndex(idx int) {
 // GetPageSize implements ListNavigator.
 //
 // Returns:
-//   - The number of items displayed per page.
+//   - A int value.
 //
 // Side effects:
 //   - None.
@@ -473,10 +473,10 @@ func (tb *TableBehavior[T]) SetFilter(pred FilterPredicate[T]) *TableBehavior[T]
 // ClearFilter deactivates filtering and restores the full item set.
 //
 // Returns:
-//   - The TableBehavior for method chaining.
+//   - A fully initialized TableBehavior[T] ready for use.
 //
 // Side effects:
-//   - Clears the internal filter predicate and triggers a display refresh.
+//   - None.
 func (tb *TableBehavior[T]) ClearFilter() *TableBehavior[T] {
 	tb.filterPredicate = nil
 	tb.needsRefresh = true
@@ -488,7 +488,7 @@ func (tb *TableBehavior[T]) ClearFilter() *TableBehavior[T] {
 // HasFilter checks whether a filter predicate is currently applied.
 //
 // Returns:
-//   - True if a filter predicate is currently set, false otherwise.
+//   - A bool value.
 //
 // Side effects:
 //   - None.
@@ -540,10 +540,10 @@ func (tb *TableBehavior[T]) SetSort(cmp SortComparator[T], reverse bool) *TableB
 // ClearSort deactivates sorting and restores the original item order.
 //
 // Returns:
-//   - The TableBehavior for method chaining.
+//   - A fully initialized TableBehavior[T] ready for use.
 //
 // Side effects:
-//   - Clears the internal sort comparator and direction, and triggers a display refresh.
+//   - None.
 func (tb *TableBehavior[T]) ClearSort() *TableBehavior[T] {
 	tb.sortComparator = nil
 	tb.sortReverse = false
@@ -556,7 +556,7 @@ func (tb *TableBehavior[T]) ClearSort() *TableBehavior[T] {
 // HasSort checks whether a sort comparator is currently applied.
 //
 // Returns:
-//   - True if a sort comparator is currently set, false otherwise.
+//   - A bool value.
 //
 // Side effects:
 //   - None.
@@ -569,7 +569,7 @@ func (tb *TableBehavior[T]) HasSort() bool {
 // Render produces the complete table view including rows, selection indicator, and pagination.
 //
 // Returns:
-//   - The fully rendered table string including rows, selection indicator, and pagination info.
+//   - A string value.
 //
 // Side effects:
 //   - None.
@@ -612,10 +612,9 @@ func (tb *TableBehavior[T]) Render() string {
 }
 
 // RenderPaginationInfo produces the formatted item count and page position footer.
-// Example: "Events: 42 | Page 2 of 5".
 //
 // Returns:
-//   - A formatted string showing the item count and current page position.
+//   - A string value.
 //
 // Side effects:
 //   - None.

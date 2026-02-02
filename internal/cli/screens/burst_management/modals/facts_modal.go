@@ -57,7 +57,7 @@ func NewBurstFactsModal(burstID string, burstName string, facts []*career.Fact, 
 // Init initializes the modal.
 //
 // Returns:
-//   - tea.Cmd: command from underlying modal.
+//   - A tea.Cmd value.
 //
 // Side effects:
 //   - None.
@@ -83,7 +83,7 @@ func (m *BurstFactsModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // View renders the modal content.
 //
 // Returns:
-//   - string: the rendered modal view.
+//   - A string value.
 //
 // Side effects:
 //   - None.
@@ -94,7 +94,7 @@ func (m *BurstFactsModal) View() string {
 // IsVisible returns whether the modal is currently visible.
 //
 // Returns:
-//   - bool: true if modal is visible.
+//   - A bool value.
 //
 // Side effects:
 //   - None.
@@ -105,7 +105,7 @@ func (m *BurstFactsModal) IsVisible() bool {
 // Show makes the modal visible.
 //
 // Side effects:
-//   - Shows underlying modal.
+//   - None.
 func (m *BurstFactsModal) Show() {
 	m.modal.Show()
 }
@@ -113,7 +113,7 @@ func (m *BurstFactsModal) Show() {
 // Hide hides the modal.
 //
 // Side effects:
-//   - Hides underlying modal.
+//   - None.
 func (m *BurstFactsModal) Hide() {
 	m.modal.Hide()
 }
@@ -121,11 +121,10 @@ func (m *BurstFactsModal) Hide() {
 // SetDimensions sets the terminal dimensions.
 //
 // Expected:
-//   - width must be a positive integer.
-//   - height must be a positive integer.
+//   - int must be valid.
 //
 // Side effects:
-//   - Updates underlying modal dimensions.
+//   - None.
 func (m *BurstFactsModal) SetDimensions(width, height int) {
 	m.modal.SetDimensions(width, height)
 }
@@ -133,11 +132,10 @@ func (m *BurstFactsModal) SetDimensions(width, height int) {
 // SetFacts updates the facts being displayed.
 //
 // Expected:
-//   - facts must be a non-nil slice of *career.Fact.
+//   - fact must be valid.
 //
 // Side effects:
-//   - Updates internal facts reference.
-//   - Regenerates modal content.
+//   - None.
 func (m *BurstFactsModal) SetFacts(facts []*career.Fact) {
 	m.facts = facts
 	content := renderFactsContent(facts, m.theme)
@@ -148,7 +146,7 @@ func (m *BurstFactsModal) SetFacts(facts []*career.Fact) {
 // GetBurstID returns the burst ID this modal is showing facts for.
 //
 // Returns:
-//   - string: the burst ID.
+//   - A string value.
 //
 // Side effects:
 //   - None.

@@ -39,6 +39,15 @@ type Service struct {
 }
 
 // NewService creates a new career event service.
+//
+// Expected:
+//   - eventrepository must be valid.
+//
+// Returns:
+//   - A fully initialized Service ready for use.
+//
+// Side effects:
+//   - None.
 func NewService(repository repo.EventRepository) *Service {
 	return &Service{
 		repo:   repository,
@@ -47,21 +56,49 @@ func NewService(repository repo.EventRepository) *Service {
 }
 
 // SetFactRepository sets the fact repository (optional, for fact extraction features).
+//
+// Expected:
+//   - factrepository must be valid.
+//
+// Side effects:
+//   - None.
 func (s *Service) SetFactRepository(factRepo repo.FactRepository) {
 	s.factRepo = factRepo
 }
 
 // SetBurstRepository sets the burst repository (optional, for burst detection features).
+//
+// Expected:
+//   - burstrepository must be valid.
+//
+// Side effects:
+//   - None.
 func (s *Service) SetBurstRepository(burstRepo repo.BurstRepository) {
 	s.burstRepo = burstRepo
 }
 
 // SetSkillRepository sets the skill repository (optional, for user-defined skills features).
+//
+// Expected:
+//   - skillrepository must be valid.
+//
+// Side effects:
+//   - None.
 func (s *Service) SetSkillRepository(skillRepo repo.SkillRepository) {
 	s.skillRepo = skillRepo
 }
 
 // CaptureEvent adds a new career event with specified capture mode.
+//
+// Expected:
+//   - event must be valid.
+//   - eventcapturemode must be valid.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (s *Service) CaptureEvent(ctx context.Context, event *domain.Event, mode EventCaptureMode) error {
 	// Validate the event
 	if err := event.Validate(); err != nil {
@@ -152,6 +189,15 @@ func (s *Service) CaptureEvent(ctx context.Context, event *domain.Event, mode Ev
 }
 
 // UpdateEvent modifies an existing career event.
+//
+// Expected:
+//   - event must be valid.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (s *Service) UpdateEvent(ctx context.Context, event *domain.Event) error {
 	// Validate the updated event
 	if err := event.Validate(); err != nil {
@@ -195,6 +241,15 @@ func (s *Service) UpdateEvent(ctx context.Context, event *domain.Event) error {
 }
 
 // DeleteEvent removes a career event.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (s *Service) DeleteEvent(ctx context.Context, eventID string) error {
 	deleteErr := s.repo.Delete(ctx, eventID)
 	if deleteErr != nil {
@@ -299,7 +354,15 @@ func (s *Service) SuggestBurstsWithOptions(
 }
 
 // SaveBurst validates and persists a burst without setting confirmation state.
-// Use ConfirmBurst to mark an existing burst as confirmed.
+//
+// Expected:
+//   - burst must be valid.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (s *Service) SaveBurst(ctx context.Context, burst *domain.Burst) error {
 	if burst == nil {
 		return errors.New("burst cannot be nil")
@@ -331,7 +394,15 @@ func (s *Service) SaveBurst(ctx context.Context, burst *domain.Burst) error {
 }
 
 // ConfirmBurst marks an existing burst as confirmed and updates the repository.
-// The burst must already exist in the repository.
+//
+// Expected:
+//   - burst must be valid.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (s *Service) ConfirmBurst(ctx context.Context, burst *domain.Burst) error {
 	if burst == nil {
 		return errors.New("burst cannot be nil")
@@ -375,6 +446,15 @@ func (s *Service) ConfirmBurst(ctx context.Context, burst *domain.Burst) error {
 }
 
 // DeleteBurst removes a burst from the repository.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (s *Service) DeleteBurst(ctx context.Context, burstID string) error {
 	if s.burstRepo == nil {
 		// Burst repository is optional - return sentinel error without logging
@@ -406,6 +486,15 @@ func (s *Service) DeleteBurst(ctx context.Context, burstID string) error {
 }
 
 // RejectBurstSuggestion records rejection of burst suggestion.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (s *Service) RejectBurstSuggestion(_ context.Context, eventIDs []string) error {
 	if len(eventIDs) == 0 {
 		return nil
@@ -560,6 +649,15 @@ func (s *Service) ExtractFactsFromBurst(ctx context.Context, burst *domain.Burst
 }
 
 // ValidateFact checks if a fact meets all validation criteria.
+//
+// Expected:
+//   - fact must be valid.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (s *Service) ValidateFact(_ context.Context, fact *domain.Fact) error {
 	if fact == nil {
 		s.logger.Warn("Cannot validate nil fact")
@@ -656,6 +754,15 @@ func (s *Service) GetFactsBySourceBurstID(ctx context.Context, burstID string) (
 }
 
 // SaveFact persists a fact to the repository.
+//
+// Expected:
+//   - fact must be valid.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (s *Service) SaveFact(ctx context.Context, fact *domain.Fact) error {
 	if s.factRepo == nil {
 		// Fact repository is optional - return sentinel error without logging
@@ -728,6 +835,15 @@ func (s *Service) SaveFact(ctx context.Context, fact *domain.Fact) error {
 }
 
 // DeleteFact removes a fact from the repository.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (s *Service) DeleteFact(ctx context.Context, factID string) error {
 	if s.factRepo == nil {
 		// Fact repository is optional - return sentinel error without logging
@@ -759,21 +875,45 @@ func (s *Service) DeleteFact(ctx context.Context, factID string) error {
 }
 
 // GetBurstRepository returns the burst repository.
+//
+// Returns:
+//   - A repo.BurstRepository value.
+//
+// Side effects:
+//   - None.
 func (s *Service) GetBurstRepository() repo.BurstRepository {
 	return s.burstRepo
 }
 
 // GetFactRepository returns the fact repository.
+//
+// Returns:
+//   - A repo.FactRepository value.
+//
+// Side effects:
+//   - None.
 func (s *Service) GetFactRepository() repo.FactRepository {
 	return s.factRepo
 }
 
 // GetEventRepository returns the event repository.
+//
+// Returns:
+//   - A repo.EventRepository value.
+//
+// Side effects:
+//   - None.
 func (s *Service) GetEventRepository() repo.EventRepository {
 	return s.repo
 }
 
 // GetSkillRepository returns the skill repository.
+//
+// Returns:
+//   - A repo.SkillRepository value.
+//
+// Side effects:
+//   - None.
 func (s *Service) GetSkillRepository() repo.SkillRepository {
 	return s.skillRepo
 }

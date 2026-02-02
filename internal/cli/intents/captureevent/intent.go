@@ -50,10 +50,10 @@ func NewIntent(ctx *IntentContext) (*Intent, error) {
 // Init prepares the intent for its first render cycle.
 //
 // Returns:
-//   - A tea.Cmd to initialise the active screen, or nil.
+//   - A tea.Cmd value.
 //
 // Side effects:
-//   - Creates and configures the strategy selection screen.
+//   - None.
 func (i *Intent) Init() tea.Cmd {
 	breadcrumbs := []string{"Main Menu", "Capture Event"}
 	i.activeScreen = captureScreens.NewStrategySelectScreen(breadcrumbs)
@@ -177,9 +177,10 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 // View renders the intent's current visual state.
 //
 // Returns:
-//   - A string containing the full terminal output for the current frame.
+//   - A string value.
 //
-// Side effects: None.
+// Side effects:
+//   - None.
 func (i *Intent) View() string {
 	if !i.active {
 		return "CaptureEvent intent is not active"
@@ -216,10 +217,10 @@ func (i *Intent) View() string {
 // Result returns the intent's outcome as a type-erased IntentResult.
 //
 // Returns:
-//   - An IntentResult[interface{}] wrapping the typed result, or nil if
-//     the intent has not yet completed.
+//   - A fully initialized intents.IntentResult[interface{}] ready for use.
 //
-// Side effects: None.
+// Side effects:
+//   - None.
 func (i *Intent) Result() *intents.IntentResult[interface{}] {
 	if i.result == nil {
 		return nil

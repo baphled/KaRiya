@@ -15,6 +15,15 @@ type Extractor struct {
 }
 
 // NewExtractor creates a new fact extractor.
+//
+// Expected:
+//   - classifier must be valid.
+//
+// Returns:
+//   - A fully initialized Extractor ready for use.
+//
+// Side effects:
+//   - None.
 func NewExtractor(classifier *Classifier) *Extractor {
 	return &Extractor{
 		classifier: classifier,
@@ -22,6 +31,15 @@ func NewExtractor(classifier *Classifier) *Extractor {
 }
 
 // ExtractFromEvent extracts facts from a single career event.
+//
+// Expected:
+//   - event must be valid.
+//
+// Returns:
+//   - A []career.Fact value.
+//
+// Side effects:
+//   - None.
 func (e *Extractor) ExtractFromEvent(_ context.Context, event *career.Event) []career.Fact {
 	if event == nil || event.Text == "" {
 		return []career.Fact{}
@@ -77,6 +95,16 @@ func (e *Extractor) ExtractFromEvent(_ context.Context, event *career.Event) []c
 }
 
 // ExtractFromBurst extracts facts from a burst (multiple related events).
+//
+// Expected:
+//   - burst must be valid.
+//   - event must be valid.
+//
+// Returns:
+//   - A []career.Fact value.
+//
+// Side effects:
+//   - None.
 func (e *Extractor) ExtractFromBurst(ctx context.Context, burst *career.Burst, events []*career.Event) []career.Fact {
 	if burst == nil || len(events) == 0 {
 		return []career.Fact{}

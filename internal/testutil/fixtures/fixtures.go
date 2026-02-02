@@ -32,7 +32,12 @@ func init() {
 }
 
 // SetSeed sets the random seed for reproducible test data.
-// Use this at the start of tests that need deterministic data.
+//
+// Expected:
+//   - int64 must be valid.
+//
+// Side effects:
+//   - None.
 func SetSeed(seed int64) {
 	if err := gofakeit.Seed(seed); err != nil {
 		// Seeding should not fail in normal circumstances

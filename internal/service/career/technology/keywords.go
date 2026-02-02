@@ -575,8 +575,15 @@ func init() {
 }
 
 // GetCategoryForSkillName performs a case-insensitive lookup of the given
-// skill name against the keyword dictionary. It first tries an exact match,
-// then falls back to substring matching with word-boundary checks.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func GetCategoryForSkillName(name string) string {
 	lower := strings.ToLower(name)
 	if cat, ok := keywordIndex[lower]; ok {
@@ -670,7 +677,12 @@ func RecategorizeSkills(ctx context.Context, repo careerRepo.SkillRepository) (*
 }
 
 // GetKeywordMap returns a map from keyword to TechnologyKeyword for backward compatibility.
-// Deprecated: Use the keywordIndex map or GetCategoryForSkillName instead.
+//
+// Returns:
+//   - A map[string]TechnologyKeyword value.
+//
+// Side effects:
+//   - None.
 func GetKeywordMap() map[string]TechnologyKeyword {
 	result := make(map[string]TechnologyKeyword, len(Keywords))
 	for _, entry := range Keywords {

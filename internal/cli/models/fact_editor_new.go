@@ -34,6 +34,16 @@ type FactEditorModelNew struct {
 }
 
 // NewFactEditorModelNew creates a new fact editor model using huh forms.
+//
+// Expected:
+//   - fact must be valid.
+//   - service must be valid.
+//
+// Returns:
+//   - A fully initialized FactEditorModelNew ready for use.
+//
+// Side effects:
+//   - None.
 func NewFactEditorModelNew(fact *career.Fact, service *careerservice.Service, ctx context.Context) *FactEditorModelNew {
 	// Create a copy of the fact for reverting
 	factCopy := *fact
@@ -62,6 +72,12 @@ func NewFactEditorModelNew(fact *career.Fact, service *careerservice.Service, ct
 }
 
 // Init initializes the model
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (m *FactEditorModelNew) Init() tea.Cmd {
 	return m.form.Init()
 }
@@ -144,21 +160,42 @@ func (m *FactEditorModelNew) handleFormCompletion() (tea.Model, tea.Cmd) {
 }
 
 // GetFact returns the edited fact
+//
+// Returns:
+//   - A fully initialized career.Fact ready for use.
+//
+// Side effects:
+//   - None.
 func (m *FactEditorModelNew) GetFact() *career.Fact {
 	return m.fact
 }
 
 // IsSubmitted returns true if changes were saved
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *FactEditorModelNew) IsSubmitted() bool {
 	return m.submitted
 }
 
 // IsCancelled returns true if operation was cancelled
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *FactEditorModelNew) IsCancelled() bool {
 	return m.cancelled
 }
 
 // Revert reverts changes to the original fact
+//
+// Side effects:
+//   - None.
 func (m *FactEditorModelNew) Revert() {
 	m.fact.Text = m.originalFact.Text
 	m.fact.CompetencyCategories = m.originalFact.CompetencyCategories
@@ -171,17 +208,34 @@ func (m *FactEditorModelNew) Revert() {
 }
 
 // GetError returns the current error
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (m *FactEditorModelNew) GetError() error {
 	return m.err
 }
 
 // GetTitle returns the modal title for overlay rendering.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *FactEditorModelNew) GetTitle() string {
 	return "Fact Editor"
 }
 
 // GetContent returns just the form content without header/footer.
-// This allows parent intents to compose the modal as an overlay.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *FactEditorModelNew) GetContent() string {
 	formView := m.form.View()
 
@@ -202,11 +256,23 @@ func (m *FactEditorModelNew) GetContent() string {
 }
 
 // GetFooter returns the footer instructions for the modal.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *FactEditorModelNew) GetFooter() string {
 	return "Enter: Confirm | Esc: Cancel | Tab: Next Field | Shift+Tab: Previous"
 }
 
 // View renders the editor UI
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *FactEditorModelNew) View() string {
 	// Render form using huh
 	formView := m.form.View()

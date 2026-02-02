@@ -22,6 +22,12 @@ type Skill struct {
 }
 
 // Validate checks if the Skill meets all defined criteria.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (s *Skill) Validate() error {
 	// Validate name
 	if err := s.validateName(); err != nil {

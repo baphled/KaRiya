@@ -48,10 +48,9 @@ func NewErrorModalAdapter(modal *feedback.Modal, width, height int, theme themes
 }
 
 // IsVisible checks whether this modal should be rendered as an overlay in the current view cycle.
-// Error modals are visible as long as they exist (nil check).
 //
 // Returns:
-//   - True if the underlying modal is non-nil.
+//   - A bool value.
 //
 // Side effects:
 //   - None.
@@ -62,7 +61,7 @@ func (a *ErrorModalAdapter) IsVisible() bool {
 // View renders the modal content for overlay composition using the stored dimensions.
 //
 // Returns:
-//   - The rendered modal string, or empty string if the modal is nil.
+//   - A string value.
 //
 // Side effects:
 //   - None.
@@ -153,7 +152,7 @@ func NewFormModalAdapter[T any](
 // IsVisible checks whether this modal should be rendered as an overlay in the current view cycle.
 //
 // Returns:
-//   - True if the underlying modal reports itself as visible.
+//   - A bool value.
 //
 // Side effects:
 //   - None.
@@ -164,7 +163,7 @@ func (a *FormModalAdapter[T]) IsVisible() bool {
 // View renders the modal content for overlay composition.
 //
 // Returns:
-//   - The rendered modal content string.
+//   - A string value.
 //
 // Side effects:
 //   - None.
@@ -221,7 +220,7 @@ func NewConfirmModalAdapter(modal *feedback.ConfirmModal) *ConfirmModalAdapter {
 // IsVisible checks whether this modal should be rendered as an overlay in the current view cycle.
 //
 // Returns:
-//   - True if the underlying modal is non-nil and reports itself as visible.
+//   - A bool value.
 //
 // Side effects:
 //   - None.
@@ -232,7 +231,7 @@ func (a *ConfirmModalAdapter) IsVisible() bool {
 // View renders the modal content for overlay composition.
 //
 // Returns:
-//   - The rendered modal string, or empty string if the modal is nil.
+//   - A string value.
 //
 // Side effects:
 //   - None.
@@ -307,7 +306,7 @@ func NewViewModalAdapter(
 // IsVisible checks whether this modal should be rendered as an overlay in the current view cycle.
 //
 // Returns:
-//   - True if the underlying modal reports itself as visible.
+//   - A bool value.
 //
 // Side effects:
 //   - None.
@@ -318,7 +317,7 @@ func (a *ViewModalAdapter) IsVisible() bool {
 // View renders the modal content for overlay composition.
 //
 // Returns:
-//   - The rendered modal content string.
+//   - A string value.
 //
 // Side effects:
 //   - None.

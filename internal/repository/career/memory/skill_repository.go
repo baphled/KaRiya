@@ -25,6 +25,12 @@ type SkillRepository struct {
 }
 
 // NewSkillRepository creates a new in-memory skill repository.
+//
+// Returns:
+//   - A fully initialized SkillRepository ready for use.
+//
+// Side effects:
+//   - None.
 func NewSkillRepository() *SkillRepository {
 	return &SkillRepository{
 		skills:      make(map[string]*career.Skill),
@@ -34,6 +40,12 @@ func NewSkillRepository() *SkillRepository {
 }
 
 // SetEventRepository sets the event repository for cross-repository queries.
+//
+// Expected:
+//   - eventrepository must be valid.
+//
+// Side effects:
+//   - None.
 func (r *SkillRepository) SetEventRepository(repo career_repo.EventRepository) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -41,6 +53,15 @@ func (r *SkillRepository) SetEventRepository(repo career_repo.EventRepository) {
 }
 
 // Create adds a new skill to the in-memory store.
+//
+// Expected:
+//   - skill must be valid.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (r *SkillRepository) Create(_ context.Context, skill *career.Skill) error {
 	if skill.ID == "" {
 		skill.ID = uuid.New().String()
@@ -265,6 +286,15 @@ func (r *SkillRepository) applyPagination(skills []*career.Skill, filters *caree
 }
 
 // Update modifies an existing skill.
+//
+// Expected:
+//   - skill must be valid.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (r *SkillRepository) Update(_ context.Context, skill *career.Skill) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -296,6 +326,15 @@ func (r *SkillRepository) Update(_ context.Context, skill *career.Skill) error {
 }
 
 // Delete removes a skill from the repository.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (r *SkillRepository) Delete(_ context.Context, id string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -420,6 +459,12 @@ func (r *SkillRepository) GetEventsUsingSkill(ctx context.Context, skillID strin
 }
 
 // AssociateSkillWithEvent associates a skill with an event (for test setup).
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Side effects:
+//   - None.
 func (r *SkillRepository) AssociateSkillWithEvent(skillID, eventID string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()

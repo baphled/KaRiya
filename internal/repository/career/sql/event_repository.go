@@ -23,11 +23,29 @@ type EventRepository struct {
 }
 
 // NewEventRepository creates a new SQL event repository.
+//
+// Expected:
+//   - db must be valid.
+//
+// Returns:
+//   - A fully initialized EventRepository ready for use.
+//
+// Side effects:
+//   - None.
 func NewEventRepository(db *gorm.DB) *EventRepository {
 	return &EventRepository{db: db}
 }
 
 // Create adds a new career event to the database.
+//
+// Expected:
+//   - event must be valid.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (r *EventRepository) Create(ctx context.Context, event *career.Event) error {
 	if event.ID == "" {
 		event.ID = uuid.New().String()
@@ -74,6 +92,15 @@ func (r *EventRepository) GetByID(ctx context.Context, id string) (*career.Event
 }
 
 // Update modifies an existing career event.
+//
+// Expected:
+//   - event must be valid.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (r *EventRepository) Update(ctx context.Context, event *career.Event) error {
 	// Check if record exists first.
 	var count int64
@@ -99,6 +126,15 @@ func (r *EventRepository) Update(ctx context.Context, event *career.Event) error
 }
 
 // Delete removes a career event from the database.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (r *EventRepository) Delete(ctx context.Context, id string) error {
 	result := r.db.WithContext(ctx).Delete(&models.Event{}, "id = ?", id)
 	if result.RowsAffected == 0 {
@@ -230,6 +266,16 @@ func (r *EventRepository) loadSkillIDs(ctx context.Context, eventID string) ([]s
 }
 
 // LinkSkill creates an association between an event and a skill.
+//
+// Expected:
+//   - Must be a valid string.
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (r *EventRepository) LinkSkill(ctx context.Context, eventID string, skillID string) error {
 	// First check if event exists
 	var exists bool

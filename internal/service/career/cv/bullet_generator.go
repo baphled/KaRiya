@@ -77,7 +77,12 @@ type Bullet struct {
 }
 
 // ToCVBullet converts a Bullet to a CVBullet for the domain layer.
-// Uses EnhancedText if available, otherwise falls back to original Text.
+//
+// Returns:
+//   - A fully initialized career.CVBullet ready for use.
+//
+// Side effects:
+//   - None.
 func (eb *Bullet) ToCVBullet() *career.CVBullet {
 	text := eb.Text
 	if eb.EnhancedText != "" {
@@ -103,6 +108,15 @@ func (eb *Bullet) ToCVBullet() *career.CVBullet {
 }
 
 // ConvertBullets converts bullets to domain CVBullets.
+//
+// Expected:
+//   - []bullet must be valid.
+//
+// Returns:
+//   - A []*career.CVBullet value.
+//
+// Side effects:
+//   - None.
 func ConvertBullets(bullets []*Bullet) []*career.CVBullet {
 	if bullets == nil {
 		return nil
@@ -121,6 +135,16 @@ type DefaultBulletGenerator struct {
 }
 
 // NewBulletGenerator creates a new bullet generator
+//
+// Expected:
+//   - logger must be valid.
+//   - config must be a valid configuration object.
+//
+// Returns:
+//   - A BulletGenerator value.
+//
+// Side effects:
+//   - None.
 func NewBulletGenerator(log *logger.Logger, scoringConfig *config.ScoringConfig) BulletGenerator {
 	return &DefaultBulletGenerator{
 		logger:        log,
@@ -200,6 +224,16 @@ func (bg *DefaultBulletGenerator) GenerateBullets(ctx context.Context,
 }
 
 // FilterByRole filters bullets based on role relevance
+//
+// Expected:
+//   - []bullet must be valid.
+//   - Must be a valid string.
+//
+// Returns:
+//   - A []*Bullet value.
+//
+// Side effects:
+//   - None.
 func (bg *DefaultBulletGenerator) FilterByRole(bullets []*Bullet, role string) []*Bullet {
 	filter := bg.getRoleFilter(role)
 	var filtered []*Bullet
@@ -217,6 +251,16 @@ func (bg *DefaultBulletGenerator) FilterByRole(bullets []*Bullet, role string) [
 }
 
 // FilterByAudience filters bullets based on audience fit
+//
+// Expected:
+//   - []bullet must be valid.
+//   - Must be a valid string.
+//
+// Returns:
+//   - A []*Bullet value.
+//
+// Side effects:
+//   - None.
 func (bg *DefaultBulletGenerator) FilterByAudience(bullets []*Bullet, audience string) []*Bullet {
 	if audience == "" {
 		return bullets
@@ -243,6 +287,17 @@ func (bg *DefaultBulletGenerator) FilterByAudience(bullets []*Bullet, audience s
 }
 
 // RankByRelevance ranks bullets using multi-factor scoring
+//
+// Expected:
+//   - []bullet must be valid.
+//   - Must be a valid string.
+//   - Must be a valid string.
+//
+// Returns:
+//   - A []*Bullet value.
+//
+// Side effects:
+//   - None.
 func (bg *DefaultBulletGenerator) RankByRelevance(bullets []*Bullet, _ string, _ string) []*Bullet {
 	// Calculate final scores
 	for _, bullet := range bullets {

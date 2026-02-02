@@ -88,10 +88,10 @@ func (m *EditBurstModal) buildForm() {
 // Init initializes the modal and its form.
 //
 // Returns:
-//   - tea.Cmd: command to execute, or nil if form is nil.
+//   - A tea.Cmd value.
 //
 // Side effects:
-//   - Initializes the underlying form.
+//   - None.
 func (m *EditBurstModal) Init() tea.Cmd {
 	if m.form == nil {
 		return nil
@@ -157,10 +157,9 @@ func (m *EditBurstModal) Update(msg tea.Msg) (tea.Cmd, bool, *EditBurstData) {
 }
 
 // View renders the edit burst modal with proper chrome (border, background)
-// for overlay compositing.
 //
 // Returns:
-//   - string: the rendered modal view, or empty string if not visible.
+//   - A string value.
 //
 // Side effects:
 //   - None.
@@ -186,7 +185,7 @@ func (m *EditBurstModal) View() string {
 // IsVisible returns whether the modal is currently visible.
 //
 // Returns:
-//   - bool: true if modal is visible.
+//   - A bool value.
 //
 // Side effects:
 //   - None.
@@ -197,7 +196,7 @@ func (m *EditBurstModal) IsVisible() bool {
 // Hide hides the modal.
 //
 // Side effects:
-//   - Sets visible flag to false.
+//   - None.
 func (m *EditBurstModal) Hide() {
 	m.visible = false
 }
@@ -205,7 +204,7 @@ func (m *EditBurstModal) Hide() {
 // Show shows the modal.
 //
 // Side effects:
-//   - Sets visible flag to true.
+//   - None.
 func (m *EditBurstModal) Show() {
 	m.visible = true
 }
@@ -213,7 +212,7 @@ func (m *EditBurstModal) Show() {
 // GetOriginalBurst returns the original burst being edited.
 //
 // Returns:
-//   - *career.Burst: the original burst.
+//   - A fully initialized career.Burst ready for use.
 //
 // Side effects:
 //   - None.

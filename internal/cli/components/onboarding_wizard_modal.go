@@ -24,8 +24,8 @@ import (
 //   - Shift+Tab: Move to previous field
 //   - Enter on last field of group: Advance to next step
 //
-// Esc key is blocked - onboarding is MANDATORY.
-// Users must complete required fields (Name and Email) to proceed.
+// Note: Onboarding is MANDATORY - Esc key is blocked. Users must complete
+// the required fields (Name and Email) to proceed with the application.
 type OnboardingWizardModal struct {
 	wizard   *behaviors.WizardBehavior[OnboardingData]
 	form     *forms.WizardFormAdapter
@@ -51,11 +51,30 @@ type OnboardingData struct {
 }
 
 // NewOnboardingWizardModal creates a new onboarding wizard modal.
+//
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized OnboardingWizardModal ready for use.
+//
+// Side effects:
+//   - None.
 func NewOnboardingWizardModal(width, height int) *OnboardingWizardModal {
 	return NewOnboardingWizardModalWithConfig(width, height, nil)
 }
 
 // NewOnboardingWizardModalWithConfig creates an onboarding wizard with pre-filled data.
+//
+// Expected:
+//   - int must be valid.
+//   - config must be a valid configuration object.
+//
+// Returns:
+//   - A fully initialized OnboardingWizardModal ready for use.
+//
+// Side effects:
+//   - None.
 func NewOnboardingWizardModalWithConfig(width, height int, cfg *config.ProfileConfig) *OnboardingWizardModal {
 	data := &OnboardingData{}
 
@@ -87,12 +106,26 @@ func NewOnboardingWizardModalWithConfig(width, height int, cfg *config.ProfileCo
 }
 
 // Init initializes the wizard modal and its form.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (m *OnboardingWizardModal) Init() tea.Cmd {
 	return m.wizard.Init()
 }
 
 // Update handles messages for the wizard modal.
-// Esc key is blocked - onboarding is MANDATORY.
+//
+// Expected:
+//   - msg must be valid.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (m *OnboardingWizardModal) Update(msg tea.Msg) tea.Cmd {
 	if !m.wizard.IsVisible() {
 		return nil
@@ -121,6 +154,12 @@ func (m *OnboardingWizardModal) Update(msg tea.Msg) tea.Cmd {
 }
 
 // View renders the wizard modal.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *OnboardingWizardModal) View() string {
 	if !m.wizard.IsVisible() {
 		return ""
@@ -165,49 +204,95 @@ func (m *OnboardingWizardModal) buildFooter() string {
 }
 
 // IsVisible returns whether the modal is currently visible.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *OnboardingWizardModal) IsVisible() bool {
 	return m.wizard.IsVisible()
 }
 
 // IsCompleted returns whether the wizard was completed successfully.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *OnboardingWizardModal) IsCompleted() bool {
 	return m.wizard.IsCompleted()
 }
 
 // WasCancelled returns whether the wizard was cancelled by the user.
-// Always returns false for onboarding (cancellation is blocked).
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *OnboardingWizardModal) WasCancelled() bool {
 	return m.wizard.IsCancelled()
 }
 
 // CurrentStep returns the current step index (0-based).
+//
+// Returns:
+//   - A int value.
+//
+// Side effects:
+//   - None.
 func (m *OnboardingWizardModal) CurrentStep() int {
 	return m.wizard.CurrentStep()
 }
 
 // TotalSteps returns the total number of steps in the wizard.
+//
+// Returns:
+//   - A int value.
+//
+// Side effects:
+//   - None.
 func (m *OnboardingWizardModal) TotalSteps() int {
 	return m.wizard.TotalSteps()
 }
 
 // Hide hides the modal.
+//
+// Side effects:
+//   - None.
 func (m *OnboardingWizardModal) Hide() {
 	m.wizard.Hide()
 }
 
 // Show shows the modal.
+//
+// Side effects:
+//   - None.
 func (m *OnboardingWizardModal) Show() {
 	m.wizard.Show()
 }
 
 // HasRequiredFields returns whether all required fields have values.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *OnboardingWizardModal) HasRequiredFields() bool {
 	m.syncFromFormData()
 	return strings.TrimSpace(m.data.Name) != "" && strings.TrimSpace(m.data.Email) != ""
 }
 
 // GetProfileConfig returns the collected data as a ProfileConfig.
-// Returns nil if the wizard was not completed.
+//
+// Returns:
+//   - A fully initialized config.ProfileConfig ready for use.
+//
+// Side effects:
+//   - None.
 func (m *OnboardingWizardModal) GetProfileConfig() *config.ProfileConfig {
 	if !m.wizard.IsCompleted() {
 		return nil
@@ -225,6 +310,12 @@ func (m *OnboardingWizardModal) GetProfileConfig() *config.ProfileConfig {
 }
 
 // GetOnboardingData returns the raw onboarding data.
+//
+// Returns:
+//   - A fully initialized OnboardingData ready for use.
+//
+// Side effects:
+//   - None.
 func (m *OnboardingWizardModal) GetOnboardingData() *OnboardingData {
 	return m.data
 }

@@ -23,6 +23,12 @@ type EventRepository struct {
 }
 
 // NewEventRepository creates a new in-memory event repository.
+//
+// Returns:
+//   - A fully initialized EventRepository ready for use.
+//
+// Side effects:
+//   - None.
 func NewEventRepository() *EventRepository {
 	return &EventRepository{
 		events: make(map[string]*career.Event),
@@ -30,6 +36,12 @@ func NewEventRepository() *EventRepository {
 }
 
 // SetSkillRepository sets the skill repository for cross-repository association sync.
+//
+// Expected:
+//   - skillrepository must be valid.
+//
+// Side effects:
+//   - None.
 func (r *EventRepository) SetSkillRepository(repo *SkillRepository) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -37,6 +49,15 @@ func (r *EventRepository) SetSkillRepository(repo *SkillRepository) {
 }
 
 // Create adds a new career event to the in-memory store.
+//
+// Expected:
+//   - event must be valid.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (r *EventRepository) Create(_ context.Context, event *career.Event) error {
 	if err := event.Validate(); err != nil {
 		return err
@@ -67,6 +88,15 @@ func (r *EventRepository) GetByID(_ context.Context, id string) (*career.Event, 
 }
 
 // Update modifies an existing career event.
+//
+// Expected:
+//   - event must be valid.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (r *EventRepository) Update(_ context.Context, event *career.Event) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -90,6 +120,15 @@ func (r *EventRepository) Update(_ context.Context, event *career.Event) error {
 }
 
 // Delete removes a career event from the repository.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (r *EventRepository) Delete(_ context.Context, id string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -174,6 +213,16 @@ func (r *EventRepository) Count(_ context.Context, filters career_repo.EventList
 }
 
 // LinkSkill creates an association between an event and a skill.
+//
+// Expected:
+//   - Must be a valid string.
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (r *EventRepository) LinkSkill(_ context.Context, eventID string, skillID string) error {
 	r.mu.Lock()
 

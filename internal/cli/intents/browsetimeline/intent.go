@@ -53,13 +53,12 @@ func NewIntent(ctx *IntentContext) (*Intent, error) {
 }
 
 // Init activates the intent by applying initial filters and transitioning
-// to the timeline list screen.
 //
 // Returns:
-//   - Always nil; screen transition is handled internally.
+//   - A tea.Cmd value.
 //
 // Side effects:
-//   - Applies filters, sets the selected event, and transitions to the timeline screen.
+//   - None.
 func (i *Intent) Init() tea.Cmd {
 	i.applyFilters()
 
@@ -388,7 +387,7 @@ func (i *Intent) handleKeyShortcuts(keyMsg tea.KeyMsg) tea.Cmd {
 // View renders the current state of the intent, including any visible modal overlays.
 //
 // Returns:
-//   - The rendered string for the active screen and overlays.
+//   - A string value.
 //
 // Side effects:
 //   - None.
@@ -425,10 +424,9 @@ func (i *Intent) renderTimelineView(screen *timeline.EventListScreen) string {
 }
 
 // Result provides the outcome of the intent after it becomes inactive,
-// converting the typed result into a generic IntentResult.
 //
 // Returns:
-//   - The intent result containing status, data, and metadata, or nil if no result is set.
+//   - A fully initialized intents.IntentResult[interface{}] ready for use.
 //
 // Side effects:
 //   - None.

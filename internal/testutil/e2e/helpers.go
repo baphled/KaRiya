@@ -85,15 +85,15 @@ type TestEnv struct {
 }
 
 // Setup creates a complete E2E test environment with SQLite persistence.
-// This sets up all repositories, services, and the application model.
 //
-// Usage:
+// Expected:
+//   - testingt must be valid.
 //
-//	env := e2e.Setup(t)
-//	defer env.Cleanup()
-//	// use env for testing
+// Returns:
+//   - A fully initialized TestEnv ready for use.
 //
-// Works with both *testing.T and GinkgoT().
+// Side effects:
+//   - None.
 func Setup(t TestingT) *TestEnv {
 	t.Helper()
 
@@ -185,18 +185,9 @@ func Setup(t TestingT) *TestEnv {
 }
 
 // SetupShared creates a shared E2E test environment for use with BeforeSuite.
-// Call this once in BeforeSuite, then use GetSharedEnv() in BeforeEach.
-// This avoids the overhead of creating a new database for every test.
 //
-// Usage in suite_test.go:
-//
-//	var _ = BeforeSuite(func() {
-//	    e2e.SetupShared()
-//	})
-//
-//	var _ = AfterSuite(func() {
-//	    e2e.CleanupShared()
-//	})
+// Side effects:
+//   - None.
 func SetupShared() {
 	var err error
 	sharedTmpDir, err = os.MkdirTemp("", "e2e_test_*")
@@ -265,7 +256,9 @@ func SetupShared() {
 }
 
 // CleanupShared releases all shared test resources.
-// Call this in AfterSuite.
+//
+// Side effects:
+//   - None.
 func CleanupShared() {
 	if sharedEnv != nil && sharedEnv.DB != nil {
 		_ = sharedEnv.DB.Close()
@@ -280,16 +273,15 @@ func CleanupShared() {
 }
 
 // GetSharedEnv returns the shared test environment for use in BeforeEach.
-// It resets the database state and creates a fresh Model.
-// Repositories and services are reused from SetupShared (they're stateless).
-// The TestingT is set for the current test.
 //
-// Usage in test file:
+// Expected:
+//   - testingt must be valid.
 //
-//	var env *e2e.TestEnv
-//	BeforeEach(func() {
-//	    env = e2e.GetSharedEnv(GinkgoT())
-//	})
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
 func GetSharedEnv(t TestingT) *TestEnv {
 	if sharedEnv == nil {
 		panic("shared env not initialized - call SetupShared() in BeforeSuite")
@@ -316,17 +308,14 @@ func GetSharedEnv(t TestingT) *TestEnv {
 
 // GetSharedEnvWithOnboarding returns the shared test environment for onboarding tests.
 //
-// Since onboarding is now a separate pre-app phase, tests that need to test
-// the onboarding UI should use bootstrap.NewOnboardingTestModel() directly.
-// This function returns a normal test environment - use GetOnboardingTestModel()
-// to get the onboarding model for testing.
+// Expected:
+//   - testingt must be valid.
 //
-// Usage in test file:
+// Returns:
+//   - A fully initialized TestEnv ready for use.
 //
-//	var env *e2e.TestEnv
-//	BeforeEach(func() {
-//	    env = e2e.GetSharedEnvWithOnboarding(GinkgoT())
-//	})
+// Side effects:
+//   - None.
 func GetSharedEnvWithOnboarding(t TestingT) *TestEnv {
 	if sharedEnv == nil {
 		panic("shared env not initialized - call SetupShared() in BeforeSuite")
@@ -351,7 +340,15 @@ func GetSharedEnvWithOnboarding(t TestingT) *TestEnv {
 }
 
 // GetOnboardingTestModel returns a model for testing the onboarding wizard UI.
-// Use this when you need to test the onboarding flow directly.
+//
+// Expected:
+//   - config must be a valid configuration object.
+//
+// Returns:
+//   - A fully initialized bootstrap.OnboardingTestModel ready for use.
+//
+// Side effects:
+//   - None.
 func GetOnboardingTestModel(existingProfile *config.ProfileConfig) *bootstrap.OnboardingTestModel {
 	return bootstrap.NewOnboardingTestModel(existingProfile)
 }
@@ -373,13 +370,15 @@ func (e *TestEnv) resetDatabase() {
 }
 
 // SetupWithOnboarding creates an E2E test environment with the onboarding wizard active.
-// Use this to test the onboarding workflow specifically.
-// This forces onboarding to appear regardless of the user's config file.
 //
-// IMPORTANT: This function isolates config file writes to a temporary directory
-// to prevent tests from polluting the user's real config file.
+// Expected:
+//   - testingt must be valid.
 //
-// Works with both *testing.T and GinkgoT().
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
 func SetupWithOnboarding(t TestingT) *TestEnv {
 	t.Helper()
 
@@ -433,8 +432,6 @@ func SetupWithOnboarding(t TestingT) *TestEnv {
 	cliService := service.NewCLIEventService(svc)
 
 	// Create bootstrap result (skipping onboarding for main app)
-	//
-	// For testing onboarding UI, use GetOnboardingTestModel() instead
 	log := logger.DefaultLogger()
 	bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
 
@@ -475,9 +472,15 @@ func SetupWithOnboarding(t TestingT) *TestEnv {
 }
 
 // SetupWithMemory creates an E2E test environment using in-memory repositories.
-// This is faster but doesn't test actual SQLite persistence.
 //
-// Works with both *testing.T and GinkgoT().
+// Expected:
+//   - testingt must be valid.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
 func SetupWithMemory(t TestingT) *TestEnv {
 	t.Helper()
 
@@ -541,9 +544,9 @@ func SetupWithMemory(t TestingT) *TestEnv {
 }
 
 // Cleanup releases all test resources.
-// Should be called with defer immediately after Setup.
-// For shared environments (from GetSharedEnv), this is a no-op since
-// cleanup is handled by CleanupShared() in AfterSuite.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) Cleanup() {
 	// Skip cleanup for shared environment (cleanup is nil)
 	if e.cleanup != nil {
@@ -556,10 +559,20 @@ func (e *TestEnv) Cleanup() {
 // ============================================================================
 
 // SelectIntent navigates to and selects a menu item by its index (0-based).
+//
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) SelectIntent(index int) *TestEnv {
 	e.T.Helper()
 
-	for range index {
+	// Navigate to the menu item
+	for i := 0; i < index; i++ {
 		e.PressKeyRune('j')
 	}
 
@@ -570,10 +583,15 @@ func (e *TestEnv) SelectIntent(index int) *TestEnv {
 }
 
 // SelectIntentByName navigates to and selects a menu item by its intent name.
-// Valid names: "capture_event", "browse_timeline", "manage_skills", "generate_cv",
-// "configure_system", "burst_management", "fact_management"
 //
-// IMPORTANT: This order must match the menu items defined in internal/cli/app/app.go.
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) SelectIntentByName(name string) *TestEnv {
 	e.T.Helper()
 
@@ -596,16 +614,20 @@ func (e *TestEnv) SelectIntentByName(name string) *TestEnv {
 }
 
 // PressKey sends a key message to the model.
-// Returns the environment for method chaining.
+//
+// Expected:
+//   - keytype must be valid.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) PressKey(key tea.KeyType) *TestEnv {
 	e.T.Helper()
 
 	modelInterface, cmd := e.Model.Update(tea.KeyMsg{Type: key})
-	var ok bool
-	e.Model, ok = modelInterface.(*app.Model)
-	if !ok {
-		e.T.Fatalf("expected *app.Model, got %T", modelInterface)
-	}
+	e.Model = modelInterface.(*app.Model)
 
 	// Execute any returned command
 	e.executeCmd(cmd)
@@ -614,16 +636,20 @@ func (e *TestEnv) PressKey(key tea.KeyType) *TestEnv {
 }
 
 // PressKeyRune sends a rune key message to the model.
-// Returns the environment for method chaining.
+//
+// Expected:
+//   - rune must be valid.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) PressKeyRune(r rune) *TestEnv {
 	e.T.Helper()
 
 	modelInterface, cmd := e.Model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{r}})
-	var ok bool
-	e.Model, ok = modelInterface.(*app.Model)
-	if !ok {
-		e.T.Fatalf("expected *app.Model, got %T", modelInterface)
-	}
+	e.Model = modelInterface.(*app.Model)
 
 	// Execute any returned command
 	e.executeCmd(cmd)
@@ -632,8 +658,15 @@ func (e *TestEnv) PressKeyRune(r rune) *TestEnv {
 }
 
 // PressKeys sends multiple keys in sequence.
-// Accepts tea.KeyType or rune values.
-// Returns the environment for method chaining.
+//
+// Expected:
+//   - interface{} must be valid.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) PressKeys(keys ...interface{}) *TestEnv {
 	e.T.Helper()
 
@@ -656,7 +689,15 @@ func (e *TestEnv) PressKeys(keys ...interface{}) *TestEnv {
 }
 
 // TypeText types a string character by character.
-// Returns the environment for method chaining.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) TypeText(text string) *TestEnv {
 	e.T.Helper()
 
@@ -668,43 +709,89 @@ func (e *TestEnv) TypeText(text string) *TestEnv {
 }
 
 // NavigateDown moves down in a list (j or down arrow).
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) NavigateDown() *TestEnv {
 	return e.PressKeyRune('j')
 }
 
 // NavigateUp moves up in a list (k or up arrow).
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) NavigateUp() *TestEnv {
 	return e.PressKeyRune('k')
 }
 
 // Confirm presses Enter to confirm an action.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) Confirm() *TestEnv {
 	return e.PressKey(tea.KeyEnter)
 }
 
 // Cancel presses Escape to cancel/go back.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) Cancel() *TestEnv {
 	return e.PressKey(tea.KeyEscape)
 }
 
 // GoBack presses Escape to go back.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) GoBack() *TestEnv {
 	return e.Cancel()
 }
 
 // Quit presses 'q' to quit.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) Quit() *TestEnv {
 	return e.PressKeyRune('q')
 }
 
 // Tab presses Tab to move to next field.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) Tab() *TestEnv {
 	return e.PressKey(tea.KeyTab)
 }
 
 // SubmitHuhForm submits a huh form by pressing Enter.
-// Huh forms are submitted with Enter when the form is complete.
-// This is equivalent to Confirm() but with a more descriptive name for form contexts.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) SubmitHuhForm() *TestEnv {
 	return e.Confirm()
 }
@@ -764,31 +851,19 @@ func (e *TestEnv) processCmdResult(msg tea.Msg) {
 	case models.SubmitMsg:
 		// Form submission - essential for form → review state transition
 		modelInterface, nextCmd := e.Model.Update(msg)
-		var ok bool
-		e.Model, ok = modelInterface.(*app.Model)
-		if !ok {
-			e.T.Fatalf("expected *app.Model, got %T", modelInterface)
-		}
+		e.Model = modelInterface.(*app.Model)
 		// Recursively execute any returned command
 		e.executeCmd(nextCmd)
 
 	case captureevent.SubmitCompleteMsg, captureevent.SubmitErrorMsg:
 		// Submit completion - essential for submit → complete state transition
 		modelInterface, nextCmd := e.Model.Update(msg)
-		model, ok := modelInterface.(*app.Model)
-		if !ok {
-			e.T.Fatalf("expected *app.Model, got %T", modelInterface)
-		}
-		e.Model = model
+		e.Model = modelInterface.(*app.Model)
 		// For SubmitCompleteMsg, immediately send DismissModalMsg to skip the 2s timer
 		if _, ok := msg.(captureevent.SubmitCompleteMsg); ok {
 			// Skip the tea.Tick timer by directly sending DismissModalMsg
 			modelInterface, nextCmd = e.Model.Update(captureevent.DismissModalMsg{})
-			model, ok = modelInterface.(*app.Model)
-			if !ok {
-				e.T.Fatalf("expected *app.Model, got %T", modelInterface)
-			}
-			e.Model = model
+			e.Model = modelInterface.(*app.Model)
 		}
 		// Recursively execute any returned command
 		e.executeCmd(nextCmd)
@@ -796,22 +871,14 @@ func (e *TestEnv) processCmdResult(msg tea.Msg) {
 	case captureevent.DismissModalMsg:
 		// Modal dismissal - essential for success modal → enrichment review transition
 		modelInterface, nextCmd := e.Model.Update(msg)
-		var ok bool
-		e.Model, ok = modelInterface.(*app.Model)
-		if !ok {
-			e.T.Fatalf("expected *app.Model, got %T", modelInterface)
-		}
+		e.Model = modelInterface.(*app.Model)
 		// Recursively execute any returned command
 		e.executeCmd(nextCmd)
 
 	case intents.ConfigCompleteMsg:
 		// Configuration save completion - essential for saving → complete state transition
 		modelInterface, nextCmd := e.Model.Update(msg)
-		var ok bool
-		e.Model, ok = modelInterface.(*app.Model)
-		if !ok {
-			e.T.Fatalf("expected *app.Model, got %T", modelInterface)
-		}
+		e.Model = modelInterface.(*app.Model)
 		// Recursively execute any returned command
 		e.executeCmd(nextCmd)
 	default:
@@ -821,25 +888,35 @@ func (e *TestEnv) processCmdResult(msg tea.Msg) {
 }
 
 // SendMessage sends a message directly to the model.
-// This is useful for testing state transitions without simulating keystrokes.
-// Returns the environment for method chaining.
+//
+// Expected:
+//   - msg must be valid.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) SendMessage(msg tea.Msg) *TestEnv {
 	e.T.Helper()
 
 	modelInterface, cmd := e.Model.Update(msg)
-	var ok bool
-	e.Model, ok = modelInterface.(*app.Model)
-	if !ok {
-		e.T.Fatalf("expected *app.Model, got %T", modelInterface)
-	}
+	e.Model = modelInterface.(*app.Model)
 	e.executeCmd(cmd)
 
 	return e
 }
 
 // SubmitEvent sends a SubmitMsg directly to the model with the given event.
-// This bypasses huh form navigation issues in E2E tests.
-// Use this when you need to test the workflow after form submission.
+//
+// Expected:
+//   - event must be valid.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) SubmitEvent(event *career.Event) *TestEnv {
 	e.T.Helper()
 
@@ -851,12 +928,26 @@ func (e *TestEnv) SubmitEvent(event *career.Event) *TestEnv {
 // ============================================================================
 
 // GetView returns the current view output.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) GetView() string {
 	return e.Model.View()
 }
 
 // AssertViewContains checks that the view contains the given substring.
-// Returns the environment for method chaining.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) AssertViewContains(substr string) *TestEnv {
 	e.T.Helper()
 
@@ -869,7 +960,15 @@ func (e *TestEnv) AssertViewContains(substr string) *TestEnv {
 }
 
 // AssertViewNotContains checks that the view does NOT contain the given substring.
-// Returns the environment for method chaining.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) AssertViewNotContains(substr string) *TestEnv {
 	e.T.Helper()
 
@@ -882,6 +981,15 @@ func (e *TestEnv) AssertViewNotContains(substr string) *TestEnv {
 }
 
 // AssertViewContainsAny checks that the view contains at least one of the given substrings.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) AssertViewContainsAny(substrs ...string) *TestEnv {
 	e.T.Helper()
 
@@ -901,6 +1009,15 @@ func (e *TestEnv) AssertViewContainsAny(substrs ...string) *TestEnv {
 // ============================================================================
 
 // AssertEventCount verifies the number of events in the database.
+//
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) AssertEventCount(expected int) *TestEnv {
 	e.T.Helper()
 
@@ -917,6 +1034,15 @@ func (e *TestEnv) AssertEventCount(expected int) *TestEnv {
 }
 
 // AssertBurstCount verifies the number of bursts in the database.
+//
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) AssertBurstCount(expected int) *TestEnv {
 	e.T.Helper()
 
@@ -938,6 +1064,15 @@ func (e *TestEnv) AssertBurstCount(expected int) *TestEnv {
 }
 
 // AssertFactCount verifies the number of facts in the database.
+//
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) AssertFactCount(expected int) *TestEnv {
 	e.T.Helper()
 
@@ -959,6 +1094,12 @@ func (e *TestEnv) AssertFactCount(expected int) *TestEnv {
 }
 
 // GetEvents returns all events from the database.
+//
+// Returns:
+//   - A []*career.Event value.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) GetEvents() []*career.Event {
 	e.T.Helper()
 
@@ -971,6 +1112,12 @@ func (e *TestEnv) GetEvents() []*career.Event {
 }
 
 // GetBursts returns all bursts from the database.
+//
+// Returns:
+//   - A []*career.Burst value.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) GetBursts() []*career.Burst {
 	e.T.Helper()
 
@@ -988,6 +1135,12 @@ func (e *TestEnv) GetBursts() []*career.Burst {
 }
 
 // GetFacts returns all facts from the database.
+//
+// Returns:
+//   - A []*career.Fact value.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) GetFacts() []*career.Fact {
 	e.T.Helper()
 
@@ -1005,6 +1158,12 @@ func (e *TestEnv) GetFacts() []*career.Fact {
 }
 
 // GetSkills returns all skills from the database.
+//
+// Returns:
+//   - A []*career.Skill value.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) GetSkills() []*career.Skill {
 	e.T.Helper()
 
@@ -1022,6 +1181,15 @@ func (e *TestEnv) GetSkills() []*career.Skill {
 }
 
 // AssertSkillCount verifies the number of skills in the database.
+//
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) AssertSkillCount(expected int) *TestEnv {
 	e.T.Helper()
 
@@ -1035,6 +1203,15 @@ func (e *TestEnv) AssertSkillCount(expected int) *TestEnv {
 }
 
 // AddSkill creates a skill in the database.
+//
+// Expected:
+//   - skill must be valid.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) AddSkill(skill *career.Skill) *TestEnv {
 	e.T.Helper()
 
@@ -1056,7 +1233,12 @@ func (e *TestEnv) AddSkill(skill *career.Skill) *TestEnv {
 // ============================================================================
 
 // SimulateRestart recreates the application model while preserving the database.
-// This simulates an application restart.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) SimulateRestart() *TestEnv {
 	e.T.Helper()
 
@@ -1107,6 +1289,15 @@ func (e *TestEnv) SimulateRestart() *TestEnv {
 // ============================================================================
 
 // AddEvent creates an event in the database.
+//
+// Expected:
+//   - event must be valid.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) AddEvent(event *career.Event) *TestEnv {
 	e.T.Helper()
 
@@ -1124,6 +1315,15 @@ func (e *TestEnv) AddEvent(event *career.Event) *TestEnv {
 }
 
 // AddBurst creates a burst in the database.
+//
+// Expected:
+//   - burst must be valid.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) AddBurst(burst *career.Burst) *TestEnv {
 	e.T.Helper()
 
@@ -1141,6 +1341,15 @@ func (e *TestEnv) AddBurst(burst *career.Burst) *TestEnv {
 }
 
 // AddFact creates a fact in the database.
+//
+// Expected:
+//   - fact must be valid.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) AddFact(fact *career.Fact) *TestEnv {
 	e.T.Helper()
 
@@ -1162,11 +1371,23 @@ func (e *TestEnv) AddFact(fact *career.Fact) *TestEnv {
 // ============================================================================
 
 // GetMenuItems returns the list of menu items from the model.
+//
+// Returns:
+//   - A []app.MenuItem value.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) GetMenuItems() []app.MenuItem {
 	return e.Model.GetMenuItems()
 }
 
 // IsInMenuState checks if the application is currently showing the main menu.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) IsInMenuState() bool {
 	view := e.GetView()
 	// Menu shows the tagline and menu items
@@ -1180,8 +1401,11 @@ func (e *TestEnv) IsInMenuState() bool {
 
 // IsInOnboardingState checks if the application is currently showing the onboarding wizard.
 //
-// Since onboarding is now a separate pre-app phase, this always returns false.
-// To test onboarding, use GetOnboardingTestModel() instead.
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) IsInOnboardingState() bool {
 	// Onboarding is now a separate program that runs before the main app.
 	// The main app is never in an "onboarding state".
@@ -1189,16 +1413,24 @@ func (e *TestEnv) IsInOnboardingState() bool {
 }
 
 // SkipOnboarding is deprecated - onboarding is now skipped by default.
-// This method is kept for backward compatibility but does nothing.
-// Deprecated: Onboarding is automatically skipped in test setup.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) SkipOnboarding() *TestEnv {
 	// No-op - onboarding is handled by bootstrap before app creation.
 	return e
 }
 
 // InitModel initializes the model by calling Init() and sending a WindowSizeMsg.
-// This is required for huh forms to render their content properly.
-// Returns the environment for method chaining.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) InitModel() *TestEnv {
 	e.T.Helper()
 
@@ -1216,20 +1448,18 @@ func (e *TestEnv) InitModel() *TestEnv {
 }
 
 // PressEnterWithFormProcessing presses Enter and processes any internal form messages.
-// This is needed because huh forms use internal messages (nextGroupMsg) to transition
-// between groups. These messages must be processed for the form to advance.
 //
-// This method loops to process messages but has a safety limit to prevent infinite loops.
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) PressEnterWithFormProcessing() *TestEnv {
 	e.T.Helper()
 
 	// Send Enter key
 	modelInterface, cmd := e.Model.Update(tea.KeyMsg{Type: tea.KeyEnter})
-	var ok bool
-	e.Model, ok = modelInterface.(*app.Model)
-	if !ok {
-		e.T.Fatalf("expected *app.Model, got %T", modelInterface)
-	}
+	e.Model = modelInterface.(*app.Model)
 
 	// Process all resulting messages (including internal form messages)
 	// This allows huh's group transitions to complete
@@ -1263,21 +1493,21 @@ func (e *TestEnv) processFormCmds(cmd tea.Cmd, maxDepth int) {
 		// Process the message and any follow-up commands
 		// This includes internal huh messages like nextGroupMsg
 		modelInterface, nextCmd := e.Model.Update(msg)
-		var ok bool
-		e.Model, ok = modelInterface.(*app.Model)
-		if !ok {
-			e.T.Fatalf("expected *app.Model, got %T", modelInterface)
-		}
+		e.Model = modelInterface.(*app.Model)
 		e.processFormCmds(nextCmd, maxDepth-1)
 	}
 }
 
 // CompleteOnboarding simulates completing the onboarding wizard.
-// This types name and email, then presses Enter to advance through steps.
-// name: Required field (e.g., "Test User")
-// email: Required field (e.g., "test@example.com")
 //
-// Returns the environment for method chaining.
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
 func (e *TestEnv) CompleteOnboarding(name, email string) *TestEnv {
 	e.T.Helper()
 

@@ -15,10 +15,9 @@ type MockIntent struct {
 }
 
 // NewMockIntent creates a new MockIntent for testing with all tracking
-// fields initialized to their zero values and an empty message slice.
 //
 // Returns:
-//   - A ready-to-use MockIntent instance.
+//   - A fully initialized MockIntent ready for use.
 //
 // Side effects:
 //   - None.
@@ -31,10 +30,10 @@ func NewMockIntent() *MockIntent {
 // Init implements Intent.Init by recording that initialization was invoked.
 //
 // Returns:
-//   - Always nil; no commands are dispatched.
+//   - A tea.Cmd value.
 //
 // Side effects:
-//   - Sets InitCalled to true.
+//   - None.
 func (m *MockIntent) Init() tea.Cmd {
 	m.InitCalled = true
 	return nil
@@ -59,23 +58,21 @@ func (m *MockIntent) Update(msg tea.Msg) tea.Cmd {
 }
 
 // View implements Intent.View by producing a fixed placeholder string
-// and recording that the view was rendered.
 //
 // Returns:
-//   - The static string "Mock Intent View".
+//   - A string value.
 //
 // Side effects:
-//   - Sets ViewCalled to true.
+//   - None.
 func (m *MockIntent) View() string {
 	m.ViewCalled = true
 	return "Mock Intent View"
 }
 
 // Result implements Intent.Result by exposing the pre-configured result
-// value that was set via SetResult.
 //
 // Returns:
-//   - The stored IntentResult, or nil if none was configured.
+//   - A fully initialized IntentResult[interface{}] ready for use.
 //
 // Side effects:
 //   - None.
@@ -84,13 +81,12 @@ func (m *MockIntent) Result() *IntentResult[interface{}] {
 }
 
 // SetResult configures the result that this mock intent will return
-// from subsequent calls to Result.
 //
 // Expected:
-//   - result is the IntentResult to store; may be nil to clear.
+//   - intentresult[interface{}] must be valid.
 //
 // Side effects:
-//   - Replaces the previously stored result value.
+//   - None.
 func (m *MockIntent) SetResult(result *IntentResult[interface{}]) {
 	m.resultValue = result
 }
@@ -102,10 +98,9 @@ type ThemeAwareMockIntent struct {
 }
 
 // NewThemeAwareMockIntent creates a new ThemeAwareMockIntent that embeds a
-// fresh MockIntent and supports theme manager injection for testing.
 //
 // Returns:
-//   - A ready-to-use ThemeAwareMockIntent instance.
+//   - A fully initialized ThemeAwareMockIntent ready for use.
 //
 // Side effects:
 //   - None.
@@ -116,22 +111,20 @@ func NewThemeAwareMockIntent() *ThemeAwareMockIntent {
 }
 
 // SetThemeManager implements ThemeAware.SetThemeManager by storing the
-// provided theme manager for later retrieval.
 //
 // Expected:
-//   - tm is the ThemeManager to associate with this intent; may be nil.
+//   - th must be a valid theme instance (can be nil).
 //
 // Side effects:
-//   - Replaces the previously stored theme manager reference.
+//   - None.
 func (m *ThemeAwareMockIntent) SetThemeManager(tm *themes.ThemeManager) {
 	m.themeManager = tm
 }
 
 // GetThemeManager implements ThemeAware.GetThemeManager by exposing the
-// theme manager that was previously injected via SetThemeManager.
 //
 // Returns:
-//   - The stored ThemeManager, or nil if none was set.
+//   - A fully initialized themes.ThemeManager ready for use.
 //
 // Side effects:
 //   - None.
@@ -146,10 +139,9 @@ type MockIntentWithSelection struct {
 }
 
 // NewMockIntentWithSelection creates a new MockIntentWithSelection that
-// embeds a fresh MockIntent and initializes the selection index to zero.
 //
 // Returns:
-//   - A ready-to-use MockIntentWithSelection instance.
+//   - A fully initialized MockIntentWithSelection ready for use.
 //
 // Side effects:
 //   - None.
@@ -161,10 +153,9 @@ func NewMockIntentWithSelection() *MockIntentWithSelection {
 }
 
 // GetSelectedIndex provides the current selection position for test
-// assertions against expected navigation state.
 //
 // Returns:
-//   - The zero-based index of the currently selected item.
+//   - A int value.
 //
 // Side effects:
 //   - None.
@@ -173,13 +164,12 @@ func (m *MockIntentWithSelection) GetSelectedIndex() int {
 }
 
 // SetSelectedIndex configures the selection position to simulate
-// navigation state changes in tests.
 //
 // Expected:
-//   - idx is the zero-based index to select.
+//   - int must be valid.
 //
 // Side effects:
-//   - Replaces the previously stored selection index.
+//   - None.
 func (m *MockIntentWithSelection) SetSelectedIndex(idx int) {
 	m.SelectedIndex = idx
 }

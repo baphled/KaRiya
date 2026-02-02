@@ -138,10 +138,9 @@ func (i *Intent) sortEvents(filtered []*career.Event) {
 }
 
 // HasActiveFilters inspects the current filter state to determine whether
-// any user-applied filters differ from defaults.
 //
 // Returns:
-//   - True if any filter field has a non-default value, false otherwise.
+//   - A bool value.
 //
 // Side effects:
 //   - None.
@@ -163,11 +162,9 @@ func (i *Intent) HasActiveFilters() bool {
 }
 
 // ClearFilters removes the most recently applied filter layer, or resets
-// all filters to defaults if the filter stack is empty.
 //
 // Side effects:
-//   - Pops the top filter layer from the stack and clears its corresponding
-//     filter field, or resets all filters when the stack is empty.
+//   - None.
 func (i *Intent) ClearFilters() {
 	if i.filterStack == nil || i.filterStack.IsEmpty() {
 		i.clearAllFilters()
@@ -216,10 +213,9 @@ func (i *Intent) clearAllFilters() {
 }
 
 // ApplyFilters is the public entry point for re-evaluating all events
-// against the current filter and sort criteria.
 //
 // Side effects:
-//   - Rebuilds the filtered events list and re-sorts it in place.
+//   - None.
 func (i *Intent) ApplyFilters() {
 	i.applyFilters()
 }

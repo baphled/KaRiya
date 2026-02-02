@@ -21,6 +21,12 @@ type FactRepository struct {
 }
 
 // NewFactRepository creates a new in-memory fact repository.
+//
+// Returns:
+//   - A fully initialized FactRepository ready for use.
+//
+// Side effects:
+//   - None.
 func NewFactRepository() *FactRepository {
 	return &FactRepository{
 		facts: make(map[string]*career.Fact),
@@ -28,6 +34,15 @@ func NewFactRepository() *FactRepository {
 }
 
 // Create adds a new fact to the in-memory store.
+//
+// Expected:
+//   - fact must be valid.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (r *FactRepository) Create(_ context.Context, fact *career.Fact) error {
 	if fact.ID == "" {
 		fact.ID = uuid.New().String()
@@ -58,6 +73,15 @@ func (r *FactRepository) GetByID(_ context.Context, id string) (*career.Fact, er
 }
 
 // Update modifies an existing fact.
+//
+// Expected:
+//   - fact must be valid.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (r *FactRepository) Update(_ context.Context, fact *career.Fact) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -82,6 +106,15 @@ func (r *FactRepository) Update(_ context.Context, fact *career.Fact) error {
 }
 
 // Delete removes a fact from the repository.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (r *FactRepository) Delete(_ context.Context, id string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()

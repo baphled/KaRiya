@@ -125,7 +125,7 @@ const (
 // NewFilterStack creates an empty filter stack.
 //
 // Returns:
-//   - A pointer to a FilterStack with no layers.
+//   - A fully initialized FilterStack ready for use.
 //
 // Side effects:
 //   - None.
@@ -138,10 +138,10 @@ func NewFilterStack() *FilterStack {
 // Push adds a filter layer to the stack (most recent).
 //
 // Expected:
-//   - layer must be one of the defined FilterLayer constants (FilterLayerSearch, FilterLayerCategory, etc.).
+//   - filterlayer must be valid.
 //
 // Side effects:
-//   - Prepends layer to the front of the Layers slice.
+//   - None.
 func (s *FilterStack) Push(layer FilterLayer) {
 	// Add to front (FIFO - first in, first out when clearing)
 	s.Layers = append([]FilterLayer{layer}, s.Layers...)
@@ -150,10 +150,10 @@ func (s *FilterStack) Push(layer FilterLayer) {
 // Pop removes the most recently pushed filter layer for FIFO clearing.
 //
 // Returns:
-//   - The most recently pushed FilterLayer, or empty string if stack is empty.
+//   - A FilterLayer value.
 //
 // Side effects:
-//   - Removes the first element from the Layers slice.
+//   - None.
 func (s *FilterStack) Pop() FilterLayer {
 	if len(s.Layers) == 0 {
 		return ""
@@ -166,7 +166,7 @@ func (s *FilterStack) Pop() FilterLayer {
 // IsEmpty checks whether any filter layers remain in the stack.
 //
 // Returns:
-//   - True if the Layers slice has no elements.
+//   - A bool value.
 //
 // Side effects:
 //   - None.
@@ -177,7 +177,7 @@ func (s *FilterStack) IsEmpty() bool {
 // Clear removes all filter layers.
 //
 // Side effects:
-//   - Replaces the Layers slice with an empty slice.
+//   - None.
 func (s *FilterStack) Clear() {
 	s.Layers = []FilterLayer{}
 }

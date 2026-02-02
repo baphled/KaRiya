@@ -410,11 +410,9 @@ type MessageInterceptor struct {
 type GlobalKeyHandler func() tea.Cmd
 
 // NewMessageInterceptor initializes an unconfigured MessageInterceptor.
-// Chain OnBack, OnQuit, and OnHelp to register handlers, then call InterceptOr
-// to process a message through the global-key-first pipeline.
 //
 // Returns:
-//   - A MessageInterceptor with all handlers unset (global keys will fall through to the fallback).
+//   - A fully initialized MessageInterceptor ready for use.
 //
 // Side effects:
 //   - None.
@@ -517,18 +515,12 @@ func (m *MessageInterceptor) InterceptOr(msg tea.Msg, fallback func() tea.Cmd) t
 }
 
 // StandardQuitHandler provides the default quit behavior for use with
-// MessageInterceptor.OnQuit. The returned handler sends tea.Quit with no
-// additional cleanup, which is appropriate for most intents.
 //
 // Returns:
-//   - A GlobalKeyHandler that sends the tea.Quit command.
+//   - A GlobalKeyHandler value.
 //
 // Side effects:
 //   - None.
-//
-// Example usage:
-//
-//	interceptor.OnQuit(StandardQuitHandler())
 func StandardQuitHandler() GlobalKeyHandler {
 	return func() tea.Cmd {
 		return tea.Quit

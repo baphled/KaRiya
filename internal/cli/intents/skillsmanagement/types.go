@@ -65,54 +65,66 @@ type Intent struct {
 
 // SetContext replaces the intent's context, allowing reconfiguration of repositories and filters.
 //
-// Expected: ctx should be a valid, fully populated IntentContext.
+// Expected:
+//   - intentcontext must be valid.
 //
-// Side effects: replaces the current context reference on the intent.
+// Side effects:
+//   - None.
 func (i *Intent) SetContext(ctx *IntentContext) {
 	i.context = ctx
 }
 
 // GetContext provides access to the intent's configuration and repository dependencies.
 //
-// Returns: the current IntentContext, or nil if not yet set.
+// Returns:
+//   - A fully initialized IntentContext ready for use.
 //
-// Side effects: None.
+// Side effects:
+//   - None.
 func (i *Intent) GetContext() *IntentContext {
 	return i.context
 }
 
 // SetState transitions the intent to a new state in the workflow state machine.
 //
-// Expected: state must be a valid State constant defined in constants.go.
+// Expected:
+//   - state must be valid.
 //
-// Side effects: updates the intent's current state.
+// Side effects:
+//   - None.
 func (i *Intent) SetState(state State) {
 	i.state = state
 }
 
 // GetState exposes the current workflow state for testing and screen orchestration decisions.
 //
-// Returns: the current State value of the intent.
+// Returns:
+//   - A State value.
 //
-// Side effects: None.
+// Side effects:
+//   - None.
 func (i *Intent) GetState() State {
 	return i.state
 }
 
 // SetActive controls whether the intent processes messages and renders views.
 //
-// Expected: active is true to enable processing, false to deactivate.
+// Expected:
+//   - bool must be valid.
 //
-// Side effects: updates the intent's active flag.
+// Side effects:
+//   - None.
 func (i *Intent) SetActive(active bool) {
 	i.active = active
 }
 
 // IsActive indicates whether the intent is currently processing messages and rendering.
 //
-// Returns: true if the intent is active and accepting updates.
+// Returns:
+//   - A bool value.
 //
-// Side effects: None.
+// Side effects:
+//   - None.
 func (i *Intent) IsActive() bool {
 	return i.active
 }
@@ -120,7 +132,7 @@ func (i *Intent) IsActive() bool {
 // HasActiveModal returns true if a loading, feedback, suggestion, or events modal is currently active.
 //
 // Returns:
-//   - True if any modal is currently active.
+//   - A bool value.
 //
 // Side effects:
 //   - None.
@@ -133,7 +145,7 @@ func (i *Intent) HasActiveModal() bool {
 // GetFeedbackModal returns the current feedback modal for testing.
 //
 // Returns:
-//   - The feedback modal instance or nil if none exists.
+//   - A fully initialized feedback.Modal ready for use.
 //
 // Side effects:
 //   - None.
@@ -144,7 +156,7 @@ func (i *Intent) GetFeedbackModal() *feedback.Modal {
 // GetLoadingModal returns the current loading modal for testing.
 //
 // Returns:
-//   - The loading modal instance or nil if none exists.
+//   - A fully initialized feedback.Modal ready for use.
 //
 // Side effects:
 //   - None.
@@ -154,27 +166,33 @@ func (i *Intent) GetLoadingModal() *feedback.Modal {
 
 // GetSkills provides access to the loaded skills for testing and screen rendering.
 //
-// Returns: the current slice of skills held by the intent.
+// Returns:
+//   - A []*domain.Skill value.
 //
-// Side effects: None.
+// Side effects:
+//   - None.
 func (i *Intent) GetSkills() []*domain.Skill {
 	return i.skills
 }
 
 // GetSelectedSkill provides access to the skill currently highlighted in the table for detail views and actions.
 //
-// Returns: the selected skill, or nil if no skill is selected.
+// Returns:
+//   - A fully initialized domain.Skill ready for use.
 //
-// Side effects: None.
+// Side effects:
+//   - None.
 func (i *Intent) GetSelectedSkill() *domain.Skill {
 	return i.selectedSkill
 }
 
 // GetSelectedIndex provides the zero-based position of the highlighted skill in the table for navigation state.
 //
-// Returns: the index of the currently selected skill in the skills slice.
+// Returns:
+//   - A int value.
 //
-// Side effects: None.
+// Side effects:
+//   - None.
 func (i *Intent) GetSelectedIndex() int {
 	return i.selectedIndex
 }

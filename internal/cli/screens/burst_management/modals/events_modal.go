@@ -57,7 +57,7 @@ func NewBurstEventsModal(burstID string, burstName string, events []*career.Even
 // Init initializes the modal.
 //
 // Returns:
-//   - tea.Cmd: command from underlying modal.
+//   - A tea.Cmd value.
 //
 // Side effects:
 //   - None.
@@ -83,7 +83,7 @@ func (m *BurstEventsModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // View renders the modal content.
 //
 // Returns:
-//   - string: the rendered modal view.
+//   - A string value.
 //
 // Side effects:
 //   - None.
@@ -94,7 +94,7 @@ func (m *BurstEventsModal) View() string {
 // IsVisible returns whether the modal is currently visible.
 //
 // Returns:
-//   - bool: true if modal is visible.
+//   - A bool value.
 //
 // Side effects:
 //   - None.
@@ -105,7 +105,7 @@ func (m *BurstEventsModal) IsVisible() bool {
 // Show makes the modal visible.
 //
 // Side effects:
-//   - Shows underlying modal.
+//   - None.
 func (m *BurstEventsModal) Show() {
 	m.modal.Show()
 }
@@ -113,7 +113,7 @@ func (m *BurstEventsModal) Show() {
 // Hide hides the modal.
 //
 // Side effects:
-//   - Hides underlying modal.
+//   - None.
 func (m *BurstEventsModal) Hide() {
 	m.modal.Hide()
 }
@@ -121,11 +121,10 @@ func (m *BurstEventsModal) Hide() {
 // SetDimensions sets the terminal dimensions.
 //
 // Expected:
-//   - width must be a positive integer.
-//   - height must be a positive integer.
+//   - int must be valid.
 //
 // Side effects:
-//   - Updates underlying modal dimensions.
+//   - None.
 func (m *BurstEventsModal) SetDimensions(width, height int) {
 	m.modal.SetDimensions(width, height)
 }
@@ -133,11 +132,10 @@ func (m *BurstEventsModal) SetDimensions(width, height int) {
 // SetEvents updates the events being displayed.
 //
 // Expected:
-//   - events must be a non-nil slice of *career.Event.
+//   - event must be valid.
 //
 // Side effects:
-//   - Updates internal events reference.
-//   - Regenerates modal content.
+//   - None.
 func (m *BurstEventsModal) SetEvents(events []*career.Event) {
 	m.events = events
 	content := renderEventsContent(events, m.theme)
@@ -148,7 +146,7 @@ func (m *BurstEventsModal) SetEvents(events []*career.Event) {
 // GetBurstID returns the burst ID this modal is showing events for.
 //
 // Returns:
-//   - string: the burst ID.
+//   - A string value.
 //
 // Side effects:
 //   - None.

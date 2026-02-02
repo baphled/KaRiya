@@ -245,12 +245,10 @@ func (i *Intent) removeBurstFromSlice(bursts []*career.Burst, id string) []*care
 // RefreshData reloads burst data from the repository and refreshes the list screen.
 //
 // Returns:
-//   - Always nil; screen transitions are handled internally.
+//   - A tea.Cmd value.
 //
 // Side effects:
-//   - Reloads bursts from the repository via IntentContext.
-//   - Replaces filteredBursts with the reloaded data.
-//   - Transitions the active screen to a new BurstListScreen.
+//   - None.
 func (i *Intent) RefreshData() tea.Cmd {
 	// Reload bursts from context if available.
 	if err := i.context.LoadBursts(); err != nil {
@@ -328,7 +326,7 @@ func (i *Intent) confirmBurst() tea.Cmd {
 // HasVisibleFeedbackModal returns true if the feedback modal is visible.
 //
 // Returns:
-//   - True if the feedback modal reference is non-nil.
+//   - A bool value.
 //
 // Side effects:
 //   - None.
@@ -338,10 +336,8 @@ func (i *Intent) HasVisibleFeedbackModal() bool {
 
 // HasVisibleErrorModal checks whether an error modal is currently displayed.
 //
-// Deprecated: Use HasVisibleFeedbackModal instead.
-//
 // Returns:
-//   - True if the error modal reference is non-nil.
+//   - A bool value.
 //
 // Side effects:
 //   - None.
@@ -352,7 +348,7 @@ func (i *Intent) HasVisibleErrorModal() bool {
 // GetFeedbackModal returns the current feedback modal for testing.
 //
 // Returns:
-//   - The feedback modal instance or nil if none exists.
+//   - A fully initialized feedback.Modal ready for use.
 //
 // Side effects:
 //   - None.
@@ -363,7 +359,7 @@ func (i *Intent) GetFeedbackModal() *feedback.Modal {
 // GetLoadingModal returns the current loading modal for testing.
 //
 // Returns:
-//   - The loading modal instance or nil if none exists.
+//   - A fully initialized feedback.Modal ready for use.
 //
 // Side effects:
 //   - None.
@@ -374,7 +370,7 @@ func (i *Intent) GetLoadingModal() *feedback.Modal {
 // HasVisibleDeleteModal checks whether the delete confirmation modal is currently displayed.
 //
 // Returns:
-//   - True if the delete modal exists and reports itself as visible.
+//   - A bool value.
 //
 // Side effects:
 //   - None.
@@ -385,7 +381,7 @@ func (i *Intent) HasVisibleDeleteModal() bool {
 // HasVisibleConfirmModal checks whether the burst confirmation modal is currently displayed.
 //
 // Returns:
-//   - True if the confirm modal exists and reports itself as visible.
+//   - A bool value.
 //
 // Side effects:
 //   - None.
@@ -396,7 +392,7 @@ func (i *Intent) HasVisibleConfirmModal() bool {
 // HasVisibleEditModal checks whether the edit burst modal is currently displayed.
 //
 // Returns:
-//   - True if the edit modal exists and reports itself as visible.
+//   - A bool value.
 //
 // Side effects:
 //   - None.
@@ -407,11 +403,10 @@ func (i *Intent) HasVisibleEditModal() bool {
 // ShowErrorModal creates and activates an error modal overlay for the intent.
 //
 // Expected:
-//   - title must be a non-empty human-readable heading.
-//   - message must describe the error condition.
+//   - Must be a valid string.
 //
 // Side effects:
-//   - Replaces any existing error modal on the intent.
+//   - None.
 func (i *Intent) ShowErrorModal(title, message string) {
 	i.feedbackModal = feedback.NewErrorModal(title, message)
 }
@@ -419,11 +414,10 @@ func (i *Intent) ShowErrorModal(title, message string) {
 // ShowWarningModal creates and shows a warning modal with the given title and message.
 //
 // Expected:
-//   - title must be a non-empty string.
-//   - message must describe the warning condition.
+//   - Must be a valid string.
 //
 // Side effects:
-//   - Replaces any existing feedback modal on the intent.
+//   - None.
 func (i *Intent) ShowWarningModal(title, message string) {
 	i.feedbackModal = feedback.NewWarningModal(title, message)
 }
@@ -431,11 +425,10 @@ func (i *Intent) ShowWarningModal(title, message string) {
 // ShowSuccessModal creates and shows a success modal with the given message.
 //
 // Expected:
-//   - title must be a non-empty string.
-//   - message must describe the success condition.
+//   - Must be a valid string.
 //
 // Side effects:
-//   - Replaces any existing feedback modal on the intent.
+//   - None.
 func (i *Intent) ShowSuccessModal(title, message string) {
 	modal := feedback.NewSuccessModal(message)
 	modal.Title = title
@@ -456,7 +449,7 @@ func (i *Intent) GetTerminalDimensions() (width, height int) {
 // GetStateName exposes the human-readable name of the current intent state for testing purposes.
 //
 // Returns:
-//   - A display-friendly label for the current state, or "Unknown" for unrecognized states.
+//   - A string value.
 //
 // Side effects:
 //   - None.
@@ -467,7 +460,7 @@ func (i *Intent) GetStateName() string {
 // GetContextHelp exposes the themed keyboard shortcut help string for testing purposes.
 //
 // Returns:
-//   - A rendered help string with keyboard badges for the current state, or empty for states without help.
+//   - A string value.
 //
 // Side effects:
 //   - None.
@@ -638,7 +631,7 @@ func (i *Intent) updateDetailModalRegistry() {
 // RebuildModalRegistry recreates the modal registry from the current modal state, exported for testing.
 //
 // Side effects:
-//   - Clears and repopulates the modal registry based on all active modals.
+//   - None.
 func (i *Intent) RebuildModalRegistry() {
 	i.rebuildModalRegistry()
 }

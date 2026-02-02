@@ -22,6 +22,15 @@ type CaptureForm struct {
 }
 
 // NewCaptureForm creates a new capture form.
+//
+// Expected:
+//   - clieventservice must be valid.
+//
+// Returns:
+//   - A fully initialized CaptureForm ready for use.
+//
+// Side effects:
+//   - None.
 func NewCaptureForm(cliService *service.CLIEventService) *CaptureForm {
 	formData := forms.NewCaptureEventFormData()
 
@@ -49,6 +58,12 @@ func (m *CaptureForm) rebuildForm() {
 }
 
 // Init initializes the form.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (m *CaptureForm) Init() tea.Cmd {
 	return m.form.Init()
 }
@@ -90,6 +105,12 @@ func (m *CaptureForm) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 // View renders the form.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *CaptureForm) View() string {
 	return m.form.View()
 }
@@ -125,12 +146,24 @@ func (m *CaptureForm) submitForm() tea.Cmd {
 }
 
 // SetStrategy updates the strategy.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Side effects:
+//   - None.
 func (m *CaptureForm) SetStrategy(strategy string) {
 	m.strategy = strategy
 	m.rebuildForm()
 }
 
 // LoadEventForEditing populates the form with existing event data.
+//
+// Expected:
+//   - event must be valid.
+//
+// Side effects:
+//   - None.
 func (m *CaptureForm) LoadEventForEditing(event *career.Event) {
 	if event == nil {
 		return
@@ -154,11 +187,23 @@ func (m *CaptureForm) LoadEventForEditing(event *career.Event) {
 }
 
 // GetStrategy returns the current strategy.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *CaptureForm) GetStrategy() string {
 	return m.strategy
 }
 
 // SubmitForm triggers form submission (for compatibility).
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (m *CaptureForm) SubmitForm() tea.Cmd {
 	m.formData.SubmitConfirmed = true
 	return m.submitForm()

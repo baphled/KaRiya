@@ -84,6 +84,12 @@ type ValidationReport struct {
 }
 
 // IsValid returns true if all bullets are valid.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (vr *ValidationReport) IsValid() bool {
 	return vr.InvalidBullets == 0
 }
@@ -199,6 +205,12 @@ func (ts *TraceabilityService) GetFactBulletMapping(
 }
 
 // SummaryString returns a human-readable summary of validation results.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (vr *ValidationReport) SummaryString() string {
 	if vr.IsValid() {
 		return fmt.Sprintf("All %d bullets have valid sources", vr.ValidBullets)

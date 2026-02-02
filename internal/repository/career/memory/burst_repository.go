@@ -21,6 +21,12 @@ type BurstRepository struct {
 }
 
 // NewBurstRepository creates a new in-memory burst repository.
+//
+// Returns:
+//   - A fully initialized BurstRepository ready for use.
+//
+// Side effects:
+//   - None.
 func NewBurstRepository() *BurstRepository {
 	return &BurstRepository{
 		bursts: make(map[string]*career.Burst),
@@ -28,6 +34,15 @@ func NewBurstRepository() *BurstRepository {
 }
 
 // Create adds a new burst to the in-memory store.
+//
+// Expected:
+//   - burst must be valid.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (r *BurstRepository) Create(_ context.Context, burst *career.Burst) error {
 	if burst.ID == "" {
 		burst.ID = uuid.New().String()
@@ -58,6 +73,15 @@ func (r *BurstRepository) GetByID(_ context.Context, id string) (*career.Burst, 
 }
 
 // Update modifies an existing burst.
+//
+// Expected:
+//   - burst must be valid.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (r *BurstRepository) Update(_ context.Context, burst *career.Burst) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -82,6 +106,15 @@ func (r *BurstRepository) Update(_ context.Context, burst *career.Burst) error {
 }
 
 // Delete removes a burst from the repository.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (r *BurstRepository) Delete(_ context.Context, id string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()

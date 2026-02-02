@@ -23,6 +23,16 @@ type Extractor struct {
 }
 
 // NewExtractor creates a new technology extractor.
+//
+// Expected:
+//   - skillrepository must be valid.
+//   - eventrepository must be valid.
+//
+// Returns:
+//   - A fully initialized Extractor ready for use.
+//
+// Side effects:
+//   - None.
 func NewExtractor(skillRepo careerRepo.SkillRepository, eventRepo careerRepo.EventRepository) *Extractor {
 	return &Extractor{
 		skillRepo: skillRepo,
@@ -85,6 +95,16 @@ func (e *Extractor) ExtractFromUser(ctx context.Context) ([]*ExtractedTechnology
 }
 
 // FilterByThreshold removes skills with < minEvents events.
+//
+// Expected:
+//   - []extractedtechnology must be valid.
+//   - int must be valid.
+//
+// Returns:
+//   - A []*ExtractedTechnology value.
+//
+// Side effects:
+//   - None.
 func (e *Extractor) FilterByThreshold(techs []*ExtractedTechnology, minEvents int) []*ExtractedTechnology {
 	if len(techs) == 0 {
 		return []*ExtractedTechnology{}

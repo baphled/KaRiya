@@ -26,13 +26,14 @@ type StringSlice []string
 
 // Scan deserializes a raw database column value into the StringSlice receiver.
 //
-// The value parameter is the raw column data provided by the database driver.
-// A nil value sets the receiver to a nil slice. A string or []byte value is
-// split on commas to produce the slice elements; an empty string also sets
-// the receiver to a nil slice.
+// Expected:
+//   - interface{} must be valid.
 //
-// Returns nil on success. Returns a descriptive error when value is an
-// unsupported type other than nil, string, or []byte.
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (s *StringSlice) Scan(value interface{}) error {
 	if value == nil {
 		*s = nil
@@ -95,16 +96,12 @@ type Skill struct {
 func (Skill) TableName() string { return "skills" }
 
 // ToDomain converts a database Skill record into the corresponding domain
-// career.Skill value.
 //
-// The receiver m provides the source database fields. Every field is mapped
-// one-to-one with no transformation: ID, Name, Category, Level, YearsUsed,
-// LastUsed, CreatedAt, and UpdatedAt are copied directly. The optional
-// pointer fields YearsUsed and LastUsed preserve their nil state unchanged.
-// The Events association is not included in the output because the domain
-// layer references skills independently of their event relationships.
+// Returns:
+//   - A fully initialized career.Skill ready for use.
 //
-// Returns a pointer to the newly constructed career.Skill.
+// Side effects:
+//   - None.
 func (m *Skill) ToDomain() *career.Skill {
 	return &career.Skill{
 		ID:        m.ID,
@@ -119,16 +116,15 @@ func (m *Skill) ToDomain() *career.Skill {
 }
 
 // SkillFromDomain creates a database Skill record from a domain career.Skill
-// value.
 //
-// The s parameter supplies the domain skill whose fields are mapped
-// one-to-one into the returned model: ID, Name, Category, Level, YearsUsed,
-// LastUsed, CreatedAt, and UpdatedAt are copied directly with no
-// transformation. The resulting model is ready for GORM persistence
-// operations. The Events association is not populated because GORM manages
-// the many-to-many join table separately.
+// Expected:
+//   - skill must be valid.
 //
-// Returns a pointer to the newly constructed Skill model.
+// Returns:
+//   - A fully initialized Skill ready for use.
+//
+// Side effects:
+//   - None.
 func SkillFromDomain(s *career.Skill) *Skill {
 	return &Skill{
 		ID:        s.ID,
@@ -170,16 +166,12 @@ type Event struct {
 func (Event) TableName() string { return "career_events" }
 
 // ToDomain converts a database Event record into the corresponding domain
-// career.Event value.
 //
-// The receiver m provides the source database fields. Scalar fields ID, Text,
-// Date, Company, Project, CreatedAt, and UpdatedAt are copied directly. Tags
-// and Categories are converted from StringSlice to plain []string. The
-// associated Skills slice is reduced to a []string of skill IDs because the
-// domain layer references skills by identifier rather than embedding full
-// skill objects.
+// Returns:
+//   - A fully initialized career.Event ready for use.
 //
-// Returns a pointer to the newly constructed career.Event.
+// Side effects:
+//   - None.
 func (m *Event) ToDomain() *career.Event {
 	skillIDs := make([]string, len(m.Skills))
 	for i := range m.Skills {
@@ -200,17 +192,15 @@ func (m *Event) ToDomain() *career.Event {
 }
 
 // EventFromDomain creates a database Event record from a domain career.Event
-// value.
 //
-// The e parameter supplies the domain event whose fields are mapped into the
-// returned model. Scalar fields ID, Text, Date, Company, Project, CreatedAt,
-// and UpdatedAt are copied directly. Tags and Categories are converted from
-// []string to StringSlice for comma-separated storage. The domain event's
-// Skills field, a []string of skill IDs, is not mapped because GORM manages
-// the many-to-many relationship through the event_skills join table
-// separately.
+// Expected:
+//   - event must be valid.
 //
-// Returns a pointer to the newly constructed Event model.
+// Returns:
+//   - A fully initialized Event ready for use.
+//
+// Side effects:
+//   - None.
 func EventFromDomain(e *career.Event) *Event {
 	return &Event{
 		ID:         e.ID,
@@ -256,15 +246,12 @@ type Fact struct {
 func (Fact) TableName() string { return "facts" }
 
 // ToDomain converts a database Fact record into the corresponding domain
-// career.Fact value.
 //
-// The receiver m provides the source database fields. CompetencyCategories
-// and AudienceRelevance are converted from StringSlice to plain []string.
-// RoleFit is cast from a raw string to the domain career.RoleFit enum type.
-// All other fields including ID, Text, StrengthSignal, SourceEventID,
-// SourceBurstID, CreatedAt, and UpdatedAt are copied directly.
+// Returns:
+//   - A fully initialized career.Fact ready for use.
 //
-// Returns a pointer to the newly constructed career.Fact.
+// Side effects:
+//   - None.
 func (m *Fact) ToDomain() *career.Fact {
 	return &career.Fact{
 		ID:                   m.ID,
@@ -281,16 +268,15 @@ func (m *Fact) ToDomain() *career.Fact {
 }
 
 // FactFromDomain creates a database Fact record from a domain career.Fact
-// value.
 //
-// The f parameter supplies the domain fact whose fields are mapped into the
-// returned model. RoleFit is converted from the domain career.RoleFit enum
-// to a raw string for storage. CompetencyCategories and AudienceRelevance
-// are converted from []string to StringSlice for comma-separated storage.
-// All other fields including ID, Text, StrengthSignal, SourceEventID,
-// SourceBurstID, CreatedAt, and UpdatedAt are copied directly.
+// Expected:
+//   - fact must be valid.
 //
-// Returns a pointer to the newly constructed Fact model.
+// Returns:
+//   - A fully initialized Fact ready for use.
+//
+// Side effects:
+//   - None.
 func FactFromDomain(f *career.Fact) *Fact {
 	return &Fact{
 		ID:                   f.ID,
@@ -333,15 +319,12 @@ type Burst struct {
 func (Burst) TableName() string { return "bursts" }
 
 // ToDomain converts a database Burst record into the corresponding domain
-// career.Burst value.
 //
-// The receiver m provides the source database fields. EventIDs is converted
-// from StringSlice to a plain []string. All other fields including ID, Name,
-// Description, Confirmed, ConfirmedAt, CreatedAt, and UpdatedAt are copied
-// directly. The optional ConfirmedAt pointer preserves its nil state
-// unchanged.
+// Returns:
+//   - A fully initialized career.Burst ready for use.
 //
-// Returns a pointer to the newly constructed career.Burst.
+// Side effects:
+//   - None.
 func (m *Burst) ToDomain() *career.Burst {
 	return &career.Burst{
 		ID:          m.ID,
@@ -356,14 +339,15 @@ func (m *Burst) ToDomain() *career.Burst {
 }
 
 // BurstFromDomain creates a database Burst record from a domain career.Burst
-// value.
 //
-// The b parameter supplies the domain burst whose fields are mapped into the
-// returned model. EventIDs is converted from []string to StringSlice for
-// comma-separated storage. All other fields including ID, Name, Description,
-// Confirmed, ConfirmedAt, CreatedAt, and UpdatedAt are copied directly.
+// Expected:
+//   - burst must be valid.
 //
-// Returns a pointer to the newly constructed Burst model.
+// Returns:
+//   - A fully initialized Burst ready for use.
+//
+// Side effects:
+//   - None.
 func BurstFromDomain(b *career.Burst) *Burst {
 	return &Burst{
 		ID:          b.ID,

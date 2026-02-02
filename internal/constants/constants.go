@@ -31,8 +31,12 @@ const (
 )
 
 // AllRoleFits returns every defined RoleFit value in declaration order.
-// The returned slice is safe to range over for building selection lists
-// or validation checks.
+//
+// Returns:
+//   - A []RoleFit value.
+//
+// Side effects:
+//   - None.
 func AllRoleFits() []RoleFit {
 	return []RoleFit{
 		RoleFitPrincipal,
@@ -43,8 +47,15 @@ func AllRoleFits() []RoleFit {
 }
 
 // IsValidRoleFit reports whether s matches a recognised RoleFit value.
-// The comparison is case-sensitive against the string representation of
-// each constant. Returns true on match, false otherwise.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func IsValidRoleFit(s string) bool {
 	for _, r := range AllRoleFits() {
 		if string(r) == s {
@@ -55,9 +66,12 @@ func IsValidRoleFit(s string) bool {
 }
 
 // CVTargetRoleFits returns the RoleFit values that are valid targets when
-// generating or configuring a CV. The returned slice may be a proper subset
-// of AllRoleFits if certain fits are excluded from CV targeting in the future.
-// Currently all defined fits are eligible.
+//
+// Returns:
+//   - A []RoleFit value.
+//
+// Side effects:
+//   - None.
 func CVTargetRoleFits() []RoleFit {
 	return AllRoleFits()
 }
@@ -108,8 +122,12 @@ const (
 )
 
 // AllCompetencyCategories returns every defined CompetencyCategory value in
-// declaration order. The returned slice is safe to range over for building
-// multi-select lists or validation checks.
+//
+// Returns:
+//   - A []CompetencyCategory value.
+//
+// Side effects:
+//   - None.
 func AllCompetencyCategories() []CompetencyCategory {
 	return []CompetencyCategory{
 		CompetencyTechnical,
@@ -127,9 +145,15 @@ func AllCompetencyCategories() []CompetencyCategory {
 }
 
 // IsValidCompetencyCategory reports whether s matches a recognised
-// CompetencyCategory value. The comparison is case-sensitive against the
-// string representation of each constant. Returns true on match, false
-// otherwise.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func IsValidCompetencyCategory(s string) bool {
 	for _, c := range AllCompetencyCategories() {
 		if string(c) == s {
@@ -163,8 +187,12 @@ const (
 )
 
 // AllSkillLevels returns every defined SkillLevel value in ascending order of
-// proficiency, from beginner through expert. The returned slice is safe to
-// range over for building selection lists or validation checks.
+//
+// Returns:
+//   - A []SkillLevel value.
+//
+// Side effects:
+//   - None.
 func AllSkillLevels() []SkillLevel {
 	return []SkillLevel{
 		SkillLevelBeginner,
@@ -175,8 +203,15 @@ func AllSkillLevels() []SkillLevel {
 }
 
 // IsValidSkillLevel reports whether s matches a recognised SkillLevel value.
-// The comparison is case-sensitive against the string representation of each
-// constant. Returns true on match, false otherwise.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func IsValidSkillLevel(s string) bool {
 	for _, l := range AllSkillLevels() {
 		if string(l) == s {
@@ -223,8 +258,12 @@ const (
 )
 
 // AllEventTags returns every defined EventTag value in declaration order.
-// The returned slice is safe to range over for building multi-select lists
-// or validation checks.
+//
+// Returns:
+//   - A []EventTag value.
+//
+// Side effects:
+//   - None.
 func AllEventTags() []EventTag {
 	return []EventTag{
 		EventTagProject,
@@ -239,8 +278,15 @@ func AllEventTags() []EventTag {
 }
 
 // IsValidEventTag reports whether s matches a recognised EventTag value.
-// The comparison is case-sensitive against the string representation of
-// each constant. Returns true on match, false otherwise.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func IsValidEventTag(s string) bool {
 	for _, t := range AllEventTags() {
 		if string(t) == s {
@@ -272,8 +318,12 @@ const (
 )
 
 // AllAudiences returns every defined Audience value in declaration order.
-// The returned slice is safe to range over for building selection lists
-// or validation checks.
+//
+// Returns:
+//   - A []Audience value.
+//
+// Side effects:
+//   - None.
 func AllAudiences() []Audience {
 	return []Audience{
 		AudienceHiringManager,
@@ -283,8 +333,15 @@ func AllAudiences() []Audience {
 }
 
 // IsValidAudience reports whether s matches a recognised Audience value.
-// The comparison is case-sensitive against the string representation of
-// each constant. Returns true on match, false otherwise.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func IsValidAudience(s string) bool {
 	for _, a := range AllAudiences() {
 		if string(a) == s {
@@ -351,8 +408,12 @@ const (
 )
 
 // AllSkillCategories returns every defined SkillCategory value in declaration
-// order. The returned slice is the single source of truth for all valid skill
-// categories and is used for validation, form dropdowns, and test assertions.
+//
+// Returns:
+//   - A []SkillCategory value.
+//
+// Side effects:
+//   - None.
 func AllSkillCategories() []SkillCategory {
 	return []SkillCategory{
 		SkillCategoryBackend,
@@ -374,15 +435,26 @@ func AllSkillCategories() []SkillCategory {
 }
 
 // SuggestedSkillCategories returns every predefined SkillCategory value in
-// declaration order. The returned slice provides sensible defaults for skill
-// grouping forms and category selection dropdowns.
+//
+// Returns:
+//   - A []SkillCategory value.
+//
+// Side effects:
+//   - None.
 func SuggestedSkillCategories() []SkillCategory {
 	return AllSkillCategories()
 }
 
 // IsValidSkillCategory reports whether s matches a recognised SkillCategory
-// value. The comparison is case-sensitive against the string representation of
-// each constant. Returns true on match, false otherwise.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func IsValidSkillCategory(s string) bool {
 	for _, c := range AllSkillCategories() {
 		if string(c) == s {
@@ -393,8 +465,12 @@ func IsValidSkillCategory(s string) bool {
 }
 
 // SkillCategoryStrings returns a string slice of all skill category values
-// in the same order as AllSkillCategories. This is useful for building
-// dynamic error messages and validation feedback.
+//
+// Returns:
+//   - A []string value.
+//
+// Side effects:
+//   - None.
 func SkillCategoryStrings() []string {
 	cats := AllSkillCategories()
 	result := make([]string, len(cats))
@@ -443,8 +519,12 @@ const (
 )
 
 // AllSectionTypes returns every defined SectionType value in declaration order.
-// The returned slice is safe to range over for building configuration options
-// or validation checks.
+//
+// Returns:
+//   - A []SectionType value.
+//
+// Side effects:
+//   - None.
 func AllSectionTypes() []SectionType {
 	return []SectionType{
 		SectionTypeExperience,
@@ -455,8 +535,15 @@ func AllSectionTypes() []SectionType {
 }
 
 // IsValidSectionType reports whether s matches a recognised SectionType value.
-// The comparison is case-sensitive against the string representation of each
-// constant. Returns true on match, false otherwise.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func IsValidSectionType(s string) bool {
 	for _, t := range AllSectionTypes() {
 		if string(t) == s {
@@ -488,8 +575,12 @@ const (
 )
 
 // AllImpactLevels returns every defined ImpactLevel value in ascending order
-// of significance, from low through high. The returned slice is safe to range
-// over for building selection lists or validation checks.
+//
+// Returns:
+//   - A []ImpactLevel value.
+//
+// Side effects:
+//   - None.
 func AllImpactLevels() []ImpactLevel {
 	return []ImpactLevel{
 		ImpactLevelLow,
@@ -499,10 +590,15 @@ func AllImpactLevels() []ImpactLevel {
 }
 
 // IsValidImpactLevel reports whether s matches a recognised ImpactLevel value.
-// The comparison is case-sensitive against the string representation of each
-// constant. An empty string is also accepted and represents an unset impact
-// level, which is common for newly created bullets. Returns true on match or
-// empty input, false otherwise.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func IsValidImpactLevel(s string) bool {
 	if s == "" {
 		return true
@@ -561,9 +657,12 @@ const (
 )
 
 // AllInclusionReasons returns every defined InclusionReason value in
-// declaration order, combining both semantic and source-based reasons. The
-// returned slice is safe to range over for building filter options or
-// validation checks.
+//
+// Returns:
+//   - A []InclusionReason value.
+//
+// Side effects:
+//   - None.
 func AllInclusionReasons() []InclusionReason {
 	return []InclusionReason{
 		InclusionReasonOwnership,
@@ -579,8 +678,15 @@ func AllInclusionReasons() []InclusionReason {
 }
 
 // IsValidInclusionReason reports whether s matches a recognised
-// InclusionReason value. The comparison is case-sensitive against the string
-// representation of each constant. Returns true on match, false otherwise.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func IsValidInclusionReason(s string) bool {
 	for _, r := range AllInclusionReasons() {
 		if string(r) == s {
@@ -615,8 +721,12 @@ const (
 )
 
 // AllFocusAreas returns every defined FocusArea value in declaration order.
-// The returned slice is safe to range over for building selection lists or
-// validation checks.
+//
+// Returns:
+//   - A []FocusArea value.
+//
+// Side effects:
+//   - None.
 func AllFocusAreas() []FocusArea {
 	return []FocusArea{
 		FocusAreaBackend,
@@ -627,8 +737,15 @@ func AllFocusAreas() []FocusArea {
 }
 
 // IsValidFocusArea reports whether s matches a recognised FocusArea value.
-// The comparison is case-sensitive against the string representation of each
-// constant. Returns true on match, false otherwise.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func IsValidFocusArea(s string) bool {
 	for _, a := range AllFocusAreas() {
 		if string(a) == s {
@@ -661,8 +778,12 @@ const (
 )
 
 // AllTechnologyFocuses returns every defined TechnologyFocus value in
-// declaration order. The returned slice is safe to range over for building
-// selection lists or validation checks.
+//
+// Returns:
+//   - A []TechnologyFocus value.
+//
+// Side effects:
+//   - None.
 func AllTechnologyFocuses() []TechnologyFocus {
 	return []TechnologyFocus{
 		TechnologyFocusLanguageAgnostic,
@@ -672,8 +793,15 @@ func AllTechnologyFocuses() []TechnologyFocus {
 }
 
 // IsValidTechnologyFocus reports whether s matches a recognised
-// TechnologyFocus value. The comparison is case-sensitive against the string
-// representation of each constant. Returns true on match, false otherwise.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func IsValidTechnologyFocus(s string) bool {
 	for _, f := range AllTechnologyFocuses() {
 		if string(f) == s {

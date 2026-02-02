@@ -10,24 +10,41 @@ import (
 type Classifier struct{}
 
 // NewClassifier creates a new classifier.
+//
+// Returns:
+//   - A fully initialized Classifier ready for use.
+//
+// Side effects:
+//   - None.
 func NewClassifier() *Classifier {
 	return &Classifier{}
 }
 
 // ClassifyRoleFit determines the role fit for a fact based on keywords.
 //
-// Deprecated: Use ClassifyRoleFitWithCategories instead for more accurate classification.
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A career.RoleFit value.
+//
+// Side effects:
+//   - None.
 func (c *Classifier) ClassifyRoleFit(text string) career.RoleFit {
 	return c.ClassifyRoleFitWithCategories(text, nil)
 }
 
 // ClassifyRoleFitWithCategories determines role fit using both text keywords and event categories.
-// Categories provide a strong signal that should take precedence over keyword matching.
-// The logic is:
-//   - "leadership" + "technical" categories → staff (technical leadership)
-//   - "leadership" only → em (people management)
-//   - "technical" only → senior_ic (individual contributor)
-//   - Keywords in text can elevate to principal if strong signals present
+//
+// Expected:
+//   - Must be a valid string.
+//   - Must be a valid string.
+//
+// Returns:
+//   - A career.RoleFit value.
+//
+// Side effects:
+//   - None.
 func (c *Classifier) ClassifyRoleFitWithCategories(text string, categories []string) career.RoleFit {
 	lowerText := strings.ToLower(text)
 
@@ -109,6 +126,16 @@ func (c *Classifier) ClassifyRoleFitWithCategories(text string, categories []str
 }
 
 // ClassifyAudienceRelevance determines the audience relevance for a fact.
+//
+// Expected:
+//   - Must be a valid string.
+//   - rolefit must be valid.
+//
+// Returns:
+//   - A []string value.
+//
+// Side effects:
+//   - None.
 func (c *Classifier) ClassifyAudienceRelevance(text string, _ career.RoleFit) []string {
 	var audiences []string
 
@@ -132,6 +159,15 @@ func (c *Classifier) ClassifyAudienceRelevance(text string, _ career.RoleFit) []
 }
 
 // ExtractStrengthSignal extracts the strength signal from text.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (c *Classifier) ExtractStrengthSignal(text string) string {
 	// Look for impact indicators
 	impactKeywords := map[string]string{
@@ -176,6 +212,16 @@ func (c *Classifier) ExtractStrengthSignal(text string) string {
 }
 
 // InferCompetencies infers competency categories from event/burst.
+//
+// Expected:
+//   - Must be a valid string.
+//   - Must be a valid string.
+//
+// Returns:
+//   - A []string value.
+//
+// Side effects:
+//   - None.
 func (c *Classifier) InferCompetencies(text string, tags []string) []string {
 	lowerText := strings.ToLower(text)
 	competencies := make(map[string]bool)

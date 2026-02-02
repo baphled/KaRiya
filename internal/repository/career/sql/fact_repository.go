@@ -23,11 +23,29 @@ type FactRepository struct {
 }
 
 // NewFactRepository creates a new SQL fact repository.
+//
+// Expected:
+//   - db must be valid.
+//
+// Returns:
+//   - A fully initialized FactRepository ready for use.
+//
+// Side effects:
+//   - None.
 func NewFactRepository(db *gorm.DB) *FactRepository {
 	return &FactRepository{db: db}
 }
 
 // Create adds a new fact to the database.
+//
+// Expected:
+//   - fact must be valid.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (r *FactRepository) Create(ctx context.Context, fact *career.Fact) error {
 	if fact.ID == "" {
 		fact.ID = uuid.New().String()
@@ -54,6 +72,15 @@ func (r *FactRepository) GetByID(ctx context.Context, id string) (*career.Fact, 
 }
 
 // Update modifies an existing fact.
+//
+// Expected:
+//   - fact must be valid.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (r *FactRepository) Update(ctx context.Context, fact *career.Fact) error {
 	// Check if record exists first.
 	var count int64
@@ -69,6 +96,15 @@ func (r *FactRepository) Update(ctx context.Context, fact *career.Fact) error {
 }
 
 // Delete removes a fact from the database.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (r *FactRepository) Delete(ctx context.Context, id string) error {
 	result := r.db.WithContext(ctx).Delete(&models.Fact{}, "id = ?", id)
 	if result.RowsAffected == 0 {

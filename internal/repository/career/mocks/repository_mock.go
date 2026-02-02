@@ -25,6 +25,15 @@ type MockEventRepositoryMockRecorder struct {
 }
 
 // NewMockEventRepository creates a new mock instance.
+//
+// Expected:
+//   - controller must be valid.
+//
+// Returns:
+//   - A fully initialized MockEventRepository ready for use.
+//
+// Side effects:
+//   - None.
 func NewMockEventRepository(ctrl *gomock.Controller) *MockEventRepository {
 	mock := &MockEventRepository{ctrl: ctrl}
 	mock.recorder = &MockEventRepositoryMockRecorder{mock}
@@ -32,6 +41,12 @@ func NewMockEventRepository(ctrl *gomock.Controller) *MockEventRepository {
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
+//
+// Returns:
+//   - A fully initialized MockEventRepositoryMockRecorder ready for use.
+//
+// Side effects:
+//   - None.
 func (m *MockEventRepository) EXPECT() *MockEventRepositoryMockRecorder {
 	return m.recorder
 }
@@ -46,12 +61,30 @@ func (m *MockEventRepository) Count(arg0 context.Context, arg1 career0.EventList
 }
 
 // Count indicates an expected call of Count.
+//
+// Expected:
+//   - interface{} must be valid.
+//
+// Returns:
+//   - A fully initialized gomock.Call ready for use.
+//
+// Side effects:
+//   - None.
 func (mr *MockEventRepositoryMockRecorder) Count(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockEventRepository)(nil).Count), arg0, arg1)
 }
 
 // Create mocks base method.
+//
+// Expected:
+//   - event must be valid.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (m *MockEventRepository) Create(arg0 context.Context, arg1 *career.Event) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", arg0, arg1)
@@ -60,12 +93,30 @@ func (m *MockEventRepository) Create(arg0 context.Context, arg1 *career.Event) e
 }
 
 // Create indicates an expected call of Create.
+//
+// Expected:
+//   - interface{} must be valid.
+//
+// Returns:
+//   - A fully initialized gomock.Call ready for use.
+//
+// Side effects:
+//   - None.
 func (mr *MockEventRepositoryMockRecorder) Create(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockEventRepository)(nil).Create), arg0, arg1)
 }
 
 // Delete mocks base method.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (m *MockEventRepository) Delete(arg0 context.Context, arg1 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Delete", arg0, arg1)
@@ -74,6 +125,15 @@ func (m *MockEventRepository) Delete(arg0 context.Context, arg1 string) error {
 }
 
 // Delete indicates an expected call of Delete.
+//
+// Expected:
+//   - interface{} must be valid.
+//
+// Returns:
+//   - A fully initialized gomock.Call ready for use.
+//
+// Side effects:
+//   - None.
 func (mr *MockEventRepositoryMockRecorder) Delete(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockEventRepository)(nil).Delete), arg0, arg1)
@@ -89,6 +149,15 @@ func (m *MockEventRepository) GetByID(arg0 context.Context, arg1 string) (*caree
 }
 
 // GetByID indicates an expected call of GetByID.
+//
+// Expected:
+//   - interface{} must be valid.
+//
+// Returns:
+//   - A fully initialized gomock.Call ready for use.
+//
+// Side effects:
+//   - None.
 func (mr *MockEventRepositoryMockRecorder) GetByID(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockEventRepository)(nil).GetByID), arg0, arg1)
@@ -104,12 +173,30 @@ func (m *MockEventRepository) List(arg0 context.Context, arg1 career0.EventListF
 }
 
 // List indicates an expected call of List.
+//
+// Expected:
+//   - interface{} must be valid.
+//
+// Returns:
+//   - A fully initialized gomock.Call ready for use.
+//
+// Side effects:
+//   - None.
 func (mr *MockEventRepositoryMockRecorder) List(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockEventRepository)(nil).List), arg0, arg1)
 }
 
 // Update mocks base method.
+//
+// Expected:
+//   - event must be valid.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
 func (m *MockEventRepository) Update(arg0 context.Context, arg1 *career.Event) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Update", arg0, arg1)
@@ -118,6 +205,15 @@ func (m *MockEventRepository) Update(arg0 context.Context, arg1 *career.Event) e
 }
 
 // Update indicates an expected call of Update.
+//
+// Expected:
+//   - interface{} must be valid.
+//
+// Returns:
+//   - A fully initialized gomock.Call ready for use.
+//
+// Side effects:
+//   - None.
 func (mr *MockEventRepositoryMockRecorder) Update(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockEventRepository)(nil).Update), arg0, arg1)

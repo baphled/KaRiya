@@ -40,6 +40,9 @@ func FullyDocumented(x int) int { return x * 2 }
 
 // VoidNoParams demonstrates a void function with no params.
 //
+// Returns:
+//   - A {} value.
+//
 // Side effects:
 //   - None.
 func VoidNoParams() {}

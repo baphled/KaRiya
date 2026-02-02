@@ -112,15 +112,12 @@ func NewGenerateCVIntent(ctx *GenerateCVContext) (*GenerateCVIntent, error) {
 }
 
 // Init prepares the intent for its first render cycle, optionally bootstrapping
-// the wizard flow or screen-based architecture depending on feature flags.
 //
 // Returns:
-//   - A tea.Cmd to kick off asynchronous initialisation, or nil when none is needed.
+//   - A tea.Cmd value.
 //
 // Side effects:
-//   - Sets the default profile on the internal model when one is provided in the context.
-//   - Creates and shows the wizard modal when the wizard flow is enabled.
-//   - Transitions to the initial screen when screen-based architecture is enabled.
+//   - None.
 func (i *GenerateCVIntent) Init() tea.Cmd {
 	if i.context.DefaultProfile != nil {
 		i.state.selectedProfile = i.context.DefaultProfile
@@ -1654,13 +1651,12 @@ func (i *GenerateCVIntent) getContextHelp() string {
 }
 
 // View produces the terminal UI string for the intent's current state,
-// choosing between wizard, screen-based, or legacy rendering paths.
 //
 // Returns:
-//   - A fully composed string ready for terminal display.
+//   - A string value.
 //
 // Side effects:
-//   - May update the preview viewport content as a rendering side-effect in legacy mode.
+//   - None.
 func (i *GenerateCVIntent) View() string {
 	if !i.active {
 		return "GenerateCV intent is not active"
@@ -2348,46 +2344,25 @@ func (i *GenerateCVIntent) viewConfirm() string {
 }
 
 // EnableScreens activates screen-based architecture for this intent, opting in
-// to the Phase 2.2 migration while maintaining backward compatibility.
-//
-// Usage:
-//
-//	intent.EnableScreens()
-//	intent.Init() // Initializes screens based on current state
 //
 // Side effects:
-//   - Sets the useScreens flag so subsequent Init/Update/View calls use screens.
+//   - None.
 func (i *GenerateCVIntent) EnableScreens() {
 	i.useScreens = true
 }
 
 // EnableWizardFlow activates the simplified wizard-based workflow that reduces
-// the 17-state legacy flow to 5 modal-driven states.
-//
-// The wizard flow simplifies the CV generation workflow from 17 states to 5:
-//   - CVStateConfiguring: Configuration wizard modal (replaces 6 states)
-//   - CVStateExtracting: Technology extraction progress (replaces 1 state)
-//   - CVStateGenerating: CV generation progress (replaces 1 state)
-//   - CVStatePreview: Preview screen with actions (replaces 3 states)
-//   - CVStateExporting: Export modal (replaces 6 states)
-//
-// Usage:
-//
-//	intent.EnableWizardFlow()
-//	intent.Init() // Initializes wizard modal
 //
 // Side effects:
-//   - Sets the useWizardFlow flag so subsequent Init/Update/View calls use the wizard path.
+//   - None.
 func (i *GenerateCVIntent) EnableWizardFlow() {
 	i.useWizardFlow = true
 }
 
 // Result retrieves the outcome of the intent after it becomes inactive,
-// wrapping the typed result into a generic IntentResult for the router.
 //
 // Returns:
-//   - A generic IntentResult containing the CV generation outcome, or nil
-//     when the intent has not yet completed or been cancelled.
+//   - A fully initialized IntentResult[interface{}] ready for use.
 //
 // Side effects:
 //   - None.
