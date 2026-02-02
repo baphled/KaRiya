@@ -172,7 +172,7 @@ jobs:
         run: go install github.com/onsi/ginkgo/v2/ginkgo@latest
 
       - name: Run tests
-        run: ginkgo -v --race --cover --coverprofile=coverage.out --skip-package=testdata ./...
+        run: ginkgo -v --race --cover --coverprofile=coverage.out --skip-package=testdata,noinlinecareer/testdata ./...
 
       - name: Upload coverage to Codecov
         if: matrix.os == 'ubuntu-latest'
