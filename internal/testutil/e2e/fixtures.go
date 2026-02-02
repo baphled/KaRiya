@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/baphled/kariya/internal/constants"
 	"github.com/baphled/kariya/internal/domain/career"
 )
 
@@ -290,4 +291,85 @@ func CreateMinimalFact(id string, sourceEventID string) *career.Fact {
 		CreatedAt:            now,
 		UpdatedAt:            now,
 	}
+}
+
+// CreateMinimalSkill creates a single minimal valid skill for testing.
+func CreateMinimalSkill(id, name, category string) *career.Skill {
+	now := time.Now()
+	return &career.Skill{
+		ID:        id,
+		Name:      name,
+		Category:  category,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+}
+
+// skillFixtureDef pairs a representative skill name with its category constant.
+type skillFixtureDef struct {
+	Name     string
+	Category constants.SkillCategory
+	Level    string
+}
+
+// allSkillFixtureDefs returns one representative skill per category, derived
+// from constants.AllSkillCategories so fixtures stay in sync with the
+// canonical category list.
+func allSkillFixtureDefs() []skillFixtureDef {
+	nameForCategory := map[constants.SkillCategory]struct {
+		Name  string
+		Level string
+	}{
+		constants.SkillCategoryBackend:      {"Go", "expert"},
+		constants.SkillCategoryFrontend:     {"React", "advanced"},
+		constants.SkillCategoryDevOps:       {"Docker", "advanced"},
+		constants.SkillCategoryDatabase:     {"PostgreSQL", "expert"},
+		constants.SkillCategoryCloud:        {"AWS", "intermediate"},
+		constants.SkillCategoryMobile:       {"Swift", "beginner"},
+		constants.SkillCategoryTooling:      {"Git", "expert"},
+		constants.SkillCategoryTesting:      {"Ginkgo", "advanced"},
+		constants.SkillCategoryData:         {"Apache Kafka", "intermediate"},
+		constants.SkillCategoryML:           {"TensorFlow", "beginner"},
+		constants.SkillCategoryMonitoring:   {"Prometheus", "intermediate"},
+		constants.SkillCategoryArchitecture: {"Microservices", "advanced"},
+		constants.SkillCategorySecurity:     {"OAuth", "intermediate"},
+		constants.SkillCategoryPractices:    {"Agile", "expert"},
+		constants.SkillCategoryOther:        {"IRC", "beginner"},
+	}
+
+	defs := make([]skillFixtureDef, 0, len(constants.AllSkillCategories()))
+	for _, cat := range constants.AllSkillCategories() {
+		info := nameForCategory[cat]
+		defs = append(defs, skillFixtureDef{
+			Name:     info.Name,
+			Category: cat,
+			Level:    info.Level,
+		})
+	}
+	return defs
+}
+
+// CreateSampleSkills generates test skills across all categories.
+// The returned skills derive their categories from constants.AllSkillCategories
+// so the fixture data stays in sync with the canonical category list.
+func CreateSampleSkills(count int) []*career.Skill {
+	defs := allSkillFixtureDefs()
+
+	skills := make([]*career.Skill, 0, count)
+	now := time.Now()
+
+	for i := 0; i < count && i < len(defs); i++ {
+		def := defs[i]
+		skill := &career.Skill{
+			ID:        fmt.Sprintf("skill-%03d", i+1),
+			Name:      def.Name,
+			Category:  string(def.Category),
+			Level:     def.Level,
+			CreatedAt: now,
+			UpdatedAt: now,
+		}
+		skills = append(skills, skill)
+	}
+
+	return skills
 }

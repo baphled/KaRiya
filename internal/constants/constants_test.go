@@ -203,9 +203,9 @@ var _ = Describe("Constants", func() {
 
 	Describe("SkillCategory", func() {
 		Describe("AllSkillCategories", func() {
-			It("returns all 12 defined skill categories", func() {
+			It("returns all 15 defined skill categories", func() {
 				categories := constants.AllSkillCategories()
-				Expect(categories).To(HaveLen(12))
+				Expect(categories).To(HaveLen(15))
 				Expect(categories).To(ContainElements(
 					constants.SkillCategoryBackend,
 					constants.SkillCategoryFrontend,
@@ -218,15 +218,18 @@ var _ = Describe("Constants", func() {
 					constants.SkillCategoryData,
 					constants.SkillCategoryML,
 					constants.SkillCategoryMonitoring,
+					constants.SkillCategoryArchitecture,
+					constants.SkillCategorySecurity,
+					constants.SkillCategoryPractices,
 					constants.SkillCategoryOther,
 				))
 			})
 		})
 
 		Describe("SuggestedSkillCategories", func() {
-			It("returns all skill categories for form dropdowns", func() {
+			It("returns all 15 skill categories for form dropdowns", func() {
 				categories := constants.SuggestedSkillCategories()
-				Expect(categories).To(HaveLen(12))
+				Expect(categories).To(HaveLen(15))
 				Expect(categories).To(ContainElements(
 					constants.SkillCategoryBackend,
 					constants.SkillCategoryFrontend,
@@ -239,13 +242,20 @@ var _ = Describe("Constants", func() {
 					constants.SkillCategoryData,
 					constants.SkillCategoryML,
 					constants.SkillCategoryMonitoring,
+					constants.SkillCategoryArchitecture,
+					constants.SkillCategorySecurity,
+					constants.SkillCategoryPractices,
 					constants.SkillCategoryOther,
 				))
+			})
+
+			It("delegates to AllSkillCategories", func() {
+				Expect(constants.SuggestedSkillCategories()).To(Equal(constants.AllSkillCategories()))
 			})
 		})
 
 		Describe("IsValidSkillCategory", func() {
-			It("returns true for all canonical skill categories", func() {
+			It("returns true for all canonical categories", func() {
 				Expect(constants.IsValidSkillCategory("backend")).To(BeTrue())
 				Expect(constants.IsValidSkillCategory("frontend")).To(BeTrue())
 				Expect(constants.IsValidSkillCategory("devops")).To(BeTrue())
@@ -257,6 +267,9 @@ var _ = Describe("Constants", func() {
 				Expect(constants.IsValidSkillCategory("data")).To(BeTrue())
 				Expect(constants.IsValidSkillCategory("ml")).To(BeTrue())
 				Expect(constants.IsValidSkillCategory("monitoring")).To(BeTrue())
+				Expect(constants.IsValidSkillCategory("architecture")).To(BeTrue())
+				Expect(constants.IsValidSkillCategory("security")).To(BeTrue())
+				Expect(constants.IsValidSkillCategory("practices")).To(BeTrue())
 				Expect(constants.IsValidSkillCategory("other")).To(BeTrue())
 			})
 
@@ -265,11 +278,26 @@ var _ = Describe("Constants", func() {
 				Expect(constants.IsValidSkillCategory("")).To(BeFalse())
 				Expect(constants.IsValidSkillCategory("BACKEND")).To(BeFalse())
 			})
+		})
 
-			It("returns false for categories that were merged into existing ones", func() {
-				Expect(constants.IsValidSkillCategory("build")).To(BeFalse())
-				Expect(constants.IsValidSkillCategory("documentation")).To(BeFalse())
-				Expect(constants.IsValidSkillCategory("os")).To(BeFalse())
+		Describe("SkillCategoryStrings", func() {
+			It("returns string slice of all 15 categories", func() {
+				strings := constants.SkillCategoryStrings()
+				Expect(strings).To(HaveLen(15))
+				Expect(strings).To(ContainElements(
+					"backend", "frontend", "devops", "database", "cloud",
+					"mobile", "tooling", "testing", "data", "ml",
+					"monitoring", "architecture", "security", "practices", "other",
+				))
+			})
+
+			It("returns strings in same order as AllSkillCategories", func() {
+				categories := constants.AllSkillCategories()
+				strings := constants.SkillCategoryStrings()
+				Expect(strings).To(HaveLen(len(categories)))
+				for i, cat := range categories {
+					Expect(strings[i]).To(Equal(string(cat)))
+				}
 			})
 		})
 	})
