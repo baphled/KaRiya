@@ -93,6 +93,7 @@ jobs:
         with:
           version: v2.8.0
           install-mode: binary
+          only-new-issues: true
           args: --timeout=5m
 
   # Docblocks enforcement (structured doc comments on exports)
