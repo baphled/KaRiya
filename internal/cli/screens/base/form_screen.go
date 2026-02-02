@@ -82,8 +82,16 @@ type FormScreen[T any] struct {
 //   - builder: Function that creates a huh.Form for given dimensions
 //   - formData: Pointer to form data structure (must have SubmitConfirmed bool field)
 //
-// The form is immediately built with default dimensions (120x40).
-// Call SetTerminalInfo to update dimensions after creation.
+// Expected:
+//   - breadcrumbs must be a valid slice of strings.
+//   - builder must be a valid FormBuilder function.
+//   - formdata must be a valid T pointer.
+//
+// Returns:
+//   - A fully initialized FormScreen[T] ready for use.
+//
+// Side effects:
+//   - Builds form with default dimensions.
 func NewBaseFormScreen[T any](
 	breadcrumbs []string,
 	builder FormBuilder[T],
@@ -128,12 +136,30 @@ func (s *FormScreen[T]) rebuildForm() {
 }
 
 // SetTerminalInfo updates terminal dimensions and rebuilds form.
+//
+// Expected:
+//   - int must be valid.
+//
+// Side effects:
+//   - None.
 func (s *FormScreen[T]) SetTerminalInfo(width, height int) {
 	s.Screen.SetTerminalInfo(width, height)
 	s.rebuildForm()
 }
 
 // Update handles messages and returns result when form is complete or cancelled.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - tea.Cmd: command to execute.
+//   - screens.ScreenResult: result indicating form state.
+//
+// Side effects:
+//   - May rebuild form on window resize.
+//   - May return CancelResult on escape.
+//   - May return SubmitResult on form completion.
 func (s *FormScreen[T]) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -175,6 +201,12 @@ func (s *FormScreen[T]) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 }
 
 // View renders the form screen using StandardView.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *FormScreen[T]) View() string {
 	// Render form content
 	formView := s.form.View()
@@ -184,13 +216,23 @@ func (s *FormScreen[T]) View() string {
 }
 
 // SetFooter updates the footer help text.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Side effects:
+//   - None.
 func (s *FormScreen[T]) SetFooter(footer string) {
 	s.footer = footer
 }
 
 // GetFormData returns the form data structure.
 //
-// This allows the intent to access the filled form data after submission.
+// Returns:
+//   - A T value.
+//
+// Side effects:
+//   - None.
 func (s *FormScreen[T]) GetFormData() T {
 	return s.formData
 }

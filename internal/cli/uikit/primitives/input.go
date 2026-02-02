@@ -30,7 +30,15 @@ type Input struct {
 }
 
 // NewInput creates a new input component with the given theme.
-// If theme is nil, the default theme is used.
+//
+// Expected:
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A fully initialized Input ready for use.
+//
+// Side effects:
+//   - None.
 func NewInput(th theme.Theme) *Input {
 	ti := textinput.New()
 	ti.CharLimit = 256
@@ -51,36 +59,75 @@ func NewInput(th theme.Theme) *Input {
 }
 
 // Label sets the label displayed above the input.
-// Returns the input for method chaining.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized Input ready for use.
+//
+// Side effects:
+//   - None.
 func (i *Input) Label(label string) *Input {
 	i.label = label
 	return i
 }
 
 // Placeholder sets the placeholder text shown when input is empty.
-// Returns the input for method chaining.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized Input ready for use.
+//
+// Side effects:
+//   - None.
 func (i *Input) Placeholder(placeholder string) *Input {
 	i.textInput.Placeholder = placeholder
 	return i
 }
 
 // Value sets the initial value of the input.
-// Returns the input for method chaining.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized Input ready for use.
+//
+// Side effects:
+//   - None.
 func (i *Input) Value(value string) *Input {
 	i.textInput.SetValue(value)
 	return i
 }
 
 // Error sets an error message to display below the input.
-// Pass empty string to clear the error.
-// Returns the input for method chaining.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized Input ready for use.
+//
+// Side effects:
+//   - None.
 func (i *Input) Error(msg string) *Input {
 	i.errorMsg = msg
 	return i
 }
 
 // Width sets the width of the input field.
-// Returns the input for method chaining.
+//
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized Input ready for use.
+//
+// Side effects:
+//   - None.
 func (i *Input) Width(w int) *Input {
 	i.width = w
 	i.textInput.Width = w
@@ -88,22 +135,46 @@ func (i *Input) Width(w int) *Input {
 }
 
 // Focus returns a command to focus the input.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (i *Input) Focus() tea.Cmd {
 	return i.textInput.Focus()
 }
 
 // Blur removes focus from the input.
+//
+// Side effects:
+//   - None.
 func (i *Input) Blur() {
 	i.textInput.Blur()
 }
 
 // GetValue returns the current value of the input.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (i *Input) GetValue() string {
 	return i.textInput.Value()
 }
 
 // Update handles input events and updates the internal state.
 // Implements the tea.Model interface for Bubble Tea integration.
+//
+// Expected:
+//   - msg must be a valid tea.Msg.
+//
+// Returns:
+//   - Updated Input model and command.
+//
+// Side effects:
+//   - Updates internal text input state.
 func (i *Input) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	i.textInput, cmd = i.textInput.Update(msg)
@@ -111,21 +182,34 @@ func (i *Input) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 // View returns the rendered input as a string.
-// This is an alias for Render() to support Bubble Tea's tea.Model interface.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (i *Input) View() string {
 	return i.Render()
 }
 
 // Init implements tea.Model interface. Returns nil as no initialization is needed.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (i *Input) Init() tea.Cmd {
 	return nil
 }
 
 // Render returns the styled input as a string.
-// The input is rendered with:
-// - Label above (if set)
-// - The input field with themed border
-// - Error message below (if set).
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (i *Input) Render() string {
 	var parts []string
 

@@ -23,6 +23,15 @@ type Overlay struct {
 }
 
 // NewOverlay creates a new overlay with the given dimensions.
+//
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized Overlay ready for use.
+//
+// Side effects:
+//   - None.
 func NewOverlay(width, height int) *Overlay {
 	return &Overlay{
 		width:   width,
@@ -33,18 +42,42 @@ func NewOverlay(width, height int) *Overlay {
 }
 
 // Content sets the content to display in the center.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized Overlay ready for use.
+//
+// Side effects:
+//   - None.
 func (o *Overlay) Content(content string) *Overlay {
 	o.content = content
 	return o
 }
 
 // Dimmed enables background dimming.
+//
+// Returns:
+//   - A fully initialized Overlay ready for use.
+//
+// Side effects:
+//   - None.
 func (o *Overlay) Dimmed() *Overlay {
 	o.dimmed = true
 	return o
 }
 
 // DimmedWith sets a custom dim character.
+//
+// Expected:
+//   - rune must be valid.
+//
+// Returns:
+//   - A fully initialized Overlay ready for use.
+//
+// Side effects:
+//   - None.
 func (o *Overlay) DimmedWith(char rune) *Overlay {
 	o.dimChar = char
 	o.dimmed = true // Automatically enable dimming when custom char is set
@@ -52,6 +85,12 @@ func (o *Overlay) DimmedWith(char rune) *Overlay {
 }
 
 // Render returns the rendered overlay as a string.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (o *Overlay) Render() string {
 	// Create background if dimmed
 	var background string

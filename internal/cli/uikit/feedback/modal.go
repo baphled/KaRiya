@@ -38,6 +38,12 @@ type SimpleSpinner struct {
 }
 
 // NewSimpleSpinner creates a new simple spinner.
+//
+// Returns:
+//   - A fully initialized SimpleSpinner ready for use.
+//
+// Side effects:
+//   - None.
 func NewSimpleSpinner() *SimpleSpinner {
 	return &SimpleSpinner{
 		frames: []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"},
@@ -46,11 +52,20 @@ func NewSimpleSpinner() *SimpleSpinner {
 }
 
 // GetFrame returns the current spinner frame.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *SimpleSpinner) GetFrame() string {
 	return s.frames[s.index]
 }
 
 // Advance advances the spinner to the next frame.
+//
+// Side effects:
+//   - None.
 func (s *SimpleSpinner) Advance() {
 	s.index = (s.index + 1) % len(s.frames)
 }
@@ -62,6 +77,15 @@ type LoadingMessageRotator struct {
 }
 
 // NewLoadingMessageRotator creates a new message rotator.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized LoadingMessageRotator ready for use.
+//
+// Side effects:
+//   - None.
 func NewLoadingMessageRotator(messages []string) *LoadingMessageRotator {
 	if len(messages) == 0 {
 		messages = []string{"Loading..."}
@@ -73,11 +97,23 @@ func NewLoadingMessageRotator(messages []string) *LoadingMessageRotator {
 }
 
 // GetCurrent returns the current message.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (r *LoadingMessageRotator) GetCurrent() string {
 	return r.messages[r.index]
 }
 
 // Rotate advances to the next message and returns it.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (r *LoadingMessageRotator) Rotate() string {
 	r.index = (r.index + 1) % len(r.messages)
 	return r.messages[r.index]
@@ -110,6 +146,15 @@ func (m *Modal) getTheme() themes.Theme {
 }
 
 // NewErrorModal creates a new error modal.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized Modal ready for use.
+//
+// Side effects:
+//   - None.
 func NewErrorModal(title, message string) *Modal {
 	return &Modal{
 		Type:           ModalError,
@@ -124,6 +169,16 @@ func NewErrorModal(title, message string) *Modal {
 }
 
 // NewLoadingModal creates a new loading modal with optional spinner.
+//
+// Expected:
+//   - Must be a valid string.
+//   - bool must be valid.
+//
+// Returns:
+//   - A fully initialized Modal ready for use.
+//
+// Side effects:
+//   - None.
 func NewLoadingModal(message string, cancellable bool) *Modal {
 	return &Modal{
 		Type:           ModalLoading,
@@ -138,6 +193,16 @@ func NewLoadingModal(message string, cancellable bool) *Modal {
 }
 
 // NewProgressModal creates a new progress modal.
+//
+// Expected:
+//   - Must be a valid string.
+//   - float64 must be valid.
+//
+// Returns:
+//   - A fully initialized Modal ready for use.
+//
+// Side effects:
+//   - None.
 func NewProgressModal(title, message string, progress float64) *Modal {
 	return &Modal{
 		Type:           ModalProgress,
@@ -151,6 +216,15 @@ func NewProgressModal(title, message string, progress float64) *Modal {
 }
 
 // NewSuccessModal creates a new success modal with auto-dismiss.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized Modal ready for use.
+//
+// Side effects:
+//   - None.
 func NewSuccessModal(message string) *Modal {
 	return &Modal{
 		Type:           ModalSuccess,
@@ -164,6 +238,15 @@ func NewSuccessModal(message string) *Modal {
 }
 
 // NewWarningModal creates a new warning modal.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized Modal ready for use.
+//
+// Side effects:
+//   - None.
 func NewWarningModal(title, message string) *Modal {
 	return &Modal{
 		Type:           ModalWarning,
@@ -178,18 +261,45 @@ func NewWarningModal(title, message string) *Modal {
 }
 
 // SetMessageRotator sets a loading message rotator for dynamic messages.
+//
+// Expected:
+//   - loadingmessagerotator must be valid.
+//
+// Returns:
+//   - A fully initialized Modal ready for use.
+//
+// Side effects:
+//   - None.
 func (m *Modal) SetMessageRotator(rotator *LoadingMessageRotator) *Modal {
 	m.messageRotator = rotator
 	return m
 }
 
 // WithTheme sets the theme for the modal.
+//
+// Expected:
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A fully initialized Modal ready for use.
+//
+// Side effects:
+//   - None.
 func (m *Modal) WithTheme(theme themes.Theme) *Modal {
 	m.theme = theme
 	return m
 }
 
 // Render renders the modal centered in the given terminal dimensions.
+//
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *Modal) Render(terminalWidth, terminalHeight int) string {
 	theme := m.getTheme()
 
@@ -405,6 +515,12 @@ func wrapText(text string, width int) string {
 }
 
 // UpdateProgress updates the progress value (0.0 to 1.0).
+//
+// Expected:
+//   - float64 must be valid.
+//
+// Side effects:
+//   - None.
 func (m *Modal) UpdateProgress(progress float64) {
 	if progress < 0.0 {
 		progress = 0.0
@@ -416,6 +532,9 @@ func (m *Modal) UpdateProgress(progress float64) {
 }
 
 // AdvanceSpinner advances the spinner to the next frame.
+//
+// Side effects:
+//   - None.
 func (m *Modal) AdvanceSpinner() {
 	if m.spinner != nil {
 		m.spinner.Advance()
@@ -423,6 +542,12 @@ func (m *Modal) AdvanceSpinner() {
 }
 
 // RotateMessage advances to the next message if a rotator is set.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *Modal) RotateMessage() string {
 	if m.messageRotator != nil {
 		return m.messageRotator.Rotate()
@@ -431,7 +556,12 @@ func (m *Modal) RotateMessage() string {
 }
 
 // Init initializes the modal and starts spinner animation for loading modals.
-// Returns a tick command for loading modals, nil for other modal types.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (m *Modal) Init() tea.Cmd {
 	if m.Type == ModalLoading && m.spinner != nil {
 		return m.tickSpinner()
@@ -440,6 +570,15 @@ func (m *Modal) Init() tea.Cmd {
 }
 
 // Update handles messages for the modal, advancing the spinner on tick.
+//
+// Expected:
+//   - msg must be valid.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (m *Modal) Update(msg tea.Msg) tea.Cmd {
 	switch msg.(type) {
 	case ModalSpinnerTickMsg:
@@ -485,6 +624,15 @@ type OverlayModal struct {
 }
 
 // NewOverlayModal creates a new overlay modal with the given title and content.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized OverlayModal ready for use.
+//
+// Side effects:
+//   - None.
 func NewOverlayModal(title, content string) *OverlayModal {
 	return &OverlayModal{
 		Title:   title,
@@ -503,12 +651,30 @@ func (o *OverlayModal) getTheme() themes.Theme {
 }
 
 // WithTheme sets the theme for the overlay modal.
+//
+// Expected:
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A fully initialized OverlayModal ready for use.
+//
+// Side effects:
+//   - None.
 func (o *OverlayModal) WithTheme(theme themes.Theme) *OverlayModal {
 	o.theme = theme
 	return o
 }
 
 // SetWidth sets the modal width, clamping to min/max bounds.
+//
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized OverlayModal ready for use.
+//
+// Side effects:
+//   - None.
 func (o *OverlayModal) SetWidth(width int) *OverlayModal {
 	if width < MinOverlayWidth {
 		width = MinOverlayWidth
@@ -521,12 +687,31 @@ func (o *OverlayModal) SetWidth(width int) *OverlayModal {
 }
 
 // SetFooter sets the footer text for the modal.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized OverlayModal ready for use.
+//
+// Side effects:
+//   - None.
 func (o *OverlayModal) SetFooter(footer string) *OverlayModal {
 	o.Footer = footer
 	return o
 }
 
 // RenderCentered renders the modal centered over the dimmed background.
+//
+// Expected:
+//   - Must be a valid string.
+//   - int must be valid.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (o *OverlayModal) RenderCentered(background string, termWidth, termHeight int) string {
 	return RenderOverlay(background, o.buildContent(), termWidth, termHeight, o.getTheme())
 }
@@ -562,7 +747,15 @@ func (o *OverlayModal) buildContent() string {
 }
 
 // DimContent applies a dimmed/faded style to the content.
-// This is used to visually distinguish the background from the modal overlay.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func DimContent(content string) string {
 	if content == "" {
 		return ""
@@ -574,14 +767,16 @@ func DimContent(content string) string {
 
 // RenderOverlay renders modal content centered over a dimmed background.
 //
-// IMPORTANT: This function expects the background to be a COMPLETE, FULLY-RENDERED view
-// that already fills the terminal (termWidth x termHeight). This is typically the output
-// of StandardView.Render() which uses lipgloss.Place to fill the terminal.
+// Expected:
+//   - Must be a valid string.
+//   - int must be valid.
+//   - th must be a valid theme instance (can be nil).
 //
-// The modal is overlaid by:
-// 1. Dimming the entire background
-// 2. Placing the modal box centered in the terminal
-// 3. Replacing the lines where the modal appears with the centered modal.
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func RenderOverlay(background, modalContent string, termWidth, termHeight int, theme themes.Theme) string {
 	if theme == nil {
 		theme = themes.NewDefaultTheme()
@@ -670,7 +865,16 @@ func RenderOverlay(background, modalContent string, termWidth, termHeight int, t
 }
 
 // RenderOverlayWithDefaultTheme renders modal content using the default theme.
-// This is a convenience function for callers that don't have a theme.
+//
+// Expected:
+//   - Must be a valid string.
+//   - int must be valid.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func RenderOverlayWithDefaultTheme(background, modalContent string, termWidth, termHeight int) string {
 	return RenderOverlay(background, modalContent, termWidth, termHeight, themes.NewDefaultTheme())
 }

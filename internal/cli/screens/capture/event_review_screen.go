@@ -60,7 +60,17 @@ type EventReviewScreen struct {
 //   - bursts: Inferred bursts (may be nil or empty)
 //   - facts: Inferred facts (may be nil or empty)
 //
-// Returns a EventReviewScreen displaying event details with bursts and facts.
+// Expected:
+//   - breadcrumbs must be a valid slice of strings.
+//   - event must be a valid *career.Event.
+//   - bursts must be a valid slice of *career.Burst (can be nil or empty).
+//   - facts must be a valid slice of *career.Fact (can be nil or empty).
+//
+// Returns:
+//   - A fully initialized EventReviewScreen ready for use.
+//
+// Side effects:
+//   - None.
 func NewEventReviewScreen(
 	breadcrumbs []string,
 	event *career.Event,
@@ -83,6 +93,18 @@ func NewEventReviewScreen(
 // - e/b/f -> returns NavigateResult with edit action
 // - Esc -> returns CancelResult
 // - WindowSizeMsg -> updates dimensions.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - A tea.Cmd value.
+//   - A screens.ScreenResult value.
+//
+// Side effects:
+//   - May return SubmitResult on Enter.
+//   - May return NavigateResult on e/b/f keys.
+//   - May return CancelResult on Escape.
 func (s *EventReviewScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	if cmd := s.Screen.HandleWindowSizeMsg(msg); cmd != nil {
 		return cmd, nil
@@ -134,8 +156,11 @@ func (s *EventReviewScreen) handleRuneKey(keyMsg tea.KeyMsg) (tea.Cmd, screens.S
 
 // View implements the Screen interface.
 //
-// Renders the review screen with event details, bursts, and facts
-// using UIKit components for consistent theming.
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *EventReviewScreen) View() string {
 	content := s.renderContent()
 	footer := s.renderFooter()

@@ -11,7 +11,12 @@ import (
 type Theme = themes.Theme
 
 // Default returns the default KaRiya theme.
-// This is the theme used when no theme is explicitly provided.
+//
+// Returns:
+//   - A Theme value.
+//
+// Side effects:
+//   - None.
 func Default() Theme {
 	return themes.NewDefaultTheme()
 }

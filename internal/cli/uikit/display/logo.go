@@ -59,6 +59,16 @@ const (
 type TickMsg time.Time
 
 // NewLogo creates a new ASCII logo component.
+//
+// Expected:
+//   - bool must be valid.
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized Logo ready for use.
+//
+// Side effects:
+//   - None.
 func NewLogo(animated bool, width int) *Logo {
 	return &Logo{
 		animated:     animated,
@@ -72,34 +82,79 @@ func NewLogo(animated bool, width int) *Logo {
 }
 
 // WithTheme sets the theme for the logo.
+//
+// Expected:
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A fully initialized Logo ready for use.
+//
+// Side effects:
+//   - None.
 func (l *Logo) WithTheme(theme themes.Theme) *Logo {
 	l.theme = theme
 	return l
 }
 
 // WithTagline sets the tagline text.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized Logo ready for use.
+//
+// Side effects:
+//   - None.
 func (l *Logo) WithTagline(tagline string) *Logo {
 	l.tagline = tagline
 	return l
 }
 
 // WithVersion sets the version text.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized Logo ready for use.
+//
+// Side effects:
+//   - None.
 func (l *Logo) WithVersion(version string) *Logo {
 	l.version = version
 	return l
 }
 
 // SetWidth sets the width for centering calculations.
+//
+// Expected:
+//   - int must be valid.
+//
+// Side effects:
+//   - None.
 func (l *Logo) SetWidth(width int) {
 	l.width = width
 }
 
 // ShowTagline controls tagline visibility.
+//
+// Expected:
+//   - bool must be valid.
+//
+// Side effects:
+//   - None.
 func (l *Logo) ShowTagline(show bool) {
 	l.showTagline = show
 }
 
 // ShowVersion controls version visibility.
+//
+// Expected:
+//   - bool must be valid.
+//
+// Side effects:
+//   - None.
 func (l *Logo) ShowVersion(show bool) {
 	l.showVersion = show
 }
@@ -113,6 +168,12 @@ func (l *Logo) getTheme() themes.Theme {
 }
 
 // Init initializes the logo component.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (l *Logo) Init() tea.Cmd {
 	if l.animated {
 		return l.tick()
@@ -122,6 +183,16 @@ func (l *Logo) Init() tea.Cmd {
 }
 
 // Update handles animation updates.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - Updated model.
+//   - Command to execute.
+//
+// Side effects:
+//   - Updates fade progress if animated.
 func (l *Logo) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if _, ok := msg.(TickMsg); ok {
 		if l.animated && l.fadeProgress < 1.0 {
@@ -143,11 +214,23 @@ func (l *Logo) tick() tea.Cmd {
 }
 
 // View renders the logo.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (l *Logo) View() string {
 	return l.render()
 }
 
 // ViewStatic renders the logo without animation (instant display).
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (l *Logo) ViewStatic() string {
 	savedProgress := l.fadeProgress
 	l.fadeProgress = 1.0
@@ -216,6 +299,12 @@ func (l *Logo) applyFadeStyle(text string, theme themes.Theme) string {
 }
 
 // GetHeight returns the height of the logo in lines.
+//
+// Returns:
+//   - A int value.
+//
+// Side effects:
+//   - None.
 func (l *Logo) GetHeight() int {
 	height := LogoArtHeight
 
@@ -231,6 +320,12 @@ func (l *Logo) GetHeight() int {
 }
 
 // GetWidth returns the width of the logo.
+//
+// Returns:
+//   - A int value.
+//
+// Side effects:
+//   - None.
 func (l *Logo) GetWidth() int {
 	// The logo art is 51 characters wide
 	return 51

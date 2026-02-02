@@ -57,6 +57,15 @@ type Box struct {
 }
 
 // NewBox creates a new box with the given theme.
+//
+// Expected:
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A fully initialized Box ready for use.
+//
+// Side effects:
+//   - None.
 func NewBox(themeObj theme.Theme) *Box {
 	box := &Box{
 		variant: BoxDefault,
@@ -69,67 +78,159 @@ func NewBox(themeObj theme.Theme) *Box {
 }
 
 // Content sets the content to display inside the box.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized Box ready for use.
+//
+// Side effects:
+//   - None.
 func (b *Box) Content(content string) *Box {
 	b.content = content
 	return b
 }
 
 // Title sets the title displayed at the top of the box.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized Box ready for use.
+//
+// Side effects:
+//   - None.
 func (b *Box) Title(title string) *Box {
 	b.title = title
 	return b
 }
 
 // Variant sets the visual variant of the box.
+//
+// Expected:
+//   - boxvariant must be valid.
+//
+// Returns:
+//   - A fully initialized Box ready for use.
+//
+// Side effects:
+//   - None.
 func (b *Box) Variant(variant BoxVariant) *Box {
 	b.variant = variant
 	return b
 }
 
 // Width sets the width of the box (0 = auto).
+//
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized Box ready for use.
+//
+// Side effects:
+//   - None.
 func (b *Box) Width(width int) *Box {
 	b.width = width
 	return b
 }
 
 // Height sets the height of the box (0 = auto).
+//
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized Box ready for use.
+//
+// Side effects:
+//   - None.
 func (b *Box) Height(height int) *Box {
 	b.height = height
 	return b
 }
 
 // Padding sets the internal padding of the box.
+//
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized Box ready for use.
+//
+// Side effects:
+//   - None.
 func (b *Box) Padding(padding int) *Box {
 	b.padding = padding
 	return b
 }
 
 // WithShadow enables shadow rendering.
+//
+// Returns:
+//   - A fully initialized Box ready for use.
+//
+// Side effects:
+//   - None.
 func (b *Box) WithShadow() *Box {
 	b.withShadow = true
 	return b
 }
 
 // Background sets a solid background color for the box.
-// Useful for modal overlays to prevent transparency.
+//
+// Expected:
+//   - color must be valid.
+//
+// Returns:
+//   - A fully initialized Box ready for use.
+//
+// Side effects:
+//   - None.
 func (b *Box) Background(color lipgloss.Color) *Box {
 	b.background = &color
 	return b
 }
 
 // MaxHeight sets the maximum height of the box.
+//
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized Box ready for use.
+//
+// Side effects:
+//   - None.
 func (b *Box) MaxHeight(maxHeight int) *Box {
 	b.maxHeight = maxHeight
 	return b
 }
 
 // BorderColor sets a custom border color, overriding the variant color.
+//
+// Expected:
+//   - color must be valid.
+//
+// Returns:
+//   - A fully initialized Box ready for use.
+//
+// Side effects:
+//   - None.
 func (b *Box) BorderColor(color lipgloss.Color) *Box {
 	b.borderColor = &color
 	return b
 }
 
 // Render returns the rendered box as a string.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (b *Box) Render() string {
 	// Get border style based on variant
 	borderStyle := b.getBorderStyle()

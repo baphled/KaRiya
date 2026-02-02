@@ -57,14 +57,14 @@ type FactListScreen struct {
 
 // NewFactListScreen creates a new fact list screen.
 //
-// The screen:
-// - Displays facts in a scrollable list
-// - Supports keyboard navigation (↑/↓, j/k)
-// - Shows fact text and created date
-// - Provides back navigation
+// Expected:
+//   - fact must be valid.
 //
-// Parameters:
-//   - facts: List of facts to display (can be empty or nil)
+// Returns:
+//   - A fully initialized FactListScreen ready for use.
+//
+// Side effects:
+//   - None.
 func NewFactListScreen(facts []*career.Fact) *FactListScreen {
 	if facts == nil {
 		facts = []*career.Fact{}
@@ -92,6 +92,17 @@ func NewFactListScreen(facts []*career.Fact) *FactListScreen {
 }
 
 // Update handles messages and navigation.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - tea.Cmd: command to execute.
+//   - screens.ScreenResult: result indicating navigation or cancellation.
+//
+// Side effects:
+//   - May update table selection.
+//   - May return CancelResult on escape/backspace.
 func (s *FactListScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -167,18 +178,34 @@ func (s *FactListScreen) handleVimKey(key string) string {
 }
 
 // RenderContent returns just the table content without StandardView wrapper.
-// This allows the intent to wrap it with proper breadcrumbs and themed footer.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *FactListScreen) RenderContent() string {
 	return s.tableBehavior.Render()
 }
 
 // View returns the full screen view (for standalone usage).
-// Most callers should use RenderContent() instead.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *FactListScreen) View() string {
 	return s.RenderContent()
 }
 
 // SetTheme sets the theme for the screen and its table behavior.
+//
+// Expected:
+//   - interface{} must be valid.
+//
+// Side effects:
+//   - None.
 func (s *FactListScreen) SetTheme(theme interface{}) {
 	s.Screen.SetTheme(theme)
 	if t, ok := theme.(themes.Theme); ok && t != nil {

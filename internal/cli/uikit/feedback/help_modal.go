@@ -33,6 +33,12 @@ type HelpModalKeyMap struct {
 }
 
 // DefaultHelpModalKeyMap returns the default key bindings for the help modal.
+//
+// Returns:
+//   - A HelpModalKeyMap value.
+//
+// Side effects:
+//   - None.
 func DefaultHelpModalKeyMap() HelpModalKeyMap {
 	return HelpModalKeyMap{
 		Toggle: key.NewBinding(
@@ -51,6 +57,15 @@ func DefaultHelpModalKeyMap() HelpModalKeyMap {
 }
 
 // NewHelpModal creates a new help modal with the given keymap.
+//
+// Expected:
+//   - keymap must be valid.
+//
+// Returns:
+//   - A fully initialized HelpModal ready for use.
+//
+// Side effects:
+//   - None.
 func NewHelpModal(keyMap help.KeyMap) *HelpModal {
 	h := help.New()
 	h.ShowAll = false
@@ -77,18 +92,38 @@ func (m *HelpModal) getTheme() theme.Theme {
 }
 
 // WithTheme sets the theme for the help modal.
-// This method uses the builder pattern to allow method chaining.
+//
+// Expected:
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A fully initialized HelpModal ready for use.
+//
+// Side effects:
+//   - None.
 func (m *HelpModal) WithTheme(t theme.Theme) *HelpModal {
 	m.theme = t
 	return m
 }
 
 // SetKeyMap updates the keymap displayed in the help modal.
+//
+// Expected:
+//   - keymap must be valid.
+//
+// Side effects:
+//   - None.
 func (m *HelpModal) SetKeyMap(keyMap help.KeyMap) {
 	m.keyMap = keyMap
 }
 
 // SetSize sets the available size for the help modal.
+//
+// Expected:
+//   - int must be valid.
+//
+// Side effects:
+//   - None.
 func (m *HelpModal) SetSize(width, height int) {
 	m.width = width
 	m.height = height
@@ -96,17 +131,26 @@ func (m *HelpModal) SetSize(width, height int) {
 }
 
 // Show makes the help modal visible.
+//
+// Side effects:
+//   - None.
 func (m *HelpModal) Show() {
 	m.visible = true
 }
 
 // Hide makes the help modal invisible.
+//
+// Side effects:
+//   - None.
 func (m *HelpModal) Hide() {
 	m.visible = false
 	m.showingAll = false
 }
 
 // Toggle toggles the help modal visibility.
+//
+// Side effects:
+//   - None.
 func (m *HelpModal) Toggle() {
 	if m.visible {
 		m.Hide()
@@ -116,11 +160,20 @@ func (m *HelpModal) Toggle() {
 }
 
 // IsVisible returns whether the help modal is currently visible.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *HelpModal) IsVisible() bool {
 	return m.visible
 }
 
 // ToggleFullHelp toggles between short and full help display.
+//
+// Side effects:
+//   - None.
 func (m *HelpModal) ToggleFullHelp() {
 	m.showingAll = !m.showingAll
 	m.help.ShowAll = m.showingAll
@@ -128,6 +181,17 @@ func (m *HelpModal) ToggleFullHelp() {
 
 // Update handles key events for the help modal.
 // Returns true if the event was consumed by the modal.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - A bool value indicating if the event was consumed.
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - May toggle help modal visibility.
+//   - May toggle full/short help view.
 func (m *HelpModal) Update(msg tea.Msg) (consumed bool, cmd tea.Cmd) {
 	if !m.visible {
 		// Check if help key was pressed to open
@@ -156,6 +220,12 @@ func (m *HelpModal) Update(msg tea.Msg) (consumed bool, cmd tea.Cmd) {
 }
 
 // View renders the help modal.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *HelpModal) View() string {
 	if !m.visible || m.keyMap == nil {
 		return ""
@@ -212,6 +282,12 @@ func (m *HelpModal) View() string {
 }
 
 // ShortHelp returns a short help string for display in footer.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *HelpModal) ShortHelp() string {
 	if m.keyMap == nil {
 		return ""
@@ -220,6 +296,15 @@ func (m *HelpModal) ShortHelp() string {
 }
 
 // RenderOverlay renders the help modal as an overlay on top of existing content.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *HelpModal) RenderOverlay(baseContent string) string {
 	if !m.visible {
 		return baseContent

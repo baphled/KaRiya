@@ -1,4 +1,4 @@
-.PHONY: test test-race coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance check-docblocks check-fixtures check-patterns check-patterns-quiet check-patterns-strict check-intent-architecture check-intent-architecture-files golangci-lint install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ai-commit ci-local ci-install-tools gosec session-start session-end session-reset check-session verify-hooks tdd-check tdd-red tdd-green tdd-refactor tdd-document pre-task what-to-use generate-diagrams generate-state-matrix generate-docs diagrams new-feature new-bug new-intent
+.PHONY: test test-race coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance check-docblocks check-fixtures check-patterns check-patterns-quiet check-patterns-strict check-intent-architecture check-intent-architecture-files golangci-lint install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ai-commit ci-local ci-install-tools gosec session-start session-end session-reset check-session verify-hooks tdd-check tdd-red tdd-green tdd-refactor tdd-document pre-task what-to-use generate-diagrams generate-state-matrix generate-docs diagrams fix-docs new-feature new-bug new-intent
 
 # Run all tests in verbose mode (race detection in CI only)
 test:
@@ -66,6 +66,9 @@ pre-commit:
 	@staticcheck ./...
 	@go build ./...
 	@go test ./...
+	@echo "Running documentation check..."
+	@go build -o ./bin/docblocks ./cmd/docblocks 2>/dev/null || true
+	@go vet -vettool=./bin/docblocks ./internal/cli/... ./tools/analyzers/docblocks/... 2>/dev/null || true
 	@echo "✅ Pre-commit checks passed"
 
 # Review staged commit (comprehensive)
@@ -76,7 +79,23 @@ review-commit:
 check-docblocks:
 	@echo "Running docblocks analyzer..."
 	@go build -o ./bin/docblocks ./cmd/docblocks
-	@go vet -vettool=./bin/docblocks ./internal/cli/behaviors/... ./internal/cli/intents/... ./tools/analyzers/docblocks/...
+	@go vet -vettool=./bin/docblocks \
+		./internal/cli/app/... \
+		./internal/cli/behaviors/... \
+		./internal/cli/bootstrap/... \
+		./internal/cli/configtypes/... \
+		./internal/cli/forms/... \
+		./internal/cli/importer/... \
+		./internal/cli/intents/... \
+		./internal/cli/navigation/... \
+		./internal/cli/screens/... \
+		./internal/cli/service/... \
+		./internal/cli/statematrix/... \
+		./internal/cli/terminal/... \
+		./internal/cli/themes/... \
+		./internal/cli/types/... \
+		./internal/cli/uikit/... \
+		./tools/analyzers/docblocks/...
 	@echo "✅ Docblocks: all checks passed."
 
 # Check fixture usage enforcement (no inline career.* structs in test files)
@@ -561,6 +580,16 @@ generate-docs: generate-diagrams generate-state-matrix
 
 # Alias for convenience
 diagrams: generate-diagrams
+
+# Fix documentation blocks in Go files (add Expected/Returns/Side effects)
+# Usage: make fix-docs FILE=path/to/file.go
+fix-docs:
+	@if [ -z "$(FILE)" ]; then \
+		echo "Usage: make fix-docs FILE=path/to/file.go"; \
+		echo "Or: scripts/fix-doc-blocks.sh file.go > file_fixed.go"; \
+		exit 1; \
+	fi
+	@bash scripts/fix-doc-blocks.sh -i "$(FILE)"
 
 # Create new feature task (auto-numbered)
 new-feature:

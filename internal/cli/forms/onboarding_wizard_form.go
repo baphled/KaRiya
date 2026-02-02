@@ -18,8 +18,16 @@ type OnboardingFormData struct {
 }
 
 // NewOnboardingWizardForm creates a 3-step onboarding wizard form.
-// The form collects: Welcome+Name, Contact info, Professional details.
-// Data fields are bound via pointers so huh updates them directly.
+//
+// Expected:
+//   - onboardingformdata must be valid.
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized huh.Form ready for use.
+//
+// Side effects:
+//   - None.
 func NewOnboardingWizardForm(data *OnboardingFormData, width, height int) *huh.Form {
 	return huh.NewForm(
 		newWelcomeStep(data),

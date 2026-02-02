@@ -27,6 +27,12 @@ type SkillsLimitOption struct {
 }
 
 // SkillsLimitOptions returns the preset options for skills limit selection.
+//
+// Returns:
+//   - A []SkillsLimitOption value.
+//
+// Side effects:
+//   - None.
 func SkillsLimitOptions() []SkillsLimitOption {
 	return []SkillsLimitOption{
 		{Value: 5, Label: "5 per category"},
@@ -51,6 +57,20 @@ type ExtractedTechnology struct {
 // NewCVConfigForm creates the CV configuration wizard form.
 // singleTechSelect: when true, uses single-select for technologies (specialist mode),
 // when false, uses multi-select (generalist mode).
+//
+// Expected:
+//   - data must be a valid CVConfigFormData pointer.
+//   - profileoptions must be a valid slice of ProfileOption.
+//   - extractedtechs must be a valid slice of ExtractedTechnology.
+//   - width must be a positive integer.
+//   - height must be a positive integer.
+//   - singletechselect must be a valid boolean.
+//
+// Returns:
+//   - A fully initialized huh.Form ready for use.
+//
+// Side effects:
+//   - None.
 func NewCVConfigForm(
 	data *CVConfigFormData, profileOptions []ProfileOption, extractedTechs []ExtractedTechnology,
 	width, height int, singleTechSelect bool,

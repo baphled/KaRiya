@@ -25,6 +25,12 @@ type TerminalInfo struct {
 }
 
 // NewTerminalInfo creates a new TerminalInfo by detecting the current terminal capabilities.
+//
+// Returns:
+//   - A fully initialized TerminalInfo ready for use.
+//
+// Side effects:
+//   - None.
 func NewTerminalInfo() *TerminalInfo {
 	return &TerminalInfo{
 		ColorDepth: DetectColorDepth(),
@@ -33,17 +39,34 @@ func NewTerminalInfo() *TerminalInfo {
 }
 
 // SupportsTrueColor returns true if the terminal supports 24-bit true color.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (ti *TerminalInfo) SupportsTrueColor() bool {
 	return ti.ColorDepth == ColorDepthTrue
 }
 
 // Supports256Colors returns true if the terminal supports at least 256 colors.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (ti *TerminalInfo) Supports256Colors() bool {
 	return ti.ColorDepth >= ColorDepth256
 }
 
 // DetectColorDepth detects the color depth supported by the current terminal.
-// It checks COLORTERM and TERM environment variables.
+//
+// Returns:
+//   - A ColorDepth value.
+//
+// Side effects:
+//   - None.
 func DetectColorDepth() ColorDepth {
 	// Check COLORTERM first for true color support
 	colorterm := os.Getenv("COLORTERM")
@@ -64,7 +87,12 @@ func DetectColorDepth() ColorDepth {
 }
 
 // DetectDarkMode attempts to detect whether the terminal is using a dark or light background.
-// Returns true if dark mode is detected or if detection fails (dark mode is the default).
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func DetectDarkMode() bool {
 	// Check COLORFGBG environment variable
 	// Format: "foreground;background" where values 0-7 are dark, 8-15 are light
@@ -85,7 +113,9 @@ func DetectDarkMode() bool {
 }
 
 // AutoSelect automatically selects an appropriate theme based on terminal capabilities.
-// It considers color depth and dark/light mode preferences.
+//
+// Side effects:
+//   - None.
 func (tm *ThemeManager) AutoSelect() {
 	info := NewTerminalInfo()
 

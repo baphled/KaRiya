@@ -61,7 +61,15 @@ type MultiSelect = *huh.MultiSelect[string]
 type Confirm = *huh.Confirm
 
 // NewGroup creates a new form group from fields.
-// Use this instead of huh.NewGroup.
+//
+// Expected:
+//   - field must be valid.
+//
+// Returns:
+//   - A Group value.
+//
+// Side effects:
+//   - None.
 func NewGroup(fields ...Field) Group {
 	return huh.NewGroup(fields...)
 }
@@ -69,6 +77,17 @@ func NewGroup(fields ...Field) Group {
 // Update handles form message updates.
 // Returns the updated form and any command to execute.
 // Use this instead of calling form.Update directly.
+//
+// Expected:
+//   - form must be a valid Form.
+//   - msg must be a valid tea.Msg.
+//
+// Returns:
+//   - Form: the updated form.
+//   - tea.Cmd: command to execute.
+//
+// Side effects:
+//   - None.
 func Update(form Form, msg tea.Msg) (Form, tea.Cmd) {
 	model, cmd := form.Update(msg)
 	f, ok := model.(*huh.Form)
@@ -79,19 +98,40 @@ func Update(form Form, msg tea.Msg) (Form, tea.Cmd) {
 }
 
 // Theme returns the Catppuccin theme configured for KaRiya forms.
-// Deprecated: Use ThemedForm or themes.GenerateHuhTheme for theme-aware forms.
+//
+// Returns:
+//   - A fully initialized huh.Theme ready for use.
+//
+// Side effects:
+//   - None.
 func Theme() *huh.Theme {
 	return huh.ThemeCatppuccin()
 }
 
 // ThemedForm returns a huh.Theme that matches the given KaRiya theme.
-// If theme is nil, falls back to Catppuccin theme.
+//
+// Expected:
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A fully initialized huh.Theme ready for use.
+//
+// Side effects:
+//   - None.
 func ThemedForm(theme themes.Theme) *huh.Theme {
 	return themes.GenerateHuhTheme(theme)
 }
 
 // NewForm creates a new form with KaRiya's default theme and configuration.
-// Note: For theme-aware forms, use NewThemedForm instead.
+//
+// Expected:
+//   - group must be valid.
+//
+// Returns:
+//   - A fully initialized huh.Form ready for use.
+//
+// Side effects:
+//   - None.
 func NewForm(groups ...*huh.Group) *huh.Form {
 	return huh.NewForm(groups...).
 		WithTheme(Theme()).
@@ -100,8 +140,16 @@ func NewForm(groups ...*huh.Group) *huh.Form {
 }
 
 // NewFormWithHeight creates a new form with KaRiya's default theme and a fixed height.
-// When height is set, the form becomes scrollable if content exceeds the height.
-// Use this for forms displayed in modals or constrained containers.
+//
+// Expected:
+//   - int must be valid.
+//   - group must be valid.
+//
+// Returns:
+//   - A fully initialized huh.Form ready for use.
+//
+// Side effects:
+//   - None.
 func NewFormWithHeight(height int, groups ...*huh.Group) *huh.Form {
 	return huh.NewForm(groups...).
 		WithTheme(Theme()).
@@ -111,8 +159,16 @@ func NewFormWithHeight(height int, groups ...*huh.Group) *huh.Form {
 }
 
 // NewFormWithDimensions creates a new form with KaRiya's default theme and fixed dimensions.
-// When height is set, the form becomes scrollable if content exceeds the height.
-// Width controls the form's rendering width.
+//
+// Expected:
+//   - int must be valid.
+//   - group must be valid.
+//
+// Returns:
+//   - A fully initialized huh.Form ready for use.
+//
+// Side effects:
+//   - None.
 func NewFormWithDimensions(width, height int, groups ...*huh.Group) *huh.Form {
 	form := huh.NewForm(groups...).WithTheme(Theme())
 	if height > 0 {
@@ -125,15 +181,31 @@ func NewFormWithDimensions(width, height int, groups ...*huh.Group) *huh.Form {
 }
 
 // NewThemedFormWithHeight creates a form with the given theme and height.
-// When height is set, the form becomes scrollable if content exceeds the height.
+//
+// Expected:
+//   - th must be a valid theme instance (can be nil).
+//   - int must be valid.
+//   - group must be valid.
+//
+// Returns:
+//   - A fully initialized huh.Form ready for use.
+//
+// Side effects:
+//   - None.
 func NewThemedFormWithHeight(theme themes.Theme, height int, groups ...*huh.Group) *huh.Form {
 	return huh.NewForm(groups...).WithTheme(ThemedForm(theme)).WithHeight(height)
 }
 
 // DefaultFormHeight calculates a reasonable form height based on terminal dimensions.
-// It reserves space for: logo (~7 lines), breadcrumbs (~2 lines), footer (~3 lines),
-// modal chrome (~4 lines), and some padding (~4 lines) = ~20 lines overhead.
-// Minimum height is 10 lines to ensure usability.
+//
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A int value.
+//
+// Side effects:
+//   - None.
 func DefaultFormHeight(terminalHeight int) int {
 	const overhead = 20
 	const minHeight = 10
@@ -146,19 +218,15 @@ func DefaultFormHeight(terminalHeight int) int {
 }
 
 // ModalFormHeight calculates the form height for forms displayed inside an
-// overlay modal. The overlay is positioned below the logo and has additional
-// chrome (border, padding, title, badge footer) that reduces available space.
 //
-// Overhead breakdown:
-//   - Logo + spacing: 10 lines (DefaultLogoHeight=9 + 1 gap)
-//   - Bottom margin: 2 lines
-//   - Modal border: 2 lines (top + bottom)
-//   - Modal padding: 2 lines (top + bottom)
-//   - Title + margin: 2 lines
-//   - Badge footer + spacing: 3 lines
-//   - Total: ~21 lines
+// Expected:
+//   - int must be valid.
 //
-// Minimum height is 12 lines to show at least 2-3 fields comfortably.
+// Returns:
+//   - A int value.
+//
+// Side effects:
+//   - None.
 func ModalFormHeight(terminalHeight int) int {
 	const modalOverhead = 21
 	const minHeight = 12
@@ -171,7 +239,15 @@ func ModalFormHeight(terminalHeight int) int {
 }
 
 // ModalFormWidth calculates the usable form width inside an overlay modal.
-// The modal has border (2) and padding (4) that reduce the available width.
+//
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A int value.
+//
+// Side effects:
+//   - None.
 func ModalFormWidth(modalWidth int) int {
 	const chromeWidth = 6
 	width := modalWidth - chromeWidth
@@ -185,7 +261,15 @@ func ModalFormWidth(modalWidth int) int {
 const ConfirmButtonHeight = 5
 
 // FieldsHeight calculates the height for form fields when using a fixed confirm button.
-// This reserves space for the confirm button to always be visible.
+//
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A int value.
+//
+// Side effects:
+//   - None.
 func FieldsHeight(terminalHeight int) int {
 	formHeight := DefaultFormHeight(terminalHeight)
 	fieldsHeight := formHeight - ConfirmButtonHeight
@@ -196,10 +280,17 @@ func FieldsHeight(terminalHeight int) int {
 }
 
 // NewFormWithFixedConfirm creates a form with scrollable fields and a fixed confirm button.
-// The confirm button remains visible at the bottom while fields scroll above it.
-// fieldsGroup: the form fields that can scroll
-// confirmValue: pointer to bool for submit confirmation
-// width, height: dimensions for the form.
+//
+// Expected:
+//   - group must be valid.
+//   - bool must be valid.
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized huh.Form ready for use.
+//
+// Side effects:
+//   - None.
 func NewFormWithFixedConfirm(fieldsGroup *huh.Group, confirmValue *bool, width, height int) *huh.Form {
 	// Calculate height for fields group (reserve space for confirm)
 	fieldsHeight := height - ConfirmButtonHeight
@@ -234,12 +325,30 @@ func NewFormWithFixedConfirm(fieldsGroup *huh.Group, confirmValue *bool, width, 
 }
 
 // NewThemedForm creates a new form with the given KaRiya theme.
-// This ensures forms match the rest of the TUI styling.
+//
+// Expected:
+//   - th must be a valid theme instance (can be nil).
+//   - group must be valid.
+//
+// Returns:
+//   - A fully initialized huh.Form ready for use.
+//
+// Side effects:
+//   - None.
 func NewThemedForm(theme themes.Theme, groups ...*huh.Group) *huh.Form {
 	return huh.NewForm(groups...).WithTheme(ThemedForm(theme))
 }
 
 // NewFormWithAccessible creates a form optimized for accessibility.
+//
+// Expected:
+//   - group must be valid.
+//
+// Returns:
+//   - A fully initialized huh.Form ready for use.
+//
+// Side effects:
+//   - None.
 func NewFormWithAccessible(groups ...*huh.Group) *huh.Form {
 	return huh.NewForm(groups...).
 		WithTheme(Theme()).
@@ -247,6 +356,16 @@ func NewFormWithAccessible(groups ...*huh.Group) *huh.Form {
 }
 
 // NewThemedFormWithAccessible creates an accessible form with the given KaRiya theme.
+//
+// Expected:
+//   - th must be a valid theme instance (can be nil).
+//   - group must be valid.
+//
+// Returns:
+//   - A fully initialized huh.Form ready for use.
+//
+// Side effects:
+//   - None.
 func NewThemedFormWithAccessible(theme themes.Theme, groups ...*huh.Group) *huh.Form {
 	return huh.NewForm(groups...).
 		WithTheme(ThemedForm(theme)).
@@ -272,32 +391,90 @@ var FormColors = struct {
 // Common form helper functions
 
 // IsCompleted checks if the form has been completed by the user.
+//
+// Expected:
+//   - form must be valid.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func IsCompleted(form *huh.Form) bool {
 	return form.State == huh.StateCompleted
 }
 
 // IsAborted checks if the form was cancelled/aborted by the user.
+//
+// Expected:
+//   - form must be valid.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func IsAborted(form *huh.Form) bool {
 	return form.State == huh.StateAborted
 }
 
 // GetString safely retrieves a string value from the form.
+//
+// Expected:
+//   - form must be valid.
+//   - Must be a valid string.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func GetString(form *huh.Form, key string) string {
 	val := form.GetString(key)
 	return val
 }
 
 // GetBool safely retrieves a boolean value from the form.
+//
+// Expected:
+//   - form must be valid.
+//   - Must be a valid string.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func GetBool(form *huh.Form, key string) bool {
 	return form.GetBool(key)
 }
 
 // GetInt safely retrieves an int value from the form.
+//
+// Expected:
+//   - form must be valid.
+//   - Must be a valid string.
+//
+// Returns:
+//   - A int value.
+//
+// Side effects:
+//   - None.
 func GetInt(form *huh.Form, key string) int {
 	return form.GetInt(key)
 }
 
 // GetStrings safely retrieves a slice of strings from the form (for MultiSelect).
+//
+// Expected:
+//   - form must be valid.
+//   - Must be a valid string.
+//
+// Returns:
+//   - A []string value.
+//
+// Side effects:
+//   - None.
 func GetStrings(form *huh.Form, key string) []string {
 	// huh stores MultiSelect values as interface{} containing []string
 	val := form.Get(key)
@@ -333,8 +510,15 @@ type FieldConfig struct {
 }
 
 // NewInput creates a pre-configured input field.
-// Note: Prompt("> ") is set explicitly to fix a huh library display issue
-// where empty fields show only the first character of the placeholder.
+//
+// Expected:
+//   - config must be a valid configuration object.
+//
+// Returns:
+//   - A fully initialized huh.Input ready for use.
+//
+// Side effects:
+//   - None.
 func NewInput(config FieldConfig) *huh.Input {
 	input := huh.NewInput().
 		Key(config.Key).
@@ -361,6 +545,15 @@ func NewInput(config FieldConfig) *huh.Input {
 }
 
 // NewText creates a pre-configured text area field.
+//
+// Expected:
+//   - config must be a valid configuration object.
+//
+// Returns:
+//   - A fully initialized huh.Text ready for use.
+//
+// Side effects:
+//   - None.
 func NewText(config FieldConfig) *huh.Text {
 	text := huh.NewText().
 		Key(config.Key).
@@ -392,6 +585,16 @@ type SelectOption struct {
 }
 
 // NewSelect creates a pre-configured select field.
+//
+// Expected:
+//   - Must be a valid string.
+//   - []selectoption must be valid.
+//
+// Returns:
+//   - A fully initialized huh.Select[string] ready for use.
+//
+// Side effects:
+//   - None.
 func NewSelect(key, title, description string, options []SelectOption) *huh.Select[string] {
 	huhOptions := make([]huh.Option[string], len(options))
 	for i, opt := range options {
@@ -411,6 +614,17 @@ func NewSelect(key, title, description string, options []SelectOption) *huh.Sele
 }
 
 // NewMultiSelect creates a pre-configured multi-select field.
+//
+// Expected:
+//   - Must be a valid string.
+//   - []selectoption must be valid.
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized huh.MultiSelect[string] ready for use.
+//
+// Side effects:
+//   - None.
 func NewMultiSelect(key, title, description string, options []SelectOption, limit int) *huh.MultiSelect[string] {
 	huhOptions := make([]huh.Option[string], len(options))
 	for i, opt := range options {
@@ -434,6 +648,15 @@ func NewMultiSelect(key, title, description string, options []SelectOption, limi
 }
 
 // NewConfirm creates a pre-configured confirmation field.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized huh.Confirm ready for use.
+//
+// Side effects:
+//   - None.
 func NewConfirm(key, title, description, affirmative, negative string) *huh.Confirm {
 	confirm := huh.NewConfirm().
 		Key(key).

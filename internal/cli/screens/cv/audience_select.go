@@ -26,6 +26,15 @@ type AudienceSelectScreen struct {
 }
 
 // NewCVAudienceSelectScreen creates a new CV audience selection screen.
+//
+// Expected:
+//   - []audienceoption must be valid.
+//
+// Returns:
+//   - A fully initialized AudienceSelectScreen ready for use.
+//
+// Side effects:
+//   - None.
 func NewCVAudienceSelectScreen(audiences []*AudienceOption) *AudienceSelectScreen {
 	// Create item renderer for audiences
 	renderer := func(item *AudienceOption) string {
@@ -48,16 +57,38 @@ func NewCVAudienceSelectScreen(audiences []*AudienceOption) *AudienceSelectScree
 }
 
 // Init initializes the screen.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (s *AudienceSelectScreen) Init() tea.Cmd {
 	return nil
 }
 
 // Update handles messages.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - tea.Cmd: command to execute.
+//   - screens.ScreenResult: result indicating selection.
+//
+// Side effects:
+//   - Delegates to underlying SelectScreen.
 func (s *AudienceSelectScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	return s.SelectScreen.Update(msg)
 }
 
 // View renders the screen.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *AudienceSelectScreen) View() string {
 	return s.SelectScreen.View()
 }

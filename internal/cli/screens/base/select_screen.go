@@ -69,7 +69,17 @@ type SelectScreen[T any] struct {
 //   - breadcrumbs: Breadcrumb trail for header (e.g., ["Main Menu", "Select Profile"])
 //   - title: Title for the screen (e.g., "Select CV Profile")
 //
-// Returns a SelectScreen with selection at index 0 (if items exist).
+// Expected:
+//   - items must be a valid slice of T.
+//   - renderer must be a valid ItemRenderer function.
+//   - breadcrumbs must be a valid slice of strings.
+//   - title must be a valid string.
+//
+// Returns:
+//   - A fully initialized SelectScreen[T] ready for use with selection at index 0.
+//
+// Side effects:
+//   - None.
 func NewBaseSelectScreen[T any](
 	items []T,
 	renderer ItemRenderer[T],
@@ -90,8 +100,14 @@ func NewBaseSelectScreen[T any](
 
 // WithInitialSelection sets the initial selection index.
 //
-// This is useful for restoring state when navigating back.
-// If the index is out of bounds, it will be clamped to valid range.
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized SelectScreen[T] ready for use.
+//
+// Side effects:
+//   - None.
 func (s *SelectScreen[T]) WithInitialSelection(index int) *SelectScreen[T] {
 	if index < 0 {
 		index = 0
@@ -109,11 +125,16 @@ func (s *SelectScreen[T]) WithInitialSelection(index int) *SelectScreen[T] {
 
 // Update implements the Screen interface.
 //
-// Handles:
-// - Navigation keys (↑/↓/j/k/g/G)
-// - Selection (Enter) → returns NavigateResult with selected item
-// - Cancellation (Esc) → returns CancelResult
-// - Window resize → updates dimensions.
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - tea.Cmd: command to execute.
+//   - screens.ScreenResult: result indicating selection or cancellation.
+//
+// Side effects:
+//   - May update selection index.
+//   - May update scroll offset.
 func (s *SelectScreen[T]) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	if cmd := s.Screen.HandleWindowSizeMsg(msg); cmd != nil {
 		s.updateVisibleItems()
@@ -151,10 +172,11 @@ func (s *SelectScreen[T]) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 
 // View implements the Screen interface.
 //
-// Renders the list with:
-// - StandardView layout (logo, breadcrumbs, footer)
-// - Selection indicator (▶) on current item
-// - Scroll indicator if list is larger than visible area.
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *SelectScreen[T]) View() string {
 	content := s.RenderContent()
 	footer := s.RenderFooter()
@@ -253,7 +275,12 @@ func (s *SelectScreen[T]) handleCancellation() screens.ScreenResult {
 }
 
 // RenderContent renders the list of items with selection indicator.
-// This is public so intents can get raw content for custom layouts.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *SelectScreen[T]) RenderContent() string {
 	if len(s.items) == 0 {
 		return "\n  No items available\n"
@@ -296,7 +323,12 @@ func (s *SelectScreen[T]) RenderContent() string {
 }
 
 // RenderFooter renders footer with navigation hints.
-// This is public so intents can get raw footer for custom layouts.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (s *SelectScreen[T]) RenderFooter() string {
 	if len(s.items) == 0 {
 		return "Esc: Back  q: Quit"

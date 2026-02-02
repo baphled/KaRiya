@@ -34,6 +34,17 @@ type SortModal struct {
 }
 
 // NewSortModal creates a new skill sort modal.
+//
+// Expected:
+//   - skill must be valid.
+//   - config must be a valid configuration object.
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized SortModal ready for use.
+//
+// Side effects:
+//   - None.
 func NewSortModal(_ []*career.Skill, current *SortConfig, width, height int) *SortModal {
 	formData := &SkillSortFormData{
 		SortBy:    "name",
@@ -101,6 +112,12 @@ func (m *SortModal) buildForm() {
 }
 
 // Init initializes the sort modal and its form.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (m *SortModal) Init() tea.Cmd {
 	if m.form == nil {
 		return nil
@@ -109,6 +126,17 @@ func (m *SortModal) Init() tea.Cmd {
 }
 
 // Update handles messages for the sort modal.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - tea.Cmd: command to execute.
+//   - bool: true if form completed successfully.
+//   - *SkillSortFormData: sort data if completed, nil otherwise.
+//
+// Side effects:
+//   - May hide modal on completion or cancellation.
 func (m *SortModal) Update(msg tea.Msg) (tea.Cmd, bool, *SkillSortFormData) {
 	if !m.visible {
 		return nil, false, nil
@@ -142,6 +170,12 @@ func (m *SortModal) Update(msg tea.Msg) (tea.Cmd, bool, *SkillSortFormData) {
 }
 
 // View renders the sort modal with proper chrome (border, background).
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *SortModal) View() string {
 	if !m.visible {
 		return ""
@@ -173,21 +207,39 @@ func (m *SortModal) View() string {
 }
 
 // IsVisible returns whether the modal is currently visible.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *SortModal) IsVisible() bool {
 	return m.visible
 }
 
 // Show makes the modal visible.
+//
+// Side effects:
+//   - None.
 func (m *SortModal) Show() {
 	m.visible = true
 }
 
 // Hide hides the modal.
+//
+// Side effects:
+//   - None.
 func (m *SortModal) Hide() {
 	m.visible = false
 }
 
 // ToSortConfig converts form data to SortConfig.
+//
+// Returns:
+//   - A fully initialized SortConfig ready for use.
+//
+// Side effects:
+//   - None.
 func (m *SortModal) ToSortConfig() *SortConfig {
 	return &SortConfig{
 		SortBy:    m.formData.SortBy,
@@ -196,7 +248,15 @@ func (m *SortModal) ToSortConfig() *SortConfig {
 }
 
 // RenderOverlay renders the sort modal as an overlay on top of the base view.
-// This follows the bubbletea-overlay pattern used in BrowseTimeline modals.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *SortModal) RenderOverlay(baseView string) string {
 	if !m.visible {
 		return baseView

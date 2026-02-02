@@ -41,8 +41,12 @@ var DefaultPalette = ColorPalette{
 }
 
 // NewDefaultTheme creates the default KaRiya theme.
-// This theme maintains backwards compatibility with the existing
-// color scheme defined in internal/cli/styles/styles.go.
+//
+// Returns:
+//   - A Theme value.
+//
+// Side effects:
+//   - None.
 func NewDefaultTheme() Theme {
 	return NewBaseTheme(
 		"default",

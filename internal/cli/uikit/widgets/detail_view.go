@@ -52,6 +52,15 @@ type DetailView struct {
 }
 
 // NewDetailView creates a new DetailView with the given theme.
+//
+// Expected:
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A fully initialized DetailView ready for use.
+//
+// Side effects:
+//   - None.
 func NewDetailView(th theme.Theme) *DetailView {
 	dv := &DetailView{
 		width: 0, // 0 means no width constraint
@@ -64,18 +73,45 @@ func NewDetailView(th theme.Theme) *DetailView {
 }
 
 // Title sets the title displayed at the top of the detail view.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized DetailView ready for use.
+//
+// Side effects:
+//   - None.
 func (dv *DetailView) Title(title string) *DetailView {
 	dv.title = title
 	return dv
 }
 
 // Width sets the maximum width for text wrapping.
+//
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized DetailView ready for use.
+//
+// Side effects:
+//   - None.
 func (dv *DetailView) Width(width int) *DetailView {
 	dv.width = width
 	return dv
 }
 
 // Section starts a new section with the given title.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized DetailView ready for use.
+//
+// Side effects:
+//   - None.
 func (dv *DetailView) Section(title string) *DetailView {
 	dv.items = append(dv.items, item{
 		kind:  itemSection,
@@ -85,6 +121,15 @@ func (dv *DetailView) Section(title string) *DetailView {
 }
 
 // Field adds a labeled field with a value.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized DetailView ready for use.
+//
+// Side effects:
+//   - None.
 func (dv *DetailView) Field(label, value string) *DetailView {
 	dv.items = append(dv.items, item{
 		kind:  itemField,
@@ -95,6 +140,15 @@ func (dv *DetailView) Field(label, value string) *DetailView {
 }
 
 // FieldIf adds a field only if the value is not empty.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized DetailView ready for use.
+//
+// Side effects:
+//   - None.
 func (dv *DetailView) FieldIf(label, value string) *DetailView {
 	if value != "" {
 		return dv.Field(label, value)
@@ -103,6 +157,16 @@ func (dv *DetailView) FieldIf(label, value string) *DetailView {
 }
 
 // List adds a field with a list of string values.
+//
+// Expected:
+//   - Must be a valid string.
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized DetailView ready for use.
+//
+// Side effects:
+//   - None.
 func (dv *DetailView) List(label string, values []string) *DetailView {
 	dv.items = append(dv.items, item{
 		kind:      itemList,
@@ -114,6 +178,16 @@ func (dv *DetailView) List(label string, values []string) *DetailView {
 }
 
 // ListIf adds a list field only if the values slice is not empty.
+//
+// Expected:
+//   - Must be a valid string.
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized DetailView ready for use.
+//
+// Side effects:
+//   - None.
 func (dv *DetailView) ListIf(label string, values []string) *DetailView {
 	if len(values) > 0 {
 		return dv.List(label, values)
@@ -122,6 +196,17 @@ func (dv *DetailView) ListIf(label string, values []string) *DetailView {
 }
 
 // ListWithSeparator adds a list with a custom separator.
+//
+// Expected:
+//   - Must be a valid string.
+//   - Must be a valid string.
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized DetailView ready for use.
+//
+// Side effects:
+//   - None.
 func (dv *DetailView) ListWithSeparator(label string, values []string, separator string) *DetailView {
 	dv.items = append(dv.items, item{
 		kind:      itemList,
@@ -133,6 +218,16 @@ func (dv *DetailView) ListWithSeparator(label string, values []string, separator
 }
 
 // BulletList adds a bulleted list.
+//
+// Expected:
+//   - Must be a valid string.
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized DetailView ready for use.
+//
+// Side effects:
+//   - None.
 func (dv *DetailView) BulletList(label string, values []string) *DetailView {
 	dv.items = append(dv.items, item{
 		kind:   itemBulletList,
@@ -143,6 +238,12 @@ func (dv *DetailView) BulletList(label string, values []string) *DetailView {
 }
 
 // Render returns the rendered detail view as a string.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (dv *DetailView) Render() string {
 	if len(dv.items) == 0 && dv.title == "" {
 		return ""

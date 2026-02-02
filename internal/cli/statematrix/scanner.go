@@ -8,6 +8,16 @@ import (
 )
 
 // FindIntentFiles finds all Go source files in the intents directory (excluding tests).
+//
+// Expected:
+//   - intentsdir must be a valid directory path.
+//
+// Returns:
+//   - A []string value containing file paths.
+//   - An error value if walking the directory failed.
+//
+// Side effects:
+//   - None.
 func FindIntentFiles(intentsDir string) ([]string, error) {
 	var files []string
 
@@ -28,6 +38,16 @@ func FindIntentFiles(intentsDir string) ([]string, error) {
 }
 
 // FindScreenFiles finds all Go source files in the screens directory (excluding tests).
+//
+// Expected:
+//   - screensdir must be a valid directory path.
+//
+// Returns:
+//   - A []string value containing file paths (empty if directory doesn't exist).
+//   - An error value if walking the directory failed.
+//
+// Side effects:
+//   - None.
 func FindScreenFiles(screensDir string) ([]string, error) {
 	// Check if directory exists
 	if _, err := os.Stat(screensDir); os.IsNotExist(err) {
@@ -54,6 +74,17 @@ func FindScreenFiles(screensDir string) ([]string, error) {
 }
 
 // ScanAll scans both intents and screens directories and returns a complete StateMatrix.
+//
+// Expected:
+//   - intentsdir must be a valid directory path.
+//   - screensdir must be a valid directory path.
+//
+// Returns:
+//   - A fully initialized StateMatrix ready for use.
+//   - An error value if scanning failed.
+//
+// Side effects:
+//   - None.
 func ScanAll(intentsDir, screensDir string) (*StateMatrix, error) {
 	matrix := &StateMatrix{
 		Intents: []ComponentInfo{},

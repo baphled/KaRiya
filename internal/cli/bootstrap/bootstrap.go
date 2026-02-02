@@ -26,7 +26,17 @@ type Result struct {
 // 4. Initializes services
 // 5. Returns everything the app needs
 //
-// Returns nil if the user aborted onboarding (Ctrl+C).
+// Expected:
+//   - careerservice must be a valid career Service instance.
+//   - logger must be a valid Logger instance.
+//
+// Returns:
+//   - A fully initialized Result ready for use, or nil if the user aborted onboarding (Ctrl+C).
+//   - An error value if bootstrap failed.
+//
+// Side effects:
+//   - May run interactive onboarding wizard.
+//   - May save configuration to disk.
 func Run(careerService *careerservice.Service, log *logger.Logger) (*Result, error) {
 	// Load existing configuration.
 	cfg, err := config.LoadConfig()
@@ -64,6 +74,19 @@ func Run(careerService *careerservice.Service, log *logger.Logger) (*Result, err
 
 // RunWithConfig performs bootstrap with a pre-loaded config.
 // This is useful for testing or when config is already loaded.
+//
+// Expected:
+//   - config must be a valid configuration object.
+//   - careerservice must be a valid career Service instance.
+//   - logger must be a valid Logger instance.
+//
+// Returns:
+//   - A fully initialized Result ready for use.
+//   - An error value if bootstrap failed.
+//
+// Side effects:
+//   - May run interactive onboarding wizard if profile is incomplete.
+//   - May save configuration to disk.
 func RunWithConfig(cfg *config.Config, careerService *careerservice.Service, log *logger.Logger) (*Result, error) {
 	// Check if onboarding is needed.
 	if !IsProfileComplete(cfg) {
@@ -90,7 +113,17 @@ func RunWithConfig(cfg *config.Config, careerService *careerservice.Service, log
 }
 
 // SkipOnboarding initializes services without checking profile completeness.
-// This is primarily for testing scenarios where onboarding should be bypassed.
+//
+// Expected:
+//   - config must be a valid configuration object.
+//   - service must be valid.
+//   - logger must be valid.
+//
+// Returns:
+//   - A fully initialized Result ready for use.
+//
+// Side effects:
+//   - None.
 func SkipOnboarding(cfg *config.Config, careerService *careerservice.Service, log *logger.Logger) *Result {
 	services := InitServices(careerService, cfg, log)
 

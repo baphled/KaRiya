@@ -30,6 +30,16 @@ type Header struct {
 }
 
 // NewHeader creates a new header with a title.
+//
+// Expected:
+//   - Must be a valid string.
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized Header ready for use.
+//
+// Side effects:
+//   - None.
 func NewHeader(title string, width int) *Header {
 	return &Header{
 		title:      title,
@@ -41,60 +51,132 @@ func NewHeader(title string, width int) *Header {
 }
 
 // WithTheme sets the theme for the header.
+//
+// Expected:
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A fully initialized Header ready for use.
+//
+// Side effects:
+//   - None.
 func (h *Header) WithTheme(theme themes.Theme) *Header {
 	h.theme = theme
 	return h
 }
 
 // WithSubtitle sets the subtitle.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized Header ready for use.
+//
+// Side effects:
+//   - None.
 func (h *Header) WithSubtitle(subtitle string) *Header {
 	h.subtitle = subtitle
 	return h
 }
 
 // WithBreadcrumbs sets the breadcrumbs.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized Header ready for use.
+//
+// Side effects:
+//   - None.
 func (h *Header) WithBreadcrumbs(breadcrumbs []string) *Header {
 	h.breadcrumbs = breadcrumbs
 	return h
 }
 
 // WithBorder enables border rendering.
+//
+// Returns:
+//   - A fully initialized Header ready for use.
+//
+// Side effects:
+//   - None.
 func (h *Header) WithBorder() *Header {
 	h.showBorder = true
 	return h
 }
 
 // SetWidth sets the header width.
+//
+// Expected:
+//   - int must be valid.
+//
+// Side effects:
+//   - None.
 func (h *Header) SetWidth(width int) {
 	h.width = width
 }
 
 // SetHeight sets the header height.
+//
+// Expected:
+//   - int must be valid.
+//
+// Side effects:
+//   - None.
 func (h *Header) SetHeight(height int) {
 	h.height = height
 }
 
 // GetTitle returns the title.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (h *Header) GetTitle() string {
 	return h.title
 }
 
 // GetSubtitle returns the subtitle.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (h *Header) GetSubtitle() string {
 	return h.subtitle
 }
 
 // GetBreadcrumbs returns the breadcrumbs.
+//
+// Returns:
+//   - A []string value.
+//
+// Side effects:
+//   - None.
 func (h *Header) GetBreadcrumbs() []string {
 	return h.breadcrumbs
 }
 
 // AddBreadcrumb adds a single breadcrumb.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Side effects:
+//   - None.
 func (h *Header) AddBreadcrumb(crumb string) {
 	h.breadcrumbs = append(h.breadcrumbs, crumb)
 }
 
 // ClearBreadcrumbs clears all breadcrumbs.
+//
+// Side effects:
+//   - None.
 func (h *Header) ClearBreadcrumbs() {
 	h.breadcrumbs = []string{}
 }
@@ -108,6 +190,12 @@ func (h *Header) getTheme() themes.Theme {
 }
 
 // View renders the header.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (h *Header) View() string {
 	if h.width <= 0 {
 		return ""
@@ -193,7 +281,15 @@ func (h *Header) renderBreadcrumbs(theme themes.Theme) string {
 }
 
 // GetClickedBreadcrumbIndex returns the index of the breadcrumb clicked at the given position.
-// Returns -1 if no breadcrumb was clicked.
+//
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A int value.
+//
+// Side effects:
+//   - None.
 func (h *Header) GetClickedBreadcrumbIndex(x, _ int) int {
 	if len(h.breadcrumbs) == 0 {
 		return -1

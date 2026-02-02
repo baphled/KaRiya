@@ -40,9 +40,17 @@ type TimelineFilters struct {
 }
 
 // NewFilterModal creates a new filter modal.
-// events: list of career events to extract filter options from
-// currentFilters: current filter state to pre-populate form
-// width, height: terminal dimensions for responsive sizing
+//
+// Expected:
+//   - event must be valid.
+//   - timelinefilters must be valid.
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized FilterModal ready for use.
+//
+// Side effects:
+//   - None.
 func NewFilterModal(events []*career.Event, currentFilters *TimelineFilters, width, height int) *FilterModal {
 	formData := &FilterFormData{
 		SortBy:    "date",
@@ -173,7 +181,12 @@ func (m *FilterModal) buildForm(events []*career.Event) {
 }
 
 // Init initializes the filter modal and its form.
-// This must be called to start the form's lifecycle.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (m *FilterModal) Init() tea.Cmd {
 	if m.form == nil {
 		return nil
@@ -182,6 +195,17 @@ func (m *FilterModal) Init() tea.Cmd {
 }
 
 // Update handles messages for the filter modal.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - tea.Cmd: command to execute.
+//   - bool: true if form completed successfully.
+//   - *FilterFormData: filter data if completed, nil otherwise.
+//
+// Side effects:
+//   - May hide modal on completion or cancellation.
 func (m *FilterModal) Update(msg tea.Msg) (tea.Cmd, bool, *FilterFormData) {
 	if !m.visible {
 		return nil, false, nil
@@ -218,8 +242,12 @@ func (m *FilterModal) Update(msg tea.Msg) (tea.Cmd, bool, *FilterFormData) {
 }
 
 // View renders the filter modal with proper chrome (border, background)
-// for overlay compositing. The chrome provides a solid background so the modal
-// doesn't show the background layer through.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *FilterModal) View() string {
 	if !m.visible {
 		return ""
@@ -235,16 +263,28 @@ func (m *FilterModal) View() string {
 }
 
 // IsVisible returns whether the modal is currently visible.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *FilterModal) IsVisible() bool {
 	return m.visible
 }
 
 // Show makes the modal visible.
+//
+// Side effects:
+//   - None.
 func (m *FilterModal) Show() {
 	m.visible = true
 }
 
 // Hide hides the modal.
+//
+// Side effects:
+//   - None.
 func (m *FilterModal) Hide() {
 	m.visible = false
 }

@@ -20,6 +20,12 @@ type GlobalKeyMap struct {
 }
 
 // DefaultGlobalKeyMap returns the standard global key bindings per documentation.
+//
+// Returns:
+//   - A GlobalKeyMap value.
+//
+// Side effects:
+//   - None.
 func DefaultGlobalKeyMap() GlobalKeyMap {
 	return GlobalKeyMap{
 		Quit: key.NewBinding(
@@ -38,13 +44,23 @@ func DefaultGlobalKeyMap() GlobalKeyMap {
 }
 
 // ShortHelp implements help.KeyMap interface.
-// Returns a slice of key bindings to show in the short help view.
+//
+// Returns:
+//   - A []key.Binding value.
+//
+// Side effects:
+//   - None.
 func (k GlobalKeyMap) ShortHelp() []key.Binding {
 	return []key.Binding{k.Quit, k.Help, k.Back}
 }
 
 // FullHelp implements help.KeyMap interface.
-// Returns a slice of key binding columns for the full help view.
+//
+// Returns:
+//   - A [][]key.Binding value.
+//
+// Side effects:
+//   - None.
 func (k GlobalKeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
 		{k.Quit, k.Help, k.Back},
@@ -83,6 +99,12 @@ type ListKeyMap struct {
 }
 
 // DefaultListKeyMap returns the standard list navigation key bindings.
+//
+// Returns:
+//   - A ListKeyMap value.
+//
+// Side effects:
+//   - None.
 func DefaultListKeyMap() ListKeyMap {
 	return ListKeyMap{
 		Up: key.NewBinding(
@@ -137,13 +159,23 @@ func DefaultListKeyMap() ListKeyMap {
 }
 
 // ShortHelp implements help.KeyMap interface.
-// Returns the most commonly used list navigation bindings.
+//
+// Returns:
+//   - A []key.Binding value.
+//
+// Side effects:
+//   - None.
 func (k ListKeyMap) ShortHelp() []key.Binding {
 	return []key.Binding{k.Up, k.Down, k.Select, k.Edit}
 }
 
 // FullHelp implements help.KeyMap interface.
-// Returns all list navigation bindings organized by category.
+//
+// Returns:
+//   - A [][]key.Binding value.
+//
+// Side effects:
+//   - None.
 func (k ListKeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
 		{k.Up, k.Down, k.PageUp, k.PageDown, k.GoToStart, k.GoToEnd},
@@ -171,6 +203,12 @@ type FormKeyMap struct {
 }
 
 // DefaultFormKeyMap returns the standard form navigation key bindings.
+//
+// Returns:
+//   - A FormKeyMap value.
+//
+// Side effects:
+//   - None.
 func DefaultFormKeyMap() FormKeyMap {
 	return FormKeyMap{
 		NextField: key.NewBinding(
@@ -201,13 +239,23 @@ func DefaultFormKeyMap() FormKeyMap {
 }
 
 // ShortHelp implements help.KeyMap interface.
-// Returns the most commonly used form navigation bindings.
+//
+// Returns:
+//   - A []key.Binding value.
+//
+// Side effects:
+//   - None.
 func (k FormKeyMap) ShortHelp() []key.Binding {
 	return []key.Binding{k.NextField, k.PrevField, k.Submit, k.Cancel}
 }
 
 // FullHelp implements help.KeyMap interface.
-// Returns all form navigation bindings.
+//
+// Returns:
+//   - A [][]key.Binding value.
+//
+// Side effects:
+//   - None.
 func (k FormKeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
 		{k.NextField, k.PrevField, k.Submit, k.Cancel, k.Toggle, k.ToggleOptional},
@@ -224,6 +272,16 @@ type CombinedKeyMap struct {
 }
 
 // NewCombinedKeyMap creates a new combined keymap with global and list bindings.
+//
+// Expected:
+//   - globalkeymap must be valid.
+//   - listkeymap must be valid.
+//
+// Returns:
+//   - A CombinedKeyMap value.
+//
+// Side effects:
+//   - None.
 func NewCombinedKeyMap(global GlobalKeyMap, list ListKeyMap) CombinedKeyMap {
 	return CombinedKeyMap{
 		Global: global,
@@ -232,6 +290,16 @@ func NewCombinedKeyMap(global GlobalKeyMap, list ListKeyMap) CombinedKeyMap {
 }
 
 // NewCombinedFormKeyMap creates a new combined keymap with global and form bindings.
+//
+// Expected:
+//   - globalkeymap must be valid.
+//   - formkeymap must be valid.
+//
+// Returns:
+//   - A CombinedKeyMap value.
+//
+// Side effects:
+//   - None.
 func NewCombinedFormKeyMap(global GlobalKeyMap, form FormKeyMap) CombinedKeyMap {
 	return CombinedKeyMap{
 		Global: global,
@@ -240,7 +308,12 @@ func NewCombinedFormKeyMap(global GlobalKeyMap, form FormKeyMap) CombinedKeyMap 
 }
 
 // ShortHelp implements help.KeyMap interface.
-// Returns a combined short help from global and contextual keymaps.
+//
+// Returns:
+//   - A []key.Binding value.
+//
+// Side effects:
+//   - None.
 func (k CombinedKeyMap) ShortHelp() []key.Binding {
 	result := k.Global.ShortHelp()
 	if k.List.Up.Enabled() {
@@ -253,7 +326,12 @@ func (k CombinedKeyMap) ShortHelp() []key.Binding {
 }
 
 // FullHelp implements help.KeyMap interface.
-// Returns combined full help with multiple columns.
+//
+// Returns:
+//   - A [][]key.Binding value.
+//
+// Side effects:
+//   - None.
 func (k CombinedKeyMap) FullHelp() [][]key.Binding {
 	result := k.Global.FullHelp()
 	if k.List.Up.Enabled() {

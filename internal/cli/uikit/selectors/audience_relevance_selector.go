@@ -9,6 +9,12 @@ type AudienceRelevanceSelector struct {
 }
 
 // NewAudienceRelevanceSelector creates a new audience relevance selector.
+//
+// Returns:
+//   - A fully initialized AudienceRelevanceSelector ready for use.
+//
+// Side effects:
+//   - None.
 func NewAudienceRelevanceSelector() *AudienceRelevanceSelector {
 	return &AudienceRelevanceSelector{
 		selected: make(map[string]bool),
@@ -17,6 +23,12 @@ func NewAudienceRelevanceSelector() *AudienceRelevanceSelector {
 }
 
 // SetSelected sets the selected audience types.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Side effects:
+//   - None.
 func (a *AudienceRelevanceSelector) SetSelected(audiences []string) {
 	a.selected = make(map[string]bool)
 	for _, aud := range audiences {
@@ -25,6 +37,12 @@ func (a *AudienceRelevanceSelector) SetSelected(audiences []string) {
 }
 
 // GetSelected returns the list of selected audience types.
+//
+// Returns:
+//   - A []string value.
+//
+// Side effects:
+//   - None.
 func (a *AudienceRelevanceSelector) GetSelected() []string {
 	var result []string
 	for _, opt := range a.options {
@@ -36,11 +54,26 @@ func (a *AudienceRelevanceSelector) GetSelected() []string {
 }
 
 // IsSelected checks if an audience type is selected.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (a *AudienceRelevanceSelector) IsSelected(audience string) bool {
 	return a.selected[audience]
 }
 
 // Render renders the selector.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (a *AudienceRelevanceSelector) Render() string {
 	var result string
 	for _, opt := range a.options {

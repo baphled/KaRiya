@@ -21,6 +21,18 @@ type BurstFactsModal struct {
 }
 
 // NewBurstFactsModal creates a new burst facts modal.
+//
+// Expected:
+//   - burstid must be a valid string.
+//   - burstname must be a valid string.
+//   - facts must be a valid slice of *career.Fact.
+//   - theme must be a valid Theme instance (can be nil).
+//
+// Returns:
+//   - A fully initialized BurstFactsModal ready for use.
+//
+// Side effects:
+//   - None.
 func NewBurstFactsModal(burstID string, burstName string, facts []*career.Fact, theme themes.Theme) *BurstFactsModal {
 	if theme == nil {
 		theme = themes.NewDefaultTheme()
@@ -43,41 +55,89 @@ func NewBurstFactsModal(burstID string, burstName string, facts []*career.Fact, 
 }
 
 // Init initializes the modal.
+//
+// Returns:
+//   - tea.Cmd: command from underlying modal.
+//
+// Side effects:
+//   - None.
 func (m *BurstFactsModal) Init() tea.Cmd {
 	return m.modal.Init()
 }
 
 // Update handles keyboard input and window sizing.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - tea.Model: the updated model.
+//   - tea.Cmd: command to execute.
+//
+// Side effects:
+//   - Delegates to underlying modal.
 func (m *BurstFactsModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m.modal.Update(msg)
 }
 
 // View renders the modal content.
+//
+// Returns:
+//   - string: the rendered modal view.
+//
+// Side effects:
+//   - None.
 func (m *BurstFactsModal) View() string {
 	return m.modal.View()
 }
 
 // IsVisible returns whether the modal is currently visible.
+//
+// Returns:
+//   - bool: true if modal is visible.
+//
+// Side effects:
+//   - None.
 func (m *BurstFactsModal) IsVisible() bool {
 	return m.modal.IsVisible()
 }
 
 // Show makes the modal visible.
+//
+// Side effects:
+//   - Shows underlying modal.
 func (m *BurstFactsModal) Show() {
 	m.modal.Show()
 }
 
 // Hide hides the modal.
+//
+// Side effects:
+//   - Hides underlying modal.
 func (m *BurstFactsModal) Hide() {
 	m.modal.Hide()
 }
 
 // SetDimensions sets the terminal dimensions.
+//
+// Expected:
+//   - width must be a positive integer.
+//   - height must be a positive integer.
+//
+// Side effects:
+//   - Updates underlying modal dimensions.
 func (m *BurstFactsModal) SetDimensions(width, height int) {
 	m.modal.SetDimensions(width, height)
 }
 
 // SetFacts updates the facts being displayed.
+//
+// Expected:
+//   - facts must be a non-nil slice of *career.Fact.
+//
+// Side effects:
+//   - Updates internal facts reference.
+//   - Regenerates modal content.
 func (m *BurstFactsModal) SetFacts(facts []*career.Fact) {
 	m.facts = facts
 	content := renderFactsContent(facts, m.theme)
@@ -86,6 +146,12 @@ func (m *BurstFactsModal) SetFacts(facts []*career.Fact) {
 }
 
 // GetBurstID returns the burst ID this modal is showing facts for.
+//
+// Returns:
+//   - string: the burst ID.
+//
+// Side effects:
+//   - None.
 func (m *BurstFactsModal) GetBurstID() string {
 	return m.burstID
 }

@@ -12,6 +12,15 @@ import (
 )
 
 // ParseIntentFile parses an intent Go file and extracts state information.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A ComponentInfo value.
+//
+// Side effects:
+//   - None.
 func ParseIntentFile(filename string) ComponentInfo {
 	fset := token.NewFileSet()
 	node, err := parser.ParseFile(fset, filename, nil, parser.ParseComments)
@@ -54,6 +63,15 @@ func ParseIntentFile(filename string) ComponentInfo {
 }
 
 // ParseScreenFile parses a screen Go file and extracts state information.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A ComponentInfo value.
+//
+// Side effects:
+//   - None.
 func ParseScreenFile(filename string) ComponentInfo {
 	fset := token.NewFileSet()
 	node, err := parser.ParseFile(fset, filename, nil, parser.ParseComments)
@@ -188,6 +206,15 @@ func isStateConstant(name string) bool {
 }
 
 // ClassifyState determines the type of state based on naming patterns.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func ClassifyState(name string) string {
 	nameLower := strings.ToLower(name)
 
@@ -241,6 +268,15 @@ func ClassifyState(name string) string {
 }
 
 // InferEscapeBehavior infers the escape key behavior based on state type.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func InferEscapeBehavior(stateType string) string {
 	switch stateType {
 	case "ROOT":

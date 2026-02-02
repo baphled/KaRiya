@@ -61,14 +61,14 @@ type SkillFormScreen struct {
 
 // NewSkillFormScreen creates a new skill form screen.
 //
-// The screen:
-// - Pre-populates form data if skill is not nil (edit mode)
-// - Creates empty form if skill is nil (add mode)
-// - Uses forms.NewSkillFormWithDataAndDimensions for form building
-// - Supports standard navigation: Esc to cancel, Tab for next field
+// Expected:
+//   - skill must be valid.
 //
-// Parameters:
-//   - skill: The skill to edit (nil for new skill)
+// Returns:
+//   - A fully initialized SkillFormScreen ready for use.
+//
+// Side effects:
+//   - None.
 func NewSkillFormScreen(skill *career.Skill) *SkillFormScreen {
 	var breadcrumbs []string
 	if skill == nil {

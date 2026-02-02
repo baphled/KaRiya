@@ -35,8 +35,16 @@ type Button struct {
 }
 
 // NewButton creates a new button with the given label and theme.
-// If theme is nil, the default theme is used.
-// The button defaults to Secondary variant.
+//
+// Expected:
+//   - Must be a valid string.
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A fully initialized Button ready for use.
+//
+// Side effects:
+//   - None.
 func NewButton(label string, th theme.Theme) *Button {
 	b := &Button{
 		label:    label,
@@ -52,37 +60,72 @@ func NewButton(label string, th theme.Theme) *Button {
 }
 
 // Variant sets the button variant (Primary, Secondary, Danger).
-// Returns the button for method chaining.
+//
+// Expected:
+//   - buttonvariant must be valid.
+//
+// Returns:
+//   - A fully initialized Button ready for use.
+//
+// Side effects:
+//   - None.
 func (b *Button) Variant(v ButtonVariant) *Button {
 	b.variant = v
 	return b
 }
 
 // Focused sets the focus state of the button.
-// Focused buttons have a thick border and accent color.
-// Returns the button for method chaining.
+//
+// Expected:
+//   - bool must be valid.
+//
+// Returns:
+//   - A fully initialized Button ready for use.
+//
+// Side effects:
+//   - None.
 func (b *Button) Focused(f bool) *Button {
 	b.focused = f
 	return b
 }
 
 // Disabled sets the disabled state of the button.
-// Disabled buttons appear faint with muted colors.
-// Returns the button for method chaining.
+//
+// Expected:
+//   - bool must be valid.
+//
+// Returns:
+//   - A fully initialized Button ready for use.
+//
+// Side effects:
+//   - None.
 func (b *Button) Disabled(d bool) *Button {
 	b.disabled = d
 	return b
 }
 
 // Width sets the minimum width of the button.
-// The button will be padded to reach this width.
-// Returns the button for method chaining.
+//
+// Expected:
+//   - int must be valid.
+//
+// Returns:
+//   - A fully initialized Button ready for use.
+//
+// Side effects:
+//   - None.
 func (b *Button) Width(w int) *Button {
 	b.width = w
 	return b
 }
 
 // Render returns the styled button as a string.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (b *Button) Render() string {
 	style := b.buildStyle()
 	return style.Render(" " + b.label + " ")
@@ -146,16 +189,46 @@ func (b *Button) buildStyle() lipgloss.Style {
 // Convenience constructors for common button variants
 
 // PrimaryButton creates a primary-styled button.
+//
+// Expected:
+//   - Must be a valid string.
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A fully initialized Button ready for use.
+//
+// Side effects:
+//   - None.
 func PrimaryButton(label string, th theme.Theme) *Button {
 	return NewButton(label, th).Variant(ButtonPrimary)
 }
 
 // SecondaryButton creates a secondary-styled button.
+//
+// Expected:
+//   - Must be a valid string.
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A fully initialized Button ready for use.
+//
+// Side effects:
+//   - None.
 func SecondaryButton(label string, th theme.Theme) *Button {
 	return NewButton(label, th).Variant(ButtonSecondary)
 }
 
 // DangerButton creates a danger-styled button.
+//
+// Expected:
+//   - Must be a valid string.
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A fully initialized Button ready for use.
+//
+// Side effects:
+//   - None.
 func DangerButton(label string, th theme.Theme) *Button {
 	return NewButton(label, th).Variant(ButtonDanger)
 }

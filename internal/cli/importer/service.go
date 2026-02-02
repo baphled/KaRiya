@@ -32,6 +32,15 @@ type ImportService struct {
 }
 
 // NewImportService creates a new import service.
+//
+// Expected:
+//   - service must be valid.
+//
+// Returns:
+//   - A fully initialized ImportService ready for use.
+//
+// Side effects:
+//   - None.
 func NewImportService(careerService *careerservice.Service) *ImportService {
 	return &ImportService{
 		careerService: careerService,
@@ -39,6 +48,17 @@ func NewImportService(careerService *careerservice.Service) *ImportService {
 }
 
 // PrepareImport parses CSV and returns parsed rows for review.
+//
+// Expected:
+//   - ctx must be a valid context.Context.
+//   - reader must be a valid interface with Read method.
+//
+// Returns:
+//   - A []*ParsedRow value for review.
+//   - An error value if preparation failed.
+//
+// Side effects:
+//   - Creates parser with existing events for duplicate detection.
 func (is *ImportService) PrepareImport(ctx context.Context, reader interface{}) ([]*ParsedRow, error) {
 	// Get existing events to check for duplicates
 	filters := &repo.EventListFilters{}
@@ -69,6 +89,21 @@ func (is *ImportService) PrepareImport(ctx context.Context, reader interface{}) 
 }
 
 // ImportRows imports the parsed rows into the database.
+//
+// Expected:
+//   - ctx must be a valid context.Context.
+//   - parsedrows must be a valid slice of ParsedRow.
+//   - selectedrows must be a valid slice of row indices to import.
+//
+// Returns:
+//   - A fully initialized ImportResult ready for use.
+//   - An error value if import failed.
+//
+// Side effects:
+//   - Creates events in the database.
+//   - May create skills in the database.
+//   - May detect and save bursts.
+//   - May extract and save facts.
 func (is *ImportService) ImportRows(ctx context.Context, parsedRows []*ParsedRow, selectedRows []int) (*ImportResult, error) {
 	result := &ImportResult{
 		TotalRows:         len(selectedRows),
@@ -204,6 +239,15 @@ func (is *ImportService) ImportRows(ctx context.Context, parsedRows []*ParsedRow
 }
 
 // GetImportSummary returns a summary of the import preparation.
+//
+// Expected:
+//   - []parsedrow must be valid.
+//
+// Returns:
+//   - A map[string]int value.
+//
+// Side effects:
+//   - None.
 func (is *ImportService) GetImportSummary(parsedRows []*ParsedRow) map[string]int {
 	summary := map[string]int{
 		"total":     len(parsedRows),

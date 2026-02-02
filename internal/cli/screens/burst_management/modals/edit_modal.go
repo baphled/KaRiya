@@ -34,6 +34,17 @@ type EditBurstModal struct {
 // NewEditBurstModal creates a new edit burst modal with fields pre-populated from the existing burst.
 // burst: the existing burst to edit
 // width, height: terminal dimensions for responsive sizing
+//
+// Expected:
+//   - burst must be a non-nil *career.Burst pointer.
+//   - width must be a positive integer.
+//   - height must be a positive integer.
+//
+// Returns:
+//   - A fully initialized EditBurstModal ready for use.
+//
+// Side effects:
+//   - Builds form with pre-populated data.
 func NewEditBurstModal(burst *career.Burst, width, height int) *EditBurstModal {
 	// Pre-populate form data from existing burst using forms package helper.
 	formData := forms.GetBurstFormData(burst)
@@ -75,6 +86,12 @@ func (m *EditBurstModal) buildForm() {
 }
 
 // Init initializes the modal and its form.
+//
+// Returns:
+//   - tea.Cmd: command to execute, or nil if form is nil.
+//
+// Side effects:
+//   - Initializes the underlying form.
 func (m *EditBurstModal) Init() tea.Cmd {
 	if m.form == nil {
 		return nil
@@ -84,10 +101,17 @@ func (m *EditBurstModal) Init() tea.Cmd {
 
 // Update handles messages for the edit burst modal.
 //
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
 // Returns:
-//   - tea.Cmd: command to execute
-//   - bool: true if form completed successfully
-//   - *EditBurstData: burst data if completed, nil otherwise
+//   - tea.Cmd: command to execute.
+//   - bool: true if form completed successfully.
+//   - *EditBurstData: burst data if completed, nil otherwise.
+//
+// Side effects:
+//   - May hide modal if completed or cancelled.
+//   - May rebuild form on window resize.
 func (m *EditBurstModal) Update(msg tea.Msg) (tea.Cmd, bool, *EditBurstData) {
 	if !m.visible {
 		return nil, false, nil
@@ -134,6 +158,12 @@ func (m *EditBurstModal) Update(msg tea.Msg) (tea.Cmd, bool, *EditBurstData) {
 
 // View renders the edit burst modal with proper chrome (border, background)
 // for overlay compositing.
+//
+// Returns:
+//   - string: the rendered modal view, or empty string if not visible.
+//
+// Side effects:
+//   - None.
 func (m *EditBurstModal) View() string {
 	if !m.visible || m.form == nil {
 		return ""
@@ -154,21 +184,39 @@ func (m *EditBurstModal) View() string {
 }
 
 // IsVisible returns whether the modal is currently visible.
+//
+// Returns:
+//   - bool: true if modal is visible.
+//
+// Side effects:
+//   - None.
 func (m *EditBurstModal) IsVisible() bool {
 	return m.visible
 }
 
 // Hide hides the modal.
+//
+// Side effects:
+//   - Sets visible flag to false.
 func (m *EditBurstModal) Hide() {
 	m.visible = false
 }
 
 // Show shows the modal.
+//
+// Side effects:
+//   - Sets visible flag to true.
 func (m *EditBurstModal) Show() {
 	m.visible = true
 }
 
 // GetOriginalBurst returns the original burst being edited.
+//
+// Returns:
+//   - *career.Burst: the original burst.
+//
+// Side effects:
+//   - None.
 func (m *EditBurstModal) GetOriginalBurst() *career.Burst {
 	return m.originalBurst
 }

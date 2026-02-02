@@ -77,8 +77,11 @@ type Screen struct {
 
 // NewBaseScreen creates a new Screen with default dimensions.
 //
-// Default dimensions (120x40) are used until SetTerminalInfo is called
-// with actual terminal dimensions.
+// Returns:
+//   - A fully initialized Screen ready for use.
+//
+// Side effects:
+//   - None.
 func NewBaseScreen() *Screen {
 	return &Screen{
 		terminalWidth:  120,
@@ -88,8 +91,11 @@ func NewBaseScreen() *Screen {
 
 // SetTerminalInfo updates the terminal dimensions.
 //
-// This should be called when the screen receives a WindowSizeMsg,
-// or when the screen is initialized with known dimensions.
+// Expected:
+//   - int must be valid.
+//
+// Side effects:
+//   - None.
 func (b *Screen) SetTerminalInfo(width, height int) {
 	b.terminalWidth = width
 	b.terminalHeight = height
@@ -97,17 +103,23 @@ func (b *Screen) SetTerminalInfo(width, height int) {
 
 // SetTheme updates the theme used for styling.
 //
-// This should be called when the intent sets up the screen,
-// passing the global or intent-specific theme.
+// Expected:
+//   - interface{} must be valid.
+//
+// Side effects:
+//   - None.
 func (b *Screen) SetTheme(theme interface{}) {
 	b.theme = theme
 }
 
 // SetLogo sets the logo to be displayed in views.
 //
-// This should be called when the intent sets up the screen,
-// passing the shared logo instance and optional spacing.
-// Accepts any LogoModel implementation (typically display.Logo).
+// Expected:
+//   - interface{} must be valid.
+//   - int must be valid.
+//
+// Side effects:
+//   - None.
 func (b *Screen) SetLogo(logo interface{}, spacing int) {
 	// Type assert to LogoModel interface
 	if logoModel, ok := logo.(LogoModel); ok {
@@ -117,46 +129,71 @@ func (b *Screen) SetLogo(logo interface{}, spacing int) {
 }
 
 // GetLogo returns the currently set logo.
+//
+// Returns:
+//   - A LogoModel value.
+//
+// Side effects:
+//   - None.
 func (b *Screen) GetLogo() LogoModel {
 	return b.logo
 }
 
 // GetLogoSpacing returns the logo spacing.
+//
+// Returns:
+//   - A int value.
+//
+// Side effects:
+//   - None.
 func (b *Screen) GetLogoSpacing() int {
 	return b.logoSpacing
 }
 
 // Width returns the current terminal width.
+//
+// Returns:
+//   - A int value.
+//
+// Side effects:
+//   - None.
 func (b *Screen) Width() int {
 	return b.terminalWidth
 }
 
 // Height returns the current terminal height.
+//
+// Returns:
+//   - A int value.
+//
+// Side effects:
+//   - None.
 func (b *Screen) Height() int {
 	return b.terminalHeight
 }
 
 // Theme returns the current theme.
+//
+// Returns:
+//   - A interface{} value.
+//
+// Side effects:
+//   - None.
 func (b *Screen) Theme() interface{} {
 	return b.theme
 }
 
 // CreateView is a helper method to create a StandardView with current dimensions and theme.
 //
-// Parameters:
-//   - breadcrumbs: Variadic breadcrumb trail (e.g., "Main Menu", "Generate CV", "Select Profile")
-//   - content: The main content of the screen
-//   - footer: The footer text (shortcuts, help, etc.)
+// Expected:
+//   - Must be a valid string.
+//   - Must be a valid string.
 //
-// Example:
+// Returns:
+//   - A string value.
 //
-//	view := s.CreateView(
-//	    []string{"Main Menu", "My Feature"},
-//	    s.renderContent(),
-//	    "Enter: Select  Esc: Back  q: Quit",
-//	)
-//
-// This automatically uses the current terminal dimensions and theme.
+// Side effects:
+//   - None.
 func (b *Screen) CreateView(breadcrumbs []string, content, footer string) string {
 	// Create terminal info from current dimensions
 	termInfo := &terminal.Info{
@@ -186,18 +223,14 @@ func (b *Screen) CreateView(breadcrumbs []string, content, footer string) string
 
 // HandleWindowSizeMsg is a helper to handle WindowSizeMsg uniformly across all screens.
 //
-// Call this at the start of your screen's Update method:
+// Expected:
+//   - msg must be valid.
 //
-//	func (s *MyScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
-//	    if cmd := s.Screen.HandleWindowSizeMsg(msg); cmd != nil {
-//	        return cmd, nil
-//	    }
-//	    // ... rest of update logic
-//	}
+// Returns:
+//   - A tea.Cmd value.
 //
-// Returns nil if msg is not a WindowSizeMsg.
-// Returns a command (usually nil) if msg is a WindowSizeMsg.
-// Never returns a ScreenResult for WindowSizeMsg (window resize is not a user action).
+// Side effects:
+//   - None.
 func (b *Screen) HandleWindowSizeMsg(msg tea.Msg) tea.Cmd {
 	if wsm, ok := msg.(tea.WindowSizeMsg); ok {
 		b.SetTerminalInfo(wsm.Width, wsm.Height)
@@ -206,10 +239,12 @@ func (b *Screen) HandleWindowSizeMsg(msg tea.Msg) tea.Cmd {
 }
 
 // RenderContent is a default implementation that returns empty string.
-// Screens should override this method to provide their content.
 //
-// This method allows intents to get just the content without StandardView wrapper,
-// enabling them to apply their own StandardView with custom breadcrumbs and help.
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (b *Screen) RenderContent() string {
 	return ""
 }

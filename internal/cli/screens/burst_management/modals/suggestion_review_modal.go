@@ -77,8 +77,16 @@ type SuggestionReviewModal struct {
 }
 
 // NewSuggestionReviewModal creates a new burst suggestion review modal.
-// Suggestions are automatically sorted by confidence (highest first).
-// This constructor is for burst fact suggestions.
+//
+// Expected:
+//   - burstsuggestion must be valid.
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A fully initialized SuggestionReviewModal ready for use.
+//
+// Side effects:
+//   - None.
 func NewSuggestionReviewModal(suggestions []burstfact.BurstSuggestion, theme themes.Theme) *SuggestionReviewModal {
 	if theme == nil {
 		theme = themes.NewDefaultTheme()
@@ -129,8 +137,16 @@ func NewSuggestionReviewModal(suggestions []burstfact.BurstSuggestion, theme the
 }
 
 // NewSkillSuggestionModal creates a new skill suggestion review modal.
-// Suggestions are automatically sorted by confidence (highest first).
-// This constructor is for skill inference suggestions.
+//
+// Expected:
+//   - skillsuggestion must be valid.
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A fully initialized SuggestionReviewModal ready for use.
+//
+// Side effects:
+//   - None.
 func NewSkillSuggestionModal(suggestions []skillinference.SkillSuggestion, theme themes.Theme) *SuggestionReviewModal {
 	if theme == nil {
 		theme = themes.NewDefaultTheme()
@@ -304,11 +320,28 @@ func (m *SuggestionReviewModal) buildFooter() string {
 }
 
 // Init initializes the modal.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (m *SuggestionReviewModal) Init() tea.Cmd {
 	return nil
 }
 
 // Update handles keyboard input.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - tea.Model: the updated model.
+//   - tea.Cmd: command to execute.
+//
+// Side effects:
+//   - May update internal state based on key presses.
+//   - May hide modal on Escape, Enter, or when no suggestions remain.
 func (m *SuggestionReviewModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if !m.IsVisible() {
 		return m, nil
@@ -458,6 +491,12 @@ func (m *SuggestionReviewModal) removeCurrentSuggestion() {
 }
 
 // View renders the modal.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *SuggestionReviewModal) View() string {
 	if !m.visible {
 		return ""
@@ -507,22 +546,40 @@ func (m *SuggestionReviewModal) View() string {
 }
 
 // IsVisible returns whether the modal is visible.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *SuggestionReviewModal) IsVisible() bool {
 	return m.visible
 }
 
 // Show makes the modal visible.
+//
+// Side effects:
+//   - None.
 func (m *SuggestionReviewModal) Show() {
 	m.visible = true
 	m.action = ""
 }
 
 // Hide hides the modal.
+//
+// Side effects:
+//   - None.
 func (m *SuggestionReviewModal) Hide() {
 	m.visible = false
 }
 
 // SetDimensions sets the terminal dimensions.
+//
+// Expected:
+//   - int must be valid.
+//
+// Side effects:
+//   - None.
 func (m *SuggestionReviewModal) SetDimensions(width, height int) {
 	m.width = width
 	m.height = height
@@ -545,40 +602,75 @@ func (m *SuggestionReviewModal) SetDimensions(width, height int) {
 }
 
 // GetAction returns the last action taken.
+//
+// Returns:
+//   - A SuggestionAction value.
+//
+// Side effects:
+//   - None.
 func (m *SuggestionReviewModal) GetAction() SuggestionAction {
 	return m.action
 }
 
 // ClearAction clears the current action.
+//
+// Side effects:
+//   - None.
 func (m *SuggestionReviewModal) ClearAction() {
 	m.action = ""
 }
 
 // GetAcceptedSuggestions returns all accepted burst suggestions.
-// For burst suggestions only. Use GetAcceptedSkills() for skill suggestions.
+//
+// Returns:
+//   - A []burstfact.BurstSuggestion value.
+//
+// Side effects:
+//   - None.
 func (m *SuggestionReviewModal) GetAcceptedSuggestions() []burstfact.BurstSuggestion {
 	return m.acceptedBursts
 }
 
 // GetAcceptedSkills returns all accepted skill suggestions.
-// For skill suggestions only.
+//
+// Returns:
+//   - A []skillinference.SkillSuggestion value.
+//
+// Side effects:
+//   - None.
 func (m *SuggestionReviewModal) GetAcceptedSkills() []skillinference.SkillSuggestion {
 	return m.acceptedSkills
 }
 
 // GetCurrentSuggestion returns the currently selected burst suggestion.
-// For burst suggestions only. Use GetCurrentSkill() for skill suggestions.
+//
+// Returns:
+//   - A fully initialized burstfact.BurstSuggestion ready for use.
+//
+// Side effects:
+//   - None.
 func (m *SuggestionReviewModal) GetCurrentSuggestion() *burstfact.BurstSuggestion {
 	return m.burstTable.GetSelectedItem()
 }
 
 // GetCurrentSkill returns the currently selected skill suggestion.
-// For skill suggestions only.
+//
+// Returns:
+//   - A fully initialized skillinference.SkillSuggestion ready for use.
+//
+// Side effects:
+//   - None.
 func (m *SuggestionReviewModal) GetCurrentSkill() *skillinference.SkillSuggestion {
 	return m.skillTable.GetSelectedItem()
 }
 
 // HasSuggestions returns whether there are any suggestions left.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *SuggestionReviewModal) HasSuggestions() bool {
 	switch m.suggestionType {
 	case "burst":
@@ -591,6 +683,12 @@ func (m *SuggestionReviewModal) HasSuggestions() bool {
 }
 
 // GetSuggestionsCount returns the number of remaining suggestions.
+//
+// Returns:
+//   - A int value.
+//
+// Side effects:
+//   - None.
 func (m *SuggestionReviewModal) GetSuggestionsCount() int {
 	switch m.suggestionType {
 	case "burst":
@@ -603,13 +701,23 @@ func (m *SuggestionReviewModal) GetSuggestionsCount() int {
 }
 
 // GetAllSuggestions returns all burst suggestions in their current order (sorted by confidence).
-// For burst suggestions only. Use GetAllSkills() for skill suggestions.
+//
+// Returns:
+//   - A []burstfact.BurstSuggestion value.
+//
+// Side effects:
+//   - None.
 func (m *SuggestionReviewModal) GetAllSuggestions() []burstfact.BurstSuggestion {
 	return m.burstSuggestions
 }
 
 // GetAllSkills returns all skill suggestions in their current order (sorted by confidence).
-// For skill suggestions only.
+//
+// Returns:
+//   - A []skillinference.SkillSuggestion value.
+//
+// Side effects:
+//   - None.
 func (m *SuggestionReviewModal) GetAllSkills() []skillinference.SkillSuggestion {
 	return m.skillSuggestions
 }

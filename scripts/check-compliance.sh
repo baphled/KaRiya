@@ -274,6 +274,31 @@ else
     check_fail "Missing .gitignore"
 fi
 
+# doc.go files (package documentation)
+echo -n "Package doc.go files: "
+MISSING_DOCGO=$(go vet -vettool=./bin/docblocks \
+    ./internal/cli/app/... \
+    ./internal/cli/behaviors/... \
+    ./internal/cli/bootstrap/... \
+    ./internal/cli/configtypes/... \
+    ./internal/cli/forms/... \
+    ./internal/cli/importer/... \
+    ./internal/cli/intents/... \
+    ./internal/cli/navigation/... \
+    ./internal/cli/screens/... \
+    ./internal/cli/service/... \
+    ./internal/cli/statematrix/... \
+    ./internal/cli/terminal/... \
+    ./internal/cli/themes/... \
+    ./internal/cli/types/... \
+    ./internal/cli/uikit/... \
+    ./tools/analyzers/docblocks/... 2>&1 | grep "missing doc.go file" | wc -l)
+if [ "$MISSING_DOCGO" -eq 0 ]; then
+    check_pass
+else
+    check_fail "$MISSING_DOCGO packages missing doc.go files (run: make check-docblocks)"
+fi
+
 echo ""
 
 # ============================================

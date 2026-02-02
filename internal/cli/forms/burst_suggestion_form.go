@@ -14,7 +14,15 @@ type BurstSuggestionFormData struct {
 }
 
 // NewBurstSuggestionEditForm creates a form for editing a burst suggestion's name and description.
-// The form has 2 fields: Name (optional) and Description (optional).
+//
+// Expected:
+//   - burstsuggestion must be valid.
+//
+// Returns:
+//   - A fully initialized huh.Form ready for use.
+//
+// Side effects:
+//   - None.
 func NewBurstSuggestionEditForm(suggestion burstfact.BurstSuggestion) *huh.Form {
 	data := GetBurstSuggestionFormData(suggestion)
 
@@ -40,6 +48,15 @@ func NewBurstSuggestionEditForm(suggestion burstfact.BurstSuggestion) *huh.Form 
 }
 
 // NewBurstSuggestionEditFormWithData creates a form with pre-populated data.
+//
+// Expected:
+//   - burstsuggestionformdata must be valid.
+//
+// Returns:
+//   - A fully initialized huh.Form ready for use.
+//
+// Side effects:
+//   - None.
 func NewBurstSuggestionEditFormWithData(data *BurstSuggestionFormData) *huh.Form {
 	return NewForm(
 		huh.NewGroup(
@@ -63,12 +80,28 @@ func NewBurstSuggestionEditFormWithData(data *BurstSuggestionFormData) *huh.Form
 }
 
 // ApplyBurstSuggestionFormData applies the form data to a burst suggestion.
+//
+// Expected:
+//   - burstsuggestion must be valid.
+//   - burstsuggestionformdata must be valid.
+//
+// Side effects:
+//   - None.
 func ApplyBurstSuggestionFormData(suggestion *burstfact.BurstSuggestion, data *BurstSuggestionFormData) {
 	suggestion.Name = data.Name
 	suggestion.Description = data.Description
 }
 
 // GetBurstSuggestionFormData extracts form data from a burst suggestion.
+//
+// Expected:
+//   - burstsuggestion must be valid.
+//
+// Returns:
+//   - A fully initialized BurstSuggestionFormData ready for use.
+//
+// Side effects:
+//   - None.
 func GetBurstSuggestionFormData(suggestion burstfact.BurstSuggestion) *BurstSuggestionFormData {
 	return &BurstSuggestionFormData{
 		Name:        suggestion.Name,

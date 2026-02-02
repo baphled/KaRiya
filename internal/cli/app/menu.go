@@ -147,6 +147,12 @@ func (m *Model) getMenuColumnWidths() (actionWidth, descWidth int) {
 }
 
 // GetMenuItems returns the menu items from the model.
+//
+// Returns:
+//   - A []MenuItem value.
+//
+// Side effects:
+//   - None.
 func (m *Model) GetMenuItems() []MenuItem {
 	return m.menuItems
 }

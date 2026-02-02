@@ -50,7 +50,15 @@ type DetailModal struct {
 }
 
 // NewDetailModal creates a new detail modal with the given title and content.
-// The modal is visible by default with a default close footer.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Returns:
+//   - A fully initialized DetailModal ready for use.
+//
+// Side effects:
+//   - None.
 func NewDetailModal(title, content string) *DetailModal {
 	return &DetailModal{
 		title:        title,
@@ -65,14 +73,30 @@ func NewDetailModal(title, content string) *DetailModal {
 }
 
 // WithTheme sets the theme for the modal.
-// Returns the modal for method chaining.
+//
+// Expected:
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A fully initialized DetailModal ready for use.
+//
+// Side effects:
+//   - None.
 func (m *DetailModal) WithTheme(theme themes.Theme) *DetailModal {
 	m.theme = theme
 	return m
 }
 
 // WithFooterBadges sets custom footer badges.
-// Returns the modal for method chaining.
+//
+// Expected:
+//   - badge must be valid.
+//
+// Returns:
+//   - A fully initialized DetailModal ready for use.
+//
+// Side effects:
+//   - None.
 func (m *DetailModal) WithFooterBadges(badges ...*primitives.Badge) *DetailModal {
 	m.footerBadges = badges
 	return m
@@ -87,11 +111,28 @@ func (m *DetailModal) getTheme() themes.Theme {
 }
 
 // Init initializes the modal (required by BubbleTea lifecycle).
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
 func (m *DetailModal) Init() tea.Cmd {
 	return nil
 }
 
 // Update handles keyboard input and scrolling.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - Updated model.
+//   - Command to execute.
+//
+// Side effects:
+//   - May update viewport.
+//   - May hide modal on close keys.
 func (m *DetailModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if !m.visible {
 		return m, nil
@@ -126,6 +167,12 @@ func (m *DetailModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 // View renders the modal content with solid background and scrolling.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (m *DetailModal) View() string {
 	if !m.visible {
 		return ""
@@ -220,22 +267,40 @@ func formatPercent(percent int) string {
 }
 
 // IsVisible returns whether the modal is currently visible.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
 func (m *DetailModal) IsVisible() bool {
 	return m.visible
 }
 
 // Show makes the modal visible and resets the viewport.
+//
+// Side effects:
+//   - None.
 func (m *DetailModal) Show() {
 	m.visible = true
 	m.ready = false // Reset viewport when showing
 }
 
 // Hide hides the modal.
+//
+// Side effects:
+//   - None.
 func (m *DetailModal) Hide() {
 	m.visible = false
 }
 
 // SetDimensions sets the terminal dimensions for responsive sizing.
+//
+// Expected:
+//   - int must be valid.
+//
+// Side effects:
+//   - None.
 func (m *DetailModal) SetDimensions(width, height int) {
 	m.width = width
 	m.height = height
@@ -243,12 +308,24 @@ func (m *DetailModal) SetDimensions(width, height int) {
 }
 
 // SetContent updates the content being displayed.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Side effects:
+//   - None.
 func (m *DetailModal) SetContent(content string) {
 	m.content = content
 	m.ready = false // Reset viewport when content changes
 }
 
 // SetTitle updates the title being displayed.
+//
+// Expected:
+//   - Must be a valid string.
+//
+// Side effects:
+//   - None.
 func (m *DetailModal) SetTitle(title string) {
 	m.title = title
 }
