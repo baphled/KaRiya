@@ -25,6 +25,32 @@ make session-start   # MUST run first - validates environment, acknowledges rule
 
 ---
 
+## Code Formatting Standards
+
+### Indentation
+
+| File Type | Indentation | Tool | Notes |
+|-----------|-------------|------|-------|
+| **Go (`*.go`)** | **Tabs** | `gofmt` | Standard Go convention, enforced by gofmt |
+| **YAML (`*.yml`, `*.yaml`)** | **2 spaces** | manual | Config files (e.g., `.golangci.yml`) |
+| **Markdown (`*.md`)** | **N/A** | - | Follow natural document flow |
+| **Makefile** | **Tabs** | - | Required by make syntax |
+
+### Go Code Formatting
+
+- **Never use spaces** for indentation in Go files - always use tabs
+- **Always run `go fmt ./...`** before committing
+- **gofmt is non-negotiable** - it automatically formats code according to Go conventions
+- The `.editorconfig` file at project root configures this for supported editors
+
+### Enforcement
+
+- **CI/CD**: All PRs are checked with `gofmt` via golangci-lint
+- **Pre-commit**: Staged files are automatically checked
+- **Make target**: `make fmt` runs `go fmt ./...`
+
+---
+
 ## Comment Rules (STRICTLY ENFORCED)
 
 ### Philosophy: Code Over Comments

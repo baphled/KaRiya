@@ -1,0 +1,30 @@
+# KaRiya EditorConfig
+# https://editorconfig.org/
+
+root = true
+
+# Go files - use tabs (standard Go convention)
+[*.go]
+indent_style = tab
+indent_size = 4
+tab_width = 4
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# YAML files - use 2 spaces
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# Markdown files
+[*.md]
+trim_trailing_whitespace = false
+insert_final_newline = true
+
+# Makefiles
+[{Makefile,makefile}]
+indent_style = tab

@@ -282,7 +282,22 @@ See `AGENTS.md` section "E2E Test Structure" for detailed examples.
 
 ## Code Style
 
-1. Format code with the standard **gofmt** tool (or run `go fmt`). This automatically formats code (indentation, spacing, etc.) according to Go conventions. Additionally, run **`go vet`** to catch common issues (unused variables, misuse of `unsafe`, etc.). These tools should be part of your development/CI process so that code is always formatted and vetted.
+### Formatting
+
+1. **Format code with the standard `gofmt` tool** (or run `go fmt ./...`). This automatically formats code (indentation, spacing, etc.) according to Go conventions.
+   - **Use tabs for indentation** in Go files - never use spaces. This is enforced by `gofmt`.
+   - Run `go vet` to catch common issues (unused variables, misuse of `unsafe`, etc.).
+
+2. **EditorConfig**: The `.editorconfig` file at project root configures indentation for supported editors:
+   - Go files: tabs
+   - YAML files: 2 spaces
+   - Makefiles: tabs (required by make syntax)
+
+### Naming Conventions
+
+3. Adopt idiomatic naming conventions. Package names are short and lowercase. Exported functions, types, and variables have descriptive names starting with a capital letter (with a comment above them for documentation). Avoid underscores in names; use MixedCaps (CamelCase) for multi-word identifiers instead. Prefer short, concise names for variables in small scopes (e.g., loop indices, receiver names).
+
+4. Keep the code base idiomatic and simple. Go favors composition over complex inheritance and clear code over clever code. Use standard library functions and idioms in preference to reinventing solutions. When in doubt, refer to "Effective Go" or official style comments for guidance.
 2. Adopt idiomatic naming conventions. Package names are short and lowercase. Exported functions, types, and variables have descriptive names starting with a capital letter (with a comment above them for documentation). Avoid underscores in names; use MixedCaps (CamelCase) for multi-word identifiers instead. Prefer short, concise names for variables in small scopes (e.g., loop indices, receiver names).
 3. Keep the code base idiomatic and simple. Go favors composition over complex inheritance and clear code over clever code. Use standard library functions and idioms in preference to reinventing solutions. When in doubt, refer to “Effective Go” or official style comments for guidance.
 
