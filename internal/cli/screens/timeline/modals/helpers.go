@@ -125,7 +125,7 @@ func RenderSkillsContent(skills []*career.Skill, theme themes.Theme) string {
 			continue
 		}
 
-		content.WriteString(primitives.NewText(fmt.Sprintf("- %s", skill.Name), theme).Bold().Render())
+		content.WriteString(primitives.NewText("- "+skill.Name, theme).Bold().Render())
 		content.WriteString("\n")
 
 		var details []string

@@ -55,7 +55,7 @@ var _ = Describe("Career Service", func() {
 				err := service.CaptureEvent(ctx, testEvent, TimelineJournaling)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(testEvent.ID).NotTo(BeEmpty())
-				Expect(len(testEvent.ID)).To(Equal(36))
+				Expect(testEvent.ID).To(HaveLen(36))
 			})
 
 			It("should preserve event data", func() {
@@ -447,7 +447,7 @@ var _ = Describe("Career Service", func() {
 				events, err := service.ListEvents(ctx, mocks.EventListFilters{})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(len(events)).To(Equal(3))
+				Expect(events).To(HaveLen(3))
 			})
 		})
 
@@ -462,7 +462,7 @@ var _ = Describe("Career Service", func() {
 				events, err := service.ListEvents(ctx, filters)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(len(events)).To(Equal(1))
+				Expect(events).To(HaveLen(1))
 				Expect(events[0].Tags).To(ContainElement("technical"))
 			})
 		})
@@ -479,7 +479,7 @@ var _ = Describe("Career Service", func() {
 				events, err := service.ListEvents(ctx, filters)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(len(events)).To(Equal(2))
+				Expect(events).To(HaveLen(2))
 			})
 		})
 
@@ -490,7 +490,7 @@ var _ = Describe("Career Service", func() {
 				events, err := service.ListEvents(ctx, mocks.EventListFilters{})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(len(events)).To(Equal(0))
+				Expect(events).To(BeEmpty())
 			})
 		})
 
@@ -517,7 +517,7 @@ var _ = Describe("Career Service", func() {
 				events, err := service.ListEvents(ctx, filters)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(len(events)).To(BeNumerically(">", 0))
+				Expect(events).ToNot(BeEmpty())
 			})
 		})
 
@@ -532,7 +532,7 @@ var _ = Describe("Career Service", func() {
 				events, err := service.ListEvents(ctx, filters)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(len(events)).To(Equal(3))
+				Expect(events).To(HaveLen(3))
 			})
 		})
 	})
@@ -703,9 +703,4 @@ var _ = Describe("Career Service", func() {
 			})
 		})
 	})
-
-	// NOTE: Competency classification is handled by:
-	// - internal/service/career/classification/classifier.go (with comprehensive tests)
-	// - internal/service/career/burstfact/extractor.go (with comprehensive tests)
-	// See those packages for competency-related tests.
 })

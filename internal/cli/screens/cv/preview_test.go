@@ -282,7 +282,7 @@ var _ = Describe("CVPreviewScreen", func() {
 		It("should display scroll percentage when content is scrollable", func() {
 			longCV := fixtures.CVViewWith("cv-long", "Long CV", "staff", "hiring_manager")
 			longCV.Sections = make([]*career.CVSection, 10)
-			for i := 0; i < 10; i++ {
+			for i := range 10 {
 				sectionID := "section-long-" + string(rune('A'+i))
 				longCV.Sections[i] = fixtures.CVSectionWithContent(sectionID, "cv-long", []*career.SectionContentGroup{
 					fixtures.ContentGroupWithBullets("Group", []*career.CVBullet{

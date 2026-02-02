@@ -173,9 +173,9 @@ var _ = Describe("TemporalGrouper", func() {
 
 			clusters := grouper.GroupEventsByTemporal(events)
 
-			Expect(len(clusters)).To(Equal(2))
-			Expect(len(clusters[0])).To(Equal(3)) // Jan, Feb, Mar
-			Expect(len(clusters[1])).To(Equal(2)) // Sep 2, Oct 2
+			Expect(clusters).To(HaveLen(2))
+			Expect(clusters[0]).To(HaveLen(3)) // Jan, Feb, Mar
+			Expect(clusters[1]).To(HaveLen(2)) // Sep 2, Oct 2
 		})
 
 		It("should handle empty event list", func() {
@@ -192,8 +192,8 @@ var _ = Describe("TemporalGrouper", func() {
 
 			clusters := grouper.GroupEventsByTemporal(events)
 
-			Expect(len(clusters)).To(Equal(1))
-			Expect(len(clusters[0])).To(Equal(1))
+			Expect(clusters).To(HaveLen(1))
+			Expect(clusters[0]).To(HaveLen(1))
 		})
 
 		It("should handle all events in single cluster", func() {
@@ -208,8 +208,8 @@ var _ = Describe("TemporalGrouper", func() {
 
 			clusters := grouper.GroupEventsByTemporal(events)
 
-			Expect(len(clusters)).To(Equal(1))
-			Expect(len(clusters[0])).To(Equal(5))
+			Expect(clusters).To(HaveLen(1))
+			Expect(clusters[0]).To(HaveLen(5))
 		})
 
 		It("should handle all events as separate clusters (>6 months apart)", func() {
@@ -223,9 +223,9 @@ var _ = Describe("TemporalGrouper", func() {
 
 			clusters := grouper.GroupEventsByTemporal(events)
 
-			Expect(len(clusters)).To(Equal(4))
+			Expect(clusters).To(HaveLen(4))
 			for _, cluster := range clusters {
-				Expect(len(cluster)).To(Equal(1))
+				Expect(cluster).To(HaveLen(1))
 			}
 		})
 
@@ -239,8 +239,8 @@ var _ = Describe("TemporalGrouper", func() {
 
 			clusters := grouper.GroupEventsByTemporal(events)
 
-			Expect(len(clusters)).To(Equal(1))
-			Expect(len(clusters[0])).To(Equal(3))
+			Expect(clusters).To(HaveLen(1))
+			Expect(clusters[0]).To(HaveLen(3))
 			// Check chronological order
 			Expect(clusters[0][0].Before(clusters[0][1])).To(BeTrue())
 			Expect(clusters[0][1].Before(clusters[0][2])).To(BeTrue())

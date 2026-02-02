@@ -106,7 +106,7 @@ func NewEventReviewScreen(
 //   - May return NavigateResult on e/b/f keys.
 //   - May return CancelResult on Escape.
 func (s *EventReviewScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
-	if cmd := s.Screen.HandleWindowSizeMsg(msg); cmd != nil {
+	if cmd := s.HandleWindowSizeMsg(msg); cmd != nil {
 		return cmd, nil
 	}
 

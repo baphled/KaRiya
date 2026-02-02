@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -301,7 +302,7 @@ func (s *Service) SuggestBurstsWithOptions(
 // Use ConfirmBurst to mark an existing burst as confirmed.
 func (s *Service) SaveBurst(ctx context.Context, burst *domain.Burst) error {
 	if burst == nil {
-		return fmt.Errorf("burst cannot be nil")
+		return errors.New("burst cannot be nil")
 	}
 
 	if err := burst.Validate(); err != nil {
@@ -333,7 +334,7 @@ func (s *Service) SaveBurst(ctx context.Context, burst *domain.Burst) error {
 // The burst must already exist in the repository.
 func (s *Service) ConfirmBurst(ctx context.Context, burst *domain.Burst) error {
 	if burst == nil {
-		return fmt.Errorf("burst cannot be nil")
+		return errors.New("burst cannot be nil")
 	}
 
 	if err := burst.Validate(); err != nil {
@@ -382,7 +383,7 @@ func (s *Service) DeleteBurst(ctx context.Context, burstID string) error {
 
 	if burstID == "" {
 		s.logger.Warn("Cannot delete burst with empty ID")
-		return fmt.Errorf("burst ID cannot be empty")
+		return errors.New("burst ID cannot be empty")
 	}
 
 	if err := s.burstRepo.Delete(ctx, burstID); err != nil {
@@ -447,8 +448,8 @@ func (s *Service) SaveBurstSuggestions(ctx context.Context, suggestions []burst_
 
 	if len(savedBursts) > 0 {
 		s.logger.WithFields(map[string]string{
-			"saved_count":     fmt.Sprintf("%d", len(savedBursts)),
-			"suggested_count": fmt.Sprintf("%d", len(suggestions)),
+			"saved_count":     strconv.Itoa(len(savedBursts)),
+			"suggested_count": strconv.Itoa(len(suggestions)),
 		}).Info("Burst suggestions saved as persistent bursts")
 	}
 
@@ -459,12 +460,12 @@ func (s *Service) SaveBurstSuggestions(ctx context.Context, suggestions []burst_
 func (s *Service) ExtractFactsFromEvent(ctx context.Context, event *domain.Event) ([]domain.Fact, error) {
 	if event == nil {
 		s.logger.Warn("Cannot extract facts from nil event")
-		return nil, fmt.Errorf("event cannot be nil")
+		return nil, errors.New("event cannot be nil")
 	}
 
 	if event.ID == "" {
 		s.logger.Warn("Cannot extract facts from event with empty ID")
-		return nil, fmt.Errorf("event ID cannot be empty")
+		return nil, errors.New("event ID cannot be empty")
 	}
 
 	// Create extractor and classifier
@@ -482,7 +483,7 @@ func (s *Service) ExtractFactsFromEvent(ctx context.Context, event *domain.Event
 	s.logger.
 		WithFields(map[string]string{
 			"event_id":   event.ID,
-			"fact_count": fmt.Sprintf("%d", len(facts)),
+			"fact_count": strconv.Itoa(len(facts)),
 			"event_text": event.Text,
 		}).
 		Info("Facts extracted from event")
@@ -494,12 +495,12 @@ func (s *Service) ExtractFactsFromEvent(ctx context.Context, event *domain.Event
 func (s *Service) ExtractFactsFromBurst(ctx context.Context, burst *domain.Burst) ([]domain.Fact, error) {
 	if burst == nil {
 		s.logger.Warn("Cannot extract facts from nil burst")
-		return nil, fmt.Errorf("burst cannot be nil")
+		return nil, errors.New("burst cannot be nil")
 	}
 
 	if burst.ID == "" {
 		s.logger.Warn("Cannot extract facts from burst with empty ID")
-		return nil, fmt.Errorf("burst ID cannot be empty")
+		return nil, errors.New("burst ID cannot be empty")
 	}
 
 	if len(burst.EventIDs) == 0 {
@@ -528,7 +529,7 @@ func (s *Service) ExtractFactsFromBurst(ctx context.Context, burst *domain.Burst
 		s.logger.
 			WithFields(map[string]string{
 				"burst_id":    burst.ID,
-				"event_count": fmt.Sprintf("%d", len(burst.EventIDs)),
+				"event_count": strconv.Itoa(len(burst.EventIDs)),
 			}).
 			Warn("No events found for burst fact extraction")
 		return []domain.Fact{}, nil
@@ -550,8 +551,8 @@ func (s *Service) ExtractFactsFromBurst(ctx context.Context, burst *domain.Burst
 		WithFields(map[string]string{
 			"burst_id":    burst.ID,
 			"burst_name":  burst.Name,
-			"fact_count":  fmt.Sprintf("%d", len(facts)),
-			"event_count": fmt.Sprintf("%d", len(events)),
+			"fact_count":  strconv.Itoa(len(facts)),
+			"event_count": strconv.Itoa(len(events)),
 		}).
 		Info("Facts extracted from burst")
 
@@ -562,7 +563,7 @@ func (s *Service) ExtractFactsFromBurst(ctx context.Context, burst *domain.Burst
 func (s *Service) ValidateFact(_ context.Context, fact *domain.Fact) error {
 	if fact == nil {
 		s.logger.Warn("Cannot validate nil fact")
-		return fmt.Errorf("fact cannot be nil")
+		return errors.New("fact cannot be nil")
 	}
 
 	// Perform domain validation
@@ -597,7 +598,7 @@ func (s *Service) GetFactsBySourceEventID(ctx context.Context, eventID string) (
 
 	if eventID == "" {
 		s.logger.Warn("Cannot get facts for empty event ID")
-		return nil, fmt.Errorf("event ID cannot be empty")
+		return nil, errors.New("event ID cannot be empty")
 	}
 
 	facts, err := s.factRepo.GetBySourceEventID(ctx, eventID)
@@ -614,7 +615,7 @@ func (s *Service) GetFactsBySourceEventID(ctx context.Context, eventID string) (
 	s.logger.
 		WithFields(map[string]string{
 			"event_id":   eventID,
-			"fact_count": fmt.Sprintf("%d", len(facts)),
+			"fact_count": strconv.Itoa(len(facts)),
 		}).
 		Debug("Facts retrieved for event")
 
@@ -630,7 +631,7 @@ func (s *Service) GetFactsBySourceBurstID(ctx context.Context, burstID string) (
 
 	if burstID == "" {
 		s.logger.Warn("Cannot get facts for empty burst ID")
-		return nil, fmt.Errorf("burst ID cannot be empty")
+		return nil, errors.New("burst ID cannot be empty")
 	}
 
 	facts, err := s.factRepo.GetBySourceBurstID(ctx, burstID)
@@ -647,7 +648,7 @@ func (s *Service) GetFactsBySourceBurstID(ctx context.Context, burstID string) (
 	s.logger.
 		WithFields(map[string]string{
 			"burst_id":   burstID,
-			"fact_count": fmt.Sprintf("%d", len(facts)),
+			"fact_count": strconv.Itoa(len(facts)),
 		}).
 		Debug("Facts retrieved for burst")
 
@@ -663,7 +664,7 @@ func (s *Service) SaveFact(ctx context.Context, fact *domain.Fact) error {
 
 	if fact == nil {
 		s.logger.Warn("Cannot save nil fact")
-		return fmt.Errorf("fact cannot be nil")
+		return errors.New("fact cannot be nil")
 	}
 
 	// Generate UUID if not provided (must be done before validation)
@@ -735,7 +736,7 @@ func (s *Service) DeleteFact(ctx context.Context, factID string) error {
 
 	if factID == "" {
 		s.logger.Warn("Cannot delete fact with empty ID")
-		return fmt.Errorf("fact ID cannot be empty")
+		return errors.New("fact ID cannot be empty")
 	}
 
 	if err := s.factRepo.Delete(ctx, factID); err != nil {

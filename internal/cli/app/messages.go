@@ -13,9 +13,9 @@ type FormSubmittedMsg struct {
 	Err   error
 }
 
-// Note: BackMsg, QuitMsg, ConfirmBurstMsg, RejectBurstSuggestionMsg, and
-// BurstProcessingCompleteMsg have been moved to internal/cli/models/messages.go
-// to avoid duplication. Import from models package when needed.
+// Moved to models package to avoid duplication:
+// BackMsg, QuitMsg, ConfirmBurstMsg, RejectBurstSuggestionMsg, BurstProcessingCompleteMsg
+// Import from models package when needed.
 
 // Screen constants for navigation.
 const (

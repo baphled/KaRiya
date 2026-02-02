@@ -178,7 +178,8 @@ func (s *FormScreen[T]) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 		s.form, cmd = forms.Update(s.form, msg)
 
 		// Check if form is completed.
-		// Note: The form data's SubmitConfirmed field must be set to true by a confirm field
+		//
+		// The form data's SubmitConfirmed field must be set to true by a confirm field
 		// for the submission to occur. This prevents accidental submissions.
 		if forms.IsCompleted(s.form) {
 			// Check if the form data has SubmitConfirmed set to true

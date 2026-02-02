@@ -44,7 +44,7 @@ func skillRowFormatterWithCounts(eventCounts map[string]int) behaviors.RowFormat
 		eventCount := "-"
 		if eventCounts != nil {
 			if count, ok := eventCounts[skill.ID]; ok {
-				eventCount = fmt.Sprintf("%d", count)
+				eventCount = strconv.Itoa(count)
 			}
 		}
 

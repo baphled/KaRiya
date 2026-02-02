@@ -192,7 +192,7 @@ func (bg *DefaultBulletGenerator) GenerateBullets(ctx context.Context,
 		bullets[i] = enhanced
 	}
 
-	// Note: Per-company/project caps are applied by SectionBuilder based on audience
+	// Per-company/project caps are applied by SectionBuilder based on audience
 	bg.logger.Info("Generated %d bullets for role %s with audience %s",
 		len(bullets), targetRole, targetAudience)
 
@@ -621,9 +621,10 @@ func (bg *DefaultBulletGenerator) calculateAudienceScore(bullet *Bullet, audienc
 	}
 
 	// Additional bonus for relevant impact level.
-	if bullet.ImpactLevel == "high" {
+	switch bullet.ImpactLevel {
+	case "high":
 		score += impactLevelHighBonus
-	} else if bullet.ImpactLevel == "medium" {
+	case "medium":
 		score += impactLevelMediumBonus
 	}
 

@@ -38,7 +38,7 @@ var _ = Describe("Extractor Integration Tests", func() {
 			Expect(facts[0].SourceEventID).To(Equal(event.ID))
 
 			// Should have multiple competencies (technical + leadership from text)
-			Expect(len(facts[0].CompetencyCategories)).To(BeNumerically(">=", 1))
+			Expect(facts[0].CompetencyCategories).ToNot(BeEmpty())
 			Expect(facts[0].CompetencyCategories).To(ContainElement("technical"))
 
 			// Should preserve timestamps

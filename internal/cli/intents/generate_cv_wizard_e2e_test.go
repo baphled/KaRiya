@@ -80,7 +80,7 @@ var _ = Describe("GenerateCV Wizard E2E Tests", func() {
 		intent.EnableWizardFlow()
 
 		// Set terminal dimensions via WindowSizeMsg
-		termInfo := intent.BaseIntent.GetTerminalInfo()
+		termInfo := intent.GetTerminalInfo()
 		termInfo.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 	})
 
@@ -416,8 +416,6 @@ var _ = Describe("GenerateCV Wizard E2E Tests", func() {
 
 			// Should return tea.Quit command
 			Expect(cmd).NotTo(BeNil())
-			// Note: We can't easily test tea.Quit directly, but we can verify
-			// the intent is cancelled
 			result := intent.Result()
 			Expect(result).NotTo(BeNil())
 			Expect(result.Status).To(Equal(Cancelled))
@@ -585,7 +583,7 @@ var _ = Describe("GenerateCV Wizard E2E Tests", func() {
 	})
 })
 
-// mockWizardPreviewScreen is a mock screen for testing wizard flow
+// mockWizardPreviewScreen is a mock screen for testing wizard flow.
 type mockWizardPreviewScreen struct {
 	cv *career.CVView
 }
@@ -626,7 +624,7 @@ func (m *mockWizardPreviewScreen) SetTerminalInfo(width, height int) {
 func (m *mockWizardPreviewScreen) SetLogo(logo interface{}, spacing int) {
 }
 
-// mockWizardReviewScreen is a mock screen for testing wizard review flow
+// mockWizardReviewScreen is a mock screen for testing wizard review flow.
 type mockWizardReviewScreen struct {
 	cv *career.CVView
 }
@@ -721,7 +719,7 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 		intent.EnableWizardFlow()
 
 		// Initialize terminal info
-		termInfo := intent.BaseIntent.GetTerminalInfo()
+		termInfo := intent.GetTerminalInfo()
 		termInfo.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 	})
 
@@ -1081,7 +1079,7 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 			intentNoFactory, err := NewGenerateCVIntent(ctxNoFactory)
 			Expect(err).NotTo(HaveOccurred())
 			intentNoFactory.EnableWizardFlow()
-			termInfo := intentNoFactory.BaseIntent.GetTerminalInfo()
+			termInfo := intentNoFactory.GetTerminalInfo()
 			termInfo.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 
 			intentNoFactory.Init()
@@ -1279,7 +1277,7 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 			// Should be in export complete state
 			Expect(intent.state.currentState).To(Equal(GenerateCVStateExportComplete))
 			Expect(intent.state.exportedPath).To(Equal("/tmp/cv_export.txt"))
-			Expect(intent.state.exportError).To(BeNil())
+			Expect(intent.state.exportError).ToNot(HaveOccurred())
 		})
 
 		It("should transition to export complete state on export error", func() {
@@ -1342,7 +1340,7 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 
 			// Should return to export location selection
 			Expect(intent.state.currentState).To(Equal(GenerateCVStateExportSelectLocation))
-			Expect(intent.state.exportError).To(BeNil())
+			Expect(intent.state.exportError).ToNot(HaveOccurred())
 		})
 
 		It("should preserve export format in result metadata", func() {
@@ -1579,7 +1577,7 @@ var _ = Describe("GenerateCV Complete Workflow E2E Tests", func() {
 		Expect(err).NotTo(HaveOccurred())
 		intent.EnableWizardFlow()
 
-		termInfo := intent.BaseIntent.GetTerminalInfo()
+		termInfo := intent.GetTerminalInfo()
 		termInfo.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 	})
 

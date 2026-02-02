@@ -236,8 +236,7 @@ var _ = Describe("BurstRepository", func() {
 
 	Describe("Count", func() {
 		BeforeEach(func() {
-			// Create test bursts using factory
-			for i := 0; i < 3; i++ {
+			for range 3 {
 				burst := fixtures.BurstFactory.MustCreate().(*career.Burst)
 				burst.ID = "" // Clear to test auto-generation
 				err := repository.Create(ctx, burst)

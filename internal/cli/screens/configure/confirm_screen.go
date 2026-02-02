@@ -92,7 +92,7 @@ func (s *ConfirmScreen) Init() tea.Cmd {
 //   - May return CancelResult on escape.
 //   - May return NavigateResult with confirmation status.
 func (s *ConfirmScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
-	if cmd := s.Screen.HandleWindowSizeMsg(msg); cmd != nil {
+	if cmd := s.HandleWindowSizeMsg(msg); cmd != nil {
 		return cmd, nil
 	}
 
@@ -136,7 +136,7 @@ func (s *ConfirmScreen) View() string {
 	content.WriteString(primitives.Title("Confirm Configuration Changes?", theme).Render())
 	content.WriteString("\n\n")
 
-	domainText := fmt.Sprintf("Domain: %s", domainLabel)
+	domainText := "Domain: " + domainLabel
 	content.WriteString(primitives.Body(domainText, theme).Render())
 	content.WriteString("\n")
 

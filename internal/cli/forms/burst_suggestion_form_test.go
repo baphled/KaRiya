@@ -186,7 +186,7 @@ var _ = Describe("BurstSuggestionForm", func() {
 			}
 
 			forms.ApplyBurstSuggestionFormData(&suggestion, data)
-			Expect(len(suggestion.Name)).To(Equal(100))
+			Expect(suggestion.Name).To(HaveLen(100))
 		})
 
 		It("should accept descriptions up to 500 characters", func() {
@@ -201,7 +201,7 @@ var _ = Describe("BurstSuggestionForm", func() {
 			}
 
 			forms.ApplyBurstSuggestionFormData(&suggestion, data)
-			Expect(len(suggestion.Description)).To(Equal(500))
+			Expect(suggestion.Description).To(HaveLen(500))
 		})
 	})
 })

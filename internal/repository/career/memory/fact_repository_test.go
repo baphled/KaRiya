@@ -227,8 +227,7 @@ var _ = Describe("FactRepository", func() {
 			facts, err := repository.List(ctx, *filters)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(facts).To(HaveLen(3))
-			// Most recent first
-			for i := 0; i < len(facts)-1; i++ {
+			for i := range len(facts) - 1 {
 				Expect(facts[i].CreatedAt.After(facts[i+1].CreatedAt) || facts[i].CreatedAt.Equal(facts[i+1].CreatedAt)).To(BeTrue())
 			}
 		})

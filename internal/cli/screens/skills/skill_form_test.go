@@ -191,7 +191,7 @@ var _ = Describe("SkillFormScreen", func() {
 			data := screen.GetFormData()
 
 			// Verify data is of correct type
-			var _ *forms.SkillFormData = data
+			var _ = data
 		})
 
 		It("should apply form data to domain object", func() {

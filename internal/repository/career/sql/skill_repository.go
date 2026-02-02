@@ -202,7 +202,7 @@ func (r *SkillRepository) applySorting(query *gorm.DB, filters *career_repo.Skil
 
 	switch filters.SortBy {
 	case "name":
-		return query.Order(fmt.Sprintf("name %s", order))
+		return query.Order("name " + order)
 	case "category":
 		return query.Order(fmt.Sprintf("category %s, name ASC", order))
 	case "events":

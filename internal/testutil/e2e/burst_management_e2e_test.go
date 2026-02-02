@@ -75,12 +75,12 @@ var _ = Describe("E2E Burst Management Workflow", func() {
 		It("should maintain burst data integrity after restart", func() {
 			env.PopulateTestData(5, 2, 0)
 			burstsBefore := env.GetBursts()
-			Expect(len(burstsBefore)).To(Equal(2))
+			Expect(burstsBefore).To(HaveLen(2))
 
 			env.SimulateRestart()
 
 			burstsAfter := env.GetBursts()
-			Expect(len(burstsAfter)).To(Equal(2))
+			Expect(burstsAfter).To(HaveLen(2))
 			Expect(burstsAfter[0].ID).To(Equal(burstsBefore[0].ID))
 		})
 	})
@@ -97,7 +97,7 @@ var _ = Describe("E2E Burst Management Workflow", func() {
 
 		It("should persist burst name changes to database", func() {
 			originalBursts := env.GetBursts()
-			Expect(len(originalBursts)).To(BeNumerically(">=", 1))
+			Expect(originalBursts).ToNot(BeEmpty())
 			originalName := originalBursts[0].Name
 			burstID := originalBursts[0].ID
 
@@ -135,7 +135,7 @@ var _ = Describe("E2E Burst Management Workflow", func() {
 
 		It("should persist burst description changes to database", func() {
 			originalBursts := env.GetBursts()
-			Expect(len(originalBursts)).To(BeNumerically(">=", 1))
+			Expect(originalBursts).ToNot(BeEmpty())
 			originalDesc := originalBursts[0].Description
 			burstID := originalBursts[0].ID
 
@@ -171,7 +171,7 @@ var _ = Describe("E2E Burst Management Workflow", func() {
 
 		It("should NOT persist changes when edit is cancelled", func() {
 			originalBursts := env.GetBursts()
-			Expect(len(originalBursts)).To(BeNumerically(">=", 1))
+			Expect(originalBursts).ToNot(BeEmpty())
 			originalName := originalBursts[0].Name
 			burstID := originalBursts[0].ID
 
@@ -201,7 +201,7 @@ var _ = Describe("E2E Burst Management Workflow", func() {
 
 		It("should persist changes and survive application restart", func() {
 			originalBursts := env.GetBursts()
-			Expect(len(originalBursts)).To(BeNumerically(">=", 1))
+			Expect(originalBursts).ToNot(BeEmpty())
 			burstID := originalBursts[0].ID
 
 			// Navigate to burst management and open detail modal.

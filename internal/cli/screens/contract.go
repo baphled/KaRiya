@@ -44,7 +44,8 @@ type Screen interface {
 
 	// View renders the Screen's current state as a string.
 	// This should use StandardView for consistency across all screens.
-	// Note: For intents that need more control over the layout, use
+	//
+	// For intents that need more control over the layout, use
 	// RenderContent() to get just the content without StandardView wrapper.
 	View() string
 

@@ -187,8 +187,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.state == StateMenu {
 		if _, ok := msg.(display.TickMsg); ok {
 			updatedLogo, cmd := m.logo.Update(msg)
-			//nolint:errcheck // Type assertion is safe - Logo.Update always returns *display.Logo.
-			m.logo = updatedLogo.(*display.Logo)
+			logo, ok := updatedLogo.(*display.Logo)
+			if !ok {
+				return m, cmd
+			}
+			m.logo = logo
 			return m, cmd
 		}
 	}
@@ -231,9 +234,10 @@ func (m *Model) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 
 	// Route to appropriate handler based on state.
-	if m.state == StateMenu {
+	switch m.state {
+	case StateMenu:
 		return m.handleMenuInput(msg)
-	} else if m.state == StateIntent {
+	case StateIntent:
 		return m.handleIntentInput(msg)
 	}
 
@@ -295,15 +299,16 @@ func (m *Model) handleEditEventRequest(editMsg intents.RequestEditEventMsg) (tea
 		CareerService:   m.careerService,
 	}
 
-	// #nosec G104 -- RegisterIntent only errors on duplicate registration which cannot happen here
-	m.intentRouter.RegisterIntent("capture_event_edit", func() intents.Intent {
+	if err := m.intentRouter.RegisterIntent("capture_event_edit", func() intents.Intent {
 		intent, err := captureevent.NewIntent(captureCtx)
 		if err != nil {
 			m.logger.Error("Failed to create CaptureEvent intent for editing: %v", err)
 			return nil
 		}
 		return intent
-	})
+	}); err != nil {
+		m.logger.Info("capture_event_edit intent already registered, using existing registration: %v", err)
+	}
 
 	cmd, err := m.intentRouter.ActivateIntent("capture_event_edit", make(map[string]interface{}))
 	if err != nil {
@@ -326,7 +331,8 @@ func (m *Model) View() string {
 		return m.renderHelpScreen()
 	}
 
-	if m.state == StateMenu {
+	switch m.state {
+	case StateMenu:
 		menuView := m.viewMenu()
 
 		if m.infoModal != nil && m.infoModal.IsVisible() {
@@ -335,7 +341,7 @@ func (m *Model) View() string {
 		}
 
 		return menuView
-	} else if m.state == StateIntent {
+	case StateIntent:
 		activeIntent := m.intentRouter.GetActiveIntent()
 		if activeIntent != nil {
 			return activeIntent.View()

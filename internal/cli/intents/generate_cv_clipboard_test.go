@@ -63,7 +63,7 @@ var _ = Describe("GenerateCV Clipboard Export Error Handling", func() {
 
 			// Verify: Should transition to ExportComplete state (not ExportSelectLocation)
 			Expect(intent.state.currentState).To(Equal(GenerateCVStateExportComplete))
-			Expect(intent.state.exportError).NotTo(BeNil())
+			Expect(intent.state.exportError).To(HaveOccurred())
 			Expect(intent.state.exportError.Error()).To(ContainSubstring("clipboard"))
 			Expect(intent.state.isExporting).To(BeFalse())
 		})

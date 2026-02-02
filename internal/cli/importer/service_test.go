@@ -83,7 +83,8 @@ Improved API response times,2024-02-05,Technical,technical,Performance,TechCorp`
 			Expect(result.CreatedEvents).To(HaveLen(5))
 
 			// Verify burst suggestions were generated
-			// Note: The exact number depends on the burst detection algorithm
+			//
+			// The exact number depends on the burst detection algorithm
 			// We just verify that the field is populated (could be 0 if no bursts detected)
 			Expect(result.BurstSuggestions).NotTo(BeNil())
 		})
@@ -129,8 +130,6 @@ Mentored junior engineers on best practices,2024-02-10,Mentoring,mentoring,Train
 			// Verify fact extraction fields are initialized
 			Expect(result.FactsByEventID).NotTo(BeNil())
 			Expect(result.FactsByCompetency).NotTo(BeNil())
-			// Note: ExtractedFactsCount will be 0 if fact repository is not configured
-			// which is expected in tests without database setup
 			Expect(result.ExtractedFactsCount).To(BeNumerically(">=", 0))
 		})
 

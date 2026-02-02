@@ -118,7 +118,7 @@ var _ = Describe("Test Database Utilities", func() {
 	})
 })
 
-// Helper functions that work with Ginkgo's TempDir
+// Helper functions that work with Ginkgo's TempDir.
 func setupTestDBHelper() (*sql.DB, func()) {
 	tmpDir := GinkgoT().TempDir()
 	dbPath := tmpDir + "/test.db"

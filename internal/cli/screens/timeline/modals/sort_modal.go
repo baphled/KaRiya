@@ -158,7 +158,11 @@ func (m *SortModal) Update(msg tea.Msg) (tea.Cmd, bool, *SortFormData) {
 
 	// Update form.
 	form, cmd := m.form.Update(msg)
-	m.form = form.(*huh.Form)
+	huhForm, ok := form.(*huh.Form)
+	if !ok {
+		return cmd, false, nil
+	}
+	m.form = huhForm
 
 	// Check if form is complete.
 	if m.form.State == huh.StateCompleted {

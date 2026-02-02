@@ -19,29 +19,29 @@ import (
 //	db, cleanup := testutil.SetupTestDB(t)
 //	defer cleanup()
 //	// use db for testing
-func SetupTestDB(t testing.TB) (*sql.DB, func()) {
-	t.Helper()
+func SetupTestDB(tb testing.TB) (*sql.DB, func()) {
+	tb.Helper()
 
-	tmpDir := t.TempDir()
+	tmpDir := tb.TempDir()
 	dbPath := filepath.Join(tmpDir, "test.db")
 
 	db, err := careersql.OpenDB(dbPath)
 	if err != nil {
-		t.Fatalf("failed to open test db: %v", err)
+		tb.Fatalf("failed to open test db: %v", err)
 	}
 
 	// Use RunMigrationsForTests which skips baseline detection for fresh test databases
 	if err := career.RunMigrationsForTests(db); err != nil {
 		closeErr := db.Close()
 		if closeErr != nil {
-			t.Fatalf("failed to run test migrations: %v (also failed to close db: %v)", err, closeErr)
+			tb.Fatalf("failed to run test migrations: %v (also failed to close db: %v)", err, closeErr)
 		}
-		t.Fatalf("failed to run test migrations: %v", err)
+		tb.Fatalf("failed to run test migrations: %v", err)
 	}
 
 	cleanup := func() {
 		if err := db.Close(); err != nil {
-			t.Errorf("failed to close test db: %v", err)
+			tb.Errorf("failed to close test db: %v", err)
 		}
 	}
 
@@ -59,29 +59,29 @@ func SetupTestDB(t testing.TB) (*sql.DB, func()) {
 //	dbPath, db, cleanup := testutil.SetupTestDBWithPath(t)
 //	defer cleanup()
 //	// use dbPath and db for testing
-func SetupTestDBWithPath(t testing.TB) (string, *sql.DB, func()) {
-	t.Helper()
+func SetupTestDBWithPath(tb testing.TB) (string, *sql.DB, func()) {
+	tb.Helper()
 
-	tmpDir := t.TempDir()
+	tmpDir := tb.TempDir()
 	dbPath := filepath.Join(tmpDir, "test.db")
 
 	db, err := careersql.OpenDB(dbPath)
 	if err != nil {
-		t.Fatalf("failed to open test db at %s: %v", dbPath, err)
+		tb.Fatalf("failed to open test db at %s: %v", dbPath, err)
 	}
 
 	// Use RunMigrationsForTests which skips baseline detection for fresh test databases
 	if err := career.RunMigrationsForTests(db); err != nil {
 		closeErr := db.Close()
 		if closeErr != nil {
-			t.Fatalf("failed to run test migrations: %v (also failed to close db: %v)", err, closeErr)
+			tb.Fatalf("failed to run test migrations: %v (also failed to close db: %v)", err, closeErr)
 		}
-		t.Fatalf("failed to run test migrations: %v", err)
+		tb.Fatalf("failed to run test migrations: %v", err)
 	}
 
 	cleanup := func() {
 		if err := db.Close(); err != nil {
-			t.Errorf("failed to close test db: %v", err)
+			tb.Errorf("failed to close test db: %v", err)
 		}
 	}
 

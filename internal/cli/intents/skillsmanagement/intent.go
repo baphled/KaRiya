@@ -390,9 +390,9 @@ func (i *Intent) HandleError(_ *screens.ErrorResult) tea.Cmd {
 // reloadSkills returns a command to reload skills.
 func (i *Intent) reloadSkills() tea.Cmd {
 	return func() tea.Msg {
-		skills, err := i.context.LoadSkills()
+		skillList, err := i.context.LoadSkills()
 		return SkillsLoadedMsg{
-			Skills: skills,
+			Skills: skillList,
 			Error:  err,
 		}
 	}

@@ -1,10 +1,8 @@
 # Test coverage
-coverage.out
-coverage*.out
-*_coverage.out
 coverage/
 coverage.html
 *.test
+*.out
 
 docs/STATE_MATRIX.md
 docs/state_matrix.json

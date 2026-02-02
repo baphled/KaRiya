@@ -272,7 +272,7 @@ var _ = Describe("ExportOptionsModal", func() {
 			modal = components.NewExportOptionsModal(120, 40)
 
 			// Rapid key presses should not cause issues
-			for i := 0; i < 10; i++ {
+			for range 10 {
 				modal.Update(tea.KeyMsg{Type: tea.KeyEnter})
 			}
 
@@ -290,7 +290,7 @@ var _ = Describe("ExportOptionsModal", func() {
 		It("should handle multiple Hide/Show cycles", func() {
 			modal = components.NewExportOptionsModal(120, 40)
 
-			for i := 0; i < 5; i++ {
+			for range 5 {
 				modal.Hide()
 				Expect(modal.IsVisible()).To(BeFalse())
 				modal.Show()

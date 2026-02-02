@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-// Mock implementation of ListNavigator for testing
+// Mock implementation of ListNavigator for testing.
 type mockListNavigator struct {
 	totalItems    int
 	selectedIndex int

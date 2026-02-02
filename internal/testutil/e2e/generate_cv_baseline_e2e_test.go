@@ -30,7 +30,7 @@ import (
 
 // This test suite is skipped because the wizard flow is now enabled by default (Task 43).
 // The legacy 10-state workflow is preserved for backward compatibility but no longer the default.
-// For wizard flow E2E tests, see: generate_cv_wizard_e2e_test.go
+// For wizard flow E2E tests, see: generate_cv_wizard_e2e_test.go.
 var _ = Describe("E2E GenerateCV Baseline (Pre-Refactor)", Pending, func() {
 	var env *e2e.TestEnv
 
@@ -111,8 +111,6 @@ var _ = Describe("E2E GenerateCV Baseline (Pre-Refactor)", Pending, func() {
 			// ====== STATE 5: Generating (Async State) ======
 			env.Confirm() // Select first length format
 
-			// View snapshot: Verify we see generation progress OR reached preview
-			// Note: Generation might be instant in tests or take time
 			view = env.GetView()
 
 			// We should see EITHER:
@@ -211,9 +209,6 @@ var _ = Describe("E2E GenerateCV Baseline (Pre-Refactor)", Pending, func() {
 			view := env.GetView()
 			Expect(view).To(ContainSubstring("Profile"))
 		})
-
-		// Note: Testing escape during async generation is tricky in E2E
-		// We rely on unit tests for that specific behavior
 	})
 
 	Describe("Data Validation", func() {
@@ -272,10 +267,10 @@ var _ = Describe("E2E GenerateCV Baseline (Pre-Refactor)", Pending, func() {
 			env.SelectIntentByName("generate_cv")
 
 			// Rapid up/down navigation
-			for i := 0; i < 10; i++ {
+			for range 10 {
 				env.NavigateDown()
 			}
-			for i := 0; i < 10; i++ {
+			for range 10 {
 				env.NavigateUp()
 			}
 
@@ -289,7 +284,7 @@ var _ = Describe("E2E GenerateCV Baseline (Pre-Refactor)", Pending, func() {
 			env.Confirm() // Go to audience
 
 			// Rapid escape presses
-			for i := 0; i < 5; i++ {
+			for range 5 {
 				env.Cancel()
 			}
 

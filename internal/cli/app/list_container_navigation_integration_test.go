@@ -149,7 +149,7 @@ var _ = Describe("List Container Navigation Integration - From Main Menu", func(
 			model = modelInterface.(*app.Model)
 
 			// Rapidly navigate down multiple times
-			for i := 0; i < 3; i++ {
+			for range 3 {
 				modelInterface, _ = model.Update(tea.KeyMsg{Type: tea.KeyDown})
 				model = modelInterface.(*app.Model)
 			}
@@ -158,7 +158,7 @@ var _ = Describe("List Container Navigation Integration - From Main Menu", func(
 			Expect(model.GetState()).To(Equal(app.StateIntent))
 
 			// Rapidly navigate up
-			for i := 0; i < 3; i++ {
+			for range 3 {
 				modelInterface, _ = model.Update(tea.KeyMsg{Type: tea.KeyUp})
 				model = modelInterface.(*app.Model)
 			}
@@ -296,7 +296,7 @@ var _ = Describe("List Container Navigation Integration - From Main Menu", func(
 	Describe("Navigation in other list-based intents", func() {
 		It("should support navigation in ConfigureSystem intent", func() {
 			// Navigate to ConfigureSystem (5th menu item, index 4)
-			for i := 0; i < 4; i++ {
+			for range 4 {
 				modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
 				model = modelInterface.(*app.Model)
 			}

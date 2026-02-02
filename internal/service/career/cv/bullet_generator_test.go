@@ -42,7 +42,7 @@ var _ = Describe("BulletGenerator", func() {
 
 		bullets, err := generator.GenerateBullets(ctx, events, nil, nil, "principal", "hiring_manager")
 		Expect(err).NotTo(HaveOccurred())
-		Expect(len(bullets)).To(BeNumerically(">", 0))
+		Expect(bullets).ToNot(BeEmpty())
 	})
 
 	It("should filter by role confidence", func() {
@@ -52,7 +52,7 @@ var _ = Describe("BulletGenerator", func() {
 		}
 
 		filtered := generator.FilterByRole(bullets, "principal")
-		Expect(len(filtered)).To(Equal(1))
+		Expect(filtered).To(HaveLen(1))
 	})
 
 	It("should rank bullets by score", func() {
@@ -91,7 +91,7 @@ var _ = Describe("BulletGenerator", func() {
 				Expect(err).NotTo(HaveOccurred())
 				// Should only include fact1 (relevant to hiring_manager)
 				// fact2 is only relevant to peer, should be excluded
-				Expect(len(bullets)).To(Equal(1))
+				Expect(bullets).To(HaveLen(1))
 				Expect(bullets[0].Text).To(ContainSubstring("cost reduction"))
 			})
 
@@ -106,7 +106,7 @@ var _ = Describe("BulletGenerator", func() {
 				bullets, err := generator.GenerateBullets(ctx, []*career.Event{}, facts, nil, "principal", "recruiter")
 				Expect(err).NotTo(HaveOccurred())
 				// Should only include fact1 (relevant to recruiter)
-				Expect(len(bullets)).To(Equal(1))
+				Expect(bullets).To(HaveLen(1))
 				Expect(bullets[0].Text).To(ContainSubstring("Go, Ruby"))
 			})
 
@@ -121,7 +121,7 @@ var _ = Describe("BulletGenerator", func() {
 				bullets, err := generator.GenerateBullets(ctx, []*career.Event{}, facts, nil, "principal", "peer")
 				Expect(err).NotTo(HaveOccurred())
 				// Should only include fact1 (relevant to peer)
-				Expect(len(bullets)).To(Equal(1))
+				Expect(bullets).To(HaveLen(1))
 				Expect(bullets[0].Text).To(ContainSubstring("Raft"))
 			})
 
@@ -136,7 +136,7 @@ var _ = Describe("BulletGenerator", func() {
 				bullets, err := generator.GenerateBullets(ctx, []*career.Event{}, facts, nil, "principal", "")
 				Expect(err).NotTo(HaveOccurred())
 				// Should include both facts when no audience filter
-				Expect(len(bullets)).To(Equal(2))
+				Expect(bullets).To(HaveLen(2))
 			})
 
 			It("should exclude facts not relevant to selected audience", func() {
@@ -148,7 +148,7 @@ var _ = Describe("BulletGenerator", func() {
 				bullets, err := generator.GenerateBullets(ctx, []*career.Event{}, facts, nil, "principal", "hiring_manager")
 				Expect(err).NotTo(HaveOccurred())
 				// fact1 is only relevant to peer, not hiring_manager
-				Expect(len(bullets)).To(Equal(0))
+				Expect(bullets).To(BeEmpty())
 			})
 
 			It("should include facts with multiple audience relevance", func() {
@@ -160,18 +160,18 @@ var _ = Describe("BulletGenerator", func() {
 				// Should be included for hiring_manager
 				bulletsMgr, err := generator.GenerateBullets(ctx, []*career.Event{}, facts, nil, "principal", "hiring_manager")
 				Expect(err).NotTo(HaveOccurred())
-				Expect(len(bulletsMgr)).To(Equal(1))
+				Expect(bulletsMgr).To(HaveLen(1))
 
 				// Should also be included for peer
 				bulletsPeer, err := generator.GenerateBullets(ctx, []*career.Event{}, facts, nil, "principal", "peer")
 				Expect(err).NotTo(HaveOccurred())
-				Expect(len(bulletsPeer)).To(Equal(1))
+				Expect(bulletsPeer).To(HaveLen(1))
 			})
 		})
 	})
 })
 
-// Task 44: Conversion helper tests
+// Task 44: Conversion helper tests.
 var _ = Describe("Bullet Conversion", func() {
 	Describe("ToCVBullet", func() {
 		It("should convert all fields correctly", func() {
@@ -246,7 +246,7 @@ var _ = Describe("Bullet Conversion", func() {
 
 			cvBullets := ConvertBullets(enhanced)
 
-			Expect(len(cvBullets)).To(Equal(3))
+			Expect(cvBullets).To(HaveLen(3))
 			Expect(cvBullets[0].ID).To(Equal("b1"))
 			Expect(cvBullets[1].ID).To(Equal("b2"))
 			Expect(cvBullets[2].ID).To(Equal("b3"))
@@ -264,7 +264,7 @@ var _ = Describe("Bullet Conversion", func() {
 	})
 })
 
-// BUG-008: Role-based CV differentiation tests
+// BUG-008: Role-based CV differentiation tests.
 var _ = Describe("BUG-008: Role-based scoring", func() {
 	var (
 		generator BulletGenerator
@@ -287,7 +287,7 @@ var _ = Describe("BUG-008: Role-based scoring", func() {
 
 				bullets, err := generator.GenerateBullets(ctx, events, nil, nil, "principal", "")
 				Expect(err).NotTo(HaveOccurred())
-				Expect(len(bullets)).To(BeNumerically(">", 0))
+				Expect(bullets).ToNot(BeEmpty())
 				// Primary category (first in list) should be propagated
 				Expect(bullets[0].Category).To(Equal(constants.CompetencyLeadership))
 			})
@@ -299,7 +299,7 @@ var _ = Describe("BUG-008: Role-based scoring", func() {
 
 				bullets, err := generator.GenerateBullets(ctx, events, nil, nil, "senior_ic", "")
 				Expect(err).NotTo(HaveOccurred())
-				Expect(len(bullets)).To(BeNumerically(">", 0))
+				Expect(bullets).ToNot(BeEmpty())
 				Expect(bullets[0].Category).To(Equal(constants.CompetencyTechnical))
 			})
 		})
@@ -313,7 +313,7 @@ var _ = Describe("BUG-008: Role-based scoring", func() {
 
 				bullets, err := generator.GenerateBullets(ctx, nil, facts, nil, "em", "hiring_manager")
 				Expect(err).NotTo(HaveOccurred())
-				Expect(len(bullets)).To(BeNumerically(">", 0))
+				Expect(bullets).ToNot(BeEmpty())
 				Expect(bullets[0].Category).To(Equal(constants.CompetencyMentoring))
 			})
 		})
@@ -428,7 +428,7 @@ var _ = Describe("BUG-008: Role-based scoring", func() {
 	})
 })
 
-// BUG-008: ScoringConfig integration tests
+// BUG-008: ScoringConfig integration tests.
 var _ = Describe("BUG-008: ScoringConfig integration", func() {
 	var log *logger.Logger
 
@@ -1207,7 +1207,7 @@ var _ = Describe("BUG-013: Company-aware bullet deduplication", func() {
 		Expect(first).To(Equal("Alpha Corp"),
 			"lexicographically smallest company should win on tie")
 
-		for i := 0; i < 20; i++ {
+		for i := range 20 {
 			result := resolvePrimaryCompany(sourceIDs, eventMap)
 			Expect(result).To(Equal(first),
 				"iteration %d: tie-breaking must be deterministic", i)

@@ -40,7 +40,7 @@ func NewCVProfileSelectScreen(profiles []*types.CVProfile) *ProfileSelectScreen 
 		}
 
 		if item.Description != "" {
-			lines = append(lines, fmt.Sprintf("  %s", item.Description))
+			lines = append(lines, "  "+item.Description)
 		}
 
 		return strings.Join(lines, "\n")

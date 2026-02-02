@@ -220,8 +220,8 @@ var _ = Describe("Generator", func() {
 			Expect(parsed.TotalIntents).To(Equal(2))
 			Expect(parsed.TotalScreens).To(Equal(1))
 			Expect(parsed.TotalStates).To(Equal(7))
-			Expect(len(parsed.Intents)).To(Equal(2))
-			Expect(len(parsed.Screens)).To(Equal(1))
+			Expect(parsed.Intents).To(HaveLen(2))
+			Expect(parsed.Screens).To(HaveLen(1))
 		})
 
 		It("should include intent and screen separation", func() {

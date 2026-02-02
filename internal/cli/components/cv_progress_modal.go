@@ -80,7 +80,7 @@ func NewGeneratingCVProgress(profile, audience string, width, height int) *CVPro
 
 // NewExportingProgress creates a progress modal for CV export.
 func NewExportingProgress(format string, width, height int) *CVProgressModal {
-	subtitle := fmt.Sprintf("Format: %s", format)
+	subtitle := "Format: " + format
 	return NewCVProgressModal(
 		"Exporting CV",
 		subtitle,

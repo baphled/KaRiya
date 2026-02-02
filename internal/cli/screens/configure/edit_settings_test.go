@@ -9,9 +9,6 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-// Note: This file adds specs to the test suite defined in domain_select_test.go
-// Do NOT add another TestXxx function with RunSpecs here.
-
 var _ = Describe("EditSettingsScreen", func() {
 	var (
 		screen   *configure.EditSettingsScreen

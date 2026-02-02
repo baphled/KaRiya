@@ -530,7 +530,7 @@ func IsSingleClaimBullet(text string) bool {
 
 // HasInferredMetrics checks if text contains inferred or assumed metrics.
 // Inferred metrics are vague quantifiers without specific numbers or context
-// Note: "improved", "increased", "decreased" are valid action verbs when used with specific metrics.
+// "improved", "increased", "decreased" are valid action verbs when used with specific metrics.
 func HasInferredMetrics(text string) bool {
 	lowerText := strings.ToLower(text)
 

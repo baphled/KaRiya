@@ -70,7 +70,7 @@ var _ = Describe("CV Generation Integration Tests", func() {
 
 	seedTestEvents := func(count int, category string) []*career.Event {
 		events := make([]*career.Event, count)
-		for i := 0; i < count; i++ {
+		for i := range count {
 			eventID := fmt.Sprintf("%s-seed-%d", category, i)
 			event := fixtures.EventWith(eventID, "Test event for "+category, "Test Company", "")
 			event.Date = time.Now().AddDate(0, 0, -i)
@@ -139,7 +139,7 @@ var _ = Describe("CV Generation Integration Tests", func() {
 			// Retrieve all events first
 			allEvents, err := repos.Event.List(ctx, *fixtures.EventListFilters())
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(allEvents)).To(Equal(7))
+			Expect(allEvents).To(HaveLen(7))
 
 			config := fixtures.CVConfigWithFilters("test-no-filters", make(map[string]interface{}))
 			config.TargetRole = "senior_ic"
@@ -247,12 +247,11 @@ var _ = Describe("CV Generation Integration Tests", func() {
 	// Previously, BulletGenerator applied a total cap (e.g., 40 bullets) before grouping
 	// by company, causing later companies to be completely excluded from the CV.
 	Describe("BUG-003: Multi-Company CV Generation", func() {
-		// Helper to seed events for multiple companies using fixtures
 		seedMultiCompanyEvents := func(companies []string, eventsPerCompany int) map[string][]*career.Event {
 			result := make(map[string][]*career.Event)
 			for _, company := range companies {
 				events := make([]*career.Event, eventsPerCompany)
-				for i := 0; i < eventsPerCompany; i++ {
+				for i := range eventsPerCompany {
 					eventID := fmt.Sprintf("%s-event-%d", company, i)
 					event := fixtures.EventWith(
 						eventID,
@@ -307,7 +306,7 @@ var _ = Describe("CV Generation Integration Tests", func() {
 			// Verify all events were created
 			allEvents, err := repos.Event.List(ctx, *fixtures.EventListFilters())
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(allEvents)).To(Equal(50))
+			Expect(allEvents).To(HaveLen(50))
 
 			config := fixtures.CVConfigWithFilters("bug-003-test", make(map[string]interface{}))
 
@@ -317,7 +316,7 @@ var _ = Describe("CV Generation Integration Tests", func() {
 
 			// CRITICAL ASSERTION: All 5 companies must be represented
 			companiesInCV := extractCompaniesFromCV(cv)
-			Expect(len(companiesInCV)).To(Equal(5),
+			Expect(companiesInCV).To(HaveLen(5),
 				"BUG-003 regression: All 5 companies should appear in CV, got %d: %v",
 				len(companiesInCV), companiesInCV)
 
@@ -374,7 +373,7 @@ var _ = Describe("CV Generation Integration Tests", func() {
 
 			// All 3 companies must be represented
 			companiesInCV := extractCompaniesFromCV(cv)
-			Expect(len(companiesInCV)).To(Equal(3))
+			Expect(companiesInCV).To(HaveLen(3))
 
 			// Verify per-company bullet caps are reasonable (not all 20 events per company)
 			for _, section := range cv.Sections {

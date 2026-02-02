@@ -2,8 +2,6 @@
 package factmanagement
 
 import (
-	"fmt"
-
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/screens/facts"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
@@ -43,7 +41,7 @@ func (i *Intent) getBreadcrumbs() []string {
 			if len(factID) > 8 {
 				factID = factID[:8]
 			}
-			factName := fmt.Sprintf("Fact #%s", factID)
+			factName := "Fact #" + factID
 			breadcrumbs = append(breadcrumbs, factName)
 		}
 	case StateEditor:
@@ -54,7 +52,7 @@ func (i *Intent) getBreadcrumbs() []string {
 			if len(factID) > 8 {
 				factID = factID[:8]
 			}
-			breadcrumbs = append(breadcrumbs, fmt.Sprintf("Edit Fact #%s", factID))
+			breadcrumbs = append(breadcrumbs, "Edit Fact #"+factID)
 		}
 	case StateResults:
 		breadcrumbs = append(breadcrumbs, "Results")

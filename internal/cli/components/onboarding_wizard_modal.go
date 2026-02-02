@@ -24,8 +24,8 @@ import (
 //   - Shift+Tab: Move to previous field
 //   - Enter on last field of group: Advance to next step
 //
-// Note: Onboarding is MANDATORY - Esc key is blocked. Users must complete
-// the required fields (Name and Email) to proceed with the application.
+// Esc key is blocked - onboarding is MANDATORY.
+// Users must complete required fields (Name and Email) to proceed.
 type OnboardingWizardModal struct {
 	wizard   *behaviors.WizardBehavior[OnboardingData]
 	form     *forms.WizardFormAdapter
@@ -92,7 +92,7 @@ func (m *OnboardingWizardModal) Init() tea.Cmd {
 }
 
 // Update handles messages for the wizard modal.
-// Note: Onboarding is mandatory - users cannot cancel/escape from this wizard.
+// Esc key is blocked - onboarding is MANDATORY.
 func (m *OnboardingWizardModal) Update(msg tea.Msg) tea.Cmd {
 	if !m.wizard.IsVisible() {
 		return nil
@@ -175,7 +175,7 @@ func (m *OnboardingWizardModal) IsCompleted() bool {
 }
 
 // WasCancelled returns whether the wizard was cancelled by the user.
-// Note: For onboarding, this always returns false since cancellation is blocked.
+// Always returns false for onboarding (cancellation is blocked).
 func (m *OnboardingWizardModal) WasCancelled() bool {
 	return m.wizard.IsCancelled()
 }

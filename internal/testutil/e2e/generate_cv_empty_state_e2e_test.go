@@ -96,9 +96,6 @@ var _ = Describe("E2E Generate CV Empty State (BUG-004)", func() {
 		It("should remain in menu state (not enter intent state)", func() {
 			env.SelectIntentByName("generate_cv")
 
-			// The modal overlays the menu, but we remain in StateMenu (not StateIntent)
-			// Note: IsInMenuState() checks view content which is replaced by modal,
-			// so we check the actual state instead
 			Expect(env.Model.GetState()).To(Equal(app.StateMenu),
 				"Should remain in menu state with modal overlay")
 		})

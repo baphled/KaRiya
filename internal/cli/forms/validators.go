@@ -63,11 +63,11 @@ func ParseDateString(s string) (time.Time, error) {
 // Common validation errors.
 var (
 	ErrRequired         = errors.New("this field is required")
-	ErrInvalidDate      = fmt.Errorf("invalid date format (expected YYYY-MM-DD)")
-	ErrInvalidEmail     = fmt.Errorf("invalid email address")
-	ErrTooShort         = fmt.Errorf("value is too short")
-	ErrTooLong          = fmt.Errorf("value is too long")
-	ErrInvalidCharacter = fmt.Errorf("contains invalid characters")
+	ErrInvalidDate      = errors.New("invalid date format (expected YYYY-MM-DD)")
+	ErrInvalidEmail     = errors.New("invalid email address")
+	ErrTooShort         = errors.New("value is too short")
+	ErrTooLong          = errors.New("value is too long")
+	ErrInvalidCharacter = errors.New("contains invalid characters")
 )
 
 // Required validates that a field is not empty.
@@ -236,7 +236,7 @@ func URL(value string) error {
 
 	urlRegex := regexp.MustCompile(`^https?://[^\s/$.?#].\S*$`)
 	if !urlRegex.MatchString(value) {
-		return fmt.Errorf("invalid URL format")
+		return errors.New("invalid URL format")
 	}
 
 	return nil
@@ -259,7 +259,7 @@ func AlphaNumeric(value string) error {
 
 	alphaNumRegex := regexp.MustCompile(`^[a-zA-Z0-9]+$`)
 	if !alphaNumRegex.MatchString(value) {
-		return fmt.Errorf("must contain only letters and numbers")
+		return errors.New("must contain only letters and numbers")
 	}
 
 	return nil
@@ -283,7 +283,7 @@ func NoSpecialChars(value string) error {
 	// Allow letters, numbers, spaces, hyphens, underscores
 	validRegex := regexp.MustCompile(`^[a-zA-Z0-9\s\-_]+$`)
 	if !validRegex.MatchString(value) {
-		return fmt.Errorf("contains invalid special characters")
+		return errors.New("contains invalid special characters")
 	}
 
 	return nil
@@ -509,11 +509,11 @@ func Custom(validate func(string) bool, errorMsg string) func(string) error {
 
 // GitHub username validation errors.
 var (
-	ErrGitHubUsernameURL         = fmt.Errorf("enter username only, not full URL (e.g., 'baphled' not 'github.com/baphled')")
-	ErrGitHubUsernameHyphenPos   = fmt.Errorf("username cannot start or end with a hyphen")
-	ErrGitHubUsernameConsecutive = fmt.Errorf("username cannot contain consecutive hyphens")
-	ErrGitHubUsernameChars       = fmt.Errorf("username must contain only alphanumeric characters and hyphens")
-	ErrGitHubUsernameTooLong     = fmt.Errorf("username must be at most 39 characters")
+	ErrGitHubUsernameURL         = errors.New("enter username only, not full URL (e.g., 'baphled' not 'github.com/baphled')")
+	ErrGitHubUsernameHyphenPos   = errors.New("username cannot start or end with a hyphen")
+	ErrGitHubUsernameConsecutive = errors.New("username cannot contain consecutive hyphens")
+	ErrGitHubUsernameChars       = errors.New("username must contain only alphanumeric characters and hyphens")
+	ErrGitHubUsernameTooLong     = errors.New("username must be at most 39 characters")
 )
 
 // GitHubUsername validates that a value is a valid GitHub username (not a URL).

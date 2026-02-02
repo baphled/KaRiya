@@ -47,7 +47,7 @@ var _ = Describe("CLI Command Handlers", func() {
 			BeforeEach(func() {
 				// Create clustered events that will trigger burst detection
 				baseDate := time.Now().AddDate(0, 0, -30)
-				for i := 0; i < 5; i++ {
+				for i := range 5 {
 					evt := fixtures.EventWith("evt"+string(rune('1'+i)), "Cloud migration task", "TechCorp", "CloudMigration")
 					evt.Date = baseDate.AddDate(0, 0, i)
 					evt.Tags = []string{"technical", "project"}

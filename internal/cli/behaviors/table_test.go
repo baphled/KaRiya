@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-// Test item type
+// Test item type.
 type TestItem struct {
 	Name   string
 	Status string

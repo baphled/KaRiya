@@ -455,7 +455,7 @@ func (i *Intent) setCancelled() {
 
 // getContext returns a context for service calls.
 //
-// Note: Currently returns context.Background() which does not support
+// Currently returns context.Background() which does not support
 // cancellation or timeouts. When BaseIntent gains a Context() method
 // for lifecycle management, this should be updated to use that instead.
 // For now, service calls using this context may not respond to intent

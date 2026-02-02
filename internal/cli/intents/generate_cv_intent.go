@@ -2,6 +2,7 @@ package intents
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -47,7 +48,6 @@ type GenerateCVIntent struct {
 
 	// useScreens enables the new screen-based architecture (opt-in for now).
 	// Set to false to use legacy code and pass existing tests.
-	// NOTE: Feature flag to be removed once all states are migrated.
 	useScreens bool
 
 	// Wizard-based workflow (Phase 5 - Task 43)
@@ -77,24 +77,24 @@ type GenerateCVIntent struct {
 //
 // Side effects:
 //   - None.
-func NewGenerateCVIntent(context *GenerateCVContext) (*GenerateCVIntent, error) {
-	if err := context.Validate(); err != nil {
+func NewGenerateCVIntent(ctx *GenerateCVContext) (*GenerateCVIntent, error) {
+	if err := ctx.Validate(); err != nil {
 		return nil, err
 	}
 
-	selectedProfile := context.DefaultProfile
-	if selectedProfile == nil && len(context.AvailableProfiles) > 0 {
-		selectedProfile = context.AvailableProfiles[0]
+	selectedProfile := ctx.DefaultProfile
+	if selectedProfile == nil && len(ctx.AvailableProfiles) > 0 {
+		selectedProfile = ctx.AvailableProfiles[0]
 	}
 
 	// Create BaseIntent for terminal awareness and state management
-	base := NewBaseIntent()
+	baseIntent := NewBaseIntent()
 
 	return &GenerateCVIntent{
-		BaseIntent: base,
-		context:    context,
+		BaseIntent: baseIntent,
+		context:    ctx,
 		state: &GenerateCVModel{
-			context:         context,
+			context:         ctx,
 			currentState:    GenerateCVStateSelectProfile,
 			selectedProfile: selectedProfile,
 			selectedIndex:   0,
@@ -227,7 +227,7 @@ func NewCVProfileSelectScreenFromIntent(profiles []*CVProfile) screens.Screen {
 		}
 
 		if item.Description != "" {
-			lines = append(lines, fmt.Sprintf("  %s", item.Description))
+			lines = append(lines, "  "+item.Description)
 		}
 
 		return strings.Join(lines, "\n")
@@ -251,8 +251,8 @@ func NewCVProfileSelectScreenFromIntent(profiles []*CVProfile) screens.Screen {
 // getCardStyle returns a themed card style, with fallback to default styling.
 // getTheme returns the theme or a default.
 func (i *GenerateCVIntent) getTheme() themes.Theme {
-	if theme := i.Theme(); theme != nil {
-		return theme
+	if themeVal := i.Theme(); themeVal != nil {
+		return themeVal
 	}
 	return themes.NewDefaultTheme()
 }
@@ -359,7 +359,7 @@ func (i *GenerateCVIntent) updateWizardFlow(msg tea.Msg) tea.Cmd {
 	// Handle window size messages
 	if msg, ok := msg.(tea.WindowSizeMsg); ok {
 		// Update BaseIntent terminal info
-		termInfo := i.BaseIntent.GetTerminalInfo()
+		termInfo := i.GetTerminalInfo()
 		termInfo.Update(msg)
 
 		// Modals handle their own window size internally via their Update methods
@@ -565,7 +565,7 @@ func (i *GenerateCVIntent) handleWizardComplete(msg WizardCompleteMsg) tea.Cmd {
 	i.state.selectedCVLength = msg.CVLength
 
 	// Show progress modal for tech extraction
-	termInfo := i.BaseIntent.GetTerminalInfo()
+	termInfo := i.GetTerminalInfo()
 	width, height := termInfo.Width, termInfo.Height
 	i.progressModal = components.NewExtractingTechsProgress(width, height)
 	i.progressModal.Show()
@@ -587,7 +587,7 @@ func (i *GenerateCVIntent) handleTechExtracted(msg TechnologiesExtractedMsg) tea
 	i.state.focusAreaSuggestion = msg.Suggestion
 
 	// Show progress modal for CV generation
-	termInfo := i.BaseIntent.GetTerminalInfo()
+	termInfo := i.GetTerminalInfo()
 	width, height := termInfo.Width, termInfo.Height
 	profileName := "Default Profile"
 	if i.state.selectedProfile != nil {
@@ -635,7 +635,7 @@ func (i *GenerateCVIntent) handleReviewScreenResult(result screens.ScreenResult)
 
 		case "export":
 			// User wants to export directly from review
-			termInfo := i.BaseIntent.GetTerminalInfo()
+			termInfo := i.GetTerminalInfo()
 			width, height := termInfo.Width, termInfo.Height
 			i.exportModal = components.NewExportOptionsModal(width, height)
 			i.exportModal.Show()
@@ -670,7 +670,7 @@ func (i *GenerateCVIntent) handlePreviewScreenResult(result screens.ScreenResult
 		switch result.Data() {
 		case "export":
 			// User wants to export
-			termInfo := i.BaseIntent.GetTerminalInfo()
+			termInfo := i.GetTerminalInfo()
 			width, height := termInfo.Width, termInfo.Height
 			i.exportModal = components.NewExportOptionsModal(width, height)
 			i.exportModal.Show()
@@ -698,7 +698,7 @@ func (i *GenerateCVIntent) handleExportComplete(exportData *components.ExportDat
 	i.exportModal.Hide()
 
 	// Show progress modal for export
-	termInfo := i.BaseIntent.GetTerminalInfo()
+	termInfo := i.GetTerminalInfo()
 	width, height := termInfo.Width, termInfo.Height
 	i.progressModal = components.NewExportingProgress(exportData.Format, width, height)
 	i.progressModal.Show()
@@ -779,8 +779,8 @@ func (i *GenerateCVIntent) handleNavigateResult(result screens.ScreenResult) tea
 
 	case GenerateCVStateGenerating:
 		// CV generation complete, move to preview
-		if cv, ok := data.(*career.CVView); ok {
-			i.state.generatedCV = cv
+		if cvView, ok := data.(*career.CVView); ok {
+			i.state.generatedCV = cvView
 			i.state.currentState = GenerateCVStatePreview
 			i.activeScreen = nil
 		}
@@ -1199,9 +1199,10 @@ func (i *GenerateCVIntent) updateSelectTechnologies(msg tea.Msg) tea.Cmd {
 
 			// Validate selection count based on focus type
 			var valid bool
-			if i.state.selectedTechnologyFocus == cv.TechnologyFocusSpecialist {
+			switch i.state.selectedTechnologyFocus {
+			case cv.TechnologyFocusSpecialist:
 				valid = len(selectedIDs) == 1
-			} else if i.state.selectedTechnologyFocus == cv.TechnologyFocusGeneralist {
+			case cv.TechnologyFocusGeneralist:
 				valid = len(selectedIDs) >= 2 && len(selectedIDs) <= 5
 			}
 
@@ -1495,6 +1496,7 @@ func (i *GenerateCVIntent) updateConfirm(msg tea.Msg) tea.Cmd {
 }
 
 // getStateContent returns the content for the current state.
+//
 // Deprecated: This method routes to legacy view methods and is only used when
 // useWizardFlow=false (for backward compatibility with tests). The wizard workflow
 // uses wizardView() instead. This method will be removed in a future release.
@@ -1534,119 +1536,120 @@ func (i *GenerateCVIntent) getStateContent() string {
 }
 
 // getContextHelp returns context-aware help text for the current state.
+//
 // Deprecated: This method provides help for legacy 17-state workflow and is only used when
 // useWizardFlow=false (for backward compatibility with tests). The wizard workflow
 // uses getWizardContextHelp() instead. This method will be removed in a future release.
 func (i *GenerateCVIntent) getContextHelp() string {
-	theme := i.Theme()
+	themeVal := i.Theme()
 
 	switch i.state.currentState {
 	case GenerateCVStateSelectProfile:
 		return CombineThemedFooters(
-			ThemedNavigationFooter(theme),
-			ThemedGlobalBadges(theme),
+			ThemedNavigationFooter(themeVal),
+			ThemedGlobalBadges(themeVal),
 		)
 	case GenerateCVStateSelectAudience:
 		return CombineThemedFooters(
-			ThemedNavigationFooter(theme),
-			ThemedGlobalBadges(theme),
+			ThemedNavigationFooter(themeVal),
+			ThemedGlobalBadges(themeVal),
 		)
 	case GenerateCVStateExtractingTechnologies:
 		return CombineThemedFooters(
-			ThemedCustomFooter(theme,
-				primitives.HelpKeyBadge("...", "Please wait", theme),
+			ThemedCustomFooter(themeVal,
+				primitives.HelpKeyBadge("...", "Please wait", themeVal),
 			),
-			ThemedGlobalBadges(theme),
+			ThemedGlobalBadges(themeVal),
 		)
 	case GenerateCVStateSelectTechnologyFocus:
 		return CombineThemedFooters(
-			ThemedNavigationFooter(theme),
-			ThemedGlobalBadges(theme),
+			ThemedNavigationFooter(themeVal),
+			ThemedGlobalBadges(themeVal),
 		)
 	case GenerateCVStateSelectTechnologies:
 		return CombineThemedFooters(
-			ThemedCustomFooter(theme,
-				primitives.HelpKeyBadge("Space", "Toggle", theme),
-				primitives.HelpKeyBadge("Enter", "Confirm", theme),
+			ThemedCustomFooter(themeVal,
+				primitives.HelpKeyBadge("Space", "Toggle", themeVal),
+				primitives.HelpKeyBadge("Enter", "Confirm", themeVal),
 			),
-			ThemedNavigationFooter(theme),
-			ThemedGlobalBadges(theme),
+			ThemedNavigationFooter(themeVal),
+			ThemedGlobalBadges(themeVal),
 		)
 	case GenerateCVStateSelectFocusArea:
 		return CombineThemedFooters(
-			ThemedNavigationFooter(theme),
-			ThemedGlobalBadges(theme),
+			ThemedNavigationFooter(themeVal),
+			ThemedGlobalBadges(themeVal),
 		)
 	case GenerateCVStateSelectSkillsConfig:
 		return CombineThemedFooters(
-			ThemedCustomFooter(theme,
-				primitives.HelpKeyBadge("Space", "Toggle Format", theme),
-				primitives.HelpKeyBadge("←→", "Adjust Limit", theme),
-				primitives.HelpKeyBadge("Enter", "Continue", theme),
+			ThemedCustomFooter(themeVal,
+				primitives.HelpKeyBadge("Space", "Toggle Format", themeVal),
+				primitives.HelpKeyBadge("←→", "Adjust Limit", themeVal),
+				primitives.HelpKeyBadge("Enter", "Continue", themeVal),
 			),
-			ThemedNavigationFooter(theme),
-			ThemedGlobalBadges(theme),
+			ThemedNavigationFooter(themeVal),
+			ThemedGlobalBadges(themeVal),
 		)
 	case GenerateCVStateGenerating:
 		return CombineThemedFooters(
-			ThemedCustomFooter(theme,
-				primitives.HelpKeyBadge("...", "Please wait", theme),
+			ThemedCustomFooter(themeVal,
+				primitives.HelpKeyBadge("...", "Please wait", themeVal),
 			),
-			ThemedGlobalBadges(theme),
+			ThemedGlobalBadges(themeVal),
 		)
 	case GenerateCVStatePreview:
 		return CombineThemedFooters(
-			ThemedDetailViewFooter(theme),
-			ThemedCustomFooter(theme,
-				primitives.EditBadge(theme),
-				primitives.HelpKeyBadge("c", "Continue", theme),
+			ThemedDetailViewFooter(themeVal),
+			ThemedCustomFooter(themeVal,
+				primitives.EditBadge(themeVal),
+				primitives.HelpKeyBadge("c", "Continue", themeVal),
 			),
-			ThemedGlobalBadges(theme),
+			ThemedGlobalBadges(themeVal),
 		)
 	case GenerateCVStateReview:
 		return CombineThemedFooters(
-			ThemedDetailViewFooter(theme),
-			ThemedCustomFooter(theme,
-				primitives.HelpKeyBadge("Enter", "Continue", theme),
+			ThemedDetailViewFooter(themeVal),
+			ThemedCustomFooter(themeVal,
+				primitives.HelpKeyBadge("Enter", "Continue", themeVal),
 			),
-			ThemedGlobalBadges(theme),
+			ThemedGlobalBadges(themeVal),
 		)
 	case GenerateCVStateConfirm:
 		return CombineThemedFooters(
-			ThemedCustomFooter(theme,
-				primitives.HelpKeyBadge("y/Enter", "Confirm", theme),
-				primitives.HelpKeyBadge("e/x", "Export", theme),
-				primitives.HelpKeyBadge("n/Esc", "Back", theme),
+			ThemedCustomFooter(themeVal,
+				primitives.HelpKeyBadge("y/Enter", "Confirm", themeVal),
+				primitives.HelpKeyBadge("e/x", "Export", themeVal),
+				primitives.HelpKeyBadge("n/Esc", "Back", themeVal),
 			),
-			ThemedGlobalBadges(theme),
+			ThemedGlobalBadges(themeVal),
 		)
 	case GenerateCVStateExportSelectFormat:
 		return CombineThemedFooters(
-			ThemedNavigationFooter(theme),
-			ThemedGlobalBadges(theme),
+			ThemedNavigationFooter(themeVal),
+			ThemedGlobalBadges(themeVal),
 		)
 	case GenerateCVStateExportSelectLocation:
 		return CombineThemedFooters(
-			ThemedNavigationFooter(theme),
-			ThemedGlobalBadges(theme),
+			ThemedNavigationFooter(themeVal),
+			ThemedGlobalBadges(themeVal),
 		)
 	case GenerateCVStateExporting:
 		return CombineThemedFooters(
-			ThemedCustomFooter(theme,
-				primitives.HelpKeyBadge("...", "Please wait", theme),
+			ThemedCustomFooter(themeVal,
+				primitives.HelpKeyBadge("...", "Please wait", themeVal),
 			),
-			ThemedGlobalBadges(theme),
+			ThemedGlobalBadges(themeVal),
 		)
 	case GenerateCVStateExportComplete:
 		return CombineThemedFooters(
-			ThemedCustomFooter(theme,
-				primitives.HelpKeyBadge("Enter", "Continue", theme),
-				primitives.BackBadge(theme),
+			ThemedCustomFooter(themeVal,
+				primitives.HelpKeyBadge("Enter", "Continue", themeVal),
+				primitives.BackBadge(themeVal),
 			),
-			ThemedGlobalBadges(theme),
+			ThemedGlobalBadges(themeVal),
 		)
 	default:
-		return ThemedGlobalBadges(theme)
+		return ThemedGlobalBadges(themeVal)
 	}
 }
 
@@ -1695,7 +1698,7 @@ func (i *GenerateCVIntent) View() string {
 // wizardView renders the wizard-based workflow with modal overlays.
 func (i *GenerateCVIntent) wizardView() string {
 	// Get terminal dimensions
-	termInfo := i.BaseIntent.GetTerminalInfo()
+	termInfo := i.GetTerminalInfo()
 	width, height := termInfo.Width, termInfo.Height
 
 	// Create StandardView with breadcrumbs
@@ -1712,21 +1715,15 @@ func (i *GenerateCVIntent) wizardView() string {
 		}
 		content = "Loading review..."
 	case CVStatePreview:
-		// For preview state, let the screen render itself fully
 		if i.wizardPreviewScreen != nil {
-			// Screen renders its own StandardView, so return it directly
-			// without wrapping in another StandardView
 			return i.renderPreviewScreenWithModalOverlay(width, height)
 		}
 		content = "Loading preview..."
 	case CVStateExporting:
-		// Note: CVStateExporting == GenerateCVStateExporting == "exporting"
 		content = "Exporting CV..."
 	case GenerateCVStateExportComplete:
-		// Use the same export complete view as legacy flow
 		content = i.viewExportComplete()
 	default:
-		// For other states, show minimal content (modals will overlay)
 		content = ""
 	}
 
@@ -2607,7 +2604,7 @@ func (i *GenerateCVIntent) exportCVAsync() tea.Cmd {
 	return func() tea.Msg {
 		// Check if export service is available
 		if i.context.ExportService == nil {
-			return CVExportCompleteMsg{Path: "", Error: fmt.Errorf("export service not available")}
+			return CVExportCompleteMsg{Path: "", Error: errors.New("export service not available")}
 		}
 
 		ctx := i.context.AppContext
@@ -2636,7 +2633,7 @@ func (i *GenerateCVIntent) exportCVAsync() tea.Cmd {
 			content, err = i.context.ExportService.ExportToYAML(ctx, i.state.generatedCV, sections, bulletsMap)
 			exportFormat = cv.ExportFormatYAML
 		default:
-			return CVExportCompleteMsg{Path: "", Error: fmt.Errorf("unknown export format")}
+			return CVExportCompleteMsg{Path: "", Error: errors.New("unknown export format")}
 		}
 
 		if err != nil {
@@ -2660,7 +2657,7 @@ func (i *GenerateCVIntent) exportCVAsync() tea.Cmd {
 			return CVExportCompleteMsg{Path: "clipboard", Error: nil}
 
 		default:
-			return CVExportCompleteMsg{Path: "", Error: fmt.Errorf("unknown export option")}
+			return CVExportCompleteMsg{Path: "", Error: errors.New("unknown export option")}
 		}
 	}
 }

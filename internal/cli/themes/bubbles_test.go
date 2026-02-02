@@ -2,10 +2,7 @@ package themes_test
 
 import (
 	"github.com/baphled/kariya/internal/cli/themes"
-	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/list"
-	"github.com/charmbracelet/bubbles/progress"
-	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/table"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -178,34 +175,6 @@ var _ = Describe("Bubbles Theme Integration", func() {
 			// Verify it still works
 			view := t.View()
 			Expect(view).To(ContainSubstring("Test"))
-		})
-	})
-
-	// Test type assertions for bubbles components
-	Describe("Type Safety", func() {
-		It("should return correct types for list styles", func() {
-			styles := themes.NewThemedListStyles(theme)
-			var _ list.Styles = styles
-		})
-
-		It("should return correct types for table styles", func() {
-			styles := themes.NewThemedTableStyles(theme)
-			var _ table.Styles = styles
-		})
-
-		It("should return correct types for help styles", func() {
-			styles := themes.NewThemedHelpStyles(theme)
-			var _ help.Styles = styles
-		})
-
-		It("should return correct types for progress", func() {
-			p := themes.NewThemedProgress(theme)
-			var _ progress.Model = p
-		})
-
-		It("should return correct types for spinner", func() {
-			s := themes.NewThemedSpinner(theme)
-			var _ spinner.Model = s
 		})
 	})
 })

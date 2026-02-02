@@ -64,7 +64,7 @@ var _ = Describe("DefaultSectionBuilder - Skills Section", func() {
 				Expect(skillsSection.Title).To(Equal("Technical Skills"))
 
 				// Should have bullets for all skills
-				Expect(len(skillsSection.Content)).To(BeNumerically(">", 0))
+				Expect(skillsSection.Content).ToNot(BeEmpty())
 
 				// Extract skill names from bullets
 				skillNames := make([]string, 0)
@@ -131,10 +131,7 @@ var _ = Describe("DefaultSectionBuilder - Skills Section", func() {
 
 				Expect(skillsSection).NotTo(BeNil())
 
-				// Skills should just show names (no counts)
-				// Note: With nil skillRepo, it will use the skill ID as the name
-				// In production, it would look up the actual skill name
-				Expect(len(skillsSection.Content[0].Bullets)).To(BeNumerically(">", 0))
+				Expect(skillsSection.Content[0].Bullets).ToNot(BeEmpty())
 			})
 		})
 
@@ -195,7 +192,7 @@ var _ = Describe("DefaultSectionBuilder - Skills Section", func() {
 
 				// Should have unique skills (no duplicates)
 				// Count unique skill IDs across both events: Go (appears twice but counted once), PostgreSQL, Docker, Redis = 4 unique
-				Expect(len(skillsSection.Content[0].Bullets)).To(Equal(4))
+				Expect(skillsSection.Content[0].Bullets).To(HaveLen(4))
 			})
 		})
 

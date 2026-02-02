@@ -118,7 +118,8 @@ var _ = Describe("App Menu Integration Tests", func() {
 
 		It("should activate BurstManagement intent without panic", func() {
 			modelInterface := tea.Model(model)
-			for i := 0; i < 5; i++ {
+			for i := range 5 {
+				_ = i
 				var cmd tea.Cmd
 				modelInterface, cmd = modelInterface.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
 				_ = cmd
@@ -131,7 +132,8 @@ var _ = Describe("App Menu Integration Tests", func() {
 
 		It("should activate FactManagement intent without panic", func() {
 			modelInterface := tea.Model(model)
-			for i := 0; i < 6; i++ {
+			for i := range 6 {
+				_ = i
 				var cmd tea.Cmd
 				modelInterface, cmd = modelInterface.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
 				_ = cmd
@@ -283,7 +285,8 @@ var _ = Describe("Intent Navigation - All Intents", func() {
 	testIntentNavigation := func(menuIndex int, intentName string) {
 		It("should navigate within "+intentName+" intent", func() {
 			// Navigate to the menu item
-			for i := 0; i < menuIndex; i++ {
+			for i := range menuIndex {
+				_ = i
 				modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
 				model = modelInterface.(*app.Model)
 			}
@@ -368,7 +371,7 @@ var _ = Describe("Intent Navigation - Detailed", func() {
 
 	selectIntent := func(menuIndex int) {
 		// Navigate to menu item
-		for i := 0; i < menuIndex; i++ {
+		for range menuIndex {
 			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
 			model = modelInterface.(*app.Model)
 		}
@@ -537,7 +540,7 @@ var _ = Describe("Intent List Navigation - Specific", func() {
 	})
 
 	selectIntent := func(menuIndex int) {
-		for i := 0; i < menuIndex; i++ {
+		for range menuIndex {
 			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
 			model = modelInterface.(*app.Model)
 		}
@@ -585,8 +588,7 @@ var _ = Describe("Intent List Navigation - Specific", func() {
 		It("should allow multiple consecutive down navigations", func() {
 			selectIntent(1) // BrowseTimeline
 
-			// Navigate down multiple times
-			for i := 0; i < 3; i++ {
+			for range 3 {
 				modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
 				model = modelInterface.(*app.Model)
 			}
@@ -627,7 +629,7 @@ var _ = Describe("Intent List Navigation - Specific", func() {
 			selectIntent(5) // BurstManagement
 
 			// Navigate down multiple times
-			for i := 0; i < 3; i++ {
+			for range 3 {
 				modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
 				model = modelInterface.(*app.Model)
 			}
@@ -668,7 +670,7 @@ var _ = Describe("Intent List Navigation - Specific", func() {
 			selectIntent(6) // FactManagement
 
 			// Navigate down multiple times
-			for i := 0; i < 3; i++ {
+			for range 3 {
 				modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
 				model = modelInterface.(*app.Model)
 			}

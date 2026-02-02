@@ -6,7 +6,7 @@ import "github.com/baphled/kariya/internal/domain/career"
 // Custom message types for BrowseTimeline state transitions.
 // ALL *Msg structs MUST be in this file.
 //
-// Note: RequestEditEventMsg and RequestAddEventMsg are defined in the parent
+// RequestEditEventMsg and RequestAddEventMsg are defined in the parent
 // intents package (intents/messages.go) since they are cross-intent coordination
 // messages used by the app router.
 

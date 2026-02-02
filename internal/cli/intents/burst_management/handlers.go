@@ -52,8 +52,6 @@ func (i *Intent) handleScreenResult(result interface{}) tea.Cmd {
 // Side effects:
 //   - Transitions the intent state toward StateList or marks the intent as cancelled.
 //   - May replace the active screen with a new BurstListScreen.
-//
-//nolint:revive // result parameter required by ScreenResultHandler interface
 func (i *Intent) HandleCancel(result *screens.CancelResult) tea.Cmd {
 	_ = result
 	switch i.state {
@@ -128,8 +126,6 @@ func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 //
 // Side effects:
 //   - None.
-//
-//nolint:revive // result parameter required by ScreenResultHandler interface
 func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
 	_ = result
 	return nil
@@ -157,10 +153,7 @@ func (i *Intent) HandleError(result *screens.ErrorResult) tea.Cmd {
 // =============================================================================
 
 // handleActionData processes action data from navigation results.
-//
-//nolint:funlen // Action routing requires handling multiple action types in one function
 func (i *Intent) handleActionData(actionData map[string]interface{}) tea.Cmd {
-	//nolint:errcheck // Type assertion ok value intentionally ignored - empty string is acceptable default
 	action, _ := actionData["action"].(string)
 	switch action {
 	case "edit":
