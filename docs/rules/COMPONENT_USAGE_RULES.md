@@ -34,7 +34,7 @@ Need to show UI?
 │
 ├─ Capture data (form inputs)?
 │  └─ YES → Use FormScreen (screens/{feature}/form_screen.go)
-│     └─ Embed forms.Form
+│     └─ Embed base.FormScreen[*forms.XxxFormData]
 │     └─ Return ScreenResult on submit/cancel
 │
 ├─ Display list of items?
@@ -359,109 +359,64 @@ func (s *ListScreen) View() string {
 
 ### Form Pattern
 
-**CORRECT Pattern** (Use FormScreen):
+**CORRECT Pattern** (Use `base.FormScreen[T]`):
+
 ```go
 // File: screens/myfeature/form_screen.go
 package myfeature
 
 import (
     "github.com/baphled/kariya/internal/cli/forms"
-    "github.com/baphled/kariya/internal/cli/screens"
     "github.com/baphled/kariya/internal/cli/screens/base"
-    tea "github.com/charmbracelet/bubbletea"
 )
 
-// FormScreen handles form input.
+// FormScreen handles form input for myfeature.
 type FormScreen struct {
-    *base.BaseScreen
-    form     forms.Form
-    formData *MyFormData
+    *base.FormScreen[*forms.MyFormData]
 }
 
 // NewFormScreen creates a new form screen.
 func NewFormScreen() *FormScreen {
-    form := forms.NewForm(
-        forms.NewGroup(
-            forms.NewInput(forms.FieldConfig{
-                Key:         "name",
-                Title:       "Name",
-                Placeholder: "Enter name",
-                Required:    true,
-            }),
-            forms.NewText(forms.FieldConfig{
-                Key:         "description",
-                Title:       "Description",
-                Placeholder: "Enter description",
-            }),
-            forms.NewSelect(
-                "category",
-                "Category",
-                []forms.Option{
-                    {Key: "work", Label: "Work"},
-                    {Key: "personal", Label: "Personal"},
-                },
-            ),
-        ),
+    formData := &forms.MyFormData{}
+    baseScreen := base.NewBaseFormScreen(
+        []string{"Main Menu", "My Feature", "Add Item"},
+        forms.NewMyFormWithDataAndDimensions, // FormBuilder[T]
+        formData,
     )
-    
-    return &FormScreen{
-        BaseScreen: base.NewBaseScreen(),
-        form:       form,
-        formData:   &MyFormData{},
-    }
-}
-
-// Update handles form updates.
-func (s *FormScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
-    // Check form state
-    if forms.IsCompleted(s.form) {
-        // Extract data
-        s.formData.Name = s.form.GetString("name")
-        s.formData.Description = s.form.GetString("description")
-        s.formData.Category = s.form.GetString("category")
-        
-        return nil, screens.NewSubmitResult(s.formData)
-    }
-    
-    if forms.IsAborted(s.form) {
-        return nil, screens.NewCancelResult("form")
-    }
-    
-    // Delegate to form
-    var cmd tea.Cmd
-    s.form, cmd = s.form.Update(msg)
-    return cmd, nil
-}
-
-// View renders the form.
-func (s *FormScreen) View() string {
-    return s.form.View()
+    return &FormScreen{FormScreen: baseScreen}
 }
 ```
 
-**DEPRECATED Pattern** (Don't Use):
+`base.FormScreen[T]` handles `Update()`, `View()`, window resize, and escape cancellation
+automatically. It returns `*screens.SubmitResult` (with `FormData` field) or `*screens.CancelResult`.
+
+**Note**: Form configurations (`FormData` types, builders, validators) live in `internal/cli/forms/`.
+Screen types in `screens/{feature}/` embed `base.FormScreen[T]` and delegate to form builders.
+See [`docs/FORMS_GUIDE.md`](../FORMS_GUIDE.md) for the complete forms API.
+
+**DEPRECATED Pattern** (Legacy - Still Active, Pending Migration):
 ```go
-// ❌ WRONG - models/ package (DEPRECATED)
+// ❌ WRONG for new code - models/ package (DEPRECATED)
 import "github.com/baphled/kariya/internal/cli/models"
 
 type MyIntent struct {
-    form *models.CaptureForm  // DEPRECATED
+    form *models.CaptureForm  // DEPRECATED - use base.FormScreen[T] instead
 }
 ```
 
 ### Form Rules
 
 **DO**:
-- ✅ Create FormScreen in `screens/{feature}/form_screen.go`
-- ✅ Use `forms.Form` directly (NOT `*huh.Form`)
+- ✅ Create FormScreen in `screens/{feature}/form_screen.go` using `base.FormScreen[T]`
+- ✅ Import from `forms/` package (NOT `huh` directly) -- `forms.Form` is a type alias for `*huh.Form`
 - ✅ Build forms with `forms.NewInput()`, `forms.NewSelect()`, etc.
 - ✅ Check state with `forms.IsCompleted()`, `forms.IsAborted()`
-- ✅ Return ScreenResult (Submit, Cancel, Error)
+- ✅ Return ScreenResult (Submit, Cancel)
 - ✅ Validate in intent (not in screen)
 
 **DON'T**:
-- ❌ Use `models/` package for forms (DEPRECATED - Check #22)
-- ❌ Import `huh` directly (use `forms/` package)
+- ❌ Use `models/` package for new forms (DEPRECATED - Check #22; existing wrappers pending migration)
+- ❌ Import `huh` directly (use `forms/` package aliases instead)
 - ❌ Put business logic in FormScreen
 - ❌ Call services from FormScreen
 - ❌ Create custom form components (use forms builders)
@@ -574,7 +529,7 @@ func (s *ListScreen) View() string {
 |----------|-----------|----------|---------|
 | **List of items** | ListScreen + TableBehavior | `screens/{feature}/list_screen.go` | Screen with embedded behavior |
 | **Item details** | DetailScreen | `screens/{feature}/detail_screen.go` | Screen with UIKit layout |
-| **Create/edit form** | FormScreen | `screens/{feature}/form_screen.go` | Screen with embedded forms.Form |
+| **Create/edit form** | FormScreen | `screens/{feature}/form_screen.go` | Screen with embedded `base.FormScreen[T]` |
 | **Delete confirmation** | ConfirmModal | Intent field | Centralized modal |
 | **Error message** | ErrorModal | Intent field | Centralized modal |
 | **Success message** | SuccessModal | Intent field | Centralized modal |
@@ -1052,23 +1007,23 @@ if i.deleteModal.Confirmed() {
 
 ---
 
-### Anti-Pattern 7: Using models/ Package for Forms
+### Anti-Pattern 7: Using models/ Package for New Forms
 
 ```go
-// ❌ WRONG - models/ package (DEPRECATED)
+// ❌ WRONG for new code - models/ package (DEPRECATED)
 import "github.com/baphled/kariya/internal/cli/models"
 type MyIntent struct {
     form *models.CaptureForm
 }
 
-// ✅ CORRECT - FormScreen
+// ✅ CORRECT - FormScreen using base.FormScreen[T]
 import "github.com/baphled/kariya/internal/cli/screens/myfeature"
 type MyIntent struct {
-    formScreen *myfeature.FormScreen
+    formScreen *myfeature.FormScreen  // embeds base.FormScreen[T]
 }
 ```
 
-**Why**: Check #22 blocks models/ usage for forms
+**Why**: Check #22 blocks models/ usage for new forms. Existing `models/` wrappers are legacy and pending migration.
 
 ---
 
@@ -1091,7 +1046,7 @@ type MyIntent struct {
 - Duration: >10 seconds
 - Full interaction
 
-**Use FormScreen when**:
+**Use FormScreen (`base.FormScreen[T]`) when**:
 - Data capture
 - Validation needed
 - Multi-field input
@@ -1110,7 +1065,7 @@ Intent (orchestration)
 ├── Screens (primary content)
 │   ├── ListScreen (with TableBehavior)
 │   ├── DetailScreen (with UIKit layout)
-│   └── FormScreen (with forms.Form)
+│   └── FormScreen (with base.FormScreen[T])
 └── Modals (temporary overlay)
     ├── ConfirmModal
     ├── ErrorModal

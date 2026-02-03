@@ -1,10 +1,26 @@
 # KaRiya Forms Guide
 
-**Last Updated**: 2026-01-20  
+**Last Updated**: 2026-02-03  
 **Status**: Complete - All 7 form configurations documented  
 **Library**: [github.com/charmbracelet/huh](https://github.com/charmbracelet/huh) v0.8.0  
-**Form Wrappers**: 2 (CaptureForm, SkillForm)  
 **Form Configurations**: 7 (Burst, Metadata, Fact, CaptureEvent, BurstSuggestion, Skill, CVConfig)
+
+---
+
+> **Migration Status**
+>
+> The codebase has three co-existing form integration patterns. New code should use the **target pattern**.
+>
+> | Pattern | Status | Example | Use When |
+> |---------|--------|---------|----------|
+> | **`base.FormScreen[T]`** | **Target (Recommended)** | `SkillFormScreen` | New screen-level forms |
+> | **`models/` wrappers** | Legacy (Active) | `CaptureForm`, `FactEditorModelNew` | Existing code, pending migration |
+> | **Direct `*huh.Form` in modals** | Current (Valid) | Timeline modals | Modal overlays (not deprecated) |
+>
+> **Key fact**: `forms.Form` is a **type alias** for `*huh.Form` -- they are the same type. The rule
+> "use `forms.Form` not `*huh.Form`" means **import from `forms/` package, don't import `huh` directly**.
+>
+> **See also**: [`base.FormScreen[T]`](#formscreen-pattern-target) for the recommended screen integration.
 
 ---
 
@@ -19,8 +35,9 @@
 7. [Helper Functions](#helper-functions)
 8. [Integration Patterns](#integration-patterns)
    - [Modal Integration](#modal-integration)
-   - [Model Integration](#model-integration)
-   - [Form Alignment and Wrapper Pattern](#form-alignment-and-the-wrapper-pattern)
+   - [Model Integration (Legacy)](#model-integration-legacy)
+   - [FormScreen Pattern (Target)](#formscreen-pattern-target)
+   - [Form Alignment and Wrapper Pattern (Legacy)](#form-alignment-and-the-wrapper-pattern-legacy)
 9. [Theming System](#theming-system)
 10. [Testing Forms](#testing-forms)
 11. [Code References](#code-references)
@@ -1233,7 +1250,11 @@ func (m *EditModal) GetFooter() string {
 
 ---
 
-### Model Integration
+### Model Integration (Legacy)
+
+> **LEGACY**: The `models/` package is deprecated (`models/doc.go`). These wrappers are still
+> actively used by the `captureevent` intent but will be migrated to `base.FormScreen[T]`.
+> For new code, use [`base.FormScreen[T]`](#formscreen-pattern-target).
 
 Models embed huh forms for full-screen editing. See examples in [`internal/cli/models/`](../internal/cli/models/).
 
@@ -1457,7 +1478,100 @@ func (m *MetadataEditorModelNew) Revert() {
 
 ---
 
-### Form Alignment and the Wrapper Pattern
+### FormScreen Pattern (Target)
+
+**Status**: Target architecture for all new screen-level forms  
+**Base class**: `internal/cli/screens/base/form_screen.go`  
+**Example**: `internal/cli/screens/skills/skill_form.go`
+
+The `base.FormScreen[T]` generic screen is the recommended way to integrate forms into screens.
+It handles window resize, form rebuilding, escape cancellation, and returns `screens.ScreenResult`.
+
+#### How It Works
+
+1. Define a `FormBuilder[T]` function that creates a form for given dimensions
+2. Create a concrete screen type embedding `*base.FormScreen[T]`
+3. The base handles `Update()`, `View()`, and `SetTerminalInfo()` automatically
+
+#### Example: SkillFormScreen (canonical)
+
+```go
+// File: internal/cli/screens/skills/skill_form.go
+package skills
+
+import (
+    "github.com/baphled/kariya/internal/cli/forms"
+    "github.com/baphled/kariya/internal/cli/screens/base"
+    "github.com/baphled/kariya/internal/domain/career"
+)
+
+type SkillFormScreen struct {
+    *base.FormScreen[*forms.SkillFormData]
+}
+
+func NewSkillFormScreen(skill *career.Skill) *SkillFormScreen {
+    var formData *forms.SkillFormData
+    if skill == nil {
+        formData = &forms.SkillFormData{}
+    } else {
+        formData = forms.GetSkillFormData(skill)
+    }
+
+    baseScreen := base.NewBaseFormScreen(
+        []string{"Main Menu", "Manage Skills", "Add Skill"},
+        forms.NewSkillFormWithDataAndDimensions, // FormBuilder[T]
+        formData,
+    )
+
+    return &SkillFormScreen{FormScreen: baseScreen}
+}
+```
+
+#### Using in an Intent
+
+```go
+// In intent handler
+func (i *MyIntent) handleAddSkill() tea.Cmd {
+    i.formScreen = skills.NewSkillFormScreen(nil)
+    i.formScreen.SetTerminalInfo(i.Width(), i.Height())
+    i.activeScreen = i.formScreen
+    i.state = StateForm
+    return nil
+}
+
+// In intent Update()
+cmd, result := i.formScreen.Update(msg)
+if result != nil {
+    switch r := result.(type) {
+    case *screens.SubmitResult:
+        data := r.FormData.(*forms.SkillFormData)
+        if data.SubmitConfirmed {
+            forms.ApplySkillFormData(skill, data)
+            // Save skill...
+        }
+    case *screens.CancelResult:
+        // Return to previous screen
+    }
+}
+```
+
+#### Key Benefits Over Legacy Wrappers
+
+| Aspect | `base.FormScreen[T]` | `models/` wrapper |
+|--------|----------------------|-------------------|
+| Window resize | Automatic (rebuilds form) | Manual in each wrapper |
+| Communication | `screens.ScreenResult` | Custom message types |
+| huh import | Not needed (uses `forms.Form` alias) | Imports huh directly |
+| Boilerplate | ~20 lines per form screen | ~100-200 lines per wrapper |
+| StandardView | Built-in (breadcrumbs, footer) | Manual |
+
+---
+
+### Form Alignment and the Wrapper Pattern (Legacy)
+
+> **LEGACY**: This section documents the `models/` wrapper pattern which is still in active use
+> but deprecated. For new forms, use [`base.FormScreen[T]`](#formscreen-pattern-target) instead.
+> Existing wrappers (`CaptureForm`, `SkillForm` in `models/`) will be migrated to `base.FormScreen[T]`.
 
 **CRITICAL**: Forms in intents must use wrapper models to ensure proper alignment and responsive sizing. Direct use of `*huh.Form` in intents causes alignment issues.
 
@@ -2049,7 +2163,10 @@ modal.SetTestResult(&ModalEditResult[*career.Burst]{
   - `EditBurstModal` (161 lines)
   - `EditFactModal` (161 lines)
 
-- **Model Integration**: [`internal/cli/models/`](../internal/cli/models/)
+- **Screen Integration (Target)**: [`internal/cli/screens/base/form_screen.go`](../internal/cli/screens/base/form_screen.go)
+  - [`skill_form.go`](../internal/cli/screens/skills/skill_form.go) - Canonical example
+
+- **Model Integration (Legacy)**: [`internal/cli/models/`](../internal/cli/models/) *(DEPRECATED - will be migrated)*
   - [`capture_form.go`](../internal/cli/models/capture_form.go) (165 lines) - Career event capture wrapper
   - [`skill_form.go`](../internal/cli/models/skill_form.go) (123 lines) - Skill management wrapper
   - [`burst_suggestion_new.go`](../internal/cli/models/burst_suggestion_new.go) (544 lines)
@@ -2082,7 +2199,7 @@ modal.SetTestResult(&ModalEditResult[*career.Burst]{
 
 1. **Use `forms.NewForm()`** to create forms with Catppuccin theme
 2. **Use pre-built validators** from `forms` package
-3. **Embed `*huh.Form`** in your BubbleTea models
+3. **Use `base.FormScreen[T]`** for screen-level forms (or `forms.Form` alias in modals)
 4. **Check state** with `forms.IsCompleted()` and `forms.IsAborted()`
 5. **Extract values** with `forms.GetString()`, `forms.GetBool()`, etc.
 6. **Use dynamic features** (`WithHideFunc`, `OptionsFunc`) for conditional UI

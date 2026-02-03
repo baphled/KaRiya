@@ -35,7 +35,7 @@
 - ❌ Form has 1-2 simple fields
 - ❌ No validators needed
 
-### Modal vs Model Form Integration?
+### Modal vs Screen Form Integration?
 
 **Use Modal Integration when:**
 - ✅ Inline editing within a larger intent (e.g., metadata edit in capture flow)
@@ -43,11 +43,15 @@
 - ✅ Small, focused form (2-6 fields)
 - ✅ Need overlay presentation
 
-**Use Model Integration when:**
+**Use Screen Integration (`base.FormScreen[T]`) when:** *(Recommended for new code)*
 - ✅ Full-screen form experience
 - ✅ Multi-step form flow
 - ✅ Strategy-aware fields (quick vs manual)
 - ✅ Direct repository persistence
+
+**Use Model Integration (`models/` wrapper) when:** *(Legacy - existing code only)*
+- ✅ Maintaining existing `models/` wrappers
+- ✅ Will be migrated to `base.FormScreen[T]` in future
 
 ### Form Builder Variants?
 
@@ -543,7 +547,99 @@ var _ = Describe("EditYourModal", func() {
 
 ---
 
-## Adding a Form to a Model
+## Adding a Form to a Screen (Recommended)
+
+**Time**: 15-20 minutes  
+**Prerequisites**: Form configuration exists in `internal/cli/forms/`  
+**Location**: `internal/cli/screens/{feature}/form_screen.go`
+
+### When to Use This Pattern
+
+Use `base.FormScreen[T]` for all new screen-level forms:
+- ✅ Full-screen form experience
+- ✅ Automatic window resize handling
+- ✅ StandardView integration (breadcrumbs, footer)
+- ✅ Returns `screens.ScreenResult` for clean intent communication
+
+### Step 1: Create Form Screen
+
+```go
+// File: internal/cli/screens/{feature}/{feature}_form.go
+package {feature}
+
+import (
+    "github.com/baphled/kariya/internal/cli/forms"
+    "github.com/baphled/kariya/internal/cli/screens/base"
+    "github.com/baphled/kariya/internal/domain/career"
+)
+
+// {Feature}FormScreen provides a form for adding or editing {feature}s.
+type {Feature}FormScreen struct {
+    *base.FormScreen[*forms.{Feature}FormData]
+}
+
+// New{Feature}FormScreen creates a new form screen.
+func New{Feature}FormScreen(obj *career.{Feature}) *{Feature}FormScreen {
+    var formData *forms.{Feature}FormData
+    if obj == nil {
+        formData = &forms.{Feature}FormData{}
+    } else {
+        formData = forms.Get{Feature}FormData(obj)
+    }
+
+    breadcrumbs := []string{"Main Menu", "Manage {Feature}", "Add {Feature}"}
+    baseScreen := base.NewBaseFormScreen(
+        breadcrumbs,
+        forms.New{Feature}FormWithDataAndDimensions, // FormBuilder[T]
+        formData,
+    )
+
+    return &{Feature}FormScreen{FormScreen: baseScreen}
+}
+```
+
+### Step 2: Use in Intent
+
+```go
+// In intent handler
+func (i *MyIntent) handleAdd() tea.Cmd {
+    i.formScreen = {feature}.New{Feature}FormScreen(nil)
+    i.formScreen.SetTerminalInfo(i.Width(), i.Height())
+    i.activeScreen = i.formScreen
+    i.state = StateForm
+    return nil
+}
+
+// In intent Update()
+cmd, result := i.formScreen.Update(msg)
+if result != nil {
+    switch r := result.(type) {
+    case *screens.SubmitResult:
+        data := r.FormData.(*forms.{Feature}FormData)
+        if data.SubmitConfirmed {
+            // Apply and save
+        }
+    case *screens.CancelResult:
+        // Return to previous screen
+    }
+}
+```
+
+**Checklist**:
+- [ ] Screen type embeds `*base.FormScreen[*forms.XxxFormData]`
+- [ ] Constructor calls `base.NewBaseFormScreen()` with FormBuilder
+- [ ] FormBuilder function is `forms.NewXxxFormWithDataAndDimensions`
+- [ ] Intent handles `*screens.SubmitResult` and `*screens.CancelResult`
+- [ ] `SubmitConfirmed` checked in intent before applying data
+- [ ] `SetTerminalInfo()` called after creation
+
+---
+
+## Adding a Form to a Model (Legacy)
+
+> **LEGACY**: This pattern uses the deprecated `models/` package. For new forms, use
+> [Adding a Form to a Screen](#adding-a-form-to-a-screen-recommended) with `base.FormScreen[T]`.
+> Existing `models/` wrappers will be migrated in future work.
 
 **Time**: 30-45 minutes  
 **Prerequisites**: Form configuration exists  
@@ -1139,6 +1235,18 @@ var _ = Describe("Empty Field Handling", func() {
 - [ ] **Tests** written (creation, extraction, application, roundtrip)
 - [ ] **Documented** in FORMS_GUIDE.md
 
+### Screen Integration Checklist (Recommended)
+
+- [ ] **Screen type** embeds `*base.FormScreen[*forms.XxxFormData]`
+- [ ] **Constructor** calls `base.NewBaseFormScreen(breadcrumbs, builder, formData)`
+- [ ] **FormBuilder** uses existing `forms.NewXxxFormWithDataAndDimensions`
+- [ ] **Breadcrumbs** set correctly for navigation context
+- [ ] **Intent** handles `*screens.SubmitResult` and `*screens.CancelResult`
+- [ ] **SubmitConfirmed** checked in intent before applying data
+- [ ] **SetTerminalInfo()** called after screen creation
+- [ ] **No huh import** -- only imports `forms/` and `screens/base`
+- [ ] **Tests** written for screen creation and data flow
+
 ### Modal Integration Checklist
 
 - [ ] **Original** field preserved (never mutated)
@@ -1153,7 +1261,7 @@ var _ = Describe("Empty Field Handling", func() {
 - [ ] **Interface methods** implemented (GetTitle, GetContent, GetFooter)
 - [ ] **Tests** written (cancel, confirm, overlay)
 
-### Model Integration Checklist
+### Model Integration Checklist (Legacy)
 
 - [ ] **Form** embedded in model
 - [ ] **FormData** embedded in model
