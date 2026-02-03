@@ -299,6 +299,10 @@ func GetSharedEnv(t TestingT) *TestEnv {
 	// Repositories and services are stateless, so we reuse them
 	model := app.NewModel(sharedEnv.CLIService, sharedEnv.Service, bootstrapResult)
 
+	// Set terminal dimensions so modals and overlays render correctly.
+	// Without this, viewport calculations use 0x0, causing empty views.
+	model.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+
 	// Update only what changes per-test
 	sharedEnv.T = t
 	sharedEnv.Model = model
@@ -1538,30 +1542,99 @@ func (e *TestEnv) PressEnterWithFormProcessing() *TestEnv {
 	return e
 }
 
+// SendMessageWithFormProcessing sends a message and processes all resulting
+// internal form messages (including huh init, focus, and group transitions).
+//
+// Expected:
+//   - msg must be valid.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
+func (e *TestEnv) SendMessageWithFormProcessing(msg tea.Msg) *TestEnv {
+	e.T.Helper()
+
+	modelInterface, cmd := e.Model.Update(msg)
+	model, ok := modelInterface.(*app.Model)
+	if ok {
+		e.Model = model
+	}
+	e.processFormCmds(cmd, 10)
+
+	return e
+}
+
+// PressKeyRuneWithFormProcessing sends a rune key and processes all resulting
+// internal form messages. Use this when a key press opens or initializes a
+// huh form (e.g., pressing 'e' to open the metadata editor).
+//
+// Expected:
+//   - r must be valid.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
+func (e *TestEnv) PressKeyRuneWithFormProcessing(r rune) *TestEnv {
+	e.T.Helper()
+
+	return e.SendMessageWithFormProcessing(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{r}})
+}
+
+// TabWithFormProcessing sends a Tab key and processes all resulting internal
+// form messages. Use this when navigating between fields in a huh form.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
+func (e *TestEnv) TabWithFormProcessing() *TestEnv {
+	e.T.Helper()
+
+	return e.SendMessageWithFormProcessing(tea.KeyMsg{Type: tea.KeyTab})
+}
+
 // processFormCmds processes commands from form interactions.
 // Unlike executeCmd, this processes ALL messages (including huh internals)
-// but has a depth limit to prevent infinite loops.
+// but has a depth limit to prevent infinite loops. Commands that take longer
+// than 600ms (cursor blink ticks) are skipped to avoid blocking.
 func (e *TestEnv) processFormCmds(cmd tea.Cmd, maxDepth int) {
 	if cmd == nil || maxDepth <= 0 {
 		return
 	}
 
-	msg := cmd()
+	type result struct {
+		msg tea.Msg
+	}
+	done := make(chan result, 1)
+	go func() {
+		done <- result{msg: cmd()}
+	}()
+
+	var msg tea.Msg
+	select {
+	case r := <-done:
+		msg = r.msg
+	case <-time.After(600 * time.Millisecond):
+		return
+	}
+
 	if msg == nil {
 		return
 	}
 
-	switch m := msg.(type) {
+	switch typedMsg := msg.(type) {
 	case tea.BatchMsg:
-		// BatchMsg contains multiple commands - process each one
-		for _, batchCmd := range m {
+		for _, batchCmd := range typedMsg {
 			e.processFormCmds(batchCmd, maxDepth-1)
 		}
 	case nil:
 		return
 	default:
-		// Process the message and any follow-up commands
-		// This includes internal huh messages like nextGroupMsg
 		modelInterface, nextCmd := e.Model.Update(msg)
 		model, ok := modelInterface.(*app.Model)
 		if !ok {

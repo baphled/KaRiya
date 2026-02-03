@@ -208,4 +208,17 @@ var _ = Describe("MetadataEditorModelNew", func() {
 			Expect(event.Date.Format("2006-01-02")).To(Equal("2024-02-20"))
 		})
 	})
+
+	Describe("Form Field Visibility", func() {
+		It("should show all form fields including Skills when rendered", func() {
+			view := model.View()
+
+			Expect(view).To(ContainSubstring("Date"))
+			Expect(view).To(ContainSubstring("Company"))
+			Expect(view).To(ContainSubstring("Project"))
+			Expect(view).To(ContainSubstring("Tags"))
+			Expect(view).To(ContainSubstring("Categories"))
+			Expect(view).To(ContainSubstring("Skills"))
+		})
+	})
 })

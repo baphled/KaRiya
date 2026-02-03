@@ -218,18 +218,25 @@ func DefaultFormHeight(terminalHeight int) int {
 }
 
 // ModalFormHeight calculates the form height for forms displayed inside an
+// overlay modal. The returned height is passed to huh's Group.WithHeight to
+// enable viewport scrolling within the fields group.
+//
+// The calculation accounts for all chrome consumed by the overlay rendering
+// pipeline: logo area (DefaultLogoHeight + 1 gap + 2 bottom margin = 12),
+// modal border (2), modal padding (2), title with margin (2), and the
+// footer separator line plus badge row (2). Total overhead = 20.
 //
 // Expected:
-//   - int must be valid.
+//   - terminalHeight must be a positive integer representing terminal rows.
 //
 // Returns:
-//   - A int value.
+//   - The maximum form height that fits within the overlay without truncation.
 //
 // Side effects:
 //   - None.
 func ModalFormHeight(terminalHeight int) int {
-	const modalOverhead = 21
-	const minHeight = 12
+	const modalOverhead = 20
+	const minHeight = 5
 
 	height := terminalHeight - modalOverhead
 	if height < minHeight {

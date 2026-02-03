@@ -232,15 +232,14 @@ var _ = Describe("MetadataForm", func() {
 
 	Describe("Modal form dimensions", func() {
 		It("should calculate ModalFormHeight with proper overhead", func() {
-			// A 40-line terminal should give reasonable modal form height.
 			height := forms.ModalFormHeight(40)
-			Expect(height).To(BeNumerically(">=", 12))
-			Expect(height).To(Equal(40 - 21))
+			Expect(height).To(BeNumerically(">=", 5))
+			Expect(height).To(Equal(40 - 20))
 		})
 
 		It("should enforce minimum ModalFormHeight for small terminals", func() {
 			height := forms.ModalFormHeight(20)
-			Expect(height).To(BeNumerically(">=", 12))
+			Expect(height).To(BeNumerically(">=", 5))
 		})
 
 		It("should calculate ModalFormWidth from modal width", func() {

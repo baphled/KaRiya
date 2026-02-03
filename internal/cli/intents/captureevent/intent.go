@@ -58,7 +58,7 @@ func (i *Intent) Init() tea.Cmd {
 
 	termInfo := i.GetTerminalInfo()
 	width, height := 120, 40
-	if termInfo != nil {
+	if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
 		width = termInfo.Width
 		height = termInfo.Height
 	}
@@ -117,7 +117,7 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 
 			termInfo := i.GetTerminalInfo()
 			width, height := 120, 40
-			if termInfo != nil {
+			if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
 				width = termInfo.Width
 				height = termInfo.Height
 			}
@@ -133,7 +133,7 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
 			if msg.Type == tea.KeyEsc && i.submitModal.Type != feedback.ModalLoading {
-				i.submitModal = nil
+				return func() tea.Msg { return DismissModalMsg{} }
 			}
 			return nil
 		case feedback.ModalSpinnerTickMsg:
@@ -199,7 +199,7 @@ func (i *Intent) View() string {
 	if i.submitModal != nil {
 		termInfo := i.GetTerminalInfo()
 		width, height := 80, 24
-		if termInfo != nil {
+		if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
 			width = termInfo.Width
 			height = termInfo.Height
 		}

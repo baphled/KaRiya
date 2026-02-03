@@ -191,7 +191,7 @@ func (i *Intent) transitionToStrategyScreen() tea.Cmd {
 
 	termInfo := i.GetTerminalInfo()
 	width, height := 120, 40
-	if termInfo != nil {
+	if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
 		width = termInfo.Width
 		height = termInfo.Height
 	}
@@ -227,7 +227,7 @@ func (i *Intent) transitionToFormScreen(strategy CaptureStrategy) tea.Cmd {
 
 	termInfo := i.GetTerminalInfo()
 	width, height := 120, 40
-	if termInfo != nil {
+	if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
 		width = termInfo.Width
 		height = termInfo.Height
 	}
@@ -357,8 +357,8 @@ func (i *Intent) renderModalOverlay(background string, modalContent *modalConten
 
 	info := i.GetTerminalInfo()
 	width := 80
-	height := 24
-	if info != nil {
+	height := 40
+	if info != nil && info.Width > 0 && info.Height > 0 {
 		width = info.Width
 		height = info.Height
 	}
