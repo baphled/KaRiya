@@ -3,6 +3,7 @@ package layout
 import (
 	"strings"
 
+	"github.com/charmbracelet/bubbles/viewport"
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/baphled/kariya/internal/cli/terminal"
@@ -374,56 +375,56 @@ func (sl *ScreenLayout) GetAvailableContentHeight() int {
 //   - None.
 func (sl *ScreenLayout) Render() string {
 	theme := sl.getTheme()
-	var contentParts []string
 
 	// === HEADER SECTION (pinned to top) ===
 	// Use shared helper to ensure consistent layout with GetAvailableContentHeight
 	headerParts := sl.buildHeaderParts(theme)
 
-	// === CONTENT SECTION (flows after header) ===
-	if sl.Content != "" {
-		contentToRender := sl.Content
-		// Check if custom style has been applied
-		hasStyle := sl.ContentStyle.GetBackground() != lipgloss.NoColor{} || sl.ContentStyle.GetForeground() != lipgloss.NoColor{}
-		if hasStyle {
-			contentToRender = sl.ContentStyle.Render(sl.Content)
-		}
-		contentParts = append(contentParts, contentToRender)
-	}
-
 	// === FOOTER SECTION (pinned to bottom) ===
 	// Use shared helper to ensure consistent layout with GetAvailableContentHeight
 	footerParts := sl.buildFooterParts(theme)
 
-	// === ASSEMBLE WITH SPACER ===
-	// Build each section
+	// === ASSEMBLE WITH VIEWPORT ===
 	header := lipgloss.JoinVertical(lipgloss.Center, headerParts...)
-	content := lipgloss.JoinVertical(lipgloss.Center, contentParts...)
 	footer := lipgloss.JoinVertical(lipgloss.Center, footerParts...)
 
-	// Calculate heights
 	headerHeight := lipgloss.Height(header)
-	contentHeight := lipgloss.Height(content)
 	footerHeight := lipgloss.Height(footer)
 
-	// Calculate spacer to fill the gap
-	spacerHeight := sl.TerminalInfo.Height - headerHeight - contentHeight - footerHeight
-	if spacerHeight < 0 {
-		spacerHeight = 0 // Graceful: don't go negative
+	// Calculate the fixed content area height
+	contentAreaHeight := sl.TerminalInfo.Height - headerHeight - footerHeight
+	if contentAreaHeight < 1 {
+		contentAreaHeight = 1
 	}
 
-	// Combine all sections with spacer lines added individually
+	// Prepare the raw content string
+	contentToRender := sl.Content
+	if contentToRender != "" {
+		hasStyle := sl.ContentStyle.GetBackground() != lipgloss.NoColor{} || sl.ContentStyle.GetForeground() != lipgloss.NoColor{}
+		if hasStyle {
+			contentToRender = sl.ContentStyle.Render(sl.Content)
+		}
+	}
+
+	// Center the content within the available area, then constrain it
+	// via a viewport. The viewport is created fresh each render (no
+	// persistent scroll state) so content always starts at the top on
+	// each screen transition.
+	centeredContent := lipgloss.Place(
+		sl.TerminalInfo.Width, contentAreaHeight,
+		lipgloss.Center, lipgloss.Center,
+		contentToRender,
+	)
+	vp := viewport.New(sl.TerminalInfo.Width, contentAreaHeight)
+	vp.SetContent(centeredContent)
+	contentView := vp.View()
+
+	// Combine all sections
 	var allParts []string
 	if header != "" {
 		allParts = append(allParts, header)
 	}
-	if content != "" {
-		allParts = append(allParts, content)
-	}
-	// Add spacer lines individually (not as a joined string)
-	for range spacerHeight {
-		allParts = append(allParts, "")
-	}
+	allParts = append(allParts, contentView)
 	if footer != "" {
 		allParts = append(allParts, footer)
 	}
