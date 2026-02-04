@@ -142,51 +142,72 @@ Added a countdown tick mechanism similar to the existing spinner pattern for loa
 
 ### Implementation Code
 
+**Note:** The code examples below show the actual implementation in the codebase.
+
 **Modal Init:**
 ```go
 func (m *Modal) Init() tea.Cmd {
-    if m.modalType == ModalTypeSuccess && m.autoDismissSeconds > 0 {
-        return tea.Every(1*time.Second, func(t time.Time) tea.Msg {
-            return ModalCountdownTickMsg{}
-        })
+    if m.Type == ModalSuccess && m.AutoDismiss > 0 {
+        m.countdownRemaining = int(m.AutoDismiss.Seconds())
+        return m.tickCountdown()
     }
     return nil
+}
+
+func (m *Modal) tickCountdown() tea.Cmd {
+    return tea.Tick(1*time.Second, func(t time.Time) tea.Msg {
+        return ModalCountdownTickMsg{}
+    })
 }
 ```
 
 **Modal Update:**
 ```go
-func (m *Modal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-    switch msg := msg.(type) {
+func (m *Modal) Update(msg tea.Msg) tea.Cmd {
+    switch msg.(type) {
     case ModalCountdownTickMsg:
-        m.autoDismissSeconds--
-        if m.autoDismissSeconds <= 0 {
-            return m, func() tea.Msg {
-                return ModalAutoDismissMsg{}
+        if m.Type == ModalSuccess && m.countdownRemaining > 0 {
+            m.countdownRemaining--
+            if m.countdownRemaining <= 0 {
+                return func() tea.Msg {
+                    return ModalAutoDismissMsg{}
+                }
             }
+            return m.tickCountdown()
         }
-        return m, tea.Every(1*time.Second, func(t time.Time) tea.Msg {
-            return ModalCountdownTickMsg{}
-        })
     }
-    return m, nil
+    return nil
 }
 ```
 
-**Intent Wiring:**
+**Modal Render:**
+```go
+func (m *Modal) Render(terminalWidth, terminalHeight int) string {
+    // ... content building ...
+    
+    if m.AutoDismiss > 0 && m.countdownRemaining > 0 {
+        contentParts = append(contentParts, "")
+        contentParts = append(contentParts, 
+            fmt.Sprintf("Auto-dismiss in %ds", m.countdownRemaining))
+    }
+    
+    // ... rest of rendering ...
+}
+```
+
+**Intent Wiring (CaptureEvent):**
 ```go
 func (i *Intent) Update(msg tea.Msg) tea.Cmd {
-    switch msg := msg.(type) {
+    switch msg.(type) {
     case feedback.ModalCountdownTickMsg:
-        if i.submitModal != nil {
-            _, cmd := i.submitModal.Update(msg)
-            return cmd
+        if i.submitModal != nil && i.submitModal.Type == feedback.ModalSuccess {
+            return i.submitModal.Update(msg)
         }
+        return nil
         
     case feedback.ModalAutoDismissMsg:
         i.submitModal = nil
-        // Transition to next state
-        return i.transitionToReview()
+        return i.transitionToEnrichmentReview()
     }
     return nil
 }

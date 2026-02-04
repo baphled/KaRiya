@@ -983,7 +983,9 @@ func (e *TestEnv) SubmitEvent(event *career.Event) *TestEnv {
 //   - A fully initialized TestEnv ready for use.
 //
 // Side effects:
-//   - None.
+//   - Sends a captureevent.DismissModalMsg through the test environment.
+//   - Advances the Bubble Tea update loop and updates e.Model to the
+//     post-dismissal state of the success modal.
 func (e *TestEnv) DismissSuccessModal() *TestEnv {
 	e.T.Helper()
 
