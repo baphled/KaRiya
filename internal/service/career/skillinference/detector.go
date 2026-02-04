@@ -34,7 +34,7 @@ type EventRepository interface {
 type DefaultSkillInferenceService struct {
 	skillRepo  SkillRepository
 	eventRepo  EventRepository
-	keywordMap map[string]technology.TechnologyKeyword
+	keywordMap map[string]technology.Entry
 }
 
 // NewSkillInferenceService creates a new skill inference service.

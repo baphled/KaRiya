@@ -572,7 +572,7 @@ func (e *TestEnv) SelectIntent(index int) *TestEnv {
 	e.T.Helper()
 
 	// Navigate to the menu item
-	for i := 0; i < index; i++ {
+	for range index {
 		e.PressKeyRune('j')
 	}
 
@@ -627,7 +627,11 @@ func (e *TestEnv) PressKey(key tea.KeyType) *TestEnv {
 	e.T.Helper()
 
 	modelInterface, cmd := e.Model.Update(tea.KeyMsg{Type: key})
-	e.Model = modelInterface.(*app.Model)
+	model, ok := modelInterface.(*app.Model)
+	if !ok {
+		e.T.Fatal("model type assertion failed: expected *app.Model")
+	}
+	e.Model = model
 
 	// Execute any returned command
 	e.executeCmd(cmd)
@@ -649,7 +653,11 @@ func (e *TestEnv) PressKeyRune(r rune) *TestEnv {
 	e.T.Helper()
 
 	modelInterface, cmd := e.Model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{r}})
-	e.Model = modelInterface.(*app.Model)
+	model, ok := modelInterface.(*app.Model)
+	if !ok {
+		e.T.Fatal("model type assertion failed: expected *app.Model")
+	}
+	e.Model = model
 
 	// Execute any returned command
 	e.executeCmd(cmd)
@@ -851,19 +859,30 @@ func (e *TestEnv) processCmdResult(msg tea.Msg) {
 	case models.SubmitMsg:
 		// Form submission - essential for form → review state transition
 		modelInterface, nextCmd := e.Model.Update(msg)
-		e.Model = modelInterface.(*app.Model)
+		model, ok := modelInterface.(*app.Model)
+		if !ok {
+			e.T.Fatal("model type assertion failed: expected *app.Model")
+		}
+		e.Model = model
 		// Recursively execute any returned command
 		e.executeCmd(nextCmd)
 
 	case captureevent.SubmitCompleteMsg, captureevent.SubmitErrorMsg:
 		// Submit completion - essential for submit → complete state transition
 		modelInterface, nextCmd := e.Model.Update(msg)
-		e.Model = modelInterface.(*app.Model)
+		model, ok := modelInterface.(*app.Model)
+		if !ok {
+			e.T.Fatal("model type assertion failed: expected *app.Model")
+		}
+		e.Model = model
 		// For SubmitCompleteMsg, immediately send DismissModalMsg to skip the 2s timer
 		if _, ok := msg.(captureevent.SubmitCompleteMsg); ok {
-			// Skip the tea.Tick timer by directly sending DismissModalMsg
-			modelInterface, nextCmd = e.Model.Update(captureevent.DismissModalMsg{})
-			e.Model = modelInterface.(*app.Model)
+			modelInterface, _ := e.Model.Update(captureevent.DismissModalMsg{})
+			model, ok := modelInterface.(*app.Model)
+			if !ok {
+				e.T.Fatal("model type assertion failed: expected *app.Model")
+			}
+			e.Model = model
 		}
 		// Recursively execute any returned command
 		e.executeCmd(nextCmd)
@@ -871,14 +890,22 @@ func (e *TestEnv) processCmdResult(msg tea.Msg) {
 	case captureevent.DismissModalMsg:
 		// Modal dismissal - essential for success modal → enrichment review transition
 		modelInterface, nextCmd := e.Model.Update(msg)
-		e.Model = modelInterface.(*app.Model)
+		model, ok := modelInterface.(*app.Model)
+		if !ok {
+			e.T.Fatal("model type assertion failed: expected *app.Model")
+		}
+		e.Model = model
 		// Recursively execute any returned command
 		e.executeCmd(nextCmd)
 
 	case intents.ConfigCompleteMsg:
 		// Configuration save completion - essential for saving → complete state transition
 		modelInterface, nextCmd := e.Model.Update(msg)
-		e.Model = modelInterface.(*app.Model)
+		model, ok := modelInterface.(*app.Model)
+		if !ok {
+			e.T.Fatal("model type assertion failed: expected *app.Model")
+		}
+		e.Model = model
 		// Recursively execute any returned command
 		e.executeCmd(nextCmd)
 	default:
@@ -901,7 +928,11 @@ func (e *TestEnv) SendMessage(msg tea.Msg) *TestEnv {
 	e.T.Helper()
 
 	modelInterface, cmd := e.Model.Update(msg)
-	e.Model = modelInterface.(*app.Model)
+	model, ok := modelInterface.(*app.Model)
+	if !ok {
+		e.T.Fatal("model type assertion failed: expected *app.Model")
+	}
+	e.Model = model
 	e.executeCmd(cmd)
 
 	return e
@@ -1459,7 +1490,11 @@ func (e *TestEnv) PressEnterWithFormProcessing() *TestEnv {
 
 	// Send Enter key
 	modelInterface, cmd := e.Model.Update(tea.KeyMsg{Type: tea.KeyEnter})
-	e.Model = modelInterface.(*app.Model)
+	model, ok := modelInterface.(*app.Model)
+	if !ok {
+		e.T.Fatal("model type assertion failed: expected *app.Model")
+	}
+	e.Model = model
 
 	// Process all resulting messages (including internal form messages)
 	// This allows huh's group transitions to complete
@@ -1493,7 +1528,11 @@ func (e *TestEnv) processFormCmds(cmd tea.Cmd, maxDepth int) {
 		// Process the message and any follow-up commands
 		// This includes internal huh messages like nextGroupMsg
 		modelInterface, nextCmd := e.Model.Update(msg)
-		e.Model = modelInterface.(*app.Model)
+		model, ok := modelInterface.(*app.Model)
+		if !ok {
+			e.T.Fatal("model type assertion failed: expected *app.Model")
+		}
+		e.Model = model
 		e.processFormCmds(nextCmd, maxDepth-1)
 	}
 }
