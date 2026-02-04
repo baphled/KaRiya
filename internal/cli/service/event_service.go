@@ -335,3 +335,56 @@ func (c *CLIEventService) GetSkillsForEvent(ctx context.Context, eventID string)
 	}
 	return skillRepo.GetSkillsForEvent(ctx, eventID)
 }
+
+// LinkSkillToEvent creates an association between an event and a skill.
+//
+// Expected:
+//   - ctx must be a valid context.Context.
+//   - eventid must be a valid string.
+//   - skillid must be a valid string.
+//
+// Returns:
+//   - An error value if linking failed.
+//
+// Side effects:
+//   - Creates a link in the database between the event and skill.
+func (c *CLIEventService) LinkSkillToEvent(ctx context.Context, eventID string, skillID string) error {
+	eventRepo := c.service.GetEventRepository()
+	return eventRepo.LinkSkill(ctx, eventID, skillID)
+}
+
+// UnlinkSkillFromEvent removes an association between an event and a skill.
+//
+// Expected:
+//   - ctx must be a valid context.Context.
+//   - eventid must be a valid string.
+//   - skillid must be a valid string.
+//
+// Returns:
+//   - An error value if unlinking failed.
+//
+// Side effects:
+//   - Removes the link in the database between the event and skill.
+func (c *CLIEventService) UnlinkSkillFromEvent(ctx context.Context, eventID string, skillID string) error {
+	eventRepo := c.service.GetEventRepository()
+	return eventRepo.UnlinkSkill(ctx, eventID, skillID)
+}
+
+// ListAllSkills retrieves all skills without any filters.
+//
+// Expected:
+//   - ctx must be a valid context.Context.
+//
+// Returns:
+//   - A []*career.Skill value containing all skills.
+//   - An error value if retrieval failed.
+//
+// Side effects:
+//   - None.
+func (c *CLIEventService) ListAllSkills(ctx context.Context) ([]*career.Skill, error) {
+	skillRepo := c.service.GetSkillRepository()
+	if skillRepo == nil {
+		return []*career.Skill{}, nil
+	}
+	return skillRepo.List(ctx, nil)
+}
