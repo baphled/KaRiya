@@ -255,6 +255,51 @@ func (r *EventRepository) LinkSkill(_ context.Context, eventID string, skillID s
 	return nil
 }
 
+// UnlinkSkill removes an association between an event and a skill.
+//
+// Expected:
+//   - Must be a valid string.
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
+func (r *EventRepository) UnlinkSkill(_ context.Context, eventID string, skillID string) error {
+	r.mu.Lock()
+
+	event, exists := r.events[eventID]
+	if !exists {
+		r.mu.Unlock()
+		return career_repo.ErrEventNotFound
+	}
+
+	newSkills := make([]string, 0, len(event.Skills))
+	found := false
+	for _, existingSkillID := range event.Skills {
+		if existingSkillID == skillID {
+			found = true
+			continue
+		}
+		newSkills = append(newSkills, existingSkillID)
+	}
+
+	if found {
+		event.Skills = newSkills
+		event.UpdatedAt = time.Now()
+	}
+
+	skillRepo := r.skillRepo
+	r.mu.Unlock()
+
+	if skillRepo != nil && found {
+		skillRepo.DisassociateSkillFromEvent(skillID, eventID)
+	}
+
+	return nil
+}
+
 // containsAnyTag checks if any tags match.
 func containsAnyTag(eventTags, filterTags []string) bool {
 	tagSet := make(map[string]bool)

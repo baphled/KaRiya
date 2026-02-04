@@ -404,4 +404,69 @@ var _ = Describe("EventRepository", func() {
 			Expect(skills).To(HaveLen(1))
 		})
 	})
+
+	Describe("UnlinkSkill", func() {
+		It("should unlink a skill from an event", func() {
+			event := fixtures.EventWith("event-1", "Test event", "", "")
+			event.Skills = []string{"skill-1", "skill-2"}
+			err := repo.Create(ctx, event)
+			Expect(err).ToNot(HaveOccurred())
+
+			err = repo.UnlinkSkill(ctx, "event-1", "skill-1")
+			Expect(err).ToNot(HaveOccurred())
+
+			retrieved, err := repo.GetByID(ctx, "event-1")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(retrieved.Skills).ToNot(ContainElement("skill-1"))
+			Expect(retrieved.Skills).To(ContainElement("skill-2"))
+		})
+
+		It("should return error if event does not exist", func() {
+			err := repo.UnlinkSkill(ctx, "nonexistent", "skill-1")
+			Expect(err).To(Equal(career_repo.ErrEventNotFound))
+		})
+
+		It("should handle unlinking non-linked skill gracefully", func() {
+			event := fixtures.EventWith("event-1", "Test event", "", "")
+			event.Skills = []string{"skill-2"}
+			err := repo.Create(ctx, event)
+			Expect(err).ToNot(HaveOccurred())
+
+			err = repo.UnlinkSkill(ctx, "event-1", "skill-1")
+			Expect(err).ToNot(HaveOccurred())
+
+			retrieved, err := repo.GetByID(ctx, "event-1")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(retrieved.Skills).To(HaveLen(1))
+			Expect(retrieved.Skills).To(ContainElement("skill-2"))
+		})
+
+		It("should sync with SkillRepository when skill repo is set", func() {
+			skillRepo := NewSkillRepository()
+			repo.SetSkillRepository(skillRepo)
+
+			skill := fixtures.SkillWith("skill-1", "Go", "backend", "expert")
+			err := skillRepo.Create(ctx, skill)
+			Expect(err).ToNot(HaveOccurred())
+
+			event := fixtures.EventWith("event-1", "Test event", "", "")
+			event.Skills = []string{"skill-1"}
+			err = repo.Create(ctx, event)
+			Expect(err).ToNot(HaveOccurred())
+
+			err = repo.LinkSkill(ctx, "event-1", "skill-1")
+			Expect(err).ToNot(HaveOccurred())
+
+			err = repo.UnlinkSkill(ctx, "event-1", "skill-1")
+			Expect(err).ToNot(HaveOccurred())
+
+			retrieved, err := repo.GetByID(ctx, "event-1")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(retrieved.Skills).To(BeEmpty())
+
+			events, err := skillRepo.GetEventsUsingSkill(ctx, "skill-1")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(events).To(BeEmpty())
+		})
+	})
 })

@@ -304,6 +304,42 @@ func (r *EventRepository) LinkSkill(ctx context.Context, eventID string, skillID
 	return err
 }
 
+// UnlinkSkill removes an association between an event and a skill.
+//
+// Expected:
+//   - Must be a valid string.
+//   - Must be a valid string.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
+func (r *EventRepository) UnlinkSkill(ctx context.Context, eventID string, skillID string) error {
+	var exists bool
+	err := r.db.WithContext(ctx).
+		Table("career_events").
+		Select("1").
+		Where("id = ?", eventID).
+		Limit(1).
+		Scan(&exists).Error
+
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		return career_repo.ErrEventNotFound
+	}
+
+	err = r.db.WithContext(ctx).Exec(
+		"DELETE FROM event_skills WHERE event_id = ? AND skill_id = ?",
+		eventID, skillID,
+	).Error
+
+	return err
+}
+
 // loadSkillIDsForEvents batch loads skill IDs for multiple events in a single query.
 func (r *EventRepository) loadSkillIDsForEvents(ctx context.Context, eventIDs []string) (map[string][]string, error) {
 	if len(eventIDs) == 0 {

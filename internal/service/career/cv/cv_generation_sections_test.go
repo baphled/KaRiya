@@ -118,6 +118,10 @@ func (r *TestEventRepository) LinkSkill(_ context.Context, _ string, _ string) e
 	return nil
 }
 
+func (r *TestEventRepository) UnlinkSkill(_ context.Context, _ string, _ string) error {
+	return nil
+}
+
 // TestFactRepository provides test facts.
 type TestFactRepository struct {
 	facts []*career.Fact
