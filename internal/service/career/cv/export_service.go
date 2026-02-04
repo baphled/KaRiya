@@ -1,3 +1,5 @@
+//go:generate mockgen -destination=../../../testutil/mocks/service/clipboard_writer_mock.go -package=mocksvc github.com/baphled/kariya/internal/service/career/cv ClipboardWriter
+
 package cv
 
 import (

@@ -146,6 +146,11 @@ echo "6. INLINE COMMENTS CHECK (NEW FILES ONLY)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 for file in $NEW_FILES; do
+    # Skip doc.go files - they are entirely package documentation comments by design
+    if [[ "$file" =~ doc\.go$ ]]; then
+        continue
+    fi
+
     # Check for end-of-line comments (code before //)
     EOL_COMMENTS=$(grep -nE '^[[:space:]]*[^/].*[[:space:]]+//' "$file" 2>/dev/null | grep -v '_test.go' | grep -v '//go:' || true)
     if [ -n "$EOL_COMMENTS" ]; then

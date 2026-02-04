@@ -1,3 +1,6 @@
+//go:generate mockgen -destination=../../../testutil/mocks/intent/burst_service_mock.go -package=mockintent github.com/baphled/kariya/internal/cli/intents/burst_management BurstService
+//go:generate mockgen -destination=../../../testutil/mocks/intent/burst_skill_inference_service_mock.go -package=mockintent -mock_names=SkillInferenceService=MockBurstSkillInferenceService github.com/baphled/kariya/internal/cli/intents/burst_management SkillInferenceService
+
 // Package burst_management implements the BurstManagement intent for managing career bursts.
 package burst_management
 

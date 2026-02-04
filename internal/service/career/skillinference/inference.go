@@ -1,3 +1,5 @@
+//go:generate mockgen -destination=../../../testutil/mocks/service/skill_inference_service_mock.go -package=mocksvc github.com/baphled/kariya/internal/service/career/skillinference SkillInferenceService
+
 // Package skillinference provides skill inference service for automatic
 // technology detection from event text.
 package skillinference
