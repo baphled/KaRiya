@@ -128,19 +128,20 @@ func (r *LoadingMessageRotator) Rotate() string {
 // Modal represents the content and configuration of a modal
 // This is the UIKit version that uses theme-based styling exclusively.
 type Modal struct {
-	Type           ModalType
-	Title          string
-	Message        string
-	Progress       float64
-	Actions        []string
-	FadeInDuration time.Duration
-	AutoDismiss    time.Duration
-	Bell           bool
-	Cancellable    bool
-	fadeStartTime  time.Time
-	spinner        *SimpleSpinner
-	messageRotator *LoadingMessageRotator
-	theme          themes.Theme
+	Type               ModalType
+	Title              string
+	Message            string
+	Progress           float64
+	Actions            []string
+	FadeInDuration     time.Duration
+	AutoDismiss        time.Duration
+	Bell               bool
+	Cancellable        bool
+	fadeStartTime      time.Time
+	countdownRemaining int
+	spinner            *SimpleSpinner
+	messageRotator     *LoadingMessageRotator
+	theme              themes.Theme
 }
 
 // getTheme returns the theme or default if nil.
@@ -232,14 +233,16 @@ func NewProgressModal(title, message string, progress float64) *Modal {
 // Side effects:
 //   - None.
 func NewSuccessModal(message string) *Modal {
+	autoDismiss := 3 * time.Second
 	return &Modal{
-		Type:           ModalSuccess,
-		Title:          "Success",
-		Message:        message,
-		FadeInDuration: 150 * time.Millisecond,
-		AutoDismiss:    3 * time.Second,
-		fadeStartTime:  time.Now(),
-		theme:          themes.NewDefaultTheme(),
+		Type:               ModalSuccess,
+		Title:              "Success",
+		Message:            message,
+		FadeInDuration:     150 * time.Millisecond,
+		AutoDismiss:        autoDismiss,
+		fadeStartTime:      time.Now(),
+		countdownRemaining: int(autoDismiss.Seconds()),
+		theme:              themes.NewDefaultTheme(),
 	}
 }
 
@@ -388,13 +391,9 @@ func (m *Modal) Render(terminalWidth, terminalHeight int) string {
 		}
 	}
 
-	if m.AutoDismiss > 0 {
+	if m.AutoDismiss > 0 && m.countdownRemaining > 0 {
 		contentParts = append(contentParts, "")
-		elapsed := time.Since(m.fadeStartTime)
-		remaining := m.AutoDismiss - elapsed
-		if remaining > 0 {
-			contentParts = append(contentParts, fmt.Sprintf("Auto-dismiss in %.0fs", remaining.Seconds()))
-		}
+		contentParts = append(contentParts, fmt.Sprintf("Auto-dismiss in %ds", m.countdownRemaining))
 	}
 
 	// Join content.
@@ -576,6 +575,7 @@ func (m *Modal) Init() tea.Cmd {
 		return m.tickSpinner()
 	}
 	if m.Type == ModalSuccess && m.AutoDismiss > 0 {
+		m.countdownRemaining = int(m.AutoDismiss.Seconds())
 		return m.tickCountdown()
 	}
 	return nil
@@ -603,10 +603,9 @@ func (m *Modal) Update(msg tea.Msg) tea.Cmd {
 			return m.tickSpinner()
 		}
 	case ModalCountdownTickMsg:
-		if m.Type == ModalSuccess && m.AutoDismiss > 0 {
-			elapsed := time.Since(m.fadeStartTime)
-			remaining := m.AutoDismiss - elapsed
-			if remaining <= 0 {
+		if m.Type == ModalSuccess && m.countdownRemaining > 0 {
+			m.countdownRemaining--
+			if m.countdownRemaining <= 0 {
 				return func() tea.Msg {
 					return ModalAutoDismissMsg{}
 				}

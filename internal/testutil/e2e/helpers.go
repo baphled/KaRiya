@@ -974,7 +974,10 @@ func (e *TestEnv) SubmitEvent(event *career.Event) *TestEnv {
 	return e.SendMessage(models.SubmitMsg{Event: event, Err: nil})
 }
 
-// DismissSuccessModal dismisses the success modal after event submission.
+// DismissSuccessModal bypasses the auto-dismiss countdown and immediately
+// dismisses the success modal. Use this to speed up tests that don't need
+// to verify countdown behavior. To test the actual countdown, send
+// ModalCountdownTickMsg messages explicitly instead.
 //
 // Returns:
 //   - A fully initialized TestEnv ready for use.

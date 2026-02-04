@@ -339,7 +339,6 @@ func (c *ConfigureSystemIntent) updateResultModal(msg tea.Msg) tea.Cmd {
 			c.active = false
 		}
 	case feedback.ModalCountdownTickMsg:
-		// Forward countdown tick to result modal
 		if c.resultModal != nil && c.resultModal.Type == feedback.ModalSuccess {
 			return c.resultModal.Update(msg)
 		}

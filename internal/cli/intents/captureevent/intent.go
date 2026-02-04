@@ -142,7 +142,7 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 			}
 			return nil
 		case feedback.ModalCountdownTickMsg:
-			if i.submitModal.Type == feedback.ModalSuccess {
+			if i.submitModal != nil && i.submitModal.Type == feedback.ModalSuccess {
 				return i.submitModal.Update(msg)
 			}
 			return nil
