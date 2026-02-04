@@ -4,6 +4,7 @@ import (
 	"sort"
 
 	"github.com/baphled/kariya/internal/constants"
+	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/charmbracelet/huh"
 )
 
@@ -16,6 +17,15 @@ type CaptureEventFormData struct {
 	Tags            []string
 	Categories      []string
 	SubmitConfirmed bool
+}
+
+// ConfirmSubmit marks the form data as submitted.
+// Implements base.QuickSubmittable for Ctrl+S quick submit support.
+//
+// Side effects:
+//   - Sets SubmitConfirmed to true.
+func (d *CaptureEventFormData) ConfirmSubmit() {
+	d.SubmitConfirmed = true
 }
 
 // NewCaptureEventFormData creates a new CaptureEventFormData with default values.
@@ -50,12 +60,10 @@ func NewCaptureEventFormData() *CaptureEventFormData {
 // Side effects:
 //   - None.
 func NewCaptureEventForm(data *CaptureEventFormData, strategy string, width, height int) *huh.Form {
-	var fieldsGroup *huh.Group
+	var fields []huh.Field
 
 	if strategy == "quick" {
-		// Quick capture: essential fields (text, date only)
-		// Company and other metadata can be added later via Edit
-		fieldsGroup = huh.NewGroup(
+		fields = []huh.Field{
 			NewText(FieldConfig{
 				Key:         "text",
 				Title:       "Event Description",
@@ -72,10 +80,8 @@ func NewCaptureEventForm(data *CaptureEventFormData, strategy string, width, hei
 				Placeholder: "Defaults to today",
 				Validate:    DateFormat,
 			}).Value(&data.Date),
-		)
+		}
 	} else {
-		// Manual capture: all fields
-		// Prepare options for tags and categories from constants
 		allTags := constants.AllEventTags()
 		tagList := make([]string, 0, len(allTags))
 		for _, tag := range allTags {
@@ -100,7 +106,7 @@ func NewCaptureEventForm(data *CaptureEventFormData, strategy string, width, hei
 			categoryOptions = append(categoryOptions, huh.NewOption(cat, cat))
 		}
 
-		fieldsGroup = huh.NewGroup(
+		fields = []huh.Field{
 			NewText(FieldConfig{
 				Key:         "text",
 				Title:       "Event Description",
@@ -151,11 +157,10 @@ func NewCaptureEventForm(data *CaptureEventFormData, strategy string, width, hei
 				Options(categoryOptions...).
 				Value(&data.Categories).
 				Limit(6),
-		)
+		}
 	}
 
-	// Create form with fixed confirm button at bottom
-	return NewFormWithFixedConfirm(fieldsGroup, &data.SubmitConfirmed, width, height)
+	return newScrollableForm(fields, &data.SubmitConfirmed, width, height)
 }
 
 // NewCaptureEventFormForModal creates a huh-based form for modal overlays (WITHOUT confirm button).
@@ -289,4 +294,34 @@ func NewCaptureEventFormForModal(data *CaptureEventFormData, strategy string, wi
 		WithWidth(width).
 		WithHeight(height).
 		WithTheme(Theme())
+}
+
+// GetCaptureEventFormData extracts form data from an existing event.
+//
+// Expected:
+//   - event must not be nil.
+//
+// Returns:
+//   - A fully initialized CaptureEventFormData ready for use.
+//
+// Side effects:
+//   - None.
+func GetCaptureEventFormData(event *career.Event) *CaptureEventFormData {
+	tags := event.Tags
+	if tags == nil {
+		tags = []string{}
+	}
+	categories := event.Categories
+	if categories == nil {
+		categories = []string{}
+	}
+
+	return &CaptureEventFormData{
+		Text:       event.Text,
+		Date:       event.Date.Format("2006-01-02"),
+		Company:    event.Company,
+		Project:    event.Project,
+		Tags:       tags,
+		Categories: categories,
+	}
 }

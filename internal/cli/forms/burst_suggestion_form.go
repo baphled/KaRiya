@@ -13,52 +13,18 @@ type BurstSuggestionFormData struct {
 	Description string
 }
 
-// NewBurstSuggestionEditForm creates a form for editing a burst suggestion's name and description.
+// NewBurstSuggestionForm creates a burst suggestion edit form bound to the given data.
 //
 // Expected:
-//   - burstsuggestion must be valid.
+//   - data must be a valid BurstSuggestionFormData pointer.
 //
 // Returns:
 //   - A fully initialized huh.Form ready for use.
 //
 // Side effects:
 //   - None.
-func NewBurstSuggestionEditForm(suggestion burstfact.BurstSuggestion) *huh.Form {
-	data := GetBurstSuggestionFormData(suggestion)
-
-	return NewForm(
-		huh.NewGroup(
-			NewInput(FieldConfig{
-				Key:         "name",
-				Title:       "Burst Name",
-				Description: "Name for this burst (optional, will be auto-generated if empty)",
-				Placeholder: "Enter burst name...",
-				CharLimit:   100,
-			}).Value(&data.Name),
-
-			NewInput(FieldConfig{
-				Key:         "description",
-				Title:       "Burst Description",
-				Description: "Description for this burst (optional)",
-				Placeholder: "Enter burst description...",
-				CharLimit:   500,
-			}).Value(&data.Description),
-		),
-	)
-}
-
-// NewBurstSuggestionEditFormWithData creates a form with pre-populated data.
-//
-// Expected:
-//   - burstsuggestionformdata must be valid.
-//
-// Returns:
-//   - A fully initialized huh.Form ready for use.
-//
-// Side effects:
-//   - None.
-func NewBurstSuggestionEditFormWithData(data *BurstSuggestionFormData) *huh.Form {
-	return NewForm(
+func NewBurstSuggestionForm(data *BurstSuggestionFormData) *huh.Form {
+	return newForm(
 		huh.NewGroup(
 			NewInput(FieldConfig{
 				Key:         "name",

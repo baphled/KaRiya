@@ -112,7 +112,7 @@ func NewMetadataEditorModelNew(
 	formWidth := forms.ModalFormWidth(modalWidth)
 	formHeight := forms.ModalFormHeight(termHeight)
 
-	form := forms.NewMetadataEditorFormWithDataAndDimensions(
+	form := forms.NewMetadataForm(
 		formData, forms.MetadataFormConfig{
 			AvailableTags:       availableTags,
 			AvailableCategories: availableCategories,

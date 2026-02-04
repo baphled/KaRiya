@@ -3,8 +3,10 @@ package captureevent
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/baphled/kariya/internal/cli/behaviors"
+	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/screens"
@@ -165,7 +167,16 @@ func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
 
 	switch i.currentState {
 	case StateForm:
-		if event, ok := data.(*career.Event); ok {
+		if formData, ok := data.(*forms.CaptureEventFormData); ok {
+			if !formData.SubmitConfirmed {
+				return nil
+			}
+
+			event, err := eventFromFormData(formData)
+			if err != nil {
+				return i.setFailedCmd("FORM_CONVERSION_ERROR", fmt.Sprintf("Failed to convert form data: %v", err), err)
+			}
+
 			if err := event.Validate(); err != nil {
 				return i.setFailedCmd("VALIDATION_ERROR", fmt.Sprintf("Event validation failed: %v", err), err)
 			}
@@ -340,4 +351,42 @@ func (i *Intent) updateEditingModal(msg tea.Msg) tea.Cmd {
 	}
 
 	return nil
+}
+
+// eventFromFormData converts CaptureEventFormData to a career.Event.
+//
+// Expected:
+//   - data must not be nil.
+//
+// Returns:
+//   - A fully initialized career.Event ready for use.
+//   - An error if date parsing fails.
+//
+// Side effects:
+//   - None.
+func eventFromFormData(data *forms.CaptureEventFormData) (*career.Event, error) {
+	var eventDate time.Time
+	var err error
+
+	if data.Date == "" {
+		eventDate = time.Now()
+	} else {
+		eventDate, err = forms.ParseDateString(data.Date)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	event := &career.Event{
+		Text:       data.Text,
+		Date:       eventDate,
+		Company:    data.Company,
+		Project:    data.Project,
+		Tags:       data.Tags,
+		Categories: data.Categories,
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
+	}
+
+	return event, nil
 }

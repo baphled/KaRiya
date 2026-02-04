@@ -52,7 +52,7 @@ func NewFactEditorModelNew(fact *career.Fact, service *careerservice.Service, ct
 	formData := forms.GetFactFormData(fact)
 
 	// Create huh form
-	form := forms.NewFactEditorFormWithData(formData)
+	form := forms.NewFactForm(formData, 0, 0)
 
 	return &FactEditorModelNew{
 		BaseStandardModel: NewBaseStandardModel(),

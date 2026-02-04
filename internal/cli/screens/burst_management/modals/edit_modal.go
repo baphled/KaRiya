@@ -4,8 +4,10 @@ import (
 	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/containers"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // EditBurstModal provides a way to edit an existing burst.
@@ -72,17 +74,10 @@ func (m *EditBurstModal) buildForm() {
 		modalWidth = 50
 	}
 
-	// Use natural height - overlay will handle positioning.
-	formHeight := 0
-	if m.height > 0 {
-		formHeight = m.height - 10 // Reserve space for modal chrome
-		if formHeight < 15 {
-			formHeight = 15
-		}
-	}
+	formWidth := forms.ModalFormWidth(modalWidth)
+	formHeight := forms.ModalFormHeight(m.height)
 
-	// Use the forms package burst editor form with dimensions.
-	m.form = forms.NewBurstEditorFormWithDataAndDimensions(m.formData, modalWidth, formHeight)
+	m.form = forms.NewBurstForm(m.formData, formWidth, formHeight)
 }
 
 // Init initializes the modal and its form.
@@ -126,11 +121,19 @@ func (m *EditBurstModal) Update(msg tea.Msg) (tea.Cmd, bool, *EditBurstData) {
 		return m.form.Init(), false, nil
 
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc":
-			// Close modal without saving.
+		switch msg.Type {
+		case tea.KeyEsc:
 			m.visible = false
 			return nil, false, nil
+
+		case tea.KeyCtrlS:
+			m.visible = false
+			m.formData.SubmitConfirmed = true
+			burstData := &EditBurstData{
+				Name:        m.formData.Name,
+				Description: m.formData.Description,
+			}
+			return nil, true, burstData
 		}
 	}
 
@@ -168,17 +171,25 @@ func (m *EditBurstModal) View() string {
 		return ""
 	}
 
-	// Get theme or use default.
 	theme := themes.NewDefaultTheme()
 
-	formView := m.form.View()
+	helpFooter := primitives.RenderHelpFooter(theme,
+		primitives.NextFieldBadge(theme),
+		primitives.HelpKeyBadge("Ctrl+S", "Submit", theme),
+		primitives.CancelBadge(theme),
+	)
 
-	// Wrap in Box with solid background for overlay.
+	content := lipgloss.JoinVertical(lipgloss.Left,
+		m.form.View(),
+		"",
+		helpFooter,
+	)
+
 	return containers.NewBox(theme).
 		Title("Edit Burst").
-		Content(formView).
+		Content(content).
 		BorderColor(theme.PrimaryColor()).
-		Background(theme.BackgroundColor()). // REQUIRED for modal overlays
+		Background(theme.BackgroundColor()).
 		Render()
 }
 

@@ -6,9 +6,11 @@ import (
 	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/containers"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // EditModal provides a way to edit an existing career event.
@@ -70,9 +72,8 @@ func NewEditModal(event *career.Event, width, height int) *EditModal {
 	return modal
 }
 
-// buildForm creates the huh form with confirm button.
+// buildForm creates the huh form with confirm button using LayoutStack.
 func (m *EditModal) buildForm() {
-	// Calculate form width.
 	modalWidth := m.width - 10
 	if modalWidth > 90 {
 		modalWidth = 90
@@ -81,11 +82,10 @@ func (m *EditModal) buildForm() {
 		modalWidth = 50
 	}
 
-	// Let Huh use natural height.
-	formHeight := 0
+	formWidth := forms.ModalFormWidth(modalWidth)
+	formHeight := forms.ModalFormHeight(m.height)
 
-	// Use standard form with confirm button (Submit/Cancel).
-	m.form = forms.NewCaptureEventForm(m.formData, "manual", modalWidth, formHeight)
+	m.form = forms.NewCaptureEventForm(m.formData, "manual", formWidth, formHeight)
 }
 
 // Init initializes the modal and its form.
@@ -129,11 +129,23 @@ func (m *EditModal) Update(msg tea.Msg) (tea.Cmd, bool, *EditData) {
 		return m.form.Init(), false, nil
 
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc":
-			// Close modal without saving.
+		switch msg.Type {
+		case tea.KeyEsc:
 			m.visible = false
 			return nil, false, nil
+
+		case tea.KeyCtrlS:
+			m.visible = false
+			m.formData.SubmitConfirmed = true
+			eventData := &EditData{
+				Text:       m.formData.Text,
+				Date:       m.formData.Date,
+				Company:    m.formData.Company,
+				Project:    m.formData.Project,
+				Tags:       m.formData.Tags,
+				Categories: m.formData.Categories,
+			}
+			return nil, true, eventData
 		}
 	}
 
@@ -177,10 +189,22 @@ func (m *EditModal) View() string {
 		return ""
 	}
 
-	// Wrap the form in a styled box with solid background using UIKit.
 	theme := themes.NewDefaultTheme()
+
+	helpFooter := primitives.RenderHelpFooter(theme,
+		primitives.NextFieldBadge(theme),
+		primitives.HelpKeyBadge("Ctrl+S", "Submit", theme),
+		primitives.CancelBadge(theme),
+	)
+
+	content := lipgloss.JoinVertical(lipgloss.Left,
+		m.form.View(),
+		"",
+		helpFooter,
+	)
+
 	return containers.NewBox(theme).
-		Content(m.form.View()).
+		Content(content).
 		Padding(2).
 		Background(theme.BackgroundColor()).
 		Render()

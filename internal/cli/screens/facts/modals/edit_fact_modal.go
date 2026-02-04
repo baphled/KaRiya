@@ -58,7 +58,7 @@ func NewEditFactModal(fact *career.Fact) *EditFactModal {
 	defaultWidth := 80
 	defaultHeight := 24
 
-	form := forms.NewFactEditorFormWithDataAndDimensions(
+	form := forms.NewFactForm(
 		formData,
 		defaultWidth-4,
 		forms.DefaultFormHeight(defaultHeight),

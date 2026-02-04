@@ -6,9 +6,11 @@ import (
 	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/containers"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // QuickAddModal provides a quick way to add a new career event.
@@ -60,9 +62,8 @@ func NewQuickAddModal(width, height int) *QuickAddModal {
 	return modal
 }
 
-// buildForm creates the huh form with confirm button.
+// buildForm creates the huh form with confirm button using LayoutStack.
 func (m *QuickAddModal) buildForm() {
-	// Calculate form width.
 	modalWidth := m.width - 10
 	if modalWidth > 80 {
 		modalWidth = 80
@@ -71,11 +72,10 @@ func (m *QuickAddModal) buildForm() {
 		modalWidth = 40
 	}
 
-	// Let Huh use natural height - bubbletea-overlay will handle positioning.
-	formHeight := 0
+	formWidth := forms.ModalFormWidth(modalWidth)
+	formHeight := forms.ModalFormHeight(m.height)
 
-	// Use standard form with confirm button (Submit/Cancel).
-	m.form = forms.NewCaptureEventForm(m.formData, "quick", modalWidth, formHeight)
+	m.form = forms.NewCaptureEventForm(m.formData, "quick", formWidth, formHeight)
 }
 
 // Init initializes the modal and its form.
@@ -119,11 +119,19 @@ func (m *QuickAddModal) Update(msg tea.Msg) (tea.Cmd, bool, *QuickAddData) {
 		return m.form.Init(), false, nil
 
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc":
-			// Close modal without saving.
+		switch msg.Type {
+		case tea.KeyEsc:
 			m.visible = false
 			return nil, false, nil
+
+		case tea.KeyCtrlS:
+			m.visible = false
+			m.formData.SubmitConfirmed = true
+			eventData := &QuickAddData{
+				Text: m.formData.Text,
+				Date: m.formData.Date,
+			}
+			return nil, true, eventData
 		}
 	}
 
@@ -163,10 +171,22 @@ func (m *QuickAddModal) View() string {
 		return ""
 	}
 
-	// Wrap the form in a styled box with solid background using UIKit.
 	theme := themes.NewDefaultTheme()
+
+	helpFooter := primitives.RenderHelpFooter(theme,
+		primitives.NextFieldBadge(theme),
+		primitives.HelpKeyBadge("Ctrl+S", "Submit", theme),
+		primitives.CancelBadge(theme),
+	)
+
+	content := lipgloss.JoinVertical(lipgloss.Left,
+		m.form.View(),
+		"",
+		helpFooter,
+	)
+
 	return containers.NewBox(theme).
-		Content(m.form.View()).
+		Content(content).
 		Padding(2).
 		Background(theme.BackgroundColor()).
 		Render()

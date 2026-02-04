@@ -20,105 +20,22 @@ type SkillFormData struct {
 	SubmitConfirmed bool
 }
 
-// NewSkillForm creates a form for adding or editing a skill.
+// NewSkillForm creates a skill add/edit form bound to the given data.
 //
 // Expected:
-//   - skill must be valid.
+//   - data must be a valid SkillFormData pointer.
+//   - width and height control form dimensions (0 means unconstrained).
 //
 // Returns:
 //   - A fully initialized huh.Form ready for use.
 //
 // Side effects:
 //   - None.
-func NewSkillForm(skill *career.Skill) *huh.Form {
-	data := &SkillFormData{}
-	if skill != nil {
-		data = GetSkillFormData(skill)
-	}
-
-	return NewForm(
-		huh.NewGroup(
-			NewInput(FieldConfig{
-				Key:         "name",
-				Title:       "Skill Name",
-				Description: "Name of the skill or technology (required)",
-				Placeholder: "e.g., Ruby, Kubernetes, React",
-				CharLimit:   100,
-				Validate:    SkillName,
-			}).Value(&data.Name),
-
-			NewSelect("category", "Category", "Skill category or domain", buildCategoryOptions()).
-				Value(&data.Category),
-
-			NewSelect("level", "Proficiency Level", "Your proficiency level (optional)", buildLevelOptions()).
-				Value(&data.Level),
-
-			NewInput(FieldConfig{
-				Key:         "years",
-				Title:       "Years of Experience",
-				Description: "Number of years using this skill (optional, 0-50)",
-				Placeholder: "e.g., 3",
-				CharLimit:   2,
-				Validate:    SkillYearsUsed,
-			}).Value(&data.YearsUsed),
-
-			huh.NewConfirm().
-				Key("submit").
-				Title("Save Changes").
-				Description("Submit the form to save your changes").
-				Affirmative("Submit").
-				Negative("Cancel").
-				Value(&data.SubmitConfirmed),
-		),
-	)
-}
-
-// NewSkillFormWithData creates a form for editing a skill with initial form data.
-//
-// Expected:
-//   - skillformdata must be valid.
-//
-// Returns:
-//   - A fully initialized huh.Form ready for use.
-//
-// Side effects:
-//   - None.
-func NewSkillFormWithData(data *SkillFormData) *huh.Form {
-	return NewSkillFormWithDataAndHeight(data, 0)
-}
-
-// NewSkillFormWithDataAndHeight creates a form for editing a skill with initial form data and height.
-//
-// Expected:
-//   - skillformdata must be valid.
-//   - int must be valid.
-//
-// Returns:
-//   - A fully initialized huh.Form ready for use.
-//
-// Side effects:
-//   - None.
-func NewSkillFormWithDataAndHeight(data *SkillFormData, height int) *huh.Form {
-	return NewSkillFormWithDataAndDimensions(data, 0, height)
-}
-
-// NewSkillFormWithDataAndDimensions creates a form for editing a skill with initial form data and dimensions.
-//
-// Expected:
-//   - skillformdata must be valid.
-//   - int must be valid.
-//
-// Returns:
-//   - A fully initialized huh.Form ready for use.
-//
-// Side effects:
-//   - None.
-func NewSkillFormWithDataAndDimensions(data *SkillFormData, width, height int) *huh.Form {
+func NewSkillForm(data *SkillFormData, width, height int) *huh.Form {
 	// Initialize submit confirmation to false
 	data.SubmitConfirmed = false
 
-	// Create fields group (scrollable)
-	fieldsGroup := huh.NewGroup(
+	fields := []huh.Field{
 		NewInput(FieldConfig{
 			Key:         "name",
 			Title:       "Skill Name",
@@ -142,9 +59,9 @@ func NewSkillFormWithDataAndDimensions(data *SkillFormData, width, height int) *
 			CharLimit:   2,
 			Validate:    SkillYearsUsed,
 		}).Value(&data.YearsUsed),
-	)
+	}
 
-	return NewFormWithFixedConfirm(fieldsGroup, &data.SubmitConfirmed, width, height)
+	return newScrollableForm(fields, &data.SubmitConfirmed, width, height)
 }
 
 // buildCategoryOptions builds the category select options from centralized constants.

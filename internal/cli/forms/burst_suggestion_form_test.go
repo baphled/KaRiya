@@ -19,9 +19,10 @@ var _ = Describe("BurstSuggestionForm", func() {
 		}
 	})
 
-	Describe("NewBurstSuggestionEditForm", func() {
+	Describe("NewBurstSuggestionForm", func() {
 		It("should create a form with name and description fields", func() {
-			form := forms.NewBurstSuggestionEditForm(suggestion)
+			data := forms.GetBurstSuggestionFormData(suggestion)
+			form := forms.NewBurstSuggestionForm(data)
 			Expect(form).NotTo(BeNil())
 		})
 
@@ -30,15 +31,13 @@ var _ = Describe("BurstSuggestionForm", func() {
 			Expect(formData.Name).To(Equal("Project Alpha Work"))
 			Expect(formData.Description).To(Equal("Work related to Project Alpha"))
 		})
-	})
 
-	Describe("NewBurstSuggestionEditFormWithData", func() {
 		It("should create a form with provided data", func() {
 			data := &forms.BurstSuggestionFormData{
 				Name:        "Custom Name",
 				Description: "Custom Description",
 			}
-			form := forms.NewBurstSuggestionEditFormWithData(data)
+			form := forms.NewBurstSuggestionForm(data)
 			Expect(form).NotTo(BeNil())
 		})
 	})

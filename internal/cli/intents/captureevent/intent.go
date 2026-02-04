@@ -2,8 +2,10 @@ package captureevent
 
 import (
 	"github.com/baphled/kariya/internal/cli/behaviors"
+	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/models"
+	"github.com/baphled/kariya/internal/cli/screens"
 	captureScreens "github.com/baphled/kariya/internal/cli/screens/capture"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/domain/career"
@@ -27,7 +29,6 @@ func NewIntent(ctx *IntentContext) (*Intent, error) {
 		return nil, err
 	}
 
-	formModel := models.NewCaptureForm(ctx.CLIEventService)
 	base := intents.NewBaseIntent()
 
 	return &Intent{
@@ -36,7 +37,6 @@ func NewIntent(ctx *IntentContext) (*Intent, error) {
 		eventService: ctx.CLIEventService,
 		active:       true,
 		currentState: StateChooseStrategy,
-		captureForm:  formModel,
 		reviewState: &ReviewInferredEventState{
 			AcceptedBursts: make([]*career.Burst, 0),
 			AcceptedFacts:  make([]*career.Fact, 0),
@@ -125,6 +125,14 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 			i.activeScreen.SetTerminalInfo(width, height)
 			i.activeScreen.SetTheme(i.Theme())
 			i.activeScreen.SetLogo(i.GetLogo(), i.GetLogoSpacing())
+		}
+		return nil
+
+	case models.SubmitMsg:
+		if i.currentState == StateForm && msg.Err == nil && msg.Event != nil {
+			formData := forms.GetCaptureEventFormData(msg.Event)
+			formData.SubmitConfirmed = true
+			return i.handleScreenResult(&screens.SubmitResult{FormData: formData})
 		}
 		return nil
 	}

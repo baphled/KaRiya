@@ -74,62 +74,18 @@ func AudienceRelevanceOptions() []huh.Option[string] {
 	return options
 }
 
-// NewFactEditorForm creates a form for editing a fact.
+// NewFactForm creates a fact edit form bound to the given data.
 //
 // Expected:
-//   - fact must be valid.
+//   - data must be a valid FactFormData pointer.
+//   - width and height control form dimensions (0 means unconstrained).
 //
 // Returns:
 //   - A fully initialized huh.Form ready for use.
 //
 // Side effects:
 //   - None.
-func NewFactEditorForm(fact *career.Fact) *huh.Form {
-	data := GetFactFormData(fact)
-	return NewFactEditorFormWithData(data)
-}
-
-// NewFactEditorFormWithData creates a form for editing a fact with initial form data.
-//
-// Expected:
-//   - factformdata must be valid.
-//
-// Returns:
-//   - A fully initialized huh.Form ready for use.
-//
-// Side effects:
-//   - None.
-func NewFactEditorFormWithData(data *FactFormData) *huh.Form {
-	return NewFactEditorFormWithDataAndHeight(data, 0)
-}
-
-// NewFactEditorFormWithDataAndHeight creates a form for editing a fact with initial form data and height.
-//
-// Expected:
-//   - factformdata must be valid.
-//   - int must be valid.
-//
-// Returns:
-//   - A fully initialized huh.Form ready for use.
-//
-// Side effects:
-//   - None.
-func NewFactEditorFormWithDataAndHeight(data *FactFormData, height int) *huh.Form {
-	return NewFactEditorFormWithDataAndDimensions(data, 0, height)
-}
-
-// NewFactEditorFormWithDataAndDimensions creates a form for editing a fact with initial form data and dimensions.
-//
-// Expected:
-//   - factformdata must be valid.
-//   - int must be valid.
-//
-// Returns:
-//   - A fully initialized huh.Form ready for use.
-//
-// Side effects:
-//   - None.
-func NewFactEditorFormWithDataAndDimensions(data *FactFormData, width, height int) *huh.Form {
+func NewFactForm(data *FactFormData, width, height int) *huh.Form {
 	// Initialize submit confirmation to false
 	data.SubmitConfirmed = false
 
@@ -140,8 +96,7 @@ func NewFactEditorFormWithDataAndDimensions(data *FactFormData, width, height in
 		huhRoleFitOpts[i] = huh.NewOption(opt.Value, opt.Key)
 	}
 
-	// Create fields group (scrollable)
-	fieldsGroup := huh.NewGroup(
+	fields := []huh.Field{
 		NewText(FieldConfig{
 			Key:         "text",
 			Title:       "Fact Text",
@@ -173,9 +128,9 @@ func NewFactEditorFormWithDataAndDimensions(data *FactFormData, width, height in
 			Options(AudienceRelevanceOptions()...).
 			Value(&data.AudienceRelevance).
 			Limit(3),
-	)
+	}
 
-	return NewFormWithFixedConfirm(fieldsGroup, &data.SubmitConfirmed, width, height)
+	return newScrollableForm(fields, &data.SubmitConfirmed, width, height)
 }
 
 // ApplyFactFormData applies the form data to a fact domain object.

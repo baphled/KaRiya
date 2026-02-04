@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/baphled/kariya/internal/cli/configtypes"
+	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/containers"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
@@ -108,15 +109,18 @@ func (m *EditSettingsModal) rebuildForm() {
 
 	group := huh.NewGroup(fields...)
 
-	// Modal form dimensions - leave room for box border
-	formWidth := m.width - 20
-	if formWidth < 40 {
-		formWidth = 40
+	modalWidth := m.width - 10
+	if modalWidth > 90 {
+		modalWidth = 90
 	}
-	formHeight := m.height - 15
-	if formHeight < 10 {
-		formHeight = 10
+	if modalWidth < 50 {
+		modalWidth = 50
 	}
+
+	formWidth := forms.ModalFormWidth(modalWidth)
+	formHeight := forms.ModalFormHeight(m.height)
+
+	group = group.WithHeight(formHeight)
 
 	huhTheme := themes.GenerateHuhTheme(m.theme)
 	m.form = huh.NewForm(group).

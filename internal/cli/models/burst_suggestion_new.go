@@ -195,7 +195,7 @@ func (m *BurstSuggestionModelNew) startEdit() (tea.Model, tea.Cmd) {
 	}
 
 	// Create huh form
-	m.editForm = forms.NewBurstSuggestionEditFormWithData(m.editFormData)
+	m.editForm = forms.NewBurstSuggestionForm(m.editFormData)
 
 	return m, m.editForm.Init()
 }

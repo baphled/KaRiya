@@ -6,6 +6,14 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+// QuickSubmittable is implemented by form data types that support Ctrl+S quick submit.
+// When Ctrl+S is pressed in FormScreen, the form data is checked for this interface.
+// If implemented, ConfirmSubmit is called to mark the data as submitted, and
+// a SubmitResult is returned immediately.
+type QuickSubmittable interface {
+	ConfirmSubmit()
+}
+
 // FormBuilder is a function type that creates a form for given dimensions.
 //
 // Parameters:
@@ -38,11 +46,11 @@ type FormBuilder[T any] func(data T, width, height int) forms.Form
 //	}
 //
 //	builder := func(data *MyFormData, width, height int) *huh.Form {
-//	    group := huh.NewGroup(
+//	    fields := []huh.Field{
 //	        huh.NewInput().Key("name").Title("Name").Value(&data.Name),
 //	        huh.NewInput().Key("email").Title("Email").Value(&data.Email),
-//	    )
-//	    return forms.NewFormWithFixedConfirm(group, &data.SubmitConfirmed, width, height)
+//	    }
+//	    return forms.NewSkillForm(data, width, height)
 //	}
 //
 //	formData := &MyFormData{}
@@ -111,6 +119,11 @@ func NewBaseFormScreen[T any](
 	return screen
 }
 
+// maxFormWidth is the maximum width for form content within a screen.
+// Capping the form width ensures ScreenLayout can center the content
+// horizontally, matching the alignment of other screens.
+const maxFormWidth = 80
+
 // rebuildForm creates a new form with current terminal dimensions.
 //
 // This is called:
@@ -123,8 +136,13 @@ func (s *FormScreen[T]) rebuildForm() {
 		return
 	}
 
-	// Use width-4 for form to account for padding in StandardView
+	// Cap form width so ScreenLayout can center the content.
+	// Without this cap the form stretches to nearly the full terminal
+	// width, leaving no room for horizontal centering.
 	formWidth := s.Width() - 4
+	if formWidth > maxFormWidth {
+		formWidth = maxFormWidth
+	}
 	if formWidth < 20 {
 		formWidth = 20
 	}
@@ -133,6 +151,10 @@ func (s *FormScreen[T]) rebuildForm() {
 	formHeight := forms.DefaultFormHeight(s.Height())
 
 	s.form = s.formBuilder(s.formData, formWidth, formHeight)
+
+	// Initialize the form so the viewport renders content immediately.
+	// Without this, forms using WithHeight (viewport scrolling) show blank content.
+	s.form.Init()
 }
 
 // SetTerminalInfo updates terminal dimensions and rebuilds form.
@@ -173,6 +195,14 @@ func (s *FormScreen[T]) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 			return nil, &screens.CancelResult{}
 		}
 
+		// Handle Ctrl+S - quick submit the form without navigating to the confirm field
+		if msg.Type == tea.KeyCtrlS {
+			if qs, ok := any(s.formData).(QuickSubmittable); ok {
+				qs.ConfirmSubmit()
+				return nil, &screens.SubmitResult{FormData: s.formData}
+			}
+		}
+
 		// Delegate other keys to form using forms package helper.
 		var cmd tea.Cmd
 		s.form, cmd = forms.Update(s.form, msg)
@@ -195,8 +225,15 @@ func (s *FormScreen[T]) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	}
 
 	// Delegate other messages to form using forms package helper.
+	// This handles internal huh messages like nextGroupMsg which complete the form.
 	var cmd tea.Cmd
 	s.form, cmd = forms.Update(s.form, msg)
+
+	if forms.IsCompleted(s.form) {
+		return cmd, &screens.SubmitResult{
+			FormData: s.formData,
+		}
+	}
 
 	return cmd, nil
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
+	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -219,11 +220,15 @@ func (i *Intent) transitionToFormScreen(strategy CaptureStrategy) tea.Cmd {
 	i.currentState = StateForm
 	i.strategy = strategy
 	breadcrumbs := []string{"Main Menu", "Capture Event", "Form"}
-	i.activeScreen = captureScreens.NewEventFormScreen(
-		i.eventService,
-		breadcrumbs,
-		strategy,
-	)
+
+	var event *career.Event
+	if i.context.PreviousEvent != nil {
+		event = i.context.PreviousEvent
+	}
+
+	formScreen := captureScreens.NewEventFormScreen(event, breadcrumbs, strategy)
+	i.captureFormScreen = formScreen
+	i.activeScreen = formScreen
 
 	termInfo := i.GetTerminalInfo()
 	width, height := 120, 40

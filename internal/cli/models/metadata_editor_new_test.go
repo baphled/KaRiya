@@ -43,6 +43,7 @@ var _ = Describe("MetadataEditorModelNew", func() {
 		event.Categories = []string{"development"}
 
 		model = models.NewMetadataEditorModelNew(event, service, cliService, ctx, nil)
+		model.Init()
 	})
 
 	Describe("NewMetadataEditorModelNew", func() {
@@ -210,15 +211,21 @@ var _ = Describe("MetadataEditorModelNew", func() {
 	})
 
 	Describe("Form Field Visibility", func() {
-		It("should show all form fields including Skills when rendered", func() {
+		It("should show initial form fields in the scrollable viewport", func() {
 			view := model.View()
 
 			Expect(view).To(ContainSubstring("Date"))
 			Expect(view).To(ContainSubstring("Company"))
 			Expect(view).To(ContainSubstring("Project"))
 			Expect(view).To(ContainSubstring("Tags"))
-			Expect(view).To(ContainSubstring("Categories"))
-			Expect(view).To(ContainSubstring("Skills"))
+		})
+
+		It("should have all metadata fields in the event", func() {
+			evt := model.GetEvent()
+			Expect(evt).NotTo(BeNil())
+			Expect(evt.Date).NotTo(BeZero())
+			Expect(evt.Tags).NotTo(BeNil())
+			Expect(evt.Categories).NotTo(BeNil())
 		})
 	})
 })

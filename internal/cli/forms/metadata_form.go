@@ -16,110 +16,8 @@ type MetadataFormData struct {
 	SubmitConfirmed bool
 }
 
-// NewMetadataEditorForm creates a form for editing event metadata.
-// The form has 6 fields: Date, Company, Project, Tags, Categories, Skills,
-// plus a Submit confirmation button.
-//
-// This form has no height constraint and renders all fields at once.
-// For modal overlays where space is limited, use NewMetadataEditorFormWithDimensions.
-//
-// Expected:
-//   - event must be a valid career.Event pointer.
-//   - availabletags must be a valid slice of strings.
-//   - availablecategories must be a valid slice of strings.
-//   - availableskills must be a valid slice of *career.Skill pointers.
-//
-// Returns:
-//   - A fully initialized huh.Form ready for use.
-//
-// Side effects:
-//   - None.
-func NewMetadataEditorForm(
-	event *career.Event, availableTags, availableCategories []string, availableSkills []*career.Skill,
-) *huh.Form {
-	data := GetMetadataFormData(event)
-	return buildMetadataForm(data, MetadataFormConfig{
-		AvailableTags: availableTags, AvailableCategories: availableCategories, AvailableSkills: availableSkills,
-	})
-}
-
-// NewMetadataEditorFormWithHeight creates a height-constrained metadata form.
-// When height > 0, the form fields scroll and the submit button stays fixed.
-//
-// Expected:
-//   - event must be a valid career.Event pointer.
-//   - availabletags must be a valid slice of strings.
-//   - availablecategories must be a valid slice of strings.
-//   - availableskills must be a valid slice of *career.Skill pointers.
-//   - height must be a positive integer.
-//
-// Returns:
-//   - A fully initialized huh.Form ready for use.
-//
-// Side effects:
-//   - None.
-func NewMetadataEditorFormWithHeight(
-	event *career.Event, availableTags, availableCategories []string, availableSkills []*career.Skill,
-	height int,
-) *huh.Form {
-	data := GetMetadataFormData(event)
-	return buildMetadataForm(data, MetadataFormConfig{
-		AvailableTags: availableTags, AvailableCategories: availableCategories, AvailableSkills: availableSkills,
-		Height: height,
-	})
-}
-
-// NewMetadataEditorFormWithData creates a form for editing event metadata with initial form data.
-//
-// This form has no height constraint and renders all fields at once.
-// For modal overlays, use NewMetadataEditorFormWithDataAndDimensions.
-//
-// Expected:
-//   - metadataformdata must be a valid MetadataFormData pointer.
-//   - availabletags must be a valid slice of strings.
-//   - availablecategories must be a valid slice of strings.
-//   - availableskills must be a valid slice of *career.Skill pointers.
-//
-// Returns:
-//   - A fully initialized huh.Form ready for use.
-//
-// Side effects:
-//   - None.
-func NewMetadataEditorFormWithData(
-	data *MetadataFormData, availableTags, availableCategories []string, availableSkills []*career.Skill,
-) *huh.Form {
-	return buildMetadataForm(data, MetadataFormConfig{
-		AvailableTags: availableTags, AvailableCategories: availableCategories, AvailableSkills: availableSkills,
-	})
-}
-
-// NewMetadataEditorFormWithDataAndHeight creates a height-constrained metadata form with initial data.
-// When height > 0, the form fields scroll and the submit button stays fixed.
-//
-// Expected:
-//   - metadataformdata must be a valid MetadataFormData pointer.
-//   - availabletags must be a valid slice of strings.
-//   - availablecategories must be a valid slice of strings.
-//   - availableskills must be a valid slice of *career.Skill pointers.
-//   - height must be a positive integer.
-//
-// Returns:
-//   - A fully initialized huh.Form ready for use.
-//
-// Side effects:
-//   - None.
-func NewMetadataEditorFormWithDataAndHeight(
-	data *MetadataFormData, availableTags, availableCategories []string, availableSkills []*career.Skill,
-	height int,
-) *huh.Form {
-	return buildMetadataForm(data, MetadataFormConfig{
-		AvailableTags: availableTags, AvailableCategories: availableCategories, AvailableSkills: availableSkills,
-		Height: height,
-	})
-}
-
 // MetadataFormConfig bundles the option lists and dimension constraints
-// shared by all metadata form constructors.
+// for the metadata form.
 type MetadataFormConfig struct {
 	AvailableTags       []string
 	AvailableCategories []string
@@ -128,24 +26,24 @@ type MetadataFormConfig struct {
 	Height              int
 }
 
-// NewMetadataEditorFormWithDataAndDimensions creates a dimension-constrained metadata form.
+// NewMetadataForm creates a metadata edit form bound to the given data and config.
 //
 // Expected:
-//   - metadataformdata must be valid.
-//   - config must be a valid configuration object.
+//   - data must be a valid MetadataFormData pointer.
+//   - cfg provides available options and dimension constraints.
 //
 // Returns:
 //   - A fully initialized huh.Form ready for use.
 //
 // Side effects:
 //   - None.
-func NewMetadataEditorFormWithDataAndDimensions(data *MetadataFormData, cfg MetadataFormConfig) *huh.Form {
+func NewMetadataForm(data *MetadataFormData, cfg MetadataFormConfig) *huh.Form {
 	return buildMetadataForm(data, cfg)
 }
 
 // buildMetadataForm constructs the metadata editor form fields and groups.
 //
-// When cfg.Height > 0, the form uses NewFormWithFixedConfirm so the submit
+// When cfg.Height > 0, the form uses newScrollableForm so the submit
 // button remains visible while the fields group scrolls independently.
 // When cfg.Height <= 0, all fields (including confirm) go in a single group.
 func buildMetadataForm(data *MetadataFormData, cfg MetadataFormConfig) *huh.Form {
@@ -154,8 +52,7 @@ func buildMetadataForm(data *MetadataFormData, cfg MetadataFormConfig) *huh.Form
 	fields := metadataFields(data, cfg.AvailableTags, cfg.AvailableCategories, cfg.AvailableSkills)
 
 	if cfg.Height > 0 {
-		fieldsGroup := huh.NewGroup(fields...)
-		return NewFormWithFixedConfirm(fieldsGroup, &data.SubmitConfirmed, cfg.Width, cfg.Height)
+		return newScrollableForm(fields, &data.SubmitConfirmed, cfg.Width, cfg.Height)
 	}
 
 	// No height constraint: put all fields including confirm in one group.
@@ -168,7 +65,7 @@ func buildMetadataForm(data *MetadataFormData, cfg MetadataFormConfig) *huh.Form
 		Value(&data.SubmitConfirmed)
 
 	allFields := append(fields, confirmField)
-	return NewForm(huh.NewGroup(allFields...))
+	return newForm(huh.NewGroup(allFields...))
 }
 
 // metadataFields builds the editable field list shared by both form layouts.

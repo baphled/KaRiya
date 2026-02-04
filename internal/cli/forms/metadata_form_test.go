@@ -22,13 +22,14 @@ var _ = Describe("MetadataForm", func() {
 		testEvent.Skills = []string{"skill-id-1", "skill-id-2"}
 	})
 
-	Describe("NewMetadataEditorForm", func() {
+	Describe("NewMetadataForm", func() {
 		It("should create a form with event data", func() {
-			availableTags := []string{"go", "python", "testing"}
-			availableCategories := []string{"technical", "leadership", "mentoring"}
-			availableSkills := []*career.Skill{}
-
-			form := forms.NewMetadataEditorForm(testEvent, availableTags, availableCategories, availableSkills)
+			data := forms.GetMetadataFormData(testEvent)
+			form := forms.NewMetadataForm(data, forms.MetadataFormConfig{
+				AvailableTags:       []string{"go", "python", "testing"},
+				AvailableCategories: []string{"technical", "leadership", "mentoring"},
+				AvailableSkills:     []*career.Skill{},
+			})
 
 			Expect(form).NotTo(BeNil())
 		})
@@ -139,7 +140,7 @@ var _ = Describe("MetadataForm", func() {
 		})
 	})
 
-	Describe("NewMetadataEditorFormWithData", func() {
+	Describe("NewMetadataForm with data", func() {
 		It("should create a form with initial data", func() {
 			data := &forms.MetadataFormData{
 				Date:       "2024-01-15",
@@ -149,30 +150,30 @@ var _ = Describe("MetadataForm", func() {
 				Categories: []string{"cat1"},
 			}
 
-			availableTags := []string{"tag1", "tag2"}
-			availableCategories := []string{"cat1", "cat2"}
-			availableSkills := []*career.Skill{}
-
-			form := forms.NewMetadataEditorFormWithData(data, availableTags, availableCategories, availableSkills)
+			form := forms.NewMetadataForm(data, forms.MetadataFormConfig{
+				AvailableTags:       []string{"tag1", "tag2"},
+				AvailableCategories: []string{"cat1", "cat2"},
+				AvailableSkills:     []*career.Skill{},
+			})
 
 			Expect(form).NotTo(BeNil())
 		})
 	})
 
-	Describe("Height-aware metadata forms", func() {
-		It("should create a height-constrained form via NewMetadataEditorFormWithHeight", func() {
-			availableTags := []string{"go", "python", "testing"}
-			availableCategories := []string{"technical", "leadership"}
-			availableSkills := []*career.Skill{}
-
-			form := forms.NewMetadataEditorFormWithHeight(
-				testEvent, availableTags, availableCategories, availableSkills, 20,
-			)
+	Describe("NewMetadataForm with dimensions", func() {
+		It("should create a height-constrained form", func() {
+			data := forms.GetMetadataFormData(testEvent)
+			form := forms.NewMetadataForm(data, forms.MetadataFormConfig{
+				AvailableTags:       []string{"go", "python", "testing"},
+				AvailableCategories: []string{"technical", "leadership"},
+				AvailableSkills:     []*career.Skill{},
+				Height:              20,
+			})
 
 			Expect(form).NotTo(BeNil())
 		})
 
-		It("should create a height-constrained form with data via NewMetadataEditorFormWithDataAndHeight", func() {
+		It("should create a height-constrained form with data", func() {
 			data := &forms.MetadataFormData{
 				Date:       "2024-01-15",
 				Company:    "Height Test Co",
@@ -181,18 +182,17 @@ var _ = Describe("MetadataForm", func() {
 				Categories: []string{"cat1"},
 			}
 
-			availableTags := []string{"tag1", "tag2", "tag3"}
-			availableCategories := []string{"cat1", "cat2"}
-			availableSkills := []*career.Skill{}
-
-			form := forms.NewMetadataEditorFormWithDataAndHeight(
-				data, availableTags, availableCategories, availableSkills, 20,
-			)
+			form := forms.NewMetadataForm(data, forms.MetadataFormConfig{
+				AvailableTags:       []string{"tag1", "tag2", "tag3"},
+				AvailableCategories: []string{"cat1", "cat2"},
+				AvailableSkills:     []*career.Skill{},
+				Height:              20,
+			})
 
 			Expect(form).NotTo(BeNil())
 		})
 
-		It("should create a dimension-constrained form with fixed confirm", func() {
+		It("should create a dimension-constrained form", func() {
 			data := &forms.MetadataFormData{
 				Date:       "2024-01-15",
 				Company:    "Dimension Co",
@@ -201,19 +201,13 @@ var _ = Describe("MetadataForm", func() {
 				Categories: []string{"cat1"},
 			}
 
-			availableTags := []string{"tag1", "tag2", "tag3"}
-			availableCategories := []string{"cat1", "cat2"}
-			availableSkills := []*career.Skill{}
-
-			form := forms.NewMetadataEditorFormWithDataAndDimensions(
-				data, forms.MetadataFormConfig{
-					AvailableTags:       availableTags,
-					AvailableCategories: availableCategories,
-					AvailableSkills:     availableSkills,
-					Width:               74,
-					Height:              20,
-				},
-			)
+			form := forms.NewMetadataForm(data, forms.MetadataFormConfig{
+				AvailableTags:       []string{"tag1", "tag2", "tag3"},
+				AvailableCategories: []string{"cat1", "cat2"},
+				AvailableSkills:     []*career.Skill{},
+				Width:               74,
+				Height:              20,
+			})
 
 			Expect(form).NotTo(BeNil())
 		})
@@ -234,7 +228,7 @@ var _ = Describe("MetadataForm", func() {
 		It("should calculate ModalFormHeight with proper overhead", func() {
 			height := forms.ModalFormHeight(40)
 			Expect(height).To(BeNumerically(">=", 5))
-			Expect(height).To(Equal(40 - 20))
+			Expect(height).To(Equal(40 - 20 - forms.HelpFooterHeight))
 		})
 
 		It("should enforce minimum ModalFormHeight for small terminals", func() {

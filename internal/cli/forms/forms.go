@@ -122,17 +122,8 @@ func ThemedForm(theme themes.Theme) *huh.Theme {
 	return themes.GenerateHuhTheme(theme)
 }
 
-// NewForm creates a new form with KaRiya's default theme and configuration.
-//
-// Expected:
-//   - group must be valid.
-//
-// Returns:
-//   - A fully initialized huh.Form ready for use.
-//
-// Side effects:
-//   - None.
-func NewForm(groups ...*huh.Group) *huh.Form {
+// newForm creates a new form with KaRiya's default theme and configuration.
+func newForm(groups ...*huh.Group) *huh.Form {
 	return huh.NewForm(groups...).
 		WithTheme(Theme()).
 		WithShowHelp(false).
@@ -238,7 +229,7 @@ func ModalFormHeight(terminalHeight int) int {
 	const modalOverhead = 20
 	const minHeight = 5
 
-	height := terminalHeight - modalOverhead
+	height := terminalHeight - modalOverhead - HelpFooterHeight
 	if height < minHeight {
 		height = minHeight
 	}
@@ -267,6 +258,13 @@ func ModalFormWidth(modalWidth int) int {
 // ConfirmButtonHeight is the space reserved for the fixed confirm button group.
 const ConfirmButtonHeight = 5
 
+// HelpFooterHeight is the space reserved for the help footer (blank line + badge row)
+// rendered below the form inside modal views.
+const HelpFooterHeight = 2
+
+// ModalBoxChrome is the vertical space consumed by box border (2) + padding (4).
+const ModalBoxChrome = 6
+
 // FieldsHeight calculates the height for form fields when using a fixed confirm button.
 //
 // Expected:
@@ -286,46 +284,40 @@ func FieldsHeight(terminalHeight int) int {
 	return fieldsHeight
 }
 
-// NewFormWithFixedConfirm creates a form with scrollable fields and a fixed confirm button.
+// newScrollableForm creates a scrollable form with a confirm field at the bottom.
+//
+// All fields (including the confirm) are placed in a single huh group so that
+// the group's built-in viewport handles scrolling. This avoids the pagination
+// behaviour of LayoutDefault (which shows one group per page) and the lack of
+// scrolling in LayoutStack (which bypasses the viewport entirely).
 //
 // Expected:
-//   - group must be valid.
-//   - bool must be valid.
-//   - int must be valid.
+//   - fields must contain at least one field.
+//   - confirmValue must not be nil.
+//   - width and height must be positive integers.
 //
 // Returns:
 //   - A fully initialized huh.Form ready for use.
 //
 // Side effects:
 //   - None.
-func NewFormWithFixedConfirm(fieldsGroup *huh.Group, confirmValue *bool, width, height int) *huh.Form {
-	// Calculate height for fields group (reserve space for confirm)
-	fieldsHeight := height - ConfirmButtonHeight
-	if fieldsHeight < 5 {
-		fieldsHeight = 5
-	}
+func newScrollableForm(fields []huh.Field, confirmValue *bool, width, height int) *huh.Form {
+	confirmField := huh.NewConfirm().
+		Key("submit").
+		Title("Save Changes").
+		Description("Submit the form to save your changes").
+		Affirmative("Submit").
+		Negative("Cancel").
+		Value(confirmValue)
 
-	// Create confirm group (fixed at bottom)
-	confirmGroup := huh.NewGroup(
-		huh.NewConfirm().
-			Key("submit").
-			Title("Save Changes").
-			Description("Submit the form to save your changes").
-			Affirmative("Submit").
-			Negative("Cancel").
-			Value(confirmValue),
-	)
+	fields = append(fields, confirmField)
+	group := huh.NewGroup(fields...).WithHeight(height)
 
-	// Apply height to fields group to make it scrollable
-	fieldsGroup = fieldsGroup.WithHeight(fieldsHeight)
-
-	form := huh.NewForm(fieldsGroup, confirmGroup).
-		WithTheme(Theme()).
-		WithLayout(huh.LayoutStack)
+	form := huh.NewForm(group).
+		WithTheme(Theme())
 
 	if width > 0 {
-		// Subtract 1 to compensate for LayoutStack adding an extra character
-		form = form.WithWidth(width - 1)
+		form = form.WithWidth(width)
 	}
 
 	return form
