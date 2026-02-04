@@ -893,6 +893,12 @@ func (e *TestEnv) processCmdResult(msg tea.Msg) {
 		e.updateModelAndExecute(msg)
 	case intents.ConfigCompleteMsg:
 		e.updateModelAndExecute(msg)
+	case intents.TechnologiesExtractedMsg:
+		e.updateModelAndExecute(msg)
+	case intents.CVGenerationCompleteMsg:
+		e.updateModelAndExecute(msg)
+	case intents.CVExportCompleteMsg:
+		e.updateModelAndExecute(msg)
 	case feedback.ModalCountdownTickMsg:
 		e.updateModelAndExecute(msg)
 	case feedback.ModalAutoDismissMsg:
