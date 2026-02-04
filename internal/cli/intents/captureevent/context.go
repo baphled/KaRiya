@@ -6,6 +6,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/types"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
+	"github.com/baphled/kariya/internal/service/career/skillinference"
 )
 
 // CaptureStrategy defines the event capture approach and controls which form
@@ -47,6 +48,9 @@ type IntentContext struct {
 	// CareerService provides domain operations for enrichment (burst detection,
 	// fact extraction) during the review phase.
 	CareerService *careerservice.Service
+
+	// SkillInferenceService provides skill detection capabilities during review.
+	SkillInferenceService skillinference.SkillInferenceService
 }
 
 // Validate checks that all required fields are present.

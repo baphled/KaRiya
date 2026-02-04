@@ -8,6 +8,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/service/career/skillinference"
 )
 
 // Ensure Intent implements ScreenResultHandler interface.
@@ -75,6 +76,9 @@ type ReviewInferredEventState struct {
 	// InferredFacts are the career facts suggested by enrichment.
 	InferredFacts []*career.Fact
 
+	// InferredSkills are the skills suggested by inference.
+	InferredSkills []skillinference.SkillSuggestion
+
 	// EditingMode indicates which editing sub-flow is active (metadata, bursts, or facts).
 	EditingMode EditingMode
 
@@ -86,6 +90,9 @@ type ReviewInferredEventState struct {
 
 	// AcceptedFacts holds the facts the user has accepted during review.
 	AcceptedFacts []*career.Fact
+
+	// AcceptedSkills holds the skills the user has accepted during review.
+	AcceptedSkills []skillinference.SkillSuggestion
 
 	// RejectedItems maps item IDs to rejection reasons for items the user rejected.
 	RejectedItems map[string]string
