@@ -389,42 +389,49 @@ func (m *SuggestionReviewModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 
 		case tea.KeyRunes:
-			switch msg.String() {
-			case "j":
-				m.handleNavigation("down")
-				return m, nil
-
-			case "k":
-				m.handleNavigation("up")
-				return m, nil
-
-			case "n":
-				m.handleNavigation("pgdn")
-				return m, nil
-
-			case "p":
-				m.handleNavigation("pgup")
-				return m, nil
-
-			case "a":
-				m.action = SuggestionActionAccept
-				m.handleAccept()
-
-				if !m.HasSuggestions() {
-					m.visible = false
-				}
-				return m, nil
-
-			case "r":
-				m.action = SuggestionActionReject
-				m.removeCurrentSuggestion()
-
-				if !m.HasSuggestions() {
-					m.visible = false
-				}
-				return m, nil
-			}
+			return m.handleRuneKey(msg)
 		}
+	}
+
+	return m, nil
+}
+
+// handleRuneKey handles rune key presses (vim-style navigation and actions).
+func (m *SuggestionReviewModal) handleRuneKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "j":
+		m.handleNavigation("down")
+		return m, nil
+
+	case "k":
+		m.handleNavigation("up")
+		return m, nil
+
+	case "n":
+		m.handleNavigation("pgdn")
+		return m, nil
+
+	case "p":
+		m.handleNavigation("pgup")
+		return m, nil
+
+	case "a":
+		m.action = SuggestionActionAccept
+		m.handleAccept()
+
+		if !m.HasSuggestions() {
+			m.visible = false
+		}
+		return m, nil
+
+	case "r":
+		m.action = SuggestionActionReject
+		m.removeCurrentSuggestion()
+
+		if !m.HasSuggestions() {
+			m.visible = false
+		}
+		return m, nil
 	}
 
 	return m, nil
@@ -462,31 +469,43 @@ func (m *SuggestionReviewModal) handleAccept() {
 func (m *SuggestionReviewModal) removeCurrentSuggestion() {
 	switch m.suggestionType {
 	case "burst":
-		idx := m.burstTable.GetSelectedIndex()
-		if idx >= 0 && idx < len(m.burstSuggestions) {
-			m.burstSuggestions = append(m.burstSuggestions[:idx], m.burstSuggestions[idx+1:]...)
-			m.burstTable.SetItems(m.burstSuggestions)
-
-			if idx >= len(m.burstSuggestions) && len(m.burstSuggestions) > 0 {
-				idx = len(m.burstSuggestions) - 1
-			}
-			if len(m.burstSuggestions) > 0 {
-				m.burstTable.SetSelectedIndex(idx)
-			}
-		}
+		m.removeBurstSuggestionAtIndex(m.burstTable.GetSelectedIndex())
 	case "skill":
-		idx := m.skillTable.GetSelectedIndex()
-		if idx >= 0 && idx < len(m.skillSuggestions) {
-			m.skillSuggestions = append(m.skillSuggestions[:idx], m.skillSuggestions[idx+1:]...)
-			m.skillTable.SetItems(m.skillSuggestions)
+		m.removeSkillSuggestionAtIndex(m.skillTable.GetSelectedIndex())
+	}
+}
 
-			if idx >= len(m.skillSuggestions) && len(m.skillSuggestions) > 0 {
-				idx = len(m.skillSuggestions) - 1
-			}
-			if len(m.skillSuggestions) > 0 {
-				m.skillTable.SetSelectedIndex(idx)
-			}
-		}
+// removeBurstSuggestionAtIndex removes a burst suggestion at the given index and updates selection.
+func (m *SuggestionReviewModal) removeBurstSuggestionAtIndex(idx int) {
+	if idx < 0 || idx >= len(m.burstSuggestions) {
+		return
+	}
+
+	m.burstSuggestions = append(m.burstSuggestions[:idx], m.burstSuggestions[idx+1:]...)
+	m.burstTable.SetItems(m.burstSuggestions)
+
+	if idx >= len(m.burstSuggestions) && len(m.burstSuggestions) > 0 {
+		idx = len(m.burstSuggestions) - 1
+	}
+	if len(m.burstSuggestions) > 0 {
+		m.burstTable.SetSelectedIndex(idx)
+	}
+}
+
+// removeSkillSuggestionAtIndex removes a skill suggestion at the given index and updates selection.
+func (m *SuggestionReviewModal) removeSkillSuggestionAtIndex(idx int) {
+	if idx < 0 || idx >= len(m.skillSuggestions) {
+		return
+	}
+
+	m.skillSuggestions = append(m.skillSuggestions[:idx], m.skillSuggestions[idx+1:]...)
+	m.skillTable.SetItems(m.skillSuggestions)
+
+	if idx >= len(m.skillSuggestions) && len(m.skillSuggestions) > 0 {
+		idx = len(m.skillSuggestions) - 1
+	}
+	if len(m.skillSuggestions) > 0 {
+		m.skillTable.SetSelectedIndex(idx)
 	}
 }
 

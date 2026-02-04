@@ -203,7 +203,7 @@ var _ = Describe("Skill Inference Integration", func() {
 	})
 })
 
-// Helper to extract skill names from suggestions
+// Helper to extract skill names from suggestions.
 func extractSkillNames(suggestions []skillinference.SkillSuggestion) []string {
 	names := make([]string, len(suggestions))
 	for i, s := range suggestions {

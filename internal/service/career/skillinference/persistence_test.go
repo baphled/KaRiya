@@ -426,7 +426,7 @@ var _ = Describe("Skill Persistence", func() {
 	})
 })
 
-// Helper function to find skill by name
+// Helper function to find skill by name.
 func findSkillByName(skills []*career.Skill, name string) *career.Skill {
 	for _, skill := range skills {
 		if skill.Name == name {
@@ -436,7 +436,7 @@ func findSkillByName(skills []*career.Skill, name string) *career.Skill {
 	return nil
 }
 
-// Mock repositories
+// Mock repositories.
 type mockSkillRepository struct {
 	skills        map[string]*career.Skill // Key: lowercase name
 	skillsByID    map[string]*career.Skill
@@ -533,7 +533,7 @@ func (m *mockEventRepository) LinkSkill(ctx context.Context, eventID string, ski
 	return nil
 }
 
-// Helper functions
+// Helper functions.
 func normalizeSkillName(name string) string {
 	return strings.ToLower(name)
 }

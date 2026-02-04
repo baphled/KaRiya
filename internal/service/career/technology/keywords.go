@@ -21,6 +21,7 @@ type Entry struct {
 }
 
 // TechnologyKeyword is an alias for Entry for backward compatibility.
+//
 // Deprecated: Use Entry instead.
 //
 //nolint:revive // Intentional naming for backward compatibility
