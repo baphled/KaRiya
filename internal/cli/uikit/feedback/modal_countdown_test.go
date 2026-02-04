@@ -2,7 +2,6 @@ package feedback
 
 import (
 	"strings"
-	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -47,7 +46,7 @@ var _ = Describe("Modal Countdown", func() {
 
 		It("should return auto-dismiss message when countdown expires", func() {
 			modal := NewSuccessModal("Operation successful!")
-			modal.fadeStartTime = time.Now().Add(-4 * time.Second)
+			modal.countdownRemaining = 1
 
 			cmd := modal.Update(ModalCountdownTickMsg{})
 
@@ -81,7 +80,7 @@ var _ = Describe("Modal Countdown", func() {
 
 		It("should not show countdown text when time expires", func() {
 			modal := NewSuccessModal("Operation successful!")
-			modal.fadeStartTime = time.Now().Add(-4 * time.Second)
+			modal.countdownRemaining = 0
 
 			output := modal.Render(80, 40)
 
@@ -97,11 +96,11 @@ var _ = Describe("Modal Countdown", func() {
 			Expect(initialOutput).To(ContainSubstring("Auto-dismiss in 3s"),
 				"Expected initial countdown to show 3s")
 
-			modal.fadeStartTime = time.Now().Add(-1 * time.Second)
+			modal.countdownRemaining = 2
 
 			laterOutput := modal.Render(80, 40)
 			Expect(laterOutput).To(ContainSubstring("Auto-dismiss in 2s"),
-				"Expected countdown to show 2s after 1 second elapsed")
+				"Expected countdown to show 2s after countdown decrements")
 		})
 	})
 })
