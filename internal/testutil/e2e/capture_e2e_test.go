@@ -125,7 +125,7 @@ var _ = Describe("E2E Capture Workflow", func() {
 			Expect(viewAfterEsc).ToNot(ContainSubstring("Auto-dismiss"), "Success modal should be dismissed after Esc")
 		})
 
-		It("should decrement countdown display on each tick (BUG-001)", func() {
+		It("should decrement countdown display on each tick", func() {
 			env.SelectIntentByName("capture_event")
 			env.Confirm()
 

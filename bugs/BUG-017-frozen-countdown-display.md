@@ -1,4 +1,4 @@
-# BUG-001: Frozen Countdown in Success Modal Auto-Dismiss
+# BUG-017: Frozen Countdown in Success Modal Auto-Dismiss
 
 ## Status: ✅ RESOLVED
 
