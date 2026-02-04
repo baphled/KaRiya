@@ -612,9 +612,9 @@ generate-mocks:
 # Check that generated mocks are up to date (for CI)
 check-mocks-updated: generate-mocks
 	@echo "Checking if mocks are up to date..."
-	@if git diff --name-only | grep -q "_mock.go"; then \
+	@if ! git diff --quiet -- '*_mock.go'; then \
 		echo "ERROR: Mock files are out of date. Run 'make generate-mocks' and commit the changes."; \
-		git diff --name-only | grep "_mock.go"; \
+		git diff --name-only -- '*_mock.go'; \
 		exit 1; \
 	fi
 	@echo "All mocks are up to date."

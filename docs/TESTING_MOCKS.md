@@ -11,15 +11,18 @@ location and auto-generation via `go:generate` directives.
 internal/testutil/mocks/
 ├── doc.go                          # Package documentation
 ├── repository/                     # Repository layer mocks (package: mockrepo)
+│   ├── doc.go
 │   ├── event_repository_mock.go     # Generated from EventRepository
 │   ├── burst_repository_mock.go     # Generated from BurstRepository
 │   ├── fact_repository_mock.go      # Generated from FactRepository
 │   └── skill_repository_mock.go    # Generated from SkillRepository
 ├── service/                        # Service layer mocks (package: mocksvc)
+│   ├── doc.go
 │   ├── cv_generation_service_mock.go   # Generated from CVGenerationService
 │   ├── clipboard_writer_mock.go        # Generated from ClipboardWriter
 │   └── skill_inference_service_mock.go # Generated from SkillInferenceService
 └── intent/                         # Intent layer mocks (package: mockintent)
+    ├── doc.go
     ├── burst_service_mock.go                    # Generated from BurstService
     ├── burst_skill_inference_service_mock.go     # Generated from burst_management.SkillInferenceService
     ├── browse_event_service_mock.go             # Generated from browsetimeline.EventService
