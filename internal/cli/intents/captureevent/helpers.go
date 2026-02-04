@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/intents"
-	"github.com/baphled/kariya/internal/cli/models"
 	captureScreens "github.com/baphled/kariya/internal/cli/screens/capture"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
@@ -20,12 +19,12 @@ import (
 // terminalDimensions returns the current terminal dimensions for modal sizing.
 // Falls back to nil if terminal info is unavailable, letting the model
 // apply its own defaults.
-func (i *Intent) terminalDimensions() *models.MetadataEditorDimensions {
+func (i *Intent) terminalDimensions() *MetadataEditorDimensions {
 	info := i.GetTerminalInfo()
 	if info == nil {
 		return nil
 	}
-	return &models.MetadataEditorDimensions{
+	return &MetadataEditorDimensions{
 		TerminalWidth:  info.Width,
 		TerminalHeight: info.Height,
 	}
@@ -271,11 +270,11 @@ type modalContentData struct {
 //   - Lazily creates the metadataModal if it is nil.
 func (i *Intent) getMetadataModalContent() *modalContentData {
 	if i.reviewState.metadataModal == nil {
-		i.reviewState.metadataModal = models.NewMetadataEditorModelNew(
+		i.reviewState.metadataModal = NewMetadataEditorModelNew(
+			context.Background(),
 			i.reviewState.Event,
 			i.context.CareerService,
 			i.context.CLIEventService,
-			context.Background(),
 			i.terminalDimensions(),
 		)
 	}

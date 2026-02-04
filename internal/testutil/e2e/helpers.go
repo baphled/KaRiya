@@ -13,7 +13,6 @@ import (
 	"github.com/baphled/kariya/internal/cli/bootstrap"
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/intents/captureevent"
-	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/config"
@@ -884,7 +883,7 @@ func (e *TestEnv) processCmdResult(msg tea.Msg) {
 	switch msg := msg.(type) {
 	case tea.BatchMsg:
 		e.processBatchMsg(msg)
-	case models.SubmitMsg:
+	case captureevent.SubmitMsg:
 		e.updateModelAndExecute(msg)
 	case captureevent.SubmitCompleteMsg:
 		e.processSubmitCompleteMsg(msg)
@@ -972,7 +971,7 @@ func (e *TestEnv) SendMessage(msg tea.Msg) *TestEnv {
 func (e *TestEnv) SubmitEvent(event *career.Event) *TestEnv {
 	e.T.Helper()
 
-	return e.SendMessage(models.SubmitMsg{Event: event, Err: nil})
+	return e.SendMessage(captureevent.SubmitMsg{Event: event, Err: nil})
 }
 
 // DismissSuccessModal bypasses the auto-dismiss countdown and immediately

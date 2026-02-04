@@ -8,7 +8,6 @@ import (
 	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/intents"
-	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/domain/career"
 	burstfact "github.com/baphled/kariya/internal/service/career/burstfact"
@@ -51,11 +50,11 @@ func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 				return i.setFailedCmd("NO_SERVICE", "Career service not available for metadata editing", nil)
 			}
 			i.reviewState.EditingMode = EditingModeMetadata
-			i.reviewState.metadataModal = models.NewMetadataEditorModelNew(
+			i.reviewState.metadataModal = NewMetadataEditorModelNew(
+				context.Background(),
 				i.reviewState.Event,
 				i.context.CareerService,
 				i.context.CLIEventService,
-				context.Background(),
 				i.terminalDimensions(),
 			)
 			return i.reviewState.metadataModal.Init()
@@ -72,10 +71,10 @@ func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 					Description: b.Description,
 				})
 			}
-			i.reviewState.burstModal = models.NewBurstSuggestionModelNew(
+			i.reviewState.burstModal = NewBurstSuggestionModelNew(
+				context.Background(),
 				i.context.CareerService,
 				suggestions,
-				context.Background(),
 			)
 			return i.reviewState.burstModal.Init()
 
@@ -90,10 +89,10 @@ func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 			} else {
 				fact = &career.Fact{Text: ""}
 			}
-			i.reviewState.factModal = models.NewFactEditorModelNew(
+			i.reviewState.factModal = NewFactEditorModelNew(
+				context.Background(),
 				fact,
 				i.context.CareerService,
-				context.Background(),
 			)
 			return i.reviewState.factModal.Init()
 
@@ -308,7 +307,7 @@ func (i *Intent) updateEditingModal(msg tea.Msg) tea.Cmd {
 	case EditingModeMetadata:
 		if i.reviewState.metadataModal != nil {
 			modal, cmd := i.reviewState.metadataModal.Update(msg)
-			if typed, ok := modal.(*models.MetadataEditorModelNew); ok {
+			if typed, ok := modal.(*MetadataEditorModelNew); ok {
 				i.reviewState.metadataModal = typed
 			}
 
@@ -326,7 +325,7 @@ func (i *Intent) updateEditingModal(msg tea.Msg) tea.Cmd {
 	case EditingModeBursts:
 		if i.reviewState.burstModal != nil {
 			modal, cmd := i.reviewState.burstModal.Update(msg)
-			if typed, ok := modal.(*models.BurstSuggestionModelNew); ok {
+			if typed, ok := modal.(*BurstSuggestionModelNew); ok {
 				i.reviewState.burstModal = typed
 			}
 			return cmd
@@ -335,7 +334,7 @@ func (i *Intent) updateEditingModal(msg tea.Msg) tea.Cmd {
 	case EditingModeFacts:
 		if i.reviewState.factModal != nil {
 			modal, cmd := i.reviewState.factModal.Update(msg)
-			if typed, ok := modal.(*models.FactEditorModelNew); ok {
+			if typed, ok := modal.(*FactEditorModelNew); ok {
 				i.reviewState.factModal = typed
 			}
 

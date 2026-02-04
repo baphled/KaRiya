@@ -3,7 +3,6 @@ package captureevent
 import (
 	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/intents"
-	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/capture"
 	"github.com/baphled/kariya/internal/cli/service"
@@ -92,13 +91,13 @@ type ReviewInferredEventState struct {
 	RejectedItems map[string]string
 
 	// metadataModal is the form model for editing event metadata fields.
-	metadataModal *models.MetadataEditorModelNew
+	metadataModal *MetadataEditorModelNew
 
 	// burstModal is the form model for editing burst suggestions.
-	burstModal *models.BurstSuggestionModelNew
+	burstModal *BurstSuggestionModelNew
 
 	// factModal is the form model for editing fact suggestions.
-	factModal *models.FactEditorModelNew
+	factModal *FactEditorModelNew
 
 	// SelectedItemType tracks which item kind ("burst" or "fact") is highlighted.
 	SelectedItemType string

@@ -1,12 +1,12 @@
 //nolint:errcheck // Test file - error handling for test setup is not relevant.
-package models_test
+package captureevent_test
 
 import (
 	"context"
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/forms"
-	"github.com/baphled/kariya/internal/cli/models"
+	"github.com/baphled/kariya/internal/cli/intents/captureevent"
 	cliservice "github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/domain/career"
 	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
@@ -17,11 +17,9 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-// TestMetadataEditorNew removed - tests are run by the main models_test.go suite
-
 var _ = Describe("MetadataEditorModelNew", func() {
 	var (
-		model      *models.MetadataEditorModelNew
+		model      *captureevent.MetadataEditorModelNew
 		event      *career.Event
 		service    *careerservice.Service
 		cliService *cliservice.CLIEventService
@@ -42,7 +40,7 @@ var _ = Describe("MetadataEditorModelNew", func() {
 		event.Tags = []string{"backend", "go"}
 		event.Categories = []string{"development"}
 
-		model = models.NewMetadataEditorModelNew(event, service, cliService, ctx, nil)
+		model = captureevent.NewMetadataEditorModelNew(ctx, event, service, cliService, nil)
 		model.Init()
 	})
 
@@ -80,7 +78,7 @@ var _ = Describe("MetadataEditorModelNew", func() {
 			It("should update dimensions", func() {
 				msg := tea.WindowSizeMsg{Width: 120, Height: 40}
 				updatedModel, _ := model.Update(msg)
-				typedModel := updatedModel.(*models.MetadataEditorModelNew)
+				typedModel := updatedModel.(*captureevent.MetadataEditorModelNew)
 				// Width and height should be updated (checked via View behavior)
 				Expect(typedModel).NotTo(BeNil())
 			})
@@ -93,7 +91,7 @@ var _ = Describe("MetadataEditorModelNew", func() {
 				Expect(cmd).NotTo(BeNil())
 				// Command should produce QuitMsg
 				result := cmd()
-				_, ok := result.(models.QuitMsg)
+				_, ok := result.(captureevent.QuitMsg)
 				Expect(ok).To(BeTrue())
 			})
 		})

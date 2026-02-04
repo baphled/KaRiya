@@ -4,7 +4,6 @@ import (
 	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/intents"
-	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/screens"
 	captureScreens "github.com/baphled/kariya/internal/cli/screens/capture"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
@@ -128,7 +127,7 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 		}
 		return nil
 
-	case models.SubmitMsg:
+	case SubmitMsg:
 		if i.currentState == StateForm && msg.Err == nil && msg.Event != nil {
 			formData := forms.GetCaptureEventFormData(msg.Event)
 			formData.SubmitConfirmed = true

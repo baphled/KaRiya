@@ -63,7 +63,7 @@ type FormBuilder[T any] func(data T, width, height int) forms.Form
 // Related:
 // - docs/FORMS_GUIDE.md (Form patterns and best practices)
 // - internal/cli/forms/ (Form builders and validators)
-// - internal/cli/models/capture_form.go (Example of form wrapper pattern).
+// - internal/cli/intents/captureevent/ (Example of form and modal patterns).
 type FormScreen[T any] struct {
 	*Screen
 

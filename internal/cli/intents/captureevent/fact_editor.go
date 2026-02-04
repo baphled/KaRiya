@@ -1,36 +1,28 @@
-package models
+package captureevent
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/forms"
-	"github.com/baphled/kariya/internal/cli/navigation"
 	"github.com/baphled/kariya/internal/cli/themes"
-	"github.com/baphled/kariya/internal/cli/uikit/layout"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 )
 
-// FactEditorModel represents the fact editor form state using huh.
+// FactEditorModelNew represents the fact editor form state using huh.
 type FactEditorModelNew struct {
-	*BaseStandardModel
+	forms.EditorFields
 	fact         *career.Fact
-	originalFact *career.Fact // For reverting changes
+	originalFact *career.Fact
 	service      *careerservice.Service
 	ctx          context.Context
-	form         *huh.Form
 	formData     *forms.FactFormData
-	err          error
 	submitted    bool
-	cancelled    bool
-	width        int
-	height       int
-	theme        themes.Theme
 }
 
 // NewFactEditorModelNew creates a new fact editor model using huh forms.
@@ -44,7 +36,7 @@ type FactEditorModelNew struct {
 //
 // Side effects:
 //   - None.
-func NewFactEditorModelNew(fact *career.Fact, service *careerservice.Service, ctx context.Context) *FactEditorModelNew {
+func NewFactEditorModelNew(ctx context.Context, fact *career.Fact, service *careerservice.Service) *FactEditorModelNew {
 	// Create a copy of the fact for reverting
 	factCopy := *fact
 
@@ -55,19 +47,17 @@ func NewFactEditorModelNew(fact *career.Fact, service *careerservice.Service, ct
 	form := forms.NewFactForm(formData, 0, 0)
 
 	return &FactEditorModelNew{
-		BaseStandardModel: NewBaseStandardModel(),
-		fact:              fact,
-		originalFact:      &factCopy,
-		service:           service,
-		ctx:               ctx,
-		form:              form,
-		formData:          formData,
-		err:               nil,
-		submitted:         false,
-		cancelled:         false,
-		width:             80,
-		height:            24,
-		theme:             themes.NewDefaultTheme(),
+		EditorFields: forms.EditorFields{
+			Form:   form,
+			Width:  80,
+			Height: 24,
+			Theme:  themes.NewDefaultTheme(),
+		},
+		fact:         fact,
+		originalFact: &factCopy,
+		service:      service,
+		ctx:          ctx,
+		formData:     formData,
 	}
 }
 
@@ -79,63 +69,27 @@ func NewFactEditorModelNew(fact *career.Fact, service *careerservice.Service, ct
 // Side effects:
 //   - None.
 func (m *FactEditorModelNew) Init() tea.Cmd {
-	return m.form.Init()
+	return m.Form.Init()
 }
 
-// Update handles messages
+// Update handles messages.
 func (m *FactEditorModelNew) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
-		return m, nil
-
-	case tea.KeyMsg:
-		// Handle escape BEFORE delegating to form
-		// This ensures the parent intent can navigate back
-		if msg.String() == "esc" {
-			m.cancelled = true
-			return m, nil
-		}
-
-		// Handle quit
-		if msg.String() == "q" || msg.String() == "ctrl+c" {
-			return m, func() tea.Msg { return QuitMsg{} }
-		}
-	}
-
-	// Update the form
-	form, cmd := m.form.Update(msg)
-	if f, ok := form.(*huh.Form); ok {
-		m.form = f
-	}
-
-	// Check form state
-	if forms.IsCompleted(m.form) {
-		return m.handleFormCompletion()
-	}
-
-	if forms.IsAborted(m.form) {
-		m.cancelled = true
-		return m, nil
-	}
-
-	return m, cmd
+	return forms.EditorUpdate(&m.EditorFields, m, msg, m.handleFactFormCompletion, func() tea.Msg { return QuitMsg{} })
 }
 
-// handleFormCompletion processes the completed form and saves the fact.
-func (m *FactEditorModelNew) handleFormCompletion() (tea.Model, tea.Cmd) {
+// handleFactFormCompletion processes the completed form and saves the fact.
+func (m *FactEditorModelNew) handleFactFormCompletion() (tea.Model, tea.Cmd) {
 	// Check if user confirmed via the submit button
 	// If they selected "Cancel" on the confirm, treat as cancelled
 	if !m.formData.SubmitConfirmed {
-		m.cancelled = true
+		m.Cancelled = true
 		return m, nil
 	}
 
 	// Apply form data to fact
 	err := forms.ApplyFactFormData(m.fact, m.formData)
 	if err != nil {
-		m.err = fmt.Errorf("failed to apply form data: %w", err)
+		m.Err = fmt.Errorf("failed to apply form data: %w", err)
 		return m, nil
 	}
 
@@ -145,13 +99,13 @@ func (m *FactEditorModelNew) handleFormCompletion() (tea.Model, tea.Cmd) {
 	// Save the fact using the repository
 	factRepo := m.service.GetFactRepository()
 	if factRepo == nil {
-		m.err = fmt.Errorf("fact repository not available")
+		m.Err = errors.New("fact repository not available")
 		return m, nil
 	}
 
 	err = factRepo.Update(m.ctx, m.fact)
 	if err != nil {
-		m.err = fmt.Errorf("failed to save fact: %w", err)
+		m.Err = fmt.Errorf("failed to save fact: %w", err)
 		return m, nil
 	}
 
@@ -189,7 +143,7 @@ func (m *FactEditorModelNew) IsSubmitted() bool {
 // Side effects:
 //   - None.
 func (m *FactEditorModelNew) IsCancelled() bool {
-	return m.cancelled
+	return m.Cancelled
 }
 
 // Revert reverts changes to the original fact
@@ -215,7 +169,7 @@ func (m *FactEditorModelNew) Revert() {
 // Side effects:
 //   - None.
 func (m *FactEditorModelNew) GetError() error {
-	return m.err
+	return m.Err
 }
 
 // GetTitle returns the modal title for overlay rendering.
@@ -237,11 +191,11 @@ func (m *FactEditorModelNew) GetTitle() string {
 // Side effects:
 //   - None.
 func (m *FactEditorModelNew) GetContent() string {
-	formView := m.form.View()
+	formView := m.Form.View()
 
 	// Add error if present
-	if m.err != nil {
-		errorColor := m.theme.ErrorColor()
+	if m.Err != nil {
+		errorColor := m.Theme.ErrorColor()
 		errorStyle := lipgloss.NewStyle().
 			Foreground(errorColor).
 			Border(lipgloss.RoundedBorder()).
@@ -249,7 +203,7 @@ func (m *FactEditorModelNew) GetContent() string {
 			Padding(1, 2).
 			MarginTop(1)
 
-		formView += "\n\n" + errorStyle.Render(m.err.Error())
+		formView += "\n\n" + errorStyle.Render(m.Err.Error())
 	}
 
 	return formView
@@ -266,7 +220,7 @@ func (m *FactEditorModelNew) GetFooter() string {
 	return "Enter: Confirm | Esc: Cancel | Tab: Next Field | Shift+Tab: Previous"
 }
 
-// View renders the editor UI
+// View renders the editor UI.
 //
 // Returns:
 //   - A string value.
@@ -274,44 +228,5 @@ func (m *FactEditorModelNew) GetFooter() string {
 // Side effects:
 //   - None.
 func (m *FactEditorModelNew) View() string {
-	// Render form using huh
-	formView := m.form.View()
-
-	// Add error if present
-	if m.err != nil {
-		errorColor := m.theme.ErrorColor()
-		errorStyle := lipgloss.NewStyle().
-			Foreground(errorColor).
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(errorColor).
-			Padding(1, 2).
-			MarginTop(1)
-
-		formView += "\n\n" + errorStyle.Render(m.err.Error())
-	}
-
-	// Use UIKit layout components
-	headerView := layout.NewHeader("Fact Editor", m.width).
-		WithTheme(m.theme).
-		View()
-	footerView := layout.NewFooter(m.width).
-		WithTheme(m.theme).
-		WithHelp(navigation.GetContextualHelp("fact_editor")).
-		View()
-
-	// Combine all sections
-	contentStyle := lipgloss.NewStyle().
-		Width(m.width).
-		Padding(1, 2)
-
-	fullContent := lipgloss.JoinVertical(
-		lipgloss.Left,
-		headerView,
-		"",
-		contentStyle.Render(formView),
-		"",
-		footerView,
-	)
-
-	return fullContent
+	return forms.RenderEditorView(&m.EditorFields, "Fact Editor", "fact_editor")
 }

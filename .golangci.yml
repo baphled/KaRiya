@@ -351,8 +351,6 @@ linters:
               desc: "ARCHITECTURE: uikit/ cannot import components/"
             - pkg: "github.com/baphled/kariya/internal/cli/behaviors"
               desc: "ARCHITECTURE: uikit/ cannot import behaviors/"
-            - pkg: "github.com/baphled/kariya/internal/cli/models"
-              desc: "ARCHITECTURE: uikit/ cannot import models/"
             - pkg: "github.com/baphled/kariya/internal/cli/forms"
               desc: "ARCHITECTURE: uikit/ cannot import forms/"
 
@@ -393,7 +391,6 @@ linters:
             - "!**/styles/**"
             - "!**/uikit/**"
             - "!**/components/**"
-            - "!**/models/**"
             - "!**/*_test.go"
             - "**/intents/**/*.go"
             - "**/screens/**/*.go"
@@ -629,7 +626,6 @@ linters:
     # -------------------------------------------------------------------------
     # C6: DEPRECATED PACKAGES (migration tracked)
     # DEPRECATED: internal/cli/components/ -> migrate to uikit/
-    # DEPRECATED: internal/cli/models/ -> migrate to screens/
     # -------------------------------------------------------------------------
       - path: 'internal/cli/components/(.*)\.go'
         linters:
@@ -642,19 +638,6 @@ linters:
           - nestif
           - dupl
           - gocritic
-
-      - path: 'internal/cli/models/(.*)\.go'
-        linters:
-          - godot
-          - stylecheck
-          - revive
-          - gocognit
-          - gocyclo
-          - funlen
-          - nestif
-          - dupl
-          - gocritic
-          - perfsprint
 
       # GORM models intentionally mix pointer/value receivers
       - path: 'internal/repository/models/career\.go'
@@ -716,11 +699,6 @@ linters:
     # -------------------------------------------------------------------------
     # C8: huh IMPORTS (migration to forms/ tracked)
     # -------------------------------------------------------------------------
-      - path: 'internal/cli/models/(.*)\.go'
-        linters:
-          - depguard
-        text: "huh-restricted-to-forms"
-
       - path: 'internal/cli/components/(.*)\.go'
         linters:
           - depguard
@@ -891,40 +869,6 @@ linters:
     # -------------------------------------------------------------------------
     # C14: LEGACY CLI - Needs refactoring
     # -------------------------------------------------------------------------
-      - path: 'internal/cli/models/burst_suggestion_new\.go'
-        linters:
-          - gocognit
-          - gocyclo
-          - funlen
-          - nestif
-          - revive
-
-      - path: 'internal/cli/models/standard_model\.go'
-        linters:
-          - gocognit
-          - gocyclo
-          - funlen
-          - nestif
-          - revive
-
-      - path: 'internal/cli/models/metadata_editor_new\.go'
-        linters:
-          - revive
-          - dupl
-
-      - path: 'internal/cli/models/fact_editor_new\.go'
-        linters:
-          - revive
-          - dupl
-
-      - path: 'internal/cli/models/capture_form\.go'
-        linters:
-          - gocritic
-
-      - path: 'internal/cli/models/skill_form\.go'
-        linters:
-          - gocritic
-
       - path: 'cmd/cli/main\.go'
         linters:
           - gocognit
