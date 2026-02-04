@@ -189,14 +189,21 @@ if command -v golangci-lint > /dev/null 2>&1; then
     CHANGED_GO_FILES=$(git diff --cached --name-only | grep '\.go$' || true)
     if [ -n "$CHANGED_GO_FILES" ]; then
         echo "Running golangci-lint on changed packages..."
-        CHANGED_PACKAGES=$(echo "$CHANGED_GO_FILES" | xargs -I{} dirname {} | sort -u | sed 's|^|./|' | sed 's|$|/...|')
-        if ! golangci-lint run --timeout=5m --new-from-rev=HEAD $CHANGED_PACKAGES > /dev/null 2>&1; then
-            echo -e "${RED}❌ ERROR: golangci-lint found issues${NC}"
-            echo ""
-            golangci-lint run --timeout=5m --new-from-rev=HEAD $CHANGED_PACKAGES 2>&1 | head -20
-            echo ""
-            echo "Fix lint issues before committing."
-            exit 1
+        CHANGED_PACKAGES=$(echo "$CHANGED_GO_FILES" | xargs -I{} dirname {} | sort -u | while read -r dir; do [ -d "$dir" ] && printf "./%s/... " "$dir"; done)
+        if [ -z "$CHANGED_PACKAGES" ]; then
+            echo -e "${GREEN}✅ golangci-lint skipped (only deleted packages)${NC}"
+        else
+            LINT_OUTPUT=$(golangci-lint run --timeout=5m --new-from-rev=HEAD $CHANGED_PACKAGES 2>&1)
+            LINT_EXIT=$?
+            # Exit code 1 = lint issues found; other non-zero = internal errors (e.g., deleted dirs in diff)
+            if [ $LINT_EXIT -eq 1 ]; then
+                echo -e "${RED}❌ ERROR: golangci-lint found issues${NC}"
+                echo ""
+                echo "$LINT_OUTPUT" | head -20
+                echo ""
+                echo "Fix lint issues before committing."
+                exit 1
+            fi
         fi
         echo -e "${GREEN}✅ golangci-lint passed${NC}"
     fi
