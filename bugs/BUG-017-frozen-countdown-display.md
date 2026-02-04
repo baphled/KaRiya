@@ -269,7 +269,7 @@ Intent dismisses modal and transitions state
 ```go
 // internal/cli/uikit/feedback/modal_countdown_test.go
 Describe("Success Modal Auto-Dismiss Countdown", func() {
-    It("BUG-001: should update countdown display every second", func() {
+    It("BUG-017: should update countdown display every second", func() {
         modal := feedback.NewSuccessModal("Test")
         
         // Verify initial state
