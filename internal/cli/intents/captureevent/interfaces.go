@@ -1,3 +1,5 @@
+//go:generate mockgen -destination=../../../testutil/mocks/intent/capture_event_service_mock.go -package=mockintent -mock_names=EventService=MockCaptureEventService github.com/baphled/kariya/internal/cli/intents/captureevent EventService
+
 package captureevent
 
 import (

@@ -1,3 +1,5 @@
+//go:generate mockgen -destination=../../../testutil/mocks/service/cv_generation_service_mock.go -package=mocksvc github.com/baphled/kariya/internal/service/career/cv CVGenerationService
+
 package cv
 
 import (
