@@ -15,6 +15,12 @@ import (
 // ModalSpinnerTickMsg is sent periodically to advance the spinner animation.
 type ModalSpinnerTickMsg struct{}
 
+// ModalCountdownTickMsg is sent periodically to update the auto-dismiss countdown display.
+type ModalCountdownTickMsg struct{}
+
+// ModalAutoDismissMsg is sent when the auto-dismiss countdown reaches zero.
+type ModalAutoDismissMsg struct{}
+
 // ModalType defines the type of modal.
 type ModalType int
 
@@ -122,19 +128,20 @@ func (r *LoadingMessageRotator) Rotate() string {
 // Modal represents the content and configuration of a modal
 // This is the UIKit version that uses theme-based styling exclusively.
 type Modal struct {
-	Type           ModalType
-	Title          string
-	Message        string
-	Progress       float64
-	Actions        []string
-	FadeInDuration time.Duration
-	AutoDismiss    time.Duration
-	Bell           bool
-	Cancellable    bool
-	fadeStartTime  time.Time
-	spinner        *SimpleSpinner
-	messageRotator *LoadingMessageRotator
-	theme          themes.Theme
+	Type               ModalType
+	Title              string
+	Message            string
+	Progress           float64
+	Actions            []string
+	FadeInDuration     time.Duration
+	AutoDismiss        time.Duration
+	Bell               bool
+	Cancellable        bool
+	fadeStartTime      time.Time
+	countdownRemaining int
+	spinner            *SimpleSpinner
+	messageRotator     *LoadingMessageRotator
+	theme              themes.Theme
 }
 
 // getTheme returns the theme or default if nil.
@@ -226,14 +233,16 @@ func NewProgressModal(title, message string, progress float64) *Modal {
 // Side effects:
 //   - None.
 func NewSuccessModal(message string) *Modal {
+	autoDismiss := 3 * time.Second
 	return &Modal{
-		Type:           ModalSuccess,
-		Title:          "Success",
-		Message:        message,
-		FadeInDuration: 150 * time.Millisecond,
-		AutoDismiss:    3 * time.Second,
-		fadeStartTime:  time.Now(),
-		theme:          themes.NewDefaultTheme(),
+		Type:               ModalSuccess,
+		Title:              "Success",
+		Message:            message,
+		FadeInDuration:     150 * time.Millisecond,
+		AutoDismiss:        autoDismiss,
+		fadeStartTime:      time.Now(),
+		countdownRemaining: int(autoDismiss.Seconds()),
+		theme:              themes.NewDefaultTheme(),
 	}
 }
 
@@ -382,13 +391,9 @@ func (m *Modal) Render(terminalWidth, terminalHeight int) string {
 		}
 	}
 
-	if m.AutoDismiss > 0 {
+	if m.AutoDismiss > 0 && m.countdownRemaining > 0 {
 		contentParts = append(contentParts, "")
-		elapsed := time.Since(m.fadeStartTime)
-		remaining := m.AutoDismiss - elapsed
-		if remaining > 0 {
-			contentParts = append(contentParts, fmt.Sprintf("Auto-dismiss in %.0fs", remaining.Seconds()))
-		}
+		contentParts = append(contentParts, fmt.Sprintf("Auto-dismiss in %ds", m.countdownRemaining))
 	}
 
 	// Join content.
@@ -557,7 +562,8 @@ func (m *Modal) RotateMessage() string {
 	return m.Message
 }
 
-// Init initializes the modal and starts spinner animation for loading modals.
+// Init initializes the modal and starts spinner animation for loading modals
+// or countdown tick for success modals with auto-dismiss.
 //
 // Returns:
 //   - A tea.Cmd value.
@@ -568,10 +574,15 @@ func (m *Modal) Init() tea.Cmd {
 	if m.Type == ModalLoading && m.spinner != nil {
 		return m.tickSpinner()
 	}
+	if m.Type == ModalSuccess && m.AutoDismiss > 0 {
+		m.countdownRemaining = int(m.AutoDismiss.Seconds())
+		return m.tickCountdown()
+	}
 	return nil
 }
 
-// Update handles messages for the modal, advancing the spinner on tick.
+// Update handles messages for the modal, advancing the spinner on tick
+// and handling countdown tick for success modals with auto-dismiss.
 //
 // Expected:
 //   - msg must be valid.
@@ -591,6 +602,16 @@ func (m *Modal) Update(msg tea.Msg) tea.Cmd {
 			}
 			return m.tickSpinner()
 		}
+	case ModalCountdownTickMsg:
+		if m.Type == ModalSuccess && m.countdownRemaining > 0 {
+			m.countdownRemaining--
+			if m.countdownRemaining <= 0 {
+				return func() tea.Msg {
+					return ModalAutoDismissMsg{}
+				}
+			}
+			return m.tickCountdown()
+		}
 	}
 	return nil
 }
@@ -599,6 +620,13 @@ func (m *Modal) Update(msg tea.Msg) tea.Cmd {
 func (m *Modal) tickSpinner() tea.Cmd {
 	return tea.Tick(100*time.Millisecond, func(t time.Time) tea.Msg {
 		return ModalSpinnerTickMsg{}
+	})
+}
+
+// tickCountdown returns a command to tick the auto-dismiss countdown.
+func (m *Modal) tickCountdown() tea.Cmd {
+	return tea.Tick(1*time.Second, func(t time.Time) tea.Msg {
+		return ModalCountdownTickMsg{}
 	})
 }
 

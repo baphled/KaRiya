@@ -15,6 +15,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/intents/captureevent"
 	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/service"
+	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
@@ -908,6 +909,25 @@ func (e *TestEnv) processCmdResult(msg tea.Msg) {
 		e.Model = model
 		// Recursively execute any returned command
 		e.executeCmd(nextCmd)
+
+	case feedback.ModalCountdownTickMsg:
+		// Countdown tick - essential for countdown display update
+		modelInterface, nextCmd := e.Model.Update(msg)
+		if model, ok := modelInterface.(*app.Model); ok {
+			e.Model = model
+		}
+		// Recursively execute any returned command
+		e.executeCmd(nextCmd)
+
+	case feedback.ModalAutoDismissMsg:
+		// Auto-dismiss - essential for success modal → next state transition
+		modelInterface, nextCmd := e.Model.Update(msg)
+		if model, ok := modelInterface.(*app.Model); ok {
+			e.Model = model
+		}
+		// Recursively execute any returned command
+		e.executeCmd(nextCmd)
+
 	default:
 		// Ignore all other messages (cursor blink, window resize, etc.)
 		return
@@ -952,6 +972,24 @@ func (e *TestEnv) SubmitEvent(event *career.Event) *TestEnv {
 	e.T.Helper()
 
 	return e.SendMessage(models.SubmitMsg{Event: event, Err: nil})
+}
+
+// DismissSuccessModal bypasses the auto-dismiss countdown and immediately
+// dismisses the success modal. Use this to speed up tests that don't need
+// to verify countdown behavior. To test the actual countdown, send
+// ModalCountdownTickMsg messages explicitly instead.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - Sends a captureevent.DismissModalMsg through the test environment.
+//   - Advances the Bubble Tea update loop and updates e.Model to the
+//     post-dismissal state of the success modal.
+func (e *TestEnv) DismissSuccessModal() *TestEnv {
+	e.T.Helper()
+
+	return e.SendMessage(captureevent.DismissModalMsg{})
 }
 
 // ============================================================================

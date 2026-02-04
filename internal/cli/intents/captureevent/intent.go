@@ -1,8 +1,6 @@
 package captureevent
 
 import (
-	"time"
-
 	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/models"
@@ -94,13 +92,14 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case SubmitCompleteMsg:
 		i.submitModal = feedback.NewSuccessModal("Event saved!")
-		return tea.Tick(2*time.Second, func(_ time.Time) tea.Msg {
-			return DismissModalMsg{}
-		})
+		return i.submitModal.Init()
 
 	case SubmitErrorMsg:
 		i.submitModal = feedback.NewErrorModal("Save Failed", msg.Message)
 		return nil
+
+	case feedback.ModalAutoDismissMsg:
+		return func() tea.Msg { return DismissModalMsg{} }
 
 	case DismissModalMsg:
 		if i.submitModal != nil {
@@ -139,6 +138,11 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 			return nil
 		case feedback.ModalSpinnerTickMsg:
 			if i.submitModal.Type == feedback.ModalLoading {
+				return i.submitModal.Update(msg)
+			}
+			return nil
+		case feedback.ModalCountdownTickMsg:
+			if i.submitModal != nil && i.submitModal.Type == feedback.ModalSuccess {
 				return i.submitModal.Update(msg)
 			}
 			return nil
