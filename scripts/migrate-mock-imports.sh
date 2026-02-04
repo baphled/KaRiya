@@ -11,7 +11,7 @@ echo ""
 
 CHANGED=0
 
-find "$PROJECT_ROOT/internal" -name "*_test.go" -type f | while read -r file; do
+while read -r file; do
     relative_path="${file#$PROJECT_ROOT/}"
 
     if grep -q 'github.com/baphled/kariya/internal/testutil/mocks"' "$file" ||
@@ -44,11 +44,21 @@ find "$PROJECT_ROOT/internal" -name "*_test.go" -type f | while read -r file; do
         # Replace hand-written mock references (from testutil/mocks package)
         sed -i 's|\bmocks\.NewBurstServiceMock\b|mockintent.NewMockBurstService|g' "$file"
         sed -i 's|\bmocks\.NewBurstRepositoryMock\b|mockrepo.NewMockBurstRepository|g' "$file"
+
+        # Add mockintent import if mockintent references were introduced
+        if grep -q 'mockintent\.' "$file" && ! grep -q 'mocks/intent"' "$file"; then
+            sed -i '/^import (/a\\tmockintent "github.com/baphled/kariya/internal/testutil/mocks/intent"' "$file"
+        fi
+
+        # Add mocksvc import if mocksvc references were introduced
+        if grep -q 'mocksvc\.' "$file" && ! grep -q 'mocks/service"' "$file"; then
+            sed -i '/^import (/a\\tmocksvc "github.com/baphled/kariya/internal/testutil/mocks/service"' "$file"
+        fi
     fi
-done
+done < <(find "$PROJECT_ROOT/internal" -name "*_test.go" -type f)
 
 echo ""
-echo "Migration complete!"
+echo "Migration complete! $CHANGED file(s) updated."
 echo "Backup location: $BACKUP_DIR"
 echo ""
 echo "Next steps:"
