@@ -28,9 +28,6 @@ package forms
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
-	"github.com/charmbracelet/lipgloss"
-
-	"github.com/baphled/kariya/internal/cli/themes"
 )
 
 // Form is the form type used throughout KaRiya.
@@ -108,45 +105,12 @@ func Theme() *huh.Theme {
 	return huh.ThemeCatppuccin()
 }
 
-// ThemedForm returns a huh.Theme that matches the given KaRiya theme.
-//
-// Expected:
-//   - th must be a valid theme instance (can be nil).
-//
-// Returns:
-//   - A fully initialized huh.Theme ready for use.
-//
-// Side effects:
-//   - None.
-func ThemedForm(theme themes.Theme) *huh.Theme {
-	return themes.GenerateHuhTheme(theme)
-}
-
 // newForm creates a new form with KaRiya's default theme and configuration.
 func newForm(groups ...*huh.Group) *huh.Form {
 	return huh.NewForm(groups...).
 		WithTheme(Theme()).
 		WithShowHelp(false).
 		WithShowErrors(false)
-}
-
-// NewFormWithHeight creates a new form with KaRiya's default theme and a fixed height.
-//
-// Expected:
-//   - int must be valid.
-//   - group must be valid.
-//
-// Returns:
-//   - A fully initialized huh.Form ready for use.
-//
-// Side effects:
-//   - None.
-func NewFormWithHeight(height int, groups ...*huh.Group) *huh.Form {
-	return huh.NewForm(groups...).
-		WithTheme(Theme()).
-		WithShowHelp(false).
-		WithShowErrors(false).
-		WithHeight(height)
 }
 
 // NewFormWithDimensions creates a new form with KaRiya's default theme and fixed dimensions.
@@ -169,22 +133,6 @@ func NewFormWithDimensions(width, height int, groups ...*huh.Group) *huh.Form {
 		form = form.WithWidth(width)
 	}
 	return form
-}
-
-// NewThemedFormWithHeight creates a form with the given theme and height.
-//
-// Expected:
-//   - th must be a valid theme instance (can be nil).
-//   - int must be valid.
-//   - group must be valid.
-//
-// Returns:
-//   - A fully initialized huh.Form ready for use.
-//
-// Side effects:
-//   - None.
-func NewThemedFormWithHeight(theme themes.Theme, height int, groups ...*huh.Group) *huh.Form {
-	return huh.NewForm(groups...).WithTheme(ThemedForm(theme)).WithHeight(height)
 }
 
 // DefaultFormHeight calculates a reasonable form height based on terminal dimensions.
@@ -255,34 +203,12 @@ func ModalFormWidth(modalWidth int) int {
 	return width
 }
 
-// ConfirmButtonHeight is the space reserved for the fixed confirm button group.
-const ConfirmButtonHeight = 5
-
 // HelpFooterHeight is the space reserved for the help footer (blank line + badge row)
 // rendered below the form inside modal views.
 const HelpFooterHeight = 2
 
 // ModalBoxChrome is the vertical space consumed by box border (2) + padding (4).
 const ModalBoxChrome = 6
-
-// FieldsHeight calculates the height for form fields when using a fixed confirm button.
-//
-// Expected:
-//   - int must be valid.
-//
-// Returns:
-//   - A int value.
-//
-// Side effects:
-//   - None.
-func FieldsHeight(terminalHeight int) int {
-	formHeight := DefaultFormHeight(terminalHeight)
-	fieldsHeight := formHeight - ConfirmButtonHeight
-	if fieldsHeight < 5 {
-		fieldsHeight = 5
-	}
-	return fieldsHeight
-}
 
 // newScrollableForm creates a scrollable form with a confirm field at the bottom.
 //
@@ -323,72 +249,6 @@ func newScrollableForm(fields []huh.Field, confirmValue *bool, width, height int
 	return form
 }
 
-// NewThemedForm creates a new form with the given KaRiya theme.
-//
-// Expected:
-//   - th must be a valid theme instance (can be nil).
-//   - group must be valid.
-//
-// Returns:
-//   - A fully initialized huh.Form ready for use.
-//
-// Side effects:
-//   - None.
-func NewThemedForm(theme themes.Theme, groups ...*huh.Group) *huh.Form {
-	return huh.NewForm(groups...).WithTheme(ThemedForm(theme))
-}
-
-// NewFormWithAccessible creates a form optimized for accessibility.
-//
-// Expected:
-//   - group must be valid.
-//
-// Returns:
-//   - A fully initialized huh.Form ready for use.
-//
-// Side effects:
-//   - None.
-func NewFormWithAccessible(groups ...*huh.Group) *huh.Form {
-	return huh.NewForm(groups...).
-		WithTheme(Theme()).
-		WithAccessible(true)
-}
-
-// NewThemedFormWithAccessible creates an accessible form with the given KaRiya theme.
-//
-// Expected:
-//   - th must be a valid theme instance (can be nil).
-//   - group must be valid.
-//
-// Returns:
-//   - A fully initialized huh.Form ready for use.
-//
-// Side effects:
-//   - None.
-func NewThemedFormWithAccessible(theme themes.Theme, groups ...*huh.Group) *huh.Form {
-	return huh.NewForm(groups...).
-		WithTheme(ThemedForm(theme)).
-		WithAccessible(true)
-}
-
-// FormColors defines the color scheme for form elements.
-// Currently uses hardcoded hex values; tracked for refactoring in issue #136.
-var FormColors = struct {
-	Title       lipgloss.Color
-	Description lipgloss.Color
-	Error       lipgloss.Color
-	Success     lipgloss.Color
-	Placeholder lipgloss.Color
-}{
-	Title:       lipgloss.Color("#89B4FA"),
-	Description: lipgloss.Color("#94E2D5"),
-	Error:       lipgloss.Color("#F38BA8"),
-	Success:     lipgloss.Color("#A6E3A1"),
-	Placeholder: lipgloss.Color("#6C7086"),
-}
-
-// Common form helper functions
-
 // IsCompleted checks if the form has been completed by the user.
 //
 // Expected:
@@ -415,86 +275,6 @@ func IsCompleted(form *huh.Form) bool {
 //   - None.
 func IsAborted(form *huh.Form) bool {
 	return form.State == huh.StateAborted
-}
-
-// GetString safely retrieves a string value from the form.
-//
-// Expected:
-//   - form must be valid.
-//   - Must be a valid string.
-//
-// Returns:
-//   - A string value.
-//
-// Side effects:
-//   - None.
-func GetString(form *huh.Form, key string) string {
-	val := form.GetString(key)
-	return val
-}
-
-// GetBool safely retrieves a boolean value from the form.
-//
-// Expected:
-//   - form must be valid.
-//   - Must be a valid string.
-//
-// Returns:
-//   - A bool value.
-//
-// Side effects:
-//   - None.
-func GetBool(form *huh.Form, key string) bool {
-	return form.GetBool(key)
-}
-
-// GetInt safely retrieves an int value from the form.
-//
-// Expected:
-//   - form must be valid.
-//   - Must be a valid string.
-//
-// Returns:
-//   - A int value.
-//
-// Side effects:
-//   - None.
-func GetInt(form *huh.Form, key string) int {
-	return form.GetInt(key)
-}
-
-// GetStrings safely retrieves a slice of strings from the form (for MultiSelect).
-//
-// Expected:
-//   - form must be valid.
-//   - Must be a valid string.
-//
-// Returns:
-//   - A []string value.
-//
-// Side effects:
-//   - None.
-func GetStrings(form *huh.Form, key string) []string {
-	// huh stores MultiSelect values as interface{} containing []string
-	val := form.Get(key)
-	if val == nil {
-		return []string{}
-	}
-
-	switch v := val.(type) {
-	case []string:
-		return v
-	case []interface{}:
-		result := make([]string, 0, len(v))
-		for _, item := range v {
-			if s, ok := item.(string); ok {
-				result = append(result, s)
-			}
-		}
-		return result
-	default:
-		return []string{}
-	}
 }
 
 // FieldConfig represents common field configuration options.
