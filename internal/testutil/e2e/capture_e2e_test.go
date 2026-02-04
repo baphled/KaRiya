@@ -124,5 +124,30 @@ var _ = Describe("E2E Capture Workflow", func() {
 			viewAfterEsc := env.GetView()
 			Expect(viewAfterEsc).ToNot(ContainSubstring("Auto-dismiss"), "Success modal should be dismissed after Esc")
 		})
+
+		It("should decrement countdown display on each tick (BUG-001)", func() {
+			env.SelectIntentByName("capture_event")
+			env.Confirm()
+
+			env.SendMessage(captureevent.SubmitCompleteMsg{})
+
+			initialView := env.GetView()
+			Expect(initialView).To(ContainSubstring("Auto-dismiss in 3s"))
+
+			env.SendMessage(feedback.ModalCountdownTickMsg{})
+			viewAfterFirstTick := env.GetView()
+			Expect(viewAfterFirstTick).To(ContainSubstring("Auto-dismiss in 2s"))
+
+			env.SendMessage(feedback.ModalCountdownTickMsg{})
+			viewAfterSecondTick := env.GetView()
+			Expect(viewAfterSecondTick).To(ContainSubstring("Auto-dismiss in 1s"))
+
+			env.SendMessage(feedback.ModalCountdownTickMsg{})
+			env.SendMessage(feedback.ModalAutoDismissMsg{})
+
+			viewAfterAutoDismiss := env.GetView()
+			Expect(viewAfterAutoDismiss).ToNot(ContainSubstring("Auto-dismiss"))
+			Expect(viewAfterAutoDismiss).To(ContainSubstring("Review Enrichment"))
+		})
 	})
 })
