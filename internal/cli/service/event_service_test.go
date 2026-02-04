@@ -161,7 +161,7 @@ var _ = Describe("Skill Management Operations", func() {
 
 			skills, err := skillRepo.GetSkillsForEvent(ctx, "event-1")
 			Expect(err).ToNot(HaveOccurred())
-			Expect(skills).To(HaveLen(0))
+			Expect(skills).To(BeEmpty())
 		})
 	})
 
@@ -183,7 +183,7 @@ var _ = Describe("Skill Management Operations", func() {
 
 			skills, err := skillRepo.GetSkillsForEvent(ctx, "event-1")
 			Expect(err).ToNot(HaveOccurred())
-			Expect(skills).To(HaveLen(0))
+			Expect(skills).To(BeEmpty())
 		})
 
 		It("should return error when event does not exist", func() {
@@ -222,7 +222,7 @@ var _ = Describe("Skill Management Operations", func() {
 		It("should return empty slice when no skills exist", func() {
 			skills, err := cliEventSvc.ListAllSkills(ctx)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(skills).To(HaveLen(0))
+			Expect(skills).To(BeEmpty())
 		})
 	})
 })

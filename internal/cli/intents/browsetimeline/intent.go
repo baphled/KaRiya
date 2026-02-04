@@ -9,6 +9,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/timeline"
+	"github.com/baphled/kariya/internal/cli/screens/timeline/modals"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
@@ -47,6 +48,7 @@ func NewIntent(ctx *IntentContext) (*Intent, error) {
 		viewedEvents:   make([]*career.Event, 0),
 		active:         true,
 		modalRegistry:  intents.NewModalRegistry(),
+		skillService:   ctx.CLISkillService,
 	}
 
 	return intent, nil
@@ -84,6 +86,17 @@ func (i *Intent) Init() tea.Cmd {
 //   - May open or close modals, transition screens, or mark the intent inactive.
 func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 	if !i.active {
+		return nil
+	}
+
+	// Handle skill management messages.
+	switch msg := msg.(type) {
+	case SkillLinkedMsg, SkillUnlinkedMsg, SkillCreatedMsg:
+		return i.refreshSkillsModal()
+	case SkillSuggestionsLoadedMsg:
+		return i.handleSkillSuggestionsLoaded(msg)
+	case SkillSuggestionsErrorMsg:
+		i.ShowErrorModal("Skill Inference Failed", msg.Err.Error())
 		return nil
 	}
 
@@ -161,6 +174,21 @@ func (i *Intent) handleModalUpdates(msg tea.Msg) tea.Cmd {
 			isActive: func() bool { return i.deleteModal != nil && i.deleteModal.IsVisible() },
 			update:   i.updateDeleteModal,
 			isClosed: func() bool { return i.deleteModal == nil || !i.deleteModal.IsVisible() },
+		},
+		{
+			isActive: func() bool { return i.skillPickerModal != nil && i.skillPickerModal.IsVisible() },
+			update:   i.updateSkillPickerModal,
+			isClosed: func() bool { return i.skillPickerModal == nil || !i.skillPickerModal.IsVisible() },
+		},
+		{
+			isActive: func() bool { return i.skillAddModal != nil && i.skillAddModal.IsVisible() },
+			update:   i.updateSkillAddModal,
+			isClosed: func() bool { return i.skillAddModal == nil || !i.skillAddModal.IsVisible() },
+		},
+		{
+			isActive: func() bool { return i.skillSuggestionModal != nil && i.skillSuggestionModal.IsVisible() },
+			update:   i.updateSkillSuggestionModal,
+			isClosed: func() bool { return i.skillSuggestionModal == nil || !i.skillSuggestionModal.IsVisible() },
 		},
 		{
 			isActive: func() bool { return i.viewSkillsModal != nil && i.viewSkillsModal.IsVisible() },
@@ -324,8 +352,79 @@ func (i *Intent) updateDeleteModal(msg tea.Msg) tea.Cmd {
 // updateViewSkillsModal handles view skills modal updates.
 func (i *Intent) updateViewSkillsModal(msg tea.Msg) tea.Cmd {
 	_, cmd := i.viewSkillsModal.Update(msg)
+
 	if !i.viewSkillsModal.IsVisible() {
 		i.viewSkillsModal = nil
+		return cmd
+	}
+
+	action := i.viewSkillsModal.GetAction()
+	if action != modals.ActionNone {
+		i.viewSkillsModal.ClearAction()
+
+		switch action {
+		case modals.ActionAddExisting:
+			return i.openSkillPickerModal()
+
+		case modals.ActionAddNew:
+			return i.openSkillAddModal()
+
+		case modals.ActionInfer:
+			return i.inferSkillsFromEvent()
+
+		case modals.ActionRemove:
+			selectedSkill := i.viewSkillsModal.GetSelectedSkill()
+			return i.unlinkSkillFromCurrentEvent(selectedSkill)
+		}
+	}
+
+	return cmd
+}
+
+// updateSkillPickerModal handles skill picker modal updates.
+func (i *Intent) updateSkillPickerModal(msg tea.Msg) tea.Cmd {
+	_, cmd := i.skillPickerModal.Update(msg)
+
+	if !i.skillPickerModal.IsVisible() {
+		if i.skillPickerModal.HasSelection() {
+			selectedSkill := i.skillPickerModal.GetSelectedSkill()
+			i.skillPickerModal = nil
+			return tea.Batch(cmd, i.linkSkillToCurrentEvent(selectedSkill))
+		}
+		i.skillPickerModal = nil
+	}
+
+	return cmd
+}
+
+// updateSkillAddModal handles skill add modal updates.
+func (i *Intent) updateSkillAddModal(msg tea.Msg) tea.Cmd {
+	cmd, completed, skillData := i.skillAddModal.Update(msg)
+	if !i.skillAddModal.IsVisible() {
+		if completed && skillData != nil {
+			i.skillAddModal = nil
+			return i.createAndLinkSkill(skillData)
+		}
+		i.skillAddModal = nil
+	}
+	return cmd
+}
+
+// updateSkillSuggestionModal handles skill suggestion modal updates.
+func (i *Intent) updateSkillSuggestionModal(msg tea.Msg) tea.Cmd {
+	if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.String() == "a" {
+		if selected := i.skillSuggestionModal.GetCurrentSkill(); selected != nil {
+			i.saveSkillFromSuggestion(*selected)
+		}
+	}
+	_, cmd := i.skillSuggestionModal.Update(msg)
+	if !i.skillSuggestionModal.IsVisible() {
+		accepted := i.skillSuggestionModal.GetAcceptedSkills()
+		if len(accepted) > 0 {
+			i.ShowErrorModal("Skills Created", fmt.Sprintf("Successfully created %d skill(s)", len(accepted)))
+		}
+		i.skillSuggestionModal = nil
+		return tea.Batch(cmd, i.refreshSkillsModal())
 	}
 	return cmd
 }

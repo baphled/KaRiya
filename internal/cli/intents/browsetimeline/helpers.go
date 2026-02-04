@@ -3,11 +3,14 @@ package browsetimeline
 import (
 	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/intents"
+	burstModals "github.com/baphled/kariya/internal/cli/screens/burst_management/modals"
+	skillModals "github.com/baphled/kariya/internal/cli/screens/skills/modals"
 	"github.com/baphled/kariya/internal/cli/screens/timeline"
 	"github.com/baphled/kariya/internal/cli/screens/timeline/modals"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/service/career/skillinference"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -275,7 +278,23 @@ func (i *Intent) rebuildModalRegistry() {
 		i.modalRegistry.Register(intents.NewConfirmModalAdapter(i.deleteModal))
 	}
 
-	// View modals.
+	// View modals (priority order: picker > suggestion > skills > detail).
+	if i.skillPickerModal != nil {
+		i.modalRegistry.Register(intents.NewViewModalAdapter(
+			i.skillPickerModal.IsVisible,
+			i.skillPickerModal.View,
+			i.skillPickerModal.Update,
+		))
+	}
+
+	if i.skillSuggestionModal != nil {
+		i.modalRegistry.Register(intents.NewViewModalAdapter(
+			i.skillSuggestionModal.IsVisible,
+			i.skillSuggestionModal.View,
+			i.skillSuggestionModal.Update,
+		))
+	}
+
 	if i.viewSkillsModal != nil {
 		i.modalRegistry.Register(intents.NewViewModalAdapter(
 			i.viewSkillsModal.IsVisible,
@@ -290,5 +309,169 @@ func (i *Intent) rebuildModalRegistry() {
 			i.viewDetailModal.View,
 			i.viewDetailModal.Update,
 		))
+	}
+}
+
+func (i *Intent) openSkillPickerModal() tea.Cmd {
+	if i.selectedEvent == nil {
+		return nil
+	}
+	ctx := i.getContext()
+	allSkills, err := i.context.CLIEventService.ListAllSkills(ctx)
+	if err != nil {
+		i.ShowErrorModal("Error Loading Skills", err.Error())
+		return nil
+	}
+	eventSkills, err := i.context.CLIEventService.GetSkillsForEvent(ctx, i.selectedEvent.ID)
+	if err != nil {
+		i.ShowErrorModal("Error Loading Skills", err.Error())
+		return nil
+	}
+	eventSkillIDs := make(map[string]bool)
+	for _, s := range eventSkills {
+		eventSkillIDs[s.ID] = true
+	}
+	availableSkills := make([]*career.Skill, 0)
+	for _, s := range allSkills {
+		if !eventSkillIDs[s.ID] {
+			availableSkills = append(availableSkills, s)
+		}
+	}
+	width, height := i.getTerminalDimensions()
+	i.skillPickerModal = modals.NewSkillPickerModal(availableSkills, i.Theme())
+	i.skillPickerModal.SetDimensions(width, height)
+	i.skillPickerModal.Show()
+	return nil
+}
+
+func (i *Intent) linkSkillToCurrentEvent(skill *career.Skill) tea.Cmd {
+	return i.performSkillLinkOperation(skill, true)
+}
+
+func (i *Intent) unlinkSkillFromCurrentEvent(skill *career.Skill) tea.Cmd {
+	return i.performSkillLinkOperation(skill, false)
+}
+
+func (i *Intent) performSkillLinkOperation(skill *career.Skill, link bool) tea.Cmd {
+	if i.selectedEvent == nil || skill == nil {
+		return nil
+	}
+	ctx := i.getContext()
+	var err error
+	if link {
+		err = i.context.CLIEventService.LinkSkillToEvent(ctx, i.selectedEvent.ID, skill.ID)
+	} else {
+		err = i.context.CLIEventService.UnlinkSkillFromEvent(ctx, i.selectedEvent.ID, skill.ID)
+	}
+	if err != nil {
+		action := "Linking"
+		if !link {
+			action = "Unlinking"
+		}
+		i.ShowErrorModal("Error "+action+" Skill", err.Error())
+		return nil
+	}
+	return func() tea.Msg {
+		if link {
+			return SkillLinkedMsg{EventID: i.selectedEvent.ID, SkillID: skill.ID}
+		}
+		return SkillUnlinkedMsg{EventID: i.selectedEvent.ID, SkillID: skill.ID}
+	}
+}
+
+func (i *Intent) refreshSkillsModal() tea.Cmd {
+	if i.selectedEvent == nil || i.viewSkillsModal == nil {
+		return nil
+	}
+	ctx := i.getContext()
+	skills, err := i.context.CLIEventService.GetSkillsForEvent(ctx, i.selectedEvent.ID)
+	if err != nil {
+		i.ShowErrorModal("Error Loading Skills", err.Error())
+		return nil
+	}
+	i.viewSkillsModal.SetSkills(skills)
+	return nil
+}
+
+func (i *Intent) openSkillAddModal() tea.Cmd {
+	width, height := i.getTerminalDimensions()
+	i.skillAddModal = skillModals.NewAddEditModal(nil, width, height)
+	return i.skillAddModal.Init()
+}
+
+func (i *Intent) createAndLinkSkill(skillData *skillModals.SkillEditData) tea.Cmd {
+	if i.selectedEvent == nil || skillData == nil {
+		return nil
+	}
+	ctx := i.getContext()
+	newSkill := skillData.ToSkill("")
+	if err := i.context.CLISkillService.Create(ctx, newSkill); err != nil {
+		i.ShowErrorModal("Error Creating Skill", err.Error())
+		return nil
+	}
+	if err := i.context.CLIEventService.LinkSkillToEvent(ctx, i.selectedEvent.ID, newSkill.ID); err != nil {
+		i.ShowErrorModal("Error Linking Skill", err.Error())
+		return nil
+	}
+	return func() tea.Msg { return SkillCreatedMsg{Skill: newSkill} }
+}
+
+func (i *Intent) inferSkillsFromEvent() tea.Cmd {
+	if i.selectedEvent == nil || i.context.SkillInferenceService == nil {
+		return nil
+	}
+	ctx, service, event := i.getContext(), i.context.SkillInferenceService, i.selectedEvent
+	return func() tea.Msg {
+		result, err := service.InferSkillsFromEvents(ctx, []*career.Event{event})
+		if err != nil {
+			return SkillSuggestionsErrorMsg{Err: err}
+		}
+		return SkillSuggestionsLoadedMsg{Suggestions: result.Suggestions, ExistingSkillNames: result.ExistingSkillNames}
+	}
+}
+
+func (i *Intent) handleSkillSuggestionsLoaded(msg SkillSuggestionsLoadedMsg) tea.Cmd {
+	if len(msg.Suggestions) == 0 {
+		i.ShowErrorModal("No Skills Detected", "No skills detected from event.")
+		return nil
+	}
+	newSuggestions := filterNewSkillSuggestions(msg.Suggestions, msg.ExistingSkillNames)
+	if len(newSuggestions) == 0 {
+		i.ShowErrorModal("All Skills Tracked", "All detected skills already in profile.")
+		return nil
+	}
+	width, height := i.getTerminalDimensions()
+	i.skillSuggestionModal = burstModals.NewSkillSuggestionModal(newSuggestions, i.Theme())
+	i.skillSuggestionModal.SetDimensions(width, height)
+	i.skillSuggestionModal.Show()
+	return nil
+}
+
+func filterNewSkillSuggestions(suggestions []skillinference.SkillSuggestion, existingNames []string) []skillinference.SkillSuggestion {
+	existingMap := make(map[string]bool)
+	for _, name := range existingNames {
+		existingMap[name] = true
+	}
+	result := make([]skillinference.SkillSuggestion, 0)
+	for _, s := range suggestions {
+		if !existingMap[s.Name] {
+			result = append(result, s)
+		}
+	}
+	return result
+}
+
+func (i *Intent) saveSkillFromSuggestion(suggestion skillinference.SkillSuggestion) {
+	if i.context.SkillInferenceService == nil {
+		return
+	}
+	ctx := i.getContext()
+	skills, err := i.context.SkillInferenceService.CreateSkillsFromSuggestions(ctx, []skillinference.SkillSuggestion{suggestion})
+	if err != nil {
+		i.ShowErrorModal("Skill Creation Failed", err.Error())
+		return
+	}
+	if i.selectedEvent != nil && len(skills) > 0 {
+		_ = i.context.CLIEventService.LinkSkillToEvent(ctx, i.selectedEvent.ID, skills[0].ID)
 	}
 }
