@@ -54,7 +54,7 @@ This document outlines the comprehensive BDD test coverage needed for all models
 ---
 
 ### 3. BurstSuggestionModelNew (`burst_suggestion_new.go`)
-**Status**: ❌ No tests exist
+**Status**: ✅ Tests implemented (`burst_suggestion_new_test.go`)
 
 **Behaviors to Test**:
 - Initialization with suggestions

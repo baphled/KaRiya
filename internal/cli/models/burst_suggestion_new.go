@@ -114,10 +114,20 @@ func (m *BurstSuggestionModelNew) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.C
 		return m, func() tea.Msg { return BackMsg{} }
 	}
 
-	// Handle character input for confirm/reject/edit
+	// Handle character input for confirm/reject/edit and vim navigation
 	if msg.Type == tea.KeyRunes {
 		for _, r := range msg.Runes {
 			switch r {
+			case 'j':
+				if len(m.suggestions) > 0 {
+					m.currentIdx = (m.currentIdx + 1) % len(m.suggestions)
+					delete(m.relatedEvents, m.currentIdx)
+				}
+			case 'k':
+				if len(m.suggestions) > 0 {
+					m.currentIdx = (m.currentIdx - 1 + len(m.suggestions)) % len(m.suggestions)
+					delete(m.relatedEvents, m.currentIdx)
+				}
 			case 'y', 'Y':
 				return m.confirmCurrent()
 			case 'n', 'N':
