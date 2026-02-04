@@ -1,3 +1,5 @@
+//go:generate mockgen -destination=../../testutil/mocks/repository/skill_repository_mock.go -package=mockrepo github.com/baphled/kariya/internal/repository/career SkillRepository
+
 package career
 
 import (

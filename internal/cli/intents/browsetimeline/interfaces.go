@@ -1,3 +1,5 @@
+//go:generate mockgen -destination=../../../testutil/mocks/intent/browse_event_service_mock.go -package=mockintent -mock_names=EventService=MockBrowseEventService github.com/baphled/kariya/internal/cli/intents/browsetimeline EventService
+
 // Package browsetimeline implements the BrowseTimeline intent for browsing career events.
 package browsetimeline
 

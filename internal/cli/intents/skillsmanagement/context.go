@@ -1,3 +1,5 @@
+//go:generate mockgen -destination=../../../testutil/mocks/intent/skills_skill_inference_service_mock.go -package=mockintent -mock_names=SkillInferenceService=MockSkillsSkillInferenceService github.com/baphled/kariya/internal/cli/intents/skillsmanagement SkillInferenceService
+
 package skillsmanagement
 
 import (
