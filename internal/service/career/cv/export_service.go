@@ -3,9 +3,11 @@ package cv
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -105,25 +107,25 @@ func NewExportService(log *logger.Logger) *ExportService {
 // NewExportServiceWithClipboard creates a new export service with a custom clipboard implementation.
 //
 // Expected:
-//   - logger must be valid.
-//   - clipboardwriter must be valid.
+//   - log must be a valid logger.
+//   - clipboardWriter must be a valid ClipboardWriter.
 //
 // Returns:
 //   - A fully initialized ExportService ready for use.
 //
 // Side effects:
 //   - None.
-func NewExportServiceWithClipboard(log *logger.Logger, clipboard ClipboardWriter) *ExportService {
+func NewExportServiceWithClipboard(log *logger.Logger, clipboardWriter ClipboardWriter) *ExportService {
 	return &ExportService{
 		logger:    log,
-		clipboard: clipboard,
+		clipboard: clipboardWriter,
 	}
 }
 
 // ExportToText exports a CV to plain text format.
 func (es *ExportService) ExportToText(_ context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet) (string, error) {
 	if cv == nil {
-		return "", fmt.Errorf("CV view is nil")
+		return "", errors.New("CV view is nil")
 	}
 
 	var buf bytes.Buffer
@@ -166,7 +168,7 @@ func (es *ExportService) ExportToText(_ context.Context, cv *career.CVView, sect
 						buf.WriteString(fmt.Sprintf("%s - %s - %s\n\n", group.Header, group.StartDate, group.EndDate))
 					}
 				} else {
-					buf.WriteString(fmt.Sprintf("%s\n\n", group.Header))
+					buf.WriteString(group.Header + "\n\n")
 				}
 			}
 
@@ -184,7 +186,7 @@ func (es *ExportService) ExportToText(_ context.Context, cv *career.CVView, sect
 // ExportToMarkdown exports a CV to markdown format.
 func (es *ExportService) ExportToMarkdown(ctx context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet) (string, error) {
 	if cv == nil {
-		return "", fmt.Errorf("CV view is nil")
+		return "", errors.New("CV view is nil")
 	}
 
 	var buf bytes.Buffer
@@ -242,7 +244,7 @@ func (es *ExportService) ExportToMarkdown(ctx context.Context, cv *career.CVView
 // ExportToYAML exports a CV to YAML format.
 func (es *ExportService) ExportToYAML(ctx context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet) (string, error) {
 	if cv == nil {
-		return "", fmt.Errorf("CV view is nil")
+		return "", errors.New("CV view is nil")
 	}
 
 	// Build a structured output
@@ -344,7 +346,7 @@ func (es *ExportService) GetExportPath() (string, error) {
 // ErrClipboardUnsupported is returned when clipboard operations are not available in the environment.
 // On Linux, this typically means no display server is available (e.g., running over SSH).
 // On macOS and Windows, clipboard support is built-in and this error should not occur.
-var ErrClipboardUnsupported = fmt.Errorf("clipboard not available in headless environment (SSH/no display). Use 'Save to file' instead")
+var ErrClipboardUnsupported = errors.New("clipboard not available in headless environment (SSH/no display). Use 'Save to file' instead")
 
 // CopyToClipboard copies the given content to the system clipboard.
 //
@@ -358,7 +360,7 @@ var ErrClipboardUnsupported = fmt.Errorf("clipboard not available in headless en
 //   - None.
 func (es *ExportService) CopyToClipboard(ctx context.Context, content string) error {
 	if content == "" {
-		return fmt.Errorf("content is empty")
+		return errors.New("content is empty")
 	}
 
 	if es.clipboard.IsUnsupported() {
@@ -385,7 +387,7 @@ func (es *ExportService) Export(ctx context.Context, cv *career.CVView, sections
 // If profileCfg is nil, uses default profile.
 func (es *ExportService) ExportWithProfile(ctx context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet, structure Structure, format ExportFormat, profileCfg *config.ProfileConfig) (string, error) {
 	if cv == nil {
-		return "", fmt.Errorf("CV view is nil")
+		return "", errors.New("CV view is nil")
 	}
 
 	// YAML always uses standard structure (it's data, not presentation)
@@ -470,7 +472,7 @@ func (es *ExportService) exportConsultingText(ctx context.Context, cv *career.CV
 					if group.StartDate != "" && group.EndDate != "" {
 						buf.WriteString(fmt.Sprintf("%s | %s - %s\n", group.Header, group.StartDate, group.EndDate))
 					} else {
-						buf.WriteString(fmt.Sprintf("%s\n", group.Header))
+						buf.WriteString(group.Header + "\n")
 					}
 				}
 
@@ -591,7 +593,7 @@ func (es *ExportService) exportHighlightsText(ctx context.Context, cv *career.CV
 		if len(profile.CoreStrengths) < maxStrengths {
 			maxStrengths = len(profile.CoreStrengths)
 		}
-		for i := 0; i < maxStrengths; i++ {
+		for i := range maxStrengths {
 			buf.WriteString(fmt.Sprintf("  * %s\n", profile.CoreStrengths[i]))
 		}
 	} else {
@@ -651,7 +653,7 @@ func (es *ExportService) exportHighlightsMarkdown(ctx context.Context, cv *caree
 		if len(profile.CoreStrengths) < maxStrengths {
 			maxStrengths = len(profile.CoreStrengths)
 		}
-		for i := 0; i < maxStrengths; i++ {
+		for i := range maxStrengths {
 			buf.WriteString(fmt.Sprintf("- %s\n", profile.CoreStrengths[i]))
 		}
 	} else {
@@ -692,14 +694,17 @@ func (es *ExportService) getTopBulletsByConfidence(bullets map[string][]*career.
 		allBullets = append(allBullets, sectionBullets...)
 	}
 
-	// Sort by confidence descending
-	for i := 0; i < len(allBullets)-1; i++ {
-		for j := i + 1; j < len(allBullets); j++ {
-			if allBullets[j].Confidence > allBullets[i].Confidence {
-				allBullets[i], allBullets[j] = allBullets[j], allBullets[i]
-			}
+	// Sort by confidence descending using standard library
+	slices.SortFunc(allBullets, func(a, b *career.CVBullet) int {
+		// Sort descending: higher confidence comes first
+		if a.Confidence > b.Confidence {
+			return -1
 		}
-	}
+		if a.Confidence < b.Confidence {
+			return 1
+		}
+		return 0
+	})
 
 	// Return top N
 	if len(allBullets) > n {
@@ -780,10 +785,10 @@ func (es *ExportService) exportNarrativeTextWithProfile(ctx context.Context, cv 
 			// Group header with dates
 			if group.Header != "" {
 				if group.StartDate != "" && group.EndDate != "" {
-					buf.WriteString(fmt.Sprintf("%s\n", group.Header))
+					buf.WriteString(group.Header + "\n")
 					buf.WriteString(fmt.Sprintf("%s - %s\n\n", group.StartDate, group.EndDate))
 				} else {
-					buf.WriteString(fmt.Sprintf("%s\n\n", group.Header))
+					buf.WriteString(group.Header + "\n\n")
 				}
 			}
 
@@ -817,7 +822,7 @@ func (es *ExportService) exportNarrativeMarkdownWithProfile(ctx context.Context,
 	// Profile header
 	buf.WriteString(fmt.Sprintf("# %s\n\n", profile.Name))
 	buf.WriteString(fmt.Sprintf("**%s**\n", profile.Role))
-	buf.WriteString(fmt.Sprintf("%s\n", profile.Location))
+	buf.WriteString(profile.Location + "\n")
 	buf.WriteString(fmt.Sprintf("Email: [%s](mailto:%s)\n", profile.Email, profile.Email))
 	buf.WriteString(fmt.Sprintf("GitHub: %s\n", forms.GitHubURL(profile.GitHub)))
 	buf.WriteString(fmt.Sprintf("Portfolio: %s\n\n", profile.Portfolio))

@@ -582,13 +582,13 @@ func (i *Intent) createSkillsFromSuggestions(suggestions []skillinference.SkillS
 			return SkillsCreatedMsg{Error: errors.New("skill inference service not available")}
 		}
 
-		skills, err := service.CreateSkillsFromSuggestions(i.context.Ctx, suggestions)
+		createdSkills, err := service.CreateSkillsFromSuggestions(i.context.Ctx, suggestions)
 		if err != nil {
 			return SkillsCreatedMsg{Error: fmt.Errorf("failed to create skills: %w", err)}
 		}
 
 		return SkillsCreatedMsg{
-			Skills: skills,
+			Skills: createdSkills,
 			Error:  nil,
 		}
 	}

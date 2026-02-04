@@ -24,7 +24,7 @@ import (
 //   - Shift+Tab: Move to previous field
 //   - Enter on last field of group: Advance to next step
 //
-// Note: Onboarding is MANDATORY - Esc key is blocked. Users must complete
+// Onboarding is mandatory: the Esc key is blocked and users must complete
 // the required fields (Name and Email) to proceed with the application.
 type OnboardingWizardModal struct {
 	wizard   *behaviors.WizardBehavior[OnboardingData]
