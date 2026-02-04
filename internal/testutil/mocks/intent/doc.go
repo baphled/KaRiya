@@ -17,9 +17,9 @@
 //
 // # Usage
 //
-//	import mock_intent "github.com/baphled/kariya/internal/testutil/mocks/intent"
+//	import mockintent "github.com/baphled/kariya/internal/testutil/mocks/intent"
 //
 //	ctrl := gomock.NewController(t)
-//	mockSvc := mock_intent.NewMockBurstService(ctrl)
+//	mockSvc := mockintent.NewMockBurstService(ctrl)
 //	mockSvc.EXPECT().ListEvents(gomock.Any(), gomock.Any()).Return(testEvents, nil)
 package mockintent

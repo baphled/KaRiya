@@ -246,6 +246,12 @@ linters:
       alias:
         - pkg: github.com/charmbracelet/bubbletea
           alias: tea
+        - pkg: github.com/baphled/kariya/internal/testutil/mocks/repository
+          alias: mockrepo
+        - pkg: github.com/baphled/kariya/internal/testutil/mocks/service
+          alias: mocksvc
+        - pkg: github.com/baphled/kariya/internal/testutil/mocks/intent
+          alias: mockintent
 
     # ---------------------------------------------------------------------------
     # A7. Code Analysis

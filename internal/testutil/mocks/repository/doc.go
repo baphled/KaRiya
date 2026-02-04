@@ -17,9 +17,9 @@
 //
 // # Usage
 //
-//	import mock_repository "github.com/baphled/kariya/internal/testutil/mocks/repository"
+//	import mockrepo "github.com/baphled/kariya/internal/testutil/mocks/repository"
 //
 //	ctrl := gomock.NewController(t)
-//	mockRepo := mock_repository.NewMockEventRepository(ctrl)
+//	mockRepo := mockrepo.NewMockEventRepository(ctrl)
 //	mockRepo.EXPECT().GetByID(gomock.Any(), gomock.Eq("event-1")).Return(testEvent, nil)
 package mockrepo

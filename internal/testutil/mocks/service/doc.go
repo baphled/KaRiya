@@ -17,9 +17,9 @@
 //
 // # Usage
 //
-//	import mock_service "github.com/baphled/kariya/internal/testutil/mocks/service"
+//	import mocksvc "github.com/baphled/kariya/internal/testutil/mocks/service"
 //
 //	ctrl := gomock.NewController(t)
-//	mockSvc := mock_service.NewMockCVGenerationService(ctrl)
+//	mockSvc := mocksvc.NewMockCVGenerationService(ctrl)
 //	mockSvc.EXPECT().GenerateCV(gomock.Any(), gomock.Eq("default")).Return(testCV, nil)
 package mocksvc
