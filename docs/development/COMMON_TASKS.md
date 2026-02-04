@@ -151,59 +151,6 @@ i.activeScreen = i.formScreen
 
 **Existing screen example**: `internal/cli/screens/skills/skill_form.go`
 
-**Intent Wrapper Integration (Legacy - existing code only)**:
-
-When maintaining existing `models/` wrappers (will be migrated to `base.FormScreen[T]`):
-
-```go
-// 1. Create wrapper in internal/cli/models/huh_your_form.go
-type HuhYourForm struct {
-    *BaseStandardModel
-    formData *forms.YourFormData
-    form     *huh.Form
-    width    int
-    height   int
-}
-
-func NewHuhYourForm() *HuhYourForm {
-    m := &HuhYourForm{
-        BaseStandardModel: NewBaseStandardModel(),
-        formData:          &forms.YourFormData{},
-        width:             80,   // Default width
-        height:            24,   // Default height
-    }
-    m.rebuildForm()
-    return m
-}
-
-func (m *HuhYourForm) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-    switch msg := msg.(type) {
-    case tea.WindowSizeMsg:
-        // Handle window size internally - THIS IS KEY
-        m.width = msg.Width
-        m.height = msg.Height
-        m.form = m.form.WithHeight(forms.DefaultFormHeight(m.height)).WithWidth(m.width - 4)
-        return m, nil
-    }
-    // ... rest of update logic
-}
-
-// 2. Use wrapper in intent (NOT raw *huh.Form)
-type YourIntent struct {
-    yourForm *models.HuhYourForm  // ✅ Correct - wrapper model
-    // form *huh.Form             // ❌ Wrong - causes alignment issues
-}
-
-func (i *YourIntent) handleAddNew() tea.Cmd {
-    i.yourForm = models.NewHuhYourForm()
-    return i.yourForm.Init()
-}
-```
-
-**Existing wrapper examples**:
-- `internal/cli/models/huh_capture_form.go` - Career event capture
-- `internal/cli/models/huh_skill_form.go` - Skill management
-
 **Modal Integration** (inline editing - wrapper NOT required):
 ```go
 type EditYourModal struct {

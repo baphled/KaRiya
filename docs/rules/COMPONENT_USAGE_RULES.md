@@ -394,13 +394,13 @@ automatically. It returns `*screens.SubmitResult` (with `FormData` field) or `*s
 Screen types in `screens/{feature}/` embed `base.FormScreen[T]` and delegate to form builders.
 See [`docs/FORMS_GUIDE.md`](../FORMS_GUIDE.md) for the complete forms API.
 
-**DEPRECATED Pattern** (Legacy - Still Active, Pending Migration):
+**DELETED Pattern** (the `models/` package has been removed):
 ```go
-// ❌ WRONG for new code - models/ package (DEPRECATED)
+// ❌ WRONG - models/ package no longer exists
 import "github.com/baphled/kariya/internal/cli/models"
 
 type MyIntent struct {
-    form *models.CaptureForm  // DEPRECATED - use base.FormScreen[T] instead
+    form *models.CaptureForm  // DELETED - use base.FormScreen[T] instead
 }
 ```
 
@@ -1007,10 +1007,10 @@ if i.deleteModal.Confirmed() {
 
 ---
 
-### Anti-Pattern 7: Using models/ Package for New Forms
+### Anti-Pattern 7: Using models/ Package for Forms
 
 ```go
-// ❌ WRONG for new code - models/ package (DEPRECATED)
+// ❌ WRONG - models/ package has been deleted
 import "github.com/baphled/kariya/internal/cli/models"
 type MyIntent struct {
     form *models.CaptureForm

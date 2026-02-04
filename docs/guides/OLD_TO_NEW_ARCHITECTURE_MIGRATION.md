@@ -830,16 +830,16 @@ func (s *DetailScreen) View() string {
 
 ## Phase 5: Forms Migration
 
-### models/ Package → screens/ Package
+### models/ Package → screens/ Package (COMPLETED)
 
-**OLD Pattern** (DEPRECATED):
+**OLD Pattern** (DELETED — the `models/` package no longer exists):
 ```go
 // File: my_intent.go
 import "github.com/baphled/kariya/internal/cli/models"
 
 type MyIntent struct {
     *BaseIntent
-    form *models.CaptureForm  // DEPRECATED
+    form *models.CaptureForm  // DELETED
 }
 
 func (i *MyIntent) Init() tea.Cmd {
@@ -1088,12 +1088,12 @@ success := primitives.SuccessText("Saved successfully", theme)
 
 ### Example 3: Forms Migration (capture_event_intent.go)
 
-**BEFORE** (models/ Package):
+**BEFORE** (models/ Package — DELETED):
 ```go
 import "github.com/baphled/kariya/internal/cli/models"
 
 type CaptureEventIntent struct {
-    form *models.CaptureForm  // DEPRECATED
+    form *models.CaptureForm  // DELETED
 }
 
 func (i *CaptureEventIntent) Init() tea.Cmd {
@@ -1199,19 +1199,19 @@ state := myfeature.StateList
 
 **Error**:
 ```
-❌ VIOLATION: Deprecated models/ package for forms
+❌ VIOLATION: Deleted models/ package for forms
 File: internal/cli/intents/events/intent.go
 ```
 
-**Cause**: Still using models.*Form
+**Cause**: The `models/` package has been deleted. Any remaining references will fail to compile.
 
 **Fix**: Change to FormScreen
 ```go
-// Remove this
+// This no longer compiles — models/ is deleted
 import "github.com/baphled/kariya/internal/cli/models"
 form *models.CaptureForm
 
-// Add this
+// Use this instead
 import "github.com/baphled/kariya/internal/cli/screens/events"
 formScreen *events.FormScreen
 ```

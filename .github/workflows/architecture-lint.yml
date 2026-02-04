@@ -8,7 +8,6 @@ on:
       - 'internal/cli/components/**'
       - 'internal/cli/behaviors/**'
       - 'internal/cli/uikit/**'
-      - 'internal/cli/models/**'
       - 'internal/cli/forms/**'
       - 'internal/**/*_test.go'
       - 'internal/testutil/**'
