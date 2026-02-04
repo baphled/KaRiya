@@ -15,6 +15,12 @@ import (
 // ModalSpinnerTickMsg is sent periodically to advance the spinner animation.
 type ModalSpinnerTickMsg struct{}
 
+// ModalCountdownTickMsg is sent periodically to update the auto-dismiss countdown display.
+type ModalCountdownTickMsg struct{}
+
+// ModalAutoDismissMsg is sent when the auto-dismiss countdown reaches zero.
+type ModalAutoDismissMsg struct{}
+
 // ModalType defines the type of modal.
 type ModalType int
 
@@ -557,7 +563,8 @@ func (m *Modal) RotateMessage() string {
 	return m.Message
 }
 
-// Init initializes the modal and starts spinner animation for loading modals.
+// Init initializes the modal and starts spinner animation for loading modals
+// or countdown tick for success modals with auto-dismiss.
 //
 // Returns:
 //   - A tea.Cmd value.
@@ -568,10 +575,14 @@ func (m *Modal) Init() tea.Cmd {
 	if m.Type == ModalLoading && m.spinner != nil {
 		return m.tickSpinner()
 	}
+	if m.Type == ModalSuccess && m.AutoDismiss > 0 {
+		return m.tickCountdown()
+	}
 	return nil
 }
 
-// Update handles messages for the modal, advancing the spinner on tick.
+// Update handles messages for the modal, advancing the spinner on tick
+// and handling countdown tick for success modals with auto-dismiss.
 //
 // Expected:
 //   - msg must be valid.
@@ -591,6 +602,17 @@ func (m *Modal) Update(msg tea.Msg) tea.Cmd {
 			}
 			return m.tickSpinner()
 		}
+	case ModalCountdownTickMsg:
+		if m.Type == ModalSuccess && m.AutoDismiss > 0 {
+			elapsed := time.Since(m.fadeStartTime)
+			remaining := m.AutoDismiss - elapsed
+			if remaining <= 0 {
+				return func() tea.Msg {
+					return ModalAutoDismissMsg{}
+				}
+			}
+			return m.tickCountdown()
+		}
 	}
 	return nil
 }
@@ -599,6 +621,13 @@ func (m *Modal) Update(msg tea.Msg) tea.Cmd {
 func (m *Modal) tickSpinner() tea.Cmd {
 	return tea.Tick(100*time.Millisecond, func(t time.Time) tea.Msg {
 		return ModalSpinnerTickMsg{}
+	})
+}
+
+// tickCountdown returns a command to tick the auto-dismiss countdown.
+func (m *Modal) tickCountdown() tea.Cmd {
+	return tea.Tick(1*time.Second, func(t time.Time) tea.Msg {
+		return ModalCountdownTickMsg{}
 	})
 }
 

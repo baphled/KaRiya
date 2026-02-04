@@ -118,6 +118,7 @@ var _ = Describe("CaptureEvent E2E Workflow", func() {
 
 			testEvent := createCaptureTestEvent("Test event for post-save review")
 			env.SubmitEvent(testEvent)
+			env.DismissSuccessModal()
 
 			view := env.GetView()
 			Expect(view).To(SatisfyAny(

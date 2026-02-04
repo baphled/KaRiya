@@ -304,7 +304,7 @@ func (c *ConfigureSystemIntent) updateSavingModal(msg tea.Msg) tea.Cmd {
 		c.savingModal = nil
 		c.result = msg.Result
 		c.resultModal = feedback.NewSuccessModal("Configuration saved!")
-		return nil
+		return c.resultModal.Init()
 
 	case ConfigErrorMsg:
 		// Save failed
@@ -324,9 +324,10 @@ func (c *ConfigureSystemIntent) updateSavingModal(msg tea.Msg) tea.Cmd {
 
 // updateResultModal handles updates to the result modal (success/error).
 func (c *ConfigureSystemIntent) updateResultModal(msg tea.Msg) tea.Cmd {
-	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
 		// Any key dismisses the result modal
-		switch keyMsg.String() {
+		switch msg.String() {
 		case "enter", "esc", "q", " ":
 			c.resultModal = nil
 			// If error, go back to edit
@@ -337,6 +338,16 @@ func (c *ConfigureSystemIntent) updateResultModal(msg tea.Msg) tea.Cmd {
 			// Success - complete the intent
 			c.active = false
 		}
+	case feedback.ModalCountdownTickMsg:
+		// Forward countdown tick to result modal
+		if c.resultModal != nil && c.resultModal.Type == feedback.ModalSuccess {
+			return c.resultModal.Update(msg)
+		}
+	case feedback.ModalAutoDismissMsg:
+		// Auto-dismiss success modal
+		c.resultModal = nil
+		// Success - complete the intent
+		c.active = false
 	}
 
 	return nil

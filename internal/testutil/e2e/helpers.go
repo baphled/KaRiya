@@ -15,6 +15,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/intents/captureevent"
 	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/service"
+	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
@@ -908,6 +909,25 @@ func (e *TestEnv) processCmdResult(msg tea.Msg) {
 		e.Model = model
 		// Recursively execute any returned command
 		e.executeCmd(nextCmd)
+
+	case feedback.ModalCountdownTickMsg:
+		// Countdown tick - essential for countdown display update
+		modelInterface, nextCmd := e.Model.Update(msg)
+		if model, ok := modelInterface.(*app.Model); ok {
+			e.Model = model
+		}
+		// Recursively execute any returned command
+		e.executeCmd(nextCmd)
+
+	case feedback.ModalAutoDismissMsg:
+		// Auto-dismiss - essential for success modal → next state transition
+		modelInterface, nextCmd := e.Model.Update(msg)
+		if model, ok := modelInterface.(*app.Model); ok {
+			e.Model = model
+		}
+		// Recursively execute any returned command
+		e.executeCmd(nextCmd)
+
 	default:
 		// Ignore all other messages (cursor blink, window resize, etc.)
 		return
@@ -952,6 +972,19 @@ func (e *TestEnv) SubmitEvent(event *career.Event) *TestEnv {
 	e.T.Helper()
 
 	return e.SendMessage(models.SubmitMsg{Event: event, Err: nil})
+}
+
+// DismissSuccessModal dismisses the success modal after event submission.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
+func (e *TestEnv) DismissSuccessModal() *TestEnv {
+	e.T.Helper()
+
+	return e.SendMessage(captureevent.DismissModalMsg{})
 }
 
 // ============================================================================
