@@ -133,6 +133,94 @@ var _ = Describe("ReviewScreen", func() {
 				Expect(result.Data()).To(Equal("edit"))
 			})
 		})
+
+		Context("viewport navigation", func() {
+			It("should go to top on 'g' key", func() {
+				cmd, result := screen.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'g'}})
+
+				Expect(cmd).To(BeNil())
+				Expect(result).To(BeNil())
+			})
+
+			It("should go to bottom on 'G' key", func() {
+				cmd, result := screen.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'G'}})
+
+				Expect(cmd).To(BeNil())
+				Expect(result).To(BeNil())
+			})
+
+			It("should handle 'k' key for scrolling up", func() {
+				cmd, result := screen.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
+
+				Expect(result).To(BeNil())
+				_ = cmd
+			})
+
+			It("should handle 'j' key for scrolling down", func() {
+				cmd, result := screen.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
+
+				Expect(result).To(BeNil())
+				_ = cmd
+			})
+
+			It("should handle up arrow key", func() {
+				cmd, result := screen.Update(tea.KeyMsg{Type: tea.KeyUp})
+
+				Expect(result).To(BeNil())
+				_ = cmd
+			})
+
+			It("should handle down arrow key", func() {
+				cmd, result := screen.Update(tea.KeyMsg{Type: tea.KeyDown})
+
+				Expect(result).To(BeNil())
+				_ = cmd
+			})
+
+			It("should handle page up key", func() {
+				cmd, result := screen.Update(tea.KeyMsg{Type: tea.KeyPgUp})
+
+				Expect(result).To(BeNil())
+				_ = cmd
+			})
+
+			It("should handle page down key", func() {
+				cmd, result := screen.Update(tea.KeyMsg{Type: tea.KeyPgDown})
+
+				Expect(result).To(BeNil())
+				_ = cmd
+			})
+
+			It("should handle ctrl+u for half page up", func() {
+				cmd, result := screen.Update(tea.KeyMsg{Type: tea.KeyCtrlU})
+
+				Expect(result).To(BeNil())
+				_ = cmd
+			})
+
+			It("should handle ctrl+d for half page down", func() {
+				cmd, result := screen.Update(tea.KeyMsg{Type: tea.KeyCtrlD})
+
+				Expect(result).To(BeNil())
+				_ = cmd
+			})
+		})
+
+		Context("unhandled messages", func() {
+			It("should return nil for unhandled key messages", func() {
+				cmd, result := screen.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'z'}})
+
+				Expect(cmd).To(BeNil())
+				Expect(result).To(BeNil())
+			})
+
+			It("should return nil for mouse messages", func() {
+				cmd, result := screen.Update(tea.MouseMsg{})
+
+				Expect(cmd).To(BeNil())
+				Expect(result).To(BeNil())
+			})
+		})
 	})
 
 	Describe("View", func() {
