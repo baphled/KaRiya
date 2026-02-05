@@ -352,6 +352,9 @@ func (i *Intent) GetSelectedCVLength() string {
 
 // SetStateForTest sets the state for test purposes.
 //
+// Expected:
+//   - state: The state to set.
+//
 // Side effects:
 //   - Mutates the state field.
 func (i *Intent) SetStateForTest(state State) {
@@ -359,6 +362,9 @@ func (i *Intent) SetStateForTest(state State) {
 }
 
 // SetSelectedExportFormatForTest sets the export format for test purposes.
+//
+// Expected:
+//   - format: The export format to set.
 //
 // Side effects:
 //   - Mutates the selectedExportFormat field.
@@ -368,6 +374,9 @@ func (i *Intent) SetSelectedExportFormatForTest(format ExportFormat) {
 
 // SetSelectedExportOptionForTest sets the export option for test purposes.
 //
+// Expected:
+//   - option: The export option to set.
+//
 // Side effects:
 //   - Mutates the selectedExportOption field.
 func (i *Intent) SetSelectedExportOptionForTest(option ExportOption) {
@@ -375,6 +384,9 @@ func (i *Intent) SetSelectedExportOptionForTest(option ExportOption) {
 }
 
 // SetIsExportingForTest sets the exporting flag for test purposes.
+//
+// Expected:
+//   - exporting: Whether exporting is in progress.
 //
 // Side effects:
 //   - Mutates the isExporting field.

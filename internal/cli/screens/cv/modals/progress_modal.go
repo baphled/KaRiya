@@ -367,6 +367,13 @@ func (m *ProgressModal) GetError() error {
 }
 
 // GetDimensions returns the current modal dimensions.
+//
+// Returns:
+//   - width: The modal width in characters.
+//   - height: The modal height in characters.
+//
+// Side effects:
+//   - None.
 func (m *ProgressModal) GetDimensions() (width, height int) {
 	return m.width, m.height
 }
