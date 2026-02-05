@@ -20,157 +20,7 @@ import (
 var _ = Describe("Global Keys Enforcement E2E", func() {
 
 	// =========================================================================
-	// PART 1: REFERENCE IMPLEMENTATION - GenerateCV (Gold Standard)
-	// =========================================================================
-	//
-	// GenerateCV is our reference because:
-	// - 10 states (most complex intent)
-	// - 16 existing escape tests (all passing)
-	// - Already follows correct pattern
-	// - These tests MUST pass - they establish the contract
-	// =========================================================================
-
-	Describe("Reference Implementation: GenerateCV", func() {
-		var intent *GenerateCVIntent
-		var profiles []*CVProfile
-		var events []*career.Event
-
-		BeforeEach(func() {
-			profiles = []*CVProfile{
-				{
-					ID:             "profile1",
-					Name:           "Senior IC",
-					TargetRole:     "senior_ic",
-					TargetAudience: "hiring_manager",
-				},
-			}
-
-			events = []*career.Event{
-				fixtures.EventWith(uuid.New().String(), "Test event for CV generation", "", ""),
-			}
-
-			ctx := &GenerateCVContext{
-				AvailableProfiles: profiles,
-				Events:            events,
-				Facts:             make([]*career.Fact, 0),
-				DefaultProfile:    profiles[0],
-			}
-
-			var err error
-			intent, err = NewGenerateCVIntent(ctx)
-			Expect(err).NotTo(HaveOccurred())
-			intent.Init()
-		})
-
-		Context("Root State Behavior", func() {
-			It("should cancel intent on escape from SelectProfile (root state)", func() {
-				intent.state.currentState = GenerateCVStateSelectProfile
-				intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
-
-				result := intent.Result()
-				Expect(result).NotTo(BeNil())
-				Expect(result.Status).To(Equal(Cancelled))
-			})
-
-			It("should ignore 'q' key from root state (quit only from main menu)", func() {
-				intent.state.currentState = GenerateCVStateSelectProfile
-				cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-
-				// q no longer quits from within intents - only from main menu
-				Expect(cmd).To(BeNil())
-			})
-
-			It("should toggle help on '?' from root state", func() {
-				intent.state.currentState = GenerateCVStateSelectProfile
-				helpBefore := intent.IsHelpVisible()
-
-				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}})
-
-				Expect(intent.IsHelpVisible()).NotTo(Equal(helpBefore))
-			})
-		})
-
-		Context("Intermediate State Behavior", func() {
-			It("should go back on escape from SelectAudience", func() {
-				intent.state.currentState = GenerateCVStateSelectAudience
-				intent.state.selectedProfile = profiles[0]
-
-				intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
-
-				Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectProfile))
-				Expect(intent.Result()).To(BeNil()) // Still active
-			})
-
-			It("should go back on escape from Preview", func() {
-				intent.state.currentState = GenerateCVStatePreview
-				generatedCV := fixtures.CVViewWith("cv1", "Test", "", "test")
-				generatedCV.SourceEventCount = 1
-				generatedCV.SourceFactCount = 0
-				intent.state.generatedCV = generatedCV
-
-				intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
-
-				Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectAudience))
-				Expect(intent.Result()).To(BeNil())
-			})
-		})
-
-		Context("Async State Behavior", func() {
-			It("should allow escape during Generating (async state)", func() {
-				intent.state.currentState = GenerateCVStateGenerating
-				intent.state.isGenerating = true
-
-				intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
-
-				// Should go back, letting generation complete
-				Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectAudience))
-			})
-		})
-
-		Context("Universal Keys Work in All States", func() {
-			DescribeTable("'q' key is ignored in all states (quit only from main menu)",
-				func(state GenerateCVState) {
-					intent.state.currentState = state
-					if state != GenerateCVStateSelectProfile {
-						intent.state.selectedProfile = profiles[0]
-					}
-
-					cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-					// q no longer quits from within intents - only from main menu
-					Expect(cmd).To(BeNil(), "'q' should be ignored in state %s (quit only from main menu)", state)
-				},
-				Entry("SelectProfile", GenerateCVStateSelectProfile),
-				Entry("SelectAudience", GenerateCVStateSelectAudience),
-				Entry("Generating", GenerateCVStateGenerating),
-				Entry("Preview", GenerateCVStatePreview),
-				Entry("Review", GenerateCVStateReview),
-				Entry("Confirm", GenerateCVStateConfirm),
-			)
-
-			DescribeTable("help key works in all states",
-				func(state GenerateCVState) {
-					intent.state.currentState = state
-					if state != GenerateCVStateSelectProfile {
-						intent.state.selectedProfile = profiles[0]
-					}
-
-					helpBefore := intent.IsHelpVisible()
-					intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}})
-					Expect(intent.IsHelpVisible()).NotTo(Equal(helpBefore),
-						"Help should toggle in state %s", state)
-				},
-				Entry("SelectProfile", GenerateCVStateSelectProfile),
-				Entry("SelectAudience", GenerateCVStateSelectAudience),
-				Entry("Generating", GenerateCVStateGenerating),
-				Entry("Preview", GenerateCVStatePreview),
-				Entry("Review", GenerateCVStateReview),
-				Entry("Confirm", GenerateCVStateConfirm),
-			)
-		})
-	})
-
-	// =========================================================================
-	// PART 2: CONTRACT COMPLIANCE - All Intents Must Follow Same Rules
+	// CONTRACT COMPLIANCE - All Intents Must Follow Same Rules
 	// =========================================================================
 	//
 	// All intents must:
@@ -212,17 +62,19 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 		})
 
 		Context("Quit Key Behavior", func() {
-			DescribeTable("should ignore 'q' key in root state (quit only from main menu)",
+			DescribeTable("should cancel intent on 'q' key with cancelled status",
 				func(name string, setupFunc func() (Intent, error)) {
 					intent, err := setupFunc()
 					Expect(err).NotTo(HaveOccurred())
 
 					intent.Init()
-					cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+					intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
 
-					// q no longer quits from within intents - only from main menu
-					Expect(cmd).To(BeNil(),
-						"%s: 'q' key should be ignored within intent (quit only from main menu)", name)
+					result := intent.Result()
+					Expect(result).NotTo(BeNil(),
+						"%s: 'q' key should cancel intent", name)
+					Expect(result.Status).To(Equal(Cancelled),
+						"%s: 'q' key should produce cancelled status", name)
 				},
 				Entry("GenerateCV", "GenerateCV", func() (Intent, error) {
 					return NewGenerateCVIntent(&GenerateCVContext{

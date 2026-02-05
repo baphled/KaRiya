@@ -205,7 +205,6 @@ func (r *DefaultIntentRegistrar) registerGenerateCV(ctx context.Context, router 
 			r.config.Log.Error("Failed to create GenerateCV intent: %v", err)
 			return nil
 		}
-		intent.EnableWizardFlow()
 		return intent
 	})
 }

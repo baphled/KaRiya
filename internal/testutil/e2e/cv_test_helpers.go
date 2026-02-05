@@ -230,7 +230,6 @@ func (r *cvMockRegistrar) overrideGenerateCV(ctx context.Context, router *intent
 			r.log.Error("Failed to create GenerateCV intent: %v", intentErr)
 			return nil
 		}
-		intent.EnableWizardFlow()
 		return intent
 	})
 }

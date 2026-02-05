@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
@@ -75,9 +76,6 @@ var _ = Describe("GenerateCV Wizard E2E Tests", func() {
 		intent, err = NewGenerateCVIntent(ctx)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(intent).NotTo(BeNil())
-
-		// Enable wizard flow
-		intent.EnableWizardFlow()
 
 		// Set terminal dimensions via WindowSizeMsg
 		termInfo := intent.GetTerminalInfo()
@@ -600,6 +598,8 @@ func (m *mockWizardPreviewScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenRe
 			return nil, &screens.SubmitResult{FormData: "complete"}
 		case "x":
 			return nil, &screens.NavigateResult{ResultData: "export"}
+		case "e":
+			return nil, &screens.NavigateResult{ResultData: "edit"}
 		case "esc":
 			return nil, &screens.CancelResult{}
 		}
@@ -716,7 +716,6 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 		var err error
 		intent, err = NewGenerateCVIntent(ctx)
 		Expect(err).NotTo(HaveOccurred())
-		intent.EnableWizardFlow()
 
 		// Initialize terminal info
 		termInfo := intent.GetTerminalInfo()
@@ -1078,7 +1077,6 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 			}
 			intentNoFactory, err := NewGenerateCVIntent(ctxNoFactory)
 			Expect(err).NotTo(HaveOccurred())
-			intentNoFactory.EnableWizardFlow()
 			termInfo := intentNoFactory.GetTerminalInfo()
 			termInfo.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 
@@ -1264,7 +1262,7 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 			// This is equivalent to what handleExportComplete() does after modal form submission
 			intent.state.selectedExportFormat = CVExportFormatText
 			intent.state.selectedExportOption = CVExportOptionSaveToFile
-			intent.state.currentState = GenerateCVStateExporting
+			intent.state.currentState = CVStateExporting
 			intent.state.isExporting = true
 		}
 
@@ -1275,7 +1273,7 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 			intent.Update(CVExportCompleteMsg{Path: "/tmp/cv_export.txt", Error: nil})
 
 			// Should be in export complete state
-			Expect(intent.state.currentState).To(Equal(GenerateCVStateExportComplete))
+			Expect(intent.state.currentState).To(Equal(CVStateExportComplete))
 			Expect(intent.state.exportedPath).To(Equal("/tmp/cv_export.txt"))
 			Expect(intent.state.exportError).ToNot(HaveOccurred())
 		})
@@ -1288,7 +1286,7 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 			intent.Update(CVExportCompleteMsg{Path: "", Error: testError})
 
 			// Should be in export complete state with error
-			Expect(intent.state.currentState).To(Equal(GenerateCVStateExportComplete))
+			Expect(intent.state.currentState).To(Equal(CVStateExportComplete))
 			Expect(intent.state.exportError).To(Equal(testError))
 		})
 
@@ -1315,7 +1313,7 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 		It("should complete workflow when Enter pressed on export complete", func() {
 			getToExportingState()
 			intent.Update(CVExportCompleteMsg{Path: "/tmp/cv_export.txt", Error: nil})
-			Expect(intent.state.currentState).To(Equal(GenerateCVStateExportComplete))
+			Expect(intent.state.currentState).To(Equal(CVStateExportComplete))
 
 			// Press Enter to complete workflow
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
@@ -1333,13 +1331,13 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 		It("should return to export location selection when Esc pressed on export complete", func() {
 			getToExportingState()
 			intent.Update(CVExportCompleteMsg{Path: "", Error: fmt.Errorf("export failed")})
-			Expect(intent.state.currentState).To(Equal(GenerateCVStateExportComplete))
+			Expect(intent.state.currentState).To(Equal(CVStateExportComplete))
 
 			// Press Esc to retry
 			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
 
 			// Should return to export location selection
-			Expect(intent.state.currentState).To(Equal(GenerateCVStateExportSelectLocation))
+			Expect(intent.state.currentState).To(Equal(CVStateExportSelectLocation))
 			Expect(intent.state.exportError).ToNot(HaveOccurred())
 		})
 
@@ -1374,7 +1372,7 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
 			intent.Update(CVExportCompleteMsg{Path: "/tmp/cv.txt", Error: nil})
-			Expect(intent.state.currentState).To(Equal(GenerateCVStateExportComplete))
+			Expect(intent.state.currentState).To(Equal(CVStateExportComplete))
 		})
 
 		It("should quit on q key in export complete state", func() {
@@ -1416,7 +1414,7 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 
 			// Step 3: Simulate export completion (as if user selected format/location and export ran)
 			intent.Update(CVExportCompleteMsg{Path: "/home/user/cv_2026.txt", Error: nil})
-			Expect(intent.state.currentState).To(Equal(GenerateCVStateExportComplete))
+			Expect(intent.state.currentState).To(Equal(CVStateExportComplete))
 
 			// Step 4: Verify export complete view
 			view = intent.View()
@@ -1450,7 +1448,7 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 
 			// Export fails
 			intent.Update(CVExportCompleteMsg{Path: "", Error: fmt.Errorf("network error")})
-			Expect(intent.state.currentState).To(Equal(GenerateCVStateExportComplete))
+			Expect(intent.state.currentState).To(Equal(CVStateExportComplete))
 
 			// View shows error
 			view := intent.View()
@@ -1461,7 +1459,7 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 
 			// User presses Esc to retry
 			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
-			Expect(intent.state.currentState).To(Equal(GenerateCVStateExportSelectLocation))
+			Expect(intent.state.currentState).To(Equal(CVStateExportSelectLocation))
 
 			// User could now retry with different options
 		})
@@ -1575,7 +1573,6 @@ var _ = Describe("GenerateCV Complete Workflow E2E Tests", func() {
 		var err error
 		intent, err = NewGenerateCVIntent(ctx)
 		Expect(err).NotTo(HaveOccurred())
-		intent.EnableWizardFlow()
 
 		termInfo := intent.GetTerminalInfo()
 		termInfo.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
@@ -1649,7 +1646,7 @@ var _ = Describe("GenerateCV Complete Workflow E2E Tests", func() {
 				Path:  "/home/user/.kariya/exports/staff_engineer_cv_2026.md",
 				Error: nil,
 			})
-			Expect(intent.state.currentState).To(Equal(GenerateCVStateExportComplete))
+			Expect(intent.state.currentState).To(Equal(CVStateExportComplete))
 			Expect(intent.exportModal.IsVisible()).To(BeFalse())
 
 			// ============================================================
@@ -1960,16 +1957,16 @@ var _ = Describe("GenerateCV Complete Workflow E2E Tests", func() {
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
 			Expect(intent.state.currentState).To(Equal(CVStateExporting))
 
-			// State 7: GenerateCVStateExporting (actual export in progress)
+			// State 7: CVStateExporting (actual export in progress)
 			// This happens when export modal is completed and async export starts
 			// We simulate this by directly setting state + sending completion msg
 			intent.state.selectedExportFormat = CVExportFormatMarkdown
 			intent.state.selectedExportOption = CVExportOptionSaveToFile
-			intent.state.currentState = GenerateCVStateExporting
+			intent.state.currentState = CVStateExporting
 
 			// State 8: Export Complete
 			intent.Update(CVExportCompleteMsg{Path: "/tmp/cv.md", Error: nil})
-			Expect(intent.state.currentState).To(Equal(GenerateCVStateExportComplete))
+			Expect(intent.state.currentState).To(Equal(CVStateExportComplete))
 
 			// Complete workflow
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
@@ -2119,6 +2116,117 @@ var _ = Describe("GenerateCV Complete Workflow E2E Tests", func() {
 				Expect(string(intent.state.selectedTechnologyFocus)).To(Equal("specialist"))
 				Expect(intent.state.selectedSkillsFormat).To(Equal("grouped"))
 			})
+		})
+	})
+
+	Describe("Screen Navigation: Review and Preview Edit/Export Paths", func() {
+		It("should transition from review to export when 'x' is pressed", func() {
+			intent.Init()
+			intent.Update(WizardCompleteMsg{ProfileID: "profile_1", Audience: "hiring_manager"})
+			intent.Update(TechnologiesExtractedMsg{})
+			intent.Update(CVGenerationCompleteMsg{CV: fixtures.CVView("cv_1")})
+
+			Expect(intent.state.currentState).To(Equal(CVStateReview))
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
+
+			Expect(intent.state.currentState).To(Equal(CVStateExporting))
+			Expect(intent.exportModal).NotTo(BeNil())
+			Expect(intent.exportModal.IsVisible()).To(BeTrue())
+		})
+
+		It("should transition from review to wizard edit when 'e' is pressed", func() {
+			intent.Init()
+			intent.Update(WizardCompleteMsg{ProfileID: "profile_1", Audience: "hiring_manager"})
+			intent.Update(TechnologiesExtractedMsg{})
+			intent.Update(CVGenerationCompleteMsg{CV: fixtures.CVView("cv_1")})
+
+			Expect(intent.state.currentState).To(Equal(CVStateReview))
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
+
+			Expect(intent.state.currentState).To(Equal(CVStateConfiguring))
+			Expect(intent.wizardModal).NotTo(BeNil())
+		})
+
+		It("should transition from preview to wizard edit when 'e' is pressed", func() {
+			intent.Init()
+			intent.Update(WizardCompleteMsg{ProfileID: "profile_1", Audience: "hiring_manager"})
+			intent.Update(TechnologiesExtractedMsg{})
+			intent.Update(CVGenerationCompleteMsg{CV: fixtures.CVView("cv_1")})
+
+			Expect(intent.state.currentState).To(Equal(CVStateReview))
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'p'}})
+			Expect(intent.state.currentState).To(Equal(CVStatePreview))
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
+
+			Expect(intent.state.currentState).To(Equal(CVStateConfiguring))
+			Expect(intent.wizardModal).NotTo(BeNil())
+		})
+	})
+
+	Describe("Export Modal Completion Flow", func() {
+		It("should process export modal completion and start async export", func() {
+			intent.Init()
+			intent.Update(WizardCompleteMsg{ProfileID: "profile_1", Audience: "hiring_manager"})
+			intent.Update(TechnologiesExtractedMsg{})
+			intent.Update(CVGenerationCompleteMsg{CV: fixtures.CVView("cv_1")})
+
+			Expect(intent.state.currentState).To(Equal(CVStateReview))
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
+			Expect(intent.state.currentState).To(Equal(CVStateExporting))
+			Expect(intent.exportModal).NotTo(BeNil())
+
+			exportData := &components.ExportData{
+				Format:   "markdown",
+				Location: "file",
+			}
+			intent.handleExportComplete(exportData)
+
+			Expect(intent.state.selectedExportFormat).To(Equal(CVExportFormatMarkdown))
+			Expect(intent.state.selectedExportOption).To(Equal(CVExportOptionSaveToFile))
+			Expect(intent.state.currentState).To(Equal(CVStateExporting))
+			Expect(intent.progressModal).NotTo(BeNil())
+			Expect(intent.progressModal.IsVisible()).To(BeTrue())
+		})
+
+		It("should map text format correctly in handleExportComplete", func() {
+			intent.Init()
+			intent.Update(WizardCompleteMsg{ProfileID: "profile_1", Audience: "hiring_manager"})
+			intent.Update(TechnologiesExtractedMsg{})
+			intent.Update(CVGenerationCompleteMsg{CV: fixtures.CVView("cv_1")})
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
+
+			exportData := &components.ExportData{
+				Format:   "text",
+				Location: "clipboard",
+			}
+			intent.handleExportComplete(exportData)
+
+			Expect(intent.state.selectedExportFormat).To(Equal(CVExportFormatText))
+			Expect(intent.state.selectedExportOption).To(Equal(CVExportOptionClipboard))
+		})
+
+		It("should map yaml format correctly in handleExportComplete", func() {
+			intent.Init()
+			intent.Update(WizardCompleteMsg{ProfileID: "profile_1", Audience: "hiring_manager"})
+			intent.Update(TechnologiesExtractedMsg{})
+			intent.Update(CVGenerationCompleteMsg{CV: fixtures.CVView("cv_1")})
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
+
+			exportData := &components.ExportData{
+				Format:   "yaml",
+				Location: "file",
+			}
+			intent.handleExportComplete(exportData)
+
+			Expect(intent.state.selectedExportFormat).To(Equal(CVExportFormatYAML))
+			Expect(intent.state.selectedExportOption).To(Equal(CVExportOptionSaveToFile))
 		})
 	})
 })
