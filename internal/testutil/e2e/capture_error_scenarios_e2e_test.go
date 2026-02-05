@@ -205,7 +205,7 @@ var _ = Describe("Capture Error Scenarios E2E", func() {
 
 			// Complete workflow
 			maxAttempts := 10
-			for i := 0; i < maxAttempts; i++ {
+			for range maxAttempts {
 				view := env.GetView()
 				if view != "" {
 					if strings.Contains(view, "Capture Event") || strings.Contains(view, "Browse Timeline") {
@@ -232,7 +232,7 @@ var _ = Describe("Capture Error Scenarios E2E", func() {
 
 			// Complete workflow
 			maxAttempts := 10
-			for i := 0; i < maxAttempts; i++ {
+			for range maxAttempts {
 				view := env.GetView()
 				if view != "" {
 					if strings.Contains(view, "Capture Event") || strings.Contains(view, "Browse Timeline") {
@@ -261,7 +261,7 @@ var _ = Describe("Capture Error Scenarios E2E", func() {
 			env.SubmitEvent(testEvent1)
 
 			maxAttempts := 10
-			for i := 0; i < maxAttempts; i++ {
+			for range maxAttempts {
 				view := env.GetView()
 				if view != "" {
 					if strings.Contains(view, "Capture Event") || strings.Contains(view, "Browse Timeline") {
@@ -282,7 +282,7 @@ var _ = Describe("Capture Error Scenarios E2E", func() {
 			testEvent2.ID = ""
 			env.SubmitEvent(testEvent2)
 
-			for i := 0; i < maxAttempts; i++ {
+			for range maxAttempts {
 				view := env.GetView()
 				if view != "" {
 					if strings.Contains(view, "Capture Event") || strings.Contains(view, "Browse Timeline") {
@@ -324,7 +324,7 @@ var _ = Describe("Capture Error Scenarios E2E", func() {
 			env.Confirm()
 
 			// Get view multiple times
-			for i := 0; i < 5; i++ {
+			for range 5 {
 				view := env.GetView()
 				Expect(view).NotTo(ContainSubstring("panic"))
 			}
@@ -358,7 +358,7 @@ var _ = Describe("Capture Error Scenarios E2E", func() {
 
 				// Complete workflow
 				maxAttempts := 10
-				for i := 0; i < maxAttempts; i++ {
+				for range maxAttempts {
 					view := env.GetView()
 					if view != "" {
 						if strings.Contains(view, "Capture Event") || strings.Contains(view, "Browse Timeline") {
@@ -385,7 +385,7 @@ var _ = Describe("Capture Error Scenarios E2E", func() {
 
 			// Complete workflow
 			maxAttempts := 10
-			for i := 0; i < maxAttempts; i++ {
+			for range maxAttempts {
 				view := env.GetView()
 				if view != "" {
 					if strings.Contains(view, "Capture Event") || strings.Contains(view, "Browse Timeline") {

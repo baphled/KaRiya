@@ -53,7 +53,7 @@ var _ = Describe("Capture State Machine E2E", func() {
 
 			// Complete workflow
 			maxAttempts := 10
-			for i := 0; i < maxAttempts; i++ {
+			for range maxAttempts {
 				view := env.GetView()
 				if strings.Contains(view, "Capture Event") || strings.Contains(view, "Browse Timeline") {
 					break
@@ -272,7 +272,7 @@ var _ = Describe("Capture State Machine E2E", func() {
 			// Wait for transition
 			maxAttempts := 10
 			completed := false
-			for i := 0; i < maxAttempts; i++ {
+			for range maxAttempts {
 				view := env.GetView()
 				if strings.Contains(view, "Capture Event") || strings.Contains(view, "Review") {
 					completed = true
@@ -310,7 +310,7 @@ var _ = Describe("Capture State Machine E2E", func() {
 
 			// Progress through review
 			maxAttempts := 10
-			for i := 0; i < maxAttempts; i++ {
+			for range maxAttempts {
 				view := env.GetView()
 				if strings.Contains(view, "Capture Event") || strings.Contains(view, "Browse Timeline") {
 					break
@@ -332,7 +332,7 @@ var _ = Describe("Capture State Machine E2E", func() {
 
 			// Wait for review state
 			maxAttempts := 10
-			for i := 0; i < maxAttempts; i++ {
+			for range maxAttempts {
 				view := env.GetView()
 				if strings.Contains(view, "Review") || view != "" {
 					break
@@ -350,7 +350,7 @@ var _ = Describe("Capture State Machine E2E", func() {
 		It("should handle transition from strategy to form and back multiple times", func() {
 			env.SelectIntentByName("capture_event")
 
-			for i := 0; i < 3; i++ {
+			for range 3 {
 				env.Confirm() // Go to form
 				env.Cancel()  // Go back to strategy
 			}
