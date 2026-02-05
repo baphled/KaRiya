@@ -11,7 +11,7 @@ comprehensive E2E coverage before any structural changes.
 **Branch**: `refactor/generate-cv-subdirectory-migration`
 **PR**: https://github.com/baphled/KaRiya/pull/158
 
-## Status: All Phases Complete ✅
+## Status: Phase 9 In Progress
 
 | Phase | Description | Status |
 |-------|-------------|--------|
@@ -23,6 +23,7 @@ comprehensive E2E coverage before any structural changes.
 | 6 | Modal Relocation | ✅ Complete |
 | 7 | Final Validation & Bug Fix | ✅ Complete |
 | 8 | Architecture Compliance | ✅ Complete |
+| 9 | Screen Tests & UI Consistency | 🔄 In Progress |
 
 **Phase 8 Results:**
 - Flattened state model (moved fields from nested `*model` struct to `Intent`)
@@ -541,6 +542,94 @@ internal/cli/screens/cv/modals/       # CREATED
 
 ---
 
+## Phase 9: Screen Tests & UI Consistency
+
+**Purpose**: Enable screen tests that aren't running and ensure UI consistency across CV components.
+**Effort**: 2-3 hours
+
+### 9.1 Critical: Enable Screen Tests
+
+**Problem**: `screens/cv/` has test files (`preview_test.go`, `review_test.go`) but they use Ginkgo
+without a suite bootstrap file. Tests show 0% coverage because they don't run.
+
+**File**: `internal/cli/screens/cv/cv_suite_test.go` (NEW)
+
+- [ ] Create `cv_suite_test.go` with Ginkgo bootstrap
+- [ ] Verify `preview_test.go` tests now run (464 lines, comprehensive)
+- [ ] Verify `review_test.go` tests now run (238 lines, comprehensive)
+- [ ] Run `go test -cover ./internal/cli/screens/cv/...` and confirm coverage > 0%
+
+### 9.2 Test Coverage Verification
+
+After enabling tests, verify coverage is adequate:
+
+| Component | Test File | Expected Coverage |
+|-----------|-----------|-------------------|
+| preview.go (458 lines) | preview_test.go (464 lines) | > 80% |
+| review.go (201 lines) | review_test.go (238 lines) | > 80% |
+
+- [ ] Run coverage report for `screens/cv/`
+- [ ] Identify any gaps in test coverage
+- [ ] Add tests if coverage is below 80%
+
+### 9.3 UI Consistency: Review Screen
+
+**Problem**: `review.go` has NO styling - just plain text with `strings.Repeat("═", 60)` separators.
+`preview.go` properly uses the theme system and should be the pattern to follow.
+
+**File**: `internal/cli/screens/cv/review.go` (MODIFY)
+
+- [ ] Add `lipgloss` and `themes` imports
+- [ ] Add `getTheme()` method matching `preview.go` pattern
+- [ ] Update `View()` method to use theme-based styling:
+  - Title with `theme.AccentColor()`
+  - Section headers with consistent styling
+  - Proper separators using lipgloss
+- [ ] Update tests if View output changes
+- [ ] Verify visual consistency with preview screen
+
+### 9.4 Modal Theme Consistency (Optional)
+
+**Current**: Modals use `theme.Default()` directly instead of receiving theme from parent.
+**Impact**: Low - works but less flexible.
+
+- [ ] (Optional) Add theme parameter to modal constructors
+- [ ] (Optional) Update intent to pass theme to modals
+
+### 9.5 Test Improvements (Optional)
+
+Modal tests are comprehensive (90.8% coverage) but could be improved:
+
+- [ ] (Optional) Add error state tests to `export_modal_test.go`
+- [ ] (Optional) Add form validation edge cases to `config_wizard_modal_test.go`
+- [ ] (Optional) Add integration tests for screen transitions
+
+### 9.6 Audit Summary
+
+**Test Coverage Status (Before Phase 9):**
+
+| Component | Lines | Test Lines | Coverage | Status |
+|-----------|-------|------------|----------|--------|
+| preview.go | 458 | 464 | 0%* | Tests don't run |
+| review.go | 201 | 238 | 0%* | Tests don't run |
+| config_wizard_modal.go | 653 | 620 | 90.8% | ✅ Good |
+| export_modal.go | 299 | 288 | 90.8% | ✅ Good |
+| progress_modal.go | 394 | 339 | 90.8% | ✅ Good |
+
+*Tests exist but don't run due to missing `cv_suite_test.go`
+
+**Mock Analysis:**
+- Screens/modals don't need service mocks (they work with domain objects)
+- Tests use fixtures (`fixtures.CVViewWith`, `fixtures.CVSectionWith`) - CORRECT
+- No legacy mocks found that need refactoring
+
+**UI Consistency Issues:**
+- `review.go`: NO styling (plain text) - NEEDS FIX
+- `preview.go`: Proper theme support - GOLD STANDARD
+- Modals: Use `theme.Default()` directly - ACCEPTABLE
+
+---
+
 ## Bugs Discovered
 
 _This section will be populated during Phase 3 as E2E tests uncover issues._
@@ -582,7 +671,7 @@ _This section will be populated during Phase 3 as E2E tests uncover issues._
 
 ## Definition of Done
 
-- [x] All 7 phases complete
+- [x] All 8 phases complete
 - [x] 27+ E2E test scenarios passing
 - [x] `generate_cv/intent.go` under 400 lines (142 lines)
 - [x] Zero architecture violations
@@ -597,4 +686,8 @@ _This section will be populated during Phase 3 as E2E tests uncover issues._
 - [x] No `context.Background()` in intent code
 - [x] Committed with `make ai-commit`
 
-**Task completed: 2026-02-05**
+**Phase 9 (Screen Tests & UI Consistency):**
+- [ ] `cv_suite_test.go` created and screen tests run
+- [ ] Screen test coverage > 80% for preview.go and review.go
+- [ ] `review.go` has theme support matching `preview.go` pattern
+- [ ] Visual consistency between review and preview screens
