@@ -192,6 +192,8 @@ func (r *DefaultIntentRegistrar) registerGenerateCV(ctx context.Context, router 
 			DataProcessingService: cv.NewDataProcessingService(r.config.Log),
 			BulletGenerator:       cv.NewBulletGenerator(r.config.Log, scoringCfg),
 			ExportService:         r.config.CVExportService,
+			SkillRepository:       r.config.CareerService.GetSkillRepository(),
+			EventRepository:       r.config.CareerService.GetEventRepository(),
 			ProfileConfig:         profileCfg,
 			AppContext:            ctx,
 			ReviewScreenFactory: func(cvView *career.CVView) screens.Screen {

@@ -140,3 +140,14 @@ func (i *Intent) setCancelled() {
 	}
 	i.active = false
 }
+
+// GetTestContext exposes the intent context for test assertions.
+//
+// Returns:
+//   - The IntentContext used to create this intent.
+//
+// Side effects:
+//   - None.
+func (i *Intent) GetTestContext() *IntentContext {
+	return i.context
+}
