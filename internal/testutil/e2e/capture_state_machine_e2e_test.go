@@ -458,16 +458,16 @@ var _ = Describe("Capture State Machine E2E", func() {
 
 			// Strategy state - no persistence
 			env.Confirm()
-			Expect(len(env.GetEvents())).To(Equal(initialCount))
+			Expect(env.GetEvents()).To(HaveLen(initialCount))
 
 			// Form state - no persistence yet
 			env.TypeText("Not yet persisted")
-			Expect(len(env.GetEvents())).To(Equal(initialCount))
+			Expect(env.GetEvents()).To(HaveLen(initialCount))
 
 			// Cancel - still no persistence
 			env.Cancel()
 			env.Cancel()
-			Expect(len(env.GetEvents())).To(Equal(initialCount))
+			Expect(env.GetEvents()).To(HaveLen(initialCount))
 		})
 	})
 })

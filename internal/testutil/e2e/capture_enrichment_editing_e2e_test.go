@@ -32,7 +32,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 
 			// Wait for review state
 			maxAttempts := 10
-			for i := 0; i < maxAttempts; i++ {
+			for range maxAttempts {
 				view := env.GetView()
 				if view != "" {
 					break
@@ -58,7 +58,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 
 			// Navigate to review
 			maxAttempts := 10
-			for i := 0; i < maxAttempts; i++ {
+			for range maxAttempts {
 				view := env.GetView()
 				if view != "" {
 					break
@@ -86,7 +86,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 
 			// Wait for review
 			maxAttempts := 10
-			for i := 0; i < maxAttempts; i++ {
+			for range maxAttempts {
 				view := env.GetView()
 				if view != "" {
 					break
@@ -113,7 +113,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 
 			// Navigate to review
 			maxAttempts := 10
-			for i := 0; i < maxAttempts; i++ {
+			for range maxAttempts {
 				view := env.GetView()
 				if view != "" {
 					break
@@ -141,7 +141,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 
 			// Wait for review
 			maxAttempts := 10
-			for i := 0; i < maxAttempts; i++ {
+			for range maxAttempts {
 				view := env.GetView()
 				if view != "" {
 					break
@@ -173,7 +173,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 
 			// Navigate to review
 			maxAttempts := 10
-			for i := 0; i < maxAttempts; i++ {
+			for range maxAttempts {
 				view := env.GetView()
 				if view != "" {
 					break
@@ -196,7 +196,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 
 			// Wait for review with bursts
 			maxAttempts := 10
-			for i := 0; i < maxAttempts; i++ {
+			for range maxAttempts {
 				view := env.GetView()
 				if view != "" {
 					break
@@ -222,7 +222,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 
 			// Navigate through review
 			maxAttempts := 10
-			for i := 0; i < maxAttempts; i++ {
+			for range maxAttempts {
 				view := env.GetView()
 				if view != "" {
 					break
@@ -248,7 +248,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 
 			// Wait for review
 			maxAttempts := 10
-			for i := 0; i < maxAttempts; i++ {
+			for range maxAttempts {
 				view := env.GetView()
 				if view != "" {
 					break
@@ -274,7 +274,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 
 			// Navigate to review
 			maxAttempts := 10
-			for i := 0; i < maxAttempts; i++ {
+			for range maxAttempts {
 				view := env.GetView()
 				if view != "" {
 					break
@@ -303,7 +303,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 
 			// Wait for review
 			maxAttempts := 10
-			for i := 0; i < maxAttempts; i++ {
+			for range maxAttempts {
 				view := env.GetView()
 				if view != "" {
 					break
@@ -333,7 +333,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 
 			// Navigate to review
 			maxAttempts := 10
-			for i := 0; i < maxAttempts; i++ {
+			for range maxAttempts {
 				view := env.GetView()
 				if view != "" {
 					break
@@ -356,7 +356,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 
 			// Wait for review with facts
 			maxAttempts := 10
-			for i := 0; i < maxAttempts; i++ {
+			for range maxAttempts {
 				view := env.GetView()
 				if view != "" {
 					break
@@ -382,7 +382,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 
 			// Navigate through review
 			maxAttempts := 10
-			for i := 0; i < maxAttempts; i++ {
+			for range maxAttempts {
 				view := env.GetView()
 				if view != "" {
 					break
@@ -408,7 +408,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 
 			// Wait for review
 			maxAttempts := 10
-			for i := 0; i < maxAttempts; i++ {
+			for range maxAttempts {
 				view := env.GetView()
 				if view != "" {
 					break
@@ -434,7 +434,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 
 			// Navigate to review
 			maxAttempts := 10
-			for i := 0; i < maxAttempts; i++ {
+			for range maxAttempts {
 				view := env.GetView()
 				if view != "" {
 					break
@@ -463,7 +463,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 
 			// Wait for review
 			maxAttempts := 10
-			for i := 0; i < maxAttempts; i++ {
+			for range maxAttempts {
 				view := env.GetView()
 				if view != "" {
 					break
@@ -492,7 +492,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 
 			// Navigate through review
 			maxAttempts := 15
-			for i := 0; i < maxAttempts; i++ {
+			for range maxAttempts {
 				view := env.GetView()
 				if view != "" {
 					// Accept or navigate through suggestions
@@ -516,7 +516,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 
 			// Wait for review
 			maxAttempts := 10
-			for i := 0; i < maxAttempts; i++ {
+			for range maxAttempts {
 				view := env.GetView()
 				if view != "" {
 					break
@@ -543,7 +543,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 
 			// Navigate through review
 			maxAttempts := 10
-			for i := 0; i < maxAttempts; i++ {
+			for range maxAttempts {
 				view := env.GetView()
 				if view != "" {
 					break
@@ -572,7 +572,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 
 			// Go through full review workflow
 			maxAttempts := 15
-			for i := 0; i < maxAttempts; i++ {
+			for range maxAttempts {
 				view := env.GetView()
 				if view != "" {
 					// Simulate accepting/rejecting randomly
@@ -604,7 +604,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 
 			// Should complete even without suggestions
 			maxAttempts := 10
-			for i := 0; i < maxAttempts; i++ {
+			for range maxAttempts {
 				view := env.GetView()
 				if view != "" {
 					time.Sleep(50 * time.Millisecond)
@@ -627,7 +627,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 
 			// Wait for review
 			maxAttempts := 10
-			for i := 0; i < maxAttempts; i++ {
+			for range maxAttempts {
 				view := env.GetView()
 				if view != "" {
 					break
@@ -652,7 +652,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 
 			// Wait for review
 			maxAttempts := 10
-			for i := 0; i < maxAttempts; i++ {
+			for range maxAttempts {
 				view := env.GetView()
 				if view != "" {
 					break
@@ -681,7 +681,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 
 			// Wait for review
 			maxAttempts := 10
-			for i := 0; i < maxAttempts; i++ {
+			for range maxAttempts {
 				view := env.GetView()
 				if view != "" {
 					break

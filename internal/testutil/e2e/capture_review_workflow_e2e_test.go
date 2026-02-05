@@ -246,7 +246,7 @@ var _ = Describe("Capture Review Workflow E2E", func() {
 			env.Cancel()
 
 			// Event count should not change
-			Expect(len(env.GetEvents())).To(Equal(initialEvents))
+			Expect(env.GetEvents()).To(HaveLen(initialEvents))
 		})
 	})
 
@@ -329,7 +329,7 @@ var _ = Describe("Capture Review Workflow E2E", func() {
 				env.Confirm()
 			}
 
-			Expect(len(env.GetEvents())).To(BeNumerically(">=", 1))
+			Expect(env.GetEvents()).ToNot(BeEmpty())
 
 			// Second event
 			env.SelectIntentByName("capture_event")
@@ -384,7 +384,7 @@ var _ = Describe("Capture Review Workflow E2E", func() {
 			}
 
 			// Only one event should be saved
-			Expect(len(env.GetEvents())).To(Equal(initialCount + 1))
+			Expect(env.GetEvents()).To(HaveLen(initialCount + 1))
 		})
 	})
 })

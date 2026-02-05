@@ -523,6 +523,7 @@ var _ = Describe("Career Service", func() {
 					Return(filteredEvents, nil)
 
 				events, err := service.ListEvents(ctx, repo.EventListFilters{
+// nolint:gochecknoinits
 					Tags: []string{"technical"},
 				})
 				Expect(err).NotTo(HaveOccurred())
@@ -540,6 +541,7 @@ var _ = Describe("Career Service", func() {
 					Return(paginatedEvents, nil)
 
 				events, err := service.ListEvents(ctx, repo.EventListFilters{
+// nolint:gochecknoinits
 					Limit:  2,
 					Offset: 0,
 				})
@@ -583,6 +585,7 @@ var _ = Describe("Career Service", func() {
 					Return(testEvents, nil)
 
 				events, err := service.ListEvents(ctx, repo.EventListFilters{
+// nolint:gochecknoinits
 					StartDate: &startDate,
 					EndDate:   &endDate,
 				})
@@ -599,6 +602,7 @@ var _ = Describe("Career Service", func() {
 					Return(testEvents, nil)
 
 				events, err := service.ListEvents(ctx, repo.EventListFilters{
+// nolint:gochecknoinits
 					SortBy:    "date",
 					SortOrder: "desc",
 				})
@@ -630,6 +634,7 @@ var _ = Describe("Career Service", func() {
 					Return(10, nil)
 
 				count, err := service.CountEvents(ctx, repo.EventListFilters{
+// nolint:gochecknoinits
 					Tags: []string{"technical"},
 				})
 				Expect(err).NotTo(HaveOccurred())
@@ -673,6 +678,7 @@ var _ = Describe("Career Service", func() {
 					Return(15, nil)
 
 				count, err := service.CountEvents(ctx, repo.EventListFilters{
+// nolint:gochecknoinits
 					StartDate: &startDate,
 					EndDate:   &endDate,
 				})
