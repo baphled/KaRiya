@@ -348,7 +348,7 @@ var _ = Describe("Capture Error Scenarios E2E", func() {
 	Describe("Memory and Resource Management", func() {
 		It("should handle repeated workflow executions without memory leaks", func() {
 			// Execute workflow multiple times
-			for iteration := 0; iteration < 3; iteration++ {
+			for range 3 {
 				env.SelectIntentByName("capture_event")
 				env.Confirm()
 
