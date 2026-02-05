@@ -15,7 +15,7 @@ var _ = Describe("Capture State Machine E2E", func() {
 	var env *e2e.TestEnv
 
 	BeforeEach(func() {
-		env = e2e.Setup(GinkgoT())
+		env = e2e.GetSharedEnv(GinkgoT())
 	})
 
 	AfterEach(func() {
@@ -441,8 +441,7 @@ var _ = Describe("Capture State Machine E2E", func() {
 			}
 
 			for _, stateFn := range states {
-				env.Cleanup()
-				env = e2e.Setup(GinkgoT())
+				env = e2e.GetSharedEnv(GinkgoT())
 
 				stateFn()
 				view := env.GetView()

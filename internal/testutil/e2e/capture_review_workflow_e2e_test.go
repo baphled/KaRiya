@@ -1,6 +1,7 @@
 package e2e_test
 
 import (
+	"strings"
 	"time"
 
 	"github.com/baphled/kariya/internal/testutil/e2e"
@@ -14,7 +15,7 @@ var _ = Describe("Capture Review Workflow E2E", func() {
 	var env *e2e.TestEnv
 
 	BeforeEach(func() {
-		env = e2e.Setup(GinkgoT())
+		env = e2e.GetSharedEnv(GinkgoT())
 	})
 
 	AfterEach(func() {
@@ -49,20 +50,8 @@ var _ = Describe("Capture Review Workflow E2E", func() {
 			env.SubmitEvent(testEvent)
 
 			// Wait for review state
-			maxAttempts := 10
-			foundReview := false
-			for i := 0; i < maxAttempts; i++ {
-				view := env.GetView()
-				if view != "" {
-					// Review state should show bursts or facts
-					foundReview = true
-					break
-				}
-				time.Sleep(50 * time.Millisecond)
-				env.Confirm() // Progress through any intermediate states
-			}
-
-			Expect(foundReview).To(BeTrue(), "Should reach review state")
+			view := env.GetView()
+			Expect(view).NotTo(BeEmpty(), "Should have a view after form submission")
 		})
 
 		It("should allow accepting all suggestions and completing workflow", func() {
@@ -77,14 +66,13 @@ var _ = Describe("Capture Review Workflow E2E", func() {
 			maxAttempts := 10
 			for i := 0; i < maxAttempts; i++ {
 				view := env.GetView()
-				if view != "" && (view == "Capture Event" || view == "Browse Timeline") {
+				if strings.Contains(view, "Capture Event") || strings.Contains(view, "Browse Timeline") {
 					break
 				}
 				time.Sleep(50 * time.Millisecond)
-				env.Confirm() // Accept suggestions and complete
+				env.Confirm()
 			}
 
-			// Should be back at main menu
 			env.AssertViewContainsAny("Capture Event", "Browse Timeline")
 			env.AssertEventCount(1)
 		})
@@ -134,11 +122,8 @@ var _ = Describe("Capture Review Workflow E2E", func() {
 			maxAttempts := 10
 			for i := 0; i < maxAttempts; i++ {
 				view := env.GetView()
-				if view != "" {
-					// Check if we're at main menu
-					if view == "Capture Event" || view == "Browse Timeline" {
-						break
-					}
+				if strings.Contains(view, "Capture Event") || strings.Contains(view, "Browse Timeline") {
+					break
 				}
 				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
@@ -319,11 +304,8 @@ var _ = Describe("Capture Review Workflow E2E", func() {
 			maxAttempts := 10
 			for i := 0; i < maxAttempts; i++ {
 				view := env.GetView()
-				if view != "" {
-					// Check if back at main menu
-					if view == "Capture Event" || view == "Browse Timeline" {
-						break
-					}
+				if strings.Contains(view, "Capture Event") || strings.Contains(view, "Browse Timeline") {
+					break
 				}
 				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
@@ -331,7 +313,6 @@ var _ = Describe("Capture Review Workflow E2E", func() {
 
 			Expect(env.GetEvents()).ToNot(BeEmpty())
 
-			// Second event
 			env.SelectIntentByName("capture_event")
 			env.Confirm()
 
@@ -339,13 +320,10 @@ var _ = Describe("Capture Review Workflow E2E", func() {
 			testEvent2.ID = ""
 			env.SubmitEvent(testEvent2)
 
-			// Complete second capture
 			for i := 0; i < maxAttempts; i++ {
 				view := env.GetView()
-				if view != "" {
-					if view == "Capture Event" || view == "Browse Timeline" {
-						break
-					}
+				if strings.Contains(view, "Capture Event") || strings.Contains(view, "Browse Timeline") {
+					break
 				}
 				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
@@ -374,16 +352,13 @@ var _ = Describe("Capture Review Workflow E2E", func() {
 			maxAttempts := 10
 			for i := 0; i < maxAttempts; i++ {
 				view := env.GetView()
-				if view != "" {
-					if view == "Capture Event" || view == "Browse Timeline" {
-						break
-					}
+				if strings.Contains(view, "Capture Event") || strings.Contains(view, "Browse Timeline") {
+					break
 				}
 				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 
-			// Only one event should be saved
 			Expect(env.GetEvents()).To(HaveLen(initialCount + 1))
 		})
 	})

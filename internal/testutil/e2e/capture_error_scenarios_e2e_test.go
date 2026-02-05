@@ -15,7 +15,7 @@ var _ = Describe("Capture Error Scenarios E2E", func() {
 	var env *e2e.TestEnv
 
 	BeforeEach(func() {
-		env = e2e.Setup(GinkgoT())
+		env = e2e.GetSharedEnv(GinkgoT())
 	})
 
 	AfterEach(func() {
@@ -40,11 +40,7 @@ var _ = Describe("Capture Error Scenarios E2E", func() {
 			env.SelectIntentByName("capture_event")
 			env.Confirm()
 
-			// Create a very long text (>2000 characters)
-			longText := ""
-			for i := 0; i < 250; i++ {
-				longText += "0123456789"
-			}
+			longText := strings.Repeat("0123456789", 250)
 
 			env.TypeText(longText)
 

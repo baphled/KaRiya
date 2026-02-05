@@ -14,7 +14,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 	var env *e2e.TestEnv
 
 	BeforeEach(func() {
-		env = e2e.Setup(GinkgoT())
+		env = e2e.GetSharedEnv(GinkgoT())
 	})
 
 	AfterEach(func() {
@@ -495,8 +495,6 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 			for range maxAttempts {
 				view := env.GetView()
 				if view != "" {
-					// Accept or navigate through suggestions
-					time.Sleep(50 * time.Millisecond)
 					time.Sleep(50 * time.Millisecond)
 					env.Confirm()
 				}
@@ -578,10 +576,9 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 					// Simulate accepting/rejecting randomly
 					if i%2 == 0 {
 						time.Sleep(50 * time.Millisecond)
-						time.Sleep(50 * time.Millisecond)
-						env.Confirm() // Accept
+						env.Confirm()
 					} else {
-						env.NavigateDown() // Skip
+						env.NavigateDown()
 					}
 				}
 			}
@@ -607,7 +604,6 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 			for range maxAttempts {
 				view := env.GetView()
 				if view != "" {
-					time.Sleep(50 * time.Millisecond)
 					time.Sleep(50 * time.Millisecond)
 					env.Confirm()
 				}
