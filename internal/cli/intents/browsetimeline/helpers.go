@@ -472,6 +472,8 @@ func (i *Intent) saveSkillFromSuggestion(suggestion skillinference.SkillSuggesti
 		return
 	}
 	if i.selectedEvent != nil && len(skills) > 0 {
-		_ = i.context.CLIEventService.LinkSkillToEvent(ctx, i.selectedEvent.ID, skills[0].ID)
+		if err := i.context.CLIEventService.LinkSkillToEvent(ctx, i.selectedEvent.ID, skills[0].ID); err != nil {
+			i.ShowErrorModal("Error Linking Skill", err.Error())
+		}
 	}
 }
