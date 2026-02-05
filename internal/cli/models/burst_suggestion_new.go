@@ -114,10 +114,20 @@ func (m *BurstSuggestionModelNew) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.C
 		return m, func() tea.Msg { return BackMsg{} }
 	}
 
-	// Handle character input for confirm/reject/edit
+	// Handle character input for confirm/reject/edit and vim navigation
 	if msg.Type == tea.KeyRunes {
 		for _, r := range msg.Runes {
 			switch r {
+			case 'j':
+				if len(m.suggestions) > 0 {
+					m.currentIdx = (m.currentIdx + 1) % len(m.suggestions)
+					delete(m.relatedEvents, m.currentIdx)
+				}
+			case 'k':
+				if len(m.suggestions) > 0 {
+					m.currentIdx = (m.currentIdx - 1 + len(m.suggestions)) % len(m.suggestions)
+					delete(m.relatedEvents, m.currentIdx)
+				}
 			case 'y', 'Y':
 				return m.confirmCurrent()
 			case 'n', 'N':
@@ -534,6 +544,63 @@ func (m *BurstSuggestionModelNew) GetRejected() []burstfact.BurstSuggestion {
 //   - None.
 func (m *BurstSuggestionModelNew) IsDone() bool {
 	return len(m.confirmed)+len(m.rejected) == len(m.suggestions)
+}
+
+// IsEditing returns true if the model is currently in edit mode.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
+func (m *BurstSuggestionModelNew) IsEditing() bool {
+	return m.editing
+}
+
+// SetEditedName sets an edited name for a suggestion at the given index.
+// This is primarily for testing purposes.
+//
+// Expected:
+//   - idx must be a valid index in the suggestions slice.
+//   - name is the new name to set.
+//
+// Returns:
+//   - None.
+//
+// Side effects:
+//   - Modifies the internal editedNames map.
+func (m *BurstSuggestionModelNew) SetEditedName(idx int, name string) {
+	m.editedNames[idx] = name
+}
+
+// SetEditedDescription sets an edited description for a suggestion at the given index.
+// This is primarily for testing purposes.
+//
+// Expected:
+//   - idx must be a valid index in the suggestions slice.
+//   - desc is the new description to set.
+//
+// Returns:
+//   - None.
+//
+// Side effects:
+//   - Modifies the internal editedDescs map.
+func (m *BurstSuggestionModelNew) SetEditedDescription(idx int, desc string) {
+	m.editedDescs[idx] = desc
+}
+
+// ExitEditMode forces the model out of edit mode without saving.
+// This is primarily for testing purposes.
+//
+// Returns:
+//   - None.
+//
+// Side effects:
+//   - Sets editing to false and clears edit form state.
+func (m *BurstSuggestionModelNew) ExitEditMode() {
+	m.editing = false
+	m.editForm = nil
+	m.editFormData = nil
 }
 
 // GetTitle returns the modal title for overlay rendering.

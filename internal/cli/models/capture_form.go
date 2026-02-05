@@ -208,3 +208,14 @@ func (m *CaptureForm) SubmitForm() tea.Cmd {
 	m.formData.SubmitConfirmed = true
 	return m.submitForm()
 }
+
+// GetFormData returns the current form data for testing purposes.
+//
+// Returns:
+//   - A pointer to the internal CaptureEventFormData.
+//
+// Side effects:
+//   - None.
+func (m *CaptureForm) GetFormData() *forms.CaptureEventFormData {
+	return m.formData
+}
