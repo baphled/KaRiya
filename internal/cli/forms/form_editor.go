@@ -47,12 +47,12 @@ func EditorUpdate(
 		return self, nil
 
 	case tea.KeyMsg:
-		if msg.String() == "esc" {
+		if msg.Type == tea.KeyEscape {
 			fe.Cancelled = true
 			return self, nil
 		}
 
-		if msg.String() == "q" || msg.String() == "ctrl+c" {
+		if msg.String() == "q" || msg.Type == tea.KeyCtrlC {
 			return self, quitMsg
 		}
 	}

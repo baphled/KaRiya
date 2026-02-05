@@ -213,6 +213,10 @@ if command -v golangci-lint > /dev/null 2>&1; then
                 echo ""
                 echo "Fix lint issues before committing."
                 exit 1
+            elif [ $LINT_EXIT -gt 1 ]; then
+                echo -e "${YELLOW}⚠️  golangci-lint internal error (exit code $LINT_EXIT)${NC}"
+                echo "   This may be due to deleted files or config issues."
+                echo "   Output: $(echo "$LINT_OUTPUT" | head -3)"
             fi
         fi
         echo -e "${GREEN}✅ golangci-lint passed${NC}"
