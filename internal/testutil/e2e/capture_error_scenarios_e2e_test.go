@@ -1,6 +1,9 @@
 package e2e_test
 
 import (
+	"strings"
+	"time"
+
 	"github.com/baphled/kariya/internal/testutil/e2e"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
@@ -209,16 +212,17 @@ var _ = Describe("Capture Error Scenarios E2E", func() {
 			for i := 0; i < maxAttempts; i++ {
 				view := env.GetView()
 				if view != "" {
-					if view == "Capture Event" || view == "Browse Timeline" {
+					if strings.Contains(view, "Capture Event") || strings.Contains(view, "Browse Timeline") {
 						break
 					}
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 
 			finalCount := len(env.GetEvents())
 			// Should only add one event despite multiple submits
-			Expect(finalCount).To(BeNumerically("<=", initialCount+2))
+			Expect(finalCount).To(Equal(initialCount+1), "Should not create duplicate events")
 		})
 
 		It("should preserve event data after navigation", func() {
@@ -235,10 +239,11 @@ var _ = Describe("Capture Error Scenarios E2E", func() {
 			for i := 0; i < maxAttempts; i++ {
 				view := env.GetView()
 				if view != "" {
-					if view == "Capture Event" || view == "Browse Timeline" {
+					if strings.Contains(view, "Capture Event") || strings.Contains(view, "Browse Timeline") {
 						break
 					}
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 
@@ -263,10 +268,11 @@ var _ = Describe("Capture Error Scenarios E2E", func() {
 			for i := 0; i < maxAttempts; i++ {
 				view := env.GetView()
 				if view != "" {
-					if view == "Capture Event" || view == "Browse Timeline" {
+					if strings.Contains(view, "Capture Event") || strings.Contains(view, "Browse Timeline") {
 						break
 					}
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 
@@ -283,10 +289,11 @@ var _ = Describe("Capture Error Scenarios E2E", func() {
 			for i := 0; i < maxAttempts; i++ {
 				view := env.GetView()
 				if view != "" {
-					if view == "Capture Event" || view == "Browse Timeline" {
+					if strings.Contains(view, "Capture Event") || strings.Contains(view, "Browse Timeline") {
 						break
 					}
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 
@@ -358,10 +365,11 @@ var _ = Describe("Capture Error Scenarios E2E", func() {
 				for i := 0; i < maxAttempts; i++ {
 					view := env.GetView()
 					if view != "" {
-						if view == "Capture Event" || view == "Browse Timeline" {
+						if strings.Contains(view, "Capture Event") || strings.Contains(view, "Browse Timeline") {
 							break
 						}
 					}
+					time.Sleep(50 * time.Millisecond)
 					env.Confirm()
 				}
 			}
@@ -384,10 +392,11 @@ var _ = Describe("Capture Error Scenarios E2E", func() {
 			for i := 0; i < maxAttempts; i++ {
 				view := env.GetView()
 				if view != "" {
-					if view == "Capture Event" || view == "Browse Timeline" {
+					if strings.Contains(view, "Capture Event") || strings.Contains(view, "Browse Timeline") {
 						break
 					}
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 

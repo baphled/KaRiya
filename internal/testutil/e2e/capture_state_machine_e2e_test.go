@@ -2,6 +2,7 @@ package e2e_test
 
 import (
 	"strings"
+	"time"
 
 	"github.com/baphled/kariya/internal/testutil/e2e"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
@@ -54,9 +55,10 @@ var _ = Describe("Capture State Machine E2E", func() {
 			maxAttempts := 10
 			for i := 0; i < maxAttempts; i++ {
 				view := env.GetView()
-				if strings.Contains(view, "Capture Event") && strings.Contains(view, "Browse Timeline") {
+				if strings.Contains(view, "Capture Event") || strings.Contains(view, "Browse Timeline") {
 					break
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 
@@ -276,6 +278,7 @@ var _ = Describe("Capture State Machine E2E", func() {
 					completed = true
 					break
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 
@@ -309,9 +312,10 @@ var _ = Describe("Capture State Machine E2E", func() {
 			maxAttempts := 10
 			for i := 0; i < maxAttempts; i++ {
 				view := env.GetView()
-				if strings.Contains(view, "Capture Event") && strings.Contains(view, "Browse Timeline") {
+				if strings.Contains(view, "Capture Event") || strings.Contains(view, "Browse Timeline") {
 					break
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 
@@ -333,6 +337,7 @@ var _ = Describe("Capture State Machine E2E", func() {
 				if strings.Contains(view, "Review") || view != "" {
 					break
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 

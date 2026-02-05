@@ -1,6 +1,8 @@
 package e2e_test
 
 import (
+	"time"
+
 	"github.com/baphled/kariya/internal/testutil/e2e"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
@@ -35,6 +37,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 				if view != "" {
 					break
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 
@@ -60,6 +63,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 				if view != "" {
 					break
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 
@@ -87,6 +91,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 				if view != "" {
 					break
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 
@@ -113,6 +118,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 				if view != "" {
 					break
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 
@@ -140,6 +146,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 				if view != "" {
 					break
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 
@@ -171,6 +178,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 				if view != "" {
 					break
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 
@@ -193,6 +201,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 				if view != "" {
 					break
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 
@@ -218,6 +227,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 				if view != "" {
 					break
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 
@@ -243,6 +253,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 				if view != "" {
 					break
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 
@@ -268,6 +279,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 				if view != "" {
 					break
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 
@@ -296,6 +308,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 				if view != "" {
 					break
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 
@@ -325,6 +338,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 				if view != "" {
 					break
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 
@@ -347,6 +361,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 				if view != "" {
 					break
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 
@@ -372,6 +387,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 				if view != "" {
 					break
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 
@@ -397,6 +413,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 				if view != "" {
 					break
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 
@@ -422,6 +439,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 				if view != "" {
 					break
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 
@@ -450,6 +468,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 				if view != "" {
 					break
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 
@@ -477,6 +496,8 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 				view := env.GetView()
 				if view != "" {
 					// Accept or navigate through suggestions
+					time.Sleep(50 * time.Millisecond)
+					time.Sleep(50 * time.Millisecond)
 					env.Confirm()
 				}
 			}
@@ -500,6 +521,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 				if view != "" {
 					break
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 
@@ -526,6 +548,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 				if view != "" {
 					break
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 
@@ -554,6 +577,8 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 				if view != "" {
 					// Simulate accepting/rejecting randomly
 					if i%2 == 0 {
+						time.Sleep(50 * time.Millisecond)
+						time.Sleep(50 * time.Millisecond)
 						env.Confirm() // Accept
 					} else {
 						env.NavigateDown() // Skip
@@ -582,6 +607,8 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 			for i := 0; i < maxAttempts; i++ {
 				view := env.GetView()
 				if view != "" {
+					time.Sleep(50 * time.Millisecond)
+					time.Sleep(50 * time.Millisecond)
 					env.Confirm()
 				}
 			}
@@ -605,6 +632,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 				if view != "" {
 					break
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 
@@ -629,6 +657,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 				if view != "" {
 					break
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 
@@ -657,6 +686,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 				if view != "" {
 					break
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 

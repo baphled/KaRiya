@@ -1,6 +1,8 @@
 package e2e_test
 
 import (
+	"time"
+
 	"github.com/baphled/kariya/internal/testutil/e2e"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
@@ -56,6 +58,7 @@ var _ = Describe("Capture Review Workflow E2E", func() {
 					foundReview = true
 					break
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm() // Progress through any intermediate states
 			}
 
@@ -77,6 +80,7 @@ var _ = Describe("Capture Review Workflow E2E", func() {
 				if view != "" && (view == "Capture Event" || view == "Browse Timeline") {
 					break
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm() // Accept suggestions and complete
 			}
 
@@ -136,6 +140,7 @@ var _ = Describe("Capture Review Workflow E2E", func() {
 						break
 					}
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 
@@ -159,6 +164,7 @@ var _ = Describe("Capture Review Workflow E2E", func() {
 				if view != "" {
 					break
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 
@@ -186,6 +192,7 @@ var _ = Describe("Capture Review Workflow E2E", func() {
 				if view != "" {
 					break
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 
@@ -214,6 +221,7 @@ var _ = Describe("Capture Review Workflow E2E", func() {
 				if view != "" {
 					break
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 
@@ -258,6 +266,7 @@ var _ = Describe("Capture Review Workflow E2E", func() {
 				if view != "" {
 					break
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 
@@ -284,6 +293,7 @@ var _ = Describe("Capture Review Workflow E2E", func() {
 				if view != "" {
 					break
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 
@@ -315,6 +325,7 @@ var _ = Describe("Capture Review Workflow E2E", func() {
 						break
 					}
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 
@@ -336,6 +347,7 @@ var _ = Describe("Capture Review Workflow E2E", func() {
 						break
 					}
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 
@@ -367,6 +379,7 @@ var _ = Describe("Capture Review Workflow E2E", func() {
 						break
 					}
 				}
+				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
 
