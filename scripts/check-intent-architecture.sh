@@ -1242,7 +1242,7 @@ if [ -n "$SUBDIRS" ]; then
         # skillsmanagement -> skills
         # factmanagement -> facts
         # captureevent -> capture (screens/capture/)
-        SCREEN_DIR_NAME=$(echo "$INTENT_NAME" | sed 's/_intent$//' | sed 's/^browse_//' | sed 's/^browse//' | sed 's/_management$//' | sed 's/management$//' | sed 's/event$//')
+        SCREEN_DIR_NAME=$(echo "$INTENT_NAME" | sed 's/_intent$//' | sed 's/^browse_//' | sed 's/^browse//' | sed 's/^generate_//' | sed 's/^generate//' | sed 's/_management$//' | sed 's/management$//' | sed 's/event$//')
         
         # Check if intent uses screens (has activeScreen or *Screen fields)
         USES_SCREENS=false
@@ -1507,6 +1507,12 @@ if [ -n "$SUBDIRS" ]; then
                 # manage_skills -> screens/skills/
                 MANAGE_NAME=$(echo "$INTENT_NAME" | sed 's/^manage_//')
                 if [ -d "internal/cli/screens/$MANAGE_NAME" ]; then
+                    FOUND_SCREENS=true
+                fi
+                
+                # generate_cv/generatecv -> screens/cv/
+                GENERATE_NAME=$(echo "$INTENT_NAME" | sed 's/^generate_//' | sed 's/^generate//')
+                if [ -d "internal/cli/screens/$GENERATE_NAME" ]; then
                     FOUND_SCREENS=true
                 fi
                 
