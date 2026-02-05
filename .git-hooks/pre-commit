@@ -301,6 +301,42 @@ if [ "$SKIP_TESTS" != "1" ]; then
                 exit 1
             fi
             echo -e "${GREEN}✅ Localized tests passed${NC}"
+            
+            # Coverage check - 95% per-package requirement for modified packages
+            if [ "$SKIP_COVERAGE_CHECK" != "1" ]; then
+                echo "Checking coverage for modified packages (>= 95% required)..."
+                COVERAGE_FAILED=""
+                for pkg in $TESTABLE_PACKAGES; do
+                    # Get coverage for this package
+                    COVERAGE_OUTPUT=$(go test -cover "$pkg" 2>/dev/null | grep "coverage:" || echo "")
+                    if [ -n "$COVERAGE_OUTPUT" ]; then
+                        # Extract coverage percentage
+                        COVERAGE_PCT=$(echo "$COVERAGE_OUTPUT" | grep -oP 'coverage: \K[0-9.]+' || echo "0")
+                        COVERAGE_INT=$(printf "%.0f" "$COVERAGE_PCT" 2>/dev/null || echo "0")
+                        
+                        # Skip packages with 0% (no statements to cover)
+                        if [ "$COVERAGE_INT" -gt 0 ] && [ "$COVERAGE_INT" -lt 95 ]; then
+                            COVERAGE_FAILED="$COVERAGE_FAILED\n  $pkg: ${COVERAGE_PCT}%"
+                        fi
+                    fi
+                done
+                
+                if [ -n "$COVERAGE_FAILED" ]; then
+                    echo -e "${RED}❌ ERROR: Coverage below 95% for modified packages${NC}"
+                    echo ""
+                    echo -e "Packages below threshold:$COVERAGE_FAILED"
+                    echo ""
+                    echo "Add tests to reach >= 95% coverage before committing."
+                    echo "Check coverage: go test -cover ./path/to/package/..."
+                    echo "Find gaps: go test -coverprofile=/tmp/c.out ./... && go tool cover -func=/tmp/c.out | grep -v 100.0%"
+                    echo ""
+                    echo "To skip: SKIP_COVERAGE_CHECK=1 git commit"
+                    exit 1
+                fi
+                echo -e "${GREEN}✅ Coverage check passed (>= 95% per package)${NC}"
+            else
+                echo -e "${YELLOW}⚠️  Coverage check skipped (SKIP_COVERAGE_CHECK=1)${NC}"
+            fi
         fi
     fi
 else

@@ -95,6 +95,11 @@ echo ""
 # ============================================
 echo "📊 TEST COVERAGE"
 echo "------------------------------------------------"
+echo ""
+echo -e "${BLUE}Coverage Requirements:${NC}"
+echo "  - Per-package (modified): >= 95% (enforced by pre-commit hook)"
+echo "  - Project average:        >= 80% (warning threshold)"
+echo ""
 
 if command -v ginkgo &> /dev/null; then
     # Using Ginkgo
@@ -112,18 +117,18 @@ if command -v ginkgo &> /dev/null; then
         COVERAGE_INT=$(printf "%.0f" "$COVERAGE")
 
         if [ "$COVERAGE_INT" -ge 80 ]; then
-            echo -e "Average Coverage: ${GREEN}${COVERAGE}% ✅${NC}"
+            echo -e "Project Average: ${GREEN}${COVERAGE}% ✅${NC}"
         elif [ "$COVERAGE_INT" -ge 70 ]; then
-            echo -e "Average Coverage: ${YELLOW}${COVERAGE}% ⚠️${NC} (Target: 80%)"
-            check_warn "Coverage below 80%"
+            echo -e "Project Average: ${YELLOW}${COVERAGE}% ⚠️${NC} (Target: 80%)"
+            check_warn "Project average coverage below 80%"
         else
-            echo -e "Average Coverage: ${RED}${COVERAGE}% ❌${NC} (Target: 80%)"
-            check_fail "Coverage significantly below 80%"
+            echo -e "Project Average: ${RED}${COVERAGE}% ❌${NC} (Target: 80%)"
+            check_fail "Project average coverage significantly below 80%"
         fi
         
-        # Check for modules below 80% threshold
+        # Check for modules below 95% threshold (matches pre-commit requirement)
         echo ""
-        echo "Modules below 80% coverage:"
+        echo "Packages below 95% coverage (pre-commit will block these if modified):"
         LOW_COVERAGE_MODULES=$(echo "$COVERAGE_OUTPUT" | \
             grep -v '/mocks' | \
             grep -v 'testutil[^/]' | \
@@ -132,7 +137,7 @@ if command -v ginkgo &> /dev/null; then
             grep 'coverage:' | \
             awk '{
                 match($0, /coverage: ([0-9.]+)%/, arr);
-                if (arr[1]+0 < 80 && arr[1]+0 > 0) {
+                if (arr[1]+0 < 95 && arr[1]+0 > 0) {
                     # Extract package name (first field after "ok")
                     gsub(/^ok[[:space:]]+/, "");
                     split($0, parts, /[[:space:]]/);
@@ -142,8 +147,10 @@ if command -v ginkgo &> /dev/null; then
         
         if [ -n "$LOW_COVERAGE_MODULES" ]; then
             echo -e "${YELLOW}$LOW_COVERAGE_MODULES${NC}"
+            echo ""
+            echo -e "${BLUE}Tip: Add tests before modifying these packages.${NC}"
         else
-            echo -e "  ${GREEN}All modules meet 80% threshold ✅${NC}"
+            echo -e "  ${GREEN}All packages meet 95% threshold ✅${NC}"
         fi
     else
         check_warn "Could not calculate coverage"
