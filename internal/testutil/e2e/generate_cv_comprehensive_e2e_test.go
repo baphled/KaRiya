@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/baphled/kariya/internal/cli/intents"
+	"github.com/baphled/kariya/internal/cli/intents/generatecv"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/testutil/e2e"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
@@ -33,7 +33,7 @@ import (
 // approach used by all internal wizard E2E tests since huh form navigation
 // cannot be reliably driven via keyboard in the E2E framework.
 func completeWizardViaMessage(env *e2e.TestEnv) {
-	env.SendMessage(intents.WizardCompleteMsg{
+	env.SendMessage(generatecv.WizardCompleteMsg{
 		ProfileID:    "profile-staff-engineer",
 		Audience:     "hiring_manager",
 		TechFocus:    "language_agnostic",
@@ -249,7 +249,7 @@ var _ = Describe("E2E GenerateCV Comprehensive", func() {
 
 			It("should generate CV with principal engineer profile", func() {
 				env.SelectIntentByName("generate_cv")
-				env.SendMessage(intents.WizardCompleteMsg{
+				env.SendMessage(generatecv.WizardCompleteMsg{
 					ProfileID:    "profile-principal-engineer",
 					Audience:     "recruiter",
 					SkillsFormat: "flat",

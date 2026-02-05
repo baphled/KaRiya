@@ -8,6 +8,7 @@ import (
 	burstmanagement "github.com/baphled/kariya/internal/cli/intents/burst_management"
 	"github.com/baphled/kariya/internal/cli/intents/captureevent"
 	"github.com/baphled/kariya/internal/cli/intents/factmanagement"
+	"github.com/baphled/kariya/internal/cli/intents/generatecv"
 	"github.com/baphled/kariya/internal/cli/intents/skillsmanagement"
 	"github.com/baphled/kariya/internal/cli/screens"
 	cvscreens "github.com/baphled/kariya/internal/cli/screens/cv"
@@ -182,7 +183,7 @@ func (r *DefaultIntentRegistrar) registerGenerateCV(ctx context.Context, router 
 			scoringCfg = &appCfg.Scoring
 		}
 
-		cvCtx := &intents.GenerateCVContext{
+		cvCtx := &generatecv.IntentContext{
 			Events:                events,
 			Facts:                 facts,
 			AvailableProfiles:     createDefaultCVProfiles(),
@@ -200,7 +201,7 @@ func (r *DefaultIntentRegistrar) registerGenerateCV(ctx context.Context, router 
 				return cvscreens.NewCVPreviewScreenWithProfile(cvView, profileCfg)
 			},
 		}
-		intent, err := intents.NewGenerateCVIntent(cvCtx)
+		intent, err := generatecv.NewIntent(cvCtx)
 		if err != nil {
 			r.config.Log.Error("Failed to create GenerateCV intent: %v", err)
 			return nil

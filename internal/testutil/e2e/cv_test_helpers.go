@@ -10,6 +10,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/app"
 	"github.com/baphled/kariya/internal/cli/bootstrap"
 	"github.com/baphled/kariya/internal/cli/intents"
+	"github.com/baphled/kariya/internal/cli/intents/generatecv"
 	"github.com/baphled/kariya/internal/cli/screens"
 	cvscreens "github.com/baphled/kariya/internal/cli/screens/cv"
 	"github.com/baphled/kariya/internal/cli/service"
@@ -204,7 +205,7 @@ func (r *cvMockRegistrar) overrideGenerateCV(ctx context.Context, router *intent
 			scoringCfg = &appCfg.Scoring
 		}
 
-		cvCtx := &intents.GenerateCVContext{
+		cvCtx := &generatecv.IntentContext{
 			Events:                events,
 			Facts:                 facts,
 			AvailableProfiles:     createDefaultCVProfilesForTest(),
@@ -225,7 +226,7 @@ func (r *cvMockRegistrar) overrideGenerateCV(ctx context.Context, router *intent
 			},
 		}
 
-		intent, intentErr := intents.NewGenerateCVIntent(cvCtx)
+		intent, intentErr := generatecv.NewIntent(cvCtx)
 		if intentErr != nil {
 			r.log.Error("Failed to create GenerateCV intent: %v", intentErr)
 			return nil
@@ -236,8 +237,8 @@ func (r *cvMockRegistrar) overrideGenerateCV(ctx context.Context, router *intent
 
 // createDefaultCVProfilesForTest mirrors the production createDefaultCVProfiles
 // from registration.go, providing the same profile options for test consistency.
-func createDefaultCVProfilesForTest() []*intents.CVProfile {
-	return []*intents.CVProfile{
+func createDefaultCVProfilesForTest() []*generatecv.CVProfile {
+	return []*generatecv.CVProfile{
 		{
 			ID:             "profile-staff-engineer",
 			Name:           "Staff Engineer",

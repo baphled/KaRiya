@@ -737,6 +737,11 @@ linters:
           - depguard
         text: "prevent-deprecated-components"
 
+      - path: 'internal/cli/intents/generatecv/(.*)\.go'
+        linters:
+          - depguard
+        text: "prevent-deprecated-components"
+
     # -------------------------------------------------------------------------
     # C12: SUBDIRECTORY INTENTS - Migrated architecture
     # -------------------------------------------------------------------------
@@ -772,6 +777,15 @@ linters:
           - errcheck
           - godox
           - depguard
+
+      - path: 'internal/cli/intents/generatecv/(.*)\.go'
+        linters:
+          - revive
+          - gocognit
+          - gocyclo
+          - nestif
+          - funlen
+          - errcheck
 
       - path: 'internal/cli/intents/burst_management/(.*)\.go'
         linters:
