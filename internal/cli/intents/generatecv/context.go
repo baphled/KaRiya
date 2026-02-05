@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 
-	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/types"
 	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
@@ -43,8 +42,6 @@ type IntentContext struct {
 	EventRepository       careerRepo.EventRepository
 	ProfileConfig         *config.ProfileConfig
 	AppContext            context.Context
-	ReviewScreenFactory   func(cv *career.CVView) screens.Screen
-	PreviewScreenFactory  func(cv *career.CVView) screens.Screen
 }
 
 // Validate ensures the context carries the minimum data needed to start the

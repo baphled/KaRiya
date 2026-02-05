@@ -42,7 +42,7 @@ func (i *Intent) initWizardFlow() tea.Cmd {
 	}
 
 	i.wizardModal.Show()
-	i.state.currentState = StateConfiguring
+	i.state = StateConfiguring
 
 	return i.wizardModal.Init()
 }
@@ -94,11 +94,11 @@ func (i *Intent) handleWindowResize(msg tea.WindowSizeMsg) tea.Cmd {
 	termInfo := i.GetTerminalInfo()
 	termInfo.Update(msg)
 
-	if i.wizardReviewScreen != nil {
-		i.wizardReviewScreen.SetTerminalInfo(msg.Width, msg.Height)
+	if i.reviewScreen != nil {
+		i.reviewScreen.SetTerminalInfo(msg.Width, msg.Height)
 	}
-	if i.wizardPreviewScreen != nil {
-		i.wizardPreviewScreen.SetTerminalInfo(msg.Width, msg.Height)
+	if i.previewScreen != nil {
+		i.previewScreen.SetTerminalInfo(msg.Width, msg.Height)
 	}
 	return nil
 }
@@ -156,7 +156,7 @@ func (i *Intent) delegateToExportModal(msg tea.Msg) (tea.Cmd, bool) {
 	}
 	if !i.exportModal.IsVisible() && !i.exportModal.IsCompleted() {
 		i.exportModal.Hide()
-		i.state.currentState = StatePreview
+		i.state = StatePreview
 		return nil, true
 	}
 	return cmd, true
@@ -167,28 +167,20 @@ func (i *Intent) handleKeyDelegation(keyMsg tea.KeyMsg) tea.Cmd {
 		if keyMsg.String() == "esc" && i.progressModal.IsCancellable() {
 			i.progressModal.Hide()
 			i.wizardModal.Show()
-			i.state.currentState = StateConfiguring
+			i.state = StateConfiguring
 			return nil
 		}
 	}
 
-	if i.wizardReviewScreen != nil && i.state.currentState == StateReview {
-		cmd, result := i.wizardReviewScreen.Update(keyMsg)
+	if i.activeScreen != nil && (i.state == StateReview || i.state == StatePreview) {
+		cmd, result := i.activeScreen.Update(keyMsg)
 		if result != nil {
-			return i.handleReviewScreenResult(result)
+			return i.handleScreenResult(result)
 		}
 		return cmd
 	}
 
-	if i.wizardPreviewScreen != nil && i.state.currentState == StatePreview {
-		cmd, result := i.wizardPreviewScreen.Update(keyMsg)
-		if result != nil {
-			return i.handlePreviewScreenResult(result)
-		}
-		return cmd
-	}
-
-	if i.state.currentState == StateExportComplete {
+	if i.state == StateExportComplete {
 		return i.handleExportCompleteKeypress(keyMsg.String())
 	}
 
@@ -203,14 +195,14 @@ func (i *Intent) wizardView() string {
 	view := intents.CreateStandardViewWithBreadcrumbs(i.BaseIntent, breadcrumbs...)
 
 	var content string
-	switch i.state.currentState {
+	switch i.state {
 	case StateReview:
-		if i.wizardReviewScreen != nil {
+		if i.activeScreen != nil {
 			return i.renderReviewScreenWithModalOverlay(width, height)
 		}
 		content = "Loading review..."
 	case StatePreview:
-		if i.wizardPreviewScreen != nil {
+		if i.activeScreen != nil {
 			return i.renderPreviewScreenWithModalOverlay(width, height)
 		}
 		content = "Loading preview..."
@@ -255,7 +247,7 @@ func (i *Intent) getCardStyle() lipgloss.Style {
 func (i *Intent) getWizardBreadcrumbs() []string {
 	crumbs := []string{"Main Menu", "Generate CV"}
 
-	switch i.state.currentState {
+	switch i.state {
 	case StateConfiguring:
 		crumbs = append(crumbs, "Configure")
 	case StateExtracting:
@@ -284,7 +276,7 @@ func (i *Intent) getWizardContextHelp() string {
 		return "Please wait   q Quit   m Main Menu"
 	}
 
-	switch i.state.currentState {
+	switch i.state {
 	case StateReview:
 		return "Enter/p Preview   x Export   e Edit   Esc Back   q Quit"
 	case StatePreview:
@@ -322,7 +314,7 @@ func (i *Intent) renderReviewScreenWithModalOverlay(width, height int) string {
 	breadcrumbs := i.getWizardBreadcrumbs()
 	view := intents.CreateStandardViewWithBreadcrumbs(i.BaseIntent, breadcrumbs...)
 
-	content := i.wizardReviewScreen.View()
+	content := i.activeScreen.View()
 	view.WithContent(content)
 
 	help := "Enter/p Preview   x Export   e Edit   Esc Back   q Quit"
@@ -341,7 +333,7 @@ func (i *Intent) renderPreviewScreenWithModalOverlay(width, height int) string {
 	breadcrumbs := i.getWizardBreadcrumbs()
 	view := intents.CreateStandardViewWithBreadcrumbs(i.BaseIntent, breadcrumbs...)
 
-	content := i.wizardPreviewScreen.View()
+	content := i.activeScreen.View()
 	view.WithContent(content)
 
 	help := "jk Scroll   g/G Top/Bottom   Enter/y Confirm   x Export   Esc Back   q Quit"
@@ -361,9 +353,9 @@ func (i *Intent) generateCVAsync() tea.Cmd {
 		if i.context.CVGenerationService == nil || i.context.AppContext == nil {
 			cvView := &career.CVView{
 				ID:               fmt.Sprintf("cv_%d", time.Now().Unix()),
-				Name:             i.state.selectedProfile.Name,
-				TargetRole:       i.state.selectedProfile.TargetRole,
-				TargetAudience:   i.state.selectedAudience,
+				Name:             i.selectedProfile.Name,
+				TargetRole:       i.selectedProfile.TargetRole,
+				TargetAudience:   i.selectedAudience,
 				GeneratedAt:      time.Now(),
 				SourceEventCount: len(i.context.Events),
 				SourceFactCount:  len(i.context.Facts),
@@ -373,16 +365,16 @@ func (i *Intent) generateCVAsync() tea.Cmd {
 
 		ctx := i.context.AppContext
 		config := &career.CVConfig{
-			Name:           i.state.selectedProfile.Name,
-			TargetRole:     i.state.selectedProfile.TargetRole,
-			TargetAudience: i.state.selectedAudience,
+			Name:           i.selectedProfile.Name,
+			TargetRole:     i.selectedProfile.TargetRole,
+			TargetAudience: i.selectedAudience,
 
-			TechnologyFocus:      string(i.state.selectedTechnologyFocus),
-			SelectedTechnologies: i.state.selectedTechnologies,
-			FocusArea:            string(i.state.selectedFocusArea),
-			LengthFormat:         string(cv.MapUILengthToFormat(i.state.selectedCVLength)),
-			SkillsFormat:         i.state.selectedSkillsFormat,
-			SkillsLimit:          i.state.selectedSkillsLimit,
+			TechnologyFocus:      string(i.selectedTechnologyFocus),
+			SelectedTechnologies: i.selectedTechnologies,
+			FocusArea:            string(i.selectedFocusArea),
+			LengthFormat:         string(cv.MapUILengthToFormat(i.selectedCVLength)),
+			SkillsFormat:         i.selectedSkillsFormat,
+			SkillsLimit:          i.selectedSkillsLimit,
 		}
 
 		cvView, err := i.context.CVGenerationService.GenerateCVFromConfig(ctx, config)
@@ -460,22 +452,22 @@ func (i *Intent) exportCVAsync() tea.Cmd {
 			}
 		}
 
-		sections := i.state.generatedCV.Sections
+		sections := i.generatedCV.Sections
 		bulletsMap := make(map[string][]*career.CVBullet)
 
 		var content string
 		var err error
 		var exportFormat cv.ExportFormat
 
-		switch i.state.selectedExportFormat {
+		switch i.selectedExportFormat {
 		case ExportFormatText:
-			content, err = i.context.ExportService.ExportToText(ctx, i.state.generatedCV, sections, bulletsMap)
+			content, err = i.context.ExportService.ExportToText(ctx, i.generatedCV, sections, bulletsMap)
 			exportFormat = cv.ExportFormatText
 		case ExportFormatMarkdown:
-			content, err = i.context.ExportService.ExportToMarkdown(ctx, i.state.generatedCV, sections, bulletsMap)
+			content, err = i.context.ExportService.ExportToMarkdown(ctx, i.generatedCV, sections, bulletsMap)
 			exportFormat = cv.ExportFormatMarkdown
 		case ExportFormatYAML:
-			content, err = i.context.ExportService.ExportToYAML(ctx, i.state.generatedCV, sections, bulletsMap)
+			content, err = i.context.ExportService.ExportToYAML(ctx, i.generatedCV, sections, bulletsMap)
 			exportFormat = cv.ExportFormatYAML
 		default:
 			return ExportCompleteMsg{Path: "", Error: errors.New("unknown export format")}
@@ -485,9 +477,9 @@ func (i *Intent) exportCVAsync() tea.Cmd {
 			return ExportCompleteMsg{Path: "", Error: fmt.Errorf("failed to export: %w", err)}
 		}
 
-		switch i.state.selectedExportOption {
+		switch i.selectedExportOption {
 		case ExportOptionSaveToFile:
-			path, saveErr := i.context.ExportService.SaveToFile(ctx, i.state.generatedCV.Name, exportFormat, content)
+			path, saveErr := i.context.ExportService.SaveToFile(ctx, i.generatedCV.Name, exportFormat, content)
 			if saveErr != nil {
 				return ExportCompleteMsg{Path: "", Error: fmt.Errorf("failed to save file: %w", saveErr)}
 			}
@@ -510,12 +502,12 @@ func (i *Intent) showExportModal() tea.Cmd {
 	termInfo := i.GetTerminalInfo()
 	i.exportModal = cvmodals.NewExportModal(termInfo.Width, termInfo.Height)
 	i.exportModal.Show()
-	i.state.currentState = StateExporting
+	i.state = StateExporting
 	return i.exportModal.Init()
 }
 
 func (i *Intent) returnToWizard() tea.Cmd {
-	i.state.currentState = StateConfiguring
+	i.state = StateConfiguring
 	i.wizardModal.Reset()
 	return i.wizardModal.Init()
 }
@@ -524,20 +516,20 @@ func (i *Intent) viewExportComplete() string {
 	th := theme.Default()
 	var content strings.Builder
 
-	if i.state.exportError != nil {
+	if i.exportError != nil {
 		errorHeader := primitives.ErrorText("Export Failed", th).Bold().Render()
 		content.WriteString("\n" + errorHeader + "\n\n")
-		content.WriteString(fmt.Sprintf("Error: %v\n\n", i.state.exportError))
+		content.WriteString(fmt.Sprintf("Error: %v\n\n", i.exportError))
 		content.WriteString("Try a different location or format.\n")
 	} else {
 		successHeader := primitives.SuccessText("Export Complete!", th).Bold().Render()
 		content.WriteString("\n" + successHeader + "\n\n")
 
-		formatName := exportFormatDisplayName(i.state.selectedExportFormat)
+		formatName := exportFormatDisplayName(i.selectedExportFormat)
 		content.WriteString(fmt.Sprintf("Format: %s\n", formatName))
 
-		if i.state.selectedExportOption == ExportOptionSaveToFile {
-			content.WriteString(fmt.Sprintf("Location: %s\n\n", i.state.exportedPath))
+		if i.selectedExportOption == ExportOptionSaveToFile {
+			content.WriteString(fmt.Sprintf("Location: %s\n\n", i.exportedPath))
 			content.WriteString("You can now share this file!\n")
 		} else {
 			content.WriteString("Location: Clipboard\n\n")

@@ -1,13 +1,18 @@
 package generatecv
 
 import (
+	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/screens"
+	"github.com/baphled/kariya/internal/cli/screens/cv"
 	cvmodals "github.com/baphled/kariya/internal/cli/screens/cv/modals"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
-	"github.com/baphled/kariya/internal/service/career/cv"
+	cvsvc "github.com/baphled/kariya/internal/service/career/cv"
 )
+
+// Ensure Intent implements ScreenResultHandler interface.
+var _ behaviors.ScreenResultHandler = (*Intent)(nil)
 
 // Intent orchestrates the multi-step CV generation workflow, managing
 // state transitions between configuration, technology extraction, generation,
@@ -19,25 +24,12 @@ type Intent struct {
 	*intents.BaseIntent
 
 	context *IntentContext
-	state   *model
+	state   State
 	active  bool
 	result  *intents.IntentResult[*Result]
 	logger  *logger.Logger
 
-	wizardModal   *cvmodals.ConfigWizardModal
-	progressModal *cvmodals.ProgressModal
-	exportModal   *cvmodals.ExportModal
-
-	wizardReviewScreen  screens.Screen
-	wizardPreviewScreen screens.Screen
-}
-
-// model tracks the internal mutable state of the GenerateCV intent throughout
-// the wizard workflow: selected profile, audience, technology/focus preferences,
-// skills configuration, generated CV, and export progress.
-type model struct {
-	context      *IntentContext
-	currentState State
+	// --- Flattened state fields (previously in model) ---
 
 	selectedProfile  *CVProfile
 	selectedAudience string
@@ -46,9 +38,9 @@ type model struct {
 	extractedTechnologies []*ExtractedTechnology
 	focusAreaSuggestion   *FocusAreaSuggestion
 
-	selectedTechnologyFocus cv.TechnologyFocus
+	selectedTechnologyFocus cvsvc.TechnologyFocus
 	selectedTechnologies    []string
-	selectedFocusArea       cv.FocusArea
+	selectedFocusArea       cvsvc.FocusArea
 
 	selectedSkillsFormat string
 	selectedSkillsLimit  int
@@ -59,4 +51,16 @@ type model struct {
 	exportedPath         string
 	exportError          error
 	isExporting          bool
+
+	// --- Modals ---
+
+	wizardModal   *cvmodals.ConfigWizardModal
+	progressModal *cvmodals.ProgressModal
+	exportModal   *cvmodals.ExportModal
+
+	// --- Screen Orchestration ---
+
+	activeScreen  screens.Screen
+	reviewScreen  *cv.ReviewScreen
+	previewScreen *cv.CVPreviewScreen
 }

@@ -11,8 +11,6 @@ import (
 	"github.com/baphled/kariya/internal/cli/bootstrap"
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/intents/generatecv"
-	"github.com/baphled/kariya/internal/cli/screens"
-	cvscreens "github.com/baphled/kariya/internal/cli/screens/cv"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
@@ -218,12 +216,6 @@ func (r *cvMockRegistrar) overrideGenerateCV(ctx context.Context, router *intent
 			EventRepository:       r.svc.GetEventRepository(),
 			ProfileConfig:         profileCfg,
 			AppContext:            ctx,
-			ReviewScreenFactory: func(cvView *career.CVView) screens.Screen {
-				return cvscreens.NewCVReviewScreen(cvView)
-			},
-			PreviewScreenFactory: func(cvView *career.CVView) screens.Screen {
-				return cvscreens.NewCVPreviewScreenWithProfile(cvView, profileCfg)
-			},
 		}
 
 		intent, intentErr := generatecv.NewIntent(cvCtx)

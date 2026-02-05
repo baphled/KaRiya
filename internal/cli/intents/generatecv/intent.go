@@ -4,6 +4,9 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/intents"
+	"github.com/baphled/kariya/internal/cli/screens"
+	"github.com/baphled/kariya/internal/domain/career"
+	cvsvc "github.com/baphled/kariya/internal/service/career/cv"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -32,14 +35,11 @@ func NewIntent(ctx *IntentContext) (*Intent, error) {
 	baseIntent := intents.NewBaseIntent()
 
 	return &Intent{
-		BaseIntent: baseIntent,
-		context:    ctx,
-		state: &model{
-			context:         ctx,
-			currentState:    StateConfiguring,
-			selectedProfile: selectedProfile,
-		},
-		active: true,
+		BaseIntent:      baseIntent,
+		context:         ctx,
+		state:           StateConfiguring,
+		selectedProfile: selectedProfile,
+		active:          true,
 	}, nil
 }
 
@@ -53,7 +53,7 @@ func NewIntent(ctx *IntentContext) (*Intent, error) {
 //   - Creates and shows the wizard modal.
 func (i *Intent) Init() tea.Cmd {
 	if i.context.DefaultProfile != nil {
-		i.state.selectedProfile = i.context.DefaultProfile
+		i.selectedProfile = i.context.DefaultProfile
 	}
 
 	return i.initWizardFlow()
@@ -118,13 +118,13 @@ func (i *Intent) setCompleted() {
 	i.result = &intents.IntentResult[*Result]{
 		Status: intents.Completed,
 		Data: &Result{
-			GeneratedCV:     i.state.generatedCV,
-			SelectedProfile: i.state.selectedProfile,
+			GeneratedCV:     i.generatedCV,
+			SelectedProfile: i.selectedProfile,
 			AcceptedFields:  make(map[string]bool),
 		},
 		Metadata: map[string]interface{}{
-			"profile":     i.state.selectedProfile.ID,
-			"audience":    i.state.selectedAudience,
+			"profile":     i.selectedProfile.ID,
+			"audience":    i.selectedAudience,
 			"timestamp":   time.Now(),
 			"event_count": len(i.context.Events),
 			"fact_count":  len(i.context.Facts),
@@ -150,4 +150,234 @@ func (i *Intent) setCancelled() {
 //   - None.
 func (i *Intent) GetTestContext() *IntentContext {
 	return i.context
+}
+
+// GetState exposes the current state for test assertions.
+//
+// Returns:
+//   - The current State value.
+//
+// Side effects:
+//   - None.
+func (i *Intent) GetState() State {
+	return i.state
+}
+
+// GetSelectedProfile exposes the selected profile for test assertions.
+//
+// Returns:
+//   - The selected CVProfile pointer.
+//
+// Side effects:
+//   - None.
+func (i *Intent) GetSelectedProfile() *CVProfile {
+	return i.selectedProfile
+}
+
+// GetSelectedAudience exposes the selected audience for test assertions.
+//
+// Returns:
+//   - The selected audience string.
+//
+// Side effects:
+//   - None.
+func (i *Intent) GetSelectedAudience() string {
+	return i.selectedAudience
+}
+
+// GetGeneratedCV exposes the generated CV for test assertions.
+//
+// Returns:
+//   - The generated CVView pointer.
+//
+// Side effects:
+//   - None.
+func (i *Intent) GetGeneratedCV() *career.CVView {
+	return i.generatedCV
+}
+
+// GetReviewScreen exposes the review screen for test assertions.
+//
+// Returns:
+//   - The ReviewScreen pointer.
+//
+// Side effects:
+//   - None.
+func (i *Intent) GetReviewScreen() screens.Screen {
+	return i.reviewScreen
+}
+
+// GetPreviewScreen exposes the preview screen for test assertions.
+//
+// Returns:
+//   - The CVPreviewScreen pointer.
+//
+// Side effects:
+//   - None.
+func (i *Intent) GetPreviewScreen() screens.Screen {
+	return i.previewScreen
+}
+
+// GetExtractedTechnologies exposes extracted technologies for test assertions.
+//
+// Returns:
+//   - The slice of ExtractedTechnology pointers.
+//
+// Side effects:
+//   - None.
+func (i *Intent) GetExtractedTechnologies() []*ExtractedTechnology {
+	return i.extractedTechnologies
+}
+
+// GetSelectedExportFormat exposes the export format for test assertions.
+//
+// Returns:
+//   - The selected ExportFormat.
+//
+// Side effects:
+//   - None.
+func (i *Intent) GetSelectedExportFormat() ExportFormat {
+	return i.selectedExportFormat
+}
+
+// GetSelectedExportOption exposes the export option for test assertions.
+//
+// Returns:
+//   - The selected ExportOption.
+//
+// Side effects:
+//   - None.
+func (i *Intent) GetSelectedExportOption() ExportOption {
+	return i.selectedExportOption
+}
+
+// GetExportedPath exposes the exported path for test assertions.
+//
+// Returns:
+//   - The exported path string.
+//
+// Side effects:
+//   - None.
+func (i *Intent) GetExportedPath() string {
+	return i.exportedPath
+}
+
+// GetExportError exposes the export error for test assertions.
+//
+// Returns:
+//   - The export error.
+//
+// Side effects:
+//   - None.
+func (i *Intent) GetExportError() error {
+	return i.exportError
+}
+
+// GetIsExporting exposes the exporting flag for test assertions.
+//
+// Returns:
+//   - The isExporting boolean.
+//
+// Side effects:
+//   - None.
+func (i *Intent) GetIsExporting() bool {
+	return i.isExporting
+}
+
+// GetSelectedTechnologyFocus exposes the technology focus for test assertions.
+//
+// Returns:
+//   - The selected TechnologyFocus.
+//
+// Side effects:
+//   - None.
+func (i *Intent) GetSelectedTechnologyFocus() cvsvc.TechnologyFocus {
+	return i.selectedTechnologyFocus
+}
+
+// GetSelectedTechnologies exposes the selected technologies for test assertions.
+//
+// Returns:
+//   - The slice of selected technology names.
+//
+// Side effects:
+//   - None.
+func (i *Intent) GetSelectedTechnologies() []string {
+	return i.selectedTechnologies
+}
+
+// GetSelectedFocusArea exposes the focus area for test assertions.
+//
+// Returns:
+//   - The selected FocusArea.
+//
+// Side effects:
+//   - None.
+func (i *Intent) GetSelectedFocusArea() cvsvc.FocusArea {
+	return i.selectedFocusArea
+}
+
+// GetSelectedSkillsFormat exposes the skills format for test assertions.
+//
+// Returns:
+//   - The selected skills format string.
+//
+// Side effects:
+//   - None.
+func (i *Intent) GetSelectedSkillsFormat() string {
+	return i.selectedSkillsFormat
+}
+
+// GetSelectedSkillsLimit exposes the skills limit for test assertions.
+//
+// Returns:
+//   - The selected skills limit.
+//
+// Side effects:
+//   - None.
+func (i *Intent) GetSelectedSkillsLimit() int {
+	return i.selectedSkillsLimit
+}
+
+// GetSelectedCVLength exposes the CV length for test assertions.
+//
+// Returns:
+//   - The selected CV length string.
+//
+// Side effects:
+//   - None.
+func (i *Intent) GetSelectedCVLength() string {
+	return i.selectedCVLength
+}
+
+// SetStateForTest sets the state for test purposes.
+//
+// Side effects:
+//   - Mutates the state field.
+func (i *Intent) SetStateForTest(state State) {
+	i.state = state
+}
+
+// SetSelectedExportFormatForTest sets the export format for test purposes.
+//
+// Side effects:
+//   - Mutates the selectedExportFormat field.
+func (i *Intent) SetSelectedExportFormatForTest(format ExportFormat) {
+	i.selectedExportFormat = format
+}
+
+// SetSelectedExportOptionForTest sets the export option for test purposes.
+//
+// Side effects:
+//   - Mutates the selectedExportOption field.
+func (i *Intent) SetSelectedExportOptionForTest(option ExportOption) {
+	i.selectedExportOption = option
+}
+
+// SetIsExportingForTest sets the exporting flag for test purposes.
+//
+// Side effects:
+//   - Mutates the isExporting field.
+func (i *Intent) SetIsExportingForTest(exporting bool) {
+	i.isExporting = exporting
 }
