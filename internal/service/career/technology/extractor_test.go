@@ -67,6 +67,9 @@ func (r *failingEventRepository) Count(_ context.Context, _ careerRepo.EventList
 func (r *failingEventRepository) LinkSkill(_ context.Context, _ string, _ string) error {
 	return nil
 }
+func (r *failingEventRepository) UnlinkSkill(_ context.Context, _ string, _ string) error {
+	return nil
+}
 
 var _ = Describe("Extractor", func() {
 	var (

@@ -25,6 +25,30 @@ type FocusAreaSuggestion = technology.FocusAreaSuggestion
 // CVProfile is a type alias for the shared types.CVProfile.
 type CVProfile = types.CVProfile
 
+// CVExporter defines the interface for CV export operations.
+// This interface enables testing by allowing mock implementations.
+//
+// Side effects:
+//   - None at interface definition.
+type CVExporter interface {
+	ExportToText(
+		ctx context.Context, cvView *career.CVView,
+		sections []*career.CVSection, bullets map[string][]*career.CVBullet,
+	) (string, error)
+	ExportToMarkdown(
+		ctx context.Context, cvView *career.CVView,
+		sections []*career.CVSection, bullets map[string][]*career.CVBullet,
+	) (string, error)
+	ExportToYAML(
+		ctx context.Context, cvView *career.CVView,
+		sections []*career.CVSection, bullets map[string][]*career.CVBullet,
+	) (string, error)
+	SaveToFile(
+		ctx context.Context, cvName string, format cv.ExportFormat, content string,
+	) (string, error)
+	CopyToClipboard(ctx context.Context, content string) error
+}
+
 // IntentContext is the input context passed to the GenerateCV intent.
 //
 // Side effects:
@@ -37,7 +61,7 @@ type IntentContext struct {
 	CVGenerationService   cv.CVGenerationService
 	DataProcessingService cv.DataProcessingService
 	BulletGenerator       cv.BulletGenerator
-	ExportService         *cv.ExportService
+	ExportService         CVExporter
 	SkillRepository       careerRepo.SkillRepository
 	EventRepository       careerRepo.EventRepository
 	ProfileConfig         *config.ProfileConfig

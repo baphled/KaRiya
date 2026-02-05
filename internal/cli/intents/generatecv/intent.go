@@ -393,3 +393,14 @@ func (i *Intent) SetSelectedExportOptionForTest(option ExportOption) {
 func (i *Intent) SetIsExportingForTest(exporting bool) {
 	i.isExporting = exporting
 }
+
+// InvokeExportCVAsyncForTest exposes exportCVAsync for test purposes.
+//
+// Returns:
+//   - A tea.Cmd that invokes the export async function.
+//
+// Side effects:
+//   - None at invocation; the returned command performs export work.
+func (i *Intent) InvokeExportCVAsyncForTest() tea.Cmd {
+	return i.exportCVAsync()
+}

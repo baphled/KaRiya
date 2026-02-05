@@ -82,7 +82,7 @@ func NewCVConfigForm(
 	step1Fields := []huh.Field{
 		huh.NewSelect[string]().
 			Key("profile").
-			Title("CV Profile").
+			Title("Select CV Profile").
 			Description("Choose which profile to use for this CV").
 			Options(profileOpts...).
 			Value(&data.ProfileID),
