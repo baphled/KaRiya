@@ -1,0 +1,26 @@
+# Empty config for VHS demos
+# This config has NO profile data, which triggers the onboarding wizard
+#
+# Use this when you want to demonstrate the first-time user experience.
+
+system:
+  data_dir: /tmp/kariya-demo
+  log_level: info
+  auto_backup: false
+
+# Profile is intentionally empty to trigger onboarding
+profile:
+  name: ""
+  email: ""
+
+cv:
+  default_format: markdown
+  max_bullets: 5
+
+export:
+  default_destination: file
+  auto_open: false
+
+display:
+  theme: default
+  animations: true

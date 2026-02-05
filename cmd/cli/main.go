@@ -14,6 +14,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/bootstrap"
 	"github.com/baphled/kariya/internal/cli/importer"
 	cliservice "github.com/baphled/kariya/internal/cli/service"
+	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/logger"
 	"github.com/baphled/kariya/internal/repository/career"
 	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
@@ -36,6 +37,7 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 	var (
 		showVersion        = false
 		showHelp           = false
+		configPath         = ""
 		dbPath             = ""
 		mode               = ""
 		listEvents         = false
@@ -57,6 +59,11 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 			showVersion = true
 		case "--help", "-h":
 			showHelp = true
+		case "--config":
+			if i+1 < len(args) {
+				configPath = args[i+1]
+				i++
+			}
 		case "--db", "--database":
 			if i+1 < len(args) {
 				dbPath = args[i+1]
@@ -109,6 +116,11 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 	if showHelp {
 		printHelpTo(out)
 		return 0
+	}
+
+	// Set custom config path if provided
+	if configPath != "" {
+		config.SetConfigPath(configPath)
 	}
 
 	// Set up repository and service
@@ -611,6 +623,8 @@ func printHelpTo(out io.Writer) {
 	fmt.Fprintln(out, "\nOptions:")
 	fmt.Fprintln(out, "  -v, --version              Show version information")
 	fmt.Fprintln(out, "  -h, --help                 Show this help message")
+	fmt.Fprintln(out, "  --config PATH              Use custom config file path")
+	fmt.Fprintln(out, "                             Default: ~/.kariya/config.yaml")
 	fmt.Fprintln(out, "  --db, --database PATH      Use custom database path (SQLite)")
 	fmt.Fprintln(out, "                             Default: ~/.kariya/events.db")
 	fmt.Fprintln(out, "  --mode MODE                Start in specific capture mode")
@@ -626,6 +640,7 @@ func printHelpTo(out io.Writer) {
 	fmt.Fprintln(out, "  --recategorize-skills      Re-categorize existing skills using keyword dictionary")
 	fmt.Fprintln(out, "\nExamples:")
 	fmt.Fprintln(out, "  kariya                                    # Start with default database")
+	fmt.Fprintln(out, "  kariya --config ./my-config.yaml         # Use custom config file")
 	fmt.Fprintln(out, "  kariya --db ./events.db                  # Use custom database path")
 	fmt.Fprintln(out, "  kariya --mode timeline                   # Start in timeline journaling mode")
 	fmt.Fprintln(out, "  kariya --db ./events.db --list           # Open with events list")

@@ -1,0 +1,41 @@
+Text,Date,Company,Project,Tags
+Architected Linux infrastructure with golden disc images for media platform,2006-01,MediaTech,Platform Infrastructure,infrastructure;linux;automation
+Configured Apache servers for multi-site hosting environments,2006-06,MediaTech,Web Hosting,apache;devops;linux
+Built monitoring dashboards for server health and performance metrics,2007-01,MediaTech,Observability,monitoring;dashboards;infrastructure
+Automated server builds with custom scripts reducing provisioning time by 80%,2007-09,MediaTech,Automation,automation;shell;infrastructure
+Created backend services for online gaming platform processing 10K transactions daily,2008-07,GameStack,Gaming Platform,backend;php;high-throughput
+Implemented payment gateway integration with 3D Secure verification,2008-10,GameStack,Payment Systems,payments;security;integration
+Mentored 3 junior developers and established code review practices,2008-11,GameStack,Team Development,mentoring;leadership;code-review
+Built transaction processing systems with 99.9% uptime SLA,2009-01,GameStack,Transaction Processing,reliability;backend;performance
+Delivered backend services for broadcasting clients including major UK networks,2010-02,DigitalAgency,Broadcasting,agency;broadcasting;api
+Created postcode lookup API serving 500K requests daily,2010-04,DigitalAgency,Data Services,api;high-throughput;backend
+Maintained and extended APIs supporting digital TV migration across broadcasters,2010-06,DigitalAgency,Broadcasting Platform,api;migration;maintenance
+Built content management systems for agency clients,2010-08,DigitalAgency,CMS Platform,cms;backend;agency
+Introduced ELK stack centralizing logs across 20+ publishing services,2013-05,SciencePress,Observability,elk;logging;devops
+Collaborated with API teams building in-house publishing APIs,2013-06,SciencePress,Publishing Platform,api;collaboration;backend
+Maintained fleet of 80+ servers across four environments,2014-04,QuickShip,Infrastructure,infrastructure;devops;operations
+Built dashboards providing real-time system insight for logistics operations,2014-05,QuickShip,Monitoring,monitoring;dashboards;observability
+Implemented agnostic metrics collection across all in-house services,2014-06,QuickShip,Observability,metrics;observability;devops
+Created pensions calculator tool used by millions of UK citizens,2014-11,FinanceGuide,Public Tools,public-sector;backend;finance
+Implemented Dough frontend framework decoupling release cycles,2014-10,FinanceGuide,Architecture,architecture;frontend;tooling
+Enabled frontend teams to ship independently of backend deployments,2015-01,FinanceGuide,Developer Experience,architecture;dx;enablement
+Delivered Rails-based solutions across varied client domains,2015-08,WeekendLabs,Consulting,ruby;rails;consulting
+Provided technical guidance to non-technical stakeholders,2015-08,WeekendLabs,Client Advisory,communication;advisory;leadership
+Architected microservices migration reducing deployment time by 70%,2018-03,TechConsulting,Architecture,architecture;microservices;migration
+Led technical workshops educating teams on modern development practices,2018-06,TechConsulting,Training,training;leadership;enablement
+Implemented real-time data pipeline processing 5M events daily,2019-02,DataPlatform,Data Engineering,data;pipelines;high-throughput
+Designed event-driven architecture adopted across engineering organization,2019-05,DataPlatform,Architecture,architecture;events;design
+Stabilized legacy systems during high-pressure operational phases,2020-03,FreshMeals,Reliability,reliability;stabilization;operations
+Implemented automated issue resolution saving organization 30K annually,2023-10,FreshMeals,Ops Automation,automation;cost-savings;operations
+Implemented OTP authentication improving account security,2024-01,FreshMeals,Security,authentication;security;backend
+Exited role after delivering stabilization and automation improvements,2024-04,FreshMeals,Delivery,delivery;impact;stabilization
+Defined MVP scope translating vague ideas into concrete requirements,2024-07,SpectrumConsulting,Product Definition,mvp;product;consulting
+Aligned Figma designs with technical feasibility reducing ambiguity,2024-08,SpectrumConsulting,Architecture,design;architecture;feasibility
+Authored technical documentation used in investor due diligence,2024-09,SpectrumConsulting,Documentation,documentation;investors;technical
+Mentored founders on MVP maturity and delivery constraints,2024-10,SpectrumConsulting,Advisory,mentoring;founders;advisory
+Architected production-grade Career CLI using Domain-Driven Design and Go,2025-01,CareerTrack,Architecture,go;ddd;architecture
+Built Bubble Tea terminal UI with 19 standardized keyboard shortcuts,2025-02,CareerTrack,TUI Development,go;tui;bubble-tea
+Implemented Intent/Screen/Component pattern enabling scalable TUI state management,2025-03,CareerTrack,Architecture,architecture;patterns;state-machine
+Achieved 95%+ test coverage through comprehensive BDD testing practices,2025-03,CareerTrack,Quality,testing;bdd;quality
+Created comprehensive UIKit library with 9 reusable component packages,2026-01,CareerTrack,Components,components;uikit;reusable
+Demonstrated effective human-AI collaboration for rapid feature development,2026-01,CareerTrack,Innovation,ai;collaboration;innovation

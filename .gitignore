@@ -79,8 +79,9 @@ yarn-error.log*
 VERSION
 
 
-# Data files
-*.csv
+# Data files (user-specific, not demo files)
+/*.csv
+cmd/cli/*.csv
 PLAN.md
 
 # Session state (AI workflow)
@@ -88,3 +89,10 @@ PLAN.md
 .tdd-state
 tmp/
 .sisyphus/
+
+# VHS demo outputs (generated files)
+demos/vhs/output/
+demos/vhs/output/gifs/
+demos/vhs/output/mp4s/
+demos/vhs/output/screenshots/
+demos/vhs/output/diff/

@@ -256,7 +256,22 @@ func DefaultConfig() *Config {
 	}
 }
 
+// SetConfigPath overrides the config path for the current process.
+// This is used by the --config CLI flag to specify a custom config location.
+//
+// Expected:
+//   - path: A valid file path string (can be empty to reset).
+//
+// Side effects:
+//   - Modifies global configPathOverride variable.
+func SetConfigPath(path string) {
+	configPathMu.Lock()
+	defer configPathMu.Unlock()
+	configPathOverride = path
+}
+
 // SetConfigPathForTesting overrides the config path for testing purposes.
+// This is an alias for SetConfigPath, kept for backward compatibility with tests.
 //
 // Expected:
 //   - Must be a valid string.
@@ -264,9 +279,7 @@ func DefaultConfig() *Config {
 // Side effects:
 //   - None.
 func SetConfigPathForTesting(path string) {
-	configPathMu.Lock()
-	defer configPathMu.Unlock()
-	configPathOverride = path
+	SetConfigPath(path)
 }
 
 // SwapConfigPathForTesting sets a new config path and returns the previous one.
