@@ -842,96 +842,93 @@ func (e *TestEnv) executeCmd(cmd tea.Cmd) {
 	}
 }
 
+// updateModelAndExecute updates the model with a message and executes any returned command.
+// This is a helper to reduce cognitive complexity in processCmdResult.
+//
+// Expected:
+//   - msg must be a valid tea.Msg.
+//
+// Returns:
+//   - None.
+//
+// Side effects:
+//   - Updates the Model field of the TestEnv.
+//   - Recursively executes any returned command.
+func (e *TestEnv) updateModelAndExecute(msg tea.Msg) {
+	modelInterface, nextCmd := e.Model.Update(msg)
+	model, ok := modelInterface.(*app.Model)
+	if !ok {
+		e.T.Fatal("model type assertion failed: expected *app.Model")
+	}
+	e.Model = model
+	e.executeCmd(nextCmd)
+}
+
 // processCmdResult processes a message returned from a command.
 // Only essential state transition messages are processed.
+//
+// Expected:
+//   - msg must be a valid tea.Msg.
+//
+// Returns:
+//   - None.
+//
+// Side effects:
+//   - May update the Model field of the TestEnv.
+//   - May recursively execute commands.
 func (e *TestEnv) processCmdResult(msg tea.Msg) {
-	// Only process messages that are essential for state transitions
-	// Skip all other messages to avoid infinite loops from huh forms (cursor blink, etc.)
 	switch msg := msg.(type) {
 	case tea.BatchMsg:
-		// Batch command returned a list of commands to execute.
-		// Execute each command in the batch (this handles tea.Batch results).
-		for _, cmd := range msg {
-			if cmd != nil {
-				e.executeCmd(cmd)
-			}
-		}
-
+		e.processBatchMsg(msg)
 	case models.SubmitMsg:
-		// Form submission - essential for form → review state transition
-		modelInterface, nextCmd := e.Model.Update(msg)
-		model, ok := modelInterface.(*app.Model)
-		if !ok {
-			e.T.Fatal("model type assertion failed: expected *app.Model")
-		}
-		e.Model = model
-		// Recursively execute any returned command
-		e.executeCmd(nextCmd)
-
-	case captureevent.SubmitCompleteMsg, captureevent.SubmitErrorMsg:
-		// Submit completion - essential for submit → complete state transition
-		modelInterface, nextCmd := e.Model.Update(msg)
-		model, ok := modelInterface.(*app.Model)
-		if !ok {
-			e.T.Fatal("model type assertion failed: expected *app.Model")
-		}
-		e.Model = model
-		// For SubmitCompleteMsg, immediately send DismissModalMsg to skip the 2s timer
-		if _, ok := msg.(captureevent.SubmitCompleteMsg); ok {
-			modelInterface, _ := e.Model.Update(captureevent.DismissModalMsg{})
-			model, ok := modelInterface.(*app.Model)
-			if !ok {
-				e.T.Fatal("model type assertion failed: expected *app.Model")
-			}
-			e.Model = model
-		}
-		// Recursively execute any returned command
-		e.executeCmd(nextCmd)
-
+		e.updateModelAndExecute(msg)
+	case captureevent.SubmitCompleteMsg:
+		e.processSubmitCompleteMsg(msg)
+	case captureevent.SubmitErrorMsg:
+		e.updateModelAndExecute(msg)
 	case captureevent.DismissModalMsg:
-		// Modal dismissal - essential for success modal → enrichment review transition
-		modelInterface, nextCmd := e.Model.Update(msg)
-		model, ok := modelInterface.(*app.Model)
-		if !ok {
-			e.T.Fatal("model type assertion failed: expected *app.Model")
-		}
-		e.Model = model
-		// Recursively execute any returned command
-		e.executeCmd(nextCmd)
-
+		e.updateModelAndExecute(msg)
 	case intents.ConfigCompleteMsg:
-		// Configuration save completion - essential for saving → complete state transition
-		modelInterface, nextCmd := e.Model.Update(msg)
-		model, ok := modelInterface.(*app.Model)
-		if !ok {
-			e.T.Fatal("model type assertion failed: expected *app.Model")
-		}
-		e.Model = model
-		// Recursively execute any returned command
-		e.executeCmd(nextCmd)
-
+		e.updateModelAndExecute(msg)
 	case feedback.ModalCountdownTickMsg:
-		// Countdown tick - essential for countdown display update
-		modelInterface, nextCmd := e.Model.Update(msg)
-		if model, ok := modelInterface.(*app.Model); ok {
-			e.Model = model
-		}
-		// Recursively execute any returned command
-		e.executeCmd(nextCmd)
-
+		e.updateModelAndExecute(msg)
 	case feedback.ModalAutoDismissMsg:
-		// Auto-dismiss - essential for success modal → next state transition
-		modelInterface, nextCmd := e.Model.Update(msg)
-		if model, ok := modelInterface.(*app.Model); ok {
-			e.Model = model
-		}
-		// Recursively execute any returned command
-		e.executeCmd(nextCmd)
-
-	default:
-		// Ignore all other messages (cursor blink, window resize, etc.)
-		return
+		e.updateModelAndExecute(msg)
 	}
+}
+
+// processBatchMsg processes a batch of commands.
+//
+// Expected:
+//   - msg must be a valid tea.BatchMsg.
+//
+// Returns:
+//   - None.
+//
+// Side effects:
+//   - Executes each non-nil command in the batch.
+func (e *TestEnv) processBatchMsg(msg tea.BatchMsg) {
+	for _, cmd := range msg {
+		if cmd != nil {
+			e.executeCmd(cmd)
+		}
+	}
+}
+
+// processSubmitCompleteMsg handles submit completion and dismisses the modal.
+//
+// Expected:
+//   - msg must be a valid captureevent.SubmitCompleteMsg.
+//
+// Returns:
+//   - None.
+//
+// Side effects:
+//   - Updates the Model with the submit completion message.
+//   - Automatically dismisses the success modal to skip the timer.
+func (e *TestEnv) processSubmitCompleteMsg(msg captureevent.SubmitCompleteMsg) {
+	e.updateModelAndExecute(msg)
+	e.updateModelAndExecute(captureevent.DismissModalMsg{})
 }
 
 // SendMessage sends a message directly to the model.
