@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/baphled/kariya/internal/cli/intents"
-	"github.com/baphled/kariya/internal/cli/screens"
 	cvscreens "github.com/baphled/kariya/internal/cli/screens/cv"
 	cvmodals "github.com/baphled/kariya/internal/cli/screens/cv/modals"
 	"github.com/baphled/kariya/internal/domain/career"
@@ -570,92 +569,6 @@ var _ = Describe("GenerateCV Wizard E2E Tests", func() {
 		})
 	})
 })
-
-// mockWizardPreviewScreen is a mock screen for testing wizard flow.
-type mockWizardPreviewScreen struct {
-	cv *career.CVView
-}
-
-func (m *mockWizardPreviewScreen) Init() tea.Cmd {
-	return nil
-}
-
-func (m *mockWizardPreviewScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "enter", "y":
-			return nil, &screens.SubmitResult{FormData: "complete"}
-		case "x":
-			return nil, &screens.NavigateResult{ResultData: "export"}
-		case "e":
-			return nil, &screens.NavigateResult{ResultData: "edit"}
-		case "esc":
-			return nil, &screens.CancelResult{}
-		}
-	}
-	return nil, nil
-}
-
-func (m *mockWizardPreviewScreen) View() string {
-	return "Mock Preview Screen"
-}
-
-func (m *mockWizardPreviewScreen) RenderContent() string {
-	return "Mock Preview Content"
-}
-
-func (m *mockWizardPreviewScreen) SetTheme(theme interface{}) {
-}
-
-func (m *mockWizardPreviewScreen) SetTerminalInfo(width, height int) {
-}
-
-func (m *mockWizardPreviewScreen) SetLogo(logo interface{}, spacing int) {
-}
-
-// mockWizardReviewScreen is a mock screen for testing wizard review flow.
-type mockWizardReviewScreen struct {
-	cv *career.CVView
-}
-
-func (m *mockWizardReviewScreen) Init() tea.Cmd {
-	return nil
-}
-
-func (m *mockWizardReviewScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "enter", "p":
-			return nil, &screens.NavigateResult{ResultData: "preview"}
-		case "x":
-			return nil, &screens.NavigateResult{ResultData: "export"}
-		case "e":
-			return nil, &screens.NavigateResult{ResultData: "edit"}
-		case "esc":
-			return nil, &screens.CancelResult{}
-		}
-	}
-	return nil, nil
-}
-
-func (m *mockWizardReviewScreen) View() string {
-	return "Mock Review Screen"
-}
-
-func (m *mockWizardReviewScreen) RenderContent() string {
-	return "Mock Review Content"
-}
-
-func (m *mockWizardReviewScreen) SetTheme(theme interface{}) {
-}
-
-func (m *mockWizardReviewScreen) SetTerminalInfo(width, height int) {
-}
-
-func (m *mockWizardReviewScreen) SetLogo(logo interface{}, spacing int) {
-}
 
 var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 	var (

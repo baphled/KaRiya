@@ -184,7 +184,9 @@ if ! make check-fixtures > /dev/null 2>&1; then
 fi
 echo -e "${GREEN}✅ Fixture usage check passed${NC}"
 
-# Golangci-lint on changed packages (catches depguard, lll, nilnil, etc.)
+# Golangci-lint on changed packages (catches depguard, lll, nilnil, unused, etc.)
+# NOTE: We run WITHOUT --new-from-rev to catch issues like unused code that becomes
+# dead due to changes elsewhere in the file. This matches CI behavior.
 if command -v golangci-lint > /dev/null 2>&1; then
     CHANGED_GO_FILES=$(git diff --cached --name-only | grep '\.go$' || true)
     if [ -n "$CHANGED_GO_FILES" ]; then
