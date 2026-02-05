@@ -5,25 +5,32 @@ import (
 	"errors"
 	"time"
 
+	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/baphled/kariya/internal/domain/career"
-	"github.com/baphled/kariya/internal/repository/career/mocks"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
+	mockrepo "github.com/baphled/kariya/internal/testutil/mocks/repository"
 )
 
 var _ = Describe("Career Service", func() {
 	var (
-		mockRepo *mocks.TestMockRepository
+		ctrl     *gomock.Controller
+		mockRepo *mockrepo.MockEventRepository
 		service  *Service
 		ctx      context.Context
 	)
 
 	BeforeEach(func() {
-		mockRepo = mocks.NewTestMockRepository()
+		ctrl = gomock.NewController(GinkgoT())
+		mockRepo = mockrepo.NewMockEventRepository(ctrl)
 		service = NewService(mockRepo)
 		ctx = context.Background()
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
 	})
 
 	Describe("CaptureEvent", func() {
@@ -37,7 +44,10 @@ var _ = Describe("Career Service", func() {
 
 		Context("with valid event and TimelineJournaling mode", func() {
 			It("should capture event successfully", func() {
-				mockRepo.SetCreateBehavior(nil)
+				mockRepo.EXPECT().
+					Create(gomock.Any(), gomock.Any()).
+					Return(nil).
+					Times(1)
 
 				err := service.CaptureEvent(ctx, testEvent, TimelineJournaling)
 				Expect(err).NotTo(HaveOccurred())
@@ -46,11 +56,12 @@ var _ = Describe("Career Service", func() {
 				Expect(testEvent.CreatedAt).NotTo(BeZero())
 				Expect(testEvent.UpdatedAt).NotTo(BeZero())
 				Expect(testEvent.CreatedAt).To(Equal(testEvent.UpdatedAt))
-				Expect(mockRepo.CreateCalled()).To(BeTrue())
 			})
 
 			It("should generate a valid UUID for the event", func() {
-				mockRepo.SetCreateBehavior(nil)
+				mockRepo.EXPECT().
+					Create(gomock.Any(), gomock.Any()).
+					Return(nil)
 
 				err := service.CaptureEvent(ctx, testEvent, TimelineJournaling)
 				Expect(err).NotTo(HaveOccurred())
@@ -59,7 +70,10 @@ var _ = Describe("Career Service", func() {
 			})
 
 			It("should preserve event data", func() {
-				mockRepo.SetCreateBehavior(nil)
+				mockRepo.EXPECT().
+					Create(gomock.Any(), gomock.Any()).
+					Return(nil)
+
 				originalText := testEvent.Text
 				originalDate := testEvent.Date
 				originalTags := testEvent.Tags
@@ -77,18 +91,23 @@ var _ = Describe("Career Service", func() {
 
 		Context("with valid event and CVBackfill mode", func() {
 			It("should capture older events successfully", func() {
-				mockRepo.SetCreateBehavior(nil)
+				mockRepo.EXPECT().
+					Create(gomock.Any(), gomock.Any()).
+					Return(nil)
+
 				testEvent.Date = time.Now().AddDate(-2, 0, 0)
 
 				err := service.CaptureEvent(ctx, testEvent, CVBackfill)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(testEvent.ID).NotTo(BeEmpty())
-				Expect(mockRepo.CreateCalled()).To(BeTrue())
 			})
 
 			It("should allow very old dates", func() {
-				mockRepo.SetCreateBehavior(nil)
+				mockRepo.EXPECT().
+					Create(gomock.Any(), gomock.Any()).
+					Return(nil)
+
 				testEvent.Date = time.Date(2010, 1, 1, 0, 0, 0, 0, time.UTC)
 
 				err := service.CaptureEvent(ctx, testEvent, CVBackfill)
@@ -99,17 +118,21 @@ var _ = Describe("Career Service", func() {
 
 		Context("with valid event and ManualEntry mode", func() {
 			It("should capture event successfully", func() {
-				mockRepo.SetCreateBehavior(nil)
+				mockRepo.EXPECT().
+					Create(gomock.Any(), gomock.Any()).
+					Return(nil)
 
 				err := service.CaptureEvent(ctx, testEvent, ManualEntry)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(testEvent.ID).NotTo(BeEmpty())
-				Expect(mockRepo.CreateCalled()).To(BeTrue())
 			})
 
 			It("should allow any valid date", func() {
-				mockRepo.SetCreateBehavior(nil)
+				mockRepo.EXPECT().
+					Create(gomock.Any(), gomock.Any()).
+					Return(nil)
+
 				testEvent.Date = time.Now().AddDate(-5, 0, 0)
 
 				err := service.CaptureEvent(ctx, testEvent, ManualEntry)
@@ -125,11 +148,13 @@ var _ = Describe("Career Service", func() {
 				err := service.CaptureEvent(ctx, testEvent, TimelineJournaling)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("within 30 days"))
-				Expect(mockRepo.CreateCalled()).To(BeFalse())
 			})
 
 			It("should accept events within 30 days", func() {
-				mockRepo.SetCreateBehavior(nil)
+				mockRepo.EXPECT().
+					Create(gomock.Any(), gomock.Any()).
+					Return(nil)
+
 				testEvent.Date = time.Now().AddDate(0, 0, -29)
 
 				err := service.CaptureEvent(ctx, testEvent, TimelineJournaling)
@@ -144,7 +169,6 @@ var _ = Describe("Career Service", func() {
 
 				err := service.CaptureEvent(ctx, testEvent, ManualEntry)
 				Expect(err).To(HaveOccurred())
-				Expect(mockRepo.CreateCalled()).To(BeFalse())
 			})
 
 			It("should reject future dates", func() {
@@ -152,7 +176,6 @@ var _ = Describe("Career Service", func() {
 
 				err := service.CaptureEvent(ctx, testEvent, ManualEntry)
 				Expect(err).To(HaveOccurred())
-				Expect(mockRepo.CreateCalled()).To(BeFalse())
 			})
 
 			It("should reject invalid tags", func() {
@@ -160,7 +183,6 @@ var _ = Describe("Career Service", func() {
 
 				err := service.CaptureEvent(ctx, testEvent, ManualEntry)
 				Expect(err).To(HaveOccurred())
-				Expect(mockRepo.CreateCalled()).To(BeFalse())
 			})
 
 			It("should reject overly long text", func() {
@@ -168,7 +190,6 @@ var _ = Describe("Career Service", func() {
 
 				err := service.CaptureEvent(ctx, testEvent, ManualEntry)
 				Expect(err).To(HaveOccurred())
-				Expect(mockRepo.CreateCalled()).To(BeFalse())
 			})
 		})
 
@@ -179,13 +200,14 @@ var _ = Describe("Career Service", func() {
 				err := service.CaptureEvent(ctx, testEvent, invalidMode)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("invalid event capture mode"))
-				Expect(mockRepo.CreateCalled()).To(BeFalse())
 			})
 		})
 
 		Context("with repository errors", func() {
 			It("should return error when repository fails to create", func() {
-				mockRepo.SetCreateBehavior(errors.New("database error"))
+				mockRepo.EXPECT().
+					Create(gomock.Any(), gomock.Any()).
+					Return(errors.New("database error"))
 
 				err := service.CaptureEvent(ctx, testEvent, ManualEntry)
 				Expect(err).To(HaveOccurred())
@@ -193,7 +215,9 @@ var _ = Describe("Career Service", func() {
 			})
 
 			It("should still generate ID even if repository fails", func() {
-				mockRepo.SetCreateBehavior(errors.New("database error"))
+				mockRepo.EXPECT().
+					Create(gomock.Any(), gomock.Any()).
+					Return(errors.New("database error"))
 
 				err := service.CaptureEvent(ctx, testEvent, ManualEntry)
 				Expect(err).To(HaveOccurred())
@@ -203,7 +227,10 @@ var _ = Describe("Career Service", func() {
 
 		Context("with pre-existing ID", func() {
 			It("should preserve provided ID", func() {
-				mockRepo.SetCreateBehavior(nil)
+				mockRepo.EXPECT().
+					Create(gomock.Any(), gomock.Any()).
+					Return(nil)
+
 				testEvent.ID = "custom-id-12345"
 
 				err := service.CaptureEvent(ctx, testEvent, ManualEntry)
@@ -231,18 +258,24 @@ var _ = Describe("Career Service", func() {
 
 		Context("with valid event", func() {
 			It("should update event successfully", func() {
-				mockRepo.SetGetByIDBehavior(existingEvent, nil)
-				mockRepo.SetUpdateBehavior(nil)
+				mockRepo.EXPECT().
+					GetByID(gomock.Any(), gomock.Eq("existing-id")).
+					Return(existingEvent, nil)
+				mockRepo.EXPECT().
+					Update(gomock.Any(), gomock.Any()).
+					Return(nil)
 
 				err := service.UpdateEvent(ctx, testEvent)
 				Expect(err).NotTo(HaveOccurred())
-
-				Expect(mockRepo.UpdateCalled()).To(BeTrue())
 			})
 
 			It("should preserve creation timestamp", func() {
-				mockRepo.SetGetByIDBehavior(existingEvent, nil)
-				mockRepo.SetUpdateBehavior(nil)
+				mockRepo.EXPECT().
+					GetByID(gomock.Any(), gomock.Eq("existing-id")).
+					Return(existingEvent, nil)
+				mockRepo.EXPECT().
+					Update(gomock.Any(), gomock.Any()).
+					Return(nil)
 
 				err := service.UpdateEvent(ctx, testEvent)
 				Expect(err).NotTo(HaveOccurred())
@@ -251,8 +284,13 @@ var _ = Describe("Career Service", func() {
 			})
 
 			It("should update modification timestamp", func() {
-				mockRepo.SetGetByIDBehavior(existingEvent, nil)
-				mockRepo.SetUpdateBehavior(nil)
+				mockRepo.EXPECT().
+					GetByID(gomock.Any(), gomock.Eq("existing-id")).
+					Return(existingEvent, nil)
+				mockRepo.EXPECT().
+					Update(gomock.Any(), gomock.Any()).
+					Return(nil)
+
 				originalUpdatedAt := existingEvent.UpdatedAt
 
 				err := service.UpdateEvent(ctx, testEvent)
@@ -262,8 +300,12 @@ var _ = Describe("Career Service", func() {
 			})
 
 			It("should update all event fields", func() {
-				mockRepo.SetGetByIDBehavior(existingEvent, nil)
-				mockRepo.SetUpdateBehavior(nil)
+				mockRepo.EXPECT().
+					GetByID(gomock.Any(), gomock.Eq("existing-id")).
+					Return(existingEvent, nil)
+				mockRepo.EXPECT().
+					Update(gomock.Any(), gomock.Any()).
+					Return(nil)
 
 				err := service.UpdateEvent(ctx, testEvent)
 				Expect(err).NotTo(HaveOccurred())
@@ -280,7 +322,6 @@ var _ = Describe("Career Service", func() {
 
 				err := service.UpdateEvent(ctx, testEvent)
 				Expect(err).To(HaveOccurred())
-				Expect(mockRepo.UpdateCalled()).To(BeFalse())
 			})
 
 			It("should reject invalid tags", func() {
@@ -288,25 +329,29 @@ var _ = Describe("Career Service", func() {
 
 				err := service.UpdateEvent(ctx, testEvent)
 				Expect(err).To(HaveOccurred())
-				Expect(mockRepo.UpdateCalled()).To(BeFalse())
 			})
 		})
 
 		Context("when event does not exist", func() {
 			It("should return error if event not found", func() {
-				mockRepo.SetGetByIDBehavior(nil, errors.New("event not found"))
+				mockRepo.EXPECT().
+					GetByID(gomock.Any(), gomock.Eq("existing-id")).
+					Return(nil, errors.New("event not found"))
 
 				err := service.UpdateEvent(ctx, testEvent)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("event not found"))
-				Expect(mockRepo.UpdateCalled()).To(BeFalse())
 			})
 		})
 
 		Context("with repository errors", func() {
 			It("should return error when update fails", func() {
-				mockRepo.SetGetByIDBehavior(existingEvent, nil)
-				mockRepo.SetUpdateBehavior(errors.New("database error"))
+				mockRepo.EXPECT().
+					GetByID(gomock.Any(), gomock.Eq("existing-id")).
+					Return(existingEvent, nil)
+				mockRepo.EXPECT().
+					Update(gomock.Any(), gomock.Any()).
+					Return(errors.New("database error"))
 
 				err := service.UpdateEvent(ctx, testEvent)
 				Expect(err).To(HaveOccurred())
@@ -318,18 +363,20 @@ var _ = Describe("Career Service", func() {
 	Describe("DeleteEvent", func() {
 		Context("with valid event ID", func() {
 			It("should delete event successfully", func() {
-				mockRepo.SetDeleteBehavior(nil)
+				mockRepo.EXPECT().
+					Delete(gomock.Any(), gomock.Eq("event-id-123")).
+					Return(nil)
 
 				err := service.DeleteEvent(ctx, "event-id-123")
 				Expect(err).NotTo(HaveOccurred())
-
-				Expect(mockRepo.DeleteCalled()).To(BeTrue())
 			})
 		})
 
 		Context("when event does not exist", func() {
 			It("should return error if event not found", func() {
-				mockRepo.SetDeleteBehavior(errors.New("event not found"))
+				mockRepo.EXPECT().
+					Delete(gomock.Any(), gomock.Eq("non-existent-id")).
+					Return(errors.New("event not found"))
 
 				err := service.DeleteEvent(ctx, "non-existent-id")
 				Expect(err).To(HaveOccurred())
@@ -339,7 +386,9 @@ var _ = Describe("Career Service", func() {
 
 		Context("with repository errors", func() {
 			It("should return error when deletion fails", func() {
-				mockRepo.SetDeleteBehavior(errors.New("database error"))
+				mockRepo.EXPECT().
+					Delete(gomock.Any(), gomock.Eq("event-id-123")).
+					Return(errors.New("database error"))
 
 				err := service.DeleteEvent(ctx, "event-id-123")
 				Expect(err).To(HaveOccurred())
@@ -349,7 +398,9 @@ var _ = Describe("Career Service", func() {
 
 		Context("with empty event ID", func() {
 			It("should attempt deletion with empty ID", func() {
-				mockRepo.SetDeleteBehavior(errors.New("invalid ID"))
+				mockRepo.EXPECT().
+					Delete(gomock.Any(), gomock.Eq("")).
+					Return(errors.New("invalid ID"))
 
 				err := service.DeleteEvent(ctx, "")
 				Expect(err).To(HaveOccurred())
@@ -370,7 +421,9 @@ var _ = Describe("Career Service", func() {
 
 		Context("when event exists", func() {
 			It("should retrieve event successfully", func() {
-				mockRepo.SetGetByIDBehavior(testEvent, nil)
+				mockRepo.EXPECT().
+					GetByID(gomock.Any(), gomock.Eq("event-id-123")).
+					Return(testEvent, nil)
 
 				event, err := service.GetEventByID(ctx, "event-id-123")
 				Expect(err).NotTo(HaveOccurred())
@@ -381,7 +434,9 @@ var _ = Describe("Career Service", func() {
 			})
 
 			It("should return complete event data", func() {
-				mockRepo.SetGetByIDBehavior(testEvent, nil)
+				mockRepo.EXPECT().
+					GetByID(gomock.Any(), gomock.Eq("event-id-123")).
+					Return(testEvent, nil)
 
 				event, err := service.GetEventByID(ctx, "event-id-123")
 				Expect(err).NotTo(HaveOccurred())
@@ -395,7 +450,9 @@ var _ = Describe("Career Service", func() {
 
 		Context("when event does not exist", func() {
 			It("should return error if event not found", func() {
-				mockRepo.SetGetByIDBehavior(nil, errors.New("event not found"))
+				mockRepo.EXPECT().
+					GetByID(gomock.Any(), gomock.Eq("non-existent-id")).
+					Return(nil, errors.New("event not found"))
 
 				event, err := service.GetEventByID(ctx, "non-existent-id")
 				Expect(err).To(HaveOccurred())
@@ -405,7 +462,9 @@ var _ = Describe("Career Service", func() {
 
 		Context("with repository errors", func() {
 			It("should return error when retrieval fails", func() {
-				mockRepo.SetGetByIDBehavior(nil, errors.New("database error"))
+				mockRepo.EXPECT().
+					GetByID(gomock.Any(), gomock.Eq("event-id-123")).
+					Return(nil, errors.New("database error"))
 
 				event, err := service.GetEventByID(ctx, "event-id-123")
 				Expect(err).To(HaveOccurred())
@@ -415,7 +474,9 @@ var _ = Describe("Career Service", func() {
 
 		Context("with empty event ID", func() {
 			It("should attempt retrieval with empty ID", func() {
-				mockRepo.SetGetByIDBehavior(nil, errors.New("invalid ID"))
+				mockRepo.EXPECT().
+					GetByID(gomock.Any(), gomock.Eq("")).
+					Return(nil, errors.New("invalid ID"))
 
 				event, err := service.GetEventByID(ctx, "")
 				Expect(err).To(HaveOccurred())
@@ -442,9 +503,11 @@ var _ = Describe("Career Service", func() {
 
 		Context("with no filters", func() {
 			It("should list all events", func() {
-				mockRepo.SetListBehavior(testEvents, nil)
+				mockRepo.EXPECT().
+					List(gomock.Any(), gomock.Any()).
+					Return(testEvents, nil)
 
-				events, err := service.ListEvents(ctx, mocks.EventListFilters{})
+				events, err := service.ListEvents(ctx, *fixtures.EventListFilters())
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(events).To(HaveLen(3))
@@ -454,12 +517,12 @@ var _ = Describe("Career Service", func() {
 		Context("with tag filters", func() {
 			It("should list events matching tags", func() {
 				filteredEvents := []*career.Event{testEvents[0]}
-				filters := mocks.EventListFilters{
-					Tags: []string{"technical"},
-				}
-				mockRepo.SetListBehavior(filteredEvents, nil)
+				mockRepo.EXPECT().
+					List(gomock.Any(), gomock.Any()).
+					Return(filteredEvents, nil)
 
-				events, err := service.ListEvents(ctx, filters)
+				filters := fixtures.EventListFiltersWithTags([]string{"technical"})
+				events, err := service.ListEvents(ctx, *filters)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(events).To(HaveLen(1))
@@ -470,13 +533,12 @@ var _ = Describe("Career Service", func() {
 		Context("with pagination", func() {
 			It("should list events with limit and offset", func() {
 				paginatedEvents := []*career.Event{testEvents[0], testEvents[1]}
-				filters := mocks.EventListFilters{
-					Limit:  2,
-					Offset: 0,
-				}
-				mockRepo.SetListBehavior(paginatedEvents, nil)
+				mockRepo.EXPECT().
+					List(gomock.Any(), gomock.Any()).
+					Return(paginatedEvents, nil)
 
-				events, err := service.ListEvents(ctx, filters)
+				filters := fixtures.EventListFiltersWithLimit(0, 2)
+				events, err := service.ListEvents(ctx, *filters)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(events).To(HaveLen(2))
@@ -485,9 +547,11 @@ var _ = Describe("Career Service", func() {
 
 		Context("when no events match filters", func() {
 			It("should return empty list", func() {
-				mockRepo.SetListBehavior([]*career.Event{}, nil)
+				mockRepo.EXPECT().
+					List(gomock.Any(), gomock.Any()).
+					Return([]*career.Event{}, nil)
 
-				events, err := service.ListEvents(ctx, mocks.EventListFilters{})
+				events, err := service.ListEvents(ctx, *fixtures.EventListFilters())
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(events).To(BeEmpty())
@@ -496,9 +560,11 @@ var _ = Describe("Career Service", func() {
 
 		Context("with repository errors", func() {
 			It("should return error when list fails", func() {
-				mockRepo.SetListBehavior(nil, errors.New("database error"))
+				mockRepo.EXPECT().
+					List(gomock.Any(), gomock.Any()).
+					Return(nil, errors.New("database error"))
 
-				events, err := service.ListEvents(ctx, mocks.EventListFilters{})
+				events, err := service.ListEvents(ctx, *fixtures.EventListFilters())
 				Expect(err).To(HaveOccurred())
 				Expect(events).To(BeNil())
 			})
@@ -508,13 +574,12 @@ var _ = Describe("Career Service", func() {
 			It("should list events within date range", func() {
 				startDate := time.Now().AddDate(0, 0, -20)
 				endDate := time.Now()
-				filters := mocks.EventListFilters{
-					StartDate: &startDate,
-					EndDate:   &endDate,
-				}
-				mockRepo.SetListBehavior(testEvents, nil)
+				mockRepo.EXPECT().
+					List(gomock.Any(), gomock.Any()).
+					Return(testEvents, nil)
 
-				events, err := service.ListEvents(ctx, filters)
+				filters := fixtures.EventListFiltersWithDateRange(&startDate, &endDate)
+				events, err := service.ListEvents(ctx, *filters)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(events).ToNot(BeEmpty())
@@ -523,13 +588,12 @@ var _ = Describe("Career Service", func() {
 
 		Context("with sorting options", func() {
 			It("should list events with sort options", func() {
-				filters := mocks.EventListFilters{
-					SortBy:    "date",
-					SortOrder: "desc",
-				}
-				mockRepo.SetListBehavior(testEvents, nil)
+				mockRepo.EXPECT().
+					List(gomock.Any(), gomock.Any()).
+					Return(testEvents, nil)
 
-				events, err := service.ListEvents(ctx, filters)
+				filters := fixtures.EventListFiltersWithSort("date", "desc")
+				events, err := service.ListEvents(ctx, *filters)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(events).To(HaveLen(3))
@@ -540,9 +604,11 @@ var _ = Describe("Career Service", func() {
 	Describe("CountEvents", func() {
 		Context("with no filters", func() {
 			It("should return total event count", func() {
-				mockRepo.SetCountBehavior(42, nil)
+				mockRepo.EXPECT().
+					Count(gomock.Any(), gomock.Any()).
+					Return(42, nil)
 
-				count, err := service.CountEvents(ctx, mocks.EventListFilters{})
+				count, err := service.CountEvents(ctx, *fixtures.EventListFilters())
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(count).To(Equal(42))
@@ -551,12 +617,12 @@ var _ = Describe("Career Service", func() {
 
 		Context("with tag filters", func() {
 			It("should return count of events matching tags", func() {
-				filters := mocks.EventListFilters{
-					Tags: []string{"technical"},
-				}
-				mockRepo.SetCountBehavior(10, nil)
+				mockRepo.EXPECT().
+					Count(gomock.Any(), gomock.Any()).
+					Return(10, nil)
 
-				count, err := service.CountEvents(ctx, filters)
+				filters := fixtures.EventListFiltersWithTags([]string{"technical"})
+				count, err := service.CountEvents(ctx, *filters)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(count).To(Equal(10))
@@ -565,9 +631,11 @@ var _ = Describe("Career Service", func() {
 
 		Context("when no events match filters", func() {
 			It("should return zero count", func() {
-				mockRepo.SetCountBehavior(0, nil)
+				mockRepo.EXPECT().
+					Count(gomock.Any(), gomock.Any()).
+					Return(0, nil)
 
-				count, err := service.CountEvents(ctx, mocks.EventListFilters{})
+				count, err := service.CountEvents(ctx, *fixtures.EventListFilters())
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(count).To(Equal(0))
@@ -576,9 +644,11 @@ var _ = Describe("Career Service", func() {
 
 		Context("with repository errors", func() {
 			It("should return error when count fails", func() {
-				mockRepo.SetCountBehavior(0, errors.New("database error"))
+				mockRepo.EXPECT().
+					Count(gomock.Any(), gomock.Any()).
+					Return(0, errors.New("database error"))
 
-				count, err := service.CountEvents(ctx, mocks.EventListFilters{})
+				count, err := service.CountEvents(ctx, *fixtures.EventListFilters())
 				Expect(err).To(HaveOccurred())
 
 				Expect(count).To(Equal(0))
@@ -589,13 +659,12 @@ var _ = Describe("Career Service", func() {
 			It("should count events within date range", func() {
 				startDate := time.Now().AddDate(0, 0, -30)
 				endDate := time.Now()
-				filters := mocks.EventListFilters{
-					StartDate: &startDate,
-					EndDate:   &endDate,
-				}
-				mockRepo.SetCountBehavior(15, nil)
+				mockRepo.EXPECT().
+					Count(gomock.Any(), gomock.Any()).
+					Return(15, nil)
 
-				count, err := service.CountEvents(ctx, filters)
+				filters := fixtures.EventListFiltersWithDateRange(&startDate, &endDate)
+				count, err := service.CountEvents(ctx, *filters)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(count).To(Equal(15))
@@ -621,7 +690,10 @@ var _ = Describe("Career Service", func() {
 	Describe("Timestamp handling", func() {
 		Context("when capturing events", func() {
 			It("should set CreatedAt and UpdatedAt to same time", func() {
-				mockRepo.SetCreateBehavior(nil)
+				mockRepo.EXPECT().
+					Create(gomock.Any(), gomock.Any()).
+					Return(nil)
+
 				testEvent := fixtures.EventWith("", "Test event", "", "")
 				testEvent.Date = time.Now().AddDate(0, 0, -5)
 
@@ -642,8 +714,13 @@ var _ = Describe("Career Service", func() {
 				existingEvent.Date = time.Now().AddDate(0, 0, -10)
 				existingEvent.CreatedAt = time.Now().AddDate(0, 0, -5)
 				existingEvent.UpdatedAt = time.Now().AddDate(0, 0, -5)
-				mockRepo.SetGetByIDBehavior(existingEvent, nil)
-				mockRepo.SetUpdateBehavior(nil)
+
+				mockRepo.EXPECT().
+					GetByID(gomock.Any(), gomock.Eq("event-id")).
+					Return(existingEvent, nil)
+				mockRepo.EXPECT().
+					Update(gomock.Any(), gomock.Any()).
+					Return(nil)
 
 				updateEvent := fixtures.EventWith("event-id", "Updated", "", "")
 				updateEvent.Date = time.Now().AddDate(0, 0, -10)
@@ -663,7 +740,10 @@ var _ = Describe("Career Service", func() {
 	Describe("Mode-specific validation", func() {
 		Context("TimelineJournaling mode", func() {
 			It("should accept events within 30 days", func() {
-				mockRepo.SetCreateBehavior(nil)
+				mockRepo.EXPECT().
+					Create(gomock.Any(), gomock.Any()).
+					Return(nil)
+
 				event := fixtures.EventWith("", "Recent event", "", "")
 				event.Date = time.Now().AddDate(0, 0, -15)
 
@@ -683,7 +763,10 @@ var _ = Describe("Career Service", func() {
 
 		Context("CVBackfill mode", func() {
 			It("should accept very old events", func() {
-				mockRepo.SetCreateBehavior(nil)
+				mockRepo.EXPECT().
+					Create(gomock.Any(), gomock.Any()).
+					Return(nil)
+
 				event := fixtures.EventWith("", "Very old event", "", "")
 				event.Date = time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
 
@@ -694,7 +777,10 @@ var _ = Describe("Career Service", func() {
 
 		Context("ManualEntry mode", func() {
 			It("should accept any valid date", func() {
-				mockRepo.SetCreateBehavior(nil)
+				mockRepo.EXPECT().
+					Create(gomock.Any(), gomock.Any()).
+					Return(nil)
+
 				event := fixtures.EventWith("", "Event from any time", "", "")
 				event.Date = time.Date(1990, 6, 15, 0, 0, 0, 0, time.UTC)
 

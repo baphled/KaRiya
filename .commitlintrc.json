@@ -54,7 +54,8 @@
         "uikit",
         "workflows",
         "summary",
-        "testing"
+        "testing",
+        "e2e"
       ]
     ],
     "scope-case": [2, "always", "lower-case"],
