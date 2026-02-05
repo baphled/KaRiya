@@ -66,7 +66,7 @@ var _ = Describe("Capture Review Workflow E2E", func() {
 			maxAttempts := 10
 			for range maxAttempts {
 				view := env.GetView()
-				if strings.Contains(view, "Capture Event") || strings.Contains(view, "Browse Timeline") {
+				if strings.Contains(view, "Capture Event") && strings.Contains(view, "Browse Timeline") {
 					break
 				}
 				time.Sleep(50 * time.Millisecond)
@@ -122,7 +122,7 @@ var _ = Describe("Capture Review Workflow E2E", func() {
 			maxAttempts := 10
 			for range maxAttempts {
 				view := env.GetView()
-				if strings.Contains(view, "Capture Event") || strings.Contains(view, "Browse Timeline") {
+				if strings.Contains(view, "Capture Event") && strings.Contains(view, "Browse Timeline") {
 					break
 				}
 				time.Sleep(50 * time.Millisecond)
@@ -145,10 +145,6 @@ var _ = Describe("Capture Review Workflow E2E", func() {
 			// Wait for review state
 			maxAttempts := 10
 			for range maxAttempts {
-				view := env.GetView()
-				if view != "" {
-					break
-				}
 				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
@@ -173,10 +169,6 @@ var _ = Describe("Capture Review Workflow E2E", func() {
 			// Wait for review
 			maxAttempts := 5
 			for range maxAttempts {
-				view := env.GetView()
-				if view != "" {
-					break
-				}
 				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
@@ -202,10 +194,6 @@ var _ = Describe("Capture Review Workflow E2E", func() {
 			// Wait for review state
 			maxAttempts := 10
 			for range maxAttempts {
-				view := env.GetView()
-				if view != "" {
-					break
-				}
 				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
@@ -247,10 +235,6 @@ var _ = Describe("Capture Review Workflow E2E", func() {
 			// Wait for review
 			maxAttempts := 5
 			for range maxAttempts {
-				view := env.GetView()
-				if view != "" {
-					break
-				}
 				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
@@ -274,10 +258,6 @@ var _ = Describe("Capture Review Workflow E2E", func() {
 			// Wait for review
 			maxAttempts := 5
 			for range maxAttempts {
-				view := env.GetView()
-				if view != "" {
-					break
-				}
 				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
@@ -304,7 +284,7 @@ var _ = Describe("Capture Review Workflow E2E", func() {
 			maxAttempts := 10
 			for range maxAttempts {
 				view := env.GetView()
-				if strings.Contains(view, "Capture Event") || strings.Contains(view, "Browse Timeline") {
+				if strings.Contains(view, "Capture Event") && strings.Contains(view, "Browse Timeline") {
 					break
 				}
 				time.Sleep(50 * time.Millisecond)
@@ -322,7 +302,7 @@ var _ = Describe("Capture Review Workflow E2E", func() {
 
 			for range maxAttempts {
 				view := env.GetView()
-				if strings.Contains(view, "Capture Event") || strings.Contains(view, "Browse Timeline") {
+				if strings.Contains(view, "Capture Event") && strings.Contains(view, "Browse Timeline") {
 					break
 				}
 				time.Sleep(50 * time.Millisecond)
@@ -352,7 +332,7 @@ var _ = Describe("Capture Review Workflow E2E", func() {
 			maxAttempts := 10
 			for range maxAttempts {
 				view := env.GetView()
-				if strings.Contains(view, "Capture Event") || strings.Contains(view, "Browse Timeline") {
+				if strings.Contains(view, "Capture Event") && strings.Contains(view, "Browse Timeline") {
 					break
 				}
 				time.Sleep(50 * time.Millisecond)

@@ -207,10 +207,8 @@ var _ = Describe("Capture Error Scenarios E2E", func() {
 			maxAttempts := 10
 			for range maxAttempts {
 				view := env.GetView()
-				if view != "" {
-					if strings.Contains(view, "Capture Event") || strings.Contains(view, "Browse Timeline") {
-						break
-					}
+				if strings.Contains(view, "Capture Event") && strings.Contains(view, "Browse Timeline") {
+					break
 				}
 				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
@@ -234,10 +232,8 @@ var _ = Describe("Capture Error Scenarios E2E", func() {
 			maxAttempts := 10
 			for range maxAttempts {
 				view := env.GetView()
-				if view != "" {
-					if strings.Contains(view, "Capture Event") || strings.Contains(view, "Browse Timeline") {
-						break
-					}
+				if strings.Contains(view, "Capture Event") && strings.Contains(view, "Browse Timeline") {
+					break
 				}
 				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
@@ -263,10 +259,8 @@ var _ = Describe("Capture Error Scenarios E2E", func() {
 			maxAttempts := 10
 			for range maxAttempts {
 				view := env.GetView()
-				if view != "" {
-					if strings.Contains(view, "Capture Event") || strings.Contains(view, "Browse Timeline") {
-						break
-					}
+				if strings.Contains(view, "Capture Event") && strings.Contains(view, "Browse Timeline") {
+					break
 				}
 				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
@@ -284,10 +278,8 @@ var _ = Describe("Capture Error Scenarios E2E", func() {
 
 			for range maxAttempts {
 				view := env.GetView()
-				if view != "" {
-					if strings.Contains(view, "Capture Event") || strings.Contains(view, "Browse Timeline") {
-						break
-					}
+				if strings.Contains(view, "Capture Event") && strings.Contains(view, "Browse Timeline") {
+					break
 				}
 				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
@@ -360,10 +352,8 @@ var _ = Describe("Capture Error Scenarios E2E", func() {
 				maxAttempts := 10
 				for range maxAttempts {
 					view := env.GetView()
-					if view != "" {
-						if strings.Contains(view, "Capture Event") || strings.Contains(view, "Browse Timeline") {
-							break
-						}
+					if strings.Contains(view, "Capture Event") && strings.Contains(view, "Browse Timeline") {
+						break
 					}
 					time.Sleep(50 * time.Millisecond)
 					env.Confirm()
@@ -387,10 +377,8 @@ var _ = Describe("Capture Error Scenarios E2E", func() {
 			maxAttempts := 10
 			for range maxAttempts {
 				view := env.GetView()
-				if view != "" {
-					if strings.Contains(view, "Capture Event") || strings.Contains(view, "Browse Timeline") {
-						break
-					}
+				if strings.Contains(view, "Capture Event") && strings.Contains(view, "Browse Timeline") {
+					break
 				}
 				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
@@ -398,12 +386,16 @@ var _ = Describe("Capture Error Scenarios E2E", func() {
 
 			// Start new workflow - should have clean state
 			env.SelectIntentByName("capture_event")
+			env.Confirm()
 			view := env.GetView()
 			Expect(view).NotTo(ContainSubstring("panic"))
+			// View should show either strategy selection OR the event form (if Quick is auto-selected)
 			Expect(view).To(SatisfyAny(
 				ContainSubstring("Quick"),
 				ContainSubstring("Manual"),
 				ContainSubstring("Strategy"),
+				ContainSubstring("Event Description"),
+				ContainSubstring("Describe what you accomplished"),
 			))
 		})
 	})

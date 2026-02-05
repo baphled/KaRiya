@@ -33,10 +33,6 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 			// Wait for review state
 			maxAttempts := 10
 			for range maxAttempts {
-				view := env.GetView()
-				if view != "" {
-					break
-				}
 				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
@@ -59,10 +55,6 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 			// Navigate to review
 			maxAttempts := 10
 			for range maxAttempts {
-				view := env.GetView()
-				if view != "" {
-					break
-				}
 				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
@@ -87,10 +79,6 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 			// Wait for review
 			maxAttempts := 10
 			for range maxAttempts {
-				view := env.GetView()
-				if view != "" {
-					break
-				}
 				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
@@ -114,10 +102,6 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 			// Navigate to review
 			maxAttempts := 10
 			for range maxAttempts {
-				view := env.GetView()
-				if view != "" {
-					break
-				}
 				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
@@ -142,10 +126,6 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 			// Wait for review
 			maxAttempts := 10
 			for range maxAttempts {
-				view := env.GetView()
-				if view != "" {
-					break
-				}
 				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
@@ -174,10 +154,6 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 			// Navigate to review
 			maxAttempts := 10
 			for range maxAttempts {
-				view := env.GetView()
-				if view != "" {
-					break
-				}
 				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
@@ -197,10 +173,6 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 			// Wait for review with bursts
 			maxAttempts := 10
 			for range maxAttempts {
-				view := env.GetView()
-				if view != "" {
-					break
-				}
 				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
@@ -223,10 +195,6 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 			// Navigate through review
 			maxAttempts := 10
 			for range maxAttempts {
-				view := env.GetView()
-				if view != "" {
-					break
-				}
 				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
@@ -249,10 +217,6 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 			// Wait for review
 			maxAttempts := 10
 			for range maxAttempts {
-				view := env.GetView()
-				if view != "" {
-					break
-				}
 				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
@@ -275,10 +239,6 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 			// Navigate to review
 			maxAttempts := 10
 			for range maxAttempts {
-				view := env.GetView()
-				if view != "" {
-					break
-				}
 				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
@@ -304,10 +264,6 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 			// Wait for review
 			maxAttempts := 10
 			for range maxAttempts {
-				view := env.GetView()
-				if view != "" {
-					break
-				}
 				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
@@ -334,10 +290,6 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 			// Navigate to review
 			maxAttempts := 10
 			for range maxAttempts {
-				view := env.GetView()
-				if view != "" {
-					break
-				}
 				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
@@ -357,10 +309,6 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 			// Wait for review with facts
 			maxAttempts := 10
 			for range maxAttempts {
-				view := env.GetView()
-				if view != "" {
-					break
-				}
 				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
@@ -383,10 +331,6 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 			// Navigate through review
 			maxAttempts := 10
 			for range maxAttempts {
-				view := env.GetView()
-				if view != "" {
-					break
-				}
 				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
@@ -409,10 +353,6 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 			// Wait for review
 			maxAttempts := 10
 			for range maxAttempts {
-				view := env.GetView()
-				if view != "" {
-					break
-				}
 				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
@@ -435,10 +375,6 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 			// Navigate to review
 			maxAttempts := 10
 			for range maxAttempts {
-				view := env.GetView()
-				if view != "" {
-					break
-				}
 				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
@@ -464,10 +400,6 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 			// Wait for review
 			maxAttempts := 10
 			for range maxAttempts {
-				view := env.GetView()
-				if view != "" {
-					break
-				}
 				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
@@ -493,11 +425,8 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 			// Navigate through review
 			maxAttempts := 15
 			for range maxAttempts {
-				view := env.GetView()
-				if view != "" {
-					time.Sleep(50 * time.Millisecond)
-					env.Confirm()
-				}
+				time.Sleep(50 * time.Millisecond)
+				env.Confirm()
 			}
 
 			view := env.GetView()
@@ -515,10 +444,6 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 			// Wait for review
 			maxAttempts := 10
 			for range maxAttempts {
-				view := env.GetView()
-				if view != "" {
-					break
-				}
 				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
@@ -542,10 +467,6 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 			// Navigate through review
 			maxAttempts := 10
 			for range maxAttempts {
-				view := env.GetView()
-				if view != "" {
-					break
-				}
 				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
@@ -571,15 +492,12 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 			// Go through full review workflow
 			maxAttempts := 15
 			for i := range maxAttempts {
-				view := env.GetView()
-				if view != "" {
-					// Simulate accepting/rejecting randomly
-					if i%2 == 0 {
-						time.Sleep(50 * time.Millisecond)
-						env.Confirm()
-					} else {
-						env.NavigateDown()
-					}
+				// Simulate accepting/rejecting randomly
+				if i%2 == 0 {
+					time.Sleep(50 * time.Millisecond)
+					env.Confirm()
+				} else {
+					env.NavigateDown()
 				}
 			}
 
@@ -602,11 +520,8 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 			// Should complete even without suggestions
 			maxAttempts := 10
 			for range maxAttempts {
-				view := env.GetView()
-				if view != "" {
-					time.Sleep(50 * time.Millisecond)
-					env.Confirm()
-				}
+				time.Sleep(50 * time.Millisecond)
+				env.Confirm()
 			}
 
 			view := env.GetView()
@@ -624,10 +539,6 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 			// Wait for review
 			maxAttempts := 10
 			for range maxAttempts {
-				view := env.GetView()
-				if view != "" {
-					break
-				}
 				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
@@ -649,10 +560,6 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 			// Wait for review
 			maxAttempts := 10
 			for range maxAttempts {
-				view := env.GetView()
-				if view != "" {
-					break
-				}
 				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}
@@ -678,10 +585,6 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 			// Wait for review
 			maxAttempts := 10
 			for range maxAttempts {
-				view := env.GetView()
-				if view != "" {
-					break
-				}
 				time.Sleep(50 * time.Millisecond)
 				env.Confirm()
 			}

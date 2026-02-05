@@ -55,7 +55,7 @@ var _ = Describe("Capture State Machine E2E", func() {
 			maxAttempts := 10
 			for range maxAttempts {
 				view := env.GetView()
-				if strings.Contains(view, "Capture Event") || strings.Contains(view, "Browse Timeline") {
+				if strings.Contains(view, "Capture Event") && strings.Contains(view, "Browse Timeline") {
 					break
 				}
 				time.Sleep(50 * time.Millisecond)
@@ -312,7 +312,7 @@ var _ = Describe("Capture State Machine E2E", func() {
 			maxAttempts := 10
 			for range maxAttempts {
 				view := env.GetView()
-				if strings.Contains(view, "Capture Event") || strings.Contains(view, "Browse Timeline") {
+				if strings.Contains(view, "Capture Event") && strings.Contains(view, "Browse Timeline") {
 					break
 				}
 				time.Sleep(50 * time.Millisecond)
