@@ -2,18 +2,22 @@
 
 # Pre-commit Hook - Fast Code Quality Checks
 #
-# This hook enforces FAST checks only:
-# 1. Session active check
+# This hook enforces checks that MATCH CI to catch failures early:
+# 1. Session active check (warning only)
 # 2. No generated files
-# 3. No debug statements
-# 4. No secrets
-# 5. Code formatting (Go files only)
-# 6. Build success (Go files only)
-# 7. Static analysis - go vet (Go files only)
-# 8. Fixture usage check - noinlinecareer analyzer (Go files only, cached)
-# 9. Golangci-lint on changed packages (Go files only)
-# 10. TDD compliance check (Go files only)
-# 11. Strict pattern checks (Go files only)
+# 3. No forbidden comment markers (TODO, FIXME, etc.)
+# 4. No debug statements
+# 5. No secrets
+# 6. Code formatting (gofmt)
+# 7. Build success
+# 8. Static analysis - go vet
+# 9. Staticcheck - catches unused code, simplifications (MATCHES CI)
+# 10. Fixture usage check - noinlinecareer analyzer
+# 11. Golangci-lint on changed packages (full lint, MATCHES CI)
+# 12. Intent architecture check (MATCHES CI)
+# 13. TDD compliance check
+# 14. Strict pattern checks
+# 15. Documentation check - validate-documentation.sh + docblocks analyzer
 #
 # Full test suite and race detection should be run via:
 #   make check-compliance
@@ -169,6 +173,28 @@ if ! go vet ./... > /dev/null 2>&1; then
     exit 1
 fi
 
+# Staticcheck - catches unused code, simplifications, etc.
+# This is run in CI and was missing from pre-commit, causing CI failures
+if command -v staticcheck > /dev/null 2>&1; then
+    CHANGED_GO_FILES=$(git diff --cached --name-only | grep '\.go$' || true)
+    if [ -n "$CHANGED_GO_FILES" ]; then
+        echo "Running staticcheck on changed packages..."
+        CHANGED_PACKAGES=$(echo "$CHANGED_GO_FILES" | xargs -I{} dirname {} | sort -u | sed 's|^|./|' | sed 's|$|/...|')
+        if ! staticcheck $CHANGED_PACKAGES > /dev/null 2>&1; then
+            echo -e "${RED}❌ ERROR: staticcheck found issues${NC}"
+            echo ""
+            staticcheck $CHANGED_PACKAGES 2>&1 | head -20
+            echo ""
+            echo "Fix staticcheck issues before committing."
+            exit 1
+        fi
+        echo -e "${GREEN}✅ staticcheck passed${NC}"
+    fi
+else
+    echo -e "${YELLOW}⚠️  staticcheck not found, skipping${NC}"
+    echo "   Install: go install honnef.co/go/tools/cmd/staticcheck@latest"
+fi
+
 # Fixture usage check (uses cached binary - fast)
 echo "Checking fixture usage..."
 if ! make check-fixtures > /dev/null 2>&1; then
@@ -226,6 +252,24 @@ if command -v golangci-lint > /dev/null 2>&1; then
 else
     echo -e "${YELLOW}⚠️  golangci-lint not found, skipping lint check${NC}"
     echo "   Install: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest"
+fi
+
+# Intent architecture check - catches architecture violations early
+# This is run in CI and is fast enough (~1.5s) for pre-commit
+if [ -f "scripts/check-intent-architecture.sh" ]; then
+    CHANGED_INTENT_FILES=$(git diff --cached --name-only | grep -E 'internal/cli/intents/|internal/cli/screens/' || true)
+    if [ -n "$CHANGED_INTENT_FILES" ]; then
+        echo "Running intent architecture check..."
+        if ! bash scripts/check-intent-architecture.sh > /dev/null 2>&1; then
+            echo -e "${RED}❌ ERROR: Intent architecture violations found${NC}"
+            echo ""
+            bash scripts/check-intent-architecture.sh 2>&1 | grep -E "❌|VIOLATION" | head -10
+            echo ""
+            echo "Run 'make check-intent-architecture' for full details."
+            exit 1
+        fi
+        echo -e "${GREEN}✅ Intent architecture check passed${NC}"
+    fi
 fi
 
 # Full test suite and race detection are not run in pre-commit.
