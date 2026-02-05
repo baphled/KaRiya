@@ -22,6 +22,19 @@ type EditorFields struct {
 // EditorUpdate handles common Update logic for huh form editor modals.
 // The onComplete callback is invoked when the form completes successfully.
 // The quitMsg factory produces the message to send when the user presses q/ctrl+c.
+//
+// Expected:
+//   - fe must be a valid EditorFields pointer.
+//   - self must be a valid tea.Model.
+//   - onComplete must be a valid callback function.
+//   - quitMsg must be a valid message factory function.
+//
+// Returns:
+//   - tea.Model: the updated model.
+//   - tea.Cmd: command to execute.
+//
+// Side effects:
+//   - May update fe.Width, fe.Height, fe.Form, or fe.Cancelled fields.
 func EditorUpdate(
 	fe *EditorFields, self tea.Model, msg tea.Msg,
 	onComplete func() (tea.Model, tea.Cmd),
@@ -62,6 +75,17 @@ func EditorUpdate(
 }
 
 // RenderEditorView renders the common form editor layout with header, form content, and footer.
+//
+// Expected:
+//   - fe must be a valid EditorFields pointer.
+//   - title must be a valid string.
+//   - helpContext must be a valid string.
+//
+// Returns:
+//   - A rendered string containing the form editor view.
+//
+// Side effects:
+//   - None.
 func RenderEditorView(fe *EditorFields, title string, helpContext string) string {
 	formView := fe.Form.View()
 

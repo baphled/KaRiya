@@ -73,6 +73,16 @@ func (m *FactEditorModelNew) Init() tea.Cmd {
 }
 
 // Update handles messages.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - tea.Model: the updated model.
+//   - tea.Cmd: command to execute.
+//
+// Side effects:
+//   - May update internal state based on message type.
 func (m *FactEditorModelNew) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return forms.EditorUpdate(&m.EditorFields, m, msg, m.handleFactFormCompletion, func() tea.Msg { return QuitMsg{} })
 }

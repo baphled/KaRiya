@@ -46,6 +46,19 @@ type MetadataEditorDimensions struct {
 // NewMetadataEditorModelNew creates a new metadata editor model using huh forms.
 //
 // dims may be nil, in which case defaults (80x40) are used.
+//
+// Expected:
+//   - ctx must be a valid context.
+//   - event must be a valid career.Event pointer.
+//   - service must be a valid careerservice.Service pointer.
+//   - cliSvc may be nil, but if provided must be a valid CLIEventService pointer.
+//   - dims may be nil, in which case defaults are used.
+//
+// Returns:
+//   - A fully initialized MetadataEditorModelNew ready for use.
+//
+// Side effects:
+//   - May query skill repository to load available skills.
 func NewMetadataEditorModelNew(
 	ctx context.Context, event *career.Event, service *careerservice.Service,
 	cliSvc *cliservice.CLIEventService, dims *MetadataEditorDimensions,
@@ -143,6 +156,16 @@ func (m *MetadataEditorModelNew) Init() tea.Cmd {
 }
 
 // Update handles messages.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - tea.Model: the updated model.
+//   - tea.Cmd: command to execute.
+//
+// Side effects:
+//   - May update internal state based on message type.
 func (m *MetadataEditorModelNew) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return forms.EditorUpdate(&m.EditorFields, m, msg, m.handleFormCompletion, func() tea.Msg { return QuitMsg{} })
 }

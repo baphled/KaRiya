@@ -41,6 +41,17 @@ type BurstSuggestionModelNew struct {
 }
 
 // NewBurstSuggestionModelNew creates a new burst suggestion model using huh forms for editing.
+//
+// Expected:
+//   - ctx must be a valid context.
+//   - svc must be a valid careerservice.Service pointer.
+//   - suggestions must be a valid slice of BurstSuggestion.
+//
+// Returns:
+//   - A fully initialized BurstSuggestionModelNew ready for use.
+//
+// Side effects:
+//   - None.
 func NewBurstSuggestionModelNew(
 	ctx context.Context, svc *careerservice.Service, suggestions []burstfact.BurstSuggestion,
 ) *BurstSuggestionModelNew {
@@ -74,6 +85,16 @@ func (m *BurstSuggestionModelNew) Init() tea.Cmd {
 }
 
 // Update handles messages.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - tea.Model: the updated model.
+//   - tea.Cmd: command to execute.
+//
+// Side effects:
+//   - May update internal state based on message type.
 func (m *BurstSuggestionModelNew) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:

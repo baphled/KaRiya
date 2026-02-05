@@ -224,8 +224,11 @@ func (s *FormScreen[T]) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 		return cmd, nil
 	}
 
-	// Delegate other messages to form using forms package helper.
+	// Delegate other messages (non-KeyMsg) to form using forms package helper.
 	// This handles internal huh messages like nextGroupMsg which complete the form.
+	// Note: The form completion check below is NOT redundant with the one in the
+	// KeyMsg case above - that case returns early for key messages, while this
+	// handles non-key messages like internal huh state transitions.
 	var cmd tea.Cmd
 	s.form, cmd = forms.Update(s.form, msg)
 
