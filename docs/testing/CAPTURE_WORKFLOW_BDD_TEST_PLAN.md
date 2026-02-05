@@ -113,7 +113,7 @@ internal/cli/models/
 ├── models_suite_test.go          # Ginkgo suite setup
 ├── capture_form_test.go          # ✅ Created
 ├── metadata_editor_new_test.go   # ✅ Exists (needs expansion)
-├── burst_suggestion_new_test.go  # ❌ Needs creation
+├── burst_suggestion_new_test.go  # ✅ Created
 └── fact_editor_new_test.go       # ❌ Needs creation
 ```
 

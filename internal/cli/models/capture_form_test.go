@@ -1,4 +1,3 @@
-//nolint:errcheck // Test file - error handling for test setup is not relevant.
 package models_test
 
 import (
@@ -103,12 +102,19 @@ var _ = Describe("CaptureForm", func() {
 				event.Categories = []string{"cat1"}
 
 				form.LoadEventForEditing(event)
-				// Form data is populated from event
+
+				formData := form.GetFormData()
+				Expect(formData.Text).To(Equal("Original event text"))
+				Expect(formData.Company).To(Equal("Test Company"))
+				Expect(formData.Project).To(Equal("Test Project"))
 			})
 
 			It("should handle nil event gracefully", func() {
+				originalText := form.GetFormData().Text
+
 				form.LoadEventForEditing(nil)
-				// Should not crash
+
+				Expect(form.GetFormData().Text).To(Equal(originalText))
 			})
 
 			It("should copy tags and categories", func() {
@@ -117,7 +123,13 @@ var _ = Describe("CaptureForm", func() {
 				event.Categories = []string{"development"}
 
 				form.LoadEventForEditing(event)
-				// Tags and categories are copied (not referenced)
+
+				formData := form.GetFormData()
+				Expect(formData.Tags).To(Equal([]string{"backend", "go"}))
+				Expect(formData.Categories).To(Equal([]string{"development"}))
+
+				event.Tags[0] = "modified"
+				Expect(formData.Tags[0]).To(Equal("backend"))
 			})
 
 			It("should format date correctly", func() {
@@ -126,7 +138,9 @@ var _ = Describe("CaptureForm", func() {
 				event.Date = testDate
 
 				form.LoadEventForEditing(event)
-				// Date is formatted as YYYY-MM-DD
+
+				formData := form.GetFormData()
+				Expect(formData.Date).To(Equal("2024-01-15"))
 			})
 		})
 	})
@@ -152,16 +166,30 @@ var _ = Describe("CaptureForm", func() {
 			})
 
 			It("should parse date string when provided", func() {
-				// Would need to access formData directly to test
-				// This tests the submitForm internal logic
+				event := fixtures.EventWith("test-date", "Event for date test", "", "")
+				event.Date = time.Date(2024, 6, 15, 0, 0, 0, 0, time.UTC)
+				form.LoadEventForEditing(event)
+
 				cmd := form.SubmitForm()
-				Expect(cmd).NotTo(BeNil())
+				msg := cmd()
+				submitMsg, ok := msg.(models.SubmitMsg)
+
+				Expect(ok).To(BeTrue())
+				Expect(submitMsg.Event.Date.Year()).To(Equal(2024))
+				Expect(submitMsg.Event.Date.Month()).To(Equal(time.June))
+				Expect(submitMsg.Event.Date.Day()).To(Equal(15))
 			})
 
 			It("should return error for invalid date", func() {
-				// Invalid date would be caught in submitForm
+				formData := form.GetFormData()
+				formData.Date = "invalid-date-format"
+
 				cmd := form.SubmitForm()
-				Expect(cmd).NotTo(BeNil())
+				msg := cmd()
+				submitMsg, ok := msg.(models.SubmitMsg)
+
+				Expect(ok).To(BeTrue())
+				Expect(submitMsg.Err).To(HaveOccurred())
 			})
 
 			It("should include all metadata in event", func() {
@@ -190,15 +218,22 @@ var _ = Describe("CaptureForm", func() {
 
 			It("should set submit confirmed flag", func() {
 				msg := tea.KeyMsg{Type: tea.KeyCtrlS}
-				_, cmd := form.Update(msg)
-				Expect(cmd).NotTo(BeNil())
+				_, _ = form.Update(msg)
+
+				formData := form.GetFormData()
+				Expect(formData.SubmitConfirmed).To(BeTrue())
 			})
 		})
 
 		Context("when form is completed via huh", func() {
-			It("should trigger submission automatically", func() {
-				// When huh form reaches StateCompleted, it should trigger submission
-				// This is tested via the Update method checking m.form.State
+			It("should return submission command when form state is completed", func() {
+				cmd := form.SubmitForm()
+				Expect(cmd).NotTo(BeNil())
+
+				msg := cmd()
+				submitMsg, ok := msg.(models.SubmitMsg)
+				Expect(ok).To(BeTrue())
+				Expect(submitMsg.Event).NotTo(BeNil())
 			})
 		})
 	})
@@ -274,7 +309,7 @@ var _ = Describe("CaptureForm", func() {
 				// 4. Verify event created
 				submitMsg := msg.(models.SubmitMsg)
 				Expect(submitMsg.Event).NotTo(BeNil())
-				Expect(submitMsg.Err).To(BeNil())
+				Expect(submitMsg.Err).ToNot(HaveOccurred())
 			})
 
 			It("should handle edit flow", func() {
@@ -317,11 +352,11 @@ var _ = Describe("CaptureForm", func() {
 
 		Context("when handling form state transitions", func() {
 			It("should handle rapid updates", func() {
-				for i := 0; i < 10; i++ {
+				for range 10 {
 					msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}}
 					_, _ = form.Update(msg)
 				}
-				// Should not crash
+				Expect(form).NotTo(BeNil())
 			})
 		})
 	})
@@ -329,31 +364,66 @@ var _ = Describe("CaptureForm", func() {
 	Describe("Date Parsing", func() {
 		Context("when parsing date strings", func() {
 			It("should accept YYYY-MM-DD format", func() {
-				// Date parsing is done in submitForm
-				// Uses forms.ParseDateString
+				formData := form.GetFormData()
+				formData.Date = "2024-03-15"
+
+				cmd := form.SubmitForm()
+				msg := cmd()
+				submitMsg, ok := msg.(models.SubmitMsg)
+
+				Expect(ok).To(BeTrue())
+				Expect(submitMsg.Err).ToNot(HaveOccurred())
+				Expect(submitMsg.Event.Date.Year()).To(Equal(2024))
+				Expect(submitMsg.Event.Date.Month()).To(Equal(time.March))
+				Expect(submitMsg.Event.Date.Day()).To(Equal(15))
 			})
 
 			It("should reject invalid date formats", func() {
-				// Invalid formats should return error in SubmitMsg
+				formData := form.GetFormData()
+				formData.Date = "15/03/2024"
+
+				cmd := form.SubmitForm()
+				msg := cmd()
+				submitMsg, ok := msg.(models.SubmitMsg)
+
+				Expect(ok).To(BeTrue())
+				Expect(submitMsg.Err).To(HaveOccurred())
 			})
 
 			It("should handle edge dates", func() {
-				// Future dates, past dates, leap years, etc.
+				formData := form.GetFormData()
+				formData.Date = "2024-02-29"
+
+				cmd := form.SubmitForm()
+				msg := cmd()
+				submitMsg, ok := msg.(models.SubmitMsg)
+
+				Expect(ok).To(BeTrue())
+				Expect(submitMsg.Err).ToNot(HaveOccurred())
+				Expect(submitMsg.Event.Date.Day()).To(Equal(29))
 			})
 		})
 	})
 
 	Describe("Form State Management", func() {
 		Context("when form reaches completed state", func() {
-			It("should detect StateCompleted", func() {
-				// When huh.Form.State == huh.StateCompleted
-				// Update should call submitForm()
+			It("should return submit command when SubmitForm is called", func() {
+				cmd := form.SubmitForm()
+				Expect(cmd).NotTo(BeNil())
+
+				msg := cmd()
+				submitMsg, ok := msg.(models.SubmitMsg)
+				Expect(ok).To(BeTrue())
+				Expect(submitMsg.Event).NotTo(BeNil())
 			})
 		})
 
 		Context("when tracking form state", func() {
-			It("should allow state inspection", func() {
-				// Form state is tracked via huh.Form.State
+			It("should allow strategy inspection", func() {
+				Expect(form.GetStrategy()).To(Equal("manual"))
+
+				form.SetStrategy("quick")
+				Expect(form.GetStrategy()).To(Equal("quick"))
 			})
 		})
 	})
