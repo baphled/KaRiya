@@ -123,6 +123,7 @@ func (r *DefaultIntentRegistrar) registerBrowseTimeline(ctx context.Context, rou
 		browserCtx := &browsetimeline.IntentContext{
 			Events:                events,
 			CLIEventService:       r.config.CLIService,
+			CLISkillService:       service.NewCLISkillService(r.config.CareerService.GetSkillRepository()),
 			SkillInferenceService: r.config.SkillInferenceService,
 		}
 		intent, err := browsetimeline.NewIntent(browserCtx)
