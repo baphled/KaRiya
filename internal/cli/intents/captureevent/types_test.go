@@ -54,14 +54,14 @@ var _ = Describe("Intent Type", func() {
 		})
 	})
 
-	Describe("GetForm", func() {
-		It("should return the capture form", func() {
-			Expect(intent.GetForm()).NotTo(BeNil())
+	Describe("GetFormScreen", func() {
+		It("should return nil for a newly created intent", func() {
+			Expect(intent.GetFormScreen()).To(BeNil())
 		})
 
 		It("should return nil for a nil intent receiver", func() {
 			var nilIntent *ce.Intent
-			Expect(nilIntent.GetForm()).To(BeNil())
+			Expect(nilIntent.GetFormScreen()).To(BeNil())
 		})
 	})
 

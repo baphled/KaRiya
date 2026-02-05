@@ -214,10 +214,10 @@ theme.Primary(), theme.Error(), theme.Success()
 
 | Old | New | Why |
 |-----|-----|-----|
-| `models.CaptureForm` | `screens/events/FormScreen` | Consistent pattern |
-| `models/` package | `screens/` package | Architecture alignment |
-| Wrapper model | Direct `forms.Form` | Simpler |
-| Intent → models → forms | Intent → screens → forms | One fewer layer |
+| `models.CaptureForm` | `base.FormScreen[T]` + `screens/events/FormScreen` | Consistent pattern |
+| `models/` package | `screens/` package with `base.FormScreen[T]` | Architecture alignment |
+| Wrapper model (manual) | Generic base (automatic resize, StandardView) | Less boilerplate |
+| Intent → models → forms | Intent → screens → base.FormScreen → forms | Clean separation |
 
 **Enforcement**: Check #22 (blocks models/ for forms)
 
@@ -830,16 +830,16 @@ func (s *DetailScreen) View() string {
 
 ## Phase 5: Forms Migration
 
-### models/ Package → screens/ Package
+### models/ Package → screens/ Package (COMPLETED)
 
-**OLD Pattern** (DEPRECATED):
+**OLD Pattern** (DELETED — the `models/` package no longer exists):
 ```go
 // File: my_intent.go
 import "github.com/baphled/kariya/internal/cli/models"
 
 type MyIntent struct {
     *BaseIntent
-    form *models.CaptureForm  // DEPRECATED
+    form *models.CaptureForm  // DELETED
 }
 
 func (i *MyIntent) Init() tea.Cmd {
@@ -902,87 +902,42 @@ func (i *{Feature}Intent) View() string {
 ### Create FormScreen
 
 **NEW File**: `screens/{feature}/form_screen.go`
+
+Uses `base.FormScreen[T]` which handles `Update()`, `View()`, window resize, and escape
+cancellation automatically. `FormData` types and form builders live in `internal/cli/forms/`.
+
 ```go
 package {feature}
 
 import (
     "github.com/baphled/kariya/internal/cli/forms"
-    "github.com/baphled/kariya/internal/cli/screens"
     "github.com/baphled/kariya/internal/cli/screens/base"
-    tea "github.com/charmbracelet/bubbletea"
 )
 
 // FormScreen handles form input.
 type FormScreen struct {
-    *base.BaseScreen
-    form     forms.Form
-    formData *FormData
-}
-
-// FormData holds the form data.
-type FormData struct {
-    Name        string
-    Description string
-    Date        string
+    *base.FormScreen[*forms.{Feature}FormData]
 }
 
 // NewFormScreen creates a new form screen.
 func NewFormScreen() *FormScreen {
-    form := forms.NewForm(
-        forms.NewGroup(
-            forms.NewInput(forms.FieldConfig{
-                Key:         "name",
-                Title:       "Name",
-                Placeholder: "Enter name",
-                Required:    true,
-            }),
-            forms.NewText(forms.FieldConfig{
-                Key:         "description",
-                Title:       "Description",
-                Placeholder: "Enter description",
-            }),
-            forms.NewInput(forms.FieldConfig{
-                Key:         "date",
-                Title:       "Date",
-                Placeholder: "YYYY-MM-DD",
-            }),
-        ),
+    formData := &forms.{Feature}FormData{}
+    baseScreen := base.NewBaseFormScreen(
+        []string{"Main Menu", "{Feature}", "Create"},
+        forms.New{Feature}FormWithDataAndDimensions, // FormBuilder[T]
+        formData,
     )
-    
-    return &FormScreen{
-        BaseScreen: base.NewBaseScreen(),
-        form:       form,
-        formData:   &FormData{},
-    }
-}
-
-// Update handles form updates.
-func (s *FormScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
-    // Check form state
-    if forms.IsCompleted(s.form) {
-        // Extract data
-        s.formData.Name = s.form.GetString("name")
-        s.formData.Description = s.form.GetString("description")
-        s.formData.Date = s.form.GetString("date")
-        
-        return nil, screens.NewSubmitResult(s.formData)
-    }
-    
-    if forms.IsAborted(s.form) {
-        return nil, screens.NewCancelResult("form")
-    }
-    
-    // Delegate to form
-    var cmd tea.Cmd
-    s.form, cmd = s.form.Update(msg)
-    return cmd, nil
-}
-
-// View renders the form.
-func (s *FormScreen) View() string {
-    return s.form.View()
+    return &FormScreen{FormScreen: baseScreen}
 }
 ```
+
+The `base.FormScreen[T]` provides:
+- Automatic `Update()` that delegates to `forms.Update()` and checks `forms.IsCompleted()`
+- Automatic `View()` using `CreateView()` with breadcrumbs and footer
+- Window resize handling via `SetTerminalInfo()` that rebuilds the form
+- Returns `*screens.SubmitResult` (with `FormData` field) or `*screens.CancelResult`
+
+**Real example**: See `internal/cli/screens/skills/skill_form.go` (93 lines).
 
 ---
 
@@ -1133,12 +1088,12 @@ success := primitives.SuccessText("Saved successfully", theme)
 
 ### Example 3: Forms Migration (capture_event_intent.go)
 
-**BEFORE** (models/ Package):
+**BEFORE** (models/ Package — DELETED):
 ```go
 import "github.com/baphled/kariya/internal/cli/models"
 
 type CaptureEventIntent struct {
-    form *models.CaptureForm  // DEPRECATED
+    form *models.CaptureForm  // DELETED
 }
 
 func (i *CaptureEventIntent) Init() tea.Cmd {
@@ -1244,19 +1199,19 @@ state := myfeature.StateList
 
 **Error**:
 ```
-❌ VIOLATION: Deprecated models/ package for forms
+❌ VIOLATION: Deleted models/ package for forms
 File: internal/cli/intents/events/intent.go
 ```
 
-**Cause**: Still using models.*Form
+**Cause**: The `models/` package has been deleted. Any remaining references will fail to compile.
 
 **Fix**: Change to FormScreen
 ```go
-// Remove this
+// This no longer compiles — models/ is deleted
 import "github.com/baphled/kariya/internal/cli/models"
 form *models.CaptureForm
 
-// Add this
+// Use this instead
 import "github.com/baphled/kariya/internal/cli/screens/events"
 formScreen *events.FormScreen
 ```

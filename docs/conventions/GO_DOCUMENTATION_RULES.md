@@ -364,7 +364,6 @@ Legacy code in certain directories has relaxed enforcement. This is **temporary*
 - `internal/cli/terminal/`
 - `internal/cli/screens/`
 - `internal/cli/intents/`
-- `internal/cli/models/`
 - And others (see `.golangci.yml` exclusions)
 
 **New code** in these directories **should** follow documentation rules. The exclusions exist only for pre-existing code.

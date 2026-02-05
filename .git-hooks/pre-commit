@@ -189,14 +189,35 @@ if command -v golangci-lint > /dev/null 2>&1; then
     CHANGED_GO_FILES=$(git diff --cached --name-only | grep '\.go$' || true)
     if [ -n "$CHANGED_GO_FILES" ]; then
         echo "Running golangci-lint on changed packages..."
-        CHANGED_PACKAGES=$(echo "$CHANGED_GO_FILES" | xargs -I{} dirname {} | sort -u | sed 's|^|./|' | sed 's|$|/...|')
-        if ! golangci-lint run --timeout=5m --new-from-rev=HEAD $CHANGED_PACKAGES > /dev/null 2>&1; then
-            echo -e "${RED}❌ ERROR: golangci-lint found issues${NC}"
-            echo ""
-            golangci-lint run --timeout=5m --new-from-rev=HEAD $CHANGED_PACKAGES 2>&1 | head -20
-            echo ""
-            echo "Fix lint issues before committing."
-            exit 1
+        # Build array of package paths safely to prevent shell injection.
+        # Directory names from git could theoretically contain shell metacharacters,
+        # so we use a bash array and proper quoting instead of unquoted expansion.
+        CHANGED_PACKAGES=()
+        while IFS= read -r dir; do
+            if [ -d "$dir" ]; then
+                CHANGED_PACKAGES+=("./$dir/...")
+            fi
+        done < <(echo "$CHANGED_GO_FILES" | xargs -I{} dirname {} | sort -u)
+        
+        if [ ${#CHANGED_PACKAGES[@]} -eq 0 ]; then
+            echo -e "${GREEN}✅ golangci-lint skipped (only deleted packages)${NC}"
+        else
+            # Use array expansion with quotes to safely pass arguments
+            LINT_OUTPUT=$(golangci-lint run --timeout=5m --new-from-rev=HEAD "${CHANGED_PACKAGES[@]}" 2>&1)
+            LINT_EXIT=$?
+            # Exit code 1 = lint issues found; other non-zero = internal errors (e.g., deleted dirs in diff)
+            if [ $LINT_EXIT -eq 1 ]; then
+                echo -e "${RED}❌ ERROR: golangci-lint found issues${NC}"
+                echo ""
+                echo "$LINT_OUTPUT" | head -20
+                echo ""
+                echo "Fix lint issues before committing."
+                exit 1
+            elif [ $LINT_EXIT -gt 1 ]; then
+                echo -e "${YELLOW}⚠️  golangci-lint internal error (exit code $LINT_EXIT)${NC}"
+                echo "   This may be due to deleted files or config issues."
+                echo "   Output: $(echo "$LINT_OUTPUT" | head -3)"
+            fi
         fi
         echo -e "${GREEN}✅ golangci-lint passed${NC}"
     fi

@@ -185,21 +185,6 @@ func (s *EventListScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	return nil, nil
 }
 
-// SetContentHeight configures the table to use the specified height with viewport scrolling.
-//
-// Expected:
-//   - int must be valid.
-//
-// Side effects:
-//   - None.
-func (s *EventListScreen) SetContentHeight(height int) {
-	if height < 10 {
-		return
-	}
-
-	s.tableBehavior.SetHeight(height)
-}
-
 // RenderContent returns just the content (table) without StandardView wrapper.
 //
 // Returns:

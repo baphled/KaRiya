@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/intents"
-	"github.com/baphled/kariya/internal/cli/models"
 	captureScreens "github.com/baphled/kariya/internal/cli/screens/capture"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
+	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -19,12 +19,12 @@ import (
 // terminalDimensions returns the current terminal dimensions for modal sizing.
 // Falls back to nil if terminal info is unavailable, letting the model
 // apply its own defaults.
-func (i *Intent) terminalDimensions() *models.MetadataEditorDimensions {
+func (i *Intent) terminalDimensions() *MetadataEditorDimensions {
 	info := i.GetTerminalInfo()
 	if info == nil {
 		return nil
 	}
-	return &models.MetadataEditorDimensions{
+	return &MetadataEditorDimensions{
 		TerminalWidth:  info.Width,
 		TerminalHeight: info.Height,
 	}
@@ -191,7 +191,7 @@ func (i *Intent) transitionToStrategyScreen() tea.Cmd {
 
 	termInfo := i.GetTerminalInfo()
 	width, height := 120, 40
-	if termInfo != nil {
+	if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
 		width = termInfo.Width
 		height = termInfo.Height
 	}
@@ -219,15 +219,19 @@ func (i *Intent) transitionToFormScreen(strategy CaptureStrategy) tea.Cmd {
 	i.currentState = StateForm
 	i.strategy = strategy
 	breadcrumbs := []string{"Main Menu", "Capture Event", "Form"}
-	i.activeScreen = captureScreens.NewEventFormScreen(
-		i.eventService,
-		breadcrumbs,
-		strategy,
-	)
+
+	var event *career.Event
+	if i.context.PreviousEvent != nil {
+		event = i.context.PreviousEvent
+	}
+
+	formScreen := captureScreens.NewEventFormScreen(event, breadcrumbs, strategy)
+	i.captureFormScreen = formScreen
+	i.activeScreen = formScreen
 
 	termInfo := i.GetTerminalInfo()
 	width, height := 120, 40
-	if termInfo != nil {
+	if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
 		width = termInfo.Width
 		height = termInfo.Height
 	}
@@ -266,11 +270,11 @@ type modalContentData struct {
 //   - Lazily creates the metadataModal if it is nil.
 func (i *Intent) getMetadataModalContent() *modalContentData {
 	if i.reviewState.metadataModal == nil {
-		i.reviewState.metadataModal = models.NewMetadataEditorModelNew(
+		i.reviewState.metadataModal = NewMetadataEditorModelNew(
+			context.Background(),
 			i.reviewState.Event,
 			i.context.CareerService,
 			i.context.CLIEventService,
-			context.Background(),
 			i.terminalDimensions(),
 		)
 	}
@@ -357,8 +361,8 @@ func (i *Intent) renderModalOverlay(background string, modalContent *modalConten
 
 	info := i.GetTerminalInfo()
 	width := 80
-	height := 24
-	if info != nil {
+	height := 40
+	if info != nil && info.Width > 0 && info.Height > 0 {
 		width = info.Width
 		height = info.Height
 	}

@@ -3,8 +3,8 @@ package captureevent
 import (
 	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/intents"
-	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/screens"
+	"github.com/baphled/kariya/internal/cli/screens/capture"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/domain/career"
@@ -44,8 +44,8 @@ type Intent struct {
 	// currentState tracks which workflow step is active.
 	currentState State
 
-	// captureForm is the huh-based form for capturing event details.
-	captureForm *models.CaptureForm
+	// captureFormScreen is the screen-level form for capturing event details.
+	captureFormScreen *capture.EventFormScreen
 
 	// reviewState holds the review sub-flow's data (event, bursts, facts, modals).
 	reviewState *ReviewInferredEventState
@@ -91,13 +91,13 @@ type ReviewInferredEventState struct {
 	RejectedItems map[string]string
 
 	// metadataModal is the form model for editing event metadata fields.
-	metadataModal *models.MetadataEditorModelNew
+	metadataModal *MetadataEditorModelNew
 
 	// burstModal is the form model for editing burst suggestions.
-	burstModal *models.BurstSuggestionModelNew
+	burstModal *BurstSuggestionModelNew
 
 	// factModal is the form model for editing fact suggestions.
-	factModal *models.FactEditorModelNew
+	factModal *FactEditorModelNew
 
 	// SelectedItemType tracks which item kind ("burst" or "fact") is highlighted.
 	SelectedItemType string
@@ -139,18 +139,18 @@ func (i *Intent) GetState() string {
 	return string(i.currentState)
 }
 
-// GetForm returns the capture form model instance.
+// GetFormScreen returns the capture form screen instance.
 //
 // Returns:
-//   - A fully initialized models.CaptureForm ready for use.
+//   - A fully initialized capture.EventFormScreen ready for use, or nil.
 //
 // Side effects:
 //   - None.
-func (i *Intent) GetForm() *models.CaptureForm {
+func (i *Intent) GetFormScreen() *capture.EventFormScreen {
 	if i == nil {
 		return nil
 	}
-	return i.captureForm
+	return i.captureFormScreen
 }
 
 // SetStateForTesting sets the current workflow state for cross-package tests.

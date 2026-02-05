@@ -9,23 +9,19 @@ import (
 
 var _ = Describe("SkillForm", func() {
 	Describe("NewSkillForm", func() {
-		Context("creating form for new skill", func() {
-			It("should create form with empty fields", func() {
-				form := forms.NewSkillForm(nil)
-				Expect(form).NotTo(BeNil())
-			})
+		It("should create form with empty data", func() {
+			data := &forms.SkillFormData{}
+			form := forms.NewSkillForm(data, 0, 0)
+			Expect(form).NotTo(BeNil())
 		})
 
-		Context("creating form for existing skill", func() {
-			It("should pre-populate fields with skill data", func() {
-				skill := fixtures.SkillWith("skill-ruby", "Ruby", "backend", "advanced")
-				form := forms.NewSkillForm(skill)
-				Expect(form).NotTo(BeNil())
-			})
+		It("should create form with pre-populated data", func() {
+			skill := fixtures.SkillWith("skill-ruby", "Ruby", "backend", "advanced")
+			data := forms.GetSkillFormData(skill)
+			form := forms.NewSkillForm(data, 0, 0)
+			Expect(form).NotTo(BeNil())
 		})
-	})
 
-	Describe("NewSkillFormWithData", func() {
 		It("should create form with provided data", func() {
 			data := &forms.SkillFormData{
 				Name:      "Go",
@@ -33,7 +29,7 @@ var _ = Describe("SkillForm", func() {
 				Level:     "expert",
 				YearsUsed: "5",
 			}
-			form := forms.NewSkillFormWithData(data)
+			form := forms.NewSkillForm(data, 0, 0)
 			Expect(form).NotTo(BeNil())
 		})
 	})

@@ -558,8 +558,7 @@ make coverage
 // ❌ NEVER in intents
 import "github.com/charmbracelet/huh"
 
-// ✅ ALWAYS use wrappers
-import "github.com/baphled/kariya/internal/cli/models"
+// ✅ ALWAYS use form builders
 import "github.com/baphled/kariya/internal/cli/forms"
 ```
 
@@ -969,18 +968,18 @@ primitives.ErrorText("message", theme)
 
 ### 22. Deprecated Models Package for Forms ✅
 
-**Rule**: NEVER use `models/` package for forms - use `screens/*FormScreen` instead
+**Rule**: NEVER use `models/` package for forms - the package has been deleted. Use `screens/*FormScreen` instead.
 
 **Violations (BLOCKING)**:
 ```go
-// ❌ NEVER use these (DEPRECATED)
+// ❌ NEVER use these (DELETED)
 import "github.com/baphled/kariya/internal/cli/models"
 
 type MyIntent struct {
-    form *models.CaptureForm  // DEPRECATED
+    form *models.CaptureForm  // DELETED
 }
 
-formModel := models.NewCaptureForm(service)  // DEPRECATED
+formModel := models.NewCaptureForm(service)  // DELETED
 
 // ✅ ALWAYS use these
 import "github.com/baphled/kariya/internal/cli/screens/myfeature"

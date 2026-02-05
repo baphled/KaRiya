@@ -562,8 +562,8 @@ Implement adapter between CLI and core domain services:
 
 Includes unit tests with 88% coverage."
 
-# 10. CLI form model
-git add internal/cli/models/*.go
+# 10. CLI form screen
+git add internal/cli/screens/capture/*.go
 git commit -m "feat(cli): add interactive event capture form
 
 Implement BubbleTea form with:

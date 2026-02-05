@@ -282,6 +282,26 @@ var _ = Describe("E2E BrowseTimeline Workflow", func() {
 			env.PressKeyRune('a')
 			env.AssertViewContainsAny("Event Text", "Date", "Text")
 		})
+
+		It("should always show submit button in quick add modal", func() {
+			env.SendMessage(tea.WindowSizeMsg{Width: 80, Height: 24})
+			env.PressKeyRune('a')
+			env.AssertViewContainsAny("Submit", "Save")
+		})
+
+		It("should show Ctrl+S help badge in quick add modal", func() {
+			env.PressKeyRune('a')
+			view := env.GetView()
+			Expect(view).To(ContainSubstring("Ctrl+S"),
+				"Quick add modal should show Ctrl+S help badge")
+		})
+
+		It("should submit quick add modal with Ctrl+S", func() {
+			env.PressKeyRune('a')
+			env.AssertViewContainsAny("Event", "Text")
+			env.PressKey(tea.KeyCtrlS)
+			env.AssertViewContainsAny("Timeline", "Events")
+		})
 	})
 
 	Describe("Edit Modal Workflow", func() {
@@ -312,6 +332,19 @@ var _ = Describe("E2E BrowseTimeline Workflow", func() {
 			env.PressKeyRune('e')
 			// Edit modal should have event data pre-populated.
 			env.AssertViewContainsAny("Text", "Date", "Company")
+		})
+
+		It("should always show submit button in edit modal on small terminal", func() {
+			env.SendMessage(tea.WindowSizeMsg{Width: 80, Height: 24})
+			env.PressKeyRune('e')
+			env.AssertViewContainsAny("Submit", "Save")
+		})
+
+		It("should show Ctrl+S help badge in edit modal", func() {
+			env.PressKeyRune('e')
+			view := env.GetView()
+			Expect(view).To(ContainSubstring("Ctrl+S"),
+				"Edit modal should show Ctrl+S help badge")
 		})
 	})
 

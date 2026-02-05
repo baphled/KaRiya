@@ -1,10 +1,26 @@
 # KaRiya Forms Guide
 
-**Last Updated**: 2026-01-20  
+**Last Updated**: 2026-02-03  
 **Status**: Complete - All 7 form configurations documented  
 **Library**: [github.com/charmbracelet/huh](https://github.com/charmbracelet/huh) v0.8.0  
-**Form Wrappers**: 2 (CaptureForm, SkillForm)  
 **Form Configurations**: 7 (Burst, Metadata, Fact, CaptureEvent, BurstSuggestion, Skill, CVConfig)
+
+---
+
+> **Migration Status**
+>
+> The codebase has three co-existing form integration patterns. New code should use the **target pattern**.
+>
+> | Pattern | Status | Example | Use When |
+> |---------|--------|---------|----------|
+> | **`base.FormScreen[T]`** | **Target (Recommended)** | `SkillFormScreen` | New screen-level forms |
+> | **`models/` wrappers** | Legacy (Active) | `CaptureForm`, `FactEditorModelNew` | Existing code, pending migration |
+> | **Direct `*huh.Form` in modals** | Current (Valid) | Timeline modals | Modal overlays (not deprecated) |
+>
+> **Key fact**: `forms.Form` is a **type alias** for `*huh.Form` -- they are the same type. The rule
+> "use `forms.Form` not `*huh.Form`" means **import from `forms/` package, don't import `huh` directly**.
+>
+> **See also**: [`base.FormScreen[T]`](#formscreen-pattern-target) for the recommended screen integration.
 
 ---
 
@@ -19,8 +35,9 @@
 7. [Helper Functions](#helper-functions)
 8. [Integration Patterns](#integration-patterns)
    - [Modal Integration](#modal-integration)
-   - [Model Integration](#model-integration)
-   - [Form Alignment and Wrapper Pattern](#form-alignment-and-the-wrapper-pattern)
+   - [Model Integration (Legacy)](#model-integration-legacy)
+   - [FormScreen Pattern (Target)](#formscreen-pattern-target)
+   - [Form Alignment and Wrapper Pattern (Legacy)](#form-alignment-and-the-wrapper-pattern-legacy)
 9. [Theming System](#theming-system)
 10. [Testing Forms](#testing-forms)
 11. [Code References](#code-references)
@@ -1233,231 +1250,116 @@ func (m *EditModal) GetFooter() string {
 
 ---
 
-### Model Integration
+### Modal Models in captureevent (Internal)
 
-Models embed huh forms for full-screen editing. See examples in [`internal/cli/models/`](../internal/cli/models/).
+The `captureevent` intent uses three internal modal models for editing:
 
-#### Strategy-Aware Forms (CaptureForm)
+- `BurstSuggestionModelNew` — inline burst suggestion review/edit
+- `MetadataEditorModelNew` — metadata editing with shared `forms.EditorFields`
+- `FactEditorModelNew` — fact editing with shared `forms.EditorFields`
 
-**File**: `internal/cli/models/capture_form.go`
+These live in `internal/cli/intents/captureevent/` and use `forms.EditorFields`
+for shared form update/render logic. They are not intended for reuse outside
+the captureevent intent.
 
-```go
-type CaptureForm struct {
-    form     *huh.Form
-    data     *forms.CaptureEventFormData
-    strategy string
-    width, height int
-}
-
-// Rebuild form when strategy changes
-func (m *CaptureForm) SetStrategy(newStrategy string) {
-    m.strategy = newStrategy
-    m.rebuildForm()
-}
-
-func (m *CaptureForm) rebuildForm() {
-    m.form = forms.NewCaptureEventForm(
-        m.data,
-        m.strategy,
-        m.width,
-        m.height,
-    )
-}
-
-// Handle keyboard shortcuts
-func (m *CaptureForm) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-    switch msg := msg.(type) {
-    case tea.KeyMsg:
-        // Ctrl+S to submit
-        if msg.Type == tea.KeyCtrlS {
-            // Mark as completed
-            m.data.SubmitConfirmed = true
-            return m, tea.Quit
-        }
-    }
-    
-    // Standard form update
-    form, cmd := m.form.Update(msg)
-    if f, ok := form.(*huh.Form); ok {
-        m.form = f
-    }
-    
-    return m, cmd
-}
-```
-
-#### Inline Edit Mode (BurstSuggestionModelNew)
-
-**File**: `internal/cli/models/burst_suggestion_new.go`
-
-```go
-type BurstSuggestionModelNew struct {
-    suggestions []burstfact.BurstSuggestion
-    
-    // Edit mode
-    editMode    bool
-    editIndex   int
-    editForm    *huh.Form
-    editData    *forms.BurstSuggestionFormData
-    
-    // Cache edited values
-    editedNames map[int]string
-    editedDescs map[int]string
-}
-
-func (m *BurstSuggestionModelNew) startEdit(index int) {
-    m.editMode = true
-    m.editIndex = index
-    
-    suggestion := m.suggestions[index]
-    m.editData = forms.GetBurstSuggestionFormData(suggestion)
-    m.editForm = forms.NewBurstSuggestionEditFormWithData(m.editData)
-}
-
-func (m *BurstSuggestionModelNew) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-    if m.editMode {
-        // Update form
-        form, cmd := m.editForm.Update(msg)
-        if f, ok := form.(*huh.Form); ok {
-            m.editForm = f
-        }
-        
-        // Check completion
-        if forms.IsCompleted(m.editForm) {
-            m.saveEdits()
-            m.exitEditMode()
-        }
-        
-        if forms.IsAborted(m.editForm) {
-            m.exitEditMode()
-        }
-        
-        return m, cmd
-    }
-    
-    // Handle normal navigation
-    // ...
-}
-
-func (m *BurstSuggestionModelNew) View() string {
-    if m.editMode {
-        return m.editForm.View()
-    }
-    
-    // Normal review view
-    // ...
-}
-
-func (m *BurstSuggestionModelNew) saveEdits() {
-    // Cache edited values
-    m.editedNames[m.editIndex] = m.editData.Name
-    m.editedDescs[m.editIndex] = m.editData.Description
-    
-    // Apply to suggestion
-    suggestion := &m.suggestions[m.editIndex]
-    forms.ApplyBurstSuggestionFormData(suggestion, m.editData)
-}
-```
-
-#### Repository Integration (MetadataEditorModelNew)
-
-**File**: `internal/cli/models/metadata_editor_new.go`
-
-```go
-type MetadataEditorModelNew struct {
-    event    *career.CareerEvent
-    original *career.CareerEvent // For revert
-    
-    form     *huh.Form
-    formData *forms.MetadataFormData
-    
-    // Services
-    cliService *service.CLIEventService
-    
-    // Selectors
-    tagSelector      *components.TagSelector
-    categorySelector *components.CategorySelector
-    skillSelector    *components.SkillSelector
-}
-
-func NewMetadataEditorModelNew(
-    event *career.CareerEvent,
-    cliService *service.CLIEventService,
-) *MetadataEditorModelNew {
-    // Load available options from domain
-    availableTags := []string{"backend", "frontend", "devops"}
-    availableCategories := []string{"development", "leadership"}
-    availableSkills, _ := cliService.GetAllSkills()
-    
-    // Create form
-    formData := forms.GetMetadataFormData(event)
-    form := forms.NewMetadataEditorFormWithData(
-        formData,
-        availableTags,
-        availableCategories,
-        availableSkills,
-    )
-    
-    return &MetadataEditorModelNew{
-        event:      event,
-        original:   copyEvent(event),
-        form:       form,
-        formData:   formData,
-        cliService: cliService,
-    }
-}
-
-func (m *MetadataEditorModelNew) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-    // Update form
-    form, cmd := m.form.Update(msg)
-    if f, ok := form.(*huh.Form); ok {
-        m.form = f
-    }
-    
-    // Handle completion
-    if forms.IsCompleted(m.form) {
-        return m.handleFormCompletion()
-    }
-    
-    if forms.IsAborted(m.form) {
-        m.Revert()
-    }
-    
-    return m, cmd
-}
-
-func (m *MetadataEditorModelNew) handleFormCompletion() (tea.Model, tea.Cmd) {
-    // Apply form data to event
-    err := forms.ApplyMetadataFormData(m.event, m.formData)
-    if err != nil {
-        m.err = err
-        return m, nil
-    }
-    
-    // Persist to repository
-    err = m.cliService.UpdateEventMetadata(m.event)
-    if err != nil {
-        m.err = err
-        return m, nil
-    }
-    
-    m.saved = true
-    return m, tea.Quit
-}
-
-func (m *MetadataEditorModelNew) Revert() {
-    m.event.Date = m.original.Date
-    m.event.Company = m.original.Company
-    m.event.Project = m.original.Project
-    m.event.Tags = m.original.Tags
-    m.event.Categories = m.original.Categories
-    m.event.Skills = m.original.Skills
-}
-```
+For new forms, use [`base.FormScreen[T]`](#formscreen-pattern-target).
 
 ---
 
-### Form Alignment and the Wrapper Pattern
+### FormScreen Pattern (Target)
+
+**Status**: Target architecture for all new screen-level forms  
+**Base class**: `internal/cli/screens/base/form_screen.go`  
+**Example**: `internal/cli/screens/skills/skill_form.go`
+
+The `base.FormScreen[T]` generic screen is the recommended way to integrate forms into screens.
+It handles window resize, form rebuilding, escape cancellation, and returns `screens.ScreenResult`.
+
+#### How It Works
+
+1. Define a `FormBuilder[T]` function that creates a form for given dimensions
+2. Create a concrete screen type embedding `*base.FormScreen[T]`
+3. The base handles `Update()`, `View()`, and `SetTerminalInfo()` automatically
+
+#### Example: SkillFormScreen (canonical)
+
+```go
+// File: internal/cli/screens/skills/skill_form.go
+package skills
+
+import (
+    "github.com/baphled/kariya/internal/cli/forms"
+    "github.com/baphled/kariya/internal/cli/screens/base"
+    "github.com/baphled/kariya/internal/domain/career"
+)
+
+type SkillFormScreen struct {
+    *base.FormScreen[*forms.SkillFormData]
+}
+
+func NewSkillFormScreen(skill *career.Skill) *SkillFormScreen {
+    var formData *forms.SkillFormData
+    if skill == nil {
+        formData = &forms.SkillFormData{}
+    } else {
+        formData = forms.GetSkillFormData(skill)
+    }
+
+    baseScreen := base.NewBaseFormScreen(
+        []string{"Main Menu", "Manage Skills", "Add Skill"},
+        forms.NewSkillFormWithDataAndDimensions, // FormBuilder[T]
+        formData,
+    )
+
+    return &SkillFormScreen{FormScreen: baseScreen}
+}
+```
+
+#### Using in an Intent
+
+```go
+// In intent handler
+func (i *MyIntent) handleAddSkill() tea.Cmd {
+    i.formScreen = skills.NewSkillFormScreen(nil)
+    i.formScreen.SetTerminalInfo(i.Width(), i.Height())
+    i.activeScreen = i.formScreen
+    i.state = StateForm
+    return nil
+}
+
+// In intent Update()
+cmd, result := i.formScreen.Update(msg)
+if result != nil {
+    switch r := result.(type) {
+    case *screens.SubmitResult:
+        data := r.FormData.(*forms.SkillFormData)
+        if data.SubmitConfirmed {
+            forms.ApplySkillFormData(skill, data)
+            // Save skill...
+        }
+    case *screens.CancelResult:
+        // Return to previous screen
+    }
+}
+```
+
+#### Key Benefits Over Legacy Wrappers
+
+| Aspect | `base.FormScreen[T]` | `models/` wrapper |
+|--------|----------------------|-------------------|
+| Window resize | Automatic (rebuilds form) | Manual in each wrapper |
+| Communication | `screens.ScreenResult` | Custom message types |
+| huh import | Not needed (uses `forms.Form` alias) | Imports huh directly |
+| Boilerplate | ~20 lines per form screen | ~100-200 lines per wrapper |
+| StandardView | Built-in (breadcrumbs, footer) | Manual |
+
+---
+
+### Form Alignment and the Wrapper Pattern (Legacy)
+
+> **LEGACY**: This section documents the `models/` wrapper pattern which is still in active use
+> but deprecated. For new forms, use [`base.FormScreen[T]`](#formscreen-pattern-target) instead.
+> Existing wrappers (`CaptureForm`, `SkillForm` in `models/`) will be migrated to `base.FormScreen[T]`.
 
 **CRITICAL**: Forms in intents must use wrapper models to ensure proper alignment and responsive sizing. Direct use of `*huh.Form` in intents causes alignment issues.
 
@@ -1641,34 +1543,14 @@ func (i *MyIntent) renderForm() string {
 }
 ```
 
-#### Existing Wrapper Models
+#### Key Differences: Modal vs Screen Forms
 
-| Wrapper | Purpose | File |
-|---------|---------|------|
-| `CaptureForm` | Career event capture | `internal/cli/models/capture_form.go` |
-| `SkillForm` | Skill management | `internal/cli/models/skill_form.go` |
-
-#### When to Create a Wrapper
-
-Create a form wrapper when:
-- Form is used in an **intent** (not a modal)
-- Form needs to **respond to terminal resize**
-- Form should be **centered/aligned** with other UI elements
-- You want **consistent completion message handling**
-
-Modals typically don't need wrappers because:
-- They have fixed dimensions relative to terminal
-- The modal container handles positioning
-- They use `ModalEditResult[T]` pattern
-
-#### Key Differences: Modal vs Intent Forms
-
-| Aspect | Modal | Intent |
-|--------|-------|--------|
+| Aspect | Modal | Screen (FormScreen) |
+|--------|-------|---------------------|
 | Form location | Overlay/popup | Full screen area |
-| Dimension handling | Modal container | Wrapper model |
-| Completion | `ModalEditResult[T]` | Custom message type |
-| Positioning | Centered by modal | Wrapper ensures alignment |
+| Dimension handling | Modal container | `base.FormScreen[T]` |
+| Completion | `ModalEditResult[T]` | `SubmitResult` / `CancelResult` |
+| Positioning | Centered by modal | Screen handles layout |
 | Window resize | Modal updates | Wrapper handles |
 
 #### Troubleshooting Form Alignment
@@ -2049,12 +1931,13 @@ modal.SetTestResult(&ModalEditResult[*career.Burst]{
   - `EditBurstModal` (161 lines)
   - `EditFactModal` (161 lines)
 
-- **Model Integration**: [`internal/cli/models/`](../internal/cli/models/)
-  - [`capture_form.go`](../internal/cli/models/capture_form.go) (165 lines) - Career event capture wrapper
-  - [`skill_form.go`](../internal/cli/models/skill_form.go) (123 lines) - Skill management wrapper
-  - [`burst_suggestion_new.go`](../internal/cli/models/burst_suggestion_new.go) (544 lines)
-  - [`metadata_editor_new.go`](../internal/cli/models/metadata_editor_new.go) (276 lines)
-  - [`fact_editor_new.go`](../internal/cli/models/fact_editor_new.go) (243 lines)
+- **Screen Integration (Target)**: [`internal/cli/screens/base/form_screen.go`](../internal/cli/screens/base/form_screen.go)
+  - [`skill_form.go`](../internal/cli/screens/skills/skill_form.go) - Canonical example
+
+- **Intent-internal Models**: `internal/cli/intents/captureevent/`
+  - `burst_suggestion.go` - Burst suggestion review/edit
+  - `metadata_editor.go` - Metadata editing (uses `forms.EditorFields`)
+  - `fact_editor.go` - Fact editing (uses `forms.EditorFields`)
 
 ### Tests
 
@@ -2082,7 +1965,7 @@ modal.SetTestResult(&ModalEditResult[*career.Burst]{
 
 1. **Use `forms.NewForm()`** to create forms with Catppuccin theme
 2. **Use pre-built validators** from `forms` package
-3. **Embed `*huh.Form`** in your BubbleTea models
+3. **Use `base.FormScreen[T]`** for screen-level forms (or `forms.Form` alias in modals)
 4. **Check state** with `forms.IsCompleted()` and `forms.IsAborted()`
 5. **Extract values** with `forms.GetString()`, `forms.GetBool()`, etc.
 6. **Use dynamic features** (`WithHideFunc`, `OptionsFunc`) for conditional UI

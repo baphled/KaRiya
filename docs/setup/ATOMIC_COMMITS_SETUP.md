@@ -284,8 +284,8 @@ git commit -m "feat(cli): add CLI service adapter layer
 Adapter between CLI and domain services using
 functional options pattern."
 
-# 10. CLI form model
-git add internal/cli/models/
+# 10. CLI form screen
+git add internal/cli/screens/capture/
 make review-commit
 git commit -m "feat(cli): add interactive event capture form
 

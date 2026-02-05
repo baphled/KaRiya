@@ -85,6 +85,7 @@ var _ = Describe("AddEditModal", func() {
 		Context("when visible", func() {
 			BeforeEach(func() {
 				modal = modals.NewAddEditModal(skill, 120, 40)
+				modal.Init()
 			})
 
 			It("renders the form", func() {

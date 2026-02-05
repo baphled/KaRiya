@@ -1,4 +1,4 @@
-package models
+package captureevent
 
 import (
 	"context"
@@ -13,7 +13,6 @@ import (
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	burstfact "github.com/baphled/kariya/internal/service/career/burstfact"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -25,7 +24,6 @@ import (
 //   - Catppuccin theming
 //   - Consistent keyboard navigation.
 type BurstSuggestionModelNew struct {
-	*BaseStandardModel
 	service       *careerservice.Service
 	ctx           context.Context
 	suggestions   []burstfact.BurstSuggestion
@@ -33,7 +31,7 @@ type BurstSuggestionModelNew struct {
 	confirmed     []burstfact.BurstSuggestion
 	rejected      []burstfact.BurstSuggestion
 	editing       bool
-	editForm      *huh.Form
+	editForm      forms.Form
 	editFormData  *forms.BurstSuggestionFormData
 	editedNames   map[int]string
 	editedDescs   map[int]string
@@ -43,25 +41,35 @@ type BurstSuggestionModelNew struct {
 }
 
 // NewBurstSuggestionModelNew creates a new burst suggestion model using huh forms for editing.
+//
+// Expected:
+//   - ctx must be a valid context.
+//   - svc must be a valid careerservice.Service pointer.
+//   - suggestions must be a valid slice of BurstSuggestion.
+//
+// Returns:
+//   - A fully initialized BurstSuggestionModelNew ready for use.
+//
+// Side effects:
+//   - None.
 func NewBurstSuggestionModelNew(
-	svc *careerservice.Service, suggestions []burstfact.BurstSuggestion, ctx context.Context,
+	ctx context.Context, svc *careerservice.Service, suggestions []burstfact.BurstSuggestion,
 ) *BurstSuggestionModelNew {
 	return &BurstSuggestionModelNew{
-		BaseStandardModel: NewBaseStandardModel(),
-		service:           svc,
-		ctx:               ctx,
-		suggestions:       suggestions,
-		currentIdx:        0,
-		confirmed:         []burstfact.BurstSuggestion{},
-		rejected:          []burstfact.BurstSuggestion{},
-		editing:           false,
-		editForm:          nil,
-		editFormData:      nil,
-		editedNames:       make(map[int]string),
-		editedDescs:       make(map[int]string),
-		relatedEvents:     make(map[int][]*career.Event),
-		width:             80,
-		height:            24,
+		service:       svc,
+		ctx:           ctx,
+		suggestions:   suggestions,
+		currentIdx:    0,
+		confirmed:     []burstfact.BurstSuggestion{},
+		rejected:      []burstfact.BurstSuggestion{},
+		editing:       false,
+		editForm:      nil,
+		editFormData:  nil,
+		editedNames:   make(map[int]string),
+		editedDescs:   make(map[int]string),
+		relatedEvents: make(map[int][]*career.Event),
+		width:         80,
+		height:        24,
 	}
 }
 
@@ -77,6 +85,16 @@ func (m *BurstSuggestionModelNew) Init() tea.Cmd {
 }
 
 // Update handles messages.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - tea.Model: the updated model.
+//   - tea.Cmd: command to execute.
+//
+// Side effects:
+//   - May update internal state based on message type.
 func (m *BurstSuggestionModelNew) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -85,14 +103,14 @@ func (m *BurstSuggestionModelNew) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tea.KeyMsg:
-		return m.handleKeyMsg(msg)
+		return m.handleBurstKeyMsg(msg)
 	}
 
 	return m, nil
 }
 
-// handleKeyMsg processes keyboard input.
-func (m *BurstSuggestionModelNew) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+// handleBurstKeyMsg processes keyboard input.
+func (m *BurstSuggestionModelNew) handleBurstKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if m.editing {
 		return m.handleEditKeyMsg(msg)
 	}
@@ -151,7 +169,7 @@ func (m *BurstSuggestionModelNew) handleEditKeyMsg(msg tea.KeyMsg) (tea.Model, t
 
 	// Update the form
 	form, cmd := m.editForm.Update(msg)
-	if f, ok := form.(*huh.Form); ok {
+	if f, ok := form.(forms.Form); ok {
 		m.editForm = f
 	}
 
@@ -171,7 +189,7 @@ func (m *BurstSuggestionModelNew) handleEditKeyMsg(msg tea.KeyMsg) (tea.Model, t
 	return m, cmd
 }
 
-// startEdit begins editing the current suggestion's name/description using huh form
+// startEdit begins editing the current suggestion's name/description using huh form.
 func (m *BurstSuggestionModelNew) startEdit() (tea.Model, tea.Cmd) {
 	if len(m.suggestions) == 0 {
 		return m, nil
@@ -195,12 +213,12 @@ func (m *BurstSuggestionModelNew) startEdit() (tea.Model, tea.Cmd) {
 	}
 
 	// Create huh form
-	m.editForm = forms.NewBurstSuggestionEditFormWithData(m.editFormData)
+	m.editForm = forms.NewBurstSuggestionForm(m.editFormData)
 
 	return m, m.editForm.Init()
 }
 
-// saveEdits saves the edited name/description from the huh form
+// saveEdits saves the edited name/description from the huh form.
 func (m *BurstSuggestionModelNew) saveEdits() (tea.Model, tea.Cmd) {
 	if m.editFormData != nil {
 		m.editedNames[m.currentIdx] = m.editFormData.Name
@@ -213,7 +231,7 @@ func (m *BurstSuggestionModelNew) saveEdits() (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-// confirmCurrent confirms the current suggestion and moves to next
+// confirmCurrent confirms the current suggestion and moves to next.
 func (m *BurstSuggestionModelNew) confirmCurrent() (tea.Model, tea.Cmd) {
 	if len(m.suggestions) == 0 {
 		return m, nil
@@ -243,22 +261,22 @@ func (m *BurstSuggestionModelNew) confirmCurrent() (tea.Model, tea.Cmd) {
 	if m.currentIdx < len(m.suggestions)-1 {
 		m.currentIdx++
 		return m, confirmCmd
-	} else {
-		// All suggestions processed, send completion message
-		completeCmd := tea.Batch(
-			confirmCmd,
-			func() tea.Msg {
-				return BurstProcessingCompleteMsg{
-					ConfirmedCount: len(m.confirmed),
-					RejectedCount:  len(m.rejected),
-				}
-			},
-		)
-		return m, completeCmd
 	}
+
+	// All suggestions processed, send completion message
+	completeCmd := tea.Batch(
+		confirmCmd,
+		func() tea.Msg {
+			return BurstProcessingCompleteMsg{
+				ConfirmedCount: len(m.confirmed),
+				RejectedCount:  len(m.rejected),
+			}
+		},
+	)
+	return m, completeCmd
 }
 
-// rejectCurrent rejects the current suggestion and moves to next
+// rejectCurrent rejects the current suggestion and moves to next.
 func (m *BurstSuggestionModelNew) rejectCurrent() (tea.Model, tea.Cmd) {
 	if len(m.suggestions) == 0 {
 		return m, nil
@@ -276,19 +294,19 @@ func (m *BurstSuggestionModelNew) rejectCurrent() (tea.Model, tea.Cmd) {
 	if m.currentIdx < len(m.suggestions)-1 {
 		m.currentIdx++
 		return m, rejectCmd
-	} else {
-		// All suggestions processed, send completion message
-		completeCmd := tea.Batch(
-			rejectCmd,
-			func() tea.Msg {
-				return BurstProcessingCompleteMsg{
-					ConfirmedCount: len(m.confirmed),
-					RejectedCount:  len(m.rejected),
-				}
-			},
-		)
-		return m, completeCmd
 	}
+
+	// All suggestions processed, send completion message
+	completeCmd := tea.Batch(
+		rejectCmd,
+		func() tea.Msg {
+			return BurstProcessingCompleteMsg{
+				ConfirmedCount: len(m.confirmed),
+				RejectedCount:  len(m.rejected),
+			}
+		},
+	)
+	return m, completeCmd
 }
 
 // View renders the burst suggestion screen
@@ -313,7 +331,7 @@ func (m *BurstSuggestionModelNew) View() string {
 	return m.renderReviewView()
 }
 
-// renderReviewView renders the suggestion review view
+// renderReviewView renders the suggestion review view.
 func (m *BurstSuggestionModelNew) renderReviewView() string {
 	current := m.suggestions[m.currentIdx]
 	theme := m.getTheme()
@@ -350,7 +368,7 @@ func (m *BurstSuggestionModelNew) renderReviewView() string {
 	return lipgloss.JoinVertical(lipgloss.Left, parts...)
 }
 
-// renderEditView renders the editing view using huh form
+// renderEditView renders the editing view using huh form.
 func (m *BurstSuggestionModelNew) renderEditView() string {
 	theme := m.getTheme()
 
@@ -380,7 +398,7 @@ func (m *BurstSuggestionModelNew) renderEditView() string {
 	return lipgloss.JoinVertical(lipgloss.Left, parts...)
 }
 
-// renderProgressBar renders the progress through suggestions
+// renderProgressBar renders the progress through suggestions.
 func (m *BurstSuggestionModelNew) renderProgressBar() string {
 	total := len(m.suggestions)
 	current := m.currentIdx + 1
@@ -396,7 +414,7 @@ func (m *BurstSuggestionModelNew) renderProgressBar() string {
 	)
 }
 
-// renderConfidenceScore renders the confidence score with color coding
+// renderConfidenceScore renders the confidence score with color coding.
 func (m *BurstSuggestionModelNew) renderConfidenceScore(score float64) string {
 	theme := m.getTheme()
 	percentage := int(score * 100)
@@ -420,7 +438,7 @@ func (m *BurstSuggestionModelNew) renderConfidenceScore(score float64) string {
 	return containers.NewBox(theme).Variant(variant).Content(content).Render()
 }
 
-// renderBurstDetails renders the burst name and description
+// renderBurstDetails renders the burst name and description.
 func (m *BurstSuggestionModelNew) renderBurstDetails(suggestion burstfact.BurstSuggestion) string {
 	theme := m.getTheme()
 	var parts []string
@@ -432,7 +450,7 @@ func (m *BurstSuggestionModelNew) renderBurstDetails(suggestion burstfact.BurstS
 	}
 
 	if name != "" {
-		nameBox := containers.NewBox(theme).Content(fmt.Sprintf("Name: %s", name)).Render()
+		nameBox := containers.NewBox(theme).Content("Name: " + name).Render()
 		parts = append(parts, nameBox)
 	} else {
 		nameBox := containers.NewBox(theme).
@@ -449,7 +467,7 @@ func (m *BurstSuggestionModelNew) renderBurstDetails(suggestion burstfact.BurstS
 	}
 
 	if desc != "" {
-		descBox := containers.NewBox(theme).Content(fmt.Sprintf("Description: %s", desc)).Render()
+		descBox := containers.NewBox(theme).Content("Description: " + desc).Render()
 		parts = append(parts, descBox)
 	}
 
@@ -463,7 +481,7 @@ func (m *BurstSuggestionModelNew) renderBurstDetails(suggestion burstfact.BurstS
 	return lipgloss.JoinVertical(lipgloss.Left, parts...)
 }
 
-// renderRelatedEvents renders preview of related events
+// renderRelatedEvents renders preview of related events.
 func (m *BurstSuggestionModelNew) renderRelatedEvents(suggestion burstfact.BurstSuggestion) string {
 	theme := m.getTheme()
 
@@ -678,7 +696,7 @@ func (m *BurstSuggestionModelNew) getTheme() themes.Theme {
 	return themes.NewDefaultTheme()
 }
 
-// createBurstFromSuggestion converts a BurstSuggestion into a Burst domain object
+// createBurstFromSuggestion converts a BurstSuggestion into a Burst domain object.
 func (m *BurstSuggestionModelNew) createBurstFromSuggestion(suggestion burstfact.BurstSuggestion) *career.Burst {
 	// Generate a name if none provided
 	name := suggestion.Name

@@ -13,15 +13,10 @@
 //
 // # Usage
 //
-// Create a form:
+// Create a form using entity-specific constructors:
 //
-//	form := forms.NewForm(
-//	    forms.NewInput(forms.FieldConfig{
-//	        Key:   "name",
-//	        Title: "Event Name",
-//	    }),
-//	    forms.NewSelect("type", "Event Type", options),
-//	)
+//	data := &forms.SkillFormData{Name: "Go"}
+//	form := forms.NewSkillForm(data, width, height)
 //
 // Check form state:
 //

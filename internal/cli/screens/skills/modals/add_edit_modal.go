@@ -90,7 +90,7 @@ func (m *AddEditModal) buildForm() {
 	formHeight := 0
 
 	// Create form with dimensions
-	m.form = forms.NewSkillFormWithDataAndDimensions(m.formData, modalWidth, formHeight)
+	m.form = forms.NewSkillForm(m.formData, modalWidth, formHeight)
 }
 
 // Init initializes the modal and its form.

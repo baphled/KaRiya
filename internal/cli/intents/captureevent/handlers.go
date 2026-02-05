@@ -3,10 +3,11 @@ package captureevent
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/baphled/kariya/internal/cli/behaviors"
+	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/intents"
-	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/domain/career"
 	burstfact "github.com/baphled/kariya/internal/service/career/burstfact"
@@ -49,11 +50,11 @@ func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 				return i.setFailedCmd("NO_SERVICE", "Career service not available for metadata editing", nil)
 			}
 			i.reviewState.EditingMode = EditingModeMetadata
-			i.reviewState.metadataModal = models.NewMetadataEditorModelNew(
+			i.reviewState.metadataModal = NewMetadataEditorModelNew(
+				context.Background(),
 				i.reviewState.Event,
 				i.context.CareerService,
 				i.context.CLIEventService,
-				context.Background(),
 				i.terminalDimensions(),
 			)
 			return i.reviewState.metadataModal.Init()
@@ -70,10 +71,10 @@ func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 					Description: b.Description,
 				})
 			}
-			i.reviewState.burstModal = models.NewBurstSuggestionModelNew(
+			i.reviewState.burstModal = NewBurstSuggestionModelNew(
+				context.Background(),
 				i.context.CareerService,
 				suggestions,
-				context.Background(),
 			)
 			return i.reviewState.burstModal.Init()
 
@@ -88,10 +89,10 @@ func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 			} else {
 				fact = &career.Fact{Text: ""}
 			}
-			i.reviewState.factModal = models.NewFactEditorModelNew(
+			i.reviewState.factModal = NewFactEditorModelNew(
+				context.Background(),
 				fact,
 				i.context.CareerService,
-				context.Background(),
 			)
 			return i.reviewState.factModal.Init()
 
@@ -165,7 +166,16 @@ func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
 
 	switch i.currentState {
 	case StateForm:
-		if event, ok := data.(*career.Event); ok {
+		if formData, ok := data.(*forms.CaptureEventFormData); ok {
+			if !formData.SubmitConfirmed {
+				return nil
+			}
+
+			event, err := eventFromFormData(formData)
+			if err != nil {
+				return i.setFailedCmd("FORM_CONVERSION_ERROR", fmt.Sprintf("Failed to convert form data: %v", err), err)
+			}
+
 			if err := event.Validate(); err != nil {
 				return i.setFailedCmd("VALIDATION_ERROR", fmt.Sprintf("Event validation failed: %v", err), err)
 			}
@@ -297,7 +307,7 @@ func (i *Intent) updateEditingModal(msg tea.Msg) tea.Cmd {
 	case EditingModeMetadata:
 		if i.reviewState.metadataModal != nil {
 			modal, cmd := i.reviewState.metadataModal.Update(msg)
-			if typed, ok := modal.(*models.MetadataEditorModelNew); ok {
+			if typed, ok := modal.(*MetadataEditorModelNew); ok {
 				i.reviewState.metadataModal = typed
 			}
 
@@ -315,7 +325,7 @@ func (i *Intent) updateEditingModal(msg tea.Msg) tea.Cmd {
 	case EditingModeBursts:
 		if i.reviewState.burstModal != nil {
 			modal, cmd := i.reviewState.burstModal.Update(msg)
-			if typed, ok := modal.(*models.BurstSuggestionModelNew); ok {
+			if typed, ok := modal.(*BurstSuggestionModelNew); ok {
 				i.reviewState.burstModal = typed
 			}
 			return cmd
@@ -324,7 +334,7 @@ func (i *Intent) updateEditingModal(msg tea.Msg) tea.Cmd {
 	case EditingModeFacts:
 		if i.reviewState.factModal != nil {
 			modal, cmd := i.reviewState.factModal.Update(msg)
-			if typed, ok := modal.(*models.FactEditorModelNew); ok {
+			if typed, ok := modal.(*FactEditorModelNew); ok {
 				i.reviewState.factModal = typed
 			}
 
@@ -340,4 +350,42 @@ func (i *Intent) updateEditingModal(msg tea.Msg) tea.Cmd {
 	}
 
 	return nil
+}
+
+// eventFromFormData converts CaptureEventFormData to a career.Event.
+//
+// Expected:
+//   - data must not be nil.
+//
+// Returns:
+//   - A fully initialized career.Event ready for use.
+//   - An error if date parsing fails.
+//
+// Side effects:
+//   - None.
+func eventFromFormData(data *forms.CaptureEventFormData) (*career.Event, error) {
+	var eventDate time.Time
+	var err error
+
+	if data.Date == "" {
+		eventDate = time.Now()
+	} else {
+		eventDate, err = forms.ParseDateString(data.Date)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	event := &career.Event{
+		Text:       data.Text,
+		Date:       eventDate,
+		Company:    data.Company,
+		Project:    data.Project,
+		Tags:       data.Tags,
+		Categories: data.Categories,
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
+	}
+
+	return event, nil
 }

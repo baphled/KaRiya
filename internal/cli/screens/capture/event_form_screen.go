@@ -2,58 +2,74 @@
 package capture
 
 import (
-	"github.com/baphled/kariya/internal/cli/models"
-	"github.com/baphled/kariya/internal/cli/screens"
+	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/screens/base"
-	"github.com/baphled/kariya/internal/cli/service"
-	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/types"
-	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/domain/career"
-	tea "github.com/charmbracelet/bubbletea"
 )
 
-// EventFormScreen wraps CaptureForm and adapts it to the Screen interface.
+// EventFormState identifies the event capture form view in the state
+// matrix. On this screen the user sees an interactive form with fields for
+// event details. The form has two strategies: quick (minimal fields) and
+// manual (all fields). Tab advances between fields, Enter submits the
+// completed form, and Escape cancels without saving.
+const EventFormState = "event_form"
+
+// EventFormScreen provides a form for capturing career events.
 //
-// This screen handles event capture forms with two strategies:
-// - Quick: Minimal fields (event text only), date defaults to today
-// - Manual: Full form with optional fields (date, company, project, tags)
+// This screen wraps FormScreen[*forms.CaptureEventFormData] with capture-specific context:
+// - Supports two strategies: quick (text + date) and manual (all fields)
+// - Pre-populates form with existing event data when editing
+// - Uses CaptureEventFormData with validation from forms package
+// - Handles terminal resize by rebuilding form
+// - Returns SubmitResult with form data on submission
+// - Returns CancelResult on escape
 //
-// The screen delegates form rendering and input handling to CaptureForm,
-// and translates form messages (SubmitMsg) to ScreenResults (SubmitResult, CancelResult).
+// Usage (New Event - Quick Strategy):
 //
-// Keyboard Shortcuts:
-// - Tab: Navigate between fields
-// - Enter: Submit form (when on confirm button)
-// - Ctrl+S: Submit form (from any field)
-// - Esc: Cancel and return to previous screen
+//	screen := capture.NewEventFormScreen(nil, []string{"Main", "Capture"}, types.StrategyQuick)
+//	cmd, result := screen.Update(msg)
+//	if result != nil && result.Type() == screens.ResultSubmit {
+//	    submitResult := result.(*screens.SubmitResult)
+//	    data := submitResult.FormData.(*forms.CaptureEventFormData)
+//	    if data.SubmitConfirmed {
+//	        // Convert form data to event and save
+//	    }
+//	}
+//
+// Usage (Edit Event - Manual Strategy):
+//
+//	screen := capture.NewEventFormScreen(existingEvent, []string{"Main", "Edit"}, types.StrategyManual)
+//	cmd, result := screen.Update(msg)
+//	if result != nil && result.Type() == screens.ResultSubmit {
+//	    submitResult := result.(*screens.SubmitResult)
+//	    data := submitResult.FormData.(*forms.CaptureEventFormData)
+//	    if data.SubmitConfirmed {
+//	        // Convert form data to event and save
+//	    }
+//	}
 //
 // Related:
-// - internal/cli/models/capture_form.go (CaptureForm model)
-// - internal/cli/forms/capture_event_form.go (Form configuration)
-// - tasks/tasks-42-tui-architecture-refactor.md (Phase 1: CaptureEvent Migration).
+// - FormScreen provides the form UI
+// - forms.CaptureEventFormData defines form structure
+// - forms.NewCaptureEventForm creates the huh form
+// - docs/FORMS_GUIDE.md (Form patterns and best practices).
 type EventFormScreen struct {
-	*base.Screen
-
-	// captureForm is the underlying form model
-	captureForm *models.CaptureForm
-
-	// breadcrumbs for the view header
-	breadcrumbs []string
+	*base.FormScreen[*forms.CaptureEventFormData]
 
 	// strategy is the capture strategy (quick or manual)
 	strategy types.CaptureStrategy
 }
 
-// NewEventFormScreen creates a new EventFormScreen with the specified strategy.
+// NewEventFormScreen creates a new event form screen with the specified strategy.
 //
 // Parameters:
-//   - cliService: CLI service for event operations (used by form for submission)
-//   - breadcrumbs: Breadcrumb trail for header (e.g., ["Main Menu", "Capture Event", "Form"])
+//   - event: Existing event to edit (nil creates a new event)
+//   - breadcrumbs: Breadcrumb trail for header (e.g., ["Main Menu", "Capture Event"])
 //   - strategy: Capture strategy (StrategyQuick or StrategyManual)
 //
 // Expected:
-//   - cliservice must be a valid *service.CLIEventService.
+//   - event can be nil (creates empty form for new capture).
 //   - breadcrumbs must be a valid slice of strings.
 //   - strategy must be a valid CaptureStrategy.
 //
@@ -61,167 +77,40 @@ type EventFormScreen struct {
 //   - A fully initialized EventFormScreen ready for use.
 //
 // Side effects:
-//   - Initializes CaptureForm.
+//   - Creates form with appropriate fields based on strategy.
 func NewEventFormScreen(
-	cliService *service.CLIEventService,
+	event *career.Event,
 	breadcrumbs []string,
 	strategy types.CaptureStrategy,
 ) *EventFormScreen {
-	captureForm := models.NewCaptureForm(cliService)
-	captureForm.SetStrategy(string(strategy))
+	var formData *forms.CaptureEventFormData
+	if event == nil {
+		formData = forms.NewCaptureEventFormData()
+	} else {
+		formData = forms.GetCaptureEventFormData(event)
+	}
+
+	strategyStr := string(strategy)
+
+	builder := func(data *forms.CaptureEventFormData, w, h int) forms.Form {
+		return forms.NewCaptureEventForm(data, strategyStr, w, h)
+	}
+
+	baseScreen := base.NewBaseFormScreen(breadcrumbs, builder, formData)
 
 	return &EventFormScreen{
-		Screen:      base.NewBaseScreen(),
-		captureForm: captureForm,
-		breadcrumbs: breadcrumbs,
-		strategy:    strategy,
+		FormScreen: baseScreen,
+		strategy:   strategy,
 	}
 }
 
-// NewEventFormScreenWithEvent creates a new EventFormScreen for editing an existing event.
-//
-// This is used when editing an event from BrowseTimeline or other intents.
-//
-// Parameters:
-//   - cliService: CLI service for event operations
-//   - breadcrumbs: Breadcrumb trail for header
-//   - strategy: Capture strategy (typically StrategyManual for editing)
-//   - event: Existing event to edit (nil creates a new event)
-//
-// Expected:
-//   - cliservice must be a valid *service.CLIEventService.
-//   - breadcrumbs must be a valid slice of strings.
-//   - strategy must be a valid CaptureStrategy.
-//   - event must be a valid *career.Event (can be nil).
+// GetStrategy returns the current capture strategy.
 //
 // Returns:
-//   - A fully initialized EventFormScreen ready for use with form pre-populated with event data.
-//
-// Side effects:
-//   - Pre-populates form with event data if event is provided.
-func NewEventFormScreenWithEvent(
-	cliService *service.CLIEventService,
-	breadcrumbs []string,
-	strategy types.CaptureStrategy,
-	event *career.Event,
-) *EventFormScreen {
-	screen := NewEventFormScreen(cliService, breadcrumbs, strategy)
-
-	if event != nil {
-		screen.captureForm.LoadEventForEditing(event)
-	}
-
-	return screen
-}
-
-// Init implements the Screen interface.
-//
-// Returns:
-//   - A tea.Cmd value.
+//   - A types.CaptureStrategy value.
 //
 // Side effects:
 //   - None.
-func (s *EventFormScreen) Init() tea.Cmd {
-	return s.captureForm.Init()
-}
-
-// Update implements the Screen interface.
-//
-// Handles:
-// - Escape key → returns CancelResult
-// - WindowSizeMsg → updates form dimensions
-// - SubmitMsg → returns SubmitResult with event data
-// - Other messages → delegates to CaptureForm.
-//
-// Expected:
-//   - msg must be a valid tea.Msg type.
-//
-// Returns:
-//   - A tea.Cmd value.
-//   - A screens.ScreenResult value.
-//
-// Side effects:
-//   - May return CancelResult on escape.
-//   - May return SubmitResult on form completion.
-//   - May return ErrorResult on submission error.
-func (s *EventFormScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
-	// Handle window size via Screen
-	if cmd := s.HandleWindowSizeMsg(msg); cmd != nil {
-		// Also update CaptureForm's dimensions
-		if wsMsg, ok := msg.(tea.WindowSizeMsg); ok {
-			s.captureForm.Update(wsMsg)
-		}
-		return cmd, nil
-	}
-
-	// Handle key messages.
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		if msg.Type == tea.KeyEsc {
-			return nil, &screens.CancelResult{}
-		}
-
-	case models.SubmitMsg:
-		// Form submission completed
-		if msg.Err != nil {
-			// Form submission failed - return error result
-			return nil, &screens.ErrorResult{
-				Err:     msg.Err,
-				Message: "Form submission failed",
-			}
-		}
-
-		// Form submission succeeded - return submit result with event data
-		return nil, &screens.SubmitResult{
-			FormData: msg.Event,
-		}
-	}
-
-	// Delegate to CaptureForm
-	model, cmd := s.captureForm.Update(msg)
-	if captureForm, ok := model.(*models.CaptureForm); ok {
-		s.captureForm = captureForm
-	}
-
-	return cmd, nil
-}
-
-// View implements the Screen interface.
-//
-// Returns:
-//   - A string value.
-//
-// Side effects:
-//   - None.
-func (s *EventFormScreen) View() string {
-	// Get form content
-	content := s.captureForm.View()
-
-	// Build footer with shortcuts
-	footer := s.renderFooter()
-
-	// Create view with StandardView
-	return s.CreateView(s.breadcrumbs, content, footer)
-}
-
-// renderFooter renders footer with form shortcuts using UIKit badge primitives.
-func (s *EventFormScreen) renderFooter() string {
-	th := s.resolveThemesTheme()
-
-	return primitives.RenderHelpFooter(th,
-		primitives.NextFieldBadge(th),
-		primitives.HelpKeyBadge("Ctrl+S", "Submit", th),
-		primitives.CancelBadge(th),
-		primitives.QuitBadge(th),
-	)
-}
-
-// resolveThemesTheme returns the screen's theme as themes.Theme for badge rendering.
-func (s *EventFormScreen) resolveThemesTheme() themes.Theme {
-	if screenTheme := s.Theme(); screenTheme != nil {
-		if th, ok := screenTheme.(themes.Theme); ok {
-			return th
-		}
-	}
-	return themes.NewDefaultTheme()
+func (s *EventFormScreen) GetStrategy() types.CaptureStrategy {
+	return s.strategy
 }

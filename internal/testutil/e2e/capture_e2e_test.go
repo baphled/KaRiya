@@ -1,11 +1,13 @@
 package e2e_test
 
 import (
+	"strings"
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/intents/captureevent"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/testutil/e2e"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -148,6 +150,80 @@ var _ = Describe("E2E Capture Workflow", func() {
 			viewAfterAutoDismiss := env.GetView()
 			Expect(viewAfterAutoDismiss).ToNot(ContainSubstring("Auto-dismiss"))
 			Expect(viewAfterAutoDismiss).To(ContainSubstring("Review Enrichment"))
+		})
+	})
+
+	Describe("Metadata Editor Form Scrolling", func() {
+		BeforeEach(func() {
+			env = e2e.GetSharedEnv(GinkgoT())
+		})
+
+		AfterEach(func() {
+			env.Cleanup()
+		})
+
+		It("should reach review screen after submitting event", func() {
+			env.SelectIntentByName("capture_event")
+			env.Confirm()
+
+			testEvent := fixtures.EventWith("", "Built REST API with Go", "", "")
+			testEvent.ID = ""
+			env.SubmitEvent(testEvent)
+
+			view := env.GetView()
+			Expect(strings.Contains(view, "Review Enrichment")).To(BeTrue(),
+				"Should be on review screen.\nView len: %d", len(view))
+		})
+
+		It("should open metadata editor when pressing e on review screen", func() {
+			env.SelectIntentByName("capture_event")
+			env.Confirm()
+
+			testEvent := fixtures.EventWith("", "Built REST API with Go", "", "")
+			testEvent.ID = ""
+			env.SubmitEvent(testEvent)
+
+			env.PressKeyRune('e')
+
+			view := env.GetView()
+			Expect(view).ToNot(BeEmpty(),
+				"View should not be empty after pressing 'e'")
+			Expect(strings.Contains(view, "Edit Event Metadata")).To(BeTrue(),
+				"Should show metadata editor modal title")
+		})
+
+		It("should close metadata editor when pressing escape", func() {
+			env.SelectIntentByName("capture_event")
+			env.Confirm()
+
+			testEvent := fixtures.EventWith("", "Built REST API with Go", "", "")
+			testEvent.ID = ""
+			env.SubmitEvent(testEvent)
+
+			env.PressKeyRune('e')
+			env.Cancel()
+
+			view := env.GetView()
+			Expect(strings.Contains(view, "Review Enrichment")).To(BeTrue(),
+				"Should return to review screen after escape.\nView len: %d", len(view))
+		})
+
+		It("should show form fields in metadata editor", func() {
+			env.SelectIntentByName("capture_event")
+			env.Confirm()
+
+			testEvent := fixtures.EventWith("", "Built REST API with Go", "", "")
+			testEvent.ID = ""
+			env.SubmitEvent(testEvent)
+
+			env.PressKeyRune('e')
+
+			view := env.GetView()
+			Expect(view).To(SatisfyAny(
+				ContainSubstring("Date"),
+				ContainSubstring("Company"),
+				ContainSubstring("Project"),
+			), "Metadata editor should show at least one form field")
 		})
 	})
 })

@@ -8,7 +8,7 @@
 // This package does NOT:
 //   - Define UI components (those live in screens/capture/)
 //   - Perform enrichment logic (delegated to service/career/)
-//   - Handle form rendering (delegated to models.CaptureForm and forms/)
+//   - Handle form rendering (delegated to screens/capture and forms/)
 package captureevent
 
 // State represents the current workflow step of the capture event intent.
