@@ -72,8 +72,8 @@ func skillPickerRowFormatter(skill *career.Skill, _ int) []string {
 // NewSkillPickerModal creates a new skill picker modal.
 //
 // Expected:
-//   - skill must be valid.
-//   - th must be a valid theme instance (can be nil).
+//   - skills must be a valid slice of career.Skill pointers.
+//   - theme must be a valid theme instance (can be nil).
 //
 // Returns:
 //   - A fully initialized SkillPickerModal ready for use.
@@ -261,7 +261,8 @@ func (m *SkillPickerModal) View() string {
 // SetDimensions updates the modal's available dimensions.
 //
 // Expected:
-//   - int must be valid.
+//   - width must be a valid int.
+//   - height must be a valid int.
 //
 // Side effects:
 //   - None.
@@ -303,7 +304,7 @@ func (m *SkillPickerModal) IsVisible() bool {
 // SetSkills updates the skills being displayed.
 //
 // Expected:
-//   - skill must be valid.
+//   - skills must be a valid slice of career.Skill pointers.
 //
 // Side effects:
 //   - None.

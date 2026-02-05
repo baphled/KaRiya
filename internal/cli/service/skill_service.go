@@ -15,7 +15,7 @@ type CLISkillService struct {
 // NewCLISkillService creates a new CLI skill service.
 //
 // Expected:
-//   - skillrepository must be valid.
+//   - skillRepo must be a valid SkillRepository instance.
 //
 // Returns:
 //   - A fully initialized CLISkillService ready for use.

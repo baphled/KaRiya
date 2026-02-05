@@ -340,8 +340,8 @@ func (c *CLIEventService) GetSkillsForEvent(ctx context.Context, eventID string)
 //
 // Expected:
 //   - ctx must be a valid context.Context.
-//   - eventid must be a valid string.
-//   - skillid must be a valid string.
+//   - eventID must be a valid string identifier for an existing event.
+//   - skillID must be a valid string identifier for an existing skill.
 //
 // Returns:
 //   - An error value if linking failed.
@@ -357,8 +357,8 @@ func (c *CLIEventService) LinkSkillToEvent(ctx context.Context, eventID string, 
 //
 // Expected:
 //   - ctx must be a valid context.Context.
-//   - eventid must be a valid string.
-//   - skillid must be a valid string.
+//   - eventID must be a valid string identifier for an existing event.
+//   - skillID must be a valid string identifier for an existing skill.
 //
 // Returns:
 //   - An error value if unlinking failed.

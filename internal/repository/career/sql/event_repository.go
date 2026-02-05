@@ -307,14 +307,14 @@ func (r *EventRepository) LinkSkill(ctx context.Context, eventID string, skillID
 // UnlinkSkill removes an association between an event and a skill.
 //
 // Expected:
-//   - Must be a valid string.
-//   - Must be a valid string.
+//   - eventID must be a valid string identifier for an existing event.
+//   - skillID must be a valid string identifier for an existing skill.
 //
 // Returns:
-//   - A error value.
+//   - An error value.
 //
 // Side effects:
-//   - None.
+//   - Deletes the event-skill association from the database.
 func (r *EventRepository) UnlinkSkill(ctx context.Context, eventID string, skillID string) error {
 	var exists bool
 	err := r.db.WithContext(ctx).

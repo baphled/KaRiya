@@ -345,7 +345,7 @@ func (m *SkillsDetailModal) SetDimensions(width, height int) {
 // SetSkills updates the skills being displayed.
 //
 // Expected:
-//   - skill must be valid.
+//   - skills must be a valid slice of career.Skill pointers.
 //
 // Side effects:
 //   - None.
