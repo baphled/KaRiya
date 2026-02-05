@@ -174,15 +174,15 @@ detect_ai_agent() {
         return
     fi
     
-    # Detect Claude Code (sets CLAUDE_CODE env var or runs in specific context)
-    if [ -n "$CLAUDE_CODE" ] || [ -n "$ANTHROPIC_API_KEY" ] && [ -z "$OPENCODE_API_KEY" ]; then
-        echo "Claude Code"
+    # Detect OpenCode (check first as it may also have ANTHROPIC_API_KEY set)
+    if [ -n "$OPENCODE" ] || [ -n "$OPENCODE_SESSION" ]; then
+        echo "Opencode"
         return
     fi
     
-    # Detect OpenCode
-    if [ -n "$OPENCODE_API_KEY" ] || [ -n "$OPENCODE" ]; then
-        echo "OpenCode"
+    # Detect Claude Code (sets CLAUDE_CODE env var or runs in specific context)
+    if [ -n "$CLAUDE_CODE" ] || [ -n "$ANTHROPIC_API_KEY" ]; then
+        echo "Claude Code"
         return
     fi
     
@@ -199,6 +199,11 @@ detect_ai_agent() {
     fi
     
     # Default based on common patterns - check parent process
+    if ps -o command= $PPID 2>/dev/null | grep -qi "opencode"; then
+        echo "Opencode"
+        return
+    fi
+    
     if ps -o command= $PPID 2>/dev/null | grep -qi "claude"; then
         echo "Claude Code"
         return
@@ -221,7 +226,7 @@ detect_ai_model() {
         "Claude Code")
             echo "Claude Sonnet 4"
             ;;
-        "OpenCode")
+        "Opencode")
             echo "Claude Sonnet 4"
             ;;
         "Cursor")

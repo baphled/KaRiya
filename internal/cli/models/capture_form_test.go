@@ -6,9 +6,9 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/service"
-	"github.com/baphled/kariya/internal/domain/career"
 	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	careerservice "github.com/baphled/kariya/internal/service/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -98,14 +98,9 @@ var _ = Describe("CaptureForm", func() {
 	Describe("Event Loading", func() {
 		Context("when loading event for editing", func() {
 			It("should populate form with event data", func() {
-				event := &career.Event{
-					Text:       "Original event text",
-					Date:       time.Now(),
-					Company:    "Test Company",
-					Project:    "Test Project",
-					Tags:       []string{"tag1", "tag2"},
-					Categories: []string{"cat1"},
-				}
+				event := fixtures.EventWith("test-1", "Original event text", "Test Company", "Test Project")
+				event.Tags = []string{"tag1", "tag2"}
+				event.Categories = []string{"cat1"}
 
 				form.LoadEventForEditing(event)
 				// Form data is populated from event
@@ -117,12 +112,9 @@ var _ = Describe("CaptureForm", func() {
 			})
 
 			It("should copy tags and categories", func() {
-				event := &career.Event{
-					Text:       "Event with metadata",
-					Date:       time.Now(),
-					Tags:       []string{"backend", "go"},
-					Categories: []string{"development"},
-				}
+				event := fixtures.EventWith("test-2", "Event with metadata", "", "")
+				event.Tags = []string{"backend", "go"}
+				event.Categories = []string{"development"}
 
 				form.LoadEventForEditing(event)
 				// Tags and categories are copied (not referenced)
@@ -130,10 +122,8 @@ var _ = Describe("CaptureForm", func() {
 
 			It("should format date correctly", func() {
 				testDate := time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
-				event := &career.Event{
-					Text: "Event with specific date",
-					Date: testDate,
-				}
+				event := fixtures.EventWith("test-3", "Event with specific date", "", "")
+				event.Date = testDate
 
 				form.LoadEventForEditing(event)
 				// Date is formatted as YYYY-MM-DD
@@ -288,19 +278,12 @@ var _ = Describe("CaptureForm", func() {
 			})
 
 			It("should handle edit flow", func() {
-				// 1. Load existing event
-				event := &career.Event{
-					Text:    "Original text",
-					Date:    time.Now(),
-					Company: "Original Company",
-				}
+				event := fixtures.EventWith("test-4", "Original text", "Original Company", "")
 				form.LoadEventForEditing(event)
 
-				// 2. Submit updated event
 				cmd := form.SubmitForm()
 				msg := cmd()
 
-				// 3. Verify submission
 				submitMsg := msg.(models.SubmitMsg)
 				Expect(submitMsg.Event).NotTo(BeNil())
 			})
@@ -321,10 +304,7 @@ var _ = Describe("CaptureForm", func() {
 
 		Context("when handling special characters", func() {
 			It("should preserve special characters in text", func() {
-				event := &career.Event{
-					Text: "Event with @#$%^&* special chars",
-					Date: time.Now(),
-				}
+				event := fixtures.EventWith("test-5", "Event with @#$%^&* special chars", "", "")
 				form.LoadEventForEditing(event)
 
 				cmd := form.SubmitForm()
