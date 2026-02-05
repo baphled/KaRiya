@@ -1,4 +1,4 @@
-package components
+package modals
 
 import (
 	"fmt"
@@ -11,19 +11,19 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// CVProgressModal displays a progress indicator for async operations.
+// ProgressModal displays a progress indicator for async operations.
 // It shows a spinner animation with title/subtitle and optional cancellation.
 //
 // Usage:
 //
-//	modal := components.NewCVProgressModal("Processing", "Please wait...", true, 120, 40)
+//	modal := modals.NewProgressModal("Processing", "Please wait...", true, 120, 40)
 //	cmd := modal.Init()
 //	// In Update:
 //	cmd := modal.Update(msg)
 //	if modal.IsCompleted() {
 //	    // Operation complete
 //	}
-type CVProgressModal struct {
+type ProgressModal struct {
 	title       string
 	subtitle    string
 	spinner     int // Current spinner frame (0-9)
@@ -42,7 +42,7 @@ type SpinnerTickMsg struct{}
 // spinnerFrames defines the 10-frame spinner animation.
 var spinnerFrames = []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
 
-// NewCVProgressModal creates a new progress modal with the given title,
+// NewProgressModal creates a new progress modal with the given title,
 //
 // Expected:
 //   - Must be a valid string.
@@ -50,12 +50,12 @@ var spinnerFrames = []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "�
 //   - int must be valid.
 //
 // Returns:
-//   - A fully initialized CVProgressModal ready for use.
+//   - A fully initialized ProgressModal ready for use.
 //
 // Side effects:
 //   - None.
-func NewCVProgressModal(title, subtitle string, cancellable bool, width, height int) *CVProgressModal {
-	return &CVProgressModal{
+func NewProgressModal(title, subtitle string, cancellable bool, width, height int) *ProgressModal {
+	return &ProgressModal{
 		title:       title,
 		subtitle:    subtitle,
 		cancellable: cancellable,
@@ -71,12 +71,12 @@ func NewCVProgressModal(title, subtitle string, cancellable bool, width, height 
 //   - int must be valid.
 //
 // Returns:
-//   - A fully initialized CVProgressModal ready for use.
+//   - A fully initialized ProgressModal ready for use.
 //
 // Side effects:
 //   - None.
-func NewExtractingTechsProgress(width, height int) *CVProgressModal {
-	return NewCVProgressModal(
+func NewExtractingTechsProgress(width, height int) *ProgressModal {
+	return NewProgressModal(
 		"Extracting Technologies",
 		"Analyzing your skills...",
 		true,
@@ -92,13 +92,13 @@ func NewExtractingTechsProgress(width, height int) *CVProgressModal {
 //   - int must be valid.
 //
 // Returns:
-//   - A fully initialized CVProgressModal ready for use.
+//   - A fully initialized ProgressModal ready for use.
 //
 // Side effects:
 //   - None.
-func NewGeneratingCVProgress(profile, audience string, width, height int) *CVProgressModal {
+func NewGeneratingCVProgress(profile, audience string, width, height int) *ProgressModal {
 	subtitle := fmt.Sprintf("Profile: %s | Audience: %s", profile, audience)
-	return NewCVProgressModal(
+	return NewProgressModal(
 		"Generating CV",
 		subtitle,
 		true,
@@ -114,13 +114,13 @@ func NewGeneratingCVProgress(profile, audience string, width, height int) *CVPro
 //   - int must be valid.
 //
 // Returns:
-//   - A fully initialized CVProgressModal ready for use.
+//   - A fully initialized ProgressModal ready for use.
 //
 // Side effects:
 //   - None.
-func NewExportingProgress(format string, width, height int) *CVProgressModal {
+func NewExportingProgress(format string, width, height int) *ProgressModal {
 	subtitle := "Format: " + format
-	return NewCVProgressModal(
+	return NewProgressModal(
 		"Exporting CV",
 		subtitle,
 		false, // Export is not cancellable
@@ -136,7 +136,7 @@ func NewExportingProgress(format string, width, height int) *CVProgressModal {
 //
 // Side effects:
 //   - None.
-func (m *CVProgressModal) Init() tea.Cmd {
+func (m *ProgressModal) Init() tea.Cmd {
 	return m.tickSpinner()
 }
 
@@ -150,7 +150,7 @@ func (m *CVProgressModal) Init() tea.Cmd {
 //
 // Side effects:
 //   - None.
-func (m *CVProgressModal) Update(msg tea.Msg) tea.Cmd {
+func (m *ProgressModal) Update(msg tea.Msg) tea.Cmd {
 	if !m.visible {
 		return nil
 	}
@@ -184,7 +184,7 @@ func (m *CVProgressModal) Update(msg tea.Msg) tea.Cmd {
 //
 // Side effects:
 //   - None.
-func (m *CVProgressModal) View() string {
+func (m *ProgressModal) View() string {
 	if !m.visible {
 		return ""
 	}
@@ -244,7 +244,7 @@ func (m *CVProgressModal) View() string {
 }
 
 // buildFooter creates the keyboard shortcuts footer using UIKit primitives.
-func (m *CVProgressModal) buildFooter() string {
+func (m *ProgressModal) buildFooter() string {
 	th := theme.Default()
 
 	if m.cancellable {
@@ -256,7 +256,7 @@ func (m *CVProgressModal) buildFooter() string {
 }
 
 // tickSpinner returns a command to tick the spinner animation.
-func (m *CVProgressModal) tickSpinner() tea.Cmd {
+func (m *ProgressModal) tickSpinner() tea.Cmd {
 	return tea.Tick(100*time.Millisecond, func(_ time.Time) tea.Msg {
 		return SpinnerTickMsg{}
 	})
@@ -266,7 +266,7 @@ func (m *CVProgressModal) tickSpinner() tea.Cmd {
 //
 // Side effects:
 //   - None.
-func (m *CVProgressModal) Show() {
+func (m *ProgressModal) Show() {
 	m.visible = true
 }
 
@@ -274,7 +274,7 @@ func (m *CVProgressModal) Show() {
 //
 // Side effects:
 //   - None.
-func (m *CVProgressModal) Hide() {
+func (m *ProgressModal) Hide() {
 	m.visible = false
 }
 
@@ -285,7 +285,7 @@ func (m *CVProgressModal) Hide() {
 //
 // Side effects:
 //   - None.
-func (m *CVProgressModal) IsVisible() bool {
+func (m *ProgressModal) IsVisible() bool {
 	return m.visible
 }
 
@@ -296,7 +296,7 @@ func (m *CVProgressModal) IsVisible() bool {
 //
 // Side effects:
 //   - None.
-func (m *CVProgressModal) IsCancellable() bool {
+func (m *ProgressModal) IsCancellable() bool {
 	return m.cancellable
 }
 
@@ -307,7 +307,7 @@ func (m *CVProgressModal) IsCancellable() bool {
 //
 // Side effects:
 //   - None.
-func (m *CVProgressModal) IsCompleted() bool {
+func (m *ProgressModal) IsCompleted() bool {
 	return m.completed
 }
 
@@ -318,7 +318,7 @@ func (m *CVProgressModal) IsCompleted() bool {
 //
 // Side effects:
 //   - None.
-func (m *CVProgressModal) IsCancelled() bool {
+func (m *ProgressModal) IsCancelled() bool {
 	return m.cancelled
 }
 
@@ -329,7 +329,7 @@ func (m *CVProgressModal) IsCancelled() bool {
 //
 // Side effects:
 //   - None.
-func (m *CVProgressModal) GetTitle() string {
+func (m *ProgressModal) GetTitle() string {
 	return m.title
 }
 
@@ -340,7 +340,7 @@ func (m *CVProgressModal) GetTitle() string {
 //
 // Side effects:
 //   - None.
-func (m *CVProgressModal) GetSubtitle() string {
+func (m *ProgressModal) GetSubtitle() string {
 	return m.subtitle
 }
 
@@ -351,7 +351,7 @@ func (m *CVProgressModal) GetSubtitle() string {
 //
 // Side effects:
 //   - None.
-func (m *CVProgressModal) GetSpinnerFrame() int {
+func (m *ProgressModal) GetSpinnerFrame() int {
 	return m.spinner
 }
 
@@ -362,12 +362,12 @@ func (m *CVProgressModal) GetSpinnerFrame() int {
 //
 // Side effects:
 //   - None.
-func (m *CVProgressModal) GetError() error {
+func (m *ProgressModal) GetError() error {
 	return m.err
 }
 
 // GetDimensions returns the current modal dimensions.
-func (m *CVProgressModal) GetDimensions() (width, height int) {
+func (m *ProgressModal) GetDimensions() (width, height int) {
 	return m.width, m.height
 }
 
@@ -375,7 +375,7 @@ func (m *CVProgressModal) GetDimensions() (width, height int) {
 //
 // Side effects:
 //   - None.
-func (m *CVProgressModal) Complete() {
+func (m *ProgressModal) Complete() {
 	m.completed = true
 	m.visible = false
 }
@@ -387,7 +387,7 @@ func (m *CVProgressModal) Complete() {
 //
 // Side effects:
 //   - None.
-func (m *CVProgressModal) SetError(err error) {
+func (m *ProgressModal) SetError(err error) {
 	m.err = err
 	m.completed = true
 	m.visible = false

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/intents"
+	cvmodals "github.com/baphled/kariya/internal/cli/screens/cv/modals"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/containers"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
@@ -22,15 +22,15 @@ import (
 func (i *Intent) initWizardFlow() tea.Cmd {
 	termInfo := i.GetTerminalInfo()
 
-	profileOptions := make([]components.ProfileOption, len(i.context.AvailableProfiles))
+	profileOptions := make([]cvmodals.ProfileOption, len(i.context.AvailableProfiles))
 	for idx, profile := range i.context.AvailableProfiles {
-		profileOptions[idx] = components.ProfileOption{
+		profileOptions[idx] = cvmodals.ProfileOption{
 			ID:   profile.ID,
 			Name: profile.Name,
 		}
 	}
 
-	i.wizardModal = components.NewCVConfigWizardModalWithProfiles(
+	i.wizardModal = cvmodals.NewConfigWizardModalWithProfiles(
 		termInfo.Width,
 		termInfo.Height,
 		profileOptions,
@@ -508,7 +508,7 @@ func (i *Intent) exportCVAsync() tea.Cmd {
 
 func (i *Intent) showExportModal() tea.Cmd {
 	termInfo := i.GetTerminalInfo()
-	i.exportModal = components.NewExportOptionsModal(termInfo.Width, termInfo.Height)
+	i.exportModal = cvmodals.NewExportModal(termInfo.Width, termInfo.Height)
 	i.exportModal.Show()
 	i.state.currentState = StateExporting
 	return i.exportModal.Init()

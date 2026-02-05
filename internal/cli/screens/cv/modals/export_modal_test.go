@@ -1,37 +1,36 @@
-package components_test
+package modals_test
 
 import (
-	"github.com/baphled/kariya/internal/cli/components"
+	"github.com/baphled/kariya/internal/cli/screens/cv/modals"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("ExportOptionsModal", func() {
+var _ = Describe("ExportModal", func() {
 	var (
-		modal *components.ExportOptionsModal
+		modal *modals.ExportModal
 	)
 
-	Describe("NewExportOptionsModal", func() {
+	Describe("NewExportModal", func() {
 		It("should create an export options modal", func() {
-			modal = components.NewExportOptionsModal(120, 40)
+			modal = modals.NewExportModal(120, 40)
 
 			Expect(modal).NotTo(BeNil())
 			Expect(modal.IsVisible()).To(BeTrue())
 		})
 
 		It("should initialize with default format and location", func() {
-			modal = components.NewExportOptionsModal(120, 40)
+			modal = modals.NewExportModal(120, 40)
 
 			data := modal.GetExportData()
 			Expect(data).NotTo(BeNil())
-			// huh.Select auto-selects first option
-			Expect(data.Format).To(Equal("text"))   // First option
-			Expect(data.Location).To(Equal("file")) // First option
+			Expect(data.Format).To(Equal("text"))
+			Expect(data.Location).To(Equal("file"))
 		})
 
 		It("should not be completed initially", func() {
-			modal = components.NewExportOptionsModal(120, 40)
+			modal = modals.NewExportModal(120, 40)
 
 			Expect(modal.IsCompleted()).To(BeFalse())
 		})
@@ -39,7 +38,7 @@ var _ = Describe("ExportOptionsModal", func() {
 
 	Describe("Visibility Management", func() {
 		BeforeEach(func() {
-			modal = components.NewExportOptionsModal(120, 40)
+			modal = modals.NewExportModal(120, 40)
 		})
 
 		It("should be visible by default", func() {
@@ -69,7 +68,7 @@ var _ = Describe("ExportOptionsModal", func() {
 
 	Describe("Format Selection", func() {
 		BeforeEach(func() {
-			modal = components.NewExportOptionsModal(120, 40)
+			modal = modals.NewExportModal(120, 40)
 		})
 
 		It("should support Text format", func() {
@@ -96,7 +95,7 @@ var _ = Describe("ExportOptionsModal", func() {
 
 	Describe("Location Selection", func() {
 		BeforeEach(func() {
-			modal = components.NewExportOptionsModal(120, 40)
+			modal = modals.NewExportModal(120, 40)
 		})
 
 		It("should support File location", func() {
@@ -116,17 +115,14 @@ var _ = Describe("ExportOptionsModal", func() {
 
 	Describe("Form Submission", func() {
 		BeforeEach(func() {
-			modal = components.NewExportOptionsModal(120, 40)
+			modal = modals.NewExportModal(120, 40)
 			modal.Init()
 		})
 
 		It("should mark as completed when form is submitted", func() {
-			// Simulate form completion
 			modal.SetFormat("markdown")
 			modal.SetLocation("file")
 
-			// Form submission happens through huh.Form internally
-			// We can call Complete() directly for testing
 			modal.Complete()
 
 			Expect(modal.IsCompleted()).To(BeTrue())
@@ -151,7 +147,7 @@ var _ = Describe("ExportOptionsModal", func() {
 
 	Describe("Cancellation", func() {
 		BeforeEach(func() {
-			modal = components.NewExportOptionsModal(120, 40)
+			modal = modals.NewExportModal(120, 40)
 		})
 
 		It("should hide modal on Esc key", func() {
@@ -177,7 +173,7 @@ var _ = Describe("ExportOptionsModal", func() {
 
 	Describe("WindowSizeMsg Handling", func() {
 		BeforeEach(func() {
-			modal = components.NewExportOptionsModal(120, 40)
+			modal = modals.NewExportModal(120, 40)
 		})
 
 		It("should update dimensions on WindowSizeMsg", func() {
@@ -194,7 +190,6 @@ var _ = Describe("ExportOptionsModal", func() {
 			modal.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
 
 			newView := modal.View()
-			// View should be different after resize
 			Expect(newView).NotTo(Equal(initialView))
 		})
 
@@ -208,14 +203,13 @@ var _ = Describe("ExportOptionsModal", func() {
 
 	Describe("View Rendering", func() {
 		BeforeEach(func() {
-			modal = components.NewExportOptionsModal(120, 40)
+			modal = modals.NewExportModal(120, 40)
 		})
 
 		It("should render modal with solid background", func() {
 			view := modal.View()
 
 			Expect(view).NotTo(BeEmpty())
-			// Should contain border characters
 			Expect(view).To(ContainSubstring("─"))
 		})
 
@@ -228,50 +222,44 @@ var _ = Describe("ExportOptionsModal", func() {
 		It("should display format field", func() {
 			view := modal.View()
 
-			// Should show export format selection
 			Expect(view).NotTo(BeEmpty())
 		})
 
 		It("should display location field", func() {
 			view := modal.View()
 
-			// Should show save location selection
 			Expect(view).NotTo(BeEmpty())
 		})
 
 		It("should display KeyBadge footer", func() {
 			view := modal.View()
 
-			// Footer should be present
 			Expect(view).NotTo(BeEmpty())
 		})
 	})
 
 	Describe("Theme Integration", func() {
 		BeforeEach(func() {
-			modal = components.NewExportOptionsModal(120, 40)
+			modal = modals.NewExportModal(120, 40)
 		})
 
 		It("should use theme for form styling", func() {
 			view := modal.View()
 
-			// Theme should be applied
 			Expect(view).NotTo(BeEmpty())
 		})
 
 		It("should have themed borders", func() {
 			view := modal.View()
 
-			// Should have rounded borders with theme colors
 			Expect(view).To(ContainSubstring("─"))
 		})
 	})
 
 	Describe("Edge Cases", func() {
 		It("should handle rapid key presses gracefully", func() {
-			modal = components.NewExportOptionsModal(120, 40)
+			modal = modals.NewExportModal(120, 40)
 
-			// Rapid key presses should not cause issues
 			for range 10 {
 				modal.Update(tea.KeyMsg{Type: tea.KeyEnter})
 			}
@@ -280,15 +268,14 @@ var _ = Describe("ExportOptionsModal", func() {
 		})
 
 		It("should handle form Init() call", func() {
-			modal = components.NewExportOptionsModal(120, 40)
+			modal = modals.NewExportModal(120, 40)
 
 			cmd := modal.Init()
-			// Init should return form init command
 			Expect(cmd).NotTo(BeNil())
 		})
 
 		It("should handle multiple Hide/Show cycles", func() {
-			modal = components.NewExportOptionsModal(120, 40)
+			modal = modals.NewExportModal(120, 40)
 
 			for range 5 {
 				modal.Hide()

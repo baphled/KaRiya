@@ -3,9 +3,9 @@ package generatecv
 import (
 	"time"
 
-	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/screens"
+	cvmodals "github.com/baphled/kariya/internal/cli/screens/cv/modals"
 	"github.com/baphled/kariya/internal/service/career/cv"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -31,7 +31,7 @@ func (i *Intent) handleWizardComplete(msg WizardCompleteMsg) tea.Cmd {
 	i.state.selectedCVLength = msg.CVLength
 
 	termInfo := i.GetTerminalInfo()
-	i.progressModal = components.NewExtractingTechsProgress(termInfo.Width, termInfo.Height)
+	i.progressModal = cvmodals.NewExtractingTechsProgress(termInfo.Width, termInfo.Height)
 	i.progressModal.Show()
 
 	i.state.currentState = StateExtracting
@@ -52,7 +52,7 @@ func (i *Intent) handleTechExtracted(msg TechnologiesExtractedMsg) tea.Cmd {
 	if i.state.selectedProfile != nil {
 		profileName = i.state.selectedProfile.Name
 	}
-	i.progressModal = components.NewGeneratingCVProgress(profileName, i.state.selectedAudience, termInfo.Width, termInfo.Height)
+	i.progressModal = cvmodals.NewGeneratingCVProgress(profileName, i.state.selectedAudience, termInfo.Width, termInfo.Height)
 	i.progressModal.Show()
 
 	i.state.currentState = StateGenerating
@@ -123,11 +123,11 @@ func (i *Intent) handlePreviewScreenResult(result screens.ScreenResult) tea.Cmd 
 }
 
 // handleExportComplete processes export modal completion by starting async export.
-func (i *Intent) handleExportComplete(exportData *components.ExportData) tea.Cmd {
+func (i *Intent) handleExportComplete(exportData *cvmodals.ExportData) tea.Cmd {
 	i.exportModal.Hide()
 
 	termInfo := i.GetTerminalInfo()
-	i.progressModal = components.NewExportingProgress(exportData.Format, termInfo.Width, termInfo.Height)
+	i.progressModal = cvmodals.NewExportingProgress(exportData.Format, termInfo.Width, termInfo.Height)
 	i.progressModal.Show()
 
 	switch exportData.Format {

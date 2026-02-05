@@ -1,9 +1,9 @@
 package generatecv
 
 import (
-	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/screens"
+	cvmodals "github.com/baphled/kariya/internal/cli/screens/cv/modals"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
 	"github.com/baphled/kariya/internal/service/career/cv"
@@ -24,9 +24,9 @@ type Intent struct {
 	result  *intents.IntentResult[*Result]
 	logger  *logger.Logger
 
-	wizardModal   *components.CVConfigWizardModal
-	progressModal *components.CVProgressModal
-	exportModal   *components.ExportOptionsModal
+	wizardModal   *cvmodals.ConfigWizardModal
+	progressModal *cvmodals.ProgressModal
+	exportModal   *cvmodals.ExportModal
 
 	wizardReviewScreen  screens.Screen
 	wizardPreviewScreen screens.Screen

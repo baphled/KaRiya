@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/screens"
+	cvmodals "github.com/baphled/kariya/internal/cli/screens/cv/modals"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
@@ -2181,7 +2181,7 @@ var _ = Describe("GenerateCV Complete Workflow E2E Tests", func() {
 			Expect(intent.state.currentState).To(Equal(StateExporting))
 			Expect(intent.exportModal).NotTo(BeNil())
 
-			exportData := &components.ExportData{
+			exportData := &cvmodals.ExportData{
 				Format:   "markdown",
 				Location: "file",
 			}
@@ -2202,7 +2202,7 @@ var _ = Describe("GenerateCV Complete Workflow E2E Tests", func() {
 
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
 
-			exportData := &components.ExportData{
+			exportData := &cvmodals.ExportData{
 				Format:   "text",
 				Location: "clipboard",
 			}
@@ -2220,7 +2220,7 @@ var _ = Describe("GenerateCV Complete Workflow E2E Tests", func() {
 
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
 
-			exportData := &components.ExportData{
+			exportData := &cvmodals.ExportData{
 				Format:   "yaml",
 				Location: "file",
 			}

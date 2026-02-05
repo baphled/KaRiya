@@ -948,6 +948,14 @@ linters:
           - gocritic
           - revive
 
+      - path: 'internal/cli/screens/cv/modals/(.*)\.go'
+        linters:
+          - gocognit
+          - gocyclo
+          - funlen
+          - nestif
+          - revive
+
       - path: 'internal/cli/screens/timeline/event_list\.go'
         linters:
           - funlen
