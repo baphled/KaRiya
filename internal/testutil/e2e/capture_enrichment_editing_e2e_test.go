@@ -658,7 +658,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 			}
 
 			// Rapid modal open/close
-			for i := 0; i < 5; i++ {
+			for range 5 {
 				env.PressKeyRune('e')
 				env.Cancel()
 			}

@@ -91,7 +91,7 @@ var _ = Describe("Capture Error Scenarios E2E", func() {
 			env.SelectIntentByName("capture_event")
 
 			// Rapid navigation
-			for i := 0; i < 10; i++ {
+			for range 10 {
 				env.NavigateDown()
 				env.NavigateUp()
 			}
@@ -132,7 +132,7 @@ var _ = Describe("Capture Error Scenarios E2E", func() {
 			env.Confirm()
 
 			// Excessive tabbing
-			for i := 0; i < 20; i++ {
+			for range 20 {
 				env.Tab()
 			}
 
