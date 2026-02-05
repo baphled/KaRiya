@@ -3,12 +3,15 @@ package cv
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/base"
+	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/domain/career"
 )
 
@@ -106,9 +109,28 @@ func (s *ReviewScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 // Side effects:
 //   - None.
 func (s *ReviewScreen) View() string {
+	theme := s.getTheme()
 	var b strings.Builder
 
-	b.WriteString("📋 CV Review\n")
+	titleStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(theme.AccentColor())
+
+	sectionTitleStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(theme.AccentColor())
+
+	labelStyle := lipgloss.NewStyle().
+		Foreground(theme.SecondaryColor())
+
+	valueStyle := lipgloss.NewStyle().
+		Foreground(theme.ForegroundColor())
+
+	footerStyle := lipgloss.NewStyle().
+		Foreground(theme.SecondaryColor())
+
+	b.WriteString(titleStyle.Render("📋 CV Review"))
+	b.WriteString("\n")
 	b.WriteString(strings.Repeat("═", 60))
 	b.WriteString("\n\n")
 
@@ -117,65 +139,62 @@ func (s *ReviewScreen) View() string {
 		b.WriteString("\n")
 		b.WriteString(strings.Repeat("─", 60))
 		b.WriteString("\n")
-		b.WriteString("esc: back")
+		b.WriteString(footerStyle.Render("esc: back"))
 		return b.String()
 	}
 
-	// CV Metadata
-	b.WriteString(fmt.Sprintf("  Name:     %s\n", s.cv.Name))
-	b.WriteString(fmt.Sprintf("  Role:     %s\n", s.cv.TargetRole))
-	b.WriteString(fmt.Sprintf("  Audience: %s\n", s.cv.TargetAudience))
+	b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Name:"), valueStyle.Render(s.cv.Name)))
+	b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Role:"), valueStyle.Render(s.cv.TargetRole)))
+	b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Audience:"), valueStyle.Render(s.cv.TargetAudience)))
 	b.WriteString("\n")
 
-	// Statistics
 	b.WriteString(strings.Repeat("─", 60))
 	b.WriteString("\n")
-	b.WriteString("📊 Statistics\n")
+	b.WriteString(sectionTitleStyle.Render("📊 Statistics"))
+	b.WriteString("\n")
 	b.WriteString(strings.Repeat("─", 60))
 	b.WriteString("\n")
-	b.WriteString(fmt.Sprintf("  Source Events: %d\n", s.cv.SourceEventCount))
-	b.WriteString(fmt.Sprintf("  Source Facts:  %d\n", s.cv.SourceFactCount))
-	b.WriteString(fmt.Sprintf("  Sections:      %d\n", len(s.cv.Sections)))
+	b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Source Events:"), valueStyle.Render(strconv.Itoa(s.cv.SourceEventCount))))
+	b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Source Facts:"), valueStyle.Render(strconv.Itoa(s.cv.SourceFactCount))))
+	b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Sections:"), valueStyle.Render(strconv.Itoa(len(s.cv.Sections)))))
 
-	// Calculate total bullets
 	totalBullets := 0
 	for _, section := range s.cv.Sections {
 		for _, group := range section.Content {
 			totalBullets += len(group.Bullets)
 		}
 	}
-	b.WriteString(fmt.Sprintf("  Total Bullets: %d\n", totalBullets))
+	b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Total Bullets:"), valueStyle.Render(strconv.Itoa(totalBullets))))
 	b.WriteString("\n")
 
-	// Section Summary
 	if len(s.cv.Sections) > 0 {
 		b.WriteString(strings.Repeat("─", 60))
 		b.WriteString("\n")
-		b.WriteString("📑 Sections\n")
+		b.WriteString(sectionTitleStyle.Render("📑 Sections"))
+		b.WriteString("\n")
 		b.WriteString(strings.Repeat("─", 60))
 		b.WriteString("\n")
 
 		for _, section := range s.cv.Sections {
-			// Count bullets in this section
 			sectionBullets := 0
 			for _, group := range section.Content {
 				sectionBullets += len(group.Bullets)
 			}
 
-			// Format bullet count with proper pluralization
 			bulletText := "bullets"
 			if sectionBullets == 1 {
 				bulletText = "bullet"
 			}
 
-			// Section type indicator
 			typeIndicator := "  •"
 			if section.SectionType == "summary" {
 				typeIndicator = "  ✎"
 			}
 
-			b.WriteString(fmt.Sprintf("%s %s (%d %s)\n",
-				typeIndicator, section.Title, sectionBullets, bulletText))
+			b.WriteString(fmt.Sprintf("%s %s %s\n",
+				typeIndicator,
+				valueStyle.Render(section.Title),
+				labelStyle.Render(fmt.Sprintf("(%d %s)", sectionBullets, bulletText))))
 		}
 	} else {
 		b.WriteString("\n  0 sections generated\n")
@@ -184,7 +203,7 @@ func (s *ReviewScreen) View() string {
 	b.WriteString("\n")
 	b.WriteString(strings.Repeat("─", 60))
 	b.WriteString("\n")
-	b.WriteString("enter/p: preview full CV  x: export  e: edit  esc: back")
+	b.WriteString(footerStyle.Render("enter/p: preview full CV  x: export  e: edit  esc: back"))
 
 	return b.String()
 }
@@ -198,4 +217,14 @@ func (s *ReviewScreen) View() string {
 //   - None.
 func (s *ReviewScreen) GetCV() *career.CVView {
 	return s.cv
+}
+
+// getTheme returns the theme from Screen or a default theme.
+func (s *ReviewScreen) getTheme() themes.Theme {
+	if t := s.Theme(); t != nil {
+		if theme, ok := t.(themes.Theme); ok {
+			return theme
+		}
+	}
+	return themes.NewDefaultTheme()
 }

@@ -7,6 +7,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/cv"
+	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
@@ -233,6 +234,70 @@ var _ = Describe("ReviewScreen", func() {
 			nilScreen := cv.NewCVReviewScreen(nil)
 			cvData := nilScreen.GetCV()
 			Expect(cvData).To(BeNil())
+		})
+	})
+
+	Describe("Theme Support", func() {
+		var view string
+
+		Context("with default theme", func() {
+			BeforeEach(func() {
+				view = screen.View()
+			})
+
+			Context("section headers", func() {
+				It("should display CV Review header", func() {
+					Expect(view).To(ContainSubstring("CV Review"))
+				})
+
+				It("should display Statistics header", func() {
+					Expect(view).To(ContainSubstring("Statistics"))
+				})
+
+				It("should display Sections header", func() {
+					Expect(view).To(ContainSubstring("Sections"))
+				})
+			})
+
+			Context("metadata labels", func() {
+				It("should display Name label", func() {
+					Expect(view).To(ContainSubstring("Name:"))
+				})
+
+				It("should display Role label", func() {
+					Expect(view).To(ContainSubstring("Role:"))
+				})
+
+				It("should display Audience label", func() {
+					Expect(view).To(ContainSubstring("Audience:"))
+				})
+			})
+
+			Context("statistics labels", func() {
+				It("should display Source Events label", func() {
+					Expect(view).To(ContainSubstring("Source Events:"))
+				})
+
+				It("should display Source Facts label", func() {
+					Expect(view).To(ContainSubstring("Source Facts:"))
+				})
+
+				It("should display Total Bullets label", func() {
+					Expect(view).To(ContainSubstring("Total Bullets:"))
+				})
+			})
+		})
+
+		Context("with custom theme", func() {
+			BeforeEach(func() {
+				theme := themes.NewDefaultTheme()
+				screen.SetTheme(theme)
+				view = screen.View()
+			})
+
+			It("should render with provided theme", func() {
+				Expect(view).To(ContainSubstring("CV Review"))
+			})
 		})
 	})
 })
