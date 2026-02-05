@@ -31,17 +31,17 @@ comprehensive E2E coverage before any structural changes.
 - Added `HandleCancel/HandleNavigate/HandleSubmit/HandleError` methods
 - Added test accessor methods for flattened state fields
 - Updated wizard_integration_test.go to use new architecture
+- Extracted view methods from `helpers.go` to new `views.go` file
 - `intent.go`: 383 lines (under 400 max ✅)
 - `handlers.go`: 282 lines (under 400 max ✅)
-- `helpers.go`: 552 lines (exceeds 500 max ⚠️ - pre-existing)
+- `helpers.go`: 345 lines (under 500 max ✅)
+- `views.go`: 213 lines (new file for view logic ✅)
 - `make check-intent-architecture`: 0 violations, 10 pre-existing warnings
 - `make check-compliance`: ✅ Pass
 - All 282 tests passing (164 intent + 118 modals)
 
-**Note:** `helpers.go` still exceeds 500 line guideline (552 lines). This is a pre-existing
-condition and could be addressed by extracting view methods to a `views.go` file in a
-future cleanup. Modal and screen files (config_wizard_modal.go, preview.go) also exceed
-size guidelines but are not blocking violations.
+**Note:** Modal and screen files (config_wizard_modal.go, preview.go) exceed size guidelines
+but are not blocking violations. These are documented as future improvement opportunities.
 
 ---
 
@@ -489,7 +489,8 @@ internal/cli/screens/cv/modals/       # CREATED
 |------|--------|-----|--------|--------|
 | `intent.go` | <400 lines | 600 lines | 383 | ✅ |
 | `handlers.go` | <400 lines | 800 lines | 282 | ✅ |
-| `helpers.go` | <300 lines | 500 lines | 552 | ⚠️ Pre-existing |
+| `helpers.go` | <300 lines | 500 lines | 345 | ✅ |
+| `views.go` | N/A | N/A | 213 | ✅ (new file) |
 | `types.go` | <150 lines | N/A | 66 | ✅ |
 | `context.go` | <200 lines | N/A | 75 | ✅ |
 | `result.go` | N/A | N/A | 17 | ✅ |
