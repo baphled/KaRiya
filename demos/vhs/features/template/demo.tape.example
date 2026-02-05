@@ -1,0 +1,66 @@
+# Feature Demo Template
+# Copy this file to demos/vhs/features/YOUR-FEATURE/demo.tape
+#
+# Usage:
+#   1. Copy to demos/vhs/features/your-feature/demo.tape
+#   2. Update the output paths and commands
+#   3. Run: make vhs-feature FEATURE=your-feature
+
+Source demos/vhs/config.tape
+
+# Update these output paths for your feature
+Output demos/vhs/features/YOUR-FEATURE/demo.gif
+Output demos/vhs/features/YOUR-FEATURE/demo.mp4
+
+# Setup (hidden)
+Hide
+Type `rm -rf /tmp/kariya-demo && mkdir -p /tmp/kariya-demo`
+Enter
+Sleep 300ms
+Type `cp demos/vhs/minimal-config.yaml /tmp/kariya-demo/config.yaml`
+Enter
+Sleep 300ms
+Type "cd /home/baphled/Projects/KoRiya"
+Enter
+Sleep 300ms
+# Optional: Import sample data if needed
+# Type `./kariya --config /tmp/kariya-demo/config.yaml --db /tmp/kariya-demo/demo.db --import demos/vhs/sample-events.csv --skip-import-review > /dev/null 2>&1`
+# Enter
+# Sleep 2s
+Show
+
+# Launch KaRiya
+Type "./kariya --config /tmp/kariya-demo/config.yaml --db /tmp/kariya-demo/demo.db"
+Enter
+
+# Wait for main menu
+Sleep 2s
+
+# === YOUR FEATURE DEMO STEPS HERE ===
+#
+# Navigation:
+#   Down / Up          - Navigate menu/list
+#   Enter              - Select / Confirm
+#   Escape             - Go back / Cancel
+#   Type "text"        - Type text
+#   Type@100ms "text"  - Slow typing
+#   Tab                - Next field
+#   Ctrl+C             - Exit
+#
+# Timing:
+#   Sleep 500ms        - Pause for 500ms
+#   Sleep 2s           - Pause for 2 seconds
+#
+# Screenshots (for PR evidence):
+#   Screenshot demos/vhs/features/YOUR-FEATURE/step1.png
+#   Screenshot demos/vhs/features/YOUR-FEATURE/result.png
+#
+# Example:
+#   Down
+#   Enter
+#   Sleep 1s
+#   Screenshot demos/vhs/features/YOUR-FEATURE/feature-screen.png
+
+# Exit
+Ctrl+C
+Sleep 500ms

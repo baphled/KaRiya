@@ -1,0 +1,35 @@
+# Minimal config for VHS demos
+# Pre-populates profile to skip onboarding wizard
+
+system:
+  data_dir: /tmp/kariya-demo
+  log_level: info
+  auto_backup: false
+
+profile:
+  name: "Alex Chen"
+  email: "alex.chen@techcorp.io"
+  title: "Senior Software Engineer"
+  location: "London, UK"
+  github: "alexchendev"
+  portfolio: "https://alexchen.dev"
+  core_strengths:
+    - "Backend Architecture"
+    - "System Design"
+    - "Technical Leadership"
+
+cv:
+  default_format: markdown
+  max_bullets: 5
+  audience_bullets:
+    hiring_manager: 4
+    recruiter: 3
+    peer: 5
+
+export:
+  default_destination: file
+  auto_open: false
+
+display:
+  theme: default
+  animations: true

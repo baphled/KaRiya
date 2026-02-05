@@ -1,4 +1,4 @@
-.PHONY: test test-race coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance check-docblocks check-fixtures check-patterns check-patterns-quiet check-patterns-strict check-intent-architecture check-intent-architecture-files golangci-lint install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ai-commit ci-local ci-install-tools gosec session-start session-end session-reset check-session verify-hooks tdd-check tdd-red tdd-green tdd-refactor tdd-document pre-task what-to-use generate-diagrams generate-state-matrix generate-docs generate-mocks check-mocks-updated diagrams fix-docs fix-all-docs validate-documentation create-doc-go
+.PHONY: test test-race coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance check-docblocks check-fixtures check-patterns check-patterns-quiet check-patterns-strict check-intent-architecture check-intent-architecture-files golangci-lint install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ai-commit ci-local ci-install-tools gosec session-start session-end session-reset check-session verify-hooks tdd-check tdd-red tdd-green tdd-refactor tdd-document pre-task what-to-use generate-diagrams generate-state-matrix generate-docs generate-mocks check-mocks-updated diagrams fix-docs fix-all-docs validate-documentation create-doc-go vhs-check vhs-clean vhs-demos vhs-all vhs-onboarding vhs-capture vhs-capture-cancel vhs-browse vhs-skills vhs-configure vhs-bursts vhs-cv vhs-facts vhs-import vhs-journey vhs-burst-detection vhs-skill-inference vhs-burst-flow vhs-fact-extraction vhs-enrichment vhs-golden-generate vhs-golden-compare vhs-golden-update vhs-docs vhs-feature
 
 # Run all tests in verbose mode (race detection in CI only)
 test:
@@ -722,4 +722,160 @@ help:
 	@echo "  docs/rules/CODE_STANDARDS.md    - Code standards"
 	@echo "  docs/rules/TUI_PATTERNS.md      - TUI patterns"
 	@echo ""
+	@echo "🎬 VHS Demos:"
+	@echo "  make vhs-demos             - Generate all demo GIFs"
+	@echo "  make vhs-onboarding        - Generate onboarding demo"
+	@echo "  make vhs-capture           - Generate capture event demo"
+	@echo "  make vhs-capture-cancel    - Generate capture cancel demo"
+	@echo "  make vhs-browse            - Generate browse timeline demo"
+	@echo "  make vhs-skills            - Generate manage skills demo"
+	@echo "  make vhs-configure         - Generate configure system demo"
+	@echo "  make vhs-bursts            - Generate manage bursts demo"
+	@echo "  make vhs-cv                - Generate CV generation demo"
+	@echo "  make vhs-facts             - Generate manage facts demo"
+	@echo "  make vhs-import            - Generate import workflow demo"
+	@echo "  make vhs-journey           - Generate complete journey demo"
+	@echo "  make vhs-burst-detection   - Generate AI burst detection demo"
+	@echo "  make vhs-skill-inference   - Generate AI skill inference demo"
+	@echo "  make vhs-burst-flow        - Generate events->burst workflow demo"
+	@echo "  make vhs-fact-extraction   - Generate fact extraction demo"
+	@echo "  make vhs-enrichment        - Generate full enrichment workflow demo"
+	@echo "  make vhs-golden-compare    - Run visual regression tests"
+	@echo "  make vhs-golden-update     - Update golden baselines"
+	@echo ""
+
+# =============================================================================
+# VHS Demo & Documentation Targets
+# =============================================================================
+
+VHS_DIR := demos/vhs
+VHS_TAPES := $(VHS_DIR)/tapes
+VHS_OUTPUT := $(VHS_DIR)/output
+
+# Check VHS is installed
+vhs-check:
+	@command -v vhs >/dev/null 2>&1 || { \
+		echo "Error: VHS not installed."; \
+		echo "Install with: brew install vhs (macOS)"; \
+		echo "See: https://github.com/charmbracelet/vhs#installation"; \
+		exit 1; \
+	}
+
+# Clean generated outputs
+vhs-clean:
+	rm -rf $(VHS_OUTPUT)
+	mkdir -p $(VHS_OUTPUT)/{gifs,mp4s,screenshots,diff}
+
+# =============================================================================
+# Demo Generation (for README/marketing)
+# =============================================================================
+
+# Generate all demos
+vhs-demos: vhs-check vhs-clean build
+	@echo "Generating demo GIFs..."
+	@for tape in $(VHS_TAPES)/*.tape; do \
+		echo "Processing $$tape..."; \
+		vhs "$$tape" || exit 1; \
+	done
+	@echo ""
+	@echo "Demos generated in $(VHS_OUTPUT)"
+
+vhs-all: vhs-demos
+
+# Individual demo targets
+vhs-onboarding: vhs-check build
+	vhs $(VHS_TAPES)/01-onboarding.tape
+
+vhs-capture: vhs-check build
+	vhs $(VHS_TAPES)/02-capture-event.tape
+
+vhs-capture-cancel: vhs-check build
+	vhs $(VHS_TAPES)/14-capture-cancel.tape
+
+vhs-browse: vhs-check build
+	vhs $(VHS_TAPES)/03-browse-timeline.tape
+
+vhs-skills: vhs-check build
+	vhs $(VHS_TAPES)/04-manage-skills.tape
+
+vhs-configure: vhs-check build
+	vhs $(VHS_TAPES)/05-configure-system.tape
+
+vhs-bursts: vhs-check build
+	vhs $(VHS_TAPES)/06-manage-bursts.tape
+
+vhs-cv: vhs-check build
+	vhs $(VHS_TAPES)/07-generate-cv.tape
+
+vhs-facts: vhs-check build
+	vhs $(VHS_TAPES)/08-manage-facts.tape
+
+vhs-import: vhs-check build
+	vhs $(VHS_TAPES)/09-import-workflow.tape
+
+vhs-journey: vhs-check build
+	vhs $(VHS_TAPES)/10-import-to-cv-journey.tape
+
+vhs-burst-detection: vhs-check build
+	vhs $(VHS_TAPES)/11-burst-detection.tape
+
+vhs-skill-inference: vhs-check build
+	vhs $(VHS_TAPES)/12-skill-inference.tape
+
+vhs-burst-flow: vhs-check build
+	vhs $(VHS_TAPES)/13-burst-creation-flow.tape
+
+vhs-fact-extraction: vhs-check build
+	vhs $(VHS_TAPES)/15-fact-extraction-flow.tape
+
+vhs-enrichment: vhs-check build
+	vhs $(VHS_TAPES)/16-enrichment-workflow.tape
+
+# =============================================================================
+# Golden File Testing (for CI/visual regression)
+# =============================================================================
+
+vhs-golden-generate: vhs-check build
+	@echo "Generating golden file screenshots..."
+	@mkdir -p $(VHS_OUTPUT)/screenshots
+	vhs $(VHS_DIR)/golden-test.tape
+
+vhs-golden-compare: vhs-golden-generate
+	@echo "Comparing against baseline..."
+	@./$(VHS_DIR)/scripts/compare-golden.sh
+
+vhs-golden-update: vhs-golden-generate
+	@echo "Updating golden file baselines..."
+	@./$(VHS_DIR)/scripts/update-golden.sh
+
+# =============================================================================
+# Documentation Generation
+# =============================================================================
+
+vhs-docs: vhs-check build
+	@echo "Generating documentation visuals..."
+	@for tape in $(VHS_DIR)/docs/*.tape 2>/dev/null; do \
+		[ -e "$$tape" ] || continue; \
+		echo "Processing $$tape..."; \
+		vhs "$$tape" || exit 1; \
+	done
+	@echo "Documentation visuals updated"
+
+# =============================================================================
+# PR Feature Evidence
+# =============================================================================
+
+# Usage: make vhs-feature FEATURE=onboarding
+vhs-feature: vhs-check build
+ifndef FEATURE
+	$(error FEATURE is not set. Usage: make vhs-feature FEATURE=onboarding)
+endif
+	@if [ ! -f "$(VHS_DIR)/features/$(FEATURE)/demo.tape" ]; then \
+		echo "Error: No demo.tape found for feature '$(FEATURE)'"; \
+		echo "Expected: $(VHS_DIR)/features/$(FEATURE)/demo.tape"; \
+		exit 1; \
+	fi
+	@echo "Generating evidence for feature: $(FEATURE)"
+	vhs $(VHS_DIR)/features/$(FEATURE)/demo.tape
+	@echo "Evidence generated in $(VHS_DIR)/features/$(FEATURE)/"
 
