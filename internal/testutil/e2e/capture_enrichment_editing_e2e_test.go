@@ -572,7 +572,7 @@ var _ = Describe("Capture Enrichment Editing E2E", func() {
 
 			// Go through full review workflow
 			maxAttempts := 15
-			for range maxAttempts {
+			for i := range maxAttempts {
 				view := env.GetView()
 				if view != "" {
 					// Simulate accepting/rejecting randomly

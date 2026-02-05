@@ -10,7 +10,6 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/baphled/kariya/internal/domain/career"
-	repo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	mockrepo "github.com/baphled/kariya/internal/testutil/mocks/repository"
 )
@@ -522,10 +521,8 @@ var _ = Describe("Career Service", func() {
 					List(gomock.Any(), gomock.Any()).
 					Return(filteredEvents, nil)
 
-				events, err := service.ListEvents(ctx, repo.EventListFilters{
-// nolint:gochecknoinits
-					Tags: []string{"technical"},
-				})
+				filters := fixtures.EventListFiltersWithTags([]string{"technical"})
+				events, err := service.ListEvents(ctx, *filters)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(events).To(HaveLen(1))
@@ -540,11 +537,8 @@ var _ = Describe("Career Service", func() {
 					List(gomock.Any(), gomock.Any()).
 					Return(paginatedEvents, nil)
 
-				events, err := service.ListEvents(ctx, repo.EventListFilters{
-// nolint:gochecknoinits
-					Limit:  2,
-					Offset: 0,
-				})
+				filters := fixtures.EventListFiltersWithLimit(0, 2)
+				events, err := service.ListEvents(ctx, *filters)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(events).To(HaveLen(2))
@@ -584,11 +578,8 @@ var _ = Describe("Career Service", func() {
 					List(gomock.Any(), gomock.Any()).
 					Return(testEvents, nil)
 
-				events, err := service.ListEvents(ctx, repo.EventListFilters{
-// nolint:gochecknoinits
-					StartDate: &startDate,
-					EndDate:   &endDate,
-				})
+				filters := fixtures.EventListFiltersWithDateRange(&startDate, &endDate)
+				events, err := service.ListEvents(ctx, *filters)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(events).ToNot(BeEmpty())
@@ -601,11 +592,8 @@ var _ = Describe("Career Service", func() {
 					List(gomock.Any(), gomock.Any()).
 					Return(testEvents, nil)
 
-				events, err := service.ListEvents(ctx, repo.EventListFilters{
-// nolint:gochecknoinits
-					SortBy:    "date",
-					SortOrder: "desc",
-				})
+				filters := fixtures.EventListFiltersWithSort("date", "desc")
+				events, err := service.ListEvents(ctx, *filters)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(events).To(HaveLen(3))
@@ -633,10 +621,8 @@ var _ = Describe("Career Service", func() {
 					Count(gomock.Any(), gomock.Any()).
 					Return(10, nil)
 
-				count, err := service.CountEvents(ctx, repo.EventListFilters{
-// nolint:gochecknoinits
-					Tags: []string{"technical"},
-				})
+				filters := fixtures.EventListFiltersWithTags([]string{"technical"})
+				count, err := service.CountEvents(ctx, *filters)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(count).To(Equal(10))
@@ -677,11 +663,8 @@ var _ = Describe("Career Service", func() {
 					Count(gomock.Any(), gomock.Any()).
 					Return(15, nil)
 
-				count, err := service.CountEvents(ctx, repo.EventListFilters{
-// nolint:gochecknoinits
-					StartDate: &startDate,
-					EndDate:   &endDate,
-				})
+				filters := fixtures.EventListFiltersWithDateRange(&startDate, &endDate)
+				count, err := service.CountEvents(ctx, *filters)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(count).To(Equal(15))
