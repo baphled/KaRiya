@@ -213,9 +213,12 @@ var _ = Describe("ConfigWizardModal", func() {
 			})
 
 			It("should require at least ProfileID to skip", func() {
-				modal.Update(tea.KeyMsg{Type: tea.KeyCtrlS})
+				emptyModal := modals.NewConfigWizardModalWithProfiles(120, 40, nil)
+				emptyModal.Init()
 
-				Expect(modal.IsCompleted()).To(BeFalse())
+				emptyModal.Update(tea.KeyMsg{Type: tea.KeyCtrlS})
+
+				Expect(emptyModal.IsCompleted()).To(BeFalse())
 			})
 		})
 	})
@@ -545,6 +548,18 @@ var _ = Describe("ConfigWizardModal", func() {
 	})
 
 	Describe("Form Navigation Selection Persistence", func() {
+		It("should pre-select first profile by default", func() {
+			profiles := []modals.ProfileOption{
+				{ID: "profile-1", Name: "Staff Engineer"},
+				{ID: "profile-2", Name: "Senior Engineer"},
+			}
+			modal = modals.NewConfigWizardModalWithProfiles(120, 40, profiles)
+			modal.Init()
+
+			config := modal.GetConfigData()
+			Expect(config.ProfileID).To(Equal("profile-1"))
+		})
+
 		It("should return the profile selected via keyboard navigation in GetConfigData", func() {
 			profiles := []modals.ProfileOption{
 				{ID: "profile-1", Name: "Staff Engineer"},
@@ -557,7 +572,7 @@ var _ = Describe("ConfigWizardModal", func() {
 			modal.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
 			config := modal.GetConfigData()
-			Expect(config.ProfileID).To(Equal("profile-1"))
+			Expect(config.ProfileID).To(Equal("profile-2"))
 		})
 
 		It("should preserve profile selection through window resize", func() {
@@ -574,7 +589,7 @@ var _ = Describe("ConfigWizardModal", func() {
 			modal.Update(tea.WindowSizeMsg{Width: 100, Height: 30})
 
 			config := modal.GetConfigData()
-			Expect(config.ProfileID).To(Equal("profile-1"))
+			Expect(config.ProfileID).To(Equal("profile-2"))
 		})
 
 		It("should preserve profile selection through SetExtractedTechnologies", func() {
@@ -594,7 +609,7 @@ var _ = Describe("ConfigWizardModal", func() {
 			modal.SetExtractedTechnologies(techs)
 
 			config := modal.GetConfigData()
-			Expect(config.ProfileID).To(Equal("profile-1"))
+			Expect(config.ProfileID).To(Equal("profile-2"))
 		})
 
 		It("should preserve profile selection through Reset", func() {

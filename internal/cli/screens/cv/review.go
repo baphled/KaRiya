@@ -6,13 +6,16 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/base"
 	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
+	cvservice "github.com/baphled/kariya/internal/service/career/cv"
 )
 
 // CVReviewState represents the internal state constant for this screen.
@@ -24,7 +27,12 @@ const CVReviewState = "review"
 type ReviewScreen struct {
 	*base.Screen
 
-	cv *career.CVView
+	cv            *career.CVView
+	profileConfig *config.ProfileConfig
+	viewport      viewport.Model
+	ready         bool
+	width         int
+	height        int
 }
 
 // NewCVReviewScreen creates a new CV review screen.
@@ -38,9 +46,28 @@ type ReviewScreen struct {
 // Side effects:
 //   - None.
 func NewCVReviewScreen(cv *career.CVView) *ReviewScreen {
+	return NewCVReviewScreenWithProfile(cv, nil)
+}
+
+// NewCVReviewScreenWithProfile creates a new CV review screen with custom profile config.
+//
+// Expected:
+//   - cvview must be valid.
+//   - profileConfig may be nil.
+//
+// Returns:
+//   - A fully initialized ReviewScreen ready for use.
+//
+// Side effects:
+//   - None.
+func NewCVReviewScreenWithProfile(cv *career.CVView, profileConfig *config.ProfileConfig) *ReviewScreen {
 	return &ReviewScreen{
-		Screen: base.NewBaseScreen(),
-		cv:     cv,
+		Screen:        base.NewBaseScreen(),
+		cv:            cv,
+		profileConfig: profileConfig,
+		width:         80,
+		height:        24,
+		ready:         false,
 	}
 }
 
@@ -65,35 +92,51 @@ func (s *ReviewScreen) Init() tea.Cmd {
 //   - screens.ScreenResult: result indicating user action.
 //
 // Side effects:
+//   - May update viewport dimensions.
 //   - May return CancelResult or NavigateResult.
 func (s *ReviewScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
+	var cmd tea.Cmd
+
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		s.HandleWindowSizeMsg(msg)
+		s.width = msg.Width
+		s.height = msg.Height
+		s.ready = false
 		return nil, nil
 
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "esc":
-			// Go back to wizard
 			return nil, &screens.CancelResult{}
 
 		case "enter", "p":
-			// Navigate to full preview
 			return nil, &screens.NavigateResult{
 				ResultData: "preview",
 			}
 
 		case "x":
-			// Export CV directly
 			return nil, &screens.NavigateResult{
 				ResultData: "export",
 			}
 
 		case "e":
-			// Edit CV
 			return nil, &screens.NavigateResult{
 				ResultData: "edit",
+			}
+
+		case "g":
+			s.viewport.GotoTop()
+			return nil, nil
+
+		case "G":
+			s.viewport.GotoBottom()
+			return nil, nil
+
+		case "up", "k", "down", "j", "pgup", "pgdown", "ctrl+u", "ctrl+d":
+			if s.ready {
+				s.viewport, cmd = s.viewport.Update(msg)
+				return cmd, nil
 			}
 		}
 	}
@@ -116,22 +159,12 @@ func (s *ReviewScreen) View() string {
 		Bold(true).
 		Foreground(theme.AccentColor())
 
-	sectionTitleStyle := lipgloss.NewStyle().
-		Bold(true).
-		Foreground(theme.AccentColor())
-
-	labelStyle := lipgloss.NewStyle().
-		Foreground(theme.SecondaryColor())
-
-	valueStyle := lipgloss.NewStyle().
-		Foreground(theme.ForegroundColor())
-
 	footerStyle := lipgloss.NewStyle().
 		Foreground(theme.SecondaryColor())
 
 	b.WriteString(titleStyle.Render("📋 CV Review"))
 	b.WriteString("\n")
-	b.WriteString(strings.Repeat("═", 60))
+	b.WriteString(strings.Repeat("═", minInt(60, s.width-4)))
 	b.WriteString("\n\n")
 
 	if s.cv == nil {
@@ -143,13 +176,89 @@ func (s *ReviewScreen) View() string {
 		return b.String()
 	}
 
-	b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Name:"), valueStyle.Render(s.cv.Name)))
+	content := s.renderContent()
+
+	if !s.ready {
+		viewportHeight := s.height - 7
+		if viewportHeight < 5 {
+			viewportHeight = 5
+		}
+		viewportWidth := s.width - 4
+		if viewportWidth < 40 {
+			viewportWidth = 40
+		}
+
+		s.viewport = viewport.New(viewportWidth, viewportHeight)
+		s.viewport.SetContent(content)
+		s.ready = true
+	}
+
+	b.WriteString(s.viewport.View())
+	b.WriteString("\n")
+	b.WriteString(s.renderFooter())
+
+	return b.String()
+}
+
+// renderContent renders the scrollable content.
+func (s *ReviewScreen) renderContent() string {
+	var b strings.Builder
+
+	b.WriteString(s.renderPersonalDetails())
+	b.WriteString(s.renderCVDetails())
+	b.WriteString(s.renderStatistics())
+	b.WriteString(s.renderSectionsList())
+
+	return b.String()
+}
+
+func (s *ReviewScreen) renderPersonalDetails() string {
+	theme := s.getTheme()
+	sectionTitleStyle := lipgloss.NewStyle().Bold(true).Foreground(theme.AccentColor())
+	labelStyle := lipgloss.NewStyle().Foreground(theme.SecondaryColor())
+	valueStyle := lipgloss.NewStyle().Foreground(theme.ForegroundColor())
+
+	profile := cvservice.NarrativeProfileFromConfig(s.profileConfig)
+
+	var b strings.Builder
+	b.WriteString(sectionTitleStyle.Render("👤 Personal Details"))
+	b.WriteString("\n")
+	b.WriteString(strings.Repeat("─", 60))
+	b.WriteString("\n")
+	b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Name:"), valueStyle.Render(profile.Name)))
+	b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Email:"), valueStyle.Render(profile.Email)))
+	b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Location:"), valueStyle.Render(profile.Location)))
+	b.WriteString("\n")
+
+	return b.String()
+}
+
+func (s *ReviewScreen) renderCVDetails() string {
+	theme := s.getTheme()
+	sectionTitleStyle := lipgloss.NewStyle().Bold(true).Foreground(theme.AccentColor())
+	labelStyle := lipgloss.NewStyle().Foreground(theme.SecondaryColor())
+	valueStyle := lipgloss.NewStyle().Foreground(theme.ForegroundColor())
+
+	var b strings.Builder
+	b.WriteString(sectionTitleStyle.Render("📄 CV Details"))
+	b.WriteString("\n")
+	b.WriteString(strings.Repeat("─", 60))
+	b.WriteString("\n")
+	b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("CV Name:"), valueStyle.Render(s.cv.Name)))
 	b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Role:"), valueStyle.Render(s.cv.TargetRole)))
 	b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Audience:"), valueStyle.Render(s.cv.TargetAudience)))
 	b.WriteString("\n")
 
-	b.WriteString(strings.Repeat("─", 60))
-	b.WriteString("\n")
+	return b.String()
+}
+
+func (s *ReviewScreen) renderStatistics() string {
+	theme := s.getTheme()
+	sectionTitleStyle := lipgloss.NewStyle().Bold(true).Foreground(theme.AccentColor())
+	labelStyle := lipgloss.NewStyle().Foreground(theme.SecondaryColor())
+	valueStyle := lipgloss.NewStyle().Foreground(theme.ForegroundColor())
+
+	var b strings.Builder
 	b.WriteString(sectionTitleStyle.Render("📊 Statistics"))
 	b.WriteString("\n")
 	b.WriteString(strings.Repeat("─", 60))
@@ -158,54 +267,80 @@ func (s *ReviewScreen) View() string {
 	b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Source Facts:"), valueStyle.Render(strconv.Itoa(s.cv.SourceFactCount))))
 	b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Sections:"), valueStyle.Render(strconv.Itoa(len(s.cv.Sections)))))
 
-	totalBullets := 0
-	for _, section := range s.cv.Sections {
-		for _, group := range section.Content {
-			totalBullets += len(group.Bullets)
-		}
-	}
+	totalBullets := s.countTotalBullets()
 	b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Total Bullets:"), valueStyle.Render(strconv.Itoa(totalBullets))))
 	b.WriteString("\n")
 
-	if len(s.cv.Sections) > 0 {
-		b.WriteString(strings.Repeat("─", 60))
-		b.WriteString("\n")
-		b.WriteString(sectionTitleStyle.Render("📑 Sections"))
-		b.WriteString("\n")
-		b.WriteString(strings.Repeat("─", 60))
-		b.WriteString("\n")
+	return b.String()
+}
 
-		for _, section := range s.cv.Sections {
-			sectionBullets := 0
-			for _, group := range section.Content {
-				sectionBullets += len(group.Bullets)
-			}
-
-			bulletText := "bullets"
-			if sectionBullets == 1 {
-				bulletText = "bullet"
-			}
-
-			typeIndicator := "  •"
-			if section.SectionType == "summary" {
-				typeIndicator = "  ✎"
-			}
-
-			b.WriteString(fmt.Sprintf("%s %s %s\n",
-				typeIndicator,
-				valueStyle.Render(section.Title),
-				labelStyle.Render(fmt.Sprintf("(%d %s)", sectionBullets, bulletText))))
+func (s *ReviewScreen) countTotalBullets() int {
+	total := 0
+	for _, section := range s.cv.Sections {
+		for _, group := range section.Content {
+			total += len(group.Bullets)
 		}
-	} else {
-		b.WriteString("\n  0 sections generated\n")
+	}
+	return total
+}
+
+func (s *ReviewScreen) renderSectionsList() string {
+	theme := s.getTheme()
+	sectionTitleStyle := lipgloss.NewStyle().Bold(true).Foreground(theme.AccentColor())
+	labelStyle := lipgloss.NewStyle().Foreground(theme.SecondaryColor())
+	valueStyle := lipgloss.NewStyle().Foreground(theme.ForegroundColor())
+
+	if len(s.cv.Sections) == 0 {
+		return "\n  0 sections generated\n"
 	}
 
+	var b strings.Builder
+	b.WriteString(sectionTitleStyle.Render("📑 Sections"))
 	b.WriteString("\n")
 	b.WriteString(strings.Repeat("─", 60))
 	b.WriteString("\n")
-	b.WriteString(footerStyle.Render("enter/p: preview full CV  x: export  e: edit  esc: back"))
+
+	for _, section := range s.cv.Sections {
+		sectionBullets := s.countSectionBullets(section)
+		bulletText := "bullets"
+		if sectionBullets == 1 {
+			bulletText = "bullet"
+		}
+
+		typeIndicator := "  •"
+		if section.SectionType == "summary" {
+			typeIndicator = "  ✎"
+		}
+
+		b.WriteString(fmt.Sprintf("%s %s %s\n",
+			typeIndicator,
+			valueStyle.Render(section.Title),
+			labelStyle.Render(fmt.Sprintf("(%d %s)", sectionBullets, bulletText))))
+	}
 
 	return b.String()
+}
+
+func (s *ReviewScreen) countSectionBullets(section *career.CVSection) int {
+	count := 0
+	for _, group := range section.Content {
+		count += len(group.Bullets)
+	}
+	return count
+}
+
+// renderFooter renders the help footer with scroll indicator.
+func (s *ReviewScreen) renderFooter() string {
+	theme := s.getTheme()
+	footerStyle := lipgloss.NewStyle().
+		Foreground(theme.SecondaryColor())
+
+	scrollInfo := ""
+	if s.ready {
+		scrollInfo = fmt.Sprintf(" (%d%%)", int(s.viewport.ScrollPercent()*100))
+	}
+
+	return footerStyle.Render(fmt.Sprintf("↑↓/jk: scroll%s  enter/p: preview  x: export  e: edit  esc: back", scrollInfo))
 }
 
 // GetCV returns the CV data.

@@ -137,7 +137,7 @@ var _ = Describe("GenerateCV Wizard E2E Tests", func() {
 			// View should contain wizard modal
 			view := intent.View()
 			Expect(view).To(ContainSubstring("CV Configuration"))
-			Expect(view).To(ContainSubstring("Select CV Profile"))
+			Expect(view).To(ContainSubstring("CV Profile"))
 		})
 
 		It("should allow user to submit wizard form and proceed to tech extraction", func() {
@@ -1623,12 +1623,9 @@ var _ = Describe("GenerateCV Complete Workflow E2E Tests", func() {
 			Expect(view).To(ContainSubstring("Recruiter"))
 		})
 
-		It("should show Peer/Colleague audience option", func() {
+		It("should show Technical Peer audience option", func() {
 			view := intent.View()
-			Expect(view).To(SatisfyAny(
-				ContainSubstring("Peer"),
-				ContainSubstring("Colleague"),
-			))
+			Expect(view).To(ContainSubstring("Technical Peer"))
 		})
 
 		It("should show all configured profile options", func() {

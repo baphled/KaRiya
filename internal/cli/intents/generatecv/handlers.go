@@ -193,13 +193,13 @@ func (i *Intent) handleCVGenerated(msg CVGenerationCompleteMsg) tea.Cmd {
 
 // transitionToReviewScreen creates and activates the review screen.
 func (i *Intent) transitionToReviewScreen() {
-	i.reviewScreen = cv.NewCVReviewScreen(i.generatedCV)
+	i.reviewScreen = cv.NewCVReviewScreenWithProfile(i.generatedCV, i.context.ProfileConfig)
 	i.activeScreen = i.reviewScreen
 }
 
 // transitionToPreviewScreen creates and activates the preview screen.
 func (i *Intent) transitionToPreviewScreen() {
-	i.previewScreen = cv.NewCVPreviewScreen(i.generatedCV)
+	i.previewScreen = cv.NewCVPreviewScreenWithProfile(i.generatedCV, i.context.ProfileConfig)
 	i.activeScreen = i.previewScreen
 }
 

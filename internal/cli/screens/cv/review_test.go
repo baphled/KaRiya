@@ -8,6 +8,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/cv"
 	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
@@ -49,6 +50,7 @@ var _ = Describe("ReviewScreen", func() {
 		testCV.SourceFactCount = 42
 
 		screen = cv.NewCVReviewScreen(testCV)
+		screen.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 	})
 
 	Describe("NewCVReviewScreen", func() {
@@ -202,6 +204,7 @@ var _ = Describe("ReviewScreen", func() {
 				emptyCV := fixtures.CVViewWith("cv-empty", "Empty CV", "Engineer", "Manager")
 				emptyCV.Sections = []*career.CVSection{}
 				emptyScreen := cv.NewCVReviewScreen(emptyCV)
+				emptyScreen.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 
 				view := emptyScreen.View()
 				Expect(view).To(ContainSubstring("0 sections"))
@@ -216,6 +219,7 @@ var _ = Describe("ReviewScreen", func() {
 				cvWithEmptySections := fixtures.CVViewWith("cv-empty-s", "CV", "Engineer", "Manager")
 				cvWithEmptySections.Sections = []*career.CVSection{emptySection}
 				s := cv.NewCVReviewScreen(cvWithEmptySections)
+				s.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 
 				view := s.View()
 				Expect(view).To(ContainSubstring("Empty Section"))
@@ -297,6 +301,67 @@ var _ = Describe("ReviewScreen", func() {
 
 			It("should render with provided theme", func() {
 				Expect(view).To(ContainSubstring("CV Review"))
+			})
+		})
+	})
+
+	Describe("Profile Configuration", func() {
+		Context("with custom profile config", func() {
+			It("should display custom name from profile config", func() {
+				customProfile := &config.ProfileConfig{
+					Name:     "Test User",
+					Email:    "test@example.com",
+					Title:    "Staff Engineer",
+					Location: "Test City, TC",
+				}
+				screenWithProfile := cv.NewCVReviewScreenWithProfile(testCV, customProfile)
+
+				view := screenWithProfile.View()
+				Expect(view).To(ContainSubstring("Test User"))
+			})
+
+			It("should display custom email from profile config", func() {
+				customProfile := &config.ProfileConfig{
+					Name:  "Test User",
+					Email: "test@example.com",
+				}
+				screenWithProfile := cv.NewCVReviewScreenWithProfile(testCV, customProfile)
+
+				view := screenWithProfile.View()
+				Expect(view).To(ContainSubstring("test@example.com"))
+			})
+
+			It("should display custom location from profile config", func() {
+				customProfile := &config.ProfileConfig{
+					Name:     "Test User",
+					Location: "Test City, TC",
+				}
+				screenWithProfile := cv.NewCVReviewScreenWithProfile(testCV, customProfile)
+
+				view := screenWithProfile.View()
+				Expect(view).To(ContainSubstring("Test City, TC"))
+			})
+		})
+
+		Context("with nil profile config", func() {
+			It("should render without error when profile config is nil", func() {
+				screenWithNilProfile := cv.NewCVReviewScreenWithProfile(testCV, nil)
+
+				view := screenWithNilProfile.View()
+				Expect(view).NotTo(BeEmpty())
+				Expect(view).To(ContainSubstring("CV Review"))
+			})
+		})
+
+		Context("with partial profile config", func() {
+			It("should display provided fields only", func() {
+				partialProfile := &config.ProfileConfig{
+					Name: "Partial User",
+				}
+				screenWithPartial := cv.NewCVReviewScreenWithProfile(testCV, partialProfile)
+
+				view := screenWithPartial.View()
+				Expect(view).To(ContainSubstring("Partial User"))
 			})
 		})
 	})

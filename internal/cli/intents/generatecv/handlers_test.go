@@ -8,6 +8,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/intents/generatecv"
+	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
@@ -118,6 +119,86 @@ var _ = Describe("Handlers", func() {
 			Expect(result).NotTo(BeNil())
 			Expect(result.Status).To(Equal(intents.Cancelled))
 			Expect(cmd).NotTo(BeNil())
+		})
+	})
+
+	Describe("ProfileConfig Integration", func() {
+		var intentWithProfile *generatecv.Intent
+
+		BeforeEach(func() {
+			ctx := &generatecv.IntentContext{
+				AvailableProfiles: []*generatecv.CVProfile{
+					{ID: "p1", Name: "Staff Engineer", TargetRole: "staff", TargetAudience: "hiring_manager"},
+				},
+				Events: []*career.Event{fixtures.Event("e1")},
+				ProfileConfig: &config.ProfileConfig{
+					Name:     "Test User",
+					Email:    "test@example.com",
+					Title:    "Staff Engineer",
+					Location: "Test City, TC",
+					GitHub:   "https://github.com/testuser",
+				},
+			}
+			var err error
+			intentWithProfile, err = generatecv.NewIntent(ctx)
+			Expect(err).ToNot(HaveOccurred())
+
+			termInfo := intentWithProfile.GetTerminalInfo()
+			termInfo.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+		})
+
+		Context("PreviewScreen", func() {
+			BeforeEach(func() {
+				intentWithProfile.Init()
+				intentWithProfile.Update(generatecv.WizardCompleteMsg{ProfileID: "p1", Audience: "hiring_manager"})
+				intentWithProfile.Update(generatecv.TechnologiesExtractedMsg{})
+				intentWithProfile.Update(generatecv.CVGenerationCompleteMsg{CV: fixtures.CVView("cv-1")})
+				intentWithProfile.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			})
+
+			It("should display user name from ProfileConfig", func() {
+				view := intentWithProfile.View()
+				Expect(view).To(ContainSubstring("Test User"))
+			})
+
+			It("should display user email from ProfileConfig", func() {
+				view := intentWithProfile.View()
+				Expect(view).To(ContainSubstring("test@example.com"))
+			})
+
+			It("should display user location from ProfileConfig", func() {
+				view := intentWithProfile.View()
+				Expect(view).To(ContainSubstring("Test City, TC"))
+			})
+
+			It("should display user GitHub from ProfileConfig", func() {
+				view := intentWithProfile.View()
+				Expect(view).To(ContainSubstring("github.com/testuser"))
+			})
+		})
+
+		Context("ReviewScreen", func() {
+			BeforeEach(func() {
+				intentWithProfile.Init()
+				intentWithProfile.Update(generatecv.WizardCompleteMsg{ProfileID: "p1", Audience: "hiring_manager"})
+				intentWithProfile.Update(generatecv.TechnologiesExtractedMsg{})
+				intentWithProfile.Update(generatecv.CVGenerationCompleteMsg{CV: fixtures.CVView("cv-1")})
+			})
+
+			It("should display user name from ProfileConfig", func() {
+				view := intentWithProfile.View()
+				Expect(view).To(ContainSubstring("Test User"))
+			})
+
+			It("should display user email from ProfileConfig", func() {
+				view := intentWithProfile.View()
+				Expect(view).To(ContainSubstring("test@example.com"))
+			})
+
+			It("should display user location from ProfileConfig", func() {
+				view := intentWithProfile.View()
+				Expect(view).To(ContainSubstring("Test City, TC"))
+			})
 		})
 	})
 })
