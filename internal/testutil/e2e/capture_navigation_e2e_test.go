@@ -122,6 +122,9 @@ var _ = Describe("Capture Navigation", func() {
 		})
 
 		It("should show Manual form with optional fields", func() {
+			env.AssertViewContains("Event Description")
+			env.TypeText("Test event description text")
+			env.Confirm()
 			env.AssertViewContainsAny("Date", "Company", "Project", "Tags")
 		})
 

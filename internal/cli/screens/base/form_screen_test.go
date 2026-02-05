@@ -1,6 +1,8 @@
 package base_test
 
 import (
+	"strings"
+
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/base"
 	tea "github.com/charmbracelet/bubbletea"
@@ -175,6 +177,70 @@ var _ = Describe("FormScreen", func() {
 			// Even if form is complete, don't submit without confirmation
 			Expect(screen.GetFormData().SubmitConfirmed).To(BeFalse())
 		})
+
+		It("should return SubmitResult when form completes via internal command chain", func() {
+			confirmOnlyBuilder := func(data *TestFormData, width, height int) *huh.Form {
+				group := huh.NewGroup(
+					huh.NewConfirm().
+						Key("submit").
+						Title("Submit?").
+						Affirmative("Submit").
+						Negative("Cancel").
+						Value(&data.SubmitConfirmed),
+				)
+				return huh.NewForm(group).WithWidth(width).WithHeight(height)
+			}
+			confirmScreen := base.NewBaseFormScreen([]string{"Test"}, confirmOnlyBuilder, formData)
+			confirmScreen.SetTerminalInfo(80, 24)
+
+			// Press right arrow to select "Submit" (affirmative option)
+			_, result := confirmScreen.Update(tea.KeyMsg{Type: tea.KeyRight})
+			Expect(result).To(BeNil(), "selecting affirmative should not complete form yet")
+
+			// Press Enter to confirm - this triggers form's internal nextGroupMsg chain
+			cmd, result := confirmScreen.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+			// The initial Enter press may not complete the form directly.
+			// huh returns a batch command containing nextGroupMsg.
+			// Process returned commands to advance the form state machine.
+			var submitResult screens.ScreenResult
+			if result != nil {
+				submitResult = result
+			}
+
+			for submitResult == nil && cmd != nil {
+				msg := cmd()
+				if msg == nil {
+					break
+				}
+				if batchMsg, ok := msg.(tea.BatchMsg); ok {
+					for _, batchCmd := range batchMsg {
+						if batchCmd == nil {
+							continue
+						}
+						innerMsg := batchCmd()
+						if innerMsg == nil {
+							continue
+						}
+						cmd, result = confirmScreen.Update(innerMsg)
+						if result != nil {
+							submitResult = result
+							break
+						}
+					}
+				} else {
+					cmd, result = confirmScreen.Update(msg)
+					if result != nil {
+						submitResult = result
+					}
+				}
+			}
+
+			Expect(submitResult).NotTo(BeNil(),
+				"form should return SubmitResult when completing via internal command chain")
+			Expect(submitResult.Type()).To(Equal(screens.ResultSubmit))
+			Expect(formData.SubmitConfirmed).To(BeTrue())
+		})
 	})
 
 	Describe("View Rendering", func() {
@@ -205,6 +271,28 @@ var _ = Describe("FormScreen", func() {
 			// We can't easily test the exact format without knowing StandardView internals,
 			// but we can verify it doesn't panic
 			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("should center form content horizontally within the view", func() {
+			view := screen.View()
+
+			// Find lines containing the form field indicator (huh uses ┃ for active fields)
+			formLines := []string{}
+			for _, line := range strings.Split(view, "\n") {
+				if strings.Contains(line, "┃") && strings.Contains(line, "Name") {
+					formLines = append(formLines, line)
+				}
+			}
+			Expect(formLines).NotTo(BeEmpty(), "should find form field lines in view")
+
+			// The form content should NOT be flush against the left edge.
+			// A centered form on a 120-char terminal should have meaningful
+			// leading whitespace (at least 10 chars) before the form chrome.
+			for _, line := range formLines {
+				leadingSpaces := len(line) - len(strings.TrimLeft(line, " "))
+				Expect(leadingSpaces).To(BeNumerically(">=", 10),
+					"form content should be centered, not left-aligned; line: '%s'", line)
+			}
 		})
 
 		It("should update view when form data changes", func() {

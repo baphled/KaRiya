@@ -35,7 +35,7 @@
 - ❌ Form has 1-2 simple fields
 - ❌ No validators needed
 
-### Modal vs Model Form Integration?
+### Modal vs Screen Form Integration?
 
 **Use Modal Integration when:**
 - ✅ Inline editing within a larger intent (e.g., metadata edit in capture flow)
@@ -43,11 +43,15 @@
 - ✅ Small, focused form (2-6 fields)
 - ✅ Need overlay presentation
 
-**Use Model Integration when:**
+**Use Screen Integration (`base.FormScreen[T]`) when:** *(Recommended for new code)*
 - ✅ Full-screen form experience
 - ✅ Multi-step form flow
 - ✅ Strategy-aware fields (quick vs manual)
 - ✅ Direct repository persistence
+
+**Use Model Integration (`models/` wrapper) when:** *(Legacy - existing code only)*
+- ✅ Maintaining existing `models/` wrappers
+- ✅ Will be migrated to `base.FormScreen[T]` in future
 
 ### Form Builder Variants?
 
@@ -543,138 +547,93 @@ var _ = Describe("EditYourModal", func() {
 
 ---
 
-## Adding a Form to a Model
+## Adding a Form to a Screen (Recommended)
 
-**Time**: 30-45 minutes  
-**Prerequisites**: Form configuration exists  
-**Location**: `internal/cli/models/your_model.go`
+**Time**: 15-20 minutes  
+**Prerequisites**: Form configuration exists in `internal/cli/forms/`  
+**Location**: `internal/cli/screens/{feature}/form_screen.go`
 
 ### When to Use This Pattern
 
-Use models for full-screen form experiences:
-- ✅ Strategy-aware forms (quick vs manual)
-- ✅ Multi-step workflows
-- ✅ Direct repository persistence
-- ✅ Full keyboard shortcut integration
+Use `base.FormScreen[T]` for all new screen-level forms:
+- ✅ Full-screen form experience
+- ✅ Automatic window resize handling
+- ✅ StandardView integration (breadcrumbs, footer)
+- ✅ Returns `screens.ScreenResult` for clean intent communication
 
-### Step 1: Create Model Structure
+### Step 1: Create Form Screen
 
 ```go
-type YourFormModel struct {
-    form     *huh.Form
-    data     *forms.YourFormData
-    
-    // Services
-    service  *service.YourService
-    
-    // State
-    saved    bool
-    cancelled bool
-    err      error
-    
-    // Dimensions
-    width, height int
+// File: internal/cli/screens/{feature}/{feature}_form.go
+package {feature}
+
+import (
+    "github.com/baphled/kariya/internal/cli/forms"
+    "github.com/baphled/kariya/internal/cli/screens/base"
+    "github.com/baphled/kariya/internal/domain/career"
+)
+
+// {Feature}FormScreen provides a form for adding or editing {feature}s.
+type {Feature}FormScreen struct {
+    *base.FormScreen[*forms.{Feature}FormData]
 }
-```
 
-### Step 2: Implement Constructor
+// New{Feature}FormScreen creates a new form screen.
+func New{Feature}FormScreen(obj *career.{Feature}) *{Feature}FormScreen {
+    var formData *forms.{Feature}FormData
+    if obj == nil {
+        formData = &forms.{Feature}FormData{}
+    } else {
+        formData = forms.Get{Feature}FormData(obj)
+    }
 
-```go
-func NewYourFormModel(service *service.YourService) *YourFormModel {
-    data := forms.NewYourFormData() // Or from existing object
-    
-    form := forms.NewYourFormWithDataAndDimensions(
-        data,
-        0, // Will be set on first WindowSizeMsg
-        0,
+    breadcrumbs := []string{"Main Menu", "Manage {Feature}", "Add {Feature}"}
+    baseScreen := base.NewBaseFormScreen(
+        breadcrumbs,
+        forms.New{Feature}FormWithDataAndDimensions, // FormBuilder[T]
+        formData,
     )
-    
-    return &YourFormModel{
-        form:    form,
-        data:    data,
-        service: service,
-    }
+
+    return &{Feature}FormScreen{FormScreen: baseScreen}
 }
 ```
 
-### Step 3: Implement Init/Update/View
+### Step 2: Use in Intent
 
 ```go
-func (m *YourFormModel) Init() tea.Cmd {
-    return m.form.Init()
+// In intent handler
+func (i *MyIntent) handleAdd() tea.Cmd {
+    i.formScreen = {feature}.New{Feature}FormScreen(nil)
+    i.formScreen.SetTerminalInfo(i.Width(), i.Height())
+    i.activeScreen = i.formScreen
+    i.state = StateForm
+    return nil
 }
 
-func (m *YourFormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-    switch msg := msg.(type) {
-    case tea.WindowSizeMsg:
-        m.width = msg.Width
-        m.height = msg.Height
-        m.form = m.form.
-            WithWidth(msg.Width).
-            WithHeight(forms.DefaultFormHeight(msg.Height))
-        return m, nil
-        
-    case tea.KeyMsg:
-        // Custom shortcuts (optional)
-        if msg.Type == tea.KeyCtrlS {
-            m.data.SubmitConfirmed = true
-            return m.handleFormCompletion()
+// In intent Update()
+cmd, result := i.formScreen.Update(msg)
+if result != nil {
+    switch r := result.(type) {
+    case *screens.SubmitResult:
+        data := r.FormData.(*forms.{Feature}FormData)
+        if data.SubmitConfirmed {
+            // Apply and save
         }
+    case *screens.CancelResult:
+        // Return to previous screen
     }
-    
-    // Update form
-    form, cmd := m.form.Update(msg)
-    if f, ok := form.(*huh.Form); ok {
-        m.form = f
-    }
-    
-    // Check completion
-    if forms.IsCompleted(m.form) {
-        return m.handleFormCompletion()
-    }
-    
-    if forms.IsAborted(m.form) {
-        m.cancelled = true
-        return m, tea.Quit
-    }
-    
-    return m, cmd
-}
-
-func (m *YourFormModel) handleFormCompletion() (tea.Model, tea.Cmd) {
-    // Check SubmitConfirmed
-    if !m.data.SubmitConfirmed {
-        m.cancelled = true
-        return m, tea.Quit
-    }
-    
-    // Persist to repository
-    err := m.service.SaveYourData(m.data)
-    if err != nil {
-        m.err = err
-        return m, nil
-    }
-    
-    m.saved = true
-    return m, tea.Quit
-}
-
-func (m *YourFormModel) View() string {
-    if m.err != nil {
-        return errorView(m.err)
-    }
-    return m.form.View()
 }
 ```
 
-**✅ Checklist**:
-- [ ] Init() calls form.Init()
-- [ ] WindowSizeMsg handled
-- [ ] Custom shortcuts implemented (optional)
-- [ ] SubmitConfirmed checked
-- [ ] Service integration for persistence
-- [ ] Error handling implemented
-- [ ] View() renders form or error
+**Checklist**:
+- [ ] Screen type embeds `*base.FormScreen[*forms.XxxFormData]`
+- [ ] Constructor calls `base.NewBaseFormScreen()` with FormBuilder
+- [ ] FormBuilder function is `forms.NewXxxFormWithDataAndDimensions`
+- [ ] Intent handles `*screens.SubmitResult` and `*screens.CancelResult`
+- [ ] `SubmitConfirmed` checked in intent before applying data
+- [ ] `SetTerminalInfo()` called after creation
+
+---
 
 ---
 
@@ -1139,6 +1098,18 @@ var _ = Describe("Empty Field Handling", func() {
 - [ ] **Tests** written (creation, extraction, application, roundtrip)
 - [ ] **Documented** in FORMS_GUIDE.md
 
+### Screen Integration Checklist (Recommended)
+
+- [ ] **Screen type** embeds `*base.FormScreen[*forms.XxxFormData]`
+- [ ] **Constructor** calls `base.NewBaseFormScreen(breadcrumbs, builder, formData)`
+- [ ] **FormBuilder** uses existing `forms.NewXxxFormWithDataAndDimensions`
+- [ ] **Breadcrumbs** set correctly for navigation context
+- [ ] **Intent** handles `*screens.SubmitResult` and `*screens.CancelResult`
+- [ ] **SubmitConfirmed** checked in intent before applying data
+- [ ] **SetTerminalInfo()** called after screen creation
+- [ ] **No huh import** -- only imports `forms/` and `screens/base`
+- [ ] **Tests** written for screen creation and data flow
+
 ### Modal Integration Checklist
 
 - [ ] **Original** field preserved (never mutated)
@@ -1153,7 +1124,7 @@ var _ = Describe("Empty Field Handling", func() {
 - [ ] **Interface methods** implemented (GetTitle, GetContent, GetFooter)
 - [ ] **Tests** written (cancel, confirm, overlay)
 
-### Model Integration Checklist
+### Model Integration Checklist (Legacy)
 
 - [ ] **Form** embedded in model
 - [ ] **FormData** embedded in model

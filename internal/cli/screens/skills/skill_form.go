@@ -84,7 +84,7 @@ func NewSkillFormScreen(skill *career.Skill) *SkillFormScreen {
 		formData = forms.GetSkillFormData(skill)
 	}
 
-	baseScreen := base.NewBaseFormScreen(breadcrumbs, forms.NewSkillFormWithDataAndDimensions, formData)
+	baseScreen := base.NewBaseFormScreen(breadcrumbs, forms.NewSkillForm, formData)
 
 	return &SkillFormScreen{
 		FormScreen: baseScreen,

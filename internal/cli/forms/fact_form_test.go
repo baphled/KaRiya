@@ -17,9 +17,10 @@ var _ = Describe("FactForm", func() {
 		testFact.StrengthSignal = "leadership"
 	})
 
-	Describe("NewFactEditorForm", func() {
+	Describe("NewFactForm", func() {
 		It("should create a form with fact data", func() {
-			form := forms.NewFactEditorForm(testFact)
+			data := forms.GetFactFormData(testFact)
+			form := forms.NewFactForm(data, 0, 0)
 
 			Expect(form).NotTo(BeNil())
 		})
@@ -114,7 +115,7 @@ var _ = Describe("FactForm", func() {
 		})
 	})
 
-	Describe("NewFactEditorFormWithData", func() {
+	Describe("NewFactForm with data", func() {
 		It("should create a form with initial data", func() {
 			data := &forms.FactFormData{
 				Text:                 "Initial fact text here",
@@ -123,13 +124,13 @@ var _ = Describe("FactForm", func() {
 				AudienceRelevance:    []string{"hiring_manager"},
 			}
 
-			form := forms.NewFactEditorFormWithData(data)
+			form := forms.NewFactForm(data, 0, 0)
 
 			Expect(form).NotTo(BeNil())
 		})
 	})
 
-	Describe("NewFactEditorFormWithDataAndHeight", func() {
+	Describe("NewFactForm with height", func() {
 		It("should create a form with specified height", func() {
 			data := &forms.FactFormData{
 				Text:                 "Test fact for height testing",
@@ -138,7 +139,7 @@ var _ = Describe("FactForm", func() {
 				AudienceRelevance:    []string{"hiring_manager"},
 			}
 
-			form := forms.NewFactEditorFormWithDataAndHeight(data, 20)
+			form := forms.NewFactForm(data, 0, 20)
 
 			Expect(form).NotTo(BeNil())
 			// Form should render and be scrollable
@@ -154,7 +155,7 @@ var _ = Describe("FactForm", func() {
 				AudienceRelevance:    []string{"hiring_manager"},
 			}
 
-			form := forms.NewFactEditorFormWithDataAndHeight(data, 0)
+			form := forms.NewFactForm(data, 0, 0)
 
 			Expect(form).NotTo(BeNil())
 			view := form.View()
@@ -171,7 +172,7 @@ var _ = Describe("FactForm", func() {
 
 			// Simulate terminal with 40 lines (40 - 20 overhead = 20 lines)
 			height := forms.DefaultFormHeight(40)
-			form := forms.NewFactEditorFormWithDataAndHeight(data, height)
+			form := forms.NewFactForm(data, 0, height)
 
 			Expect(form).NotTo(BeNil())
 			Expect(height).To(Equal(20))

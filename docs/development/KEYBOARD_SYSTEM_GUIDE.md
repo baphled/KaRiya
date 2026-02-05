@@ -1,9 +1,13 @@
 # KaRiya Keyboard Shortcut System - Developer Guide
 
+> **Note**: Some file references in this guide point to `internal/cli/models/` which has been
+> deleted. The keyboard patterns described here are still valid — they now live in
+> `internal/cli/intents/` and `internal/cli/screens/` packages.
+
 **Complete Guide for Implementing and Extending Keyboard Shortcuts**
 
-**Last Updated**: 2026-01-12
-**Version**: 2.0 (Consolidated from shortcuts/DEVELOPER_GUIDE.md and UNIFIED_SHORTCUT_SYSTEM_DESIGN.md)
+**Last Updated**: 2026-02-04
+**Version**: 2.1 (models/ package deleted — patterns migrated to intents/screens)
 **Audience**: Developers implementing TUI features
 
 ---

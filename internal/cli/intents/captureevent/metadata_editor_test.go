@@ -1,12 +1,12 @@
 //nolint:errcheck // Test file - error handling for test setup is not relevant.
-package models_test
+package captureevent_test
 
 import (
 	"context"
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/forms"
-	"github.com/baphled/kariya/internal/cli/models"
+	"github.com/baphled/kariya/internal/cli/intents/captureevent"
 	cliservice "github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/domain/career"
 	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
@@ -17,11 +17,9 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-// TestMetadataEditorNew removed - tests are run by the main models_test.go suite
-
 var _ = Describe("MetadataEditorModelNew", func() {
 	var (
-		model      *models.MetadataEditorModelNew
+		model      *captureevent.MetadataEditorModelNew
 		event      *career.Event
 		service    *careerservice.Service
 		cliService *cliservice.CLIEventService
@@ -42,7 +40,8 @@ var _ = Describe("MetadataEditorModelNew", func() {
 		event.Tags = []string{"backend", "go"}
 		event.Categories = []string{"development"}
 
-		model = models.NewMetadataEditorModelNew(event, service, cliService, ctx, nil)
+		model = captureevent.NewMetadataEditorModelNew(ctx, event, service, cliService, nil)
+		model.Init()
 	})
 
 	Describe("NewMetadataEditorModelNew", func() {
@@ -79,7 +78,7 @@ var _ = Describe("MetadataEditorModelNew", func() {
 			It("should update dimensions", func() {
 				msg := tea.WindowSizeMsg{Width: 120, Height: 40}
 				updatedModel, _ := model.Update(msg)
-				typedModel := updatedModel.(*models.MetadataEditorModelNew)
+				typedModel := updatedModel.(*captureevent.MetadataEditorModelNew)
 				// Width and height should be updated (checked via View behavior)
 				Expect(typedModel).NotTo(BeNil())
 			})
@@ -92,7 +91,7 @@ var _ = Describe("MetadataEditorModelNew", func() {
 				Expect(cmd).NotTo(BeNil())
 				// Command should produce QuitMsg
 				result := cmd()
-				_, ok := result.(models.QuitMsg)
+				_, ok := result.(captureevent.QuitMsg)
 				Expect(ok).To(BeTrue())
 			})
 		})
@@ -206,6 +205,25 @@ var _ = Describe("MetadataEditorModelNew", func() {
 			Expect(event.Tags).To(Equal([]string{"frontend", "react"}))
 			Expect(event.Categories).To(Equal([]string{"ui"}))
 			Expect(event.Date.Format("2006-01-02")).To(Equal("2024-02-20"))
+		})
+	})
+
+	Describe("Form Field Visibility", func() {
+		It("should show initial form fields in the scrollable viewport", func() {
+			view := model.View()
+
+			Expect(view).To(ContainSubstring("Date"))
+			Expect(view).To(ContainSubstring("Company"))
+			Expect(view).To(ContainSubstring("Project"))
+			Expect(view).To(ContainSubstring("Tags"))
+		})
+
+		It("should have all metadata fields in the event", func() {
+			evt := model.GetEvent()
+			Expect(evt).NotTo(BeNil())
+			Expect(evt.Date).NotTo(BeZero())
+			Expect(evt.Tags).NotTo(BeNil())
+			Expect(evt.Categories).NotTo(BeNil())
 		})
 	})
 })

@@ -1012,7 +1012,7 @@ Footer (filters active):
 
 **Key Components**:
 - **SkillRepository**: SQLite or Memory repository for persistence
-- **SkillForm**: Huh form wrapper (`internal/cli/models/huh_skill_form.go`)
+- **SkillForm**: Huh form wrapper (`internal/cli/screens/skills/skill_form.go`)
 - **StandardView**: Consistent layout with logo and breadcrumbs
 - **MessageInterceptor**: Global key handling (q, ?, Esc, Ctrl+C)
 - **Theme System**: Catppuccin theme for consistent styling

@@ -23,7 +23,7 @@ Modals MUST NOT be defined in:
 | Location | Reason |
 |----------|--------|
 | `internal/cli/intents/` | Violates layer separation |
-| `internal/cli/models/` | Package is deprecated |
+| `internal/cli/models/` | Package has been deleted |
 | Any other location | Not in approved list |
 
 ## Directory Structure

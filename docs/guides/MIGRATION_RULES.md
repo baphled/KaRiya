@@ -339,13 +339,13 @@ if modal != nil && modal.IsVisible() {
 
 ### Rule 7: No models/ Package for Forms (STRICTLY ENFORCED)
 
-**DEPRECATED (DO NOT USE)**:
+**DELETED (the `models/` package no longer exists)**:
 ```go
-// ❌ WRONG - models/ package
+// ❌ WRONG - models/ package has been deleted
 import "github.com/baphled/kariya/internal/cli/models"
 
 type MyIntent struct {
-    form *models.CaptureForm  // DEPRECATED
+    form *models.CaptureForm  // DELETED
 }
 
 func (i *MyIntent) Init() tea.Cmd {
@@ -892,7 +892,7 @@ func (i *MyIntent) View() string {
 ### Violation 5: Using models/ for Forms
 
 ```go
-// ❌ WRONG - models/ package
+// ❌ WRONG - models/ package has been deleted
 import "github.com/baphled/kariya/internal/cli/models"
 type MyIntent struct {
     form *models.CaptureForm

@@ -49,15 +49,29 @@ Frequently used commands and troubleshooting.
 **Prerequisites**: Domain object exists, validators identified  
 **Reference**: [`docs/rules/FORMS_WORKFLOW_GUIDE.md`](docs/rules/FORMS_WORKFLOW_GUIDE.md) - Complete step-by-step guide
 
+> **NEW (Recommended): `base.FormScreen[T]`**
+>
+> For new forms, use `base.FormScreen[T]` instead of creating `models/` wrappers:
+> - Automatic window resize handling (rebuilds form)
+> - Built-in StandardView integration (breadcrumbs, footer)
+> - Returns `screens.ScreenResult` (no custom message types needed)
+> - No `huh` import needed -- uses `forms.Form` alias
+> - ~20 lines per form screen vs ~100-200 lines per wrapper
+>
+> **Example**: `internal/cli/screens/skills/skill_form.go` (93 lines)
+>
+> **See**: [`docs/FORMS_GUIDE.md#formscreen-pattern-target`](docs/FORMS_GUIDE.md#formscreen-pattern-target)
+
 > **⚠️ CRITICAL: Form Alignment Rule**
 > 
-> Forms used in **intents** MUST use a wrapper model (like `CaptureForm`, `SkillForm`).
-> Direct use of `*huh.Form` in intents causes **left-alignment issues** because:
-> - Form dimensions are captured at creation time and become stale
-> - `WindowSizeMsg` handling is scattered and error-prone
-> - Forms don't update properly on terminal resize
+> Forms used in **intents** MUST NOT use `*huh.Form` directly. Either:
+> - **New code**: Use `base.FormScreen[T]` in `screens/{feature}/` (recommended)
+> - **Legacy code**: Use a wrapper model (like `CaptureForm`, `SkillForm` in `models/`)
 >
-> **See**: [`docs/FORMS_GUIDE.md#form-alignment-and-the-wrapper-pattern`](docs/FORMS_GUIDE.md#form-alignment-and-the-wrapper-pattern)
+> Direct use of `*huh.Form` in intents causes **left-alignment issues** because
+> form dimensions are captured at creation time and become stale on terminal resize.
+>
+> **See**: [`docs/FORMS_GUIDE.md#formscreen-pattern-target`](docs/FORMS_GUIDE.md#formscreen-pattern-target)
 
 #### Quick Workflow
 
@@ -110,58 +124,32 @@ Frequently used commands and troubleshooting.
 
 #### Integration Patterns
 
-**⚠️ Intent Integration (MUST use wrapper model)**:
-
-When adding forms to an **intent**, you MUST create a wrapper model:
+**Screen Integration (Recommended for new code)**:
 
 ```go
-// 1. Create wrapper in internal/cli/models/huh_your_form.go
-type HuhYourForm struct {
-    *BaseStandardModel
-    formData *forms.YourFormData
-    form     *huh.Form
-    width    int
-    height   int
+// 1. Create screen in internal/cli/screens/{feature}/form_screen.go
+type MyFormScreen struct {
+    *base.FormScreen[*forms.MyFormData]
 }
 
-func NewHuhYourForm() *HuhYourForm {
-    m := &HuhYourForm{
-        BaseStandardModel: NewBaseStandardModel(),
-        formData:          &forms.YourFormData{},
-        width:             80,   // Default width
-        height:            24,   // Default height
+func NewMyFormScreen() *MyFormScreen {
+    formData := &forms.MyFormData{}
+    return &MyFormScreen{
+        FormScreen: base.NewBaseFormScreen(
+            []string{"Main Menu", "My Feature"},
+            forms.NewMyFormWithDataAndDimensions,
+            formData,
+        ),
     }
-    m.rebuildForm()
-    return m
 }
 
-func (m *HuhYourForm) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-    switch msg := msg.(type) {
-    case tea.WindowSizeMsg:
-        // Handle window size internally - THIS IS KEY
-        m.width = msg.Width
-        m.height = msg.Height
-        m.form = m.form.WithHeight(forms.DefaultFormHeight(m.height)).WithWidth(m.width - 4)
-        return m, nil
-    }
-    // ... rest of update logic
-}
-
-// 2. Use wrapper in intent (NOT raw *huh.Form)
-type YourIntent struct {
-    yourForm *models.HuhYourForm  // ✅ Correct - wrapper model
-    // form *huh.Form             // ❌ Wrong - causes alignment issues
-}
-
-func (i *YourIntent) handleAddNew() tea.Cmd {
-    i.yourForm = models.NewHuhYourForm()
-    return i.yourForm.Init()
-}
+// 2. Use in intent
+i.formScreen = myfeature.NewMyFormScreen()
+i.formScreen.SetTerminalInfo(i.Width(), i.Height())
+i.activeScreen = i.formScreen
 ```
 
-**Existing wrapper examples**:
-- `internal/cli/models/huh_capture_form.go` - Career event capture
-- `internal/cli/models/huh_skill_form.go` - Skill management
+**Existing screen example**: `internal/cli/screens/skills/skill_form.go`
 
 **Modal Integration** (inline editing - wrapper NOT required):
 ```go

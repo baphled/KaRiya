@@ -837,17 +837,17 @@ func RenderOverlay(background, modalContent string, termWidth, termHeight int, t
 
 	// Handle very small terminals gracefully
 	if termHeight < 15 {
-		// For very small terminals, center the modal (no room for logo positioning)
 		startY = (termHeight - modalHeight) / 2
 		if startY < 0 {
 			startY = 0
 		}
 	}
 
-	// If modal is too tall to fit below logo, constrain it
+	// If modal is too tall to fit below logo, reduce startY progressively
+	// before resorting to truncation. This allows the modal to overlap
+	// the logo area rather than losing content.
 	availableHeight := termHeight - startY - 2
 	if availableHeight <= 0 {
-		// Terminal too small - use all available space
 		availableHeight = termHeight - 2
 		if availableHeight < 1 {
 			availableHeight = termHeight
@@ -855,13 +855,25 @@ func RenderOverlay(background, modalContent string, termWidth, termHeight int, t
 		startY = 0
 	}
 
+	if modalHeight > availableHeight {
+		needed := modalHeight - availableHeight
+		reduction := needed
+		if reduction > startY {
+			reduction = startY
+		}
+		startY -= reduction
+		availableHeight = termHeight - startY - 2
+		if availableHeight < 1 {
+			availableHeight = termHeight
+			startY = 0
+		}
+	}
+
 	if modalHeight > availableHeight && availableHeight > 0 {
-		// Modal is too tall - truncate it and add scroll indicator
 		if availableHeight <= len(modalLines) {
 			modalLines = modalLines[:availableHeight]
 			modalHeight = availableHeight
 		}
-		// Add scroll indicator at bottom
 		if modalHeight > 0 {
 			lastLine := modalLines[modalHeight-1]
 			modalLines[modalHeight-1] = lastLine + " ↓"

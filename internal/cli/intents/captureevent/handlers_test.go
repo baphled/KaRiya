@@ -3,6 +3,7 @@ package captureevent_test
 import (
 	"errors"
 
+	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/intents"
 	ce "github.com/baphled/kariya/internal/cli/intents/captureevent"
 	"github.com/baphled/kariya/internal/cli/screens"
@@ -183,20 +184,36 @@ var _ = Describe("Handlers", func() {
 	})
 
 	Describe("HandleSubmit", func() {
-		Context("from StateForm with valid event", func() {
+		Context("from StateForm with valid form data", func() {
 			BeforeEach(func() {
 				intent.HandleNavigate(&screens.NavigateResult{
 					ResultData: ce.StrategyQuick,
 				})
 			})
 
-			It("should not panic", func() {
-				event := fixtures.EventWith("", "Test event", "", "")
+			It("should not panic with confirmed form data", func() {
+				formData := &forms.CaptureEventFormData{
+					Text:            "Test event description that is long enough",
+					Date:            "2026-01-15",
+					SubmitConfirmed: true,
+				}
 				Expect(func() {
 					intent.HandleSubmit(&screens.SubmitResult{
-						FormData: event,
+						FormData: formData,
 					})
 				}).NotTo(Panic())
+			})
+
+			It("should do nothing when SubmitConfirmed is false", func() {
+				formData := &forms.CaptureEventFormData{
+					Text:            "Test event description",
+					SubmitConfirmed: false,
+				}
+				cmd := intent.HandleSubmit(&screens.SubmitResult{
+					FormData: formData,
+				})
+				Expect(cmd).To(BeNil())
+				Expect(intent.IsActive()).To(BeTrue())
 			})
 		})
 
@@ -209,7 +226,7 @@ var _ = Describe("Handlers", func() {
 
 			It("should fail the intent", func() {
 				intent.HandleSubmit(&screens.SubmitResult{
-					FormData: "not an event",
+					FormData: "not form data",
 				})
 				Expect(intent.IsActive()).To(BeFalse())
 				Expect(intent.Result().Status).To(Equal(intents.Failed))

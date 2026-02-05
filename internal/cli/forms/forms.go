@@ -28,9 +28,6 @@ package forms
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
-	"github.com/charmbracelet/lipgloss"
-
-	"github.com/baphled/kariya/internal/cli/themes"
 )
 
 // Form is the form type used throughout KaRiya.
@@ -108,54 +105,12 @@ func Theme() *huh.Theme {
 	return huh.ThemeCatppuccin()
 }
 
-// ThemedForm returns a huh.Theme that matches the given KaRiya theme.
-//
-// Expected:
-//   - th must be a valid theme instance (can be nil).
-//
-// Returns:
-//   - A fully initialized huh.Theme ready for use.
-//
-// Side effects:
-//   - None.
-func ThemedForm(theme themes.Theme) *huh.Theme {
-	return themes.GenerateHuhTheme(theme)
-}
-
-// NewForm creates a new form with KaRiya's default theme and configuration.
-//
-// Expected:
-//   - group must be valid.
-//
-// Returns:
-//   - A fully initialized huh.Form ready for use.
-//
-// Side effects:
-//   - None.
-func NewForm(groups ...*huh.Group) *huh.Form {
+// newForm creates a new form with KaRiya's default theme and configuration.
+func newForm(groups ...*huh.Group) *huh.Form {
 	return huh.NewForm(groups...).
 		WithTheme(Theme()).
 		WithShowHelp(false).
 		WithShowErrors(false)
-}
-
-// NewFormWithHeight creates a new form with KaRiya's default theme and a fixed height.
-//
-// Expected:
-//   - int must be valid.
-//   - group must be valid.
-//
-// Returns:
-//   - A fully initialized huh.Form ready for use.
-//
-// Side effects:
-//   - None.
-func NewFormWithHeight(height int, groups ...*huh.Group) *huh.Form {
-	return huh.NewForm(groups...).
-		WithTheme(Theme()).
-		WithShowHelp(false).
-		WithShowErrors(false).
-		WithHeight(height)
 }
 
 // NewFormWithDimensions creates a new form with KaRiya's default theme and fixed dimensions.
@@ -180,22 +135,6 @@ func NewFormWithDimensions(width, height int, groups ...*huh.Group) *huh.Form {
 	return form
 }
 
-// NewThemedFormWithHeight creates a form with the given theme and height.
-//
-// Expected:
-//   - th must be a valid theme instance (can be nil).
-//   - int must be valid.
-//   - group must be valid.
-//
-// Returns:
-//   - A fully initialized huh.Form ready for use.
-//
-// Side effects:
-//   - None.
-func NewThemedFormWithHeight(theme themes.Theme, height int, groups ...*huh.Group) *huh.Form {
-	return huh.NewForm(groups...).WithTheme(ThemedForm(theme)).WithHeight(height)
-}
-
 // DefaultFormHeight calculates a reasonable form height based on terminal dimensions.
 //
 // Expected:
@@ -218,20 +157,27 @@ func DefaultFormHeight(terminalHeight int) int {
 }
 
 // ModalFormHeight calculates the form height for forms displayed inside an
+// overlay modal. The returned height is passed to huh's Group.WithHeight to
+// enable viewport scrolling within the fields group.
+//
+// The calculation accounts for all chrome consumed by the overlay rendering
+// pipeline: logo area (DefaultLogoHeight + 1 gap + 2 bottom margin = 12),
+// modal border (2), modal padding (2), title with margin (2), and the
+// footer separator line plus badge row (2). Total overhead = 20.
 //
 // Expected:
-//   - int must be valid.
+//   - terminalHeight must be a positive integer representing terminal rows.
 //
 // Returns:
-//   - A int value.
+//   - The maximum form height that fits within the overlay without truncation.
 //
 // Side effects:
 //   - None.
 func ModalFormHeight(terminalHeight int) int {
-	const modalOverhead = 21
-	const minHeight = 12
+	const modalOverhead = 20
+	const minHeight = 5
 
-	height := terminalHeight - modalOverhead
+	height := terminalHeight - modalOverhead - HelpFooterHeight
 	if height < minHeight {
 		height = minHeight
 	}
@@ -257,138 +203,51 @@ func ModalFormWidth(modalWidth int) int {
 	return width
 }
 
-// ConfirmButtonHeight is the space reserved for the fixed confirm button group.
-const ConfirmButtonHeight = 5
+// HelpFooterHeight is the space reserved for the help footer (blank line + badge row)
+// rendered below the form inside modal views.
+const HelpFooterHeight = 2
 
-// FieldsHeight calculates the height for form fields when using a fixed confirm button.
+// ModalBoxChrome is the vertical space consumed by box border (2) + padding (4).
+const ModalBoxChrome = 6
+
+// newScrollableForm creates a scrollable form with a confirm field at the bottom.
+//
+// All fields (including the confirm) are placed in a single huh group so that
+// the group's built-in viewport handles scrolling. This avoids the pagination
+// behaviour of LayoutDefault (which shows one group per page) and the lack of
+// scrolling in LayoutStack (which bypasses the viewport entirely).
 //
 // Expected:
-//   - int must be valid.
-//
-// Returns:
-//   - A int value.
-//
-// Side effects:
-//   - None.
-func FieldsHeight(terminalHeight int) int {
-	formHeight := DefaultFormHeight(terminalHeight)
-	fieldsHeight := formHeight - ConfirmButtonHeight
-	if fieldsHeight < 5 {
-		fieldsHeight = 5
-	}
-	return fieldsHeight
-}
-
-// NewFormWithFixedConfirm creates a form with scrollable fields and a fixed confirm button.
-//
-// Expected:
-//   - group must be valid.
-//   - bool must be valid.
-//   - int must be valid.
+//   - fields must contain at least one field.
+//   - confirmValue must not be nil.
+//   - width and height must be positive integers.
 //
 // Returns:
 //   - A fully initialized huh.Form ready for use.
 //
 // Side effects:
 //   - None.
-func NewFormWithFixedConfirm(fieldsGroup *huh.Group, confirmValue *bool, width, height int) *huh.Form {
-	// Calculate height for fields group (reserve space for confirm)
-	fieldsHeight := height - ConfirmButtonHeight
-	if fieldsHeight < 5 {
-		fieldsHeight = 5
-	}
+func newScrollableForm(fields []huh.Field, confirmValue *bool, width, height int) *huh.Form {
+	confirmField := huh.NewConfirm().
+		Key("submit").
+		Title("Save Changes").
+		Description("Submit the form to save your changes").
+		Affirmative("Submit").
+		Negative("Cancel").
+		Value(confirmValue)
 
-	// Create confirm group (fixed at bottom)
-	confirmGroup := huh.NewGroup(
-		huh.NewConfirm().
-			Key("submit").
-			Title("Save Changes").
-			Description("Submit the form to save your changes").
-			Affirmative("Submit").
-			Negative("Cancel").
-			Value(confirmValue),
-	)
+	fields = append(fields, confirmField)
+	group := huh.NewGroup(fields...).WithHeight(height)
 
-	// Apply height to fields group to make it scrollable
-	fieldsGroup = fieldsGroup.WithHeight(fieldsHeight)
-
-	form := huh.NewForm(fieldsGroup, confirmGroup).
-		WithTheme(Theme()).
-		WithLayout(huh.LayoutStack)
+	form := huh.NewForm(group).
+		WithTheme(Theme())
 
 	if width > 0 {
-		// Subtract 1 to compensate for LayoutStack adding an extra character
-		form = form.WithWidth(width - 1)
+		form = form.WithWidth(width)
 	}
 
 	return form
 }
-
-// NewThemedForm creates a new form with the given KaRiya theme.
-//
-// Expected:
-//   - th must be a valid theme instance (can be nil).
-//   - group must be valid.
-//
-// Returns:
-//   - A fully initialized huh.Form ready for use.
-//
-// Side effects:
-//   - None.
-func NewThemedForm(theme themes.Theme, groups ...*huh.Group) *huh.Form {
-	return huh.NewForm(groups...).WithTheme(ThemedForm(theme))
-}
-
-// NewFormWithAccessible creates a form optimized for accessibility.
-//
-// Expected:
-//   - group must be valid.
-//
-// Returns:
-//   - A fully initialized huh.Form ready for use.
-//
-// Side effects:
-//   - None.
-func NewFormWithAccessible(groups ...*huh.Group) *huh.Form {
-	return huh.NewForm(groups...).
-		WithTheme(Theme()).
-		WithAccessible(true)
-}
-
-// NewThemedFormWithAccessible creates an accessible form with the given KaRiya theme.
-//
-// Expected:
-//   - th must be a valid theme instance (can be nil).
-//   - group must be valid.
-//
-// Returns:
-//   - A fully initialized huh.Form ready for use.
-//
-// Side effects:
-//   - None.
-func NewThemedFormWithAccessible(theme themes.Theme, groups ...*huh.Group) *huh.Form {
-	return huh.NewForm(groups...).
-		WithTheme(ThemedForm(theme)).
-		WithAccessible(true)
-}
-
-// FormColors defines the color scheme for form elements.
-// Currently uses hardcoded hex values; tracked for refactoring in issue #136.
-var FormColors = struct {
-	Title       lipgloss.Color
-	Description lipgloss.Color
-	Error       lipgloss.Color
-	Success     lipgloss.Color
-	Placeholder lipgloss.Color
-}{
-	Title:       lipgloss.Color("#89B4FA"),
-	Description: lipgloss.Color("#94E2D5"),
-	Error:       lipgloss.Color("#F38BA8"),
-	Success:     lipgloss.Color("#A6E3A1"),
-	Placeholder: lipgloss.Color("#6C7086"),
-}
-
-// Common form helper functions
 
 // IsCompleted checks if the form has been completed by the user.
 //
@@ -416,86 +275,6 @@ func IsCompleted(form *huh.Form) bool {
 //   - None.
 func IsAborted(form *huh.Form) bool {
 	return form.State == huh.StateAborted
-}
-
-// GetString safely retrieves a string value from the form.
-//
-// Expected:
-//   - form must be valid.
-//   - Must be a valid string.
-//
-// Returns:
-//   - A string value.
-//
-// Side effects:
-//   - None.
-func GetString(form *huh.Form, key string) string {
-	val := form.GetString(key)
-	return val
-}
-
-// GetBool safely retrieves a boolean value from the form.
-//
-// Expected:
-//   - form must be valid.
-//   - Must be a valid string.
-//
-// Returns:
-//   - A bool value.
-//
-// Side effects:
-//   - None.
-func GetBool(form *huh.Form, key string) bool {
-	return form.GetBool(key)
-}
-
-// GetInt safely retrieves an int value from the form.
-//
-// Expected:
-//   - form must be valid.
-//   - Must be a valid string.
-//
-// Returns:
-//   - A int value.
-//
-// Side effects:
-//   - None.
-func GetInt(form *huh.Form, key string) int {
-	return form.GetInt(key)
-}
-
-// GetStrings safely retrieves a slice of strings from the form (for MultiSelect).
-//
-// Expected:
-//   - form must be valid.
-//   - Must be a valid string.
-//
-// Returns:
-//   - A []string value.
-//
-// Side effects:
-//   - None.
-func GetStrings(form *huh.Form, key string) []string {
-	// huh stores MultiSelect values as interface{} containing []string
-	val := form.Get(key)
-	if val == nil {
-		return []string{}
-	}
-
-	switch v := val.(type) {
-	case []string:
-		return v
-	case []interface{}:
-		result := make([]string, 0, len(v))
-		for _, item := range v {
-			if s, ok := item.(string); ok {
-				result = append(result, s)
-			}
-		}
-		return result
-	default:
-		return []string{}
-	}
 }
 
 // FieldConfig represents common field configuration options.

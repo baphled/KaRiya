@@ -39,10 +39,10 @@ var _ = Describe("Intent", func() {
 			Expect(intent.IsActive()).To(BeTrue())
 		})
 
-		It("should have a non-nil form after creation", func() {
+		It("should have nil form screen before transition", func() {
 			ctx := &ce.IntentContext{CaptureStrategy: "quick"}
 			intent, _ := ce.NewIntent(ctx)
-			Expect(intent.GetForm()).NotTo(BeNil())
+			Expect(intent.GetFormScreen()).To(BeNil())
 		})
 
 		It("should initialise review state with empty slices", func() {

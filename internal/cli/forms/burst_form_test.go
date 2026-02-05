@@ -18,17 +18,18 @@ var _ = Describe("BurstForm", func() {
 		testBurst.Description = "Test description"
 	})
 
-	Describe("NewBurstEditorForm", func() {
+	Describe("NewBurstForm", func() {
 		It("should create a form with burst data", func() {
-			form := forms.NewBurstEditorForm(testBurst)
+			data := forms.GetBurstFormData(testBurst)
+			form := forms.NewBurstForm(data, 0, 0)
 
 			Expect(form).NotTo(BeNil())
 		})
 
 		It("should have Catppuccin theme", func() {
-			form := forms.NewBurstEditorForm(testBurst)
+			data := forms.GetBurstFormData(testBurst)
+			form := forms.NewBurstForm(data, 0, 0)
 
-			// Form should be created successfully with theme
 			Expect(form).NotTo(BeNil())
 		})
 	})
@@ -55,14 +56,14 @@ var _ = Describe("BurstForm", func() {
 		})
 	})
 
-	Describe("NewBurstEditorFormWithData", func() {
+	Describe("NewBurstForm with data", func() {
 		It("should create a form with initial data", func() {
 			data := &forms.BurstFormData{
 				Name:        "Initial Name",
 				Description: "Initial Description",
 			}
 
-			form := forms.NewBurstEditorFormWithData(data)
+			form := forms.NewBurstForm(data, 0, 0)
 
 			Expect(form).NotTo(BeNil())
 		})
@@ -73,7 +74,7 @@ var _ = Describe("BurstForm", func() {
 				Description: "Bound Description",
 			}
 
-			form := forms.NewBurstEditorFormWithData(data)
+			form := forms.NewBurstForm(data, 0, 0)
 
 			// Simulate user updating the data
 			data.Name = "Updated Name"
@@ -117,7 +118,7 @@ var _ = Describe("BurstForm", func() {
 				Description: "Test description",
 			}
 
-			form := forms.NewBurstEditorFormWithData(data)
+			form := forms.NewBurstForm(data, 0, 0)
 
 			// The form should render without error
 			view := form.View()
@@ -145,20 +146,20 @@ var _ = Describe("BurstForm", func() {
 			}
 
 			// Create form which should initialize SubmitConfirmed
-			forms.NewBurstEditorFormWithData(data)
+			forms.NewBurstForm(data, 0, 0)
 
 			Expect(data.SubmitConfirmed).To(BeFalse())
 		})
 	})
 
-	Describe("NewBurstEditorFormWithDataAndHeight", func() {
+	Describe("NewBurstForm with height", func() {
 		It("should create a form with specified height", func() {
 			data := &forms.BurstFormData{
 				Name:        "Test Burst",
 				Description: "Test description",
 			}
 
-			form := forms.NewBurstEditorFormWithDataAndHeight(data, 20)
+			form := forms.NewBurstForm(data, 0, 20)
 
 			Expect(form).NotTo(BeNil())
 			// Form should render and be scrollable
@@ -172,7 +173,7 @@ var _ = Describe("BurstForm", func() {
 				Description: "Test description",
 			}
 
-			form := forms.NewBurstEditorFormWithDataAndHeight(data, 0)
+			form := forms.NewBurstForm(data, 0, 0)
 
 			Expect(form).NotTo(BeNil())
 			view := form.View()
@@ -189,7 +190,7 @@ var _ = Describe("BurstForm", func() {
 			height := forms.DefaultFormHeight(30)
 			Expect(height).To(Equal(10))
 
-			form := forms.NewBurstEditorFormWithDataAndHeight(data, height)
+			form := forms.NewBurstForm(data, 0, height)
 			Expect(form).NotTo(BeNil())
 		})
 
@@ -203,7 +204,7 @@ var _ = Describe("BurstForm", func() {
 			height := forms.DefaultFormHeight(50)
 			Expect(height).To(Equal(30))
 
-			form := forms.NewBurstEditorFormWithDataAndHeight(data, height)
+			form := forms.NewBurstForm(data, 0, height)
 			Expect(form).NotTo(BeNil())
 		})
 	})

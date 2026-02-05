@@ -1,4 +1,4 @@
-package models
+package captureevent
 
 import (
 	"context"
@@ -6,15 +6,12 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/forms"
-	"github.com/baphled/kariya/internal/cli/navigation"
 	cliservice "github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/themes"
-	"github.com/baphled/kariya/internal/cli/uikit/layout"
 	"github.com/baphled/kariya/internal/cli/uikit/selectors"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -24,25 +21,19 @@ import (
 // - Built-in validation with custom validators
 // - Catppuccin theming
 // - Consistent keyboard navigation
-// - MultiSelect for tags and categories
+// - MultiSelect for tags and categories.
 type MetadataEditorModelNew struct {
-	*BaseStandardModel
+	forms.EditorFields
 	event            *career.Event
 	originalEvent    *career.Event
 	service          *careerservice.Service
 	cliService       *cliservice.CLIEventService
 	ctx              context.Context
-	form             *huh.Form
 	formData         *forms.MetadataFormData
 	tagSelector      *selectors.TagSelector
 	categorySelector *selectors.CategorySelector
 	skillSelector    *selectors.SkillSelector
-	err              error
 	submitted        bool
-	cancelled        bool
-	width            int
-	height           int
-	theme            themes.Theme
 }
 
 // MetadataEditorDimensions holds terminal dimensions for the metadata editor.
@@ -55,10 +46,22 @@ type MetadataEditorDimensions struct {
 // NewMetadataEditorModelNew creates a new metadata editor model using huh forms.
 //
 // dims may be nil, in which case defaults (80x40) are used.
+//
+// Expected:
+//   - ctx must be a valid context.
+//   - event must be a valid career.Event pointer.
+//   - service must be a valid careerservice.Service pointer.
+//   - cliSvc may be nil, but if provided must be a valid CLIEventService pointer.
+//   - dims may be nil, in which case defaults are used.
+//
+// Returns:
+//   - A fully initialized MetadataEditorModelNew ready for use.
+//
+// Side effects:
+//   - May query skill repository to load available skills.
 func NewMetadataEditorModelNew(
-	event *career.Event, service *careerservice.Service,
-	cliSvc *cliservice.CLIEventService, ctx context.Context,
-	dims *MetadataEditorDimensions,
+	ctx context.Context, event *career.Event, service *careerservice.Service,
+	cliSvc *cliservice.CLIEventService, dims *MetadataEditorDimensions,
 ) *MetadataEditorModelNew {
 	// Apply defaults for nil dimensions.
 	termWidth := 80
@@ -112,7 +115,7 @@ func NewMetadataEditorModelNew(
 	formWidth := forms.ModalFormWidth(modalWidth)
 	formHeight := forms.ModalFormHeight(termHeight)
 
-	form := forms.NewMetadataEditorFormWithDataAndDimensions(
+	form := forms.NewMetadataForm(
 		formData, forms.MetadataFormConfig{
 			AvailableTags:       availableTags,
 			AvailableCategories: availableCategories,
@@ -123,23 +126,21 @@ func NewMetadataEditorModelNew(
 	)
 
 	return &MetadataEditorModelNew{
-		BaseStandardModel: NewBaseStandardModel(),
-		event:             event,
-		originalEvent:     &eventCopy,
-		service:           service,
-		cliService:        cliSvc,
-		ctx:               ctx,
-		form:              form,
-		formData:          formData,
-		tagSelector:       tagSelector,
-		categorySelector:  categorySelector,
-		skillSelector:     skillSelector,
-		err:               nil,
-		submitted:         false,
-		cancelled:         false,
-		width:             termWidth,
-		height:            termHeight,
-		theme:             themes.NewDefaultTheme(),
+		EditorFields: forms.EditorFields{
+			Form:   form,
+			Width:  termWidth,
+			Height: termHeight,
+			Theme:  themes.NewDefaultTheme(),
+		},
+		event:            event,
+		originalEvent:    &eventCopy,
+		service:          service,
+		cliService:       cliSvc,
+		ctx:              ctx,
+		formData:         formData,
+		tagSelector:      tagSelector,
+		categorySelector: categorySelector,
+		skillSelector:    skillSelector,
 	}
 }
 
@@ -151,48 +152,22 @@ func NewMetadataEditorModelNew(
 // Side effects:
 //   - None.
 func (m *MetadataEditorModelNew) Init() tea.Cmd {
-	return m.form.Init()
+	return m.Form.Init()
 }
 
-// Update handles messages
+// Update handles messages.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - tea.Model: the updated model.
+//   - tea.Cmd: command to execute.
+//
+// Side effects:
+//   - May update internal state based on message type.
 func (m *MetadataEditorModelNew) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
-		return m, nil
-
-	case tea.KeyMsg:
-		// Handle escape BEFORE delegating to form
-		// This ensures the parent intent can navigate back
-		if msg.String() == "esc" {
-			m.cancelled = true
-			return m, nil
-		}
-
-		// Handle quit
-		if msg.String() == "q" || msg.String() == "ctrl+c" {
-			return m, func() tea.Msg { return QuitMsg{} }
-		}
-	}
-
-	// Update the form
-	form, cmd := m.form.Update(msg)
-	if f, ok := form.(*huh.Form); ok {
-		m.form = f
-	}
-
-	// Check form state
-	if forms.IsCompleted(m.form) {
-		return m.handleFormCompletion()
-	}
-
-	if forms.IsAborted(m.form) {
-		m.cancelled = true
-		return m, nil
-	}
-
-	return m, cmd
+	return forms.EditorUpdate(&m.EditorFields, m, msg, m.handleFormCompletion, func() tea.Msg { return QuitMsg{} })
 }
 
 // handleFormCompletion processes the completed form and saves the metadata.
@@ -200,20 +175,20 @@ func (m *MetadataEditorModelNew) handleFormCompletion() (tea.Model, tea.Cmd) {
 	// Check if user confirmed via the submit button
 	// If they selected "Cancel" on the confirm, treat as cancelled
 	if !m.formData.SubmitConfirmed {
-		m.cancelled = true
+		m.Cancelled = true
 		return m, nil
 	}
 
 	// Apply form data to event
 	err := forms.ApplyMetadataFormData(m.event, m.formData)
 	if err != nil {
-		m.err = fmt.Errorf("failed to apply form data: %w", err)
+		m.Err = fmt.Errorf("failed to apply form data: %w", err)
 		return m, nil
 	}
 
 	// Validate event
 	if err := m.event.Validate(); err != nil {
-		m.err = fmt.Errorf("validation failed: %w", err)
+		m.Err = fmt.Errorf("validation failed: %w", err)
 		return m, nil
 	}
 
@@ -223,7 +198,7 @@ func (m *MetadataEditorModelNew) handleFormCompletion() (tea.Model, tea.Cmd) {
 	// Persist metadata changes to service
 	if m.cliService != nil {
 		if err := m.cliService.UpdateEventMetadata(m.ctx, m.event); err != nil {
-			m.err = fmt.Errorf("failed to save metadata: %w", err)
+			m.Err = fmt.Errorf("failed to save metadata: %w", err)
 			return m, nil
 		}
 	}
@@ -262,7 +237,7 @@ func (m *MetadataEditorModelNew) IsSubmitted() bool {
 // Side effects:
 //   - None.
 func (m *MetadataEditorModelNew) IsCancelled() bool {
-	return m.cancelled
+	return m.Cancelled
 }
 
 // Revert reverts changes to the original event
@@ -283,7 +258,7 @@ func (m *MetadataEditorModelNew) Revert() {
 // Side effects:
 //   - None.
 func (m *MetadataEditorModelNew) GetError() error {
-	return m.err
+	return m.Err
 }
 
 // GetTitle returns the modal title for overlay rendering.
@@ -305,11 +280,11 @@ func (m *MetadataEditorModelNew) GetTitle() string {
 // Side effects:
 //   - None.
 func (m *MetadataEditorModelNew) GetContent() string {
-	formView := m.form.View()
+	formView := m.Form.View()
 
 	// Add error if present
-	if m.err != nil {
-		errorColor := m.theme.ErrorColor()
+	if m.Err != nil {
+		errorColor := m.Theme.ErrorColor()
 		errorStyle := lipgloss.NewStyle().
 			Foreground(errorColor).
 			Border(lipgloss.RoundedBorder()).
@@ -317,7 +292,7 @@ func (m *MetadataEditorModelNew) GetContent() string {
 			Padding(1, 2).
 			MarginTop(1)
 
-		formView += "\n\n" + errorStyle.Render(m.err.Error())
+		formView += "\n\n" + errorStyle.Render(m.Err.Error())
 	}
 
 	return formView
@@ -342,44 +317,5 @@ func (m *MetadataEditorModelNew) GetFooter() string {
 // Side effects:
 //   - None.
 func (m *MetadataEditorModelNew) View() string {
-	// Render form using huh
-	formView := m.form.View()
-
-	// Add error if present
-	if m.err != nil {
-		errorColor := m.theme.ErrorColor()
-		errorStyle := lipgloss.NewStyle().
-			Foreground(errorColor).
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(errorColor).
-			Padding(1, 2).
-			MarginTop(1)
-
-		formView += "\n\n" + errorStyle.Render(m.err.Error())
-	}
-
-	// Use UIKit layout components
-	headerView := layout.NewHeader("Edit Event Metadata", m.width).
-		WithTheme(m.theme).
-		View()
-	footerView := layout.NewFooter(m.width).
-		WithTheme(m.theme).
-		WithHelp(navigation.GetContextualHelp("metadata_editor")).
-		View()
-
-	// Combine all sections
-	contentStyle := lipgloss.NewStyle().
-		Width(m.width).
-		Padding(1, 2)
-
-	fullContent := lipgloss.JoinVertical(
-		lipgloss.Left,
-		headerView,
-		"",
-		contentStyle.Render(formView),
-		"",
-		footerView,
-	)
-
-	return fullContent
+	return forms.RenderEditorView(&m.EditorFields, "Edit Event Metadata", "metadata_editor")
 }

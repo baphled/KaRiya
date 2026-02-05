@@ -470,8 +470,9 @@ It("should intercept escape before form", func() {
 ## Migration Status
 
 **Completed**:
-- ✅ `internal/cli/models/form.go` - Fully migrated
+- ✅ `internal/cli/screens/capture/event_form_screen.go` - Fully migrated
 - ✅ `internal/cli/intents/browse_timeline_intent.go` - MessageInterceptor pattern
+- ✅ `internal/cli/models/` - Package deleted (modals migrated to captureevent/)
 
 **Pending**:
 - ⏳ 8 remaining intents (capture_event, generate_cv, etc.)

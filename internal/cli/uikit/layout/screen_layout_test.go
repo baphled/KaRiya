@@ -211,6 +211,34 @@ var _ = Describe("ScreenLayout Pinned Layout", func() {
 				_ = view.Render()
 			}).NotTo(Panic())
 		})
+
+		It("should constrain overflowing content to available height via viewport", func() {
+			tallContent := strings.Repeat("Line\n", 30) // 30 lines in a 24-line terminal
+
+			view := layout.NewScreenLayout(termInfo).
+				WithTheme(theme).
+				WithContent(tallContent).
+				WithHelp("Help")
+
+			rendered := view.Render()
+			lines := strings.Split(rendered, "\n")
+
+			// Total output must still be exactly terminal height
+			Expect(lines).To(HaveLen(termInfo.Height),
+				"output should be exactly terminal height even with overflowing content")
+
+			// Footer must still be at the bottom
+			strippedLines := strings.Split(stripAnsi(rendered), "\n")
+			var lastNonEmptyLine string
+			for i := len(strippedLines) - 1; i >= 0; i-- {
+				if strings.TrimSpace(strippedLines[i]) != "" {
+					lastNonEmptyLine = strippedLines[i]
+					break
+				}
+			}
+			Expect(lastNonEmptyLine).To(ContainSubstring("Help"),
+				"footer should remain pinned at bottom even when content overflows")
+		})
 	})
 
 	Describe("No Logo Mode", func() {

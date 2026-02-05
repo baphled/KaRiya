@@ -710,14 +710,14 @@ Every bullet in your CV traces back to source events:
 3. **Help Flag**: `./kariya-cli --help`
 4. **Version**: `./kariya-cli --version`
 5. **Troubleshooting**: See section above
-6. **Code Examples**: Check `internal/cli/models/*_test.go`
+6. **Code Examples**: Check `internal/cli/intents/*_test.go` and `internal/cli/screens/*_test.go`
 
 ## Support
 
 For issues or suggestions:
 1. Check the troubleshooting section above
 2. Review the help system in the app
-3. Check test coverage in `internal/cli/models/*_test.go`
+3. Check test coverage in `internal/cli/intents/` and `internal/cli/screens/`
 4. Review code in `internal/cli/`
 
 ## License

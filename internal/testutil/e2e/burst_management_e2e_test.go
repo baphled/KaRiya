@@ -8,6 +8,7 @@ import (
 	"github.com/baphled/kariya/internal/service/career/burstfact"
 	"github.com/baphled/kariya/internal/service/career/skillinference"
 	"github.com/baphled/kariya/internal/testutil/e2e"
+	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -93,6 +94,23 @@ var _ = Describe("E2E Burst Management Workflow", func() {
 
 		AfterEach(func() {
 			env.Cleanup()
+		})
+
+		It("should show Ctrl+S help badge in burst edit modal", func() {
+			env.SelectIntentByName("burst_management")
+			env.Confirm()
+			env.PressKeyRune('e')
+			view := env.GetView()
+			Expect(view).To(ContainSubstring("Ctrl+S"),
+				"Burst edit modal should show Ctrl+S help badge")
+		})
+
+		It("should show submit button in burst edit modal on small terminal", func() {
+			env.SendMessage(tea.WindowSizeMsg{Width: 80, Height: 24})
+			env.SelectIntentByName("burst_management")
+			env.Confirm()
+			env.PressKeyRune('e')
+			env.AssertViewContainsAny("Submit", "Save")
 		})
 
 		It("should persist burst name changes to database", func() {
