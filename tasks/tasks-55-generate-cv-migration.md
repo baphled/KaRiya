@@ -520,11 +520,12 @@ internal/cli/screens/cv/modals/       # CREATED
 | E2E test scenarios | 34 active + 12 pending baseline | 27+ (comprehensive) | Replaced |
 | States | 22 | 8 | -64% |
 
-### 7.6 Fix Known Bug
+### 7.6 Fix Known Bug ✅
 
-- [ ] Wire `SkillRepository` and `EventRepository` in `registerGenerateCV()`
-- [ ] Verify tech extraction works with real services
-- [ ] Run tests, verify fix passes
+- [x] Wire `SkillRepository` and `EventRepository` in `registerGenerateCV()`
+- [x] Add `GetTestContext()` to generatecv.Intent for test assertions
+- [x] Add unit test verifying production registrar wires repositories
+- [x] TDD verified: test fails without fix, passes with fix (commit a8d43ef4)
 
 ---
 
@@ -534,7 +535,7 @@ _This section will be populated during Phase 3 as E2E tests uncover issues._
 
 | Bug | Phase Found | Severity | Status |
 |-----|------------|----------|--------|
-| `SkillRepository`/`EventRepository` not set in registrar | Pre-task audit | Medium | Known |
+| `SkillRepository`/`EventRepository` not set in registrar | Pre-task audit | Medium | **Fixed** (a8d43ef4) |
 | | | | |
 
 ---
