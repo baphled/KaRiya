@@ -15,13 +15,13 @@
 # 10. Fixture usage check - noinlinecareer analyzer
 # 11. Golangci-lint on changed packages (full lint, MATCHES CI)
 # 12. Intent architecture check (MATCHES CI)
-# 13. TDD compliance check
-# 14. Strict pattern checks
-# 15. Documentation check - validate-documentation.sh + docblocks analyzer
+# 13. Localized tests - tests ONLY for changed packages (fast)
+# 14. TDD compliance check
+# 15. Strict pattern checks
+# 16. Documentation check - validate-documentation.sh + docblocks analyzer
 #
-# Full test suite and race detection should be run via:
-#   make check-compliance
-# before committing. Pre-commit focuses on fast checks only.
+# Full test suite runs in CI as regression check.
+# Run 'make test' locally for full regression testing before major changes.
 
 set -e
 
@@ -272,9 +272,43 @@ if [ -f "scripts/check-intent-architecture.sh" ]; then
     fi
 fi
 
-# Full test suite and race detection are not run in pre-commit.
-# Run 'make check-compliance' before committing to ensure tests pass.
-echo -e "${BLUE}ℹ️  Run 'make check-compliance' before committing to ensure tests pass${NC}"
+# Localized tests - run tests ONLY for changed packages (fast)
+# Full test suite is run in CI as regression check
+if [ "$SKIP_TESTS" != "1" ]; then
+    CHANGED_GO_FILES=$(git diff --cached --name-only | grep '\.go$' || true)
+    if [ -n "$CHANGED_GO_FILES" ]; then
+        echo "Running localized tests for changed packages..."
+        CHANGED_PACKAGES=$(echo "$CHANGED_GO_FILES" | xargs -I{} dirname {} | sort -u | sed 's|^|./|' | sed 's|$|/...|')
+        
+        # Filter to only packages that have test files
+        TESTABLE_PACKAGES=""
+        for pkg in $CHANGED_PACKAGES; do
+            # Remove the /... suffix to get the directory
+            pkg_dir=$(echo "$pkg" | sed 's|/\.\.\.$||' | sed 's|^\./||')
+            if ls "$pkg_dir"/*_test.go > /dev/null 2>&1; then
+                TESTABLE_PACKAGES="$TESTABLE_PACKAGES $pkg"
+            fi
+        done
+        
+        if [ -n "$TESTABLE_PACKAGES" ]; then
+            if ! go test -count=1 -short $TESTABLE_PACKAGES > /dev/null 2>&1; then
+                echo -e "${RED}❌ ERROR: Tests failed for changed packages${NC}"
+                echo ""
+                go test -count=1 -short $TESTABLE_PACKAGES 2>&1 | grep -E "FAIL|Error|panic" | head -20
+                echo ""
+                echo "Fix failing tests before committing."
+                echo "To skip: SKIP_TESTS=1 git commit"
+                exit 1
+            fi
+            echo -e "${GREEN}✅ Localized tests passed${NC}"
+        fi
+    fi
+else
+    echo -e "${YELLOW}⚠️  Tests skipped (SKIP_TESTS=1)${NC}"
+fi
+
+# Full test suite is run in CI as regression check
+echo -e "${BLUE}ℹ️  Full test suite runs in CI. Run 'make test' locally for regression check.${NC}"
 
 # TDD check (can be overridden)
 if [ "$SKIP_TDD_CHECK" != "1" ]; then
