@@ -22,6 +22,31 @@ Use this skill after creating a PR to:
 
 ## PR Monitoring Workflow
 
+### 0. CHECK FOR REBASE FIRST (CRITICAL)
+
+**ALWAYS check if branch needs rebasing BEFORE waiting on CI.**
+
+Wasting time on CI that will need to re-run after rebase is inefficient.
+
+```bash
+# Fetch latest and check if behind target
+git fetch origin
+BASE_BRANCH=$(gh pr view --json baseRefName -q '.baseRefName')
+BEHIND=$(git rev-list --count HEAD..origin/$BASE_BRANCH)
+
+if [ "$BEHIND" -gt 0 ]; then
+    echo "Branch is $BEHIND commits behind $BASE_BRANCH - REBASE FIRST"
+    # Use auto-rebase skill
+fi
+```
+
+**If rebase needed:**
+1. Cancel any running CI jobs (they'll need to re-run anyway)
+2. Rebase onto target branch
+3. Resolve any conflicts
+4. Force push with `--force-with-lease`
+5. THEN monitor CI
+
 ### 1. Check CI Status
 
 ```bash
