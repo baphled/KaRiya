@@ -22,7 +22,7 @@ Feature: Manage Skills
   # Skills List Display
   # ============================================================================
 
-  @happy @smoke @wip
+  @happy @smoke
   Scenario: View skills list with skills
     Given I have 5 skills in my profile
     When I select "manage_skills" from the menu
