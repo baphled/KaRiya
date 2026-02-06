@@ -38,6 +38,9 @@ These skills are **always loaded** and inform all work:
 - `question-resolver` - Systematic question resolution
 - `pragmatic-problem-solving` - Practical solutions focus
 - `british-english` - All content uses British English spelling
+- `parallel-execution` - Run independent tasks simultaneously
+
+**Parallelisation is mandatory.** When multiple independent operations are needed, execute them in parallel. Never run sequential operations that could be parallel.
 
 **When uncertain:** Stop. Use `question-resolver` to determine if the question is answerable, gather evidence, test assumptions.
 
@@ -551,4 +554,4 @@ All skills are related - I orchestrate them based on context:
 - `british-english`
 
 **Efficiency:**
-- `token-efficiency`
+- `token-efficiency`, `parallel-execution`
