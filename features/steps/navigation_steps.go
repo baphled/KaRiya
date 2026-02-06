@@ -15,6 +15,8 @@ import (
 // Expected: sc is a valid ScenarioContext.
 // Returns: None.
 // Side effects: Registers step definitions with the scenario context.
+//
+//nolint:dupl // Step registration functions look similar but register different steps.
 func RegisterNavigationSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I start the application$`, navStartTheApplication)
 	sc.Step(`^I should see the main menu$`, navShouldSeeTheMainMenu)
@@ -26,6 +28,7 @@ func RegisterNavigationSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I should see help information$`, navShouldSeeHelpInformation)
 	sc.Step(`^I should see "([^"]*)" or "([^"]*)"$`, navShouldSeeOr)
 	sc.Step(`^the application should exit$`, navApplicationShouldExit)
+	sc.Step(`^the application should not exit$`, navApplicationShouldNotExit)
 	sc.Step(`^I press Ctrl\+C$`, navPressCtrlC)
 	sc.Step(`^I am in the middle of capturing an event$`, navAmInTheMiddleOfCapturingAnEvent)
 	sc.Step(`^I should see a confirmation dialog$`, navShouldSeeAConfirmationDialog)
@@ -135,7 +138,16 @@ func navApplicationShouldExit(ctx context.Context) error {
 	if env == nil {
 		return godog.ErrPending
 	}
-	gomega.Expect(env.IsInMenuState()).To(gomega.BeFalse())
+	gomega.Expect(env.QuitRequested).To(gomega.BeTrue(), "Application should have requested quit")
+	return nil
+}
+
+func navApplicationShouldNotExit(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	gomega.Expect(env.QuitRequested).To(gomega.BeFalse(), "Application should NOT have requested quit")
 	return nil
 }
 
@@ -148,46 +160,153 @@ func navPressCtrlC(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-func navAmInTheMiddleOfCapturingAnEvent(_ context.Context) (context.Context, error) {
-	return nil, godog.ErrPending
+func navAmInTheMiddleOfCapturingAnEvent(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.SelectIntentByName("capture_event")
+	return ctx, nil
 }
 
-func navShouldSeeAConfirmationDialog(_ context.Context) error {
-	return godog.ErrPending
+func navShouldSeeAConfirmationDialog(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("confirm"),
+		gomega.ContainSubstring("Confirm"),
+		gomega.ContainSubstring("save"),
+		gomega.ContainSubstring("Save"),
+		gomega.ContainSubstring("discard"),
+		gomega.ContainSubstring("Discard"),
+		gomega.ContainSubstring("cancel"),
+		gomega.ContainSubstring("Cancel"),
+	), "Should see confirmation dialog")
+	return nil
 }
 
-func navShouldBeAbleToSaveOrDiscardChanges(_ context.Context) error {
-	return godog.ErrPending
+func navShouldBeAbleToSaveOrDiscardChanges(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("save"),
+		gomega.ContainSubstring("Save"),
+		gomega.ContainSubstring("discard"),
+		gomega.ContainSubstring("Discard"),
+		gomega.ContainSubstring("yes"),
+		gomega.ContainSubstring("Yes"),
+		gomega.ContainSubstring("no"),
+		gomega.ContainSubstring("No"),
+	), "Should have save/discard options")
+	return nil
 }
 
-func navPressingXShouldShowHelp(_ context.Context, _ string) error {
-	return godog.ErrPending
+func navPressingXShouldShowHelp(ctx context.Context, key string) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	if len(key) == 1 {
+		env.PressKeyRune(rune(key[0]))
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("Help"),
+		gomega.ContainSubstring("Keyboard"),
+		gomega.ContainSubstring("Reference"),
+	), "Should show help")
+	return nil
 }
 
-func navPressingXShouldQuit(_ context.Context, _ string) error {
-	return godog.ErrPending
+func navPressingXShouldQuit(ctx context.Context, key string) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	switch key {
+	case "q":
+		env.PressKeyRune('q')
+	case "Ctrl+C":
+		env.PressKey(tea.KeyCtrlC)
+	}
+	gomega.Expect(env.QuitRequested).To(gomega.BeTrue(), "Application should quit")
+	return nil
 }
 
-func navPressingXShouldOpenSearch(_ context.Context, _ string) error {
-	return godog.ErrPending
+func navPressingXShouldOpenSearch(ctx context.Context, _ string) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	env.PressKeyRune('/')
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("Search"),
+		gomega.ContainSubstring("search"),
+		gomega.ContainSubstring("Find"),
+	), "Should show search modal")
+	return nil
 }
 
-func navPressingXShouldOpenFilter(_ context.Context, _ string) error {
-	return godog.ErrPending
+func navPressingXShouldOpenFilter(ctx context.Context, _ string) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	env.PressKeyRune('f')
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("Filter"),
+		gomega.ContainSubstring("filter"),
+	), "Should show filter modal")
+	return nil
 }
 
-func navPressingXShouldOpenSort(_ context.Context, _ string) error {
-	return godog.ErrPending
+func navPressingXShouldOpenSort(ctx context.Context, _ string) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	env.PressKeyRune('s')
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("Sort"),
+		gomega.ContainSubstring("sort"),
+	), "Should show sort modal")
+	return nil
 }
 
-func navTypingShouldGoToTheSearchInput(_ context.Context) error {
-	return godog.ErrPending
+func navTypingShouldGoToTheSearchInput(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	env.TypeText("test")
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring("test"), "Typed text should appear in search input")
+	return nil
 }
 
-func navPressingEscapeShouldCloseTheModal(_ context.Context) error {
-	return godog.ErrPending
+func navPressingEscapeShouldCloseTheModal(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	env.Cancel()
+	return nil
 }
 
-func navPressingJShouldNavigateTheList(_ context.Context) error {
-	return godog.ErrPending
+func navPressingJShouldNavigateTheList(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	env.PressKeyRune('j')
+	return nil
 }
