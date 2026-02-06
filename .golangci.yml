@@ -445,6 +445,7 @@ linters:
             - github.com/atotto/clipboard
             - github.com/bluele/factory-go/factory
             - github.com/brianvoe/gofakeit/v7
+            - github.com/cucumber/godog
             - gorm.io/gorm
             - gorm.io/driver/sqlite
 
