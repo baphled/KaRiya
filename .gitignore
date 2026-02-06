@@ -14,7 +14,7 @@ docs/state_matrix.json
 docs/STATE_MATRIX.md
 docs/state_matrix.json
 
-.opencode
+.opencode/plan
 
 # Build artifacts
 *.exe
@@ -84,3 +84,4 @@ PLAN.md
 # Session state (AI workflow)
 .session-active
 .tdd-state
+tmp/
