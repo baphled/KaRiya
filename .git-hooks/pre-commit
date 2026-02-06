@@ -2,22 +2,26 @@
 
 # Pre-commit Hook - Fast Code Quality Checks
 #
-# This hook enforces FAST checks only:
-# 1. Session active check
+# This hook enforces checks that MATCH CI to catch failures early:
+# 1. Session active check (warning only)
 # 2. No generated files
-# 3. No debug statements
-# 4. No secrets
-# 5. Code formatting (Go files only)
-# 6. Build success (Go files only)
-# 7. Static analysis - go vet (Go files only)
-# 8. Fixture usage check - noinlinecareer analyzer (Go files only, cached)
-# 9. Golangci-lint on changed packages (Go files only)
-# 10. TDD compliance check (Go files only)
-# 11. Strict pattern checks (Go files only)
+# 3. No forbidden comment markers (TODO, FIXME, etc.)
+# 4. No debug statements
+# 5. No secrets
+# 6. Code formatting (gofmt)
+# 7. Build success
+# 8. Static analysis - go vet
+# 9. Staticcheck - catches unused code, simplifications (MATCHES CI)
+# 10. Fixture usage check - noinlinecareer analyzer
+# 11. Golangci-lint on changed packages (full lint, MATCHES CI)
+# 12. Intent architecture check (MATCHES CI)
+# 13. Localized tests - tests ONLY for changed packages (fast)
+# 14. TDD compliance check
+# 15. Strict pattern checks
+# 16. Documentation check - validate-documentation.sh + docblocks analyzer
 #
-# Full test suite and race detection should be run via:
-#   make check-compliance
-# before committing. Pre-commit focuses on fast checks only.
+# Full test suite runs in CI as regression check.
+# Run 'make test' locally for full regression testing before major changes.
 
 set -e
 
@@ -169,6 +173,28 @@ if ! go vet ./... > /dev/null 2>&1; then
     exit 1
 fi
 
+# Staticcheck - catches unused code, simplifications, etc.
+# This is run in CI and was missing from pre-commit, causing CI failures
+if command -v staticcheck > /dev/null 2>&1; then
+    CHANGED_GO_FILES=$(git diff --cached --name-only | grep '\.go$' || true)
+    if [ -n "$CHANGED_GO_FILES" ]; then
+        echo "Running staticcheck on changed packages..."
+        CHANGED_PACKAGES=$(echo "$CHANGED_GO_FILES" | xargs -I{} dirname {} | sort -u | sed 's|^|./|' | sed 's|$|/...|')
+        if ! staticcheck $CHANGED_PACKAGES > /dev/null 2>&1; then
+            echo -e "${RED}❌ ERROR: staticcheck found issues${NC}"
+            echo ""
+            staticcheck $CHANGED_PACKAGES 2>&1 | head -20
+            echo ""
+            echo "Fix staticcheck issues before committing."
+            exit 1
+        fi
+        echo -e "${GREEN}✅ staticcheck passed${NC}"
+    fi
+else
+    echo -e "${YELLOW}⚠️  staticcheck not found, skipping${NC}"
+    echo "   Install: go install honnef.co/go/tools/cmd/staticcheck@latest"
+fi
+
 # Fixture usage check (uses cached binary - fast)
 echo "Checking fixture usage..."
 if ! make check-fixtures > /dev/null 2>&1; then
@@ -184,7 +210,9 @@ if ! make check-fixtures > /dev/null 2>&1; then
 fi
 echo -e "${GREEN}✅ Fixture usage check passed${NC}"
 
-# Golangci-lint on changed packages (catches depguard, lll, nilnil, etc.)
+# Golangci-lint on changed packages (catches depguard, lll, nilnil, unused, etc.)
+# NOTE: We run WITHOUT --new-from-rev to catch issues like unused code that becomes
+# dead due to changes elsewhere in the file. This matches CI behavior.
 if command -v golangci-lint > /dev/null 2>&1; then
     CHANGED_GO_FILES=$(git diff --cached --name-only | grep '\.go$' || true)
     if [ -n "$CHANGED_GO_FILES" ]; then
@@ -226,9 +254,97 @@ else
     echo "   Install: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest"
 fi
 
-# Full test suite and race detection are not run in pre-commit.
-# Run 'make check-compliance' before committing to ensure tests pass.
-echo -e "${BLUE}ℹ️  Run 'make check-compliance' before committing to ensure tests pass${NC}"
+# Intent architecture check - catches architecture violations early
+# This is run in CI and is fast enough (~1.5s) for pre-commit
+if [ -f "scripts/check-intent-architecture.sh" ]; then
+    CHANGED_INTENT_FILES=$(git diff --cached --name-only | grep -E 'internal/cli/intents/|internal/cli/screens/' || true)
+    if [ -n "$CHANGED_INTENT_FILES" ]; then
+        echo "Running intent architecture check..."
+        if ! bash scripts/check-intent-architecture.sh > /dev/null 2>&1; then
+            echo -e "${RED}❌ ERROR: Intent architecture violations found${NC}"
+            echo ""
+            bash scripts/check-intent-architecture.sh 2>&1 | grep -E "❌|VIOLATION" | head -10
+            echo ""
+            echo "Run 'make check-intent-architecture' for full details."
+            exit 1
+        fi
+        echo -e "${GREEN}✅ Intent architecture check passed${NC}"
+    fi
+fi
+
+# Localized tests - run tests ONLY for changed packages (fast)
+# Full test suite is run in CI as regression check
+if [ "$SKIP_TESTS" != "1" ]; then
+    CHANGED_GO_FILES=$(git diff --cached --name-only | grep '\.go$' || true)
+    if [ -n "$CHANGED_GO_FILES" ]; then
+        echo "Running localized tests for changed packages..."
+        CHANGED_PACKAGES=$(echo "$CHANGED_GO_FILES" | xargs -I{} dirname {} | sort -u | sed 's|^|./|' | sed 's|$|/...|')
+        
+        # Filter to only packages that have test files
+        TESTABLE_PACKAGES=""
+        for pkg in $CHANGED_PACKAGES; do
+            # Remove the /... suffix to get the directory
+            pkg_dir=$(echo "$pkg" | sed 's|/\.\.\.$||' | sed 's|^\./||')
+            if ls "$pkg_dir"/*_test.go > /dev/null 2>&1; then
+                TESTABLE_PACKAGES="$TESTABLE_PACKAGES $pkg"
+            fi
+        done
+        
+        if [ -n "$TESTABLE_PACKAGES" ]; then
+            if ! go test -count=1 -short $TESTABLE_PACKAGES > /dev/null 2>&1; then
+                echo -e "${RED}❌ ERROR: Tests failed for changed packages${NC}"
+                echo ""
+                go test -count=1 -short $TESTABLE_PACKAGES 2>&1 | grep -E "FAIL|Error|panic" | head -20
+                echo ""
+                echo "Fix failing tests before committing."
+                echo "To skip: SKIP_TESTS=1 git commit"
+                exit 1
+            fi
+            echo -e "${GREEN}✅ Localized tests passed${NC}"
+            
+            # Coverage check - 95% per-package requirement for modified packages
+            if [ "$SKIP_COVERAGE_CHECK" != "1" ]; then
+                echo "Checking coverage for modified packages (>= 95% required)..."
+                COVERAGE_FAILED=""
+                for pkg in $TESTABLE_PACKAGES; do
+                    # Get coverage for this package
+                    COVERAGE_OUTPUT=$(go test -cover "$pkg" 2>/dev/null | grep "coverage:" || echo "")
+                    if [ -n "$COVERAGE_OUTPUT" ]; then
+                        # Extract coverage percentage
+                        COVERAGE_PCT=$(echo "$COVERAGE_OUTPUT" | grep -oP 'coverage: \K[0-9.]+' || echo "0")
+                        COVERAGE_INT=$(printf "%.0f" "$COVERAGE_PCT" 2>/dev/null || echo "0")
+                        
+                        # Skip packages with 0% (no statements to cover)
+                        if [ "$COVERAGE_INT" -gt 0 ] && [ "$COVERAGE_INT" -lt 95 ]; then
+                            COVERAGE_FAILED="$COVERAGE_FAILED\n  $pkg: ${COVERAGE_PCT}%"
+                        fi
+                    fi
+                done
+                
+                if [ -n "$COVERAGE_FAILED" ]; then
+                    echo -e "${RED}❌ ERROR: Coverage below 95% for modified packages${NC}"
+                    echo ""
+                    echo -e "Packages below threshold:$COVERAGE_FAILED"
+                    echo ""
+                    echo "Add tests to reach >= 95% coverage before committing."
+                    echo "Check coverage: go test -cover ./path/to/package/..."
+                    echo "Find gaps: go test -coverprofile=/tmp/c.out ./... && go tool cover -func=/tmp/c.out | grep -v 100.0%"
+                    echo ""
+                    echo "To skip: SKIP_COVERAGE_CHECK=1 git commit"
+                    exit 1
+                fi
+                echo -e "${GREEN}✅ Coverage check passed (>= 95% per package)${NC}"
+            else
+                echo -e "${YELLOW}⚠️  Coverage check skipped (SKIP_COVERAGE_CHECK=1)${NC}"
+            fi
+        fi
+    fi
+else
+    echo -e "${YELLOW}⚠️  Tests skipped (SKIP_TESTS=1)${NC}"
+fi
+
+# Full test suite is run in CI as regression check
+echo -e "${BLUE}ℹ️  Full test suite runs in CI. Run 'make test' locally for regression check.${NC}"
 
 # TDD check (can be overridden)
 if [ "$SKIP_TDD_CHECK" != "1" ]; then
@@ -274,7 +390,7 @@ if [ "$SKIP_DOC_CHECK" != "1" ]; then
     echo "Running documentation check..."
     STAGED_GO=$(git diff --cached --name-only | grep '\.go$' | grep -v '_test.go' || true)
     if [ -n "$STAGED_GO" ]; then
-        # Run comprehensive documentation validation
+        # Step 1: Run validate-documentation.sh for basic checks (doc.go, inline comments)
         if [ -f "scripts/validate-documentation.sh" ]; then
             echo "Validating documentation structure..."
             if ! bash scripts/validate-documentation.sh --verbose 2>/dev/null; then
@@ -282,42 +398,42 @@ if [ "$SKIP_DOC_CHECK" != "1" ]; then
                 echo ""
                 echo "Documentation required for all exported symbols:"
                 echo "  - Package doc.go file with package-level documentation"
-                echo "  - Function/Method: Expected, Returns, Side effects sections"
                 echo "  - Type: Godoc comment starting with type name"
                 echo "  - No inline comments (except in e2e test files)"
                 echo ""
-                echo "Run 'make check-docblocks' for structured section validation."
                 echo "Run 'scripts/validate-documentation.sh --fix' to attempt automatic fixes."
                 echo ""
                 echo "To skip: SKIP_DOC_CHECK=1 git commit"
-                echo ""
-                echo "Note: Documentation is REQUIRED - this check cannot be bypassed for Go code."
                 exit 1
             fi
-        else
-            # Fallback to docblocks analyzer only
-            if [ ! -f "./bin/docblocks" ]; then
-                echo "Building docblocks analyzer..."
-                go build -o ./bin/docblocks ./cmd/docblocks > /dev/null 2>&1
-            fi
-            
-            # Run docblocks analyzer on staged packages
-            STAGED_PACKAGES=$(echo "$STAGED_GO" | xargs -I{} dirname {} | sort -u | sed 's|^|./|' | sed 's|$|/...|')
-            if ! go vet -vettool=./bin/docblocks $STAGED_PACKAGES 2>/dev/null; then
-                echo -e "${RED}❌ ERROR: Documentation violations found${NC}"
-                echo ""
-                echo "Documentation required for all exported symbols:"
-                echo "  - Package doc.go file with package-level documentation"
-                echo "  - Function/Method: Expected, Returns, Side effects sections"
-                echo "  - Type: Godoc comment starting with type name"
-                echo ""
-                echo "Run 'make check-docblocks' for details."
-                echo ""
-                echo "To skip: SKIP_DOC_CHECK=1 git commit"
-                echo ""
-                echo "Note: Documentation is REQUIRED - this check cannot be bypassed for Go code."
-                exit 1
-            fi
+        fi
+        
+        # Step 2: ALWAYS run docblocks analyzer for structured sections (Expected/Returns/Side effects)
+        # This is the authoritative check - validate-documentation.sh is a lighter pre-check
+        if [ ! -f "./bin/docblocks" ]; then
+            echo "Building docblocks analyzer..."
+            go build -o ./bin/docblocks ./cmd/docblocks > /dev/null 2>&1
+        fi
+        
+        # Run docblocks analyzer on staged packages
+        STAGED_PACKAGES=$(echo "$STAGED_GO" | xargs -I{} dirname {} | sort -u | sed 's|^|./|' | sed 's|$|/...|')
+        echo "Checking docblock sections (Expected/Returns/Side effects)..."
+        if ! go vet -vettool=./bin/docblocks $STAGED_PACKAGES 2>/dev/null; then
+            echo -e "${RED}❌ ERROR: Docblock section violations found${NC}"
+            echo ""
+            # Show the actual errors
+            go vet -vettool=./bin/docblocks $STAGED_PACKAGES 2>&1 | grep -v "^#" | head -10
+            echo ""
+            echo "Documentation required for all exported functions/methods:"
+            echo "  - Expected: section (if function has parameters)"
+            echo "  - Returns: section (if function returns values)"
+            echo "  - Side effects: section (always required)"
+            echo ""
+            echo "Run 'make check-docblocks' for full details."
+            echo "Run 'scripts/fix-doc-blocks.sh <file>' to attempt automatic fixes."
+            echo ""
+            echo "To skip: SKIP_DOC_CHECK=1 git commit"
+            exit 1
         fi
     fi
     echo -e "${GREEN}✅ Documentation check passed${NC}"

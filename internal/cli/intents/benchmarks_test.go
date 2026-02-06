@@ -4,45 +4,13 @@ package intents
 import (
 	"context"
 	"testing"
-
-	"github.com/baphled/kariya/internal/domain/career"
 )
 
 // CaptureEvent benchmarks have been moved to internal/cli/intents/captureevent/benchmarks_test.go
 
 // BrowseTimeline benchmarks have been moved to internal/cli/intents/browsetimeline/benchmarks_test.go
 
-// BenchmarkGenerateCVInit benchmarks GenerateCV intent initialization.
-func BenchmarkGenerateCVInit(b *testing.B) {
-	ctx := &GenerateCVContext{
-		AvailableProfiles: make([]*CVProfile, 0),
-		Events:            make([]*career.Event, 0),
-		Facts:             make([]*career.Fact, 0),
-		DefaultProfile:    nil,
-	}
-
-	b.ResetTimer()
-	for range b.N {
-		intent, _ := NewGenerateCVIntent(ctx)
-		_ = intent.Init()
-	}
-}
-
-// BenchmarkGenerateCVView benchmarks GenerateCV intent view rendering.
-func BenchmarkGenerateCVView(b *testing.B) {
-	ctx := &GenerateCVContext{
-		AvailableProfiles: make([]*CVProfile, 0),
-		Events:            make([]*career.Event, 0),
-		Facts:             make([]*career.Fact, 0),
-		DefaultProfile:    nil,
-	}
-	intent, _ := NewGenerateCVIntent(ctx)
-
-	b.ResetTimer()
-	for range b.N {
-		_ = intent.View()
-	}
-}
+// GenerateCV benchmarks have been moved to internal/cli/intents/generatecv/benchmarks_test.go
 
 // BenchmarkConfigureSystemInit benchmarks ConfigureSystem intent initialization.
 func BenchmarkConfigureSystemInit(b *testing.B) {

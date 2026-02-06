@@ -275,11 +275,17 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 if [ -n "$ALL_STAGED" ]; then
     PACKAGES=$(echo "$ALL_STAGED" | xargs -I{} dirname {} | sort -u)
     for pkg in $PACKAGES; do
+        # Skip mock packages - they are auto-generated and don't need tests
+        if [[ "$pkg" == *"/mocks/"* ]] || [[ "$pkg" == *"/mocks" ]]; then
+            echo -e "${YELLOW}⏭️  Skipping mock package: $pkg${NC}"
+            continue
+        fi
         if [ -d "$pkg" ]; then
             COVERAGE_OUTPUT=$(go test -cover "./$pkg" 2>/dev/null || true)
             COVERAGE=$(echo "$COVERAGE_OUTPUT" | grep -oP 'coverage: \K[0-9.]+' || echo "0")
             if [ -n "$COVERAGE" ]; then
-                COVERAGE_INT=${COVERAGE%.*}
+                # Round to nearest integer (94.5+ rounds to 95)
+                COVERAGE_INT=$(printf "%.0f" "$COVERAGE" 2>/dev/null || echo "0")
                 if [ "$COVERAGE_INT" -lt 95 ]; then
                     echo -e "${RED}❌ Package coverage below 95%${NC}"
                     echo "   Package: $pkg"

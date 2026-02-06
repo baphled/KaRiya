@@ -1,8 +1,6 @@
 package forms
 
 import (
-	"errors"
-
 	"github.com/charmbracelet/huh"
 )
 
@@ -35,11 +33,11 @@ type SkillsLimitOption struct {
 //   - None.
 func SkillsLimitOptions() []SkillsLimitOption {
 	return []SkillsLimitOption{
-		{Value: 5, Label: "5 per category"},
-		{Value: 10, Label: "10 per category"},
-		{Value: 15, Label: "15 per category"},
-		{Value: 20, Label: "20 per category"},
-		{Value: 0, Label: "All (no limit)"},
+		{Value: 3, Label: "3"},
+		{Value: 5, Label: "5"},
+		{Value: 10, Label: "10"},
+		{Value: 15, Label: "15"},
+		{Value: 0, Label: "All"},
 	}
 }
 
@@ -76,8 +74,7 @@ func NewCVConfigForm(
 	width, height int, singleTechSelect bool,
 ) *huh.Form {
 	// Step 1: WHO - Profile and Audience
-	profileOpts := make([]huh.Option[string], 0, len(profileOptions)+1)
-	profileOpts = append(profileOpts, huh.NewOption("-- Select a profile --", ""))
+	profileOpts := make([]huh.Option[string], 0, len(profileOptions))
 	for _, profile := range profileOptions {
 		profileOpts = append(profileOpts, huh.NewOption(profile.Name, profile.ID))
 	}
@@ -86,15 +83,9 @@ func NewCVConfigForm(
 		huh.NewSelect[string]().
 			Key("profile").
 			Title("Select CV Profile").
-			Description("Use ↑/↓ arrows to navigate, Enter to select").
+			Description("Choose which profile to use for this CV").
 			Options(profileOpts...).
-			Value(&data.ProfileID).
-			Validate(func(s string) error {
-				if s == "" {
-					return errors.New("please select a profile")
-				}
-				return nil
-			}),
+			Value(&data.ProfileID),
 
 		huh.NewSelect[string]().
 			Key("audience").
@@ -103,7 +94,7 @@ func NewCVConfigForm(
 			Options(
 				huh.NewOption("Hiring Manager", "hiring_manager"),
 				huh.NewOption("Recruiter", "recruiter"),
-				huh.NewOption("Peer/Colleague", "peer"),
+				huh.NewOption("Technical Peer", "peer"),
 			).
 			Value(&data.Audience),
 	}
@@ -115,9 +106,9 @@ func NewCVConfigForm(
 			Title("Technology Focus").
 			Description("How should we present your technical expertise?").
 			Options(
-				huh.NewOption("Language Agnostic (focus on concepts)", "language_agnostic"),
-				huh.NewOption("Generalist (show broad tech range)", "generalist"),
-				huh.NewOption("Specialist (highlight specific techs)", "specialist"),
+				huh.NewOption("Language Agnostic", "language_agnostic"),
+				huh.NewOption("Generalist", "generalist"),
+				huh.NewOption("Specialist", "specialist"),
 			).
 			Value(&data.TechFocus),
 	}
@@ -154,10 +145,10 @@ func NewCVConfigForm(
 				Title("Focus Area").
 				Description("Primary area of expertise").
 				Options(
-					huh.NewOption("Backend Development", "backend"),
-					huh.NewOption("Frontend Development", "frontend"),
-					huh.NewOption("Full Stack Development", "fullstack"),
-					huh.NewOption("DevOps/Infrastructure", "devops"),
+					huh.NewOption("Backend", "backend"),
+					huh.NewOption("Frontend", "frontend"),
+					huh.NewOption("Full Stack", "fullstack"),
+					huh.NewOption("DevOps", "devops"),
 				).
 				Value(&data.FocusArea),
 		)
@@ -181,8 +172,8 @@ func NewCVConfigForm(
 			Title("Skills Presentation").
 			Description("How should skills be organized?").
 			Options(
-				huh.NewOption("Grouped by Category", "grouped"),
-				huh.NewOption("Flat List", "flat"),
+				huh.NewOption("Grouped", "grouped"),
+				huh.NewOption("Flat", "flat"),
 			).
 			Value(&data.SkillsFormat),
 
@@ -198,10 +189,10 @@ func NewCVConfigForm(
 			Title("CV Length").
 			Description("Target length for the CV").
 			Options(
-				huh.NewOption("1 Page (executive summary)", "1_page"),
-				huh.NewOption("2 Pages (concise)", "2_page"),
-				huh.NewOption("Standard (2-3 pages)", "standard"),
-				huh.NewOption("Detailed (3+ pages)", "detailed"),
+				huh.NewOption("1 Page", "1_page"),
+				huh.NewOption("2 Pages", "2_page"),
+				huh.NewOption("Standard", "standard"),
+				huh.NewOption("Detailed", "detailed"),
 			).
 			Value(&data.CVLength),
 	}

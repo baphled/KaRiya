@@ -13,6 +13,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/bootstrap"
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/intents/captureevent"
+	"github.com/baphled/kariya/internal/cli/intents/generatecv"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/config"
@@ -892,6 +893,12 @@ func (e *TestEnv) processCmdResult(msg tea.Msg) {
 	case captureevent.DismissModalMsg:
 		e.updateModelAndExecute(msg)
 	case intents.ConfigCompleteMsg:
+		e.updateModelAndExecute(msg)
+	case generatecv.TechnologiesExtractedMsg:
+		e.updateModelAndExecute(msg)
+	case generatecv.CVGenerationCompleteMsg:
+		e.updateModelAndExecute(msg)
+	case generatecv.ExportCompleteMsg:
 		e.updateModelAndExecute(msg)
 	case feedback.ModalCountdownTickMsg:
 		e.updateModelAndExecute(msg)

@@ -8,9 +8,8 @@ import (
 	burstmanagement "github.com/baphled/kariya/internal/cli/intents/burst_management"
 	"github.com/baphled/kariya/internal/cli/intents/captureevent"
 	"github.com/baphled/kariya/internal/cli/intents/factmanagement"
+	"github.com/baphled/kariya/internal/cli/intents/generatecv"
 	"github.com/baphled/kariya/internal/cli/intents/skillsmanagement"
-	"github.com/baphled/kariya/internal/cli/screens"
-	cvscreens "github.com/baphled/kariya/internal/cli/screens/cv"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
@@ -182,7 +181,7 @@ func (r *DefaultIntentRegistrar) registerGenerateCV(ctx context.Context, router 
 			scoringCfg = &appCfg.Scoring
 		}
 
-		cvCtx := &intents.GenerateCVContext{
+		cvCtx := &generatecv.IntentContext{
 			Events:                events,
 			Facts:                 facts,
 			AvailableProfiles:     createDefaultCVProfiles(),
@@ -191,21 +190,16 @@ func (r *DefaultIntentRegistrar) registerGenerateCV(ctx context.Context, router 
 			DataProcessingService: cv.NewDataProcessingService(r.config.Log),
 			BulletGenerator:       cv.NewBulletGenerator(r.config.Log, scoringCfg),
 			ExportService:         r.config.CVExportService,
+			SkillRepository:       r.config.CareerService.GetSkillRepository(),
+			EventRepository:       r.config.CareerService.GetEventRepository(),
 			ProfileConfig:         profileCfg,
 			AppContext:            ctx,
-			ReviewScreenFactory: func(cvView *career.CVView) screens.Screen {
-				return cvscreens.NewCVReviewScreen(cvView)
-			},
-			PreviewScreenFactory: func(cvView *career.CVView) screens.Screen {
-				return cvscreens.NewCVPreviewScreenWithProfile(cvView, profileCfg)
-			},
 		}
-		intent, err := intents.NewGenerateCVIntent(cvCtx)
+		intent, err := generatecv.NewIntent(cvCtx)
 		if err != nil {
 			r.config.Log.Error("Failed to create GenerateCV intent: %v", err)
 			return nil
 		}
-		intent.EnableWizardFlow()
 		return intent
 	})
 }
