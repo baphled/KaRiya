@@ -189,7 +189,7 @@ Feature: Capture Career Events
   # Date Input Scenarios
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Capture event with specific date
     When I select "capture_event" from the menu
     And I select quick capture strategy
@@ -199,7 +199,7 @@ Feature: Capture Career Events
     Then I should see the success message
     And the event should have date "2025-06-15"
 
-  @happy @wip
+  @happy
   Scenario: Capture event with today keyword
     When I select "capture_event" from the menu
     And I select quick capture strategy
@@ -209,7 +209,7 @@ Feature: Capture Career Events
     Then I should see the success message
     And the event should have today's date
 
-  @happy @wip
+  @happy
   Scenario: Capture event with relative date
     When I select "capture_event" from the menu
     And I select quick capture strategy

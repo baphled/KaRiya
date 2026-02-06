@@ -3,6 +3,7 @@ package steps
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/baphled/kariya/features/support"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
@@ -53,6 +54,11 @@ func RegisterCaptureSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I try to submit without description$`, iTryToSubmitWithoutDescription)
 	sc.Step(`^I should see a validation error$`, iShouldSeeValidationError)
 	sc.Step(`^I press Ctrl\+S$`, iPressCtrlS)
+	sc.Step(`^I set event date to "([^"]*)"$`, iSetEventDateTo)
+	sc.Step(`^the event should have date "([^"]*)"$`, theEventShouldHaveDate)
+	sc.Step(`^the event should have today's date$`, theEventShouldHaveTodaysDate)
+	sc.Step(`^the event should have a date (\d+) days ago$`, theEventShouldHaveDateDaysAgo)
+	sc.Step(`^I should see a date validation error$`, iShouldSeeDateValidationError)
 }
 
 func theDatabaseIsEmpty(ctx context.Context) (context.Context, error) {
@@ -474,4 +480,60 @@ func iPressCtrlS(ctx context.Context) (context.Context, error) {
 	}
 	env.PressKey(tea.KeyCtrlS)
 	return ctx, nil
+}
+
+func iSetEventDateTo(ctx context.Context, date string) (context.Context, error) {
+	data := support.GetEventData(ctx)
+	data.Date = date
+	return support.WithEventData(ctx, data), nil
+}
+
+func theEventShouldHaveDate(ctx context.Context, expected string) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	events := env.GetEvents()
+	gomega.Expect(events).NotTo(gomega.BeEmpty())
+	gomega.Expect(events[0].Date.Format("2006-01-02")).To(gomega.Equal(expected))
+	return nil
+}
+
+func theEventShouldHaveTodaysDate(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	events := env.GetEvents()
+	gomega.Expect(events).NotTo(gomega.BeEmpty())
+	today := time.Now().Format("2006-01-02")
+	gomega.Expect(events[0].Date.Format("2006-01-02")).To(gomega.Equal(today))
+	return nil
+}
+
+func theEventShouldHaveDateDaysAgo(ctx context.Context, daysAgo int) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	events := env.GetEvents()
+	gomega.Expect(events).NotTo(gomega.BeEmpty())
+	expected := time.Now().AddDate(0, 0, -daysAgo).Format("2006-01-02")
+	gomega.Expect(events[0].Date.Format("2006-01-02")).To(gomega.Equal(expected))
+	return nil
+}
+
+func iShouldSeeDateValidationError(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("invalid date"),
+		gomega.ContainSubstring("Invalid date"),
+		gomega.ContainSubstring("date format"),
+		gomega.ContainSubstring("Date format"),
+	))
+	return nil
 }
