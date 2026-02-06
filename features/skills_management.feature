@@ -1,0 +1,472 @@
+@skills
+Feature: Manage Skills
+  As a professional
+  I want to manage my skills
+  So that I can track my expertise and proficiency levels
+
+  Background:
+    Given I am on the main menu
+
+  # ============================================================================
+  # Empty State
+  # ============================================================================
+
+  @happy @smoke
+  Scenario: View empty skills list
+    Given the database is empty
+    When I select "manage_skills" from the menu
+    Then I should see "No skills"
+    And I should be able to go back to the menu
+
+  # ============================================================================
+  # Skills List Display
+  # ============================================================================
+
+  @happy @smoke @wip
+  Scenario: View skills list with skills
+    Given I have 5 skills in my profile
+    When I select "manage_skills" from the menu
+    Then I should see a list of skills
+    And I should see "5"
+
+  @happy @wip
+  Scenario: Navigate through skills list with vim keys
+    Given I have 5 skills in my profile
+    When I select "manage_skills" from the menu
+    And I press "j" to navigate down
+    And I press "k" to navigate up
+    Then I should still be on the skills list
+
+  @happy @wip
+  Scenario: Navigate through skills list with arrow keys
+    Given I have 5 skills in my profile
+    When I select "manage_skills" from the menu
+    And I press down arrow
+    And I press up arrow
+    Then I should still be on the skills list
+
+  # ============================================================================
+  # Skill Detail View
+  # ============================================================================
+
+  @happy @wip
+  Scenario: View skill details
+    Given I have a skill "Go" with category "Programming"
+    When I select "manage_skills" from the menu
+    And I press enter to view details
+    Then I should see "Go"
+    And I should see "Programming"
+
+  @happy @wip
+  Scenario: Close skill detail modal
+    Given I have a skill "Go" with category "Programming"
+    When I select "manage_skills" from the menu
+    And I press enter to view details
+    And I press escape
+    Then I should still be on the skills list
+
+  # ============================================================================
+  # Add Skill
+  # ============================================================================
+
+  @happy
+  Scenario: Open add skill modal
+    Given the database is empty
+    When I select "manage_skills" from the menu
+    And I press "a" to add skill
+    Then I should see the add skill form
+
+  @happy
+  Scenario: Cancel add skill
+    Given the database is empty
+    When I select "manage_skills" from the menu
+    And I press "a" to add skill
+    And I press escape
+    Then I should still be on the skills list
+    And there should be 0 skills
+
+  @happy @wip
+  Scenario: Add a new skill
+    Given the database is empty
+    When I select "manage_skills" from the menu
+    And I press "a" to add skill
+    And I enter skill name "Python"
+    And I select category "Programming"
+    And I submit the skill form
+    Then I should still be on the skills list
+    And there should be 1 skill
+    And the skill should have name "Python"
+
+  # ============================================================================
+  # Edit Skill
+  # ============================================================================
+
+  @happy @wip
+  Scenario: Open edit skill modal
+    Given I have a skill "JavaScript" with category "Programming"
+    When I select "manage_skills" from the menu
+    And I press "e" to edit
+    Then I should see the edit skill form
+    And I should see "JavaScript"
+
+  @happy @wip
+  Scenario: Cancel edit skill
+    Given I have a skill "JavaScript" with category "Programming"
+    When I select "manage_skills" from the menu
+    And I press "e" to edit
+    And I press escape
+    Then I should still be on the skills list
+    And the skill should have name "JavaScript"
+
+  @happy @wip
+  Scenario: Edit skill and save
+    Given I have a skill "JavaScript" with category "Programming"
+    When I select "manage_skills" from the menu
+    And I press "e" to edit
+    And I clear the skill name field
+    And I enter skill name "TypeScript"
+    And I submit the skill form
+    Then I should still be on the skills list
+    And the skill should have name "TypeScript"
+
+  # ============================================================================
+  # Delete Skill
+  # ============================================================================
+
+  @happy @wip
+  Scenario: Open delete skill confirmation
+    Given I have a skill "Ruby" with category "Programming"
+    When I select "manage_skills" from the menu
+    And I press "d" to delete
+    Then I should see the delete confirmation
+
+  @happy @wip
+  Scenario: Cancel delete skill
+    Given I have a skill "Ruby" with category "Programming"
+    When I select "manage_skills" from the menu
+    And I press "d" to delete
+    And I cancel the confirmation
+    Then I should still be on the skills list
+    And there should be 1 skill
+
+  @happy @wip
+  Scenario: Confirm delete skill
+    Given I have a skill "Ruby" with category "Programming"
+    When I select "manage_skills" from the menu
+    And I press "d" to delete
+    And I confirm the deletion
+    Then I should still be on the skills list
+    And there should be 0 skills
+
+  # ============================================================================
+  # Filter and Sort
+  # ============================================================================
+
+  @happy
+  Scenario: Open filter modal
+    Given the database is empty
+    When I select "manage_skills" from the menu
+    And I press "f" to filter
+    Then I should see the filter modal
+
+  @happy
+  Scenario: Cancel filter modal
+    Given the database is empty
+    When I select "manage_skills" from the menu
+    And I press "f" to filter
+    And I press escape
+    Then I should still be on the skills list
+
+  @happy
+  Scenario: Open sort modal
+    Given the database is empty
+    When I select "manage_skills" from the menu
+    And I press "s" to sort
+    Then I should see the sort modal
+
+  @happy
+  Scenario: Cancel sort modal
+    Given the database is empty
+    When I select "manage_skills" from the menu
+    And I press "s" to sort
+    And I press escape
+    Then I should still be on the skills list
+
+  @happy
+  Scenario: Open search modal
+    Given the database is empty
+    When I select "manage_skills" from the menu
+    And I press "/" to search
+    Then I should see the search modal
+
+  @happy
+  Scenario: Cancel search modal
+    Given the database is empty
+    When I select "manage_skills" from the menu
+    And I press "/" to search
+    And I press escape
+    Then I should still be on the skills list
+
+  # ============================================================================
+  # Skill Inference
+  # ============================================================================
+
+  @happy @wip
+  Scenario: Trigger skill inference
+    Given I have an event "Built REST API in Go with PostgreSQL"
+    When I select "manage_skills" from the menu
+    And I press "i" to infer skills
+    Then I should see the loading modal
+    And I should see "Analyzing"
+
+  @happy @wip
+  Scenario: Cancel skill inference
+    Given I have an event "Built REST API in Go"
+    When I select "manage_skills" from the menu
+    And I press "i" to infer skills
+    And I press escape
+    Then I should still be on the skills list
+
+  @happy @wip
+  Scenario: Review skill suggestions
+    Given I have an event "Built microservices in Go with PostgreSQL database"
+    When I select "manage_skills" from the menu
+    And I press "i" to infer skills
+    And the inference completes
+    Then I should see the skill suggestions modal
+    And I should see "Go"
+
+  @happy @wip
+  Scenario: Accept skill suggestion
+    Given I have an event "Built microservices in Go"
+    When I select "manage_skills" from the menu
+    And I press "i" to infer skills
+    And the inference completes
+    And I accept the first suggestion
+    Then I should see "success"
+    And there should be 1 skill
+
+  @happy @wip
+  Scenario: Reject skill suggestion
+    Given I have an event "Built microservices in Go"
+    When I select "manage_skills" from the menu
+    And I press "i" to infer skills
+    And the inference completes
+    And I reject the first suggestion
+    Then I should still be on the skill suggestions modal
+    And the suggestion should be marked as rejected
+
+  # ============================================================================
+  # Navigation and Exit
+  # ============================================================================
+
+  @sad
+  Scenario: Exit skills list returns to menu
+    Given the database is empty
+    When I select "manage_skills" from the menu
+    And I press escape
+    Then I should be on the main menu
+
+  @sad
+  Scenario: Go back from empty skills list
+    Given the database is empty
+    When I select "manage_skills" from the menu
+    And I press escape
+    Then I should be on the main menu
+
+  # ============================================================================
+  # All Categories
+  # ============================================================================
+
+  @happy @wip
+  Scenario: Create skills with all categories
+    Given the database is empty
+    When I create skills with all 15 categories
+    Then there should be 15 skills
+    And each skill should have a unique category
+
+  # ============================================================================
+  # View Events Using Skill
+  # ============================================================================
+
+  @happy @wip
+  Scenario: View events that use a skill
+    Given I have a skill "Go" with category "Languages"
+    And I have an event "Built API in Go" that uses skill "Go"
+    And I have an event "Wrote CLI tool in Go" that uses skill "Go"
+    When I select "manage_skills" from the menu
+    And I select skill "Go"
+    And I press "s" to view events
+    Then I should see the skill events modal
+    And I should see 2 events
+    And I should see "Built API in Go"
+    And I should see "Wrote CLI tool in Go"
+
+  @happy @wip
+  Scenario: View event detail from skill events modal
+    Given I have a skill "Python" with category "Languages"
+    And I have an event "Built data pipeline" that uses skill "Python"
+    When I select "manage_skills" from the menu
+    And I select skill "Python"
+    And I press "s" to view events
+    And I press enter to view event details
+    Then I should see "Built data pipeline"
+    And I should see the full event description
+
+  @happy @wip
+  Scenario: Close skill events modal returns to skill detail
+    Given I have a skill "JavaScript" with category "Languages"
+    And I have an event "Built React app" that uses skill "JavaScript"
+    When I select "manage_skills" from the menu
+    And I select skill "JavaScript"
+    And I press "s" to view events
+    And I press escape
+    Then I should see the skill detail view
+
+  # ============================================================================
+  # Proficiency Level
+  # ============================================================================
+
+  @happy @wip
+  Scenario: Add skill with proficiency level
+    Given the database is empty
+    When I select "manage_skills" from the menu
+    And I press "a" to add skill
+    And I enter "Kubernetes" as skill name
+    And I select category "DevOps"
+    And I select level "Expert"
+    And I submit the skill form
+    Then there should be 1 skill
+    And the skill should have level "Expert"
+
+  @happy @wip
+  Scenario: Edit skill proficiency level
+    Given I have a skill "Docker" with category "DevOps" and level "Intermediate"
+    When I select "manage_skills" from the menu
+    And I select skill "Docker"
+    And I press "e" to edit
+    And I change level to "Expert"
+    And I submit the skill form
+    Then the skill should have level "Expert"
+
+  # ============================================================================
+  # Years of Experience
+  # ============================================================================
+
+  @happy @wip
+  Scenario: Add skill with years of experience
+    Given the database is empty
+    When I select "manage_skills" from the menu
+    And I press "a" to add skill
+    And I enter "Java" as skill name
+    And I select category "Languages"
+    And I enter years of experience "8"
+    And I submit the skill form
+    Then there should be 1 skill
+    And the skill should have years "8"
+
+  @happy @wip
+  Scenario: Edit skill years of experience
+    Given I have a skill "Python" with category "Languages" and years "3"
+    When I select "manage_skills" from the menu
+    And I select skill "Python"
+    And I press "e" to edit
+    And I change years to "5"
+    And I submit the skill form
+    Then the skill should have years "5"
+
+  # ============================================================================
+  # Filter by Category
+  # ============================================================================
+
+  @happy @wip
+  Scenario: Filter skills by category
+    Given I have a skill "Go" with category "Languages"
+    And I have a skill "Docker" with category "DevOps"
+    And I have a skill "AWS" with category "Cloud"
+    When I select "manage_skills" from the menu
+    And I press "f" to filter
+    And I select filter category "Languages"
+    And I confirm filter
+    Then I should see 1 skill
+    And I should see "Go"
+    And I should not see "Docker"
+
+  @happy @wip
+  Scenario: Filter skills by multiple categories
+    Given I have a skill "Go" with category "Languages"
+    And I have a skill "Python" with category "Languages"
+    And I have a skill "Docker" with category "DevOps"
+    And I have a skill "Kubernetes" with category "DevOps"
+    And I have a skill "AWS" with category "Cloud"
+    When I select "manage_skills" from the menu
+    And I press "f" to filter
+    And I select filter categories "Languages,DevOps"
+    And I confirm filter
+    Then I should see 4 skills
+    And I should not see "AWS"
+
+  # ============================================================================
+  # Sort Options
+  # ============================================================================
+
+  @happy @wip
+  Scenario: Sort skills by years descending
+    Given I have a skill "Go" with years "2"
+    And I have a skill "Python" with years "8"
+    And I have a skill "Java" with years "5"
+    When I select "manage_skills" from the menu
+    And I press "s" to sort
+    And I select sort by "years"
+    And I select order "descending"
+    And I confirm sort
+    Then I should see "Python" first
+    And I should see "Go" last
+
+  @happy @wip
+  Scenario: Sort skills by level
+    Given I have a skill "Go" with level "Expert"
+    And I have a skill "Python" with level "Beginner"
+    And I have a skill "Java" with level "Intermediate"
+    When I select "manage_skills" from the menu
+    And I press "s" to sort
+    And I select sort by "level"
+    And I confirm sort
+    Then I should see "Go" first
+
+  @happy @wip
+  Scenario: Sort skills by name alphabetically
+    Given I have a skill "Zebra"
+    And I have a skill "Alpha"
+    And I have a skill "Mike"
+    When I select "manage_skills" from the menu
+    And I press "s" to sort
+    And I select sort by "name"
+    And I confirm sort
+    Then I should see "Alpha" first
+    And I should see "Zebra" last
+
+  # ============================================================================
+  # Skill Count Display
+  # ============================================================================
+
+  @happy @wip
+  Scenario: Skill shows event count
+    Given I have a skill "Go" with category "Languages"
+    And I have 5 events that use skill "Go"
+    When I select "manage_skills" from the menu
+    Then I should see "Go" with event count "5"
+
+  # ============================================================================
+  # Category Grouping
+  # ============================================================================
+
+  @happy @wip
+  Scenario: Skills are grouped by category
+    Given I have a skill "Go" with category "Languages"
+    And I have a skill "Python" with category "Languages"
+    And I have a skill "Docker" with category "DevOps"
+    When I select "manage_skills" from the menu
+    Then I should see skills grouped by category
+    And I should see "Languages" section with 2 skills
+    And I should see "DevOps" section with 1 skill
