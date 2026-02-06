@@ -4,7 +4,7 @@ This directory contains all development standards, guidelines, and workflows for
 
 ## 📚 Documentation Overview
 
-### Total Documents: 14 files (~7,790+ lines)
+### Total Documents: 14 files (~7,800+ lines)
 ### Archived Documents: 4 files (see docs/archive/rules/)
 ### Categories: Rules, Guidelines, Quick References, Processes, Best Practices
 
@@ -206,6 +206,7 @@ This directory contains all development standards, guidelines, and workflows for
 | Check compliance | [COMPLIANCE_QUICK_REF.md](COMPLIANCE_QUICK_REF.md) |
 | Save tokens | [token-efficiency.md](token-efficiency.md) |
 | Review commits | [review-commit-prompt.md](review-commit-prompt.md) |
+| Generate VHS demos | [VHS_DEMO_GENERATION_PROMPT.md](../prompts/VHS_DEMO_GENERATION_PROMPT.md) |
 
 ### Reading Strategy
 
@@ -348,9 +349,9 @@ After reading the rules, ensure you understand:
 
 ---
 
-**Last Updated**: 2026-01-06
+**Last Updated**: 2026-02-06
 **Directory**: `docs/rules/`
 **Total Files**: 14
-**Total Lines**: ~7,400+
+**Total Lines**: ~7,800+
 **Status**: Production-ready and comprehensive
 

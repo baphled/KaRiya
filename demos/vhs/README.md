@@ -17,26 +17,50 @@ brew install vhs
 ## Quick Start
 
 ```bash
-# Generate all demo GIFs
+# Generate all numbered demo GIFs
 make vhs-demos
 
-# Generate specific demo
-make vhs-onboarding
-make vhs-capture
-make vhs-capture-cancel    # Cancel workflow
-make vhs-browse
-make vhs-skills
-make vhs-configure
-make vhs-bursts
-make vhs-cv
-make vhs-facts
-make vhs-import
-make vhs-journey
-make vhs-burst-detection   # AI feature
-make vhs-skill-inference   # AI feature
-make vhs-burst-flow        # Complete workflow: events -> burst
-make vhs-fact-extraction   # Complete workflow: burst -> facts
-make vhs-enrichment        # Full enrichment: events -> bursts -> facts -> skills
+# Generate all feature-organized tapes
+make vhs-features-all
+
+# Generate all tapes for a specific feature
+make vhs-feature-all FEATURE=skills
+make vhs-feature-all FEATURE=capture
+make vhs-feature-all FEATURE=cv
+
+# Feature-specific shortcuts
+make vhs-skills-all      # All skills tapes
+make vhs-config-all      # All config tapes
+make vhs-cv-all          # All CV tapes
+make vhs-facts-all       # All facts tapes
+make vhs-import-all      # All import tapes
+make vhs-bursts-all      # All bursts tapes
+make vhs-timeline-all    # All timeline tapes
+make vhs-capture-all     # All capture tapes
+make vhs-onboarding-all  # All onboarding tapes
+
+# Individual feature tapes
+make vhs-skills-happy    # Skills happy path
+make vhs-skills-ai       # AI skill inference
+make vhs-cv-happy        # CV wizard happy path
+make vhs-import-enrich   # Import with enrichment
+
+# Legacy numbered tapes
+make vhs-onboarding      # 01-onboarding.tape
+make vhs-capture         # 02-capture-event.tape
+make vhs-browse          # 03-browse-timeline.tape
+make vhs-skills          # 04-manage-skills.tape
+make vhs-configure       # 05-configure-system.tape
+make vhs-bursts          # 06-manage-bursts.tape
+make vhs-cv              # 07-generate-cv.tape
+make vhs-facts           # 08-manage-facts.tape
+make vhs-import          # 09-import-workflow.tape
+make vhs-journey         # 10-import-to-cv-journey.tape
+make vhs-burst-detection # 11-burst-detection.tape
+make vhs-skill-inference # 12-skill-inference.tape
+make vhs-burst-flow      # 13-burst-creation-flow.tape
+make vhs-fact-extraction # 15-fact-extraction-flow.tape
+make vhs-enrichment      # 16-enrichment-workflow.tape
 
 # Run visual regression tests
 make vhs-golden-compare
@@ -55,23 +79,53 @@ demos/vhs/
 ├── sample-events.csv        # 40 anonymized career events for demos
 ├── golden-test.tape         # Generates golden file screenshots
 │
-├── tapes/                   # Main demo tapes
-│   ├── 01-onboarding.tape   # First-time user experience (~30s)
-│   ├── 02-capture-event.tape # Capture new event (~25s)
-│   ├── 03-browse-timeline.tape # Browse & filter events (~20s)
-│   ├── 04-manage-skills.tape # Manage skills (~25s)
-│   ├── 05-configure-system.tape # Configure system settings (~30s)
-│   ├── 06-manage-bursts.tape # Manage career bursts (~25s)
-│   ├── 07-generate-cv.tape  # CV wizard workflow (~40s)
-│   ├── 08-manage-facts.tape # Manage extracted facts (~25s)
-│   ├── 09-import-workflow.tape # CSV import (~30s)
-│   ├── 10-import-to-cv-journey.tape # Complete journey (~90s)
-│   ├── 11-burst-detection.tape # AI burst detection (~45s)
-│   ├── 12-skill-inference.tape # AI skill inference (~50s)
-│   ├── 13-burst-creation-flow.tape # Events -> burst workflow (~120s)
-│   ├── 14-capture-cancel.tape # Cancel event capture (~20s)
-│   ├── 15-fact-extraction-flow.tape # Fact extraction workflow (~60s)
-│   └── 16-enrichment-workflow.tape # Full enrichment workflow (~150s)
+├── tapes/                   # Demo tapes
+│   │
+│   │ # Numbered tapes (legacy, quick reference)
+│   ├── 01-onboarding.tape
+│   ├── 02-capture-event.tape
+│   ├── ...
+│   ├── 16-enrichment-workflow.tape
+│   │
+│   │ # Feature directories (organized by feature)
+│   ├── onboarding/
+│   │   └── happy-path.tape
+│   │
+│   ├── capture/
+│   │   ├── happy-path-manual.tape    # Manual capture with full form
+│   │   ├── happy-path-quick.tape     # Quick capture mode
+│   │   └── sad-path-cancel.tape      # Cancel at various stages
+│   │
+│   ├── timeline/
+│   │   ├── happy-path.tape           # Browse, filter, view details
+│   │   └── edge-case-empty.tape      # Empty timeline
+│   │
+│   ├── skills/
+│   │   ├── happy-path.tape           # Browse, view, filter, sort
+│   │   ├── add-skill.tape            # Create skill manually
+│   │   ├── ai-inference.tape         # AI skill inference
+│   │   └── edge-case-empty.tape      # Empty skills list
+│   │
+│   ├── config/
+│   │   ├── happy-path.tape           # Edit and save settings
+│   │   └── sad-path-cancel.tape      # Cancel without saving
+│   │
+│   ├── bursts/
+│   │   ├── happy-path-detect-and-accept.tape  # AI detect + accept
+│   │   └── skill-inference-from-burst.tape    # Infer skills from burst
+│   │
+│   ├── cv/
+│   │   ├── happy-path-wizard.tape    # Complete CV wizard
+│   │   └── edge-case-no-events.tape  # Warning with no events
+│   │
+│   ├── facts/
+│   │   ├── happy-path.tape           # Browse and view facts
+│   │   ├── create-delete.tape        # CRUD operations
+│   │   └── edge-case-empty.tape      # Empty facts list
+│   │
+│   └── import/
+│       ├── happy-path.tape           # Basic CSV import
+│       └── with-enrichment.tape      # Import with AI enrichment
 │
 ├── golden/                  # Golden file baselines for visual regression
 │   ├── main-menu.png
@@ -89,6 +143,8 @@ demos/vhs/
 ```
 
 ## Available Demos
+
+### Numbered Tapes (Legacy)
 
 | Demo | Duration | Description |
 |------|----------|-------------|
@@ -108,6 +164,76 @@ demos/vhs/
 | `14-capture-cancel` | ~20s | Cancel event capture at various stages |
 | `15-fact-extraction-flow` | ~60s | Complete workflow: burst detection -> fact extraction |
 | `16-enrichment-workflow` | ~150s | Full enrichment: events -> bursts -> facts -> skills |
+
+### Feature Directory Tapes
+
+Each feature has its own directory with organized tapes for different scenarios.
+
+#### Onboarding (`tapes/onboarding/`)
+
+| Tape | Description |
+|------|-------------|
+| `happy-path.tape` | Complete onboarding wizard flow |
+
+#### Capture (`tapes/capture/`)
+
+| Tape | Description |
+|------|-------------|
+| `happy-path-manual.tape` | Full manual capture with all form fields |
+| `happy-path-quick.tape` | Quick capture mode |
+| `sad-path-cancel.tape` | Cancel capture at various stages |
+
+#### Timeline (`tapes/timeline/`)
+
+| Tape | Description |
+|------|-------------|
+| `happy-path.tape` | Browse, filter, view event details |
+| `edge-case-empty.tape` | Empty timeline state |
+
+#### Skills (`tapes/skills/`)
+
+| Tape | Description |
+|------|-------------|
+| `happy-path.tape` | Browse, view, filter, sort skills |
+| `add-skill.tape` | Create a skill manually |
+| `ai-inference.tape` | AI skill inference from events |
+| `edge-case-empty.tape` | Empty skills list |
+
+#### Config (`tapes/config/`)
+
+| Tape | Description |
+|------|-------------|
+| `happy-path.tape` | Edit and save configuration settings |
+| `sad-path-cancel.tape` | Cancel editing without saving |
+
+#### Bursts (`tapes/bursts/`)
+
+| Tape | Description |
+|------|-------------|
+| `happy-path-detect-and-accept.tape` | AI detect bursts and accept suggestions |
+| `skill-inference-from-burst.tape` | Infer skills from burst events |
+
+#### CV (`tapes/cv/`)
+
+| Tape | Description |
+|------|-------------|
+| `happy-path-wizard.tape` | Complete CV generation wizard |
+| `edge-case-no-events.tape` | Warning when no events exist |
+
+#### Facts (`tapes/facts/`)
+
+| Tape | Description |
+|------|-------------|
+| `happy-path.tape` | Browse and view extracted facts |
+| `create-delete.tape` | Create and delete facts |
+| `edge-case-empty.tape` | Empty facts list |
+
+#### Import (`tapes/import/`)
+
+| Tape | Description |
+|------|-------------|
+| `happy-path.tape` | Basic CSV import |
+| `with-enrichment.tape` | Import with full AI enrichment pipeline |
 
 ## Usage
 
