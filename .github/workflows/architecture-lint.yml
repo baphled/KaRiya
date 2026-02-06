@@ -115,13 +115,16 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
           cache: true
 
-      - name: Run golangci-lint (PR - changed files only)
+      - name: Run golangci-lint (PR - full scan)
         if: github.event_name == 'pull_request'
         uses: golangci/golangci-lint-action@v7
         with:
           version: v2.8.0
           install-mode: binary
-          args: --timeout=5m --new-from-rev=origin/${{ github.base_ref }}
+          args: --timeout=5m
+          # Note: We run full scan (not --new-from-rev) to catch pre-existing issues
+          # that would block merging to next. This ensures PRs don't merge code that
+          # will fail when pushed to next.
 
       - name: Run golangci-lint (Push - full scan)
         if: github.event_name == 'push'
@@ -173,10 +176,42 @@ jobs:
       - name: Check Patterns
         run: make check-patterns
 
+  test:
+    name: Test (Push to next/main)
+    runs-on: ${{ matrix.os }}
+    if: github.event_name == 'push'
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        go-version: ['1.25']
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache: true
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Run tests
+        run: go test -v -race -coverprofile=coverage.out ./...
+
+      - name: Upload coverage
+        if: matrix.os == 'ubuntu-latest'
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.out
+          flags: unittests
+          name: codecov-umbrella
+
   report:
     name: Architecture Report
     runs-on: ubuntu-latest
-    needs: [intent-architecture, golangci-lint, docblocks, fixture-usage, pattern-compliance]
+    needs: [intent-architecture, golangci-lint, docblocks, fixture-usage, pattern-compliance, test]
     if: always()
     steps:
       - name: Architecture Validation Summary
@@ -190,6 +225,7 @@ jobs:
           echo "Docblocks:           ${{ needs.docblocks.result }}"
           echo "Fixture Usage:       ${{ needs.fixture-usage.result }}"
           echo "Pattern Compliance:  ${{ needs.pattern-compliance.result }}"
+          echo "Tests:               ${{ needs.test.result }}"
           echo ""
           
           # For PRs, intent-architecture uses continue-on-error, so it may show
@@ -212,16 +248,17 @@ jobs:
               echo "✅ Required architecture checks passed"
             fi
           else
-            # For pushes, all checks must pass
+            # For pushes, all checks must pass (including tests)
             if [ "${{ needs.intent-architecture.result }}" != "success" ] || \
                [ "${{ needs.golangci-lint.result }}" != "success" ] || \
                [ "${{ needs.fixture-usage.result }}" != "success" ] || \
-               [ "${{ needs.pattern-compliance.result }}" != "success" ]; then
-              echo "❌ Architecture validation FAILED"
+               [ "${{ needs.pattern-compliance.result }}" != "success" ] || \
+               [ "${{ needs.test.result }}" != "success" ]; then
+              echo "❌ Validation FAILED"
               echo ""
               echo "See: docs/checklists/INTENT_DEVELOPMENT_CHECKLIST.md"
               exit 1
             else
-              echo "✅ All architecture checks passed"
+              echo "✅ All checks passed (linting + tests)"
             fi
           fi
