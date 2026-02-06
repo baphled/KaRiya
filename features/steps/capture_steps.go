@@ -115,10 +115,8 @@ func iEnterEventDescription(ctx context.Context, description string) (context.Co
 		return ctx, godog.ErrPending
 	}
 
-	// Type the description into the form so it's available for Ctrl+S and form validation
 	env.TypeText(description)
 
-	// Also store in context for iSubmitTheEvent to use when building the event
 	data := support.GetEventData(ctx)
 	data.Description = description
 	return support.WithEventData(ctx, data), nil
@@ -162,7 +160,6 @@ func iSubmitTheEvent(ctx context.Context) (context.Context, error) {
 	data := support.GetEventData(ctx)
 	event, err := data.BuildEvent()
 	if err != nil {
-		// Submit with error to trigger validation error modal
 		env.SubmitEventWithError(event, err)
 	} else {
 		env.SubmitEvent(event)
@@ -486,8 +483,7 @@ func iTryToSubmitWithoutDescription(ctx context.Context) (context.Context, error
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	// Try to submit without entering description - should trigger validation
-	env.PressKey(tea.KeyEnter) // Try to submit form with empty description
+	env.PressKey(tea.KeyEnter)
 	return ctx, nil
 }
 
@@ -497,7 +493,6 @@ func iShouldSeeValidationError(ctx context.Context) error {
 		return godog.ErrPending
 	}
 	view := env.GetView()
-	// Check for validation error indicators in view
 	hasValidationError := strings.Contains(view, "required") ||
 		strings.Contains(view, "error") ||
 		strings.Contains(view, "invalid") ||
