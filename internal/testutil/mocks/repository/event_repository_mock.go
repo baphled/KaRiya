@@ -123,6 +123,20 @@ func (mr *MockEventRepositoryMockRecorder) List(arg0, arg1 interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockEventRepository)(nil).List), arg0, arg1)
 }
 
+// UnlinkSkill mocks base method.
+func (m *MockEventRepository) UnlinkSkill(arg0 context.Context, arg1, arg2 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UnlinkSkill", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UnlinkSkill indicates an expected call of UnlinkSkill.
+func (mr *MockEventRepositoryMockRecorder) UnlinkSkill(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnlinkSkill", reflect.TypeOf((*MockEventRepository)(nil).UnlinkSkill), arg0, arg1, arg2)
+}
+
 // Update mocks base method.
 func (m *MockEventRepository) Update(arg0 context.Context, arg1 *career.Event) error {
 	m.ctrl.T.Helper()

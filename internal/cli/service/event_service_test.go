@@ -103,6 +103,130 @@ var _ = Describe("CLI Event Service", func() {
 	})
 })
 
+var _ = Describe("Skill Management Operations", func() {
+	var (
+		eventRepo   *careermemory.EventRepository
+		skillRepo   *careermemory.SkillRepository
+		careerSvc   *careerservice.Service
+		cliEventSvc *CLIEventService
+		ctx         context.Context
+	)
+
+	BeforeEach(func() {
+		ctx = context.Background()
+		eventRepo = careermemory.NewEventRepository()
+		skillRepo = careermemory.NewSkillRepository()
+		eventRepo.SetSkillRepository(skillRepo)
+		skillRepo.SetEventRepository(eventRepo)
+		careerSvc = careerservice.NewService(eventRepo)
+		careerSvc.SetSkillRepository(skillRepo)
+		cliEventSvc = NewCLIEventService(careerSvc)
+	})
+
+	Describe("LinkSkillToEvent", func() {
+		It("should link an existing skill to an event", func() {
+			event := fixtures.EventWith("event-1", "Implemented feature", "", "")
+			err := eventRepo.Create(ctx, event)
+			Expect(err).ToNot(HaveOccurred())
+
+			skill := fixtures.SkillWith("skill-1", "Go", "backend", "advanced")
+			err = skillRepo.Create(ctx, skill)
+			Expect(err).ToNot(HaveOccurred())
+
+			err = cliEventSvc.LinkSkillToEvent(ctx, "event-1", "skill-1")
+			Expect(err).ToNot(HaveOccurred())
+
+			skills, err := skillRepo.GetSkillsForEvent(ctx, "event-1")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(skills).To(HaveLen(1))
+			Expect(skills[0].ID).To(Equal("skill-1"))
+		})
+
+		It("should return error when event does not exist", func() {
+			skill := fixtures.SkillWith("skill-1", "Go", "backend", "advanced")
+			err := skillRepo.Create(ctx, skill)
+			Expect(err).ToNot(HaveOccurred())
+
+			err = cliEventSvc.LinkSkillToEvent(ctx, "non-existent", "skill-1")
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should allow linking non-existent skill ID", func() {
+			event := fixtures.EventWith("event-1", "Implemented feature", "", "")
+			err := eventRepo.Create(ctx, event)
+			Expect(err).ToNot(HaveOccurred())
+
+			err = cliEventSvc.LinkSkillToEvent(ctx, "event-1", "non-existent")
+			Expect(err).ToNot(HaveOccurred())
+
+			skills, err := skillRepo.GetSkillsForEvent(ctx, "event-1")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(skills).To(BeEmpty())
+		})
+	})
+
+	Describe("UnlinkSkillFromEvent", func() {
+		It("should unlink an existing skill from an event", func() {
+			event := fixtures.EventWith("event-1", "Implemented feature", "", "")
+			err := eventRepo.Create(ctx, event)
+			Expect(err).ToNot(HaveOccurred())
+
+			skill := fixtures.SkillWith("skill-1", "Go", "backend", "advanced")
+			err = skillRepo.Create(ctx, skill)
+			Expect(err).ToNot(HaveOccurred())
+
+			err = eventRepo.LinkSkill(ctx, "event-1", "skill-1")
+			Expect(err).ToNot(HaveOccurred())
+
+			err = cliEventSvc.UnlinkSkillFromEvent(ctx, "event-1", "skill-1")
+			Expect(err).ToNot(HaveOccurred())
+
+			skills, err := skillRepo.GetSkillsForEvent(ctx, "event-1")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(skills).To(BeEmpty())
+		})
+
+		It("should return error when event does not exist", func() {
+			err := cliEventSvc.UnlinkSkillFromEvent(ctx, "non-existent", "skill-1")
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should handle gracefully when skill is not linked", func() {
+			event := fixtures.EventWith("event-1", "Implemented feature", "", "")
+			err := eventRepo.Create(ctx, event)
+			Expect(err).ToNot(HaveOccurred())
+
+			err = cliEventSvc.UnlinkSkillFromEvent(ctx, "event-1", "skill-1")
+			Expect(err).ToNot(HaveOccurred())
+		})
+	})
+
+	Describe("ListAllSkills", func() {
+		It("should return all skills without filters", func() {
+			skill1 := fixtures.SkillWith("skill-1", "Go", "backend", "advanced")
+			skill2 := fixtures.SkillWith("skill-2", "Docker", "devops", "intermediate")
+			skill3 := fixtures.SkillWith("skill-3", "React", "frontend", "advanced")
+
+			err := skillRepo.Create(ctx, skill1)
+			Expect(err).ToNot(HaveOccurred())
+			err = skillRepo.Create(ctx, skill2)
+			Expect(err).ToNot(HaveOccurred())
+			err = skillRepo.Create(ctx, skill3)
+			Expect(err).ToNot(HaveOccurred())
+
+			skills, err := cliEventSvc.ListAllSkills(ctx)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(skills).To(HaveLen(3))
+		})
+
+		It("should return empty slice when no skills exist", func() {
+			skills, err := cliEventSvc.ListAllSkills(ctx)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(skills).To(BeEmpty())
+		})
+	})
+})
+
 var _ = Describe("UpdateEventMetadata", func() {
 	var (
 		repo   *careermemory.EventRepository

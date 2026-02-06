@@ -46,7 +46,6 @@ var _ = Describe("CVGenerationService - Sections Should Be Populated", func() {
 		factRepo := &TestFactRepository{facts: facts}
 
 		// Create services with REAL implementations (not empty mocks)
-		// BUG-008: use BulletGenerator for role-based scoring
 		configManager := NewMemoryConfigManager()
 		bulletGenerator := NewBulletGenerator(log, nil) // nil uses default scoring config
 		sectionBuilder := NewSectionBuilder(nil, log)   // Use REAL section builder, not empty
@@ -115,6 +114,10 @@ func (r *TestEventRepository) Count(ctx context.Context, filters careerrepo.Even
 }
 
 func (r *TestEventRepository) LinkSkill(_ context.Context, _ string, _ string) error {
+	return nil
+}
+
+func (r *TestEventRepository) UnlinkSkill(_ context.Context, _ string, _ string) error {
 	return nil
 }
 

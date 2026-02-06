@@ -588,6 +588,10 @@ func (r *EmptyRepository) LinkSkill(_ context.Context, _ string, _ string) error
 	return nil
 }
 
+func (r *EmptyRepository) UnlinkSkill(_ context.Context, _ string, _ string) error {
+	return nil
+}
+
 type CountingRepository struct {
 	count int
 }
@@ -625,6 +629,10 @@ func (r *CountingRepository) Count(ctx context.Context, filters careerrepo.Event
 }
 
 func (r *CountingRepository) LinkSkill(_ context.Context, _ string, _ string) error {
+	return nil
+}
+
+func (r *CountingRepository) UnlinkSkill(_ context.Context, _ string, _ string) error {
 	return nil
 }
 
@@ -827,6 +835,10 @@ func (r *MockEventRepository) Count(ctx context.Context, filters careerrepo.Even
 }
 
 func (r *MockEventRepository) LinkSkill(_ context.Context, _ string, _ string) error {
+	return nil
+}
+
+func (r *MockEventRepository) UnlinkSkill(_ context.Context, _ string, _ string) error {
 	return nil
 }
 

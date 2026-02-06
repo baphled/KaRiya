@@ -4,6 +4,8 @@ import (
 	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/screens"
+	burstModals "github.com/baphled/kariya/internal/cli/screens/burst_management/modals"
+	skillModals "github.com/baphled/kariya/internal/cli/screens/skills/modals"
 	"github.com/baphled/kariya/internal/cli/screens/timeline/modals"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/domain/career"
@@ -88,6 +90,18 @@ type Intent struct {
 
 	// viewSkillsModal holds the skills viewer modal (shown over event detail).
 	viewSkillsModal *modals.SkillsDetailModal
+
+	// skillPickerModal holds the skill picker modal for linking existing skills.
+	skillPickerModal *modals.SkillPickerModal
+
+	// skillAddModal holds the add/edit modal for creating new skills.
+	skillAddModal *skillModals.AddEditModal
+
+	// skillSuggestionModal holds the skill suggestion review modal.
+	skillSuggestionModal *burstModals.SuggestionReviewModal
+
+	// skillService for creating new skills.
+	skillService SkillService
 
 	// errorModal holds the error modal (shown when operations fail).
 	errorModal *feedback.Modal

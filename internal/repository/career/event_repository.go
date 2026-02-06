@@ -41,6 +41,10 @@ type EventRepository interface {
 	// LinkSkill creates an association between an event and a skill.
 	// This is used by the skill inference service to record detected skills.
 	LinkSkill(ctx context.Context, eventID string, skillID string) error
+
+	// UnlinkSkill removes an association between an event and a skill.
+	// This is used when managing event skills to remove unwanted associations.
+	UnlinkSkill(ctx context.Context, eventID string, skillID string) error
 }
 
 // EventListFilters provides flexible filtering options for career events.
