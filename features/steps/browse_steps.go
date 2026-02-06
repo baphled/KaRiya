@@ -14,7 +14,7 @@ import (
 
 // RegisterBrowseSteps registers browse timeline step definitions with Godog.
 //
-//nolint:dupl // Step registration blocks share similar structure but different content.
+//nolint:funlen // Step registration blocks are long by nature.
 func RegisterBrowseSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I have (\d+) events? in my timeline$`, iHaveNEventsInMyTimeline)
 	sc.Step(`^I should see a list of events$`, iShouldSeeAListOfEvents)
@@ -44,6 +44,9 @@ func RegisterBrowseSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I press "e" to edit$`, iPressEToEdit)
 	sc.Step(`^I should see the edit event form$`, iShouldSeeTheEditEventForm)
 	sc.Step(`^I clear the description field$`, iClearTheDescriptionField)
+	sc.Step(`^I navigate to company field$`, iNavigateToCompanyField)
+	sc.Step(`^I clear the company field$`, iClearTheCompanyField)
+	sc.Step(`^I enter "([^"]*)" as company$`, iEnterAsCompany)
 	sc.Step(`^I press "d" to delete$`, iPressDToDelete)
 	sc.Step(`^I should see the delete confirmation$`, iShouldSeeTheDeleteConfirmation)
 	sc.Step(`^I cancel the confirmation$`, iCancelTheConfirmation)
@@ -225,8 +228,8 @@ func iSelectCompany(ctx context.Context, _ string) (context.Context, error) {
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	env.Tab()
-	env.Confirm()
+	env.NavigateDown()
+	env.PressKeyRune('x')
 	return ctx, nil
 }
 
@@ -235,6 +238,8 @@ func iApplyTheFilter(ctx context.Context) (context.Context, error) {
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
+	env.Confirm()
+	env.Confirm()
 	env.Confirm()
 	return ctx, nil
 }
@@ -310,6 +315,12 @@ func iSubmitTheForm(ctx context.Context) (context.Context, error) {
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
+	env.Confirm()
+	env.Confirm()
+	env.Confirm()
+	env.Confirm()
+	env.Confirm()
+	env.Confirm()
 	env.PressKey(tea.KeyCtrlS)
 	return ctx, nil
 }
@@ -342,7 +353,35 @@ func iClearTheDescriptionField(ctx context.Context) (context.Context, error) {
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	env.PressKey(tea.KeyCtrlU)
+	env.ClearTextField(100)
+	return ctx, nil
+}
+
+func iNavigateToCompanyField(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.NextFormField()
+	env.NextFormField()
+	return ctx, nil
+}
+
+func iClearTheCompanyField(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.ClearTextField(50)
+	return ctx, nil
+}
+
+func iEnterAsCompany(ctx context.Context, company string) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.TypeText(company)
 	return ctx, nil
 }
 
