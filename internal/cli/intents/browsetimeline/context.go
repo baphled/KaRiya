@@ -20,6 +20,12 @@ type IntentContext struct {
 
 	// CLIEventService is the service for event CRUD operations (edit/delete).
 	CLIEventService EventService
+
+	// CLISkillService is the service for skill operations (create).
+	CLISkillService SkillService
+
+	// SkillInferenceService is the service for inferring skills from event text.
+	SkillInferenceService SkillInferenceService
 }
 
 // Validate ensures the context is usable by initializing nil fields to

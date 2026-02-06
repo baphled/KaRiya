@@ -533,6 +533,27 @@ func (m *mockEventRepository) LinkSkill(ctx context.Context, eventID string, ski
 	return nil
 }
 
+func (m *mockEventRepository) UnlinkSkill(ctx context.Context, eventID string, skillID string) error {
+	if m.updateError != nil {
+		return m.updateError
+	}
+
+	event, exists := m.events[eventID]
+	if !exists {
+		return errors.New("event not found")
+	}
+
+	newSkills := make([]string, 0, len(event.Skills))
+	for _, sid := range event.Skills {
+		if sid != skillID {
+			newSkills = append(newSkills, sid)
+		}
+	}
+
+	event.Skills = newSkills
+	return nil
+}
+
 // Helper functions.
 func normalizeSkillName(name string) string {
 	return strings.ToLower(name)

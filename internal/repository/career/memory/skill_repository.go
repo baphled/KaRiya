@@ -486,6 +486,33 @@ func (r *SkillRepository) AssociateSkillWithEvent(skillID, eventID string) {
 	}
 }
 
+// DisassociateSkillFromEvent removes the association between a skill and an event.
+//
+// Expected:
+//   - skillID must be a valid string identifier for an existing skill.
+//   - eventID must be a valid string identifier for an existing event.
+//
+// Side effects:
+//   - Removes the association from internal tracking maps.
+func (r *SkillRepository) DisassociateSkillFromEvent(skillID, eventID string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if skillIDs, exists := r.eventSkills[eventID]; exists {
+		r.eventSkills[eventID] = removeString(skillIDs, skillID)
+		if len(r.eventSkills[eventID]) == 0 {
+			delete(r.eventSkills, eventID)
+		}
+	}
+
+	if eventIDs, exists := r.skillEvents[skillID]; exists {
+		r.skillEvents[skillID] = removeString(eventIDs, eventID)
+		if len(r.skillEvents[skillID]) == 0 {
+			delete(r.skillEvents, skillID)
+		}
+	}
+}
+
 // Helper functions.
 func removeString(slice []string, s string) []string {
 	var result []string
