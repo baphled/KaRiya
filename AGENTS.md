@@ -108,6 +108,62 @@ App -> Intents -> Screens/Modals -> UIKit -> Behaviors
 4. `make check-compliance`
 5. `make ai-commit`
 
+## 🎬 VHS Demo Generation
+
+When creating or modifying TUI workflows, generate visual documentation.
+
+**IMPORTANT**: When a feature task is marked as "done", the [VHS Demo Generation Prompt](docs/prompts/VHS_DEMO_GENERATION_PROMPT.md) should be triggered to ensure visual documentation exists.
+
+**Trigger Conditions**:
+| Change Type | Action | Location |
+|-------------|--------|----------|
+| **New Feature** | Create 3 new tapes | `demos/vhs/tapes/<feature>/` |
+| **Bug Fix** | Find and update existing tape | Existing tape location |
+| **Enhancement** | Find and update existing tape | Existing tape location |
+
+**Required for**:
+- New intents/workflows
+- UI changes that affect user experience
+- Bug fixes with visual impact
+
+**Demo Scenarios** (all three required for new features):
+
+| Scenario | File | Purpose |
+|----------|------|---------|
+| **Happy path** | `happy-path.tape` | Successful workflow completion |
+| **Sad path** | `sad-path.tape` | Error handling, validation |
+| **Edge cases** | `edge-cases.tape` | Cancel, back nav, empty states |
+
+**Workflow**:
+```bash
+# 1. Create feature demo directory
+mkdir -p demos/vhs/tapes/your-feature
+
+# 2. Copy templates
+cp demos/vhs/tapes/template/*.tape demos/vhs/tapes/your-feature/
+
+# 3. Customize tapes for your feature
+
+# 4. Generate demos
+make vhs-feature FEATURE=your-feature
+
+# 5. Include GIFs in PR description
+```
+
+**Quick Commands**:
+```bash
+make vhs-demos                    # Generate all workflow demos
+make vhs-{workflow}               # Generate specific workflow (vhs-capture, vhs-browse, etc.)
+make vhs-feature FEATURE=name     # Generate feature demo for PR
+make vhs-golden-compare           # Visual regression test
+```
+
+**📖 VHS Demo Prompt:** [VHS_DEMO_GENERATION_PROMPT.md](docs/prompts/VHS_DEMO_GENERATION_PROMPT.md)  
+**📖 Workflow Guide:** [WORKFLOW_DOCUMENTATION_GUIDE.md](docs/workflows/WORKFLOW_DOCUMENTATION_GUIDE.md)  
+**📖 VHS README:** [demos/vhs/README.md](demos/vhs/README.md)
+
+## Testing
+
 ### Test Location
 - E2E: `internal/testutil/e2e/{workflow}_e2e_test.go`
 - BDD: `features/*.feature`

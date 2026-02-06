@@ -282,16 +282,83 @@ For detailed troubleshooting:
 
 ---
 
+## VHS Demo Integration
+
+Each workflow should have corresponding VHS demo tapes that generate visual documentation. This enables:
+
+1. **Automated documentation** - GIFs that always match current behavior
+2. **PR evidence** - Visual proof of feature functionality
+3. **Visual regression testing** - Detect unintended UI changes
+4. **Marketing material** - Professional demos for README/docs
+
+### Demo Categories
+
+| Category | Location | Purpose | When to Create |
+|----------|----------|---------|----------------|
+| **Main demos** | `demos/vhs/tapes/` | README/marketing | Core workflows |
+| **Feature demos** | `demos/vhs/features/{name}/` | PR evidence | New features |
+| **Golden tests** | `demos/vhs/golden/` | Visual regression | CI testing |
+
+### Creating Feature Demos
+
+When creating a new feature, generate demo evidence:
+
+```bash
+# 1. Create feature demo directory
+mkdir -p demos/vhs/features/your-feature
+
+# 2. Copy templates
+cp demos/vhs/features/template/*.tape demos/vhs/features/your-feature/
+
+# 3. Customize tapes for your feature (edit the .tape files)
+
+# 4. Generate demos
+make vhs-feature FEATURE=your-feature
+
+# 5. Include in PR description
+```
+
+### Required Demo Scenarios
+
+Each feature demo should cover:
+
+| Scenario | File | Description |
+|----------|------|-------------|
+| **Happy path** | `happy-path.tape` | Successful workflow completion |
+| **Sad path** | `sad-path.tape` | Error handling, validation failures |
+| **Edge cases** | `edge-cases.tape` | Cancel, back navigation, empty states |
+
+### Quick Commands
+
+```bash
+# Generate all workflow demos
+make vhs-demos
+
+# Generate specific workflow
+make vhs-{workflow-name}
+
+# Generate feature demo for PR
+make vhs-feature FEATURE=your-feature
+
+# Visual regression testing
+make vhs-golden-compare
+make vhs-golden-update
+```
+
+---
+
 ## Contributing
 
 When adding new workflow guides:
 
 1. **Create the guide**: Use `CV_GENERATION_WORKFLOW.md` as a template
-2. **Update diagram script**: Add new diagram to `scripts/generate_workflow_diagrams.sh`
-3. **Run diagram generation**: `make generate-diagrams`
-4. **Add to this README**: Include in "Available Workflows" section
-5. **Cross-reference**: Link from AGENTS.md and relevant user guides
-6. **Test navigation**: Verify all keyboard shortcuts work as documented
+2. **Create VHS demo tapes**: See [VHS Demo Integration](#vhs-demo-integration) above
+3. **Update diagram script**: Add new diagram to `scripts/generate_workflow_diagrams.sh`
+4. **Run diagram generation**: `make generate-diagrams`
+5. **Generate demos**: `make vhs-{workflow-name}`
+6. **Add to this README**: Include in "Available Workflows" section
+7. **Cross-reference**: Link from AGENTS.md and relevant user guides
+8. **Test navigation**: Verify all keyboard shortcuts work as documented
 
 **Template structure**:
 - Overview (purpose, when to use, prerequisites)
@@ -302,6 +369,7 @@ When adding new workflow guides:
 - Common workflows (timed examples)
 - Troubleshooting (specific issues and solutions)
 - Technical details (implementation notes)
+- **Demo evidence** (links to generated GIFs)
 
 ---
 

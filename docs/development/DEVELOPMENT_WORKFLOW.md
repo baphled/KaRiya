@@ -152,3 +152,62 @@ make check-patterns             # Verify pattern compliance
 See [`docs/UIKIT_GUIDE.md`](../UIKIT_GUIDE.md) for complete component documentation.
 
 ---
+
+## VHS Demo Generation
+
+When creating new features or modifying workflows, generate visual documentation using VHS.
+
+### Why Generate Demos?
+
+1. **Automated documentation** - GIFs always match current behavior
+2. **PR evidence** - Visual proof of feature functionality
+3. **Visual regression testing** - Detect unintended UI changes
+4. **Marketing material** - Professional demos for README/docs
+
+### Quick Start
+
+```bash
+# Generate all workflow demos
+make vhs-demos
+
+# Generate specific workflow demo
+make vhs-capture
+make vhs-browse
+make vhs-cv
+
+# Generate feature demo for PR
+make vhs-feature FEATURE=your-feature
+```
+
+### Creating Feature Demos
+
+For new features, create demo tapes covering three scenarios:
+
+| Scenario | Purpose | Template |
+|----------|---------|----------|
+| **Happy path** | Successful workflow completion | `happy-path.tape` |
+| **Sad path** | Error handling and validation | `sad-path.tape` |
+| **Edge cases** | Cancel, back navigation, empty states | `edge-cases.tape` |
+
+```bash
+# 1. Create feature directory
+mkdir -p demos/vhs/features/my-feature
+
+# 2. Copy templates
+cp demos/vhs/features/template/*.tape demos/vhs/features/my-feature/
+
+# 3. Edit tapes for your specific feature
+
+# 4. Generate demos
+make vhs-feature FEATURE=my-feature
+
+# 5. Include in PR description
+```
+
+### Full Reference
+
+See:
+- [`docs/workflows/WORKFLOW_DOCUMENTATION_GUIDE.md`](../workflows/WORKFLOW_DOCUMENTATION_GUIDE.md) - Complete guide
+- [`demos/vhs/README.md`](../../demos/vhs/README.md) - VHS setup and usage
+
+---
