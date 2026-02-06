@@ -206,17 +206,82 @@ Happy to discuss further.
 
 ### Inline Response
 ```bash
-# Reply to specific comment
-gh api repos/:owner/:repo/pulls/COMMENTS_URL -X POST \
-  -f body="Your response here"
+# Reply to specific comment thread
+gh api graphql -f query='
+  mutation {
+    addPullRequestReviewComment(input: {
+      pullRequestReviewId: "<REVIEW_ID>",
+      body: "Your response here",
+      inReplyTo: "<COMMENT_ID>"
+    }) {
+      comment { id }
+    }
+  }
+'
+
+# Or using REST API for simple reply
+gh api repos/:owner/:repo/pulls/$PR_NUM/comments/<COMMENT_ID>/replies \
+  -X POST -f body="Your response here"
 ```
 
-### Resolve Conversation
-After addressing feedback:
+### Resolve Conversation Thread
+
+**IMPORTANT: Always resolve threads after addressing feedback.**
+
+```bash
+# Get thread ID from comment
+THREAD_ID=$(gh api graphql -f query='
+  query {
+    repository(owner: "OWNER", name: "REPO") {
+      pullRequest(number: PR_NUM) {
+        reviewThreads(first: 100) {
+          nodes {
+            id
+            isResolved
+            comments(first: 1) {
+              nodes { body }
+            }
+          }
+        }
+      }
+    }
+  }
+' -q '.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false) | .id')
+
+# Resolve the thread
+gh api graphql -f query='
+  mutation {
+    resolveReviewThread(input: {threadId: "'"$THREAD_ID"'"}) {
+      thread { isResolved }
+    }
+  }
+'
+```
+
+**Simplified workflow:**
 1. Make the fix
 2. Push the commit
 3. Reply with "Fixed in [SHA]"
-4. Mark conversation as resolved
+4. Resolve the thread in GitHub UI or via API
+5. **Report progress to user**
+
+### Progress Feedback Format
+
+After each comment is addressed, report:
+
+```
+## Progress Update
+
+### Comment [N/Total]: [Brief description]
+- **Status**: [Accepted/Challenged/Clarified/Deferred]
+- **Action**: [What was done]
+- **Commit**: [SHA if applicable]
+- **Thread**: [Resolved/Pending response]
+
+### Remaining
+- [X] comments to address
+- [Y] threads unresolved
+```
 
 ### Request Re-review
 After addressing all feedback:
@@ -292,6 +357,96 @@ Could we align on the preferred approach? Happy to implement whichever you agree
 
 ```markdown
 @reviewer Friendly ping on this PR. Let me know if you need any additional context or if the changes address your concerns.
+```
+
+## Progress Tracking
+
+### During Review Response
+
+Keep the user informed with structured updates:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+REVIEW RESPONSE PROGRESS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PR #[NUM]: [Title]
+Comments: [Addressed]/[Total]
+
+## Current: Comment [N]
+Reviewer: @[username]
+Category: [Bug/Architecture/Style/etc.]
+Decision: [Accept/Challenge/Clarify]
+
+[Action being taken...]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+### After Each Comment
+
+```
+Comment [N] complete:
+  Decision: Accepted
+  Action: Fixed null check
+  Commit: abc1234
+  Thread: Resolved
+```
+
+### Summary Table
+
+Maintain running summary:
+
+| # | Reviewer | Category | Decision | Status |
+|---|----------|----------|----------|--------|
+| 1 | @alice | Bug | Accept | Resolved |
+| 2 | @bob | Style | Challenge | Pending |
+| 3 | @alice | Arch | Accept | Resolved |
+
+## Merge Readiness Summary
+
+When all comments are addressed, provide final summary:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PR READY FOR MERGE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PR #[NUM]: [Title]
+Branch: [branch] -> next
+
+## Review Summary
+- Total comments: [N]
+- Accepted: [X]
+- Challenged: [Y]
+- Deferred: [Z]
+
+## Changes Made
+| Commit | Description |
+|--------|-------------|
+| abc123 | Fix null check (comment #1) |
+| def456 | Add error handling (comment #3) |
+
+## Threads Status
+- Resolved: [N]/[Total]
+- Pending: [List any waiting for reviewer]
+
+## CI Status
+- Build:
+- Tests:
+- Coverage:
+- Lint:
+
+## Checklist
+- [x] All comments addressed
+- [x] All threads resolved (or awaiting reviewer)
+- [x] CI passing
+- [x] No unresolved conversations
+- [x] Re-review requested
+
+## Next Steps
+[Ready for merge / Waiting for reviewer response on X]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 ## Related Skills

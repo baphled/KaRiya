@@ -152,6 +152,169 @@ watch -n 30 'gh pr checks && gh pr view --json reviews'
 - Thank reviewers for valid catches
 - Learn from feedback for future PRs
 
+## Progress Reporting
+
+**IMPORTANT: Keep the user informed throughout the process.**
+
+### Initial Status Report
+
+When starting review response:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PR STATUS: #[NUM] - [Title]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Branch: [branch] -> next
+CI Status: [Passing/Failing/Pending]
+
+## Review Comments: [Total]
+| # | Reviewer | Category | Preview |
+|---|----------|----------|---------|
+| 1 | @alice | Bug | "Missing null check..." |
+| 2 | @bob | Style | "Consider renaming..." |
+| 3 | @copilot | Security | "Potential injection..." |
+
+## Plan
+Will address comments in order of severity:
+1. Security issues first
+2. Bugs second  
+3. Architecture/Style last
+
+Starting with comment #3 (Security)...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+### Per-Comment Progress
+
+After addressing each comment:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+COMMENT #[N] COMPLETE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Reviewer: @[username]
+Category: [Bug/Security/Style/etc.]
+Feedback: "[Brief quote]"
+
+Decision: [Accepted/Challenged/Clarified/Deferred]
+Reasoning: [Why this decision]
+Action: [What was done]
+Commit: [SHA or N/A]
+Thread: [Resolved/Pending reviewer response]
+
+Progress: [N]/[Total] comments addressed
+Remaining: [List remaining comments]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+### Resolving Threads
+
+After responding, resolve the GitHub thread:
+
+```bash
+# Get unresolved thread IDs
+gh api graphql -f query='
+  query($owner: String!, $repo: String!, $pr: Int!) {
+    repository(owner: $owner, name: $repo) {
+      pullRequest(number: $pr) {
+        reviewThreads(first: 100) {
+          nodes {
+            id
+            isResolved
+            comments(first: 1) { nodes { body author { login } } }
+          }
+        }
+      }
+    }
+  }
+' -f owner=OWNER -f repo=REPO -f pr=$PR_NUM
+
+# Resolve a thread
+gh api graphql -f query='
+  mutation($threadId: ID!) {
+    resolveReviewThread(input: {threadId: $threadId}) {
+      thread { isResolved }
+    }
+  }
+' -f threadId="$THREAD_ID"
+```
+
+## Merge Readiness Summary
+
+When all comments are addressed, provide final summary:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PR READY FOR MERGE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PR #[NUM]: [Title]
+URL: [PR URL]
+Branch: [branch] -> next
+
+## Review Summary
+
+| Metric | Count |
+|--------|-------|
+| Total comments | [N] |
+| Accepted | [X] |
+| Challenged (with evidence) | [Y] |
+| Clarified | [Z] |
+| Deferred to issues | [W] |
+
+## Resolution Details
+
+| # | Reviewer | Decision | Resolution |
+|---|----------|----------|------------|
+| 1 | @alice | Accept | Fixed in abc123 |
+| 2 | @bob | Challenge | Kept current (see evidence) |
+| 3 | @copilot | Accept | Fixed in def456 |
+
+## Commits Added
+
+| SHA | Description |
+|-----|-------------|
+| abc123 | Fix null check (comment #1) |
+| def456 | Add input validation (comment #3) |
+
+## Thread Status
+
+- Total threads: [N]
+- Resolved: [X]
+- Pending reviewer response: [Y]
+- Unresolved (explain): [Z]
+
+## CI Status
+
+| Check | Status |
+|-------|--------|
+| Build | [Pass/Fail] |
+| Tests | [Pass/Fail] |
+| Coverage | [XX%] |
+| Lint | [Pass/Fail] |
+
+## Pre-Merge Checklist
+
+- [x] All comments addressed and responded to
+- [x] Conversations resolved (or awaiting reviewer)
+- [x] CI passing
+- [x] Coverage maintained/improved
+- [x] Re-review requested from reviewers
+- [ ] Approved by reviewer (waiting)
+
+## Next Steps
+
+[One of:]
+- Ready for merge pending approval
+- Waiting for @[reviewer] response on comment #[N]
+- CI failing - needs fix before merge
+- Coverage dropped - add tests before merge
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
 ## Example Session
 
 ```bash
@@ -170,9 +333,16 @@ gh pr view $PR_NUM --comments
 
 # 5. For each comment, evaluate and respond
 # (Use evaluate-change-request, prove-correctness, respond-to-review skills)
+# Report progress after each comment
 
-# 6. Request re-review after addressing comments
-gh pr review $PR_NUM --request-changes --body "Addressed all feedback, ready for re-review"
+# 6. Resolve threads as comments are addressed
+# Use GraphQL API to resolve review threads
+
+# 7. Provide merge readiness summary
+# Use template above
+
+# 8. Request re-review
+gh pr edit $PR_NUM --add-reviewer <reviewer>
 ```
 
 ## Related Skills
