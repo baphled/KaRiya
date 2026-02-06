@@ -240,12 +240,12 @@ Each feature has its own directory with organized tapes for different scenarios.
 ### Generating Demos
 
 ```bash
-# All demos
-make vhs-demos
+# All demos for a feature
+make vhs-feature FEATURE=skills
 
 # Individual demos
-vhs demos/vhs/tapes/01-onboarding.tape
-vhs demos/vhs/tapes/07-generate-cv.tape
+vhs demos/vhs/features/skills/happy-path.tape
+vhs demos/vhs/features/template/happy-path.tape
 ```
 
 ### Visual Regression Testing

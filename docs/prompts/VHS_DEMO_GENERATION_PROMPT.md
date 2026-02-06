@@ -327,12 +327,10 @@ ls -la demos/vhs/features/<feature-name>/*.png
 find demos/vhs -name "*.tape" | xargs grep -l "<feature-keyword>"
 
 # Or list by directory
-ls demos/vhs/tapes/<feature>/
 ls demos/vhs/features/<feature>/
 ```
 
 **Common tape locations:**
-- `demos/vhs/tapes/<feature>/` - Main workflow demos
 - `demos/vhs/features/<feature>/` - Feature-specific demos
 
 ### 3.2 Determine What to Update
@@ -349,7 +347,7 @@ ls demos/vhs/features/<feature>/
 
 ```bash
 # Edit the relevant tape
-view demos/vhs/tapes/<feature>/happy-path.tape
+view demos/vhs/features/<feature>/happy-path.tape
 
 # Make changes to reflect the fix/enhancement
 # Add new steps, update navigation, change timing
@@ -365,7 +363,7 @@ view demos/vhs/tapes/<feature>/happy-path.tape
 
 ```bash
 # Regenerate the specific tape
-vhs demos/vhs/tapes/<feature>/happy-path.tape
+vhs demos/vhs/features/<feature>/happy-path.tape
 
 # Or regenerate all tapes for the feature
 make vhs-feature FEATURE=<feature>
@@ -581,18 +579,18 @@ make ai-commit FILE=/tmp/commit.txt
 ```bash
 # 1. Find existing tape
 find demos/vhs -name "*.tape" | xargs grep -l "skills"
-# Found: demos/vhs/tapes/skills/happy-path.tape
+# Found: demos/vhs/features/skills/happy-path.tape
 
 # 2. Edit to show fixed behavior
-view demos/vhs/tapes/skills/happy-path.tape
+view demos/vhs/features/skills/happy-path.tape
 # Update navigation or add verification step
 
 # 3. Regenerate
-vhs demos/vhs/tapes/skills/happy-path.tape
+vhs demos/vhs/features/skills/happy-path.tape
 
 # 4. Commit update
-git add demos/vhs/tapes/skills/happy-path.tape
-git add demos/vhs/tapes/skills/happy-path.gif
+git add demos/vhs/features/skills/happy-path.tape
+git add demos/vhs/features/skills/happy-path.gif
 make ai-commit FILE=/tmp/commit.txt
 ```
 

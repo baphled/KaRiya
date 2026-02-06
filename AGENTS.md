@@ -179,7 +179,7 @@ When creating or modifying TUI workflows, generate visual documentation.
 **Trigger Conditions**:
 | Change Type | Action | Location |
 |-------------|--------|----------|
-| **New Feature** | Create 3 new tapes | `demos/vhs/tapes/<feature>/` |
+| **New Feature** | Create 3 new tapes | `demos/vhs/features/<feature>/` |
 | **Bug Fix** | Find and update existing tape | Existing tape location |
 | **Enhancement** | Find and update existing tape | Existing tape location |
 
@@ -199,10 +199,10 @@ When creating or modifying TUI workflows, generate visual documentation.
 **Workflow**:
 ```bash
 # 1. Create feature demo directory
-mkdir -p demos/vhs/tapes/your-feature
+mkdir -p demos/vhs/features/your-feature
 
 # 2. Copy templates
-cp demos/vhs/tapes/template/*.tape demos/vhs/tapes/your-feature/
+cp demos/vhs/features/template/*.tape demos/vhs/features/your-feature/
 
 # 3. Customize tapes for your feature
 
