@@ -11,7 +11,14 @@
         "skill": {
           "clean-code": "allow",
           "architecture": "allow",
-          "security": "allow"
+          "security": "allow",
+          "create-pr": "allow",
+          "pr-monitor": "allow",
+          "evaluate-change-request": "allow",
+          "prove-correctness": "allow",
+          "justify-decision": "allow",
+          "respond-to-review": "allow",
+          "trade-off-analysis": "allow"
         }
       }
     },
@@ -22,7 +29,9 @@
           "architecture": "allow",
           "create-task": "allow",
           "create-bug": "allow",
-          "tech-debt": "allow"
+          "tech-debt": "allow",
+          "evaluate-change-request": "allow",
+          "trade-off-analysis": "allow"
         }
       }
     }

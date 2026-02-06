@@ -123,13 +123,107 @@ Examples:
 Before/After screenshots if applicable
 ```
 
+## Post-Creation: Monitor and Respond
+
+After creating the PR, you MUST monitor for CI failures and reviews.
+
+### 4. Wait for CI Checks
+
+```bash
+# Watch CI status (blocks until complete)
+gh pr checks $PR_NUM --watch --fail-fast
+```
+
+If CI fails:
+```bash
+# View failure details
+gh run list --limit 5
+gh run view <run-id> --log-failed
+
+# Fix locally
+make ci-local
+
+# Push fix (same branch, same PR)
+git push
+```
+
+### 5. Monitor for Reviews
+
+```bash
+# Check review status
+gh pr view $PR_NUM --json reviews,comments
+
+# Get detailed review comments
+gh api repos/:owner/:repo/pulls/$PR_NUM/comments
+```
+
+### 6. Respond to Review Feedback
+
+**IMPORTANT: Do not blindly accept all feedback.**
+
+For each review comment:
+
+1. **Evaluate** - Use `evaluate-change-request` skill
+   - Is this objectively correct (bug, security)?
+   - Is there evidence provided?
+   - Does it align with project standards?
+
+2. **Decide** - Based on evaluation:
+   - **Accept**: Implement and respond "Fixed in [SHA]"
+   - **Challenge**: Use `prove-correctness` and `justify-decision`
+   - **Clarify**: Ask specific questions
+   - **Defer**: Create issue for out-of-scope work
+
+3. **Respond** - Use `respond-to-review` skill
+   - Always respond to every comment
+   - Be professional and specific
+   - Provide evidence when disagreeing
+
+### 7. Request Re-review
+
+After addressing all feedback:
+```bash
+# Summary comment
+gh pr comment $PR_NUM --body "Addressed all feedback. Ready for re-review.
+
+| Comment | Resolution |
+|---------|------------|
+| [Issue 1] | Fixed in abc123 |
+| [Issue 2] | Discussed - keeping current |"
+
+# Request re-review
+gh pr edit $PR_NUM --add-reviewer <reviewer>
+```
+
 ## Review Process
 
 1. **Copilot review** - Automatically requested on PR creation
-2. CI checks must pass
-3. At least one human approval required
-4. All comments resolved (Copilot + human)
-5. Squash merge to `next`
+2. **CI checks must pass** - Fix any failures before review
+3. **Evaluate feedback critically** - Don't blindly accept
+4. **Respond to all comments** - Accept, challenge, or clarify
+5. At least one human approval required
+6. All comments resolved (Copilot + human)
+7. Squash merge to `next`
+
+### Review Response Workflow
+
+```
+Review Comment Received
+    │
+    ├─ Use `evaluate-change-request` skill
+    │   └─ Categorise and assess validity
+    │
+    ├─ If Valid Bug/Security:
+    │   └─ Accept immediately, fix, respond
+    │
+    ├─ If Questionable:
+    │   ├─ Use `prove-correctness` (write tests)
+    │   ├─ Use `justify-decision` (document reasoning)
+    │   └─ Use `respond-to-review` (craft response)
+    │
+    └─ If Unclear:
+        └─ Ask clarifying questions first
+```
 
 ### Copilot Review Benefits
 
@@ -147,8 +241,17 @@ git pull origin next
 git branch -d feature/my-feature
 ```
 
-## Related skills
+## Related Skills
 
+### Pre-PR
 - `ai-commit` - Create commits before PR
 - `check-compliance` - Validate before PR
 - `session-start` - Start new feature work
+
+### Post-PR (Review Response)
+- `pr-monitor` - Orchestrate monitoring workflow
+- `evaluate-change-request` - Critically assess feedback
+- `prove-correctness` - Write tests as evidence
+- `justify-decision` - Explain architectural choices
+- `respond-to-review` - Craft professional responses
+- `trade-off-analysis` - Compare alternatives
