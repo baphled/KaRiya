@@ -290,3 +290,7 @@ Watch for these in yourself and others:
 - `architecture` - Architectural decisions
 - `tech-debt` - Evaluate technical trade-offs
 - `software-engineer` - Integrate into overall approach
+- `epistemic-rigor` - Intellectual honesty foundation
+- `assumption-tracker` - Explicit assumption management
+- `question-resolver` - Systematic question resolution
+- `pragmatic-problem-solving` - Practical solutions
