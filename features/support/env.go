@@ -214,7 +214,7 @@ type BDDTestingT struct {
 // Side effects:
 //   - None.
 //
-//nolint:thelper // Factory function, not a test helper.
+//nolint:thelper // Constructor for BDDTestingT adapter - not a test helper that needs t.Helper().
 func NewBDDTestingT(t *testing.T) *BDDTestingT {
 	return &BDDTestingT{t: t}
 }
