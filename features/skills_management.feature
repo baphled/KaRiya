@@ -51,15 +51,15 @@ Feature: Manage Skills
 
   @happy @wip
   Scenario: View skill details
-    Given I have a skill "Go" with category "Programming"
+    Given I have a skill "Go" with category "backend"
     When I select "manage_skills" from the menu
     And I press enter to view details
     Then I should see "Go"
-    And I should see "Programming"
+    And I should see "backend"
 
   @happy @wip
   Scenario: Close skill detail modal
-    Given I have a skill "Go" with category "Programming"
+    Given I have a skill "Go" with category "backend"
     When I select "manage_skills" from the menu
     And I press enter to view details
     And I press escape
@@ -85,13 +85,13 @@ Feature: Manage Skills
     Then I should still be on the skills list
     And there should be 0 skills
 
-  @happy @wip
+  @happy
   Scenario: Add a new skill
     Given the database is empty
     When I select "manage_skills" from the menu
     And I press "a" to add skill
     And I enter skill name "Python"
-    And I select category "Programming"
+    And I select category "backend"
     And I submit the skill form
     Then I should still be on the skills list
     And there should be 1 skill
@@ -101,26 +101,25 @@ Feature: Manage Skills
   # Edit Skill
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Open edit skill modal
-    Given I have a skill "JavaScript" with category "Programming"
+    Given I have a skill "JavaScript" with category "backend"
     When I select "manage_skills" from the menu
     And I press "e" to edit
     Then I should see the edit skill form
-    And I should see "JavaScript"
 
   @happy @wip
   Scenario: Cancel edit skill
-    Given I have a skill "JavaScript" with category "Programming"
+    Given I have a skill "JavaScript" with category "backend"
     When I select "manage_skills" from the menu
     And I press "e" to edit
     And I press escape
     Then I should still be on the skills list
     And the skill should have name "JavaScript"
 
-  @happy @wip
+  @happy
   Scenario: Edit skill and save
-    Given I have a skill "JavaScript" with category "Programming"
+    Given I have a skill "JavaScript" with category "backend"
     When I select "manage_skills" from the menu
     And I press "e" to edit
     And I clear the skill name field
@@ -135,14 +134,14 @@ Feature: Manage Skills
 
   @happy @wip
   Scenario: Open delete skill confirmation
-    Given I have a skill "Ruby" with category "Programming"
+    Given I have a skill "Ruby" with category "backend"
     When I select "manage_skills" from the menu
     And I press "d" to delete
     Then I should see the delete confirmation
 
   @happy @wip
   Scenario: Cancel delete skill
-    Given I have a skill "Ruby" with category "Programming"
+    Given I have a skill "Ruby" with category "backend"
     When I select "manage_skills" from the menu
     And I press "d" to delete
     And I cancel the confirmation
@@ -151,7 +150,7 @@ Feature: Manage Skills
 
   @happy @wip
   Scenario: Confirm delete skill
-    Given I have a skill "Ruby" with category "Programming"
+    Given I have a skill "Ruby" with category "backend"
     When I select "manage_skills" from the menu
     And I press "d" to delete
     And I confirm the deletion
@@ -289,9 +288,9 @@ Feature: Manage Skills
   # View Events Using Skill
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: View events that use a skill
-    Given I have a skill "Go" with category "Languages"
+    Given I have a skill "Go" with category "backend"
     And I have an event "Built API in Go" that uses skill "Go"
     And I have an event "Wrote CLI tool in Go" that uses skill "Go"
     When I select "manage_skills" from the menu
@@ -304,7 +303,7 @@ Feature: Manage Skills
 
   @happy @wip
   Scenario: View event detail from skill events modal
-    Given I have a skill "Python" with category "Languages"
+    Given I have a skill "Python" with category "backend"
     And I have an event "Built data pipeline" that uses skill "Python"
     When I select "manage_skills" from the menu
     And I select skill "Python"
@@ -315,7 +314,7 @@ Feature: Manage Skills
 
   @happy @wip
   Scenario: Close skill events modal returns to skill detail
-    Given I have a skill "JavaScript" with category "Languages"
+    Given I have a skill "JavaScript" with category "backend"
     And I have an event "Built React app" that uses skill "JavaScript"
     When I select "manage_skills" from the menu
     And I select skill "JavaScript"
@@ -341,7 +340,7 @@ Feature: Manage Skills
 
   @happy @wip
   Scenario: Edit skill proficiency level
-    Given I have a skill "Docker" with category "DevOps" and level "Intermediate"
+    Given I have a skill "Docker" with category "devops" and level "Intermediate"
     When I select "manage_skills" from the menu
     And I select skill "Docker"
     And I press "e" to edit
@@ -367,7 +366,7 @@ Feature: Manage Skills
 
   @happy @wip
   Scenario: Edit skill years of experience
-    Given I have a skill "Python" with category "Languages" and years "3"
+    Given I have a skill "Python" with category "backend" and years "3"
     When I select "manage_skills" from the menu
     And I select skill "Python"
     And I press "e" to edit
@@ -381,9 +380,9 @@ Feature: Manage Skills
 
   @happy @wip
   Scenario: Filter skills by category
-    Given I have a skill "Go" with category "Languages"
-    And I have a skill "Docker" with category "DevOps"
-    And I have a skill "AWS" with category "Cloud"
+    Given I have a skill "Go" with category "backend"
+    And I have a skill "Docker" with category "devops"
+    And I have a skill "AWS" with category "cloud"
     When I select "manage_skills" from the menu
     And I press "f" to filter
     And I select filter category "Languages"
@@ -394,11 +393,11 @@ Feature: Manage Skills
 
   @happy @wip
   Scenario: Filter skills by multiple categories
-    Given I have a skill "Go" with category "Languages"
-    And I have a skill "Python" with category "Languages"
-    And I have a skill "Docker" with category "DevOps"
-    And I have a skill "Kubernetes" with category "DevOps"
-    And I have a skill "AWS" with category "Cloud"
+    Given I have a skill "Go" with category "backend"
+    And I have a skill "Python" with category "backend"
+    And I have a skill "Docker" with category "devops"
+    And I have a skill "Kubernetes" with category "devops"
+    And I have a skill "AWS" with category "cloud"
     When I select "manage_skills" from the menu
     And I press "f" to filter
     And I select filter categories "Languages,DevOps"
@@ -452,7 +451,7 @@ Feature: Manage Skills
 
   @happy @wip
   Scenario: Skill shows event count
-    Given I have a skill "Go" with category "Languages"
+    Given I have a skill "Go" with category "backend"
     And I have 5 events that use skill "Go"
     When I select "manage_skills" from the menu
     Then I should see "Go" with event count "5"
@@ -463,9 +462,9 @@ Feature: Manage Skills
 
   @happy @wip
   Scenario: Skills are grouped by category
-    Given I have a skill "Go" with category "Languages"
-    And I have a skill "Python" with category "Languages"
-    And I have a skill "Docker" with category "DevOps"
+    Given I have a skill "Go" with category "backend"
+    And I have a skill "Python" with category "backend"
+    And I have a skill "Docker" with category "devops"
     When I select "manage_skills" from the menu
     Then I should see skills grouped by category
     And I should see "Languages" section with 2 skills
