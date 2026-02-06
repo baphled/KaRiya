@@ -187,6 +187,19 @@ func (s *SkillsListScreen) handleActionKey(msg tea.KeyMsg) (tea.Cmd, screens.Scr
 		return s.handleViewAction()
 	}
 
+	// Handle 's' key - view skill events.
+	if msg.Type == tea.KeyRunes && len(msg.Runes) > 0 && msg.Runes[0] == 's' {
+		// Navigate to skill events screen for selected skill
+		if selected := s.tableBehavior.GetSelectedItem(); selected != nil {
+			return nil, &screens.NavigateResult{
+				ResultData: map[string]interface{}{
+					"action": "view_events",
+					"skill":  *selected,
+				},
+			}
+		}
+	}
+
 	// Handle character keys for other actions.
 	switch msg.String() {
 	case "a":
