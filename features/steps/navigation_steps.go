@@ -15,8 +15,6 @@ import (
 // Expected: sc is a valid ScenarioContext.
 // Returns: None.
 // Side effects: Registers step definitions with the scenario context.
-//
-//nolint:dupl // Step registration functions look similar but register different steps.
 func RegisterNavigationSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I start the application$`, navStartTheApplication)
 	sc.Step(`^I should see the main menu$`, navShouldSeeTheMainMenu)
