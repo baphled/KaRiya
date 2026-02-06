@@ -215,10 +215,12 @@ list-ai-commits:
 
 # Create AI-attributed commit (for AI-generated code)
 ai-commit:
-	@if [ -z "$(FILE)" ]; then \
+	@if [ -z "$(FILE)" ] && [ -z "$(AMEND)" ]; then \
 		echo "Usage:"; \
 		echo "  make ai-commit FILE=/path/to/commit-msg.txt"; \
 		echo "  make ai-commit FILE=/path/to/commit-msg.txt NO_VERIFY=1"; \
+		echo "  make ai-commit AMEND=1                        # Add AI attribution to HEAD"; \
+		echo "  make ai-commit AMEND=1 NO_VERIFY=1"; \
 		echo ""; \
 		echo "Create your commit message file:"; \
 		echo "  cat > /tmp/commit.txt << 'EOF'"; \
@@ -229,9 +231,12 @@ ai-commit:
 		echo ""; \
 		echo "  make ai-commit FILE=/tmp/commit.txt"; \
 		echo ""; \
+		echo "Or amend the last commit with AI attribution:"; \
+		echo "  make ai-commit AMEND=1"; \
+		echo ""; \
 		exit 1; \
 	fi
-	@bash scripts/ai-commit.sh "$(FILE)" "$(NO_VERIFY)"
+	@bash scripts/ai-commit.sh "$(FILE)" "$(NO_VERIFY)" "$(AMEND)"
 
 # Show token efficiency reminder
 token-check:
