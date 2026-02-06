@@ -14,6 +14,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/intents/captureevent"
 	"github.com/baphled/kariya/internal/cli/intents/generatecv"
+	"github.com/baphled/kariya/internal/cli/intents/skillsmanagement"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/config"
@@ -945,6 +946,8 @@ func (e *TestEnv) processCmdResult(msg tea.Msg) {
 	case generatecv.CVGenerationCompleteMsg:
 		e.updateModelAndExecute(msg)
 	case generatecv.ExportCompleteMsg:
+		e.updateModelAndExecute(msg)
+	case skillsmanagement.SkillsLoadedMsg:
 		e.updateModelAndExecute(msg)
 	case feedback.ModalCountdownTickMsg:
 		e.updateModelAndExecute(msg)
