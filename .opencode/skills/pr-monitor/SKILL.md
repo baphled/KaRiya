@@ -44,9 +44,34 @@ fi
 1. Cancel any running CI jobs (they'll need to re-run anyway)
 2. Rebase onto target branch
 3. Resolve any conflicts
-4. Force push with `--force-with-lease`
-5. Request Copilot review (see below)
-6. THEN monitor CI
+4. **CHECK FOR REMOTE CHANGES** (see below)
+5. Force push with `--force-with-lease`
+6. Request Copilot review (see below)
+7. THEN monitor CI
+
+### 0.1. CHECK FOR REMOTE CHANGES BEFORE PUSH (CRITICAL)
+
+**Multiple people/agents may work on the same branch. ALWAYS check for
+remote changes before any push, especially force push.**
+
+```bash
+# Fetch and check for new remote commits
+git fetch origin
+BRANCH=$(git branch --show-current)
+REMOTE_NEW=$(git rev-list --count HEAD..origin/$BRANCH 2>/dev/null || echo "0")
+
+if [ "$REMOTE_NEW" -gt 0 ]; then
+    echo "STOP: Remote has $REMOTE_NEW new commit(s)!"
+    echo "Someone else pushed. Pull/rebase their changes first."
+    git log --oneline HEAD..origin/$BRANCH
+    exit 1
+fi
+```
+
+**This check is MANDATORY before:**
+- Any force push (`git push --force-with-lease`)
+- Regular push after rebase
+- Any push when collaborating with others
 
 ### 0.5. REQUEST COPILOT REVIEW (ALWAYS)
 

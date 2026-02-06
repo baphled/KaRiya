@@ -98,14 +98,53 @@ git rebase --continue
 # Until rebase completes
 ```
 
-### 5. Force Push (Safe)
+### 5. Check for Remote Changes (CRITICAL)
+
+**ALWAYS fetch and check for remote changes before force pushing.**
+
+Multiple people/agents may be working on the same branch. Force pushing
+without checking will overwrite their work.
 
 ```bash
-# Push rebased branch
+# Fetch latest remote state
+git fetch origin
+
+# Check if remote has commits we don't have
+LOCAL_HEAD=$(git rev-parse HEAD)
+REMOTE_HEAD=$(git rev-parse origin/$(git branch --show-current) 2>/dev/null || echo "")
+
+if [ -n "$REMOTE_HEAD" ] && [ "$REMOTE_HEAD" != "$LOCAL_HEAD" ]; then
+    # Check if remote is ahead of our pre-rebase state
+    REMOTE_COMMITS=$(git rev-list --count $LOCAL_HEAD..$REMOTE_HEAD 2>/dev/null || echo "0")
+    
+    if [ "$REMOTE_COMMITS" -gt 0 ]; then
+        echo "WARNING: Remote has $REMOTE_COMMITS new commit(s) since we started!"
+        echo "Someone else pushed to this branch."
+        echo ""
+        echo "Options:"
+        echo "  1. Abort and pull their changes first"
+        echo "  2. Review their changes and decide how to proceed"
+        echo ""
+        # DO NOT force push without user confirmation
+        exit 1
+    fi
+fi
+```
+
+### 6. Force Push (Safe)
+
+```bash
+# Push rebased branch (only after checking for remote changes)
 git push --force-with-lease origin HEAD
 
-# --force-with-lease prevents overwriting others' work
+# --force-with-lease prevents overwriting if remote changed since fetch
+# BUT: Always do the explicit check above FIRST
 ```
+
+**Why both checks?**
+- `--force-with-lease` compares against your local remote-tracking branch
+- If you fetched recently, it may be stale
+- The explicit check above catches changes made after your last fetch
 
 ## Conflict Resolution Rules
 
