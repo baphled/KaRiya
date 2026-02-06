@@ -1,8 +1,9 @@
 .PHONY: test test-race coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance check-docblocks check-fixtures check-patterns check-patterns-quiet check-patterns-strict check-intent-architecture check-intent-architecture-files golangci-lint install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ai-commit ci-local ci-install-tools gosec session-start session-end session-reset check-session verify-hooks tdd-check tdd-red tdd-green tdd-refactor tdd-document pre-task what-to-use generate-diagrams generate-state-matrix generate-docs generate-mocks check-mocks-updated diagrams fix-docs fix-all-docs validate-documentation create-doc-go bdd bdd-wip bdd-smoke bdd-feature bdd-happy bdd-sad bdd-check-wip
 
 # Run all tests in verbose mode (race detection in CI only)
+# Note: BDD tests in features/ are run separately via 'make bdd' with tag filtering
 test:
-	ginkgo -v --skip-package=testdata ./...
+	ginkgo -v --skip-package=testdata,features ./...
 
 # Run a specific test suite
 test-suite:
@@ -14,7 +15,7 @@ test-suite:
 
 # Run tests with race detection (slow - use sparingly)
 test-race:
-	ginkgo -v --race --skip-package=testdata ./...
+	ginkgo -v --race --skip-package=testdata,features ./...
 
 # Run a specific test
 individual-test:
@@ -22,7 +23,7 @@ individual-test:
 		echo "Please specify a test using TEST=path/to/test/file/TestName"; \
 		exit 1; \
 	fi
-	ginkgo -v --skip-package=testdata -focus="$(TEST)" ./...
+	ginkgo -v --skip-package=testdata,features -focus="$(TEST)" ./...
 
 coverage:
 	@bash scripts/test-coverage.sh
