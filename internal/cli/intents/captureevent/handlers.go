@@ -174,7 +174,10 @@ func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
 			event, err := eventFromFormData(formData)
 			if err != nil {
 				// Show validation error modal instead of silently failing
-				return i.showValidationErrorModal(fmt.Sprintf("Invalid date format: %v", err))
+				return i.showValidationErrorModal(fmt.Sprintf(
+					"Invalid date format. Please use YYYY-MM-DD, \"today\", or a relative format like \"-7d\" for 7 days ago. Details: %v",
+					err,
+				))
 			}
 
 			if err := event.Validate(); err != nil {
