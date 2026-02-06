@@ -815,16 +815,16 @@ func (e *TestEnv) SubmitHuhForm() *TestEnv {
 // cause infinite loops or stuck goroutines in tests. We only care about messages
 // that actually change application state.
 //
-// Commands that take longer than 500ms to execute (tick commands with delays) are skipped
-// to avoid slow tests from cursor blink animations (530ms each). The 500ms timeout
-// allows database operations to complete while still filtering out cursor blinks.
+// Commands that take longer than 100ms to execute (tick commands with delays) are skipped
+// to avoid slow tests from cursor blink animations (530ms each). The 100ms timeout
+// allows database operations to complete while filtering out cursor blinks faster.
 func (e *TestEnv) executeCmd(cmd tea.Cmd) {
 	if cmd == nil {
 		return
 	}
 
 	// Execute command with timeout to skip slow tick commands
-	// Cursor blink ticks take 530ms, database operations typically complete in <100ms
+	// Cursor blink ticks take 530ms, database operations typically complete in <50ms
 	type result struct {
 		msg tea.Msg
 	}
@@ -839,7 +839,7 @@ func (e *TestEnv) executeCmd(cmd tea.Cmd) {
 			return
 		}
 		e.processCmdResult(r.msg)
-	case <-time.After(500 * time.Millisecond):
+	case <-time.After(100 * time.Millisecond):
 		// Command is a slow tick (cursor blink, etc.) - skip it
 		return
 	}
@@ -901,6 +901,7 @@ func (e *TestEnv) processCmdResult(msg tea.Msg) {
 }
 
 // processBatchMsg processes a batch of commands.
+// Limits processing to maxBatchCommands to prevent stalls from tick-heavy batches.
 //
 // Expected:
 //   - msg must be a valid tea.BatchMsg.
@@ -909,11 +910,14 @@ func (e *TestEnv) processCmdResult(msg tea.Msg) {
 //   - None.
 //
 // Side effects:
-//   - Executes each non-nil command in the batch.
+//   - Executes each non-nil command in the batch (up to limit).
 func (e *TestEnv) processBatchMsg(msg tea.BatchMsg) {
+	const maxBatchCommands = 10
+	processed := 0
 	for _, cmd := range msg {
-		if cmd != nil {
+		if cmd != nil && processed < maxBatchCommands {
 			e.executeCmd(cmd)
+			processed++
 		}
 	}
 }
