@@ -45,6 +45,7 @@ If CI fails:
 2. **Get failure details** - `gh run view <run-id> --log-failed`
 3. **Fix locally** - Run same checks: `make ci-local`
 4. **Push fix** - Don't create new PR, push to same branch
+5. **Request re-review** - Always request re-review after pushing fixes
 
 ```bash
 # View failed run logs
@@ -54,6 +55,9 @@ gh run view <run-id> --log-failed
 # Fix and push
 make ci-local  # Verify fix locally
 git push
+
+# MANDATORY: Request re-review after pushing changes
+gh pr edit $PR_NUM --add-reviewer <reviewer>
 ```
 
 ### 3. Collect Review Comments
@@ -102,7 +106,26 @@ For each comment:
     │
     └─ If unclear:
         └─ Use `respond-to-review` to ask questions
+
+After ALL comments addressed:
+    │
+    └─ MANDATORY: Request re-review
+        └─ gh pr edit $PR_NUM --add-reviewer <original-reviewer>
 ```
+
+### 6. Request Re-Review (MANDATORY)
+
+**After pushing ANY changes in response to review feedback, ALWAYS request re-review.**
+
+```bash
+# Get the original reviewer(s)
+REVIEWERS=$(gh pr view $PR_NUM --json reviews -q '[.reviews[].author.login] | unique | join(",")')
+
+# Request re-review from all reviewers who commented
+gh pr edit $PR_NUM --add-reviewer "$REVIEWERS"
+```
+
+This is non-negotiable. Reviewers need to know changes are ready for another look.
 
 ## Monitoring Commands
 

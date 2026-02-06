@@ -261,9 +261,10 @@ gh api graphql -f query='
 **Simplified workflow:**
 1. Make the fix
 2. Push the commit
-3. Reply with "Fixed in [SHA]"
+3. Reply with "Fixed in [`SHA`](link-to-commit)" (always use linked SHA)
 4. Resolve the thread in GitHub UI or via API
 5. **Report progress to user**
+6. **MANDATORY: Request re-review after all comments addressed**
 
 ### Progress Feedback Format
 
@@ -283,21 +284,35 @@ After each comment is addressed, report:
 - [Y] threads unresolved
 ```
 
-### Request Re-review
-After addressing all feedback:
+### Request Re-review (MANDATORY)
+
+**ALWAYS request re-review after pushing changes. This is non-negotiable.**
+
 ```bash
-gh pr edit $PR_NUM --add-reviewer username
+# Get PR number
+PR_NUM=$(gh pr view --json number -q '.number')
+
+# Get original reviewers
+REVIEWERS=$(gh pr view $PR_NUM --json reviews -q '[.reviews[].author.login] | unique | join(",")')
+
+# Request re-review - MUST do this after every push
+gh pr edit $PR_NUM --add-reviewer "$REVIEWERS"
 ```
 
-Or comment:
+Also post a summary comment:
 ```markdown
 @reviewer I've addressed all feedback. Ready for re-review when you have time.
 
 Summary of changes:
-- [Change 1]: Fixed in abc123
-- [Change 2]: Fixed in def456
+- [Change 1]: Fixed in [`abc123`](link)
+- [Change 2]: Fixed in [`def456`](link)
 - [Change 3]: Discussed above, keeping current approach
 ```
+
+**Why this is mandatory:**
+- Reviewers don't get notified of pushes automatically
+- Re-review request explicitly signals "ready for another look"
+- Prevents PRs from going stale waiting for reviewer to notice changes
 
 ## Multi-Round Reviews
 
