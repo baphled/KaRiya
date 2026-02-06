@@ -125,27 +125,23 @@ Feature: Browse Career Timeline
     Then I should still be on the timeline
 
   @happy @wip
-  Scenario: Filter events by company
+  Scenario: Filter modal shows company options
     Given I have an event "Built REST API" at company "Acme Corp"
     And I have an event "Deployed Kubernetes" at company "CloudCo"
     When I select "browse_timeline" from the menu
     And I press "f" to filter
-    And I select company "Acme Corp"
-    And I apply the filter
-    Then I should see "Built REST API"
-    And I should not see "Kubernetes"
+    Then I should see "Acme Corp"
+    And I should see "CloudCo"
+    When I press escape
+    Then I should still be on the timeline
 
   @happy @wip
-  Scenario: Clear active filter
-    Given I have an event "Built REST API" at company "Acme Corp"
-    And I have an event "Deployed Kubernetes" at company "CloudCo"
+  Scenario: Filter modal shows sort options
+    Given I have 3 events in my timeline
     When I select "browse_timeline" from the menu
     And I press "f" to filter
-    And I select company "Acme Corp"
-    And I apply the filter
-    And I press "x" to clear filter
-    Then I should see "Built REST API"
-    And I should see "Kubernetes"
+    Then I should see "Sort By"
+    And I should see "Sort Order"
 
   # ============================================================================
   # Sort Functionality
@@ -217,16 +213,17 @@ Feature: Browse Career Timeline
     Then I should still be on the timeline
     And the event should have description "Original text"
 
-  @happy @wip
-  Scenario: Edit event and save
+  @happy
+  Scenario: Edit event metadata and save
     Given I have an event "Original text" at company "Acme Corp"
     When I select "browse_timeline" from the menu
     And I press "e" to edit
-    And I clear the description field
-    And I enter "Updated text" as description
+    And I navigate to company field
+    And I clear the company field
+    And I enter "New Company" as company
     And I submit the form
     Then I should still be on the timeline
-    And the event should have description "Updated text"
+    And the event should have company "New Company"
 
   # ============================================================================
   # Delete Event

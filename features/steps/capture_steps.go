@@ -12,8 +12,6 @@ import (
 )
 
 // RegisterCaptureSteps registers capture event step definitions with Godog.
-//
-//nolint:dupl // Step registration blocks share similar structure but different content.
 func RegisterCaptureSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^the database is empty$`, theDatabaseIsEmpty)
 	sc.Step(`^I am on the main menu$`, iAmOnTheMainMenu)
