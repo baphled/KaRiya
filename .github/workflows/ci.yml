@@ -93,8 +93,9 @@ jobs:
         with:
           version: v2.8.0
           install-mode: binary
-          only-new-issues: true
           args: --timeout=5m
+          # Note: We run full scan (not only-new-issues) to catch pre-existing issues
+          # that would block merging to next. This ensures consistent quality checks.
 
   # Docblocks enforcement (structured doc comments on exports)
   docblocks:

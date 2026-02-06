@@ -1323,6 +1323,11 @@ linters:
           - revive
         text: "package-comments"
 
+      - path: 'internal/cli/types/(.*)\.go'
+        linters:
+          - revive
+        text: "package-comments"
+
     # -------------------------------------------------------------------------
     # C26: LEGACY COMPONENTS - Modals
     # -------------------------------------------------------------------------
