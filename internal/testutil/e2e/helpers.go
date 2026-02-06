@@ -24,6 +24,7 @@ import (
 	careersql "github.com/baphled/kariya/internal/repository/career/sql"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/huh"
 	_ "modernc.org/sqlite"
 )
 
@@ -810,6 +811,46 @@ func (e *TestEnv) Tab() *TestEnv {
 //   - None.
 func (e *TestEnv) SubmitHuhForm() *TestEnv {
 	return e.Confirm()
+}
+
+// ClearTextField clears a text field by moving to end and pressing backspace.
+// This is useful for clearing pre-populated huh form fields.
+//
+// Expected:
+//   - maxChars should be a reasonable upper bound for the text length.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
+func (e *TestEnv) ClearTextField(maxChars int) *TestEnv {
+	e.T.Helper()
+
+	e.PressKey(tea.KeyCtrlE)
+
+	for range maxChars {
+		e.PressKey(tea.KeyBackspace)
+	}
+
+	return e
+}
+
+// NextFormField moves to the next field in a huh form.
+// This sends the huh.NextField message directly to properly navigate forms.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
+func (e *TestEnv) NextFormField() *TestEnv {
+	e.T.Helper()
+
+	msg := huh.NextField()
+	e.updateModelAndExecute(msg)
+
+	return e
 }
 
 // executeCmd executes commands returned by Update, but only for specific message types
