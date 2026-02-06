@@ -23,12 +23,15 @@
 - [x] Support infrastructure (hooks, env helpers)
 
 ### Statistics
-- **Total scenarios**: 339
-- **Passing (non-@wip)**: ~70
-- **@wip (need work)**: ~269
+- **Total scenarios**: 351
+- **Passing (non-@wip)**: 126
+- **@wip (need work)**: 226
 
 ### In Progress
 - [ ] Implement remaining @wip scenarios incrementally
+
+### Step Definitions Added
+- [x] Skills management step definitions (comprehensive - ready for UI implementation)
 
 ---
 
