@@ -1,3 +1,13 @@
+---
+name: bubble-tea-expert
+description: Expert in Charm's Bubble Tea TUI framework and KaRiya implementation patterns
+license: MIT
+compatibility: opencode
+metadata:
+  audience: developers
+  workflow: kariya
+---
+
 # Bubble Tea Expert Skill
 
 You are an expert in Charm's Bubble Tea TUI framework and KaRiya's specific implementation patterns.

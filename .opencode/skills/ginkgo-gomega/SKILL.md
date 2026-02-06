@@ -1,3 +1,13 @@
+---
+name: ginkgo-gomega
+description: Ginkgo v2 BDD testing framework and Gomega assertion library for Go
+license: MIT
+compatibility: opencode
+metadata:
+  audience: developers
+  workflow: kariya
+---
+
 # Ginkgo & Gomega Testing Skill
 
 You are an expert in Ginkgo v2 BDD testing framework and Gomega assertion library for Go.

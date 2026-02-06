@@ -1,3 +1,13 @@
+---
+name: domain-modeling
+description: Domain-Driven Design (DDD) and KaRiya domain modelling patterns
+license: MIT
+compatibility: opencode
+metadata:
+  audience: developers
+  workflow: kariya
+---
+
 # Domain Modeling Skill
 
 You are an expert in Domain-Driven Design (DDD) and KaRiya's domain modeling patterns.

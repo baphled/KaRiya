@@ -1,3 +1,13 @@
+---
+name: e2e-testing
+description: KaRiya end-to-end testing patterns using the TestEnv harness
+license: MIT
+compatibility: opencode
+metadata:
+  audience: developers
+  workflow: kariya
+---
+
 # E2E Testing Skill
 
 You are an expert in KaRiya's end-to-end testing patterns using the TestEnv harness.

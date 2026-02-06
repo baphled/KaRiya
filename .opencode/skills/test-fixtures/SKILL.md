@@ -1,3 +1,13 @@
+---
+name: test-fixtures
+description: Creating test data using factory-go and gofakeit for Go tests
+license: MIT
+compatibility: opencode
+metadata:
+  audience: developers
+  workflow: kariya
+---
+
 # Test Fixtures Skill
 
 You are an expert in creating test data using factory-go and gofakeit for Go tests.

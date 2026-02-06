@@ -1,3 +1,13 @@
+---
+name: token-efficiency
+description: Optimise AI interactions for token efficiency - maximise value while minimising token usage
+license: MIT
+compatibility: opencode
+metadata:
+  audience: developers
+  workflow: kariya
+---
+
 # Token Efficiency Skill
 
 You are an expert in optimizing AI interactions for token efficiency - maximizing value while minimizing token usage.

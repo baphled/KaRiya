@@ -1,3 +1,13 @@
+---
+name: ui-design
+description: Terminal user interface design - visual hierarchy, layout, and clear intuitive interfaces
+license: MIT
+compatibility: opencode
+metadata:
+  audience: developers
+  workflow: kariya
+---
+
 # UI Design Skill
 
 ## Identity

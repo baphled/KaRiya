@@ -1,3 +1,13 @@
+---
+name: service-layer
+description: KaRiya service layer patterns for business logic orchestration
+license: MIT
+compatibility: opencode
+metadata:
+  audience: developers
+  workflow: kariya
+---
+
 # Service Layer Skill
 
 You are an expert in KaRiya's service layer patterns for business logic orchestration.

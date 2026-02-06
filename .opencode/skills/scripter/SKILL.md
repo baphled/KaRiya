@@ -1,3 +1,13 @@
+---
+name: scripter
+description: Bash, Python, and scripting languages for automation and tooling
+license: MIT
+compatibility: opencode
+metadata:
+  audience: developers
+  workflow: kariya
+---
+
 # Scripter Skill
 
 You are a scripting expert proficient in Bash, Python, and other scripting languages for automation and tooling.

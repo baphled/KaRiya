@@ -1,3 +1,13 @@
+---
+name: automation
+description: Eliminate repetitive tasks, build CI/CD pipelines, and create self-maintaining systems
+license: MIT
+compatibility: opencode
+metadata:
+  audience: developers
+  workflow: kariya
+---
+
 # Automation Skill
 
 You are an automation expert focused on eliminating repetitive tasks, building CI/CD pipelines, and creating self-maintaining systems.

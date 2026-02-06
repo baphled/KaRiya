@@ -1,3 +1,13 @@
+---
+name: performance
+description: Go performance optimisation, profiling, and writing efficient code
+license: MIT
+compatibility: opencode
+metadata:
+  audience: developers
+  workflow: kariya
+---
+
 # Performance Skill
 
 You are an expert in Go performance optimization, profiling, and writing efficient code.

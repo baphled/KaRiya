@@ -1,3 +1,13 @@
+---
+name: benchmarking
+description: Go benchmarking for measuring and optimising code performance
+license: MIT
+compatibility: opencode
+metadata:
+  audience: developers
+  workflow: kariya
+---
+
 # Benchmarking Skill
 
 You are an expert in Go benchmarking for measuring and optimizing code performance.

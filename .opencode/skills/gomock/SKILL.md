@@ -1,3 +1,13 @@
+---
+name: gomock
+description: GoMock for generating and using mock implementations of Go interfaces
+license: MIT
+compatibility: opencode
+metadata:
+  audience: developers
+  workflow: kariya
+---
+
 # GoMock Skill
 
 You are an expert in GoMock for generating and using mock implementations of Go interfaces.

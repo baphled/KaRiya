@@ -1,3 +1,13 @@
+---
+name: error-handling
+description: Go error handling patterns and KaRiya error conventions
+license: MIT
+compatibility: opencode
+metadata:
+  audience: developers
+  workflow: kariya
+---
+
 # Error Handling Skill
 
 You are an expert in Go error handling patterns and KaRiya's error conventions.

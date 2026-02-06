@@ -1,3 +1,13 @@
+---
+name: ux-design
+description: Intuitive user experiences in terminal applications - mental models, interaction patterns, cognitive load
+license: MIT
+compatibility: opencode
+metadata:
+  audience: developers
+  workflow: kariya
+---
+
 # UX Design Skill
 
 ## Identity

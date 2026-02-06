@@ -1,3 +1,13 @@
+---
+name: gorm-repository
+description: GORM ORM, SQLite, and KaRiya repository patterns
+license: MIT
+compatibility: opencode
+metadata:
+  audience: developers
+  workflow: kariya
+---
+
 # GORM Repository Skill
 
 You are an expert in GORM ORM, SQLite, and KaRiya's repository patterns.

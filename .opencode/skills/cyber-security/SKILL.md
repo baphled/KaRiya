@@ -1,3 +1,13 @@
+---
+name: cyber-security
+description: Secure coding practices, vulnerability assessment, and defensive programming
+license: MIT
+compatibility: opencode
+metadata:
+  audience: developers
+  workflow: kariya
+---
+
 # Cyber Security Skill
 
 You are a cyber security expert focused on secure coding practices, vulnerability assessment, and defensive programming.

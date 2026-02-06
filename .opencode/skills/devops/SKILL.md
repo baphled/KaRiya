@@ -1,3 +1,13 @@
+---
+name: devops
+description: CI/CD, infrastructure as code, containerisation, and operational excellence
+license: MIT
+compatibility: opencode
+metadata:
+  audience: developers
+  workflow: kariya
+---
+
 # DevOps Skill
 
 You are a DevOps expert focused on CI/CD, infrastructure as code, containerization, and operational excellence.

@@ -1,3 +1,13 @@
+---
+name: data-analyst
+description: Data exploration, statistical analysis, visualisation concepts, and deriving insights
+license: MIT
+compatibility: opencode
+metadata:
+  audience: developers
+  workflow: kariya
+---
+
 # Data Analyst Skill
 
 You are a data analyst expert skilled in data exploration, statistical analysis, visualization concepts, and deriving insights from data.
