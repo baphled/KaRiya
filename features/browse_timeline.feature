@@ -124,7 +124,7 @@ Feature: Browse Career Timeline
     And I press escape
     Then I should still be on the timeline
 
-  @happy @wip
+  @happy
   Scenario: Filter modal shows company options
     Given I have an event "Built REST API" at company "Acme Corp"
     And I have an event "Deployed Kubernetes" at company "CloudCo"
@@ -135,7 +135,7 @@ Feature: Browse Career Timeline
     When I press escape
     Then I should still be on the timeline
 
-  @happy @wip
+  @happy
   Scenario: Filter modal shows sort options
     Given I have 3 events in my timeline
     When I select "browse_timeline" from the menu
@@ -182,7 +182,7 @@ Feature: Browse Career Timeline
     Then I should still be on the timeline
     And there should be 0 events
 
-  @happy @wip
+  @happy
   Scenario: Add event from timeline
     Given the database is empty
     When I select "browse_timeline" from the menu
@@ -276,7 +276,7 @@ Feature: Browse Career Timeline
   # Pagination
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Page through large event list
     Given I have 20 events in my timeline
     When I select "browse_timeline" from the menu
@@ -285,7 +285,7 @@ Feature: Browse Career Timeline
     When I press page up
     Then I should see the original events
 
-  @happy @wip
+  @happy
   Scenario: Jump to first and last event
     Given I have 20 events in my timeline
     When I select "browse_timeline" from the menu
@@ -298,7 +298,7 @@ Feature: Browse Career Timeline
   # View Skills from Event Detail
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: View skills from event detail modal
     Given I have an event "Built API with Go" at company "TechCorp"
     And the event has skills "Go,PostgreSQL,REST"
@@ -310,7 +310,7 @@ Feature: Browse Career Timeline
     And I should see "PostgreSQL"
     And I should see "REST"
 
-  @happy @wip
+  @happy
   Scenario: Close skills modal returns to event detail
     Given I have an event "Built API with Go" at company "TechCorp"
     And the event has skills "Go,PostgreSQL"
@@ -324,7 +324,7 @@ Feature: Browse Career Timeline
   # Advanced Filtering
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Filter by multiple companies
     Given I have an event "Event at Acme" at company "Acme Corp"
     And I have an event "Event at Tech" at company "TechCorp"
@@ -338,7 +338,7 @@ Feature: Browse Career Timeline
     And I should see "Event at Tech"
     And I should not see "Event at Other"
 
-  @happy @wip
+  @happy
   Scenario: Filter by category
     Given I have an event "Technical event" with category "technical"
     And I have an event "Leadership event" with category "leadership"
@@ -349,7 +349,7 @@ Feature: Browse Career Timeline
     Then I should see 1 event
     And I should see "Technical event"
 
-  @happy @wip
+  @happy
   Scenario: Filter by project
     Given I have an event "Project A work" with project "Project Alpha"
     And I have an event "Project B work" with project "Project Beta"
@@ -360,7 +360,7 @@ Feature: Browse Career Timeline
     Then I should see 1 event
     And I should see "Project A work"
 
-  @happy @wip
+  @happy
   Scenario: Filter by date range
     Given I have an event "Old event" dated "2024-01-01"
     And I have an event "Recent event" dated "2025-06-01"
@@ -371,7 +371,7 @@ Feature: Browse Career Timeline
     Then I should see 1 event
     And I should see "Recent event"
 
-  @happy @wip
+  @happy
   Scenario: Combine company and category filter
     Given I have an event "Acme tech" at company "Acme Corp" with category "technical"
     And I have an event "Acme lead" at company "Acme Corp" with category "leadership"
@@ -398,7 +398,7 @@ Feature: Browse Career Timeline
   # Search with Sort by Relevance
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Sort search results by relevance
     Given I have an event "Go programming basics"
     And I have an event "Advanced Go techniques and patterns"
@@ -415,7 +415,7 @@ Feature: Browse Career Timeline
   # Filter Display
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Active filters are displayed
     Given I have 5 events in my timeline
     When I select "browse_timeline" from the menu
