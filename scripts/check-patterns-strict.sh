@@ -269,7 +269,39 @@ fi
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "9. COVERAGE CHECK"
+echo "9. BDD @wip TAG CHECK"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+FEATURE_FILES=$(git diff --cached --name-only | grep '\.feature$' || true)
+if [ -n "$FEATURE_FILES" ]; then
+    WIP_COUNT=0
+    for file in $FEATURE_FILES; do
+        FILE_WIP=$(grep -c '@wip' "$file" 2>/dev/null || echo 0)
+        WIP_COUNT=$((WIP_COUNT + FILE_WIP))
+    done
+    
+    if [ "$WIP_COUNT" -gt 0 ]; then
+        echo -e "${YELLOW}⚠️  BDD scenarios with @wip tags: $WIP_COUNT${NC}"
+        echo "   These scenarios are excluded from CI but should be completed"
+        echo "   Run 'make bdd-wip' to see which scenarios need work"
+        echo ""
+        echo "   Files with @wip:"
+        for file in $FEATURE_FILES; do
+            COUNT=$(grep -c '@wip' "$file" 2>/dev/null || echo 0)
+            if [ "$COUNT" -gt 0 ]; then
+                echo "     $file: $COUNT scenario(s)"
+            fi
+        done
+    else
+        echo -e "${GREEN}✅ No @wip tags in staged feature files${NC}"
+    fi
+else
+    echo -e "${GREEN}✅ No feature files in commit${NC}"
+fi
+
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "10. COVERAGE CHECK"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 if [ -n "$ALL_STAGED" ]; then
@@ -278,6 +310,11 @@ if [ -n "$ALL_STAGED" ]; then
         # Skip mock packages - they are auto-generated and don't need tests
         if [[ "$pkg" == *"/mocks/"* ]] || [[ "$pkg" == *"/mocks" ]]; then
             echo -e "${YELLOW}⏭️  Skipping mock package: $pkg${NC}"
+            continue
+        fi
+        # Skip BDD test infrastructure (features/ directory contains test code, not production code)
+        if [[ "$pkg" == features* ]]; then
+            echo -e "${GREEN}✅ $pkg: skipped (BDD test infrastructure)${NC}"
             continue
         fi
         if [ -d "$pkg" ]; then
