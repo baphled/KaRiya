@@ -173,11 +173,13 @@ func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
 
 			event, err := eventFromFormData(formData)
 			if err != nil {
-				return i.setFailedCmd("FORM_CONVERSION_ERROR", fmt.Sprintf("Failed to convert form data: %v", err), err)
+				// Show validation error modal instead of silently failing
+				return i.showValidationErrorModal(fmt.Sprintf("Invalid date format: %v", err))
 			}
 
 			if err := event.Validate(); err != nil {
-				return i.setFailedCmd("VALIDATION_ERROR", fmt.Sprintf("Event validation failed: %v", err), err)
+				// Show validation error modal instead of silently failing
+				return i.showValidationErrorModal(err.Error())
 			}
 
 			i.reviewState = &ReviewInferredEventState{
