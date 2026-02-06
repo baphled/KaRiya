@@ -949,6 +949,14 @@ func (e *TestEnv) processCmdResult(msg tea.Msg) {
 		e.updateModelAndExecute(msg)
 	case skillsmanagement.SkillsLoadedMsg:
 		e.updateModelAndExecute(msg)
+	case skillsmanagement.SkillCreatedMsg:
+		e.updateModelAndExecute(msg)
+	case skillsmanagement.SkillUpdatedMsg:
+		e.updateModelAndExecute(msg)
+	case skillsmanagement.SkillDeletedMsg:
+		e.updateModelAndExecute(msg)
+	case skillsmanagement.SkillFormCompleteMsg:
+		e.updateModelAndExecute(msg)
 	case feedback.ModalCountdownTickMsg:
 		e.updateModelAndExecute(msg)
 	case feedback.ModalAutoDismissMsg:
