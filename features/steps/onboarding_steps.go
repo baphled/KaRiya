@@ -3,6 +3,7 @@ package steps
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/baphled/kariya/features/support"
 	"github.com/cucumber/godog"
@@ -278,8 +279,23 @@ func iShouldStillBeOnStep(ctx context.Context, step int) error {
 }
 
 // iShouldSeeValidationErrorOnboarding checks for validation error in the onboarding view.
-func iShouldSeeValidationErrorOnboarding(_ context.Context) error {
-	return godog.ErrPending
+func iShouldSeeValidationErrorOnboarding(ctx context.Context) error {
+	env := support.GetOnboardingEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.View()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("error"),
+		gomega.ContainSubstring("Error"),
+		gomega.ContainSubstring("required"),
+		gomega.ContainSubstring("Required"),
+		gomega.ContainSubstring("invalid"),
+		gomega.ContainSubstring("Invalid"),
+		gomega.ContainSubstring("please"),
+		gomega.ContainSubstring("Please"),
+	), "Should see validation error")
+	return nil
 }
 
 // iShouldStillSeeOnboardingWizard verifies the onboarding wizard is visible.
@@ -296,6 +312,12 @@ func iShouldStillSeeOnboardingWizard(ctx context.Context) error {
 }
 
 // fieldShouldBeFocused verifies the specified field is focused.
-func fieldShouldBeFocused(_ context.Context, _ string) error {
-	return godog.ErrPending
+func fieldShouldBeFocused(ctx context.Context, field string) error {
+	env := support.GetOnboardingEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.View()
+	gomega.Expect(strings.ToLower(view)).To(gomega.ContainSubstring(strings.ToLower(field)), "Field should be visible (focused): "+field)
+	return nil
 }

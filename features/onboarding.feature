@@ -74,7 +74,7 @@ Feature: User Onboarding
   # Step 3 Completion (Optional Fields)
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Complete Step 3 with professional title
     When I enter "Test User" as my name
     And I press enter
@@ -83,11 +83,11 @@ Feature: User Onboarding
     And I enter "London" as my location
     And I press enter
     And I enter "Senior Software Engineer" as my title
-    And I press enter
+    And I skip the optional fields
     Then the onboarding wizard should be complete
     And my profile should have title "Senior Software Engineer"
 
-  @happy @wip
+  @happy
   Scenario: Complete onboarding with all optional fields
     When I enter "Jane Developer" as my name
     And I press enter
@@ -106,7 +106,7 @@ Feature: User Onboarding
     And my profile should have GitHub username "janedev"
     And my profile should have portfolio "https://janedev.com"
 
-  @happy @wip
+  @happy
   Scenario: Skip all optional fields in Step 3
     When I enter "Test User" as my name
     And I press enter
@@ -122,7 +122,7 @@ Feature: User Onboarding
   # Validation Scenarios
   # ============================================================================
 
-  @sad @wip
+  @sad
   Scenario: Invalid email format shows validation error
     When I enter "Test User" as my name
     And I press enter
@@ -131,7 +131,7 @@ Feature: User Onboarding
     Then I should still be on step 2
     And I should see a validation error
 
-  @sad @wip
+  @sad
   Scenario: Empty email shows validation error
     When I enter "Test User" as my name
     And I press enter
@@ -142,13 +142,13 @@ Feature: User Onboarding
   # Navigation Scenarios
   # ============================================================================
 
-  @sad @wip
+  @sad
   Scenario: Escape key is blocked during onboarding
     When I press escape
     Then I should still see the onboarding wizard
     And I should see "Step 1 of 3"
 
-  @happy @wip
+  @happy
   Scenario: Navigate between fields with Tab
     When I enter "Test User" as my name
     And I press enter
@@ -156,7 +156,7 @@ Feature: User Onboarding
     And I press tab
     Then the location field should be focused
 
-  @happy @wip
+  @happy
   Scenario: Navigate backwards with Shift+Tab
     When I enter "Test User" as my name
     And I press enter
