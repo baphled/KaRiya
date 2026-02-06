@@ -1,0 +1,30 @@
+{
+  "$schema": "https://opencode.ai/config.schema.json",
+  "permission": {
+    "skill": {
+      "*": "allow"
+    }
+  },
+  "agent": {
+    "build": {
+      "permission": {
+        "skill": {
+          "clean-code": "allow",
+          "architecture": "allow",
+          "security": "allow"
+        }
+      }
+    },
+    "plan": {
+      "permission": {
+        "skill": {
+          "code-reviewer": "allow",
+          "architecture": "allow",
+          "create-task": "allow",
+          "create-bug": "allow",
+          "tech-debt": "allow"
+        }
+      }
+    }
+  }
+}

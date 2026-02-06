@@ -14,7 +14,7 @@ docs/state_matrix.json
 docs/STATE_MATRIX.md
 docs/state_matrix.json
 
-.opencode
+.opencode/plan
 
 # Build artifacts
 *.exe
