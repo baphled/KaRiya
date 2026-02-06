@@ -1,13 +1,8 @@
 name: CI
 
 on:
-  push:
-    branches:
-      - main
-      - next
-      - 'feature/**'
-      - 'fix/**'
-      - 'refactor/**'
+  # Only run on PRs to avoid duplicate test runs
+  # Push to next/main is covered by architecture-lint.yml
   pull_request:
     branches:
       - next
@@ -93,8 +88,9 @@ jobs:
         with:
           version: v2.8.0
           install-mode: binary
-          only-new-issues: true
           args: --timeout=5m
+          # Note: We run full scan (not only-new-issues) to catch pre-existing issues
+          # that would block merging to next. This ensures consistent quality checks.
 
   # Docblocks enforcement (structured doc comments on exports)
   docblocks:
