@@ -144,12 +144,42 @@ Before committing:
 
 ## AI Attribution
 
-The `ai-commit` script automatically adds:
+The `ai-commit` script automatically adds attribution trailers. However, **you must set the correct model** since auto-detection defaults may be wrong.
+
+### Required Environment Variables
+
+**Always set these before committing:**
+
+```bash
+AI_AGENT="Opencode" AI_MODEL="Claude Opus 4.5" make ai-commit FILE=/tmp/commit.txt
+```
+
+| Variable | Value | When |
+|----------|-------|------|
+| `AI_AGENT` | `Opencode` | Running in Opencode |
+| `AI_AGENT` | `Claude Code` | Running in Claude Code CLI |
+| `AI_AGENT` | `Cursor` | Running in Cursor |
+| `AI_MODEL` | `Claude Opus 4.5` | Using claude-opus-4-5 |
+| `AI_MODEL` | `Claude Sonnet 4` | Using claude-sonnet-4 |
+
+### Why This Matters
+
+The script auto-detects the agent from environment variables (`OPENCODE=1`, `CLAUDE_CODE`, etc.) but **defaults to wrong models**:
+- Opencode defaults to "Claude Sonnet 4" even when using Opus
+- You must explicitly set `AI_MODEL` to get correct attribution
+
+### Correct Attribution Format
 
 ```
-AI-Generated-By: OpenCode
-AI-Model: [detected model]
+AI-Generated-By: Opencode (Claude Opus 4.5)
+Reviewed-By: Yomi Colledge
 ```
+
+### Check Your Model
+
+If unsure which model you're running, check the session info or ask:
+- `claude-opus-4-5` → `AI_MODEL="Claude Opus 4.5"`
+- `claude-sonnet-4` → `AI_MODEL="Claude Sonnet 4"`
 
 ## Git Safety Rules
 

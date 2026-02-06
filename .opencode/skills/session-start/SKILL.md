@@ -37,13 +37,30 @@ Use this skill at the **start of every work session** before making any changes.
    - **Architecture** - Follow layer hierarchy, no shortcuts
    - **Documentation** - Required for all exported symbols
 
+## AI Attribution Setup
+
+**Before any commits**, know your correct attribution:
+
+| If running in | Set `AI_AGENT` to | Set `AI_MODEL` to |
+|---------------|-------------------|-------------------|
+| Opencode with Opus | `Opencode` | `Claude Opus 4.5` |
+| Opencode with Sonnet | `Opencode` | `Claude Sonnet 4` |
+| Claude Code | `Claude Code` | `Claude Opus 4.5` or `Claude Sonnet 4` |
+
+**Use when committing:**
+```bash
+AI_AGENT="Opencode" AI_MODEL="Claude Opus 4.5" make ai-commit FILE=/tmp/commit.txt
+```
+
+The script auto-detects the agent but **defaults to wrong models**. Always set `AI_MODEL` explicitly.
+
 ## Session workflow
 
 ```
 make session-start
   -> work on task
   -> make check-compliance
-  -> make ai-commit FILE=/tmp/commit.txt
+  -> AI_AGENT="Opencode" AI_MODEL="Claude Opus 4.5" make ai-commit FILE=/tmp/commit.txt
   -> repeat
 make session-end
 ```

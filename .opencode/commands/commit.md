@@ -39,8 +39,12 @@ Load these skills:
 
 4. **Create Commit**
    ```bash
-   make ai-commit FILE=/tmp/commit.txt
+   AI_AGENT="Opencode" AI_MODEL="Claude Opus 4.5" make ai-commit FILE=/tmp/commit.txt
    ```
+   
+   **Important:** Always set `AI_MODEL` explicitly. The script defaults to wrong models.
+   - Use `Claude Opus 4.5` when running claude-opus-4-5
+   - Use `Claude Sonnet 4` when running claude-sonnet-4
 
 5. **Verify**
    ```bash
