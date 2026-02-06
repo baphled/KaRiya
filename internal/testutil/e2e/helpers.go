@@ -925,6 +925,8 @@ func (e *TestEnv) updateModelAndExecute(msg tea.Msg) {
 // Side effects:
 //   - May update the Model field of the TestEnv.
 //   - May recursively execute commands.
+//
+//nolint:gocyclo // Type switch handler inherently requires many cases for different message types.
 func (e *TestEnv) processCmdResult(msg tea.Msg) {
 	switch msg := msg.(type) {
 	case tea.QuitMsg:
