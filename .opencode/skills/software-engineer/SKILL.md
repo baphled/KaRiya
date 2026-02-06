@@ -37,6 +37,7 @@ These skills are **always loaded** and inform all work:
 - `assumption-tracker` - Explicit tracking of assumptions
 - `question-resolver` - Systematic question resolution
 - `pragmatic-problem-solving` - Practical solutions focus
+- `british-english` - All content uses British English spelling
 
 **When uncertain:** Stop. Use `question-resolver` to determine if the question is answerable, gather evidence, test assumptions.
 
@@ -323,6 +324,16 @@ CONCLUSION: Form validates before submit (VERIFIED)
 3. Apply correct patterns
 4. Verify fix
 
+### Parallel Development
+**Trigger:** "worktree", "parallel branch", "test in isolation", "multiple branches"
+**Load:** `git-worktree`, `github-expert`
+**Process:**
+1. Use bare repository structure for worktrees
+2. Create worktree: `git worktree add -b feature/name ../name origin/next`
+3. Each worktree is independent (own dependencies, build)
+4. Run `make session-start` in each worktree
+5. Clean up when done: `git worktree remove ../name`
+
 ## Decision Framework
 
 When faced with choices, I prioritize:
@@ -534,7 +545,10 @@ All skills are related - I orchestrate them based on context:
 - `ui-design`, `ux-design`, `accessibility`
 
 **Git & Collaboration:**
-- `ai-commit`, `create-pr`
+- `ai-commit`, `create-pr`, `git-worktree`
+
+**Language & Style:**
+- `british-english`
 
 **Efficiency:**
 - `token-efficiency`
