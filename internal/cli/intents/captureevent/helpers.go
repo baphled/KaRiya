@@ -72,6 +72,22 @@ func (i *Intent) setFailedCmd(code, message string, cause error) tea.Cmd {
 	return nil
 }
 
+// showValidationErrorModal displays a validation error modal without exiting the intent.
+// This allows the user to see what went wrong and correct the input.
+//
+// Expected:
+//   - message describes the validation failure in human-readable form.
+//
+// Returns:
+//   - A tea.Cmd from the modal's Init method.
+//
+// Side effects:
+//   - Creates an error modal on i.submitModal.
+func (i *Intent) showValidationErrorModal(message string) tea.Cmd {
+	i.submitModal = feedback.NewErrorModal("Validation Error", message)
+	return i.submitModal.Init()
+}
+
 // showSubmitModal creates the loading modal and starts event submission.
 //
 // Returns:

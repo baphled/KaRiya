@@ -52,13 +52,15 @@ func RegisterCaptureSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I change event company to "([^"]*)"$`, iChangeEventCompanyTo)
 	sc.Step(`^I save metadata changes$`, iSaveMetadataChanges)
 	sc.Step(`^I try to submit without description$`, iTryToSubmitWithoutDescription)
-	sc.Step(`^I should see a validation error$`, iShouldSeeValidationError)
+	sc.Step(`^I should see a capture validation error$`, iShouldSeeValidationError)
 	sc.Step(`^I press Ctrl\+S$`, iPressCtrlS)
 	sc.Step(`^I set event date to "([^"]*)"$`, iSetEventDateTo)
 	sc.Step(`^the event should have date "([^"]*)"$`, theEventShouldHaveDate)
 	sc.Step(`^the event should have today's date$`, theEventShouldHaveTodaysDate)
 	sc.Step(`^the event should have a date (\d+) days ago$`, theEventShouldHaveDateDaysAgo)
 	sc.Step(`^I should see a date validation error$`, iShouldSeeDateValidationError)
+	sc.Step(`^I should see a validation error about minimum length$`, iShouldSeeMinLengthValidationError)
+	sc.Step(`^the event should have skills "([^"]*)"$`, theEventShouldHaveSkills)
 }
 
 func theDatabaseIsEmpty(ctx context.Context) (context.Context, error) {
@@ -108,6 +110,15 @@ func iSelectManualCaptureStrategy(ctx context.Context) (context.Context, error) 
 }
 
 func iEnterEventDescription(ctx context.Context, description string) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+
+	// Type the description into the form so it's available for Ctrl+S and form validation
+	env.TypeText(description)
+
+	// Also store in context for iSubmitTheEvent to use when building the event
 	data := support.GetEventData(ctx)
 	data.Description = description
 	return support.WithEventData(ctx, data), nil
@@ -135,6 +146,8 @@ func iCaptureAnEvent(ctx context.Context, table *godog.Table) (context.Context, 
 			data.Tags = strings.Split(value, ",")
 		case "categories":
 			data.Categories = strings.Split(value, ",")
+		case "skills":
+			data.Skills = strings.Split(value, ",")
 		}
 	}
 	return support.WithEventData(ctx, data), nil
@@ -145,9 +158,16 @@ func iSubmitTheEvent(ctx context.Context) (context.Context, error) {
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
+
 	data := support.GetEventData(ctx)
-	event := data.BuildEvent()
-	env.SubmitEvent(event)
+	event, err := data.BuildEvent()
+	if err != nil {
+		// Submit with error to trigger validation error modal
+		env.SubmitEventWithError(event, err)
+	} else {
+		env.SubmitEvent(event)
+	}
+
 	return ctx, nil
 }
 
@@ -331,6 +351,18 @@ func theEventShouldHaveNCategories(ctx context.Context, expected int) error {
 	return nil
 }
 
+func theEventShouldHaveSkills(ctx context.Context, expected string) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	events := env.GetEvents()
+	gomega.Expect(events).NotTo(gomega.BeEmpty())
+	expectedSkills := strings.Split(expected, ",")
+	gomega.Expect(events[0].Skills).To(gomega.ConsistOf(expectedSkills))
+	return nil
+}
+
 func iHaveAnEventAtCompany(ctx context.Context, description, company string) (context.Context, error) {
 	env := support.GetAppEnv(ctx)
 	if env == nil {
@@ -454,7 +486,8 @@ func iTryToSubmitWithoutDescription(ctx context.Context) (context.Context, error
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	env.PressKey(tea.KeyCtrlS)
+	// Try to submit without entering description - should trigger validation
+	env.PressKey(tea.KeyEnter) // Try to submit form with empty description
 	return ctx, nil
 }
 
@@ -464,12 +497,13 @@ func iShouldSeeValidationError(ctx context.Context) error {
 		return godog.ErrPending
 	}
 	view := env.GetView()
-	gomega.Expect(view).To(gomega.SatisfyAny(
-		gomega.ContainSubstring("required"),
-		gomega.ContainSubstring("error"),
-		gomega.ContainSubstring("invalid"),
-		gomega.ContainSubstring("Event Description"),
-	))
+	// Check for validation error indicators in view
+	hasValidationError := strings.Contains(view, "required") ||
+		strings.Contains(view, "error") ||
+		strings.Contains(view, "invalid") ||
+		strings.Contains(view, "validation") ||
+		strings.Contains(view, "10-2000 characters")
+	gomega.Expect(hasValidationError).To(gomega.BeTrue(), "Expected validation error in view:\n%s", view)
 	return nil
 }
 
@@ -534,6 +568,22 @@ func iShouldSeeDateValidationError(ctx context.Context) error {
 		gomega.ContainSubstring("Invalid date"),
 		gomega.ContainSubstring("date format"),
 		gomega.ContainSubstring("Date format"),
+	))
+	return nil
+}
+
+func iShouldSeeMinLengthValidationError(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("minimum"),
+		gomega.ContainSubstring("at least"),
+		gomega.ContainSubstring("too short"),
+		gomega.ContainSubstring("10 characters"),
+		gomega.ContainSubstring("10-2000"),
 	))
 	return nil
 }

@@ -1027,6 +1027,22 @@ func (e *TestEnv) SubmitEvent(event *career.Event) *TestEnv {
 	return e.SendMessage(captureevent.SubmitMsg{Event: event, Err: nil})
 }
 
+// SubmitEventWithError sends a SubmitMsg with an error to trigger validation error handling.
+//
+// Expected:
+//   - err should describe the validation failure.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
+func (e *TestEnv) SubmitEventWithError(event *career.Event, err error) *TestEnv {
+	e.T.Helper()
+
+	return e.SendMessage(captureevent.SubmitMsg{Event: event, Err: err})
+}
+
 // DismissSuccessModal bypasses the auto-dismiss countdown and immediately
 // dismisses the success modal. Use this to speed up tests that don't need
 // to verify countdown behavior. To test the actual countdown, send
