@@ -158,7 +158,7 @@ Based on the task, I load the appropriate skills:
 
 ### Performance Optimization
 **Trigger:** "slow", "performance", "optimize", "faster"
-**Load:** `performance`, `benchmarking`, `go-expert`
+**Load:** `performance`, `benchmarking`, `go-expert`, `concurrency`
 **Process:**
 1. MEASURE: Profile to identify actual bottleneck
 2. BENCHMARK: Create benchmark for current implementation
@@ -166,6 +166,26 @@ Based on the task, I load the appropriate skills:
 4. OPTIMIZE: Fix specific bottleneck with targeted change
 5. VERIFY: Run benchmarks to confirm improvement
 6. Check for regressions elsewhere
+
+### Concurrent Code
+**Trigger:** "goroutine", "channel", "concurrent", "parallel", "race condition", "deadlock"
+**Load:** `concurrency`, `go-expert`, `debug-test`
+**Process:**
+1. Identify if concurrency is actually needed
+2. Choose appropriate pattern (worker pool, fan-out, pipeline)
+3. Use channels for communication, mutexes for state
+4. Ensure goroutines have exit paths (context cancellation)
+5. Test with race detector: `go test -race ./...`
+
+### Design Patterns
+**Trigger:** "pattern", "refactor to", "strategy pattern", "factory", "decorator"
+**Load:** `design-patterns`, `refactor`, `clean-code`
+**Process:**
+1. Identify the code smell or problem
+2. Select appropriate pattern (don't force it)
+3. Apply pattern incrementally with tests
+4. Verify pattern solves the actual problem
+5. Don't over-engineer - simplest solution wins
 
 ### Benchmarking
 **Trigger:** "benchmark", "measure performance", "how fast"
@@ -449,8 +469,11 @@ All skills are related - I orchestrate them based on context:
 **Data & Infrastructure:**
 - `db-operations`, `gorm-repository`, `debug-test`, `component-lookup`
 
-**Performance:**
-- `performance`, `benchmarking`
+**Performance & Concurrency:**
+- `performance`, `benchmarking`, `concurrency`
+
+**Design Patterns:**
+- `design-patterns`
 
 **Security & DevOps:**
 - `cyber-security`, `devops`, `github-expert`, `automation`, `scripter`
