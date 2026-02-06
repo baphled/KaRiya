@@ -36,6 +36,11 @@ This directory contains comprehensive setup and installation guides for the KaRi
    - Compliance check scripts and automation
    - Makefile targets and workflow integration
 
+7. **[BRANCH_CLEANUP_SETUP.md](BRANCH_CLEANUP_SETUP.md)**
+   - Automatic branch deletion configuration
+   - GitHub auto-delete of merged branches
+   - Local cleanup script and Git aliases
+
 ## 🚀 Getting Started
 
 ### For New Developers
@@ -62,6 +67,7 @@ If you just want to start coding:
 - **AI_COMMIT_ATTRIBUTION_SETUP.md** - AI attribution system
 - **AI_COMMIT_SETUP.md** - Quick AI setup
 - **ATOMIC_COMMITS_SETUP.md** - Atomic commit practices
+- **BRANCH_CLEANUP_SETUP.md** - Branch cleanup automation
 
 ### CI/CD & Automation
 - **CI_CD_SETUP.md** - Pipeline and automation
