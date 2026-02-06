@@ -4,6 +4,7 @@ package steps
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/baphled/kariya/features/support"
@@ -14,7 +15,7 @@ import (
 )
 
 // RegisterSkillsSteps registers skills management step definitions with Godog.
-// Note: Many steps are shared with browse_steps.go and registered there.
+// Many steps are shared with browse_steps.go and registered there.
 //
 //nolint:funlen // Registration function has many steps by design.
 func RegisterSkillsSteps(sc *godog.ScenarioContext) {
@@ -343,7 +344,7 @@ func iShouldSeeNSkills(ctx context.Context, expected int) error {
 		return godog.ErrPending
 	}
 	view := env.GetView()
-	gomega.Expect(view).To(gomega.ContainSubstring(fmt.Sprintf("%d", expected)))
+	gomega.Expect(view).To(gomega.ContainSubstring(strconv.Itoa(expected)))
 	return nil
 }
 
@@ -408,7 +409,7 @@ func iShouldSeeNEvents(ctx context.Context, expected int) error {
 		return godog.ErrPending
 	}
 	view := env.GetView()
-	gomega.Expect(view).To(gomega.ContainSubstring(fmt.Sprintf("%d", expected)))
+	gomega.Expect(view).To(gomega.ContainSubstring(strconv.Itoa(expected)))
 	return nil
 }
 
@@ -757,12 +758,11 @@ func iCreateSkillsWithAll15Categories(ctx context.Context) (context.Context, err
 		"Cloud", "Mobile", "Testing", "Security", "Architecture",
 		"Data", "ML", "Monitoring", "Tooling", "Practices",
 	}
-	for i, cat := range categories {
+	for _, cat := range categories {
 		skill := &career.Skill{
-			Name:     fmt.Sprintf("Skill_%s", cat),
+			Name:     "Skill_" + cat,
 			Category: cat,
 		}
-		_ = i
 		env.AddSkill(skill)
 	}
 	return ctx, nil

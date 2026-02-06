@@ -13,6 +13,8 @@ import (
 )
 
 // RegisterCaptureSteps registers capture event step definitions with Godog.
+//
+//nolint:funlen // Registration function has many steps by design.
 func RegisterCaptureSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^the database is empty$`, theDatabaseIsEmpty)
 	sc.Step(`^I am on the main menu$`, iAmOnTheMainMenu)
