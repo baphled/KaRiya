@@ -45,7 +45,32 @@ fi
 2. Rebase onto target branch
 3. Resolve any conflicts
 4. Force push with `--force-with-lease`
-5. THEN monitor CI
+5. Request Copilot review (see below)
+6. THEN monitor CI
+
+### 0.5. REQUEST COPILOT REVIEW (ALWAYS)
+
+**ALWAYS request Copilot review after ANY push to the PR branch.**
+
+This ensures continuous code review feedback on all changes.
+
+```bash
+PR_NUM=$(gh pr view --json number -q '.number')
+
+# Request Copilot review after every push
+gh pr edit $PR_NUM --add-reviewer copilot
+
+# Or use the API directly
+gh api repos/:owner/:repo/pulls/$PR_NUM/requested_reviewers \
+  -X POST -f "reviewers[]=copilot"
+```
+
+**Triggers for requesting Copilot review:**
+- Initial PR creation
+- After fixing CI failures
+- After rebasing
+- After addressing review comments
+- After any code changes pushed to the branch
 
 ### 1. Check CI Status
 
