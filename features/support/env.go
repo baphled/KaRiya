@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/bootstrap"
+	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/testutil/e2e"
@@ -189,6 +190,7 @@ type eventDataKey struct{}
 // EventData holds event data being built during a scenario.
 type EventData struct {
 	Description string
+	Date        string
 	Company     string
 	Project     string
 	Tags        []string
@@ -272,11 +274,19 @@ func WithEventData(ctx context.Context, data *EventData) context.Context {
 
 // BuildEvent creates a career.Event from EventData.
 func (d *EventData) BuildEvent() *career.Event {
-	return &career.Event{
+	event := &career.Event{
 		Text:       d.Description,
 		Company:    d.Company,
 		Project:    d.Project,
 		Tags:       d.Tags,
 		Categories: d.Categories,
 	}
+
+	if d.Date != "" {
+		if parsed, err := forms.ParseDateString(d.Date); err == nil {
+			event.Date = parsed
+		}
+	}
+
+	return event
 }
