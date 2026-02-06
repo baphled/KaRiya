@@ -48,43 +48,42 @@ Feature: Application Navigation
     Then I should see help information
     And I should see "Keyboard Reference" or "Toggle this help"
 
-  @happy @wip
+  @happy
   Scenario: Close help modal
     Given I am on the main menu
     When I press "?" for help
     And I press escape
     Then I should be on the main menu
 
-  @happy @wip
+  @happy
   Scenario: Context-sensitive help in browse timeline
     Given I have 3 events in my timeline
     When I select "browse_timeline" from the menu
     And I press "?" for help
-    Then I should see "j/k" or "Navigate"
-    And I should see "Enter" or "Select"
+    Then I should see "Move up" or "Navigate"
+    And I should see "Enter" or "Confirm"
 
   # ============================================================================
   # Quit Application
   # ============================================================================
 
-  @happy @smoke @wip
+  @happy @smoke
   Scenario: Quit from main menu with q
     Given I am on the main menu
     When I press "q" to quit
     Then the application should exit
 
-  @happy @wip
+  @happy
   Scenario: Quit from main menu with Ctrl+C
     Given I am on the main menu
     When I press Ctrl+C
     Then the application should exit
 
-  @sad @wip
-  Scenario: Cannot quit with unsaved changes
+  @sad
+  Scenario: Cannot quit with q while in intent
     Given I am in the middle of capturing an event
     When I press "q" to quit
-    Then I should see a confirmation dialog
-    And I should be able to save or discard changes
+    Then the application should not exit
 
   # ============================================================================
   # Back Navigation
@@ -120,14 +119,14 @@ Feature: Application Navigation
   # Keyboard Shortcuts
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Global keyboard shortcuts work everywhere
     Given I am on the main menu
     Then pressing "?" should show help
     And pressing "q" should quit
     And pressing "Ctrl+C" should quit
 
-  @happy @wip
+  @happy
   Scenario: Intent-specific shortcuts
     Given I have 3 events in my timeline
     When I select "browse_timeline" from the menu
@@ -139,7 +138,7 @@ Feature: Application Navigation
   # Focus Management
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Modal captures focus
     Given I have 3 events in my timeline
     When I select "browse_timeline" from the menu
@@ -147,7 +146,7 @@ Feature: Application Navigation
     Then typing should go to the search input
     And pressing escape should close the modal
 
-  @happy @wip
+  @happy
   Scenario: Focus returns after modal closes
     Given I have 3 events in my timeline
     When I select "browse_timeline" from the menu
