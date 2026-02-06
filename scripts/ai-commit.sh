@@ -196,8 +196,41 @@ detect_ai_model() {
     echo ""
 }
 
+# Format model name to human-readable format
+# Converts hyphenated model IDs to Title Case with proper spacing
+# Examples: claude-sonnet-4-5 -> Claude Sonnet 4.5
+#           gpt-4o -> GPT-4o
+#           llama3-70b -> Llama3 70B
+format_model_name() {
+    local model="$1"
+    
+    # Special case for gpt-4o format (preserve -4o as hyphenated)
+    if [[ "$model" =~ ^gpt-[0-9]+o$ ]]; then
+        echo "$model" | sed 's/gpt/GPT/'
+        return
+    fi
+    
+    # Replace hyphens with spaces
+    local formatted="${model//-/ }"
+    
+    # Capitalize first letter of each word
+    formatted=$(echo "$formatted" | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) tolower(substr($i,2))}1')
+    
+    # Fix version numbers: "4 5" -> "4.5", "5 1" -> "5.1"
+    # Only for standalone single-digit numbers (use word boundaries)
+    formatted=$(echo "$formatted" | sed -E 's/\b([0-9]) ([0-9])\b/\1.\2/g')
+    
+    # Uppercase size suffixes (70b -> 70B, 8b -> 8B, 7b -> 7B)
+    formatted=$(echo "$formatted" | sed -E 's/([0-9]+)b$/\1B/g')
+    
+    # Uppercase special prefixes
+    formatted=$(echo "$formatted" | sed 's/^Gpt/GPT/g')
+    
+    echo "$formatted"
+}
+
 AGENT_NAME=$(detect_ai_agent)
-MODEL_NAME=$(detect_ai_model)
+MODEL_NAME=$(format_model_name "$(detect_ai_model)")
 
 # Validate agent detected
 if [ -z "$AGENT_NAME" ]; then
