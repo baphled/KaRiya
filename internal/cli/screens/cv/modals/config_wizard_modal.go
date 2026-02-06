@@ -1,4 +1,4 @@
-package components
+package modals
 
 import (
 	"github.com/baphled/kariya/internal/cli/behaviors"
@@ -10,7 +10,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// CVConfigWizardModal provides a 3-step wizard for CV generation configuration.
+// ConfigWizardModal provides a 3-step wizard for CV generation configuration.
 // The wizard guides users through:
 //   - Step 1 (WHO): Profile selection + Audience targeting
 //   - Step 2 (TECH): Technology focus (conditional - only if techs extracted)
@@ -24,7 +24,7 @@ import (
 //
 // Usage:
 //
-//	modal := components.NewCVConfigWizardModal(width, height)
+//	modal := modals.NewConfigWizardModal(width, height)
 //	cmd := modal.Init()
 //	// In Update:
 //	cmd := modal.Update(msg)
@@ -32,11 +32,11 @@ import (
 //	    config := modal.GetConfigData()
 //	    // Use config to generate CV
 //	}
-type CVConfigWizardModal struct {
-	wizard   *behaviors.WizardBehavior[CVConfigData]
+type ConfigWizardModal struct {
+	wizard   *behaviors.WizardBehavior[ConfigData]
 	form     *forms.WizardFormAdapter
 	formData *forms.CVConfigFormData
-	data     *CVConfigData
+	data     *ConfigData
 
 	width          int
 	height         int
@@ -45,8 +45,8 @@ type CVConfigWizardModal struct {
 	profileOptions []ProfileOption
 }
 
-// CVConfigData holds the configuration data collected from the wizard.
-type CVConfigData struct {
+// ConfigData holds the configuration data collected from the wizard.
+type ConfigData struct {
 	// Step 1: WHO
 	ProfileID string // Required - CV profile to use
 	Audience  string // "hiring_manager" | "recruiter" | "peer"
@@ -76,34 +76,34 @@ type ExtractedTechnology struct {
 	Confidence float64
 }
 
-// NewCVConfigWizardModal creates a new CV configuration wizard modal
+// NewConfigWizardModal creates a new CV configuration wizard modal.
 //
 // Expected:
-//   - int must be valid.
+//   - width and height must be valid positive integers.
 //
 // Returns:
-//   - A fully initialized CVConfigWizardModal ready for use.
+//   - A fully initialized ConfigWizardModal ready for use.
 //
 // Side effects:
 //   - None.
-func NewCVConfigWizardModal(width, height int) *CVConfigWizardModal {
-	return NewCVConfigWizardModalWithProfiles(width, height, nil)
+func NewConfigWizardModal(width, height int) *ConfigWizardModal {
+	return NewConfigWizardModalWithProfiles(width, height, nil)
 }
 
-// NewCVConfigWizardModalWithProfiles creates a wizard modal with profile options.
+// NewConfigWizardModalWithProfiles creates a wizard modal with profile options.
 //
 // Expected:
-//   - int must be valid.
-//   - []profileoption must be valid.
+//   - width and height must be valid positive integers.
+//   - profiles can be nil or a slice of ProfileOption.
 //
 // Returns:
-//   - A fully initialized CVConfigWizardModal ready for use.
+//   - A fully initialized ConfigWizardModal ready for use.
 //
 // Side effects:
 //   - None.
-func NewCVConfigWizardModalWithProfiles(width, height int, profiles []ProfileOption) *CVConfigWizardModal {
-	modal := &CVConfigWizardModal{
-		data:           &CVConfigData{},
+func NewConfigWizardModalWithProfiles(width, height int, profiles []ProfileOption) *ConfigWizardModal {
+	modal := &ConfigWizardModal{
+		data:           &ConfigData{},
 		width:          width,
 		height:         height,
 		profileOptions: profiles,
@@ -112,17 +112,17 @@ func NewCVConfigWizardModalWithProfiles(width, height int, profiles []ProfileOpt
 
 	modal.buildForm()
 
-	wizard := behaviors.NewWizardBehavior[CVConfigData](modal.form, modal.data)
+	wizard := behaviors.NewWizardBehavior[ConfigData](modal.form, modal.data)
 	modal.wizard = wizard
 
 	return modal
 }
 
 // buildForm creates the huh form with 3 steps (groups).
-func (m *CVConfigWizardModal) buildForm() {
+func (m *ConfigWizardModal) buildForm() {
 	m.syncFromFormData()
 
-	modalWidth := calcCVModalWidth(m.width)
+	modalWidth := calcModalWidth(m.width)
 
 	formProfileOpts := make([]forms.ProfileOption, len(m.profileOptions))
 	for i, opt := range m.profileOptions {
@@ -159,7 +159,7 @@ func (m *CVConfigWizardModal) buildForm() {
 //
 // Side effects:
 //   - None.
-func (m *CVConfigWizardModal) Init() tea.Cmd {
+func (m *ConfigWizardModal) Init() tea.Cmd {
 	if m.form == nil {
 		return nil
 	}
@@ -169,14 +169,14 @@ func (m *CVConfigWizardModal) Init() tea.Cmd {
 // Update handles messages for the wizard modal.
 //
 // Expected:
-//   - msg must be valid.
+//   - msg must be a valid tea.Msg.
 //
 // Returns:
 //   - A tea.Cmd value.
 //
 // Side effects:
-//   - None.
-func (m *CVConfigWizardModal) Update(msg tea.Msg) tea.Cmd {
+//   - May update internal state based on key messages.
+func (m *ConfigWizardModal) Update(msg tea.Msg) tea.Cmd {
 	if !m.wizard.IsVisible() {
 		return nil
 	}
@@ -207,7 +207,7 @@ func (m *CVConfigWizardModal) Update(msg tea.Msg) tea.Cmd {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		m.form.SetDimensions(calcCVModalWidth(m.width), m.height)
+		m.form.SetDimensions(calcModalWidth(m.width), m.height)
 		return m.form.Init()
 	}
 
@@ -233,11 +233,11 @@ func (m *CVConfigWizardModal) Update(msg tea.Msg) tea.Cmd {
 // View renders the wizard modal.
 //
 // Returns:
-//   - A string value.
+//   - A string containing the rendered modal view.
 //
 // Side effects:
 //   - None.
-func (m *CVConfigWizardModal) View() string {
+func (m *ConfigWizardModal) View() string {
 	if !m.wizard.IsVisible() {
 		return ""
 	}
@@ -246,7 +246,7 @@ func (m *CVConfigWizardModal) View() string {
 		return ""
 	}
 
-	modalWidth := calcCVModalWidth(m.width)
+	modalWidth := calcModalWidth(m.width)
 
 	modalHeight := m.height - 10
 	if modalHeight < 20 {
@@ -275,7 +275,7 @@ func (m *CVConfigWizardModal) View() string {
 }
 
 // buildFooter creates the keyboard shortcuts footer using UIKit primitives.
-func (m *CVConfigWizardModal) buildFooter() string {
+func (m *ConfigWizardModal) buildFooter() string {
 	th := theme.Default()
 
 	badges := []*primitives.Badge{
@@ -297,16 +297,16 @@ func (m *CVConfigWizardModal) buildFooter() string {
 // Show makes the modal visible.
 //
 // Side effects:
-//   - None.
-func (m *CVConfigWizardModal) Show() {
+//   - Updates modal visibility state.
+func (m *ConfigWizardModal) Show() {
 	m.wizard.Show()
 }
 
 // Reset resets the wizard state while preserving the entered data.
 //
 // Side effects:
-//   - None.
-func (m *CVConfigWizardModal) Reset() {
+//   - Resets wizard step to beginning.
+func (m *ConfigWizardModal) Reset() {
 	m.wizard.Reset()
 
 	m.buildForm()
@@ -316,8 +316,8 @@ func (m *CVConfigWizardModal) Reset() {
 // Hide makes the modal invisible.
 //
 // Side effects:
-//   - None.
-func (m *CVConfigWizardModal) Hide() {
+//   - Updates modal visibility state.
+func (m *ConfigWizardModal) Hide() {
 	m.wizard.Hide()
 }
 
@@ -328,7 +328,7 @@ func (m *CVConfigWizardModal) Hide() {
 //
 // Side effects:
 //   - None.
-func (m *CVConfigWizardModal) IsVisible() bool {
+func (m *ConfigWizardModal) IsVisible() bool {
 	return m.wizard.IsVisible()
 }
 
@@ -339,7 +339,7 @@ func (m *CVConfigWizardModal) IsVisible() bool {
 //
 // Side effects:
 //   - None.
-func (m *CVConfigWizardModal) IsCompleted() bool {
+func (m *ConfigWizardModal) IsCompleted() bool {
 	return m.wizard.IsCompleted()
 }
 
@@ -350,18 +350,18 @@ func (m *CVConfigWizardModal) IsCompleted() bool {
 //
 // Side effects:
 //   - None.
-func (m *CVConfigWizardModal) IsSkipped() bool {
+func (m *ConfigWizardModal) IsSkipped() bool {
 	return m.wizard.IsSkipped()
 }
 
 // GetConfigData returns the collected configuration data.
 //
 // Returns:
-//   - A fully initialized CVConfigData ready for use.
+//   - A fully initialized ConfigData ready for use.
 //
 // Side effects:
-//   - None.
-func (m *CVConfigWizardModal) GetConfigData() *CVConfigData {
+//   - Syncs data from form before returning.
+func (m *ConfigWizardModal) GetConfigData() *ConfigData {
 	m.syncFromFormData()
 	return m.data
 }
@@ -369,22 +369,22 @@ func (m *CVConfigWizardModal) GetConfigData() *CVConfigData {
 // GetCurrentStep returns the current step index (0-based).
 //
 // Returns:
-//   - A int value.
+//   - An int value representing the current step.
 //
 // Side effects:
 //   - None.
-func (m *CVConfigWizardModal) GetCurrentStep() int {
+func (m *ConfigWizardModal) GetCurrentStep() int {
 	return m.wizard.CurrentStep()
 }
 
 // GetStepCount returns the total number of steps.
 //
 // Returns:
-//   - A int value.
+//   - An int value (always 3).
 //
 // Side effects:
 //   - None.
-func (m *CVConfigWizardModal) GetStepCount() int {
+func (m *ConfigWizardModal) GetStepCount() int {
 	return 3
 }
 
@@ -395,29 +395,29 @@ func (m *CVConfigWizardModal) GetStepCount() int {
 //
 // Side effects:
 //   - None.
-func (m *CVConfigWizardModal) AreTechsAvailable() bool {
+func (m *ConfigWizardModal) AreTechsAvailable() bool {
 	return m.techsAvailable
 }
 
 // GetExtractedTechnologies returns the extracted technologies.
 //
 // Returns:
-//   - A []ExtractedTechnology value.
+//   - A slice of ExtractedTechnology.
 //
 // Side effects:
 //   - None.
-func (m *CVConfigWizardModal) GetExtractedTechnologies() []ExtractedTechnology {
+func (m *ConfigWizardModal) GetExtractedTechnologies() []ExtractedTechnology {
 	return m.extractedTechs
 }
 
 // SetExtractedTechnologies sets the extracted technologies and rebuilds the form.
 //
 // Expected:
-//   - []extractedtechnology must be valid.
+//   - techs can be nil or a slice of ExtractedTechnology.
 //
 // Side effects:
-//   - None.
-func (m *CVConfigWizardModal) SetExtractedTechnologies(techs []ExtractedTechnology) {
+//   - Rebuilds the form with new technology options.
+func (m *ConfigWizardModal) SetExtractedTechnologies(techs []ExtractedTechnology) {
 	m.extractedTechs = techs
 	m.techsAvailable = len(techs) > 0
 	m.buildForm()
@@ -429,22 +429,22 @@ func (m *CVConfigWizardModal) SetExtractedTechnologies(techs []ExtractedTechnolo
 // GetProfileOptions returns the available profile options.
 //
 // Returns:
-//   - A []ProfileOption value.
+//   - A slice of ProfileOption.
 //
 // Side effects:
 //   - None.
-func (m *CVConfigWizardModal) GetProfileOptions() []ProfileOption {
+func (m *ConfigWizardModal) GetProfileOptions() []ProfileOption {
 	return m.profileOptions
 }
 
 // SetProfileID sets the profile ID.
 //
 // Expected:
-//   - Must be a valid string.
+//   - id must be a valid string.
 //
 // Side effects:
-//   - None.
-func (m *CVConfigWizardModal) SetProfileID(id string) {
+//   - Updates profile ID in both data and formData.
+func (m *ConfigWizardModal) SetProfileID(id string) {
 	if m.formData != nil {
 		m.formData.ProfileID = id
 	}
@@ -454,11 +454,11 @@ func (m *CVConfigWizardModal) SetProfileID(id string) {
 // SetAudience sets the target audience.
 //
 // Expected:
-//   - Must be a valid string.
+//   - audience must be a valid string.
 //
 // Side effects:
-//   - None.
-func (m *CVConfigWizardModal) SetAudience(audience string) {
+//   - Updates audience in both data and formData.
+func (m *ConfigWizardModal) SetAudience(audience string) {
 	if m.formData != nil {
 		m.formData.Audience = audience
 	}
@@ -468,11 +468,11 @@ func (m *CVConfigWizardModal) SetAudience(audience string) {
 // SetTechFocus sets the technology focus.
 //
 // Expected:
-//   - Must be a valid string.
+//   - focus must be a valid string.
 //
 // Side effects:
-//   - None.
-func (m *CVConfigWizardModal) SetTechFocus(focus string) {
+//   - Updates tech focus in both data and formData.
+func (m *ConfigWizardModal) SetTechFocus(focus string) {
 	if m.formData != nil {
 		m.formData.TechFocus = focus
 	}
@@ -482,11 +482,11 @@ func (m *CVConfigWizardModal) SetTechFocus(focus string) {
 // SetTechnologies sets the selected technologies (for generalist mode).
 //
 // Expected:
-//   - Must be a valid string.
+//   - techs must be a valid string slice.
 //
 // Side effects:
-//   - None.
-func (m *CVConfigWizardModal) SetTechnologies(techs []string) {
+//   - Updates technologies in both data and formData.
+func (m *ConfigWizardModal) SetTechnologies(techs []string) {
 	if m.formData != nil {
 		m.formData.Technologies = techs
 	}
@@ -496,11 +496,11 @@ func (m *CVConfigWizardModal) SetTechnologies(techs []string) {
 // SetTechnology sets the selected technology (for specialist mode).
 //
 // Expected:
-//   - Must be a valid string.
+//   - tech must be a valid string.
 //
 // Side effects:
-//   - None.
-func (m *CVConfigWizardModal) SetTechnology(tech string) {
+//   - Updates technology in both data and formData.
+func (m *ConfigWizardModal) SetTechnology(tech string) {
 	if m.formData != nil {
 		m.formData.Technology = tech
 	}
@@ -510,11 +510,11 @@ func (m *CVConfigWizardModal) SetTechnology(tech string) {
 // SetFocusArea sets the focus area.
 //
 // Expected:
-//   - Must be a valid string.
+//   - area must be a valid string.
 //
 // Side effects:
-//   - None.
-func (m *CVConfigWizardModal) SetFocusArea(area string) {
+//   - Updates focus area in both data and formData.
+func (m *ConfigWizardModal) SetFocusArea(area string) {
 	if m.formData != nil {
 		m.formData.FocusArea = area
 	}
@@ -524,11 +524,11 @@ func (m *CVConfigWizardModal) SetFocusArea(area string) {
 // SetSkillsFormat sets the skills format.
 //
 // Expected:
-//   - Must be a valid string.
+//   - format must be a valid string.
 //
 // Side effects:
-//   - None.
-func (m *CVConfigWizardModal) SetSkillsFormat(format string) {
+//   - Updates skills format in both data and formData.
+func (m *ConfigWizardModal) SetSkillsFormat(format string) {
 	if m.formData != nil {
 		m.formData.SkillsFormat = format
 	}
@@ -538,11 +538,11 @@ func (m *CVConfigWizardModal) SetSkillsFormat(format string) {
 // SetSkillsLimit sets the skills limit per category/total.
 //
 // Expected:
-//   - int must be valid.
+//   - limit must be a valid non-negative integer.
 //
 // Side effects:
-//   - None.
-func (m *CVConfigWizardModal) SetSkillsLimit(limit int) {
+//   - Updates skills limit in both data and formData.
+func (m *ConfigWizardModal) SetSkillsLimit(limit int) {
 	if m.formData != nil {
 		m.formData.SkillsLimit = limit
 	}
@@ -552,11 +552,11 @@ func (m *CVConfigWizardModal) SetSkillsLimit(limit int) {
 // SetCVLength sets the CV length.
 //
 // Expected:
-//   - Must be a valid string.
+//   - length must be a valid string.
 //
 // Side effects:
-//   - None.
-func (m *CVConfigWizardModal) SetCVLength(length string) {
+//   - Updates CV length in both data and formData.
+func (m *ConfigWizardModal) SetCVLength(length string) {
 	if m.formData != nil {
 		m.formData.CVLength = length
 	}
@@ -566,8 +566,8 @@ func (m *CVConfigWizardModal) SetCVLength(length string) {
 // Complete marks the wizard as completed.
 //
 // Side effects:
-//   - None.
-func (m *CVConfigWizardModal) Complete() {
+//   - Marks wizard as completed if required fields are present.
+func (m *ConfigWizardModal) Complete() {
 	if m.HasRequiredFields() {
 		m.wizard.Complete()
 	}
@@ -579,18 +579,24 @@ func (m *CVConfigWizardModal) Complete() {
 //   - A bool value.
 //
 // Side effects:
-//   - None.
-func (m *CVConfigWizardModal) HasRequiredFields() bool {
+//   - Syncs data from form before checking.
+func (m *ConfigWizardModal) HasRequiredFields() bool {
 	m.syncFromFormData()
 	return m.data.ProfileID != ""
 }
 
 // GetDimensions returns the current modal dimensions.
-func (m *CVConfigWizardModal) GetDimensions() (width, height int) {
+//
+// Returns:
+//   - width and height as int values.
+//
+// Side effects:
+//   - None.
+func (m *ConfigWizardModal) GetDimensions() (width, height int) {
 	return m.width, m.height
 }
 
-func (m *CVConfigWizardModal) syncFromFormData() {
+func (m *ConfigWizardModal) syncFromFormData() {
 	if m.formData == nil {
 		return
 	}
@@ -605,7 +611,7 @@ func (m *CVConfigWizardModal) syncFromFormData() {
 	m.data.CVLength = m.formData.CVLength
 }
 
-func (m *CVConfigWizardModal) applyDefaults() {
+func (m *ConfigWizardModal) applyDefaults() {
 	m.syncFromFormData()
 
 	if m.data.Audience == "" {
@@ -634,7 +640,8 @@ func (m *CVConfigWizardModal) applyDefaults() {
 	}
 }
 
-func calcCVModalWidth(terminalWidth int) int {
+// calcModalWidth calculates the appropriate modal width based on terminal width.
+func calcModalWidth(terminalWidth int) int {
 	modalWidth := terminalWidth - 20
 	if modalWidth > 80 {
 		modalWidth = 80

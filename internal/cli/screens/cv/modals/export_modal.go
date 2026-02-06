@@ -1,21 +1,21 @@
-package components
+package modals
 
 import (
+	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/uikit/containers"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/cli/uikit/theme"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 )
 
-// ExportOptionsModal provides a simple 2-field form for export configuration.
+// ExportModal provides a simple 2-field form for export configuration.
 // It allows users to select export format (Text/Markdown/YAML) and
 // location (File/Clipboard).
 //
 // Usage:
 //
-//	modal := components.NewExportOptionsModal(120, 40)
+//	modal := modals.NewExportModal(120, 40)
 //	cmd := modal.Init()
 //	// In Update:
 //	cmd := modal.Update(msg)
@@ -23,8 +23,8 @@ import (
 //	    data := modal.GetExportData()
 //	    // Use data.Format and data.Location
 //	}
-type ExportOptionsModal struct {
-	form      *huh.Form
+type ExportModal struct {
+	form      forms.Form
 	data      *ExportData
 	visible   bool
 	completed bool
@@ -38,23 +38,19 @@ type ExportData struct {
 	Location string // "file" | "clipboard"
 }
 
-// NewExportOptionsModal creates a new export options modal
+// NewExportModal creates a new export options modal.
 //
 // Expected:
-//   - int must be valid.
+//   - width and height must be valid positive integers.
 //
 // Returns:
-//   - A fully initialized ExportOptionsModal ready for use.
+//   - A fully initialized ExportModal ready for use.
 //
 // Side effects:
 //   - None.
-func NewExportOptionsModal(width, height int) *ExportOptionsModal {
-	modal := &ExportOptionsModal{
-		data: &ExportData{
-			// huh.Select will auto-select first options:
-			// Format: "text" (first option)
-			// Location: "file" (first option)
-		},
+func NewExportModal(width, height int) *ExportModal {
+	modal := &ExportModal{
+		data:    &ExportData{},
 		visible: true,
 		width:   width,
 		height:  height,
@@ -64,46 +60,30 @@ func NewExportOptionsModal(width, height int) *ExportOptionsModal {
 	return modal
 }
 
-// buildForm creates the huh form with 2 fields (Format + Location).
-func (m *ExportOptionsModal) buildForm() {
-	// Calculate modal width
-	modalWidth := m.width - 20
-	if modalWidth > 60 {
-		modalWidth = 60
-	}
-	if modalWidth < 40 {
-		modalWidth = 40
+// buildForm creates the form with 2 fields (Format + Location).
+func (m *ExportModal) buildForm() {
+	modalWidth := calcModalWidth(m.width)
+
+	formatOptions := []forms.SelectOption{
+		{Key: "text", Value: "Plain Text"},
+		{Key: "markdown", Value: "Markdown"},
+		{Key: "yaml", Value: "YAML"},
 	}
 
-	// Create fields
-	formatField := huh.NewSelect[string]().
-		Key("format").
-		Title("Export Format").
-		Description("Choose output format for the CV").
-		Options(
-			huh.NewOption("Plain Text", "text"),
-			huh.NewOption("Markdown", "markdown"),
-			huh.NewOption("YAML", "yaml"),
-		).
+	locationOptions := []forms.SelectOption{
+		{Key: "file", Value: "File"},
+		{Key: "clipboard", Value: "Clipboard"},
+	}
+
+	formatField := forms.NewSelect("format", "Export Format", "Choose output format for the CV", formatOptions).
 		Value(&m.data.Format)
 
-	locationField := huh.NewSelect[string]().
-		Key("location").
-		Title("Save To").
-		Description("Where to save the exported CV").
-		Options(
-			huh.NewOption("File", "file"),
-			huh.NewOption("Clipboard", "clipboard"),
-		).
+	locationField := forms.NewSelect("location", "Save To", "Where to save the exported CV", locationOptions).
 		Value(&m.data.Location)
 
-	// Create form with single group
-	group := huh.NewGroup(formatField, locationField)
+	group := forms.NewGroup(formatField, locationField)
 
-	m.form = huh.NewForm(group).
-		WithWidth(modalWidth).
-		WithShowHelp(true).
-		WithShowErrors(true)
+	m.form = forms.NewFormWithDimensions(modalWidth, 0, group)
 }
 
 // Init initializes the export options modal and its form.
@@ -113,7 +93,7 @@ func (m *ExportOptionsModal) buildForm() {
 //
 // Side effects:
 //   - None.
-func (m *ExportOptionsModal) Init() tea.Cmd {
+func (m *ExportModal) Init() tea.Cmd {
 	if m.form == nil {
 		return nil
 	}
@@ -123,14 +103,14 @@ func (m *ExportOptionsModal) Init() tea.Cmd {
 // Update handles messages for the export options modal.
 //
 // Expected:
-//   - msg must be valid.
+//   - msg must be a valid tea.Msg.
 //
 // Returns:
 //   - A tea.Cmd value.
 //
 // Side effects:
-//   - None.
-func (m *ExportOptionsModal) Update(msg tea.Msg) tea.Cmd {
+//   - May update internal state based on key messages.
+func (m *ExportModal) Update(msg tea.Msg) tea.Cmd {
 	if !m.visible {
 		return nil
 	}
@@ -145,21 +125,15 @@ func (m *ExportOptionsModal) Update(msg tea.Msg) tea.Cmd {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		// Rebuild form with new dimensions
 		m.buildForm()
 		return m.form.Init()
 	}
 
-	// Update form
 	if m.form != nil {
 		var cmd tea.Cmd
-		form, cmd := m.form.Update(msg)
-		if f, ok := form.(*huh.Form); ok {
-			m.form = f
-		}
+		m.form, cmd = forms.Update(m.form, msg)
 
-		// Check if form completed
-		if m.form.State == huh.StateCompleted {
+		if forms.IsCompleted(m.form) {
 			m.completed = true
 			m.visible = false
 		}
@@ -173,11 +147,11 @@ func (m *ExportOptionsModal) Update(msg tea.Msg) tea.Cmd {
 // View renders the export options modal.
 //
 // Returns:
-//   - A string value.
+//   - A string containing the rendered modal view.
 //
 // Side effects:
 //   - None.
-func (m *ExportOptionsModal) View() string {
+func (m *ExportModal) View() string {
 	if !m.visible {
 		return ""
 	}
@@ -186,36 +160,24 @@ func (m *ExportOptionsModal) View() string {
 		return ""
 	}
 
-	// Calculate modal dimensions
-	modalWidth := m.width - 20
-	if modalWidth > 60 {
-		modalWidth = 60
-	}
-	if modalWidth < 40 {
-		modalWidth = 40
-	}
+	modalWidth := calcModalWidth(m.width)
 
 	modalHeight := m.height - 10
 	if modalHeight < 15 {
 		modalHeight = 15
 	}
 
-	// Use default theme for colors
 	th := theme.Default()
 
-	// Title using UIKit Text with centering
 	title := primitives.Title("Export Options", th).
 		Width(modalWidth - 4).
 		Center().
 		Render()
 
-	// Render form
 	formView := m.form.View()
 
-	// Footer with keyboard shortcuts
 	footer := m.buildFooter()
 
-	// Combine all parts
 	content := lipgloss.JoinVertical(
 		lipgloss.Left,
 		title,
@@ -225,19 +187,18 @@ func (m *ExportOptionsModal) View() string {
 		footer,
 	)
 
-	// Wrap in styled container with solid background using UIKit Box
 	return containers.NewBox(th).
 		Content(content).
 		Width(modalWidth).
 		MaxHeight(modalHeight).
 		Padding(1).
 		Background(th.BackgroundColor()).
-		Variant(containers.BoxInfo). // Use accent color border
+		Variant(containers.BoxInfo).
 		Render()
 }
 
 // buildFooter creates the keyboard shortcuts footer using UIKit primitives.
-func (m *ExportOptionsModal) buildFooter() string {
+func (m *ExportModal) buildFooter() string {
 	th := theme.Default()
 
 	return primitives.RenderHelpFooter(th,
@@ -249,16 +210,16 @@ func (m *ExportOptionsModal) buildFooter() string {
 // Show makes the modal visible.
 //
 // Side effects:
-//   - None.
-func (m *ExportOptionsModal) Show() {
+//   - Updates modal visibility state.
+func (m *ExportModal) Show() {
 	m.visible = true
 }
 
 // Hide makes the modal invisible.
 //
 // Side effects:
-//   - None.
-func (m *ExportOptionsModal) Hide() {
+//   - Updates modal visibility state.
+func (m *ExportModal) Hide() {
 	m.visible = false
 }
 
@@ -269,7 +230,7 @@ func (m *ExportOptionsModal) Hide() {
 //
 // Side effects:
 //   - None.
-func (m *ExportOptionsModal) IsVisible() bool {
+func (m *ExportModal) IsVisible() bool {
 	return m.visible
 }
 
@@ -280,53 +241,59 @@ func (m *ExportOptionsModal) IsVisible() bool {
 //
 // Side effects:
 //   - None.
-func (m *ExportOptionsModal) IsCompleted() bool {
+func (m *ExportModal) IsCompleted() bool {
 	return m.completed
 }
 
 // GetExportData returns the export configuration data.
 //
 // Returns:
-//   - A fully initialized ExportData ready for use.
+//   - A pointer to ExportData containing format and location selections.
 //
 // Side effects:
 //   - None.
-func (m *ExportOptionsModal) GetExportData() *ExportData {
+func (m *ExportModal) GetExportData() *ExportData {
 	return m.data
 }
 
 // SetFormat sets the export format.
 //
 // Expected:
-//   - Must be a valid string.
+//   - format must be a valid string ("text", "markdown", or "yaml").
 //
 // Side effects:
-//   - None.
-func (m *ExportOptionsModal) SetFormat(format string) {
+//   - Updates the format in export data.
+func (m *ExportModal) SetFormat(format string) {
 	m.data.Format = format
 }
 
 // SetLocation sets the save location.
 //
 // Expected:
-//   - Must be a valid string.
+//   - location must be a valid string ("file" or "clipboard").
 //
 // Side effects:
-//   - None.
-func (m *ExportOptionsModal) SetLocation(location string) {
+//   - Updates the location in export data.
+func (m *ExportModal) SetLocation(location string) {
 	m.data.Location = location
 }
 
 // Complete marks the modal as completed and hides it.
 //
 // Side effects:
-//   - None.
-func (m *ExportOptionsModal) Complete() {
+//   - Sets completed flag and hides the modal.
+func (m *ExportModal) Complete() {
 	m.completed = true
 	m.visible = false
 }
 
 // GetDimensions returns the current modal dimensions.
-func (m *ExportOptionsModal) GetDimensions() (width, height int) {
+//
+// Returns:
+//   - width and height as int values.
+//
+// Side effects:
+//   - None.
+func (m *ExportModal) GetDimensions() (width, height int) {
 	return m.width, m.height
 }

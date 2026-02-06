@@ -1,22 +1,22 @@
-package components_test
+package modals_test
 
 import (
 	"errors"
 
-	"github.com/baphled/kariya/internal/cli/components"
+	"github.com/baphled/kariya/internal/cli/screens/cv/modals"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("CVProgressModal", func() {
+var _ = Describe("ProgressModal", func() {
 	var (
-		modal *components.CVProgressModal
+		modal *modals.ProgressModal
 	)
 
-	Describe("NewCVProgressModal", func() {
+	Describe("NewProgressModal", func() {
 		It("should create a progress modal with title and subtitle", func() {
-			modal = components.NewCVProgressModal("Processing", "Please wait...", true, 120, 40)
+			modal = modals.NewProgressModal("Processing", "Please wait...", true, 120, 40)
 
 			Expect(modal).NotTo(BeNil())
 			Expect(modal.GetTitle()).To(Equal("Processing"))
@@ -26,19 +26,19 @@ var _ = Describe("CVProgressModal", func() {
 		})
 
 		It("should initialize with spinner at frame 0", func() {
-			modal = components.NewCVProgressModal("Processing", "Please wait...", true, 120, 40)
+			modal = modals.NewProgressModal("Processing", "Please wait...", true, 120, 40)
 
 			Expect(modal.GetSpinnerFrame()).To(Equal(0))
 		})
 
 		It("should not be completed initially", func() {
-			modal = components.NewCVProgressModal("Processing", "Please wait...", true, 120, 40)
+			modal = modals.NewProgressModal("Processing", "Please wait...", true, 120, 40)
 
 			Expect(modal.IsCompleted()).To(BeFalse())
 		})
 
 		It("should have no error initially", func() {
-			modal = components.NewCVProgressModal("Processing", "Please wait...", true, 120, 40)
+			modal = modals.NewProgressModal("Processing", "Please wait...", true, 120, 40)
 
 			Expect(modal.GetError()).To(Succeed())
 		})
@@ -47,7 +47,7 @@ var _ = Describe("CVProgressModal", func() {
 	Describe("Factory Functions", func() {
 		Context("NewExtractingTechsProgress", func() {
 			It("should create a tech extraction progress modal", func() {
-				modal = components.NewExtractingTechsProgress(120, 40)
+				modal = modals.NewExtractingTechsProgress(120, 40)
 
 				Expect(modal).NotTo(BeNil())
 				Expect(modal.GetTitle()).To(Equal("Extracting Technologies"))
@@ -59,7 +59,7 @@ var _ = Describe("CVProgressModal", func() {
 
 		Context("NewGeneratingCVProgress", func() {
 			It("should create a CV generation progress modal", func() {
-				modal = components.NewGeneratingCVProgress("Senior Engineer", "hiring_manager", 120, 40)
+				modal = modals.NewGeneratingCVProgress("Senior Engineer", "hiring_manager", 120, 40)
 
 				Expect(modal).NotTo(BeNil())
 				Expect(modal.GetTitle()).To(Equal("Generating CV"))
@@ -71,19 +71,19 @@ var _ = Describe("CVProgressModal", func() {
 
 		Context("NewExportingProgress", func() {
 			It("should create an export progress modal", func() {
-				modal = components.NewExportingProgress("Markdown", 120, 40)
+				modal = modals.NewExportingProgress("Markdown", 120, 40)
 
 				Expect(modal).NotTo(BeNil())
 				Expect(modal.GetTitle()).To(Equal("Exporting CV"))
 				Expect(modal.GetSubtitle()).To(ContainSubstring("Markdown"))
-				Expect(modal.IsCancellable()).To(BeFalse()) // Export is not cancellable
+				Expect(modal.IsCancellable()).To(BeFalse())
 			})
 		})
 	})
 
 	Describe("Visibility Management", func() {
 		BeforeEach(func() {
-			modal = components.NewCVProgressModal("Processing", "Please wait...", true, 120, 40)
+			modal = modals.NewProgressModal("Processing", "Please wait...", true, 120, 40)
 		})
 
 		It("should be visible by default", func() {
@@ -113,26 +113,25 @@ var _ = Describe("CVProgressModal", func() {
 
 	Describe("Spinner Animation", func() {
 		BeforeEach(func() {
-			modal = components.NewCVProgressModal("Processing", "Please wait...", true, 120, 40)
+			modal = modals.NewProgressModal("Processing", "Please wait...", true, 120, 40)
 		})
 
 		It("should advance spinner frame on tick", func() {
 			initialFrame := modal.GetSpinnerFrame()
 
-			modal.Update(components.SpinnerTickMsg{})
+			modal.Update(modals.SpinnerTickMsg{})
 
 			newFrame := modal.GetSpinnerFrame()
-			Expect(newFrame).To(Equal((initialFrame + 1) % 10)) // 10-frame animation
+			Expect(newFrame).To(Equal((initialFrame + 1) % 10))
 		})
 
 		It("should wrap spinner frame after 10 frames", func() {
 			for range 9 {
-				modal.Update(components.SpinnerTickMsg{})
+				modal.Update(modals.SpinnerTickMsg{})
 			}
 			Expect(modal.GetSpinnerFrame()).To(Equal(9))
 
-			// Next tick should wrap to 0
-			modal.Update(components.SpinnerTickMsg{})
+			modal.Update(modals.SpinnerTickMsg{})
 			Expect(modal.GetSpinnerFrame()).To(Equal(0))
 		})
 
@@ -143,7 +142,7 @@ var _ = Describe("CVProgressModal", func() {
 		})
 
 		It("should return tick command on Update() to continue animation", func() {
-			cmd := modal.Update(components.SpinnerTickMsg{})
+			cmd := modal.Update(modals.SpinnerTickMsg{})
 
 			Expect(cmd).NotTo(BeNil())
 		})
@@ -152,7 +151,7 @@ var _ = Describe("CVProgressModal", func() {
 	Describe("Cancellation", func() {
 		Context("When cancellable", func() {
 			BeforeEach(func() {
-				modal = components.NewCVProgressModal("Processing", "Please wait...", true, 120, 40)
+				modal = modals.NewProgressModal("Processing", "Please wait...", true, 120, 40)
 			})
 
 			It("should hide modal on Esc key", func() {
@@ -170,7 +169,7 @@ var _ = Describe("CVProgressModal", func() {
 
 		Context("When not cancellable", func() {
 			BeforeEach(func() {
-				modal = components.NewCVProgressModal("Processing", "Please wait...", false, 120, 40)
+				modal = modals.NewProgressModal("Processing", "Please wait...", false, 120, 40)
 			})
 
 			It("should not hide modal on Esc key", func() {
@@ -189,7 +188,7 @@ var _ = Describe("CVProgressModal", func() {
 
 	Describe("Completion Handling", func() {
 		BeforeEach(func() {
-			modal = components.NewCVProgressModal("Processing", "Please wait...", true, 120, 40)
+			modal = modals.NewProgressModal("Processing", "Please wait...", true, 120, 40)
 		})
 
 		It("should mark as completed when Complete() is called", func() {
@@ -207,9 +206,8 @@ var _ = Describe("CVProgressModal", func() {
 		It("should stop spinner animation when completed", func() {
 			modal.Complete()
 
-			// Spinner tick should not advance frame
 			initialFrame := modal.GetSpinnerFrame()
-			modal.Update(components.SpinnerTickMsg{})
+			modal.Update(modals.SpinnerTickMsg{})
 
 			Expect(modal.GetSpinnerFrame()).To(Equal(initialFrame))
 		})
@@ -217,7 +215,7 @@ var _ = Describe("CVProgressModal", func() {
 
 	Describe("Error Handling", func() {
 		BeforeEach(func() {
-			modal = components.NewCVProgressModal("Processing", "Please wait...", true, 120, 40)
+			modal = modals.NewProgressModal("Processing", "Please wait...", true, 120, 40)
 		})
 
 		It("should set error when SetError() is called", func() {
@@ -242,7 +240,7 @@ var _ = Describe("CVProgressModal", func() {
 
 	Describe("WindowSizeMsg Handling", func() {
 		BeforeEach(func() {
-			modal = components.NewCVProgressModal("Processing", "Please wait...", true, 120, 40)
+			modal = modals.NewProgressModal("Processing", "Please wait...", true, 120, 40)
 		})
 
 		It("should update dimensions on WindowSizeMsg", func() {
@@ -256,7 +254,6 @@ var _ = Describe("CVProgressModal", func() {
 		It("should handle minimum dimensions gracefully", func() {
 			modal.Update(tea.WindowSizeMsg{Width: 40, Height: 10})
 
-			// Should not crash
 			view := modal.View()
 			Expect(view).NotTo(BeEmpty())
 		})
@@ -264,14 +261,13 @@ var _ = Describe("CVProgressModal", func() {
 
 	Describe("View Rendering", func() {
 		BeforeEach(func() {
-			modal = components.NewCVProgressModal("Processing", "Please wait...", true, 120, 40)
+			modal = modals.NewProgressModal("Processing", "Please wait...", true, 120, 40)
 		})
 
 		It("should render modal with solid background", func() {
 			view := modal.View()
 
 			Expect(view).NotTo(BeEmpty())
-			// Should contain border characters
 			Expect(view).To(ContainSubstring("─"))
 		})
 
@@ -290,36 +286,33 @@ var _ = Describe("CVProgressModal", func() {
 		It("should display spinner animation", func() {
 			view := modal.View()
 
-			// Should contain some spinner character
 			Expect(view).NotTo(BeEmpty())
 		})
 
 		It("should display KeyBadge footer when cancellable", func() {
 			view := modal.View()
 
-			// Footer should indicate Esc to cancel
 			Expect(view).NotTo(BeEmpty())
 		})
 
 		It("should not show cancel option when not cancellable", func() {
-			modal = components.NewCVProgressModal("Processing", "Please wait...", false, 120, 40)
+			modal = modals.NewProgressModal("Processing", "Please wait...", false, 120, 40)
 			view := modal.View()
 
-			// Should not suggest cancellation
 			Expect(view).NotTo(BeEmpty())
 		})
 	})
 
 	Describe("Edge Cases", func() {
 		It("should handle empty title gracefully", func() {
-			modal = components.NewCVProgressModal("", "Subtitle", true, 120, 40)
+			modal = modals.NewProgressModal("", "Subtitle", true, 120, 40)
 
 			view := modal.View()
 			Expect(view).NotTo(BeEmpty())
 		})
 
 		It("should handle empty subtitle gracefully", func() {
-			modal = components.NewCVProgressModal("Title", "", true, 120, 40)
+			modal = modals.NewProgressModal("Title", "", true, 120, 40)
 
 			view := modal.View()
 			Expect(view).NotTo(BeEmpty())
@@ -327,17 +320,17 @@ var _ = Describe("CVProgressModal", func() {
 
 		It("should handle very long title gracefully", func() {
 			longTitle := "This is a very long title that should be truncated or wrapped appropriately"
-			modal = components.NewCVProgressModal(longTitle, "Subtitle", true, 120, 40)
+			modal = modals.NewProgressModal(longTitle, "Subtitle", true, 120, 40)
 
 			view := modal.View()
 			Expect(view).NotTo(BeEmpty())
 		})
 
 		It("should handle rapid spinner ticks", func() {
-			modal = components.NewCVProgressModal("Processing", "Please wait...", true, 120, 40)
+			modal = modals.NewProgressModal("Processing", "Please wait...", true, 120, 40)
 
 			for range 100 {
-				modal.Update(components.SpinnerTickMsg{})
+				modal.Update(modals.SpinnerTickMsg{})
 			}
 
 			Expect(modal.GetSpinnerFrame()).To(BeNumerically("<", 10))

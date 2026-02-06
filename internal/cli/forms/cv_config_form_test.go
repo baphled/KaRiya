@@ -94,16 +94,15 @@ var _ = Describe("CVConfigForm", func() {
 		It("should return preset options for skills limit", func() {
 			options := forms.SkillsLimitOptions()
 			Expect(options).To(HaveLen(5))
-			// Should include: 5, 10, 15, 20, 0 (All)
-			Expect(options).To(ContainElement(forms.SkillsLimitOption{Value: 5, Label: "5 per category"}))
-			Expect(options).To(ContainElement(forms.SkillsLimitOption{Value: 10, Label: "10 per category"}))
-			Expect(options).To(ContainElement(forms.SkillsLimitOption{Value: 15, Label: "15 per category"}))
-			Expect(options).To(ContainElement(forms.SkillsLimitOption{Value: 20, Label: "20 per category"}))
-			Expect(options).To(ContainElement(forms.SkillsLimitOption{Value: 0, Label: "All (no limit)"}))
+			Expect(options).To(ContainElement(forms.SkillsLimitOption{Value: 3, Label: "3"}))
+			Expect(options).To(ContainElement(forms.SkillsLimitOption{Value: 5, Label: "5"}))
+			Expect(options).To(ContainElement(forms.SkillsLimitOption{Value: 10, Label: "10"}))
+			Expect(options).To(ContainElement(forms.SkillsLimitOption{Value: 15, Label: "15"}))
+			Expect(options).To(ContainElement(forms.SkillsLimitOption{Value: 0, Label: "All"}))
 		})
 	})
 
-	Describe("Specialist Single-Select Mode (BUG-006)", func() {
+	Describe("Specialist Single-Select Mode", func() {
 		var (
 			data           *forms.CVConfigFormData
 			profileOptions []forms.ProfileOption

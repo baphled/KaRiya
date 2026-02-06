@@ -1,12 +1,12 @@
 package app
 
 import (
-	"github.com/baphled/kariya/internal/cli/intents"
+	"github.com/baphled/kariya/internal/cli/intents/generatecv"
 )
 
 // createDefaultCVProfiles creates a set of default CV profiles for the GenerateCV intent.
-func createDefaultCVProfiles() []*intents.CVProfile {
-	return []*intents.CVProfile{
+func createDefaultCVProfiles() []*generatecv.CVProfile {
+	return []*generatecv.CVProfile{
 		{
 			ID:             "profile-staff-engineer",
 			Name:           "Staff Engineer",

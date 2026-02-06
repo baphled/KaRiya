@@ -2,6 +2,7 @@ package technology_test
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
@@ -12,6 +13,63 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
+
+type failingSkillRepository struct {
+	listErr error
+}
+
+var errNotImplemented = errors.New("not implemented")
+
+func (r *failingSkillRepository) Create(_ context.Context, _ *career.Skill) error { return nil }
+func (r *failingSkillRepository) GetByID(_ context.Context, _ string) (*career.Skill, error) {
+	return nil, errNotImplemented
+}
+func (r *failingSkillRepository) GetByName(_ context.Context, _ string) (*career.Skill, error) {
+	return nil, errNotImplemented
+}
+func (r *failingSkillRepository) List(_ context.Context, _ *careerRepo.SkillListFilters) ([]*career.Skill, error) {
+	return nil, r.listErr
+}
+func (r *failingSkillRepository) Update(_ context.Context, _ *career.Skill) error { return nil }
+func (r *failingSkillRepository) Delete(_ context.Context, _ string) error        { return nil }
+func (r *failingSkillRepository) GetByCategory(_ context.Context, _ string) ([]*career.Skill, error) {
+	return nil, errNotImplemented
+}
+func (r *failingSkillRepository) GetSkillsForEvent(_ context.Context, _ string) ([]*career.Skill, error) {
+	return nil, errNotImplemented
+}
+func (r *failingSkillRepository) GetEventCountsForSkills(_ context.Context) (map[string]int, error) {
+	return nil, errNotImplemented
+}
+func (r *failingSkillRepository) GetLastUsedForSkills(_ context.Context) (map[string]time.Time, error) {
+	return nil, errNotImplemented
+}
+func (r *failingSkillRepository) GetEventsUsingSkill(_ context.Context, _ string) ([]*career.Event, error) {
+	return nil, errNotImplemented
+}
+
+type failingEventRepository struct {
+	listErr error
+}
+
+func (r *failingEventRepository) Create(_ context.Context, _ *career.Event) error { return nil }
+func (r *failingEventRepository) GetByID(_ context.Context, _ string) (*career.Event, error) {
+	return nil, errNotImplemented
+}
+func (r *failingEventRepository) Update(_ context.Context, _ *career.Event) error { return nil }
+func (r *failingEventRepository) Delete(_ context.Context, _ string) error        { return nil }
+func (r *failingEventRepository) List(_ context.Context, _ careerRepo.EventListFilters) ([]*career.Event, error) {
+	return nil, r.listErr
+}
+func (r *failingEventRepository) Count(_ context.Context, _ careerRepo.EventListFilters) (int, error) {
+	return 0, nil
+}
+func (r *failingEventRepository) LinkSkill(_ context.Context, _ string, _ string) error {
+	return nil
+}
+func (r *failingEventRepository) UnlinkSkill(_ context.Context, _ string, _ string) error {
+	return nil
+}
 
 var _ = Describe("Extractor", func() {
 	var (
@@ -141,7 +199,6 @@ var _ = Describe("Extractor", func() {
 
 		Context("when user has no skills", func() {
 			It("should return empty list", func() {
-				// Create empty repositories
 				emptySkillRepo := careermemory.NewSkillRepository()
 				emptyEventRepo := careermemory.NewEventRepository()
 				emptyExtractor := technology.NewExtractor(emptySkillRepo, emptyEventRepo)
@@ -150,6 +207,44 @@ var _ = Describe("Extractor", func() {
 
 				Expect(err).NotTo(HaveOccurred())
 				Expect(techs).To(BeEmpty())
+			})
+		})
+
+		Context("when skill repository fails", func() {
+			It("should propagate the error", func() {
+				skillListErr := errors.New("skill repository unavailable")
+				failingSkillRepo := &failingSkillRepository{listErr: skillListErr}
+				failingExtractor := technology.NewExtractor(failingSkillRepo, eventRepo)
+
+				_, err := failingExtractor.ExtractFromUser(ctx)
+
+				Expect(err).To(MatchError(skillListErr))
+			})
+		})
+
+		Context("when event repository fails", func() {
+			It("should propagate the error", func() {
+				eventListErr := errors.New("event repository unavailable")
+				failingEventRepo := &failingEventRepository{listErr: eventListErr}
+				failingExtractor := technology.NewExtractor(skillRepo, failingEventRepo)
+
+				_, err := failingExtractor.ExtractFromUser(ctx)
+
+				Expect(err).To(MatchError(eventListErr))
+			})
+		})
+
+		Context("when context is cancelled", func() {
+			It("should return the context error", func() {
+				cancelledCtx, cancel := context.WithCancel(ctx)
+				cancel()
+
+				cancellingSkillRepo := &failingSkillRepository{listErr: cancelledCtx.Err()}
+				cancellingExtractor := technology.NewExtractor(cancellingSkillRepo, eventRepo)
+
+				_, err := cancellingExtractor.ExtractFromUser(cancelledCtx)
+
+				Expect(err).To(MatchError(context.Canceled))
 			})
 		})
 	})

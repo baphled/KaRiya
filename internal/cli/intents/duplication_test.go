@@ -4,9 +4,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/baphled/kariya/internal/cli/intents"
 	browse_timeline "github.com/baphled/kariya/internal/cli/intents/browsetimeline"
 	"github.com/baphled/kariya/internal/cli/intents/captureevent"
+	"github.com/baphled/kariya/internal/cli/intents/generatecv"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
@@ -65,10 +65,10 @@ var _ = Describe("View Duplication Prevention", func() {
 	})
 
 	Describe("GenerateCV", func() {
-		var intent *intents.GenerateCVIntent
+		var intent *generatecv.Intent
 
 		BeforeEach(func() {
-			profiles := []*intents.CVProfile{
+			profiles := []*generatecv.CVProfile{
 				{
 					ID:         "profile1",
 					Name:       "Test Profile",
@@ -80,13 +80,13 @@ var _ = Describe("View Duplication Prevention", func() {
 			evt.Date = time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
 			events := []*career.Event{evt}
 
-			ctx := &intents.GenerateCVContext{
+			ctx := &generatecv.IntentContext{
 				AvailableProfiles: profiles,
 				Events:            events,
 			}
 
 			var err error
-			intent, err = intents.NewGenerateCVIntent(ctx)
+			intent, err = generatecv.NewIntent(ctx)
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 		})

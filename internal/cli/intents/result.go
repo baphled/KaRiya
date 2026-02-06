@@ -78,7 +78,7 @@ func (e *IntentError) WithMessage(message string) *IntentError {
 //
 // The generic type parameter T specifies the concrete payload type the
 // intent produces on success (e.g., *captureevent.Result or
-// *GenerateCVResult). T must satisfy the "any" constraint.
+// *generatecv.Result). T must satisfy the "any" constraint.
 //
 // The Status field is one of the following ResultStatus values:
 //

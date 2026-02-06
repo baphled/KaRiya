@@ -4,9 +4,6 @@ import (
 	"context"
 	"strings"
 
-	"github.com/baphled/kariya/internal/domain/career"
-	"github.com/baphled/kariya/internal/testutil/fixtures"
-	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -26,31 +23,7 @@ var _ = Describe("StandardView Consistency", func() {
 
 	// BrowseTimeline consistency tests are in internal/cli/intents/browsetimeline/
 
-	Describe("GenerateCV", func() {
-		It("should use StandardView patterns", func() {
-			ctx := &GenerateCVContext{
-				AvailableProfiles: []*CVProfile{
-					{
-						ID:             "default",
-						Name:           "Default Profile",
-						TargetRole:     "staff",
-						TargetAudience: "hiring_manager",
-					},
-				},
-				Events: []*career.Event{
-					fixtures.EventWith(uuid.New().String(), "Implemented test feature for CV generation", "TechCorp", "Platform"),
-				},
-			}
-
-			intent, err := NewGenerateCVIntent(ctx)
-			Expect(err).NotTo(HaveOccurred())
-
-			intent.Init()
-			view := intent.View()
-
-			testStandardViewConsistency("GenerateCV", view)
-		})
-	})
+	// GenerateCV consistency tests are in internal/cli/intents/generatecv/
 
 	Describe("ConfigureSystem", func() {
 		It("should use StandardView patterns", func() {
@@ -82,26 +55,7 @@ var _ = Describe("All Intents Initialization", func() {
 		},
 		// CaptureEvent Entry is in internal/cli/intents/captureevent/
 		// BrowseTimeline Entry is in internal/cli/intents/browsetimeline/
-		Entry("GenerateCV",
-			"GenerateCV",
-			func() (interface{}, error) {
-				return NewGenerateCVIntent(&GenerateCVContext{
-					AvailableProfiles: []*CVProfile{
-						{
-							ID:             "default",
-							Name:           "Default Profile",
-							TargetRole:     "staff",
-							TargetAudience: "hiring_manager",
-						},
-					},
-					Events: []*career.Event{
-						fixtures.EventWith(uuid.New().String(), "Implemented test feature for CV generation", "TechCorp", "Platform"),
-					},
-				})
-			},
-			func(i interface{}) { _ = i.(*GenerateCVIntent).Init() }, //nolint:errcheck // Init returns tea.Cmd which is intentionally discarded in tests
-			func(i interface{}) string { return i.(*GenerateCVIntent).View() },
-		),
+		// GenerateCV Entry is in internal/cli/intents/generatecv/
 		Entry("ConfigureSystem",
 			"ConfigureSystem",
 			func() (interface{}, error) { return NewConfigureSystemIntent(context.Background()) },

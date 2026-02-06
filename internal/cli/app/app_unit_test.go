@@ -10,6 +10,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/bootstrap"
 	"github.com/baphled/kariya/internal/cli/intents"
 	burst_management "github.com/baphled/kariya/internal/cli/intents/burst_management"
+	"github.com/baphled/kariya/internal/cli/intents/generatecv"
 	"github.com/baphled/kariya/internal/cli/intents/skillsmanagement"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/uikit/display"
@@ -1396,6 +1397,48 @@ var _ = Describe("IntentRegistrar DI Tests", func() {
 			testCtx := skillsIntent.GetTestContext()
 			Expect(testCtx).NotTo(BeNil(), "Intent context should not be nil")
 			Expect(testCtx.SkillInferenceService).NotTo(BeNil(), "SkillInferenceService should be wired up in context")
+			Expect(testCtx.EventRepository).NotTo(BeNil(), "EventRepository should be wired up in context")
+		})
+
+		It("should wire SkillRepository and EventRepository into GenerateCV intent context", func() {
+			eventRepo := careermemory.NewEventRepository()
+			skillRepo := careermemory.NewSkillRepository()
+			burstRepo := careermemory.NewBurstRepository()
+			factRepo := careermemory.NewFactRepository()
+
+			testEvent := fixtures.Event("test-event-1")
+			err := eventRepo.Create(context.Background(), testEvent)
+			Expect(err).ToNot(HaveOccurred())
+
+			careerSvc := careerservice.NewService(eventRepo)
+			careerSvc.SetSkillRepository(skillRepo)
+			careerSvc.SetBurstRepository(burstRepo)
+			careerSvc.SetFactRepository(factRepo)
+
+			log := logger.DefaultLogger()
+			registrar := app.NewDefaultIntentRegistrar(&app.RegistrarConfig{
+				CLIService:    nil,
+				CareerService: careerSvc,
+				Log:           log,
+			})
+
+			router := intents.NewDefaultIntentRouter()
+			err = registrar.RegisterAll(context.Background(), router)
+			Expect(err).ToNot(HaveOccurred())
+
+			_, err = router.ActivateIntent("generate_cv", nil)
+			Expect(err).ToNot(HaveOccurred())
+
+			activeIntent := router.GetActiveIntent()
+			Expect(activeIntent).NotTo(BeNil())
+
+			cvIntent, ok := activeIntent.(*generatecv.Intent)
+			Expect(ok).To(BeTrue(), "Active intent should be *generatecv.Intent")
+			Expect(cvIntent).NotTo(BeNil())
+
+			testCtx := cvIntent.GetTestContext()
+			Expect(testCtx).NotTo(BeNil(), "Intent context should not be nil")
+			Expect(testCtx.SkillRepository).NotTo(BeNil(), "SkillRepository should be wired up in context")
 			Expect(testCtx.EventRepository).NotTo(BeNil(), "EventRepository should be wired up in context")
 		})
 	})

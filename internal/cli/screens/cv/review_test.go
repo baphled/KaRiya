@@ -7,6 +7,8 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/cv"
+	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
@@ -48,6 +50,7 @@ var _ = Describe("ReviewScreen", func() {
 		testCV.SourceFactCount = 42
 
 		screen = cv.NewCVReviewScreen(testCV)
+		screen.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 	})
 
 	Describe("NewCVReviewScreen", func() {
@@ -130,6 +133,94 @@ var _ = Describe("ReviewScreen", func() {
 				Expect(result.Data()).To(Equal("edit"))
 			})
 		})
+
+		Context("viewport navigation", func() {
+			It("should go to top on 'g' key", func() {
+				cmd, result := screen.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'g'}})
+
+				Expect(cmd).To(BeNil())
+				Expect(result).To(BeNil())
+			})
+
+			It("should go to bottom on 'G' key", func() {
+				cmd, result := screen.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'G'}})
+
+				Expect(cmd).To(BeNil())
+				Expect(result).To(BeNil())
+			})
+
+			It("should handle 'k' key for scrolling up", func() {
+				cmd, result := screen.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
+
+				Expect(result).To(BeNil())
+				_ = cmd
+			})
+
+			It("should handle 'j' key for scrolling down", func() {
+				cmd, result := screen.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
+
+				Expect(result).To(BeNil())
+				_ = cmd
+			})
+
+			It("should handle up arrow key", func() {
+				cmd, result := screen.Update(tea.KeyMsg{Type: tea.KeyUp})
+
+				Expect(result).To(BeNil())
+				_ = cmd
+			})
+
+			It("should handle down arrow key", func() {
+				cmd, result := screen.Update(tea.KeyMsg{Type: tea.KeyDown})
+
+				Expect(result).To(BeNil())
+				_ = cmd
+			})
+
+			It("should handle page up key", func() {
+				cmd, result := screen.Update(tea.KeyMsg{Type: tea.KeyPgUp})
+
+				Expect(result).To(BeNil())
+				_ = cmd
+			})
+
+			It("should handle page down key", func() {
+				cmd, result := screen.Update(tea.KeyMsg{Type: tea.KeyPgDown})
+
+				Expect(result).To(BeNil())
+				_ = cmd
+			})
+
+			It("should handle ctrl+u for half page up", func() {
+				cmd, result := screen.Update(tea.KeyMsg{Type: tea.KeyCtrlU})
+
+				Expect(result).To(BeNil())
+				_ = cmd
+			})
+
+			It("should handle ctrl+d for half page down", func() {
+				cmd, result := screen.Update(tea.KeyMsg{Type: tea.KeyCtrlD})
+
+				Expect(result).To(BeNil())
+				_ = cmd
+			})
+		})
+
+		Context("unhandled messages", func() {
+			It("should return nil for unhandled key messages", func() {
+				cmd, result := screen.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'z'}})
+
+				Expect(cmd).To(BeNil())
+				Expect(result).To(BeNil())
+			})
+
+			It("should return nil for mouse messages", func() {
+				cmd, result := screen.Update(tea.MouseMsg{})
+
+				Expect(cmd).To(BeNil())
+				Expect(result).To(BeNil())
+			})
+		})
 	})
 
 	Describe("View", func() {
@@ -201,6 +292,7 @@ var _ = Describe("ReviewScreen", func() {
 				emptyCV := fixtures.CVViewWith("cv-empty", "Empty CV", "Engineer", "Manager")
 				emptyCV.Sections = []*career.CVSection{}
 				emptyScreen := cv.NewCVReviewScreen(emptyCV)
+				emptyScreen.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 
 				view := emptyScreen.View()
 				Expect(view).To(ContainSubstring("0 sections"))
@@ -215,6 +307,7 @@ var _ = Describe("ReviewScreen", func() {
 				cvWithEmptySections := fixtures.CVViewWith("cv-empty-s", "CV", "Engineer", "Manager")
 				cvWithEmptySections.Sections = []*career.CVSection{emptySection}
 				s := cv.NewCVReviewScreen(cvWithEmptySections)
+				s.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 
 				view := s.View()
 				Expect(view).To(ContainSubstring("Empty Section"))
@@ -233,6 +326,131 @@ var _ = Describe("ReviewScreen", func() {
 			nilScreen := cv.NewCVReviewScreen(nil)
 			cvData := nilScreen.GetCV()
 			Expect(cvData).To(BeNil())
+		})
+	})
+
+	Describe("Theme Support", func() {
+		var view string
+
+		Context("with default theme", func() {
+			BeforeEach(func() {
+				view = screen.View()
+			})
+
+			Context("section headers", func() {
+				It("should display CV Review header", func() {
+					Expect(view).To(ContainSubstring("CV Review"))
+				})
+
+				It("should display Statistics header", func() {
+					Expect(view).To(ContainSubstring("Statistics"))
+				})
+
+				It("should display Sections header", func() {
+					Expect(view).To(ContainSubstring("Sections"))
+				})
+			})
+
+			Context("metadata labels", func() {
+				It("should display Name label", func() {
+					Expect(view).To(ContainSubstring("Name:"))
+				})
+
+				It("should display Role label", func() {
+					Expect(view).To(ContainSubstring("Role:"))
+				})
+
+				It("should display Audience label", func() {
+					Expect(view).To(ContainSubstring("Audience:"))
+				})
+			})
+
+			Context("statistics labels", func() {
+				It("should display Source Events label", func() {
+					Expect(view).To(ContainSubstring("Source Events:"))
+				})
+
+				It("should display Source Facts label", func() {
+					Expect(view).To(ContainSubstring("Source Facts:"))
+				})
+
+				It("should display Total Bullets label", func() {
+					Expect(view).To(ContainSubstring("Total Bullets:"))
+				})
+			})
+		})
+
+		Context("with custom theme", func() {
+			BeforeEach(func() {
+				theme := themes.NewDefaultTheme()
+				screen.SetTheme(theme)
+				view = screen.View()
+			})
+
+			It("should render with provided theme", func() {
+				Expect(view).To(ContainSubstring("CV Review"))
+			})
+		})
+	})
+
+	Describe("Profile Configuration", func() {
+		Context("with custom profile config", func() {
+			It("should display custom name from profile config", func() {
+				customProfile := &config.ProfileConfig{
+					Name:     "Test User",
+					Email:    "test@example.com",
+					Title:    "Staff Engineer",
+					Location: "Test City, TC",
+				}
+				screenWithProfile := cv.NewCVReviewScreenWithProfile(testCV, customProfile)
+
+				view := screenWithProfile.View()
+				Expect(view).To(ContainSubstring("Test User"))
+			})
+
+			It("should display custom email from profile config", func() {
+				customProfile := &config.ProfileConfig{
+					Name:  "Test User",
+					Email: "test@example.com",
+				}
+				screenWithProfile := cv.NewCVReviewScreenWithProfile(testCV, customProfile)
+
+				view := screenWithProfile.View()
+				Expect(view).To(ContainSubstring("test@example.com"))
+			})
+
+			It("should display custom location from profile config", func() {
+				customProfile := &config.ProfileConfig{
+					Name:     "Test User",
+					Location: "Test City, TC",
+				}
+				screenWithProfile := cv.NewCVReviewScreenWithProfile(testCV, customProfile)
+
+				view := screenWithProfile.View()
+				Expect(view).To(ContainSubstring("Test City, TC"))
+			})
+		})
+
+		Context("with nil profile config", func() {
+			It("should render without error when profile config is nil", func() {
+				screenWithNilProfile := cv.NewCVReviewScreenWithProfile(testCV, nil)
+
+				view := screenWithNilProfile.View()
+				Expect(view).NotTo(BeEmpty())
+				Expect(view).To(ContainSubstring("CV Review"))
+			})
+		})
+
+		Context("with partial profile config", func() {
+			It("should display provided fields only", func() {
+				partialProfile := &config.ProfileConfig{
+					Name: "Partial User",
+				}
+				screenWithPartial := cv.NewCVReviewScreenWithProfile(testCV, partialProfile)
+
+				view := screenWithPartial.View()
+				Expect(view).To(ContainSubstring("Partial User"))
+			})
 		})
 	})
 })
