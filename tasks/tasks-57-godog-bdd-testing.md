@@ -24,14 +24,20 @@
 
 ### Statistics
 - **Total scenarios**: 351
-- **Passing (non-@wip)**: 126
-- **@wip (need work)**: 226
+- **Passing (non-@wip)**: 134 (38%)
+- **@wip (need work)**: 217
 
 ### In Progress
 - [ ] Implement remaining @wip scenarios incrementally
 
 ### Step Definitions Added
-- [x] Skills management step definitions (comprehensive - ready for UI implementation)
+- [x] Skills management step definitions (comprehensive - 16/16 passing)
+  - [x] SubmitSkill() bypass helper (follows SubmitEvent pattern)
+  - [x] SubmitSkillUpdate() bypass helper for edit scenarios
+  - [x] Smart form submission detection (add vs edit)
+  - [x] Fixed invalid skill categories in test data
+  - [x] Added 's' key handler for viewing skill events
+  - [x] Fixed skill fixture loading with SkillsLoadedMsg
 
 ---
 
@@ -110,21 +116,32 @@
 
 ---
 
-### 4. Skills Management
+### 4. Skills Management ✅ **100% COMPLETE (16/16 non-@wip)**
 **File:** `skills_management.feature`
 
 #### Happy Paths
-- [ ] View skills list
-- [ ] Add skill with all fields (name, category, level, years)
-- [ ] Edit existing skill
-- [ ] Delete skill with confirmation
-- [ ] View skill details
-- [ ] View events associated with skill
+- [x] View skills list (empty and with data)
+- [x] Navigate skills list (vim keys and arrow keys)
+- [x] View skill details
+- [x] Close skill detail modal
+- [x] Open add skill modal
+- [x] Cancel add skill
+- [x] Add skill with name and category
+- [ ] Add skill with all fields (name, category, level, years) - @wip
+- [x] Open edit skill modal
+- [x] Cancel edit skill
+- [x] Edit existing skill and save
+- [ ] Delete skill with confirmation - @wip
+- [x] View events associated with skill
+- [x] Exit skills list returns to menu
+- [x] Go back from empty skills list
 
 #### Search & Filter
-- [ ] Search skills by name
-- [ ] Filter by category (backend, frontend, devops, database, cloud, mobile, tooling, testing, data, ml, monitoring, architecture, security, practices)
-- [ ] Filter by level (beginner, intermediate, advanced, expert)
+- [x] Open search modal
+- [x] Cancel search modal
+- [ ] Search skills by name - @wip
+- [ ] Filter by category - @wip
+- [ ] Filter by level - @wip
 
 #### Skill Inference
 - [ ] Run inference from events
