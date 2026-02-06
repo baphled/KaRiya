@@ -50,10 +50,11 @@ git rebase origin/next
 git push -u origin HEAD
 ```
 
-### 3. Create PR
+### 3. Create PR and Request Copilot Review
 
 ```bash
-gh pr create --base next --title "type(scope): description" --body "$(cat <<'EOF'
+# Create PR and capture the URL
+PR_URL=$(gh pr create --base next --title "type(scope): description" --body "$(cat <<'EOF'
 ## Summary
 
 - Brief description of changes
@@ -75,8 +76,17 @@ gh pr create --base next --title "type(scope): description" --body "$(cat <<'EOF
 - [ ] Compliance check passes (`make check-compliance`)
 - [ ] Documentation updated if needed
 EOF
-)"
+)")
+
+# Extract PR number and request Copilot review
+PR_NUM=$(echo "$PR_URL" | grep -oE '[0-9]+$')
+gh api repos/:owner/:repo/pulls/$PR_NUM/requested_reviewers -X POST -f "reviewers[]=copilot"
+
+echo "PR created: $PR_URL"
+echo "Copilot review requested"
 ```
+
+**Note**: Copilot review is automatically requested for all PRs. This provides immediate AI-powered feedback on code quality, security, and best practices.
 
 ## PR Title Format
 
@@ -115,10 +125,19 @@ Before/After screenshots if applicable
 
 ## Review Process
 
-1. CI checks must pass
-2. At least one approval required
-3. All comments resolved
-4. Squash merge to `next`
+1. **Copilot review** - Automatically requested on PR creation
+2. CI checks must pass
+3. At least one human approval required
+4. All comments resolved (Copilot + human)
+5. Squash merge to `next`
+
+### Copilot Review Benefits
+
+- Immediate feedback (no waiting for human availability)
+- Security vulnerability detection
+- Code quality suggestions
+- Best practice recommendations
+- Catches common issues before human review
 
 ## After Merge
 
