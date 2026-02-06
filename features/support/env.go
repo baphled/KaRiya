@@ -195,6 +195,7 @@ type EventData struct {
 	Project     string
 	Tags        []string
 	Categories  []string
+	Skills      []string
 }
 
 // BDDTestingT adapts context for TestEnv's TestingT interface.
@@ -204,40 +205,91 @@ type BDDTestingT struct {
 
 // NewBDDTestingT creates a new BDDTestingT adapter.
 //
+// Expected:
+//   - t must be a valid *testing.T.
+//
+// Returns:
+//   - A new BDDTestingT instance.
+//
+// Side effects:
+//   - None.
+//
 //nolint:thelper // Factory function, not a test helper.
 func NewBDDTestingT(t *testing.T) *BDDTestingT {
 	return &BDDTestingT{t: t}
 }
 
 // Helper marks this as a test helper.
+//
+// Side effects:
+//   - None.
 func (b *BDDTestingT) Helper() {}
 
 // TempDir returns a temporary directory.
+//
+// Returns:
+//   - A string path to a temporary directory.
+//
+// Side effects:
+//   - Creates a temporary directory on the filesystem.
 func (b *BDDTestingT) TempDir() string {
 	return b.t.TempDir()
 }
 
 // Fatalf logs a fatal error.
+//
+// Expected:
+//   - format is a printf-style format string.
+//
+// Side effects:
+//   - Terminates the test with a fatal error.
 func (b *BDDTestingT) Fatalf(format string, args ...interface{}) {
 	b.t.Fatalf(format, args...)
 }
 
 // Errorf logs an error.
+//
+// Expected:
+//   - format is a printf-style format string.
+//
+// Side effects:
+//   - Logs an error to the test output.
 func (b *BDDTestingT) Errorf(format string, args ...interface{}) {
 	b.t.Errorf(format, args...)
 }
 
 // Fatal logs a fatal error.
+//
+// Expected:
+//   - args are the values to log.
+//
+// Side effects:
+//   - Terminates the test with a fatal error.
 func (b *BDDTestingT) Fatal(args ...interface{}) {
 	b.t.Fatal(args...)
 }
 
 // Error logs an error.
+//
+// Expected:
+//   - args are the values to log.
+//
+// Side effects:
+//   - Logs an error to the test output.
 func (b *BDDTestingT) Error(args ...interface{}) {
 	b.t.Error(args...)
 }
 
 // NewAppEnv creates a new full application TestEnv for BDD testing.
+//
+// Expected:
+//   - t must be a valid *testing.T.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - Creates a temporary database for testing.
 //
 //nolint:thelper // Factory function, not a test helper.
 func NewAppEnv(t *testing.T) *e2e.TestEnv {
@@ -273,20 +325,24 @@ func WithEventData(ctx context.Context, data *EventData) context.Context {
 }
 
 // BuildEvent creates a career.Event from EventData.
-func (d *EventData) BuildEvent() *career.Event {
+// Returns an error if date parsing fails.
+func (d *EventData) BuildEvent() (*career.Event, error) {
 	event := &career.Event{
 		Text:       d.Description,
 		Company:    d.Company,
 		Project:    d.Project,
 		Tags:       d.Tags,
 		Categories: d.Categories,
+		Skills:     d.Skills,
 	}
 
 	if d.Date != "" {
-		if parsed, err := forms.ParseDateString(d.Date); err == nil {
-			event.Date = parsed
+		parsed, err := forms.ParseDateString(d.Date)
+		if err != nil {
+			return nil, err
 		}
+		event.Date = parsed
 	}
 
-	return event
+	return event, nil
 }

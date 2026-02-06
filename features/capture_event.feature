@@ -33,7 +33,7 @@ Feature: Capture Career Events
     And the event should have company "Acme Corp"
     And the event should have project "User Platform"
 
-  @happy @wip
+  @happy
   Scenario: Manual capture with full metadata
     When I select "capture_event" from the menu
     And I select manual capture strategy
@@ -42,12 +42,12 @@ Feature: Capture Career Events
       | description | Architected microservices migration      |
       | company     | Tech Innovations Ltd                     |
       | project     | Cloud Migration                          |
-      | tags        | technical,architecture                   |
+      | tags        | technical,project                        |
       | categories  | technical,architecture                   |
     And I submit the event
     Then I should see the success message
     And there should be 1 event
-    And the event should have tags "technical,architecture"
+    And the event should have tags "technical,project"
     And the event should have categories "technical,architecture"
 
   @happy @enrichment @wip
@@ -145,14 +145,13 @@ Feature: Capture Career Events
     And there should be 1 event
     And there should be 0 bursts
 
-  @sad @wip
+  @sad
   Scenario: Empty description shows validation error
     When I select "capture_event" from the menu
     And I select quick capture strategy
     And I try to submit without description
-    Then I should see a validation error
+    Then I should see a capture validation error
 
-  @wip
   Scenario: Event with all available tags
     When I select "capture_event" from the menu
     And I select manual capture strategy
@@ -164,7 +163,6 @@ Feature: Capture Career Events
     Then there should be 1 event
     And the event should have 8 tags
 
-  @wip
   Scenario: Event with all available categories
     When I select "capture_event" from the menu
     And I select manual capture strategy
@@ -176,7 +174,7 @@ Feature: Capture Career Events
     Then there should be 1 event
     And the event should have 11 categories
 
-  @happy @wip
+  @happy
   Scenario: Quick submit with Ctrl+S from form
     When I select "capture_event" from the menu
     And I select quick capture strategy
@@ -219,7 +217,7 @@ Feature: Capture Career Events
     Then I should see the success message
     And the event should have a date 7 days ago
 
-  @sad @wip
+  @sad
   Scenario: Invalid date format shows validation error
     When I select "capture_event" from the menu
     And I select quick capture strategy
@@ -312,7 +310,7 @@ Feature: Capture Career Events
   # Description Validation
   # ============================================================================
 
-  @sad @wip
+  @sad
   Scenario: Description too short shows validation error
     When I select "capture_event" from the menu
     And I select quick capture strategy
@@ -320,7 +318,7 @@ Feature: Capture Career Events
     And I submit the event
     Then I should see a validation error about minimum length
 
-  @sad @wip
+  @sad
   Scenario: Description at minimum length is accepted
     When I select "capture_event" from the menu
     And I select quick capture strategy
