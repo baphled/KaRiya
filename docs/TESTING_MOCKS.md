@@ -109,8 +109,11 @@ ctrl := gomock.NewController(GinkgoT())
 // burst_management.BurstService
 mockBurst := mockintent.NewMockBurstService(ctrl)
 
-// browsetimeline.EventService (prefixed to avoid collision)
-mockBrowse := mockintent.NewMockBrowseEventService(ctrl)
+// browsetimeline.EventCRUDService (CRUD operations)
+mockBrowseCRUD := mockintent.NewMockBrowseEventCRUDService(ctrl)
+
+// browsetimeline.EventSkillService (skill-event linking)
+mockBrowseSkill := mockintent.NewMockBrowseEventSkillService(ctrl)
 
 // captureevent.EventService (prefixed to avoid collision)
 mockCapture := mockintent.NewMockCaptureEventService(ctrl)
