@@ -37,6 +37,26 @@ func ParseDateString(s string) (time.Time, error) {
 		return t, nil
 	}
 
+	// Try short relative format (e.g., "-7d", "-2w", "-1m")
+	shortRelativeRegex := regexp.MustCompile(`^-(\d+)([dwm])$`)
+	if matches := shortRelativeRegex.FindStringSubmatch(strings.ToLower(s)); len(matches) == 3 {
+		var amount int
+		if _, err := fmt.Sscanf(matches[1], "%d", &amount); err != nil {
+			amount = 0
+		}
+		unit := matches[2]
+
+		now := time.Now()
+		switch unit {
+		case "d":
+			return now.AddDate(0, 0, -amount), nil
+		case "w":
+			return now.AddDate(0, 0, -amount*7), nil
+		case "m":
+			return now.AddDate(0, -amount, 0), nil
+		}
+	}
+
 	// Try relative dates (e.g., "1 week ago", "2 days ago")
 	relativeRegex := regexp.MustCompile(`^(\d+)\s+(day|days|week|weeks|month|months)\s+ago$`)
 	if matches := relativeRegex.FindStringSubmatch(strings.ToLower(s)); len(matches) == 3 {
