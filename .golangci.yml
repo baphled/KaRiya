@@ -1367,6 +1367,11 @@ linters:
           - revive
         text: "var-naming: avoid meaningless package names"
 
+      - path: 'internal/cli/types/capture_types\.go'
+        linters:
+          - revive
+        text: "var-naming: avoid meaningless package names"
+
 # =============================================================================
 # FORMATTERS (v2 - separated from linters)
 # =============================================================================
