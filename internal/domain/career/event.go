@@ -54,7 +54,7 @@ func (ce *Event) Validate() error {
 }
 
 // validateText ensures text is not empty and within length constraints.
-// Text must be between 10 and 2000 characters.
+// Added minimum length requirement: text must be at least 10 characters (existing maximum of 2000 remains).
 func (ce *Event) validateText() error {
 	trimmedText := strings.TrimSpace(ce.Text)
 	if trimmedText == "" {

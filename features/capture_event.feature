@@ -322,6 +322,6 @@ Feature: Capture Career Events
   Scenario: Description at minimum length is accepted
     When I select "capture_event" from the menu
     And I select quick capture strategy
-    And I enter event description "Exactly 10"
+    And I enter event description "Ten chars!"
     And I submit the event
     Then I should see the success message
