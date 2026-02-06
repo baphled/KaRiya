@@ -546,7 +546,11 @@ func iSubmitTheSkillForm(ctx context.Context) (context.Context, error) {
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	env.SubmitHuhForm()
+	// Navigate through remaining optional fields (Level, Years) to reach confirm
+	env.Tab() // Skip Level field
+	env.Tab() // Skip Years field
+	// Now at the confirm field - select "Submit" and press Enter
+	env.Confirm()
 	return ctx, nil
 }
 
