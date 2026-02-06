@@ -39,6 +39,7 @@ func setupScenarioEnv(ctx context.Context, sc *godog.Scenario) (context.Context,
 }
 
 // needsAppEnv checks if scenario requires full app environment.
+// It checks for feature-level tags that indicate the main app is needed.
 func needsAppEnv(sc *godog.Scenario) bool {
 	appTags := map[string]bool{
 		"@capture":    true,
