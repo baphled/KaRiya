@@ -29,10 +29,29 @@ features/
 ├── steps/
 │   ├── doc.go              # Package documentation
 │   ├── common_steps.go     # Shared assertion/navigation steps
-│   └── onboarding_steps.go # Onboarding workflow steps
-├── onboarding.feature      # Onboarding feature file
-├── godog_test.go           # Test runner
-└── README.md               # This file
+│   ├── browse_steps.go     # Browse timeline workflow steps
+│   ├── bursts_steps.go     # Burst management workflow steps
+│   ├── capture_steps.go    # Capture event workflow steps
+│   ├── cli_steps.go        # CLI commands workflow steps
+│   ├── configure_steps.go  # Configure system workflow steps
+│   ├── cv_steps.go         # CV generation workflow steps
+│   ├── facts_steps.go      # Fact management workflow steps
+│   ├── navigation_steps.go # Navigation workflow steps
+│   ├── onboarding_steps.go # Onboarding workflow steps
+│   └── skills_steps.go     # Skills management workflow steps
+├── browse_timeline.feature     # Timeline browsing scenarios
+├── burst_management.feature    # Burst management scenarios
+├── capture_event.feature       # Event capture scenarios
+├── chained_workflows.feature   # Cross-workflow scenarios
+├── cli_commands.feature        # CLI command scenarios
+├── configure_system.feature    # System configuration scenarios
+├── fact_management.feature     # Fact management scenarios
+├── generate_cv.feature         # CV generation scenarios
+├── navigation.feature          # Application navigation scenarios
+├── onboarding.feature          # Onboarding wizard scenarios
+├── skills_management.feature   # Skills management scenarios
+├── godog_test.go               # Test runner
+└── README.md                   # This file
 ```
 
 ## Writing Feature Files
@@ -154,14 +173,18 @@ func InitializeScenario(sc *godog.ScenarioContext) {
 }
 ```
 
-## Integration with Existing E2E Tests
+## Test Architecture
 
-BDD tests complement existing Ginkgo-based E2E tests:
+BDD tests have replaced the previous Ginkgo-based E2E tests:
 
 - **BDD tests**: High-level, business-focused scenarios readable by non-technical stakeholders
-- **E2E tests**: Technical integration tests with detailed assertions
+- **Unit tests**: Technical unit tests for individual components remain in Ginkgo
 
-Both use the same underlying test infrastructure from `internal/testutil/e2e/`.
+BDD tests use the test infrastructure from `internal/testutil/e2e/` which provides:
+- `TestEnv` for full application testing
+- Navigation helpers (`SelectIntentByName`, `Confirm`, `Cancel`, etc.)
+- Data management (`AddEvent`, `AddSkill`, `GetEvents`, etc.)
+- Assertion helpers (`AssertViewContains`, `AssertEventCount`, etc.)
 
 ## Best Practices
 
