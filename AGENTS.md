@@ -171,6 +171,11 @@ When creating or modifying TUI workflows, generate visual documentation.
 
 **IMPORTANT**: When a feature task is marked as "done", the [VHS Demo Generation Prompt](docs/prompts/VHS_DEMO_GENERATION_PROMPT.md) should be triggered to ensure visual documentation exists.
 
+**MANDATORY**: Before marking any UI-related task as complete, you MUST:
+1. Check if VHS tapes need to be created or updated
+2. Follow the VHS Demo Generation Prompt
+3. Include demo evidence in the PR description
+
 **Trigger Conditions**:
 | Change Type | Action | Location |
 |-------------|--------|----------|
@@ -315,6 +320,7 @@ make coverage                     # Coverage report
 - Import `intents/` from `screens/`
 - Import `huh` outside `forms/` package
 - Use hardcoded colors instead of theme
+- Mark UI task complete without VHS demo (see VHS Demo Generation section)
 
 **Refusal template:**
 ```
