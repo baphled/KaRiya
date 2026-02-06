@@ -39,6 +39,7 @@
         "security",
         "workflow",
         "config",
+        "git",
         "docs",
         "guides",
         "rules",

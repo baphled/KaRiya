@@ -6,15 +6,17 @@ set -e
 # AI Commit Helper
 # ============================================================================
 # Automates AI-attributed commits by:
-# 1. Reading commit message from a file
+# 1. Reading commit message from a file (or extracting from HEAD for amend)
 # 2. Validating commit message format
-# 3. Checking for staged changes
+# 3. Checking for staged changes (or unpushed HEAD for amend)
 # 4. Adding AI attribution and human review trailers
-# 5. Creating the commit
+# 5. Creating or amending the commit
 #
 # Usage: 
 #   make ai-commit FILE=/path/to/commit-msg.txt
 #   make ai-commit FILE=/path/to/commit-msg.txt NO_VERIFY=1
+#   make ai-commit AMEND=1                       # Amend HEAD with AI attribution
+#   make ai-commit AMEND=1 NO_VERIFY=1
 #
 # Environment variables for attribution override:
 #   AI_AGENT - Override the AI agent name (auto-detected from OPENCODE env)
@@ -34,109 +36,189 @@ COMMIT_FILE="$1"
 # Check if NO_VERIFY flag is set (passed as second argument)
 NO_VERIFY="${2:-}"
 
-# ============================================================================
-# Step 1: Validate file provided and read commit message
-# ============================================================================
-
-if [ -z "$COMMIT_FILE" ]; then
-    echo -e "${RED}ERROR: Commit message file required${NC}"
-    echo ""
-    echo "Usage:"
-    echo "  make ai-commit FILE=/path/to/commit-msg.txt"
-    echo ""
-    echo "Create your commit message file first:"
-    echo ""
-    echo "  cat > /tmp/commit.txt << 'EOF'"
-    echo "  feat(scope): short description"
-    echo ""
-    echo "  Optional longer explanation..."
-    echo "  EOF"
-    echo ""
-    echo "  make ai-commit FILE=/tmp/commit.txt"
-    echo ""
-    exit 1
-fi
-
-# Check if file exists and is readable
-if [ ! -f "$COMMIT_FILE" ]; then
-    echo -e "${RED}ERROR: File not found: ${COMMIT_FILE}${NC}"
-    echo ""
-    echo "Create the file first:"
-    echo "  cat > ${COMMIT_FILE} << 'EOF'"
-    echo "  feat(scope): description"
-    echo "  EOF"
-    echo ""
-    exit 1
-fi
-
-if [ ! -r "$COMMIT_FILE" ]; then
-    echo -e "${RED}ERROR: Cannot read file: ${COMMIT_FILE}${NC}"
-    exit 1
-fi
-
-echo -e "${BLUE}Reading commit message from: ${COMMIT_FILE}${NC}"
-COMMIT_MSG=$(cat "$COMMIT_FILE")
-
-# Validate we have a message
-if [ -z "$COMMIT_MSG" ]; then
-    echo -e "${RED}ERROR: Commit message file is empty${NC}"
-    exit 1
-fi
-
-# Validate message is not a placeholder
-if [[ "$COMMIT_MSG" =~ ^\.\.\.$ ]] || [[ "$COMMIT_MSG" =~ ^\.\.\.\s*$ ]] || [[ "$COMMIT_MSG" == "..." ]]; then
-    echo -e "${RED}ERROR: Commit message cannot be '...' placeholder${NC}"
-    echo ""
-    echo "Edit your file with an actual commit message:"
-    echo "  ${COMMIT_FILE}"
-    echo ""
-    exit 1
-fi
-
-# Validate message has actual content (not just type prefix)
-# Get first line and strip whitespace
-FIRST_LINE=$(echo "$COMMIT_MSG" | head -n1 | sed 's/[[:space:]]*$//')
-if [[ "$FIRST_LINE" =~ ^[a-z]+\([a-zA-Z0-9_-]+\):$ ]] || [[ "$FIRST_LINE" =~ ^[a-z]+:$ ]]; then
-    echo -e "${RED}ERROR: Commit message has no description${NC}"
-    echo ""
-    echo "Edit your file to add a description after the colon:"
-    echo "  ${COMMIT_FILE}"
-    echo ""
-    exit 1
-fi
+# Check if AMEND flag is set (passed as third argument)
+AMEND="${3:-}"
 
 # ============================================================================
-# Step 2: Check for staged changes
+# Helper: Strip existing AI attribution from commit message
 # ============================================================================
+strip_ai_attribution() {
+    local msg="$1"
+    # Remove AI-Generated-By, Reviewed-By, and AI-Model lines (and blank lines before them)
+    echo "$msg" | sed '/^$/N;/\nAI-Generated-By:/d' | \
+        sed '/^AI-Generated-By:/d' | \
+        sed '/^Reviewed-By:/d' | \
+        sed '/^AI-Model:/d' | \
+        sed -e :a -e '/^\n*$/{$d;N;ba' -e '}'  # Remove trailing blank lines
+}
 
-echo ""
-echo -e "${BLUE}Checking for staged changes...${NC}"
+# ============================================================================
+# AMEND MODE: Add AI attribution to existing HEAD commit
+# ============================================================================
+if [ "$AMEND" = "1" ]; then
+    echo -e "${BLUE}🔄 AMEND MODE: Adding AI attribution to HEAD commit${NC}"
+    echo ""
+    
+    # Safety check 1: Verify we have commits
+    if ! git rev-parse HEAD &>/dev/null; then
+        echo -e "${RED}❌ ERROR: No commits in repository${NC}"
+        exit 1
+    fi
+    
+    # Safety check 2: Verify HEAD hasn't been pushed
+    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+    UPSTREAM=$(git rev-parse --abbrev-ref "@{upstream}" 2>/dev/null || echo "")
+    
+    if [ -n "$UPSTREAM" ]; then
+        # Check if HEAD is ahead of upstream
+        AHEAD=$(git rev-list --count "$UPSTREAM..HEAD" 2>/dev/null || echo "0")
+        if [ "$AHEAD" = "0" ]; then
+            echo -e "${RED}❌ ERROR: HEAD commit has already been pushed${NC}"
+            echo ""
+            echo "Cannot amend pushed commits. Options:"
+            echo "  1. Create a new commit with the fix"
+            echo "  2. Use 'git push --force' (DANGEROUS - only if you're certain)"
+            echo ""
+            exit 1
+        fi
+        echo -e "${GREEN}✅ HEAD is unpushed (${AHEAD} commit(s) ahead of ${UPSTREAM})${NC}"
+    else
+        echo -e "${YELLOW}⚠️  No upstream branch - assuming commit is unpushed${NC}"
+    fi
+    
+    # Safety check 3: Check if commit already has AI attribution
+    CURRENT_MSG=$(git log -1 --pretty=%B)
+    if echo "$CURRENT_MSG" | grep -q "^AI-Generated-By:"; then
+        echo -e "${YELLOW}⚠️  HEAD commit already has AI attribution${NC}"
+        echo ""
+        echo "Current attribution:"
+        echo "$CURRENT_MSG" | grep -E "^(AI-Generated-By|Reviewed-By|AI-Model):" | sed 's/^/  /'
+        echo ""
+        read -p "Replace existing attribution? [y/N] " -n 1 -r
+        echo ""
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            echo "Aborted."
+            exit 0
+        fi
+    fi
+    
+    # Extract original message (strip any existing attribution)
+    COMMIT_MSG=$(strip_ai_attribution "$CURRENT_MSG")
+    
+    echo -e "${BLUE}📄 Extracted commit message from HEAD:${NC}"
+    echo "─────────────────────────────────────────────"
+    echo "$COMMIT_MSG"
+    echo "─────────────────────────────────────────────"
+    
+    # Get first line for validation
+    FIRST_LINE=$(echo "$COMMIT_MSG" | head -n1 | sed 's/[[:space:]]*$//')
+    
+    # Skip to Step 3 (validation) - no staged changes check needed for amend
+    
+else
+    # ============================================================================
+    # NORMAL MODE: Create new commit
+    # ============================================================================
+    
+    # Step 1: Validate file provided and read commit message
+    if [ -z "$COMMIT_FILE" ]; then
+        echo -e "${RED}❌ ERROR: Commit message file required${NC}"
+        echo ""
+        echo "Usage:"
+        echo "  make ai-commit FILE=/path/to/commit-msg.txt"
+        echo "  make ai-commit AMEND=1                        # Amend HEAD with AI attribution"
+        echo ""
+        echo "Create your commit message file first:"
+        echo ""
+        echo "  cat > tmp/commit.txt << 'EOF'"
+        echo "  feat(scope): short description"
+        echo ""
+        echo "  Optional longer explanation..."
+        echo "  EOF"
+        echo ""
+        echo "  make ai-commit FILE=tmp/commit.txt"
+        echo ""
+        exit 1
+    fi
 
-if git diff --cached --quiet; then
-    echo -e "${RED}ERROR: No staged changes${NC}"
+    # Check if file exists and is readable
+    if [ ! -f "$COMMIT_FILE" ]; then
+        echo -e "${RED}❌ ERROR: File not found: ${COMMIT_FILE}${NC}"
+        echo ""
+        echo "Create the file first:"
+        echo "  cat > ${COMMIT_FILE} << 'EOF'"
+        echo "  feat(scope): description"
+        echo "  EOF"
+        echo ""
+        exit 1
+    fi
+
+    if [ ! -r "$COMMIT_FILE" ]; then
+        echo -e "${RED}❌ ERROR: Cannot read file: ${COMMIT_FILE}${NC}"
+        exit 1
+    fi
+
+    echo -e "${BLUE}📄 Reading commit message from: ${COMMIT_FILE}${NC}"
+    COMMIT_MSG=$(cat "$COMMIT_FILE")
+
+    # Validate we have a message
+    if [ -z "$COMMIT_MSG" ]; then
+        echo -e "${RED}❌ ERROR: Commit message file is empty${NC}"
+        exit 1
+    fi
+
+    # Validate message is not a placeholder
+    if [[ "$COMMIT_MSG" =~ ^\.\.\.$ ]] || [[ "$COMMIT_MSG" =~ ^\.\.\.\s*$ ]] || [[ "$COMMIT_MSG" == "..." ]]; then
+        echo -e "${RED}❌ ERROR: Commit message cannot be '...' placeholder${NC}"
+        echo ""
+        echo "Edit your file with an actual commit message:"
+        echo "  ${COMMIT_FILE}"
+        echo ""
+        exit 1
+    fi
+
+    # Validate message has actual content (not just type prefix)
+    # Get first line and strip whitespace
+    FIRST_LINE=$(echo "$COMMIT_MSG" | head -n1 | sed 's/[[:space:]]*$//')
+    if [[ "$FIRST_LINE" =~ ^[a-z]+\([a-zA-Z0-9_-]+\):$ ]] || [[ "$FIRST_LINE" =~ ^[a-z]+:$ ]]; then
+        echo -e "${RED}❌ ERROR: Commit message has no description${NC}"
+        echo ""
+        echo "Edit your file to add a description after the colon:"
+        echo "  ${COMMIT_FILE}"
+        echo ""
+        exit 1
+    fi
+
+    # Step 2: Check for staged changes
     echo ""
-    echo "You must stage changes before committing:"
-    echo "  git add -p <file>          # Stage specific hunks interactively"
-    echo "  git add <file>             # Stage entire file"
-    echo ""
-    echo "Then try again:"
-    echo "  make ai-commit FILE=${COMMIT_FILE}"
-    echo ""
-    exit 1
+    echo -e "${BLUE}🔍 Checking for staged changes...${NC}"
+
+    if git diff --cached --quiet; then
+        echo -e "${RED}❌ ERROR: No staged changes${NC}"
+        echo ""
+        echo "You must stage changes before committing:"
+        echo "  git add -p <file>          # Stage specific hunks interactively"
+        echo "  git add <file>             # Stage entire file"
+        echo ""
+        echo "Then try again:"
+        echo "  make ai-commit FILE=${COMMIT_FILE}"
+        echo ""
+        exit 1
+    fi
+
+    echo -e "${GREEN}✅ Staged changes detected${NC}"
 fi
-
-echo -e "${GREEN}Staged changes detected${NC}"
 
 # ============================================================================
 # Step 3: Validate commit message format
 # ============================================================================
 
 echo ""
-echo -e "${BLUE}Validating commit message format...${NC}"
+echo -e "${BLUE}🔍 Validating commit message format...${NC}"
 
 # Basic conventional commit format check
 if ! echo "$FIRST_LINE" | grep -qE "^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\([a-zA-Z0-9_-]+\))?: .+"; then
-    echo -e "${YELLOW}Warning: Message may not follow conventional commit format${NC}"
+    echo -e "${YELLOW}⚠️  Warning: Message may not follow conventional commit format${NC}"
     echo ""
     echo "Recommended format:"
     echo -e "${GREEN}  type(scope): subject${NC}"
@@ -147,7 +229,7 @@ if ! echo "$FIRST_LINE" | grep -qE "^(feat|fix|docs|style|refactor|test|chore|pe
     echo "  docs(readme): update installation"
     echo ""
 else
-    echo -e "${GREEN}Commit message format valid${NC}"
+    echo -e "${GREEN}✅ Commit message format valid${NC}"
 fi
 
 # ============================================================================
@@ -234,20 +316,20 @@ MODEL_NAME=$(format_model_name "$(detect_ai_model)")
 
 # Validate agent detected
 if [ -z "$AGENT_NAME" ]; then
-    echo -e "${RED}ERROR: Could not detect AI agent${NC}"
+    echo -e "${RED}❌ ERROR: Could not detect AI agent${NC}"
     echo ""
     echo "Set the AI_AGENT environment variable:"
     echo "  export AI_AGENT='Opencode'"
     echo ""
     echo "Or run with:"
-    echo "  AI_AGENT='Opencode' AI_MODEL='claude-opus-4-5' make ai-commit FILE=/tmp/commit.txt"
+    echo "  AI_AGENT='Opencode' AI_MODEL='claude-opus-4-5' make ai-commit FILE=tmp/commit.txt"
     echo ""
     exit 1
 fi
 
 # Validate model - REQUIRED
 if [ -z "$MODEL_NAME" ]; then
-    echo -e "${RED}ERROR: AI_MODEL environment variable not set${NC}"
+    echo -e "${RED}❌ ERROR: AI_MODEL environment variable not set${NC}"
     echo ""
     echo "The model must be specified for accurate attribution."
     echo ""
@@ -255,7 +337,7 @@ if [ -z "$MODEL_NAME" ]; then
     echo "  export AI_MODEL='claude-opus-4-5'"
     echo ""
     echo "Or run with:"
-    echo "  AI_MODEL='claude-opus-4-5' make ai-commit FILE=/tmp/commit.txt"
+    echo "  AI_MODEL='claude-opus-4-5' make ai-commit FILE=tmp/commit.txt"
     echo ""
     echo "Common models:"
     echo "  claude-opus-4-5, claude-sonnet-4, gpt-4o, llama3.2"
@@ -267,17 +349,21 @@ fi
 REVIEWER_NAME=$(git config user.name)
 
 if [ -z "$REVIEWER_NAME" ]; then
-    echo -e "${YELLOW}Warning: git user.name not set${NC}"
+    echo -e "${YELLOW}⚠️  Warning: git user.name not set${NC}"
     echo "Set it with: git config user.name \"Your Name\""
     REVIEWER_NAME="Unknown"
 fi
 
 # ============================================================================
-# Step 5: Create commit with AI attribution
+# Step 5: Create or amend commit with AI attribution
 # ============================================================================
 
 echo ""
-echo -e "${BLUE}Creating AI-attributed commit...${NC}"
+if [ "$AMEND" = "1" ]; then
+    echo -e "${BLUE}🤖 Amending commit with AI attribution...${NC}"
+else
+    echo -e "${BLUE}🤖 Creating AI-attributed commit...${NC}"
+fi
 echo ""
 echo "Agent:    ${AGENT_NAME}"
 echo "Model:    ${MODEL_NAME}"
@@ -294,28 +380,39 @@ AI-Generated-By: ${AGENT_NAME} (${MODEL_NAME})
 Reviewed-By: ${REVIEWER_NAME}
 EOF
 
-# Create the commit using the temp file
+# Build commit flags
 COMMIT_FLAGS="-F $FINAL_MSG_FILE"
+
+# Add --amend flag if in AMEND mode
+if [ "$AMEND" = "1" ]; then
+    COMMIT_FLAGS="$COMMIT_FLAGS --amend"
+fi
+
+# Add --no-verify flag if NO_VERIFY is set
 if [ "$NO_VERIFY" = "1" ]; then
-    echo -e "${YELLOW}Skipping pre-commit hooks (--no-verify)${NC}"
+    echo -e "${YELLOW}⚠️  Skipping pre-commit hooks (--no-verify)${NC}"
     echo ""
     COMMIT_FLAGS="$COMMIT_FLAGS --no-verify"
 fi
 
 if git commit $COMMIT_FLAGS; then
     echo ""
-    echo -e "${GREEN}Commit created successfully${NC}"
+    if [ "$AMEND" = "1" ]; then
+        echo -e "${GREEN}✅ Commit amended successfully${NC}"
+    else
+        echo -e "${GREEN}✅ Commit created successfully${NC}"
+    fi
     echo ""
     echo "Commit message:"
-    echo "---------------------------------------------"
+    echo "─────────────────────────────────────────────"
     git log -1 --pretty=%B
-    echo "---------------------------------------------"
+    echo "─────────────────────────────────────────────"
     echo ""
     
     rm -f "$FINAL_MSG_FILE"
 else
     echo ""
-    echo -e "${RED}Commit failed${NC}"
+    echo -e "${RED}❌ Commit failed${NC}"
     rm -f "$FINAL_MSG_FILE"
     exit 1
 fi
@@ -324,10 +421,18 @@ fi
 # Step 6: Summary
 # ============================================================================
 
-echo -e "${GREEN}AI-attributed commit complete${NC}"
+if [ "$AMEND" = "1" ]; then
+    echo -e "${GREEN}✅ AI attribution added to commit${NC}"
+else
+    echo -e "${GREEN}✅ AI-attributed commit complete${NC}"
+fi
 echo ""
 echo "Next steps:"
-echo "  git log -1         # Review the commit"
-echo "  make check         # Run checks"
-echo "  git push           # Push to remote (when ready)"
+echo "  git log -1                  # Review the commit"
+echo "  make check-compliance       # Run compliance checks"
+if [ "$AMEND" = "1" ]; then
+    echo "  git push --force-with-lease # Push amended commit (if already pushed)"
+else
+    echo "  git push                    # Push to remote (when ready)"
+fi
 echo ""
