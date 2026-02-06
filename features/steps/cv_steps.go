@@ -57,7 +57,6 @@ func registerCVWizardSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^the generation completes$`, theGenerationCompletes)
 }
 
-//nolint:dupl // Step registration functions look similar but register different steps.
 func registerCVReviewSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I should see the CV review screen$`, iShouldSeeTheCVReviewScreen)
 	sc.Step(`^I should see CV metadata$`, iShouldSeeCVMetadata)
