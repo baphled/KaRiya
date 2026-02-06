@@ -957,6 +957,8 @@ func (e *TestEnv) processCmdResult(msg tea.Msg) {
 		e.updateModelAndExecute(msg)
 	case skillsmanagement.SkillFormCompleteMsg:
 		e.updateModelAndExecute(msg)
+	case skillsmanagement.SkillEventsForModalLoadedMsg:
+		e.updateModelAndExecute(msg)
 	case feedback.ModalCountdownTickMsg:
 		e.updateModelAndExecute(msg)
 	case feedback.ModalAutoDismissMsg:
@@ -1052,6 +1054,86 @@ func (e *TestEnv) SubmitEventWithError(event *career.Event, err error) *TestEnv 
 	e.T.Helper()
 
 	return e.SendMessage(captureevent.SubmitMsg{Event: event, Err: err})
+}
+
+// SubmitSkill creates a skill in the repository and sends a SkillCreatedMsg.
+// This bypasses the UI form submission path, similar to SubmitEvent.
+//
+// Expected:
+//   - skill must be valid.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - Creates the skill in the repository.
+func (e *TestEnv) SubmitSkill(skill *career.Skill) *TestEnv {
+	e.T.Helper()
+
+	skillRepo := e.Service.GetSkillRepository()
+	if skillRepo == nil {
+		e.T.Fatal("skill repository not set")
+	}
+
+	err := skillRepo.Create(e.Ctx, skill)
+
+	return e.SendMessage(skillsmanagement.SkillCreatedMsg{Skill: skill, Error: err})
+}
+
+// SubmitSkillWithError sends a SkillCreatedMsg with an error to trigger validation error handling.
+//
+// Expected:
+//   - err should describe the validation failure.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
+func (e *TestEnv) SubmitSkillWithError(skill *career.Skill, err error) *TestEnv {
+	e.T.Helper()
+
+	return e.SendMessage(skillsmanagement.SkillCreatedMsg{Skill: skill, Error: err})
+}
+
+// SubmitSkillUpdate updates a skill in the repository and sends a SkillUpdatedMsg.
+// This bypasses the UI form submission path for skill editing.
+//
+// Expected:
+//   - skill must be valid with existing ID.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - Updates the skill in the repository.
+func (e *TestEnv) SubmitSkillUpdate(skill *career.Skill) *TestEnv {
+	e.T.Helper()
+
+	skillRepo := e.Service.GetSkillRepository()
+	if skillRepo == nil {
+		e.T.Fatal("skill repository not set")
+	}
+
+	err := skillRepo.Update(e.Ctx, skill)
+
+	return e.SendMessage(skillsmanagement.SkillUpdatedMsg{Skill: skill, Error: err})
+}
+
+// SubmitSkillUpdateWithError sends a SkillUpdatedMsg with an error.
+//
+// Expected:
+//   - err should describe the update failure.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
+func (e *TestEnv) SubmitSkillUpdateWithError(skill *career.Skill, err error) *TestEnv {
+	e.T.Helper()
+
+	return e.SendMessage(skillsmanagement.SkillUpdatedMsg{Skill: skill, Error: err})
 }
 
 // DismissSuccessModal bypasses the auto-dismiss countdown and immediately
