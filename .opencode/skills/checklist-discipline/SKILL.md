@@ -1,3 +1,13 @@
+---
+name: checklist-discipline
+description: Maintain rigorous checklist discipline with incremental updates and explicit skip reasons
+license: MIT
+compatibility: opencode
+metadata:
+  audience: developers
+  workflow: kariya
+---
+
 # Checklist Discipline Skill
 
 ## Identity

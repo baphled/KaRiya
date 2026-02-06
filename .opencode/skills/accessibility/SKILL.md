@@ -1,3 +1,13 @@
+---
+name: accessibility
+description: Ensure terminal applications are usable by everyone including users with visual impairments and disabilities
+license: MIT
+compatibility: opencode
+metadata:
+  audience: developers
+  workflow: kariya
+---
+
 # Accessibility Skill
 
 ## Identity

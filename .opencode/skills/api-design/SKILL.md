@@ -268,7 +268,7 @@ GET /events?q=meeting
 | 201 | Created | Successful POST creating resource |
 | 204 | No Content | Successful DELETE |
 | 400 | Bad Request | Invalid input, validation error |
-| 401 | Unauthorised | Missing/invalid authentication |
+| 401 | Unauthorized | Missing/invalid authentication |
 | 403 | Forbidden | Authenticated but not allowed |
 | 404 | Not Found | Resource doesn't exist |
 | 409 | Conflict | Resource state conflict |

@@ -1,3 +1,8 @@
+---
+description: Create and run benchmarks to measure code performance
+agent: benchmark
+---
+
 # /benchmark - Measure Performance
 
 Create and run benchmarks to measure code performance.

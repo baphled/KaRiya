@@ -1,3 +1,8 @@
+---
+description: Write end-to-end tests for TUI workflows using KaRiya's TestEnv harness
+agent: test
+---
+
 # /e2e - Write E2E Tests
 
 Write end-to-end tests for TUI workflows using KaRiya's TestEnv harness.

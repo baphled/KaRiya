@@ -1,3 +1,8 @@
+---
+description: Develop a feature using BDD smallest-change workflow with scenario first then incremental implementation
+agent: dev
+---
+
 # /bdd - BDD Feature Development
 
 Develop a feature using BDD smallest-change workflow: scenario first, then incremental implementation.

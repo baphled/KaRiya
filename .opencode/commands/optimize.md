@@ -1,3 +1,8 @@
+---
+description: Optimize code performance using profiling and benchmarking
+agent: performance
+---
+
 # /optimize - Performance Optimization
 
 Optimize code performance using profiling and benchmarking.
