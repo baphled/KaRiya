@@ -83,6 +83,9 @@ type TestEnv struct {
 
 	// Cleanup function to call when done
 	cleanup func()
+
+	// QuitRequested is true if tea.Quit was returned by the model
+	QuitRequested bool
 }
 
 // Setup creates a complete E2E test environment with SQLite persistence.
@@ -882,6 +885,8 @@ func (e *TestEnv) updateModelAndExecute(msg tea.Msg) {
 //   - May recursively execute commands.
 func (e *TestEnv) processCmdResult(msg tea.Msg) {
 	switch msg := msg.(type) {
+	case tea.QuitMsg:
+		e.QuitRequested = true
 	case tea.BatchMsg:
 		e.processBatchMsg(msg)
 	case captureevent.SubmitMsg:

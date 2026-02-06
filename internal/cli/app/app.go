@@ -231,6 +231,11 @@ func (m *Model) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case keyHelp:
 		m.showingHelp = !m.showingHelp
 		return m, nil
+	case keyEsc:
+		if m.showingHelp {
+			m.showingHelp = false
+			return m, nil
+		}
 	}
 
 	// Route to appropriate handler based on state.
