@@ -268,14 +268,8 @@ func (s *EventReviewScreen) renderFooter() string {
 	badges := []*primitives.Badge{
 		primitives.ConfirmBadge(th),
 		primitives.HelpKeyBadge("e", "Edit metadata", th),
-	}
-
-	if len(s.bursts) > 0 {
-		badges = append(badges, primitives.HelpKeyBadge("b", "Edit bursts", th))
-	}
-
-	if len(s.facts) > 0 {
-		badges = append(badges, primitives.HelpKeyBadge("f", "Edit facts", th))
+		primitives.HelpKeyBadge("b", "Edit bursts", th),
+		primitives.HelpKeyBadge("f", "Edit facts", th),
 	}
 
 	badges = append(badges,
