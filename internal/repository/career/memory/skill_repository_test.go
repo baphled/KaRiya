@@ -66,8 +66,8 @@ var _ = Describe("SkillRepository", func() {
 		})
 
 		It("returns skills for correct event only", func() {
-			event1 := fixtures.EventWith("event-1", "Go work", "", "")
-			event2 := fixtures.EventWith("event-2", "Python work", "", "")
+			event1 := fixtures.EventWith("event-1", "Go work description", "", "")
+			event2 := fixtures.EventWith("event-2", "Python work description", "", "")
 			eventRepo.Create(ctx, event1)
 			eventRepo.Create(ctx, event2)
 
@@ -91,7 +91,7 @@ var _ = Describe("SkillRepository", func() {
 		})
 
 		It("does not return duplicate skills from repeated LinkSkill calls", func() {
-			event := fixtures.EventWith("event-1", "Go work", "", "")
+			event := fixtures.EventWith("event-1", "Go work description", "", "")
 			eventRepo.Create(ctx, event)
 
 			goSkill := fixtures.SkillWith("skill-go", "Go", "backend", "")
@@ -107,7 +107,7 @@ var _ = Describe("SkillRepository", func() {
 		})
 
 		It("works with AssociateSkillWithEvent as well", func() {
-			event := fixtures.EventWith("event-1", "Go work", "", "")
+			event := fixtures.EventWith("event-1", "Go work description", "", "")
 			eventRepo.Create(ctx, event)
 
 			goSkill := fixtures.SkillWith("skill-go", "Go", "backend", "")
