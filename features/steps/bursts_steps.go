@@ -269,9 +269,8 @@ func iClearTheBurstNameField(ctx context.Context) (context.Context, error) {
 		return ctx, godog.ErrPending
 	}
 
-	// Clear the name field by selecting all and deleting
-	env.PressKey(tea.KeyCtrlA)
-	env.PressKey(tea.KeyBackspace)
+	// Clear the name field using Ctrl+U (Unix line-kill)
+	env.PressKey(tea.KeyCtrlU)
 
 	return ctx, nil
 }
@@ -292,7 +291,8 @@ func iSubmitTheBurstForm(ctx context.Context) (context.Context, error) {
 		return ctx, godog.ErrPending
 	}
 
-	env.Confirm()
+	// Edit burst modal requires Ctrl+S to submit (not Enter)
+	env.PressKey(tea.KeyCtrlS)
 	return ctx, nil
 }
 
@@ -310,12 +310,25 @@ func theBurstShouldHaveName(ctx context.Context, name string) error {
 	return nil
 }
 
-func iTabToDescriptionField(_ context.Context) (context.Context, error) {
-	return nil, godog.ErrPending
+func iTabToDescriptionField(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+
+	// Tab to next field (description)
+	env.PressKey(tea.KeyTab)
+	return ctx, nil
 }
 
-func iEnterBurstDescription(_ context.Context, _ string) (context.Context, error) {
-	return nil, godog.ErrPending
+func iEnterBurstDescription(ctx context.Context, description string) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+
+	env.TypeText(description)
+	return ctx, nil
 }
 
 func theBurstShouldHaveDescription(ctx context.Context, description string) error {
