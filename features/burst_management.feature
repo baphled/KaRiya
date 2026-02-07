@@ -140,7 +140,7 @@ Feature: Manage Career Bursts
   # Edit Burst
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Open edit burst modal from list
     Given I have a burst "Original Name" with 2 events
     When I select "burst_management" from the menu
@@ -165,7 +165,7 @@ Feature: Manage Career Bursts
     Then I should still be on the burst list
     And the burst should have name "Original Name"
 
-  @happy @wip
+  @happy
   Scenario: Edit burst name and save
     Given I have a burst "Original Name" with 2 events
     When I select "burst_management" from the menu
