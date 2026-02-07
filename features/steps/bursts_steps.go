@@ -191,8 +191,14 @@ func iShouldSeeTheBurstEventsModal(ctx context.Context) error {
 	return nil
 }
 
-func iShouldSeeEventDetails(_ context.Context) error {
-	return godog.ErrPending
+func iShouldSeeEventDetails(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring("Date:"))
+	return nil
 }
 
 func iHaveAConfirmedBurstWithFacts(_ context.Context, _ string) (context.Context, error) {

@@ -53,6 +53,7 @@ func RegisterCaptureSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I open the metadata editor$`, iOpenTheMetadataEditor)
 	sc.Step(`^I change event company to "([^"]*)"$`, iChangeEventCompanyTo)
 	sc.Step(`^I save metadata changes$`, iSaveMetadataChanges)
+	sc.Step(`^I should see "([^"]*)" key badge for (?:editing )?(bursts|facts)$`, iShouldSeeKeyBadgeFor)
 	sc.Step(`^I try to submit without description$`, iTryToSubmitWithoutDescription)
 	sc.Step(`^I should see a capture validation error$`, iShouldSeeValidationError)
 	sc.Step(`^I press Ctrl\+S$`, iPressCtrlS)
