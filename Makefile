@@ -690,15 +690,15 @@ bdd-feature:
 	fi
 	@go test -v ./features/... -test.run "^TestFeatures$$/$(FEATURE)"
 
-## Run BDD happy path scenarios (complete successful workflows)
+## Run BDD happy path scenarios (complete successful workflows, excludes @wip)
 bdd-happy:
 	@echo "Running BDD @happy path scenarios..."
-	@go test -v ./features/... -test.run ^TestFeatures$$ -godog.tags=@happy
+	@go test -v ./features/... -test.run ^TestFeatures$$ --godog.tags='@happy && ~@wip'
 
-## Run BDD sad path scenarios (error cases and recovery)
+## Run BDD sad path scenarios (error cases and recovery, excludes @wip)
 bdd-sad:
 	@echo "Running BDD @sad path scenarios..."
-	@go test -v ./features/... -test.run ^TestFeatures$$ -godog.tags=@sad
+	@go test -v ./features/... -test.run ^TestFeatures$$ --godog.tags='@sad && ~@wip'
 
 ## Check for @wip tags in feature files (CI warning)
 bdd-check-wip:
