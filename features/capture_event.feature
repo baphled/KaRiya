@@ -61,6 +61,7 @@ Feature: Capture Career Events
     And I submit the event
     And I dismiss the success modal
     Then I should be on the enrichment review screen
+    And I should see "b" key badge for bursts
     When I accept the suggested burst
     And I confirm the review
     Then I should be on the main menu
@@ -325,3 +326,43 @@ Feature: Capture Career Events
     And I enter event description "Ten chars!"
     And I submit the event
     Then I should see the success message
+
+  # ============================================================================
+  # Review Screen Key Badges
+  # ============================================================================
+
+  @happy @enrichment @wip
+  Scenario: Review screen shows burst badge when bursts inferred
+    Given I have an event "Built API gateway" at company "TechCo"
+    Given I have an event "Deployed API gateway" at company "TechCo"
+    When I select "capture_event" from the menu
+    And I select quick capture strategy
+    And I enter event description "Scaled API gateway for production load"
+    And I set event company to "TechCo"
+    And I submit the event
+    And I dismiss the success modal
+    Then I should be on the enrichment review screen
+    And I should see "b" key badge for editing bursts
+
+  @happy @enrichment @wip
+  Scenario: Review screen shows fact badge when facts inferred
+    When I select "capture_event" from the menu
+    And I select quick capture strategy
+    And I enter event description "Reduced API latency by 40% through optimization"
+    And I submit the event
+    And I dismiss the success modal
+    Then I should be on the enrichment review screen
+    And I should see "f" key badge for editing facts
+
+  @happy @enrichment @wip
+  Scenario: Review screen shows both badges when bursts and facts inferred
+    Given I have an event "Started migration project" at company "TechCo"
+    When I select "capture_event" from the menu
+    And I select quick capture strategy
+    And I enter event description "Completed database migration reducing query time by 50%"
+    And I set event company to "TechCo"
+    And I submit the event
+    And I dismiss the success modal
+    Then I should be on the enrichment review screen
+    And I should see "b" key badge for editing bursts
+    And I should see "f" key badge for editing facts
