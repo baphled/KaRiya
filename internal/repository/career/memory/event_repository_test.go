@@ -168,7 +168,7 @@ var _ = Describe("EventRepository", func() {
 		It("should filter events by date range", func() {
 			baseDate := time.Now()
 			for i := range 10 {
-				event := fixtures.EventWith("", fmt.Sprintf("Event %d", i), "Test Company", "")
+				event := fixtures.EventWith("", fmt.Sprintf("Event description %d", i), "Test Company", "")
 				event.Date = baseDate.AddDate(0, 0, -i*30)
 				event.Tags = []string{"project"}
 				err := repo.Create(ctx, event)
@@ -268,10 +268,10 @@ var _ = Describe("EventRepository", func() {
 		})
 
 		It("should list events with company and project", func() {
-			e1 := fixtures.EventWith("", "Event 1", "Company A", "Project Alpha")
+			e1 := fixtures.EventWith("", "First event description", "Company A", "Project Alpha")
 			e1.Date = time.Now().Add(-48 * time.Hour)
 			e1.Tags = []string{"technical"}
-			e2 := fixtures.EventWith("", "Event 2", "Company B", "Project Beta")
+			e2 := fixtures.EventWith("", "Second event description", "Company B", "Project Beta")
 			e2.Date = time.Now().Add(-24 * time.Hour)
 			e2.Tags = []string{"leadership"}
 

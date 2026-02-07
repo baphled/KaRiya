@@ -722,7 +722,7 @@ var _ = Describe("Career Service", func() {
 					Update(gomock.Any(), gomock.Any()).
 					Return(nil)
 
-				updateEvent := fixtures.EventWith("event-id", "Updated", "", "")
+				updateEvent := fixtures.EventWith("event-id", "Updated event description", "", "")
 				updateEvent.Date = time.Now().AddDate(0, 0, -10)
 
 				originalCreatedAt := existingEvent.CreatedAt
@@ -744,7 +744,7 @@ var _ = Describe("Career Service", func() {
 					Create(gomock.Any(), gomock.Any()).
 					Return(nil)
 
-				event := fixtures.EventWith("", "Recent event", "", "")
+				event := fixtures.EventWith("", "Recent event description", "", "")
 				event.Date = time.Now().AddDate(0, 0, -15)
 
 				err := service.CaptureEvent(ctx, event, TimelineJournaling)
@@ -752,7 +752,7 @@ var _ = Describe("Career Service", func() {
 			})
 
 			It("should reject events older than 30 days", func() {
-				event := fixtures.EventWith("", "Old event", "", "")
+				event := fixtures.EventWith("", "Old event description", "", "")
 				event.Date = time.Now().AddDate(0, 0, -40)
 
 				err := service.CaptureEvent(ctx, event, TimelineJournaling)
@@ -767,7 +767,7 @@ var _ = Describe("Career Service", func() {
 					Create(gomock.Any(), gomock.Any()).
 					Return(nil)
 
-				event := fixtures.EventWith("", "Very old event", "", "")
+				event := fixtures.EventWith("", "Very old event description", "", "")
 				event.Date = time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
 
 				err := service.CaptureEvent(ctx, event, CVBackfill)
