@@ -54,7 +54,7 @@ Feature: Manage Career Bursts
     When I press page up
     Then I should see the original bursts
 
-  @happy @wip
+  @happy
   Scenario: Jump to first and last burst
     Given I have 20 bursts in my profile
     When I select "burst_management" from the menu
