@@ -190,14 +190,14 @@ Feature: Manage Career Bursts
   # Delete Burst
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Open delete confirmation from list
     Given I have a burst "Burst to Delete" with 2 events
     When I select "burst_management" from the menu
     And I press "d" to delete
     Then I should see the delete confirmation
 
-  @happy @wip
+  @happy
   Scenario: Open delete confirmation from detail
     Given I have a burst "Burst to Delete" with 2 events
     When I select "burst_management" from the menu
@@ -205,7 +205,7 @@ Feature: Manage Career Bursts
     And I press "d" to delete
     Then I should see the delete confirmation
 
-  @happy @wip
+  @happy
   Scenario: Cancel delete burst
     Given I have a burst "Burst to Delete" with 2 events
     When I select "burst_management" from the menu
@@ -214,7 +214,7 @@ Feature: Manage Career Bursts
     Then I should still be on the burst list
     And there should be 1 burst
 
-  @happy @wip
+  @happy
   Scenario: Confirm delete burst
     Given I have a burst "Burst to Delete" with 2 events
     When I select "burst_management" from the menu
