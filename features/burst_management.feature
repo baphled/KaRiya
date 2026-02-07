@@ -67,7 +67,7 @@ Feature: Manage Career Bursts
   # Burst Detail Modal
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: View burst details
     Given I have a burst "Backend API Development" with 3 events
     When I select "burst_management" from the menu
@@ -76,7 +76,7 @@ Feature: Manage Career Bursts
     And I should see "Backend API Development"
     And I should see "3"
 
-  @happy @wip
+  @happy
   Scenario: Close burst detail modal
     Given I have a burst "Backend API Development" with 3 events
     When I select "burst_management" from the menu

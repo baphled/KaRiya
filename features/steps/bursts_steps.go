@@ -3,6 +3,7 @@ package steps
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/baphled/kariya/features/support"
 	"github.com/baphled/kariya/internal/domain/career"
@@ -123,8 +124,35 @@ func iShouldStillBeOnTheBurstList(ctx context.Context) error {
 	return nil
 }
 
-func iHaveABurstWithEvents(_ context.Context, _, _ string) (context.Context, error) {
-	return nil, godog.ErrPending
+func iHaveABurstWithEvents(ctx context.Context, name string, count string) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+
+	// Create events first
+	var eventIDs []string
+	for i := 0; i < parseIntOrDefault(count, 3); i++ {
+		event := fixtures.EventFactory.MustCreate().(*career.Event)
+		event.ID = ""
+		env.AddEvent(event)
+		eventIDs = append(eventIDs, event.ID)
+	}
+
+	// Create burst with those events
+	burst := fixtures.Burst("", eventIDs...)
+	burst.Name = name
+	env.AddBurst(burst)
+
+	return ctx, nil
+}
+
+func parseIntOrDefault(s string, def int) int {
+	var i int
+	if _, err := fmt.Sscanf(s, "%d", &i); err == nil {
+		return i
+	}
+	return def
 }
 
 func iShouldSeeTheBurstDetailModal(ctx context.Context) error {
