@@ -331,7 +331,7 @@ Feature: Capture Career Events
   # Review Screen Key Badges
   # ============================================================================
 
-  @happy @enrichment @wip
+  @happy @enrichment
   Scenario: Review screen shows burst badge when bursts inferred
     Given I have an event "Built API gateway" at company "TechCo"
     Given I have an event "Deployed API gateway" at company "TechCo"
@@ -344,7 +344,7 @@ Feature: Capture Career Events
     Then I should be on the enrichment review screen
     And I should see "b" key badge for editing bursts
 
-  @happy @enrichment @wip
+  @happy @enrichment
   Scenario: Review screen shows fact badge when facts inferred
     When I select "capture_event" from the menu
     And I select quick capture strategy
@@ -354,7 +354,7 @@ Feature: Capture Career Events
     Then I should be on the enrichment review screen
     And I should see "f" key badge for editing facts
 
-  @happy @enrichment @wip
+  @happy @enrichment
   Scenario: Review screen shows both badges when bursts and facts inferred
     Given I have an event "Started migration project" at company "TechCo"
     When I select "capture_event" from the menu
