@@ -6,6 +6,8 @@
 
 ## Status
 
+Branch: feature/task-57-bdd-godog-coverage
+
 ### Completed
 - [x] Godog framework setup (v0.15.0)
 - [x] Makefile targets: `bdd`, `bdd-happy`, `bdd-sad`, `bdd-smoke`, `bdd-wip`, `bdd-check-wip`
