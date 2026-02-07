@@ -29,7 +29,7 @@ Feature: Manage Career Bursts
     Then I should see a list of bursts
     And I should see "3"
 
-  @happy @wip
+  @happy
   Scenario: Navigate through burst list with vim keys
     Given I have 5 bursts in my profile
     When I select "burst_management" from the menu
@@ -37,7 +37,7 @@ Feature: Manage Career Bursts
     And I press "k" to navigate up
     Then I should still be on the burst list
 
-  @happy @wip
+  @happy
   Scenario: Navigate through burst list with arrow keys
     Given I have 5 bursts in my profile
     When I select "burst_management" from the menu
