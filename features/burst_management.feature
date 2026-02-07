@@ -22,7 +22,7 @@ Feature: Manage Career Bursts
   # Burst List Display
   # ============================================================================
 
-  @happy @smoke @wip
+  @happy @smoke
   Scenario: View burst list with bursts
     Given I have 3 bursts in my profile
     When I select "burst_management" from the menu

@@ -5,6 +5,8 @@ import (
 	"context"
 
 	"github.com/baphled/kariya/features/support"
+	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	"github.com/cucumber/godog"
 	"github.com/onsi/gomega"
 )
@@ -77,8 +79,20 @@ func registerBurstNavigationSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I should not see the loading modal$`, iShouldNotSeeTheLoadingModal)
 }
 
-func iHaveNBurstsInMyProfile(_ context.Context, _ int) (context.Context, error) {
-	return nil, godog.ErrPending
+func iHaveNBurstsInMyProfile(ctx context.Context, count int) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+
+	// Create N bursts with test data
+	for i := 0; i < count; i++ {
+		burst := fixtures.BurstFactory.MustCreate().(*career.Burst)
+		burst.ID = "" // Clear ID so repo generates one
+		env.AddBurst(burst)
+	}
+
+	return ctx, nil
 }
 
 func iShouldSeeAListOfBursts(ctx context.Context) error {
