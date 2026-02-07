@@ -5,12 +5,19 @@ import (
 	"context"
 	"fmt"
 
+	tea "github.com/charmbracelet/bubbletea"
+
 	"github.com/baphled/kariya/features/support"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	"github.com/cucumber/godog"
 	"github.com/onsi/gomega"
 )
+
+// contextKey is a custom type for context keys to avoid collisions.
+type contextKey string
+
+const originalBurstsViewKey contextKey = "originalBurstsView"
 
 // RegisterBurstsSteps registers burst management step definitions with Godog.
 func RegisterBurstsSteps(sc *godog.ScenarioContext) {
@@ -256,16 +263,37 @@ func iShouldSeeTheEditBurstForm(ctx context.Context) error {
 	return nil
 }
 
-func iClearTheBurstNameField(_ context.Context) (context.Context, error) {
-	return nil, godog.ErrPending
+func iClearTheBurstNameField(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+
+	// Clear the name field by selecting all and deleting
+	env.PressKey(tea.KeyCtrlA)
+	env.PressKey(tea.KeyBackspace)
+
+	return ctx, nil
 }
 
-func iEnterBurstName(_ context.Context, _ string) (context.Context, error) {
-	return nil, godog.ErrPending
+func iEnterBurstName(ctx context.Context, name string) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+
+	env.TypeText(name)
+	return ctx, nil
 }
 
-func iSubmitTheBurstForm(_ context.Context) (context.Context, error) {
-	return nil, godog.ErrPending
+func iSubmitTheBurstForm(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+
+	env.Confirm()
+	return ctx, nil
 }
 
 func theBurstShouldHaveName(ctx context.Context, name string) error {
@@ -290,8 +318,17 @@ func iEnterBurstDescription(_ context.Context, _ string) (context.Context, error
 	return nil, godog.ErrPending
 }
 
-func theBurstShouldHaveDescription(_ context.Context, _ string) error {
-	return godog.ErrPending
+func theBurstShouldHaveDescription(ctx context.Context, description string) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+
+	bursts := env.GetBursts()
+	gomega.Expect(bursts).To(gomega.HaveLen(1))
+	gomega.Expect(bursts[0].Description).To(gomega.Equal(description))
+
+	return nil
 }
 
 func iHaveAnUnconfirmedBurst(_ context.Context, _ string, _ int) (context.Context, error) {
@@ -433,7 +470,7 @@ func iShouldSeeDifferentBursts(ctx context.Context) (context.Context, error) {
 
 	// Store current view for later comparison
 	currentView := env.GetView()
-	ctx = context.WithValue(ctx, "originalBurstsView", currentView)
+	ctx = context.WithValue(ctx, originalBurstsViewKey, currentView)
 
 	// Just verify we're still on burst list (actual difference check is complex)
 	gomega.Expect(currentView).To(gomega.ContainSubstring("Burst"))
@@ -447,7 +484,7 @@ func iShouldSeeTheOriginalBursts(ctx context.Context) error {
 	}
 
 	// Get the stored original view
-	originalView, ok := ctx.Value("originalBurstsView").(string)
+	originalView, ok := ctx.Value(originalBurstsViewKey).(string)
 	if !ok {
 		return godog.ErrPending
 	}
