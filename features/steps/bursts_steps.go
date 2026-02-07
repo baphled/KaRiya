@@ -331,8 +331,28 @@ func theBurstShouldHaveDescription(ctx context.Context, description string) erro
 	return nil
 }
 
-func iHaveAnUnconfirmedBurst(_ context.Context, _ string, _ int) (context.Context, error) {
-	return nil, godog.ErrPending
+func iHaveAnUnconfirmedBurst(ctx context.Context, name string, count int) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+
+	// Create events first
+	var eventIDs []string
+	for i := 0; i < count; i++ {
+		event := fixtures.EventFactory.MustCreate().(*career.Event)
+		event.ID = ""
+		env.AddEvent(event)
+		eventIDs = append(eventIDs, event.ID)
+	}
+
+	// Create unconfirmed burst with those events
+	burst := fixtures.Burst("", eventIDs...)
+	burst.Name = name
+	burst.Confirmed = false // Explicitly set
+	env.AddBurst(burst)
+
+	return ctx, nil
 }
 
 func iPressCToConfirm(ctx context.Context) (context.Context, error) {
@@ -366,8 +386,17 @@ func iConfirmTheAction(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-func theBurstShouldNotBeConfirmed(_ context.Context) error {
-	return godog.ErrPending
+func theBurstShouldNotBeConfirmed(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+
+	bursts := env.GetBursts()
+	gomega.Expect(bursts).To(gomega.HaveLen(1))
+	gomega.Expect(bursts[0].Confirmed).To(gomega.BeFalse())
+
+	return nil
 }
 
 func iHaveUnassignedEvents(_ context.Context, _ int) (context.Context, error) {
