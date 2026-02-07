@@ -227,7 +227,7 @@ Feature: Manage Career Bursts
   # Confirm Burst (Trigger Fact Extraction)
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Confirm unconfirmed burst
     Given I have an unconfirmed burst "New Burst" with 3 events
     When I select "burst_management" from the menu
@@ -236,7 +236,7 @@ Feature: Manage Career Bursts
     Then I should see the confirm burst modal
     And I should see "confirm"
 
-  @happy @wip
+  @happy
   Scenario: Cancel confirm burst
     Given I have an unconfirmed burst "New Burst" with 3 events
     When I select "burst_management" from the menu
