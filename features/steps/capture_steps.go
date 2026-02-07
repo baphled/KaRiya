@@ -584,3 +584,12 @@ func iShouldSeeMinLengthValidationError(ctx context.Context) error {
 	))
 	return nil
 }
+func iShouldSeeKeyBadgeFor(ctx context.Context, key, action string) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring(key))
+	return nil
+}
