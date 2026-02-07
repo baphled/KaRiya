@@ -45,7 +45,7 @@ Feature: Manage Career Bursts
     And I press up arrow
     Then I should still be on the burst list
 
-  @happy @wip
+  @happy
   Scenario: Page through burst list
     Given I have 20 bursts in my profile
     When I select "burst_management" from the menu
