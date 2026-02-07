@@ -2,7 +2,15 @@
 
 Go TUI application using Bubble Tea. Follow these rules strictly.
 
-## Pre-Action Framework (MANDATORY)
+## Foundation Rules (MANDATORY)
+
+### Token Efficiency
+- Be concise and precise
+- No unnecessary words
+- Specific, not vague
+- Structured output
+
+### Pre-Action Framework
 
 Before ANY action, complete this checklist:
 
