@@ -268,8 +268,18 @@ func iSubmitTheBurstForm(_ context.Context) (context.Context, error) {
 	return nil, godog.ErrPending
 }
 
-func theBurstShouldHaveName(_ context.Context, _ string) error {
-	return godog.ErrPending
+func theBurstShouldHaveName(ctx context.Context, name string) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+
+	// Get burst from repository
+	bursts := env.GetBursts()
+	gomega.Expect(bursts).To(gomega.HaveLen(1))
+	gomega.Expect(bursts[0].Name).To(gomega.Equal(name))
+
+	return nil
 }
 
 func iTabToDescriptionField(_ context.Context) (context.Context, error) {

@@ -93,7 +93,7 @@ Feature: Manage Career Bursts
     Then I should see the burst events modal
     And I should see event details
 
-  @happy @wip
+  @happy
   Scenario: Close burst events modal
     Given I have a burst "Backend API Development" with 3 events
     When I select "burst_management" from the menu
@@ -148,7 +148,7 @@ Feature: Manage Career Bursts
     Then I should see the edit burst form
     And I should see "Original Name"
 
-  @happy @wip
+  @happy
   Scenario: Open edit burst modal from detail
     Given I have a burst "Original Name" with 2 events
     When I select "burst_management" from the menu
@@ -156,7 +156,7 @@ Feature: Manage Career Bursts
     And I press "e" to edit
     Then I should see the edit burst form
 
-  @happy @wip
+  @happy
   Scenario: Cancel edit burst
     Given I have a burst "Original Name" with 2 events
     When I select "burst_management" from the menu
