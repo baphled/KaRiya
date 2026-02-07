@@ -5,8 +5,11 @@ agent: build
 
 Continue work from where I left off.
 
-Load the `software-engineer` skill to assess and resume appropriately.
-Load the `task-completer` skill to check what's done and what remains.
+## Skills to Load (MANDATORY)
+
+- `pre-action` - Decision framework before ANY action (always active)
+- `software-engineer` - Orchestrates technical work
+- `task-completer` - Check what's done and what remains
 
 ## Context
 $ARGUMENTS
@@ -36,27 +39,35 @@ $ARGUMENTS
    make test
    ```
 
-4. **Identify Next Step**
+4. **Apply Pre-Action Framework**
+   Before taking any action based on findings:
+   - STOP: What am I about to do?
+   - THINK: What do I KNOW vs ASSUME?
+   - INVESTIGATE: If tests fail, WHY? Is it intentional?
+   - CONFIDENCE: Am I VERIFIED or just ASSUMED?
+   - ASK if uncertain
+
+5. **Identify Next Step**
    Based on state:
    - **Uncommitted changes** → Review, test, commit
-   - **Failing tests** → Debug and fix
+   - **Failing tests** → Investigate WHY before fixing
    - **Partial implementation** → Continue TDD cycle
    - **Ready for commit** → Run compliance, commit
    - **Ready for PR** → Create PR
 
-5. **Resume Work**
+6. **Resume Work**
    Load appropriate skills based on what needs to be done next.
 
 ## State Detection
 
 | State | Indicator | Action |
 |-------|-----------|--------|
-| Mid-implementation | Uncommitted code, tests failing | Continue TDD green phase |
+| Mid-implementation | Uncommitted code, tests failing | Investigate, then continue TDD |
 | Tests passing | Green tests, uncommitted | Refactor or commit |
 | Ready to commit | Clean, tested code | Run compliance, commit |
 | Needs review | Committed, not pushed | Self-review, push |
 | Ready for PR | Pushed to remote | Create PR |
-| Blocked | Failing checks | Fix issues first |
+| Blocked | Failing checks | Investigate cause first |
 
 ## Output
 
@@ -64,5 +75,6 @@ Report:
 - Current state summary
 - What was being worked on
 - What's completed
+- **Pre-action assessment** (KNOW/ASSUME/UNKNOWN)
 - Recommended next action
-- Then proceed with that action
+- Then proceed (or ASK if uncertain)

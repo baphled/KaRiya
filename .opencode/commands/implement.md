@@ -5,7 +5,9 @@ agent: build
 
 Implement the following feature using TDD and clean code principles.
 
-Load these skills for guidance:
+## Skills to Load (MANDATORY)
+
+- `pre-action` - Decision framework before ANY action (always active)
 - `tdd-workflow` - For the Red-Green-Refactor cycle
 - `clean-code` - For writing clean, maintainable code
 - `architecture` - For proper layer placement
@@ -17,17 +19,28 @@ $ARGUMENTS
 
 ## Process
 
-1. **Understand** - Analyze where this code should live (which layer, package)
-2. **Plan** - Break into small, testable increments
-3. **TDD Cycle** for each increment:
+1. **Pre-Action Assessment**
+   - STOP: What exactly is being requested?
+   - THINK: Do I understand the requirement? What's ASSUMED?
+   - INVESTIGATE: How do similar features work in this codebase?
+   - CONFIDENCE: Am I ready to implement, or need clarification?
+
+2. **Understand** - Analyze where this code should live (which layer, package)
+
+3. **Plan** - Break into small, testable increments
+
+4. **TDD Cycle** for each increment:
    - Write a failing test (Red)
    - Write minimal code to pass (Green)
    - Refactor for cleanliness
-4. **Boy Scout Rule** - Leave any touched code cleaner than you found it
-5. **Verify** - Run `make check-compliance`
+
+5. **Boy Scout Rule** - Leave any touched code cleaner than you found it
+
+6. **Verify** - Run `make check-compliance`
 
 ## Requirements
 
+- **Apply pre-action framework before each change**
 - Follow the architecture patterns (intents orchestrate, screens render)
 - Use existing components from `make what-to-use NEED="keyword"`
 - No comments inside function bodies
