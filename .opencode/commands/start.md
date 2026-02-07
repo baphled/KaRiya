@@ -5,19 +5,27 @@ agent: build
 
 Start a new KaRiya development session.
 
-First, load the `session-start` skill to understand the session protocol.
+## Skills to Load (MANDATORY)
 
-Then run:
+Load these skills - they govern ALL subsequent actions:
+- `pre-action` - Decision framework before ANY action (always active)
+- `software-engineer` - Orchestrates technical work
+- `session-start` - Session protocol
+
+## Process
+
+1. Run environment validation:
 ```bash
 make session-start
 ```
 
-If it fails, help me fix the issues before proceeding.
+2. If it fails, help me fix the issues before proceeding.
 
-Acknowledge the critical rules:
-1. Feature branches only (never commit to next/main)
-2. TDD workflow (test first)
-3. Use `make ai-commit` for commits
-4. Run `make check-compliance` before and after tasks
+3. Acknowledge the critical rules:
+   - Feature branches only (never commit to next/main)
+   - TDD workflow (test first)
+   - Use `make ai-commit` for commits
+   - Run `make check-compliance` before and after tasks
+   - **Pre-action framework before ANY action**
 
 $ARGUMENTS
