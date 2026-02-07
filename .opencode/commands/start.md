@@ -9,6 +9,7 @@ Start a new KaRiya development session.
 
 Load these skills - they govern ALL subsequent actions:
 - `pre-action` - Decision framework before ANY action (always active)
+- `token-efficiency` - Concise, efficient communication (always active)
 - `software-engineer` - Orchestrates technical work
 - `session-start` - Session protocol
 - `task-tracker` - Task file synchronization
