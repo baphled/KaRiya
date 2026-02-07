@@ -41,18 +41,18 @@ Test event,2024-01,Technical,technical,MyProject,MyCompany`
 
 		It("should parse multiple rows", func() {
 			csv := `Text,Date,Categories,Tags,Project,Company
-Event 1,2024-01,Technical,technical,Project1,Company1
-Event 2,2024-02,Leadership,leadership,Project2,Company2
-Event 3,2024-03,Product,product,Project3,Company3`
+First event description,2024-01,Technical,technical,Project1,Company1
+Second event description,2024-02,Leadership,leadership,Project2,Company2
+Third event description,2024-03,Product,product,Project3,Company3`
 
 			reader := bytes.NewReader([]byte(csv))
 			rows, err := parser.Parse(reader)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rows).To(HaveLen(3))
-			Expect(rows[0].Event.Text).To(Equal("Event 1"))
-			Expect(rows[1].Event.Text).To(Equal("Event 2"))
-			Expect(rows[2].Event.Text).To(Equal("Event 3"))
+			Expect(rows[0].Event.Text).To(Equal("First event description"))
+			Expect(rows[1].Event.Text).To(Equal("Second event description"))
+			Expect(rows[2].Event.Text).To(Equal("Third event description"))
 		})
 
 		It("should handle optional fields", func() {
@@ -73,7 +73,7 @@ Minimal event,2024-01,,,,`
 	Describe("Date Parsing", func() {
 		It("should parse YYYY-MM format", func() {
 			csv := `Text,Date,Categories,Tags,Project,Company
-Test,2024-01,Technical,technical,,`
+Test event text,2024-01,Technical,technical,,`
 
 			reader := bytes.NewReader([]byte(csv))
 			rows, err := parser.Parse(reader)
@@ -86,7 +86,7 @@ Test,2024-01,Technical,technical,,`
 
 		It("should parse YYYY-MM-DD format", func() {
 			csv := `Text,Date,Categories,Tags,Project,Company
-Test,2024-01-15,Technical,technical,,`
+Test event text,2024-01-15,Technical,technical,,`
 
 			reader := bytes.NewReader([]byte(csv))
 			rows, err := parser.Parse(reader)
@@ -109,7 +109,7 @@ Test,invalid-date,Technical,technical,,`
 
 		It("should reject future dates", func() {
 			futureDate := time.Now().AddDate(1, 0, 0).Format("2006-01-02")
-			csv := "Text,Date,Categories,Tags,Project,Company\nTest," + futureDate + ",Technical,technical,,"
+			csv := "Text,Date,Categories,Tags,Project,Company\nTest event text," + futureDate + ",Technical,technical,,"
 
 			reader := bytes.NewReader([]byte(csv))
 			rows, err := parser.Parse(reader)
@@ -123,7 +123,7 @@ Test,invalid-date,Technical,technical,,`
 	Describe("Tag Validation", func() {
 		It("should parse valid tags", func() {
 			csv := `Text,Date,Categories,Tags,Project,Company
-Test,2024-01,Technical,technical;leadership;mentoring,,`
+Test event text,2024-01,Technical,technical;leadership;mentoring,,`
 
 			reader := bytes.NewReader([]byte(csv))
 			rows, err := parser.Parse(reader)
@@ -149,7 +149,7 @@ Test,2024-01,Technical,invalid-tag,,`
 
 		It("should normalize tags to lowercase", func() {
 			csv := `Text,Date,Categories,Tags,Project,Company
-Test,2024-01,Technical,TECHNICAL;Leadership,,`
+Test event text,2024-01,Technical,TECHNICAL;Leadership,,`
 
 			reader := bytes.NewReader([]byte(csv))
 			rows, err := parser.Parse(reader)
@@ -164,7 +164,7 @@ Test,2024-01,Technical,TECHNICAL;Leadership,,`
 	Describe("Category Validation", func() {
 		It("should parse valid categories", func() {
 			csv := `Text,Date,Categories,Tags,Project,Company
-Test,2024-01,Technical;Leadership,technical,,`
+Test event text,2024-01,Technical;Leadership,technical,,`
 
 			reader := bytes.NewReader([]byte(csv))
 			rows, err := parser.Parse(reader)
@@ -264,8 +264,8 @@ Different event,2024-02,Leadership,leadership,,Company2`
 
 		It("should not mark valid events as duplicates", func() {
 			csv := `Text,Date,Categories,Tags,Project,Company
-Event 1,2024-01,Technical,technical,,Company1
-Event 2,2024-02,Leadership,leadership,,Company2`
+First event description,2024-01,Technical,technical,,Company1
+Second event description,2024-02,Leadership,leadership,,Company2`
 
 			reader := bytes.NewReader([]byte(csv))
 			rows, err := parser.Parse(reader)
@@ -518,8 +518,8 @@ Test event,2024-01,Technical,technical,MyProject,MyCompany,Go;Ruby`
 
 		It("should handle multiple events with shared skills", func() {
 			csvData := `Text,Date,Categories,Tags,Project,Company,Skills
-Event 1,2024-01,Technical,technical,Project1,Company1,Go;Docker
-Event 2,2024-02,Technical,technical,Project2,Company2,Go;Kubernetes`
+First event description,2024-01,Technical,technical,Project1,Company1,Go;Docker
+Second event description,2024-02,Technical,technical,Project2,Company2,Go;Kubernetes`
 
 			reader := bytes.NewReader([]byte(csvData))
 			rows, err := parserWithSkill.Parse(reader)
