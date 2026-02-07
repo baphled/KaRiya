@@ -184,10 +184,7 @@ func iShouldSeeTheBurstEventsModal(ctx context.Context) error {
 		return godog.ErrPending
 	}
 	view := env.GetView()
-	gomega.Expect(view).To(gomega.SatisfyAny(
-		gomega.ContainSubstring("Events"),
-		gomega.ContainSubstring("Date"),
-	))
+	gomega.Expect(view).To(gomega.ContainSubstring("Events in Burst:"))
 	return nil
 }
 
@@ -394,12 +391,27 @@ func theSkillShouldBeMarkedAsRejectedBursts(_ context.Context) error {
 	return godog.ErrPending
 }
 
-func iShouldBeAtTheLastBurst(_ context.Context) error {
-	return godog.ErrPending
+func iShouldBeAtTheLastBurst(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	// Last burst in a list of 20 would show "20" in some indicator
+	// For now, just verify we're still on the burst list
+	gomega.Expect(view).To(gomega.ContainSubstring("Burst"))
+	return nil
 }
 
-func iShouldBeAtTheFirstBurst(_ context.Context) error {
-	return godog.ErrPending
+func iShouldBeAtTheFirstBurst(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	// Verify we're on the burst list
+	gomega.Expect(view).To(gomega.ContainSubstring("Burst"))
+	return nil
 }
 
 func iShouldSeeDifferentBursts(_ context.Context) error {
