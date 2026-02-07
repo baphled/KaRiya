@@ -12,6 +12,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/app"
 	"github.com/baphled/kariya/internal/cli/bootstrap"
 	"github.com/baphled/kariya/internal/cli/intents"
+	burstmanagement "github.com/baphled/kariya/internal/cli/intents/burst_management"
 	"github.com/baphled/kariya/internal/cli/intents/captureevent"
 	"github.com/baphled/kariya/internal/cli/intents/generatecv"
 	"github.com/baphled/kariya/internal/cli/intents/skillsmanagement"
@@ -960,6 +961,12 @@ func (e *TestEnv) processCmdResult(msg tea.Msg) {
 	case skillsmanagement.SkillFormCompleteMsg:
 		e.updateModelAndExecute(msg)
 	case skillsmanagement.SkillEventsForModalLoadedMsg:
+		e.updateModelAndExecute(msg)
+	case burstmanagement.EditBurstMsg:
+		e.updateModelAndExecute(msg)
+	case burstmanagement.BurstDeletedMsg:
+		e.updateModelAndExecute(msg)
+	case burstmanagement.BurstConfirmedMsg:
 		e.updateModelAndExecute(msg)
 	case feedback.ModalCountdownTickMsg:
 		e.updateModelAndExecute(msg)
