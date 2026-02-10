@@ -352,7 +352,7 @@ Feature: Configure System
     Then I should see the success modal
     And I should see "Configuration saved"
 
-  @happy @wip
+  @happy
   Scenario: Success modal auto-dismisses
     When the save completes successfully
     Then the success modal should auto-dismiss
