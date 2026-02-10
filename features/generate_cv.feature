@@ -175,7 +175,7 @@ Feature: Generate CV
     And I should see "2 Page"
     And I should see "Detailed"
 
-  @happy @wip
+  @happy
   Scenario: Skip wizard with Ctrl+S
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
