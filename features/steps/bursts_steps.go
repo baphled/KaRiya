@@ -63,6 +63,7 @@ func registerBurstEditSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I submit the burst form$`, iSubmitTheBurstForm)
 	sc.Step(`^the burst should have name "([^"]*)"$`, theBurstShouldHaveName)
 	sc.Step(`^I tab to description field$`, iTabToDescriptionField)
+	sc.Step(`^I clear the burst description field$`, iClearTheBurstDescriptionField)
 	sc.Step(`^I enter burst description "([^"]*)"$`, iEnterBurstDescription)
 	sc.Step(`^the burst should have description "([^"]*)"$`, theBurstShouldHaveDescription)
 	sc.Step(`^I have an unconfirmed burst "([^"]*)" with (\d+) events$`, iHaveAnUnconfirmedBurst)
@@ -429,6 +430,17 @@ func iTabToDescriptionField(ctx context.Context) (context.Context, error) {
 
 	// Tab to next field (description)
 	env.PressKey(tea.KeyTab)
+	return ctx, nil
+}
+
+func iClearTheBurstDescriptionField(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+
+	// Clear the description field using Ctrl+U (Unix line-kill)
+	env.PressKey(tea.KeyCtrlU)
 	return ctx, nil
 }
 
