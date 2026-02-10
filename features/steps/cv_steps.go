@@ -11,6 +11,12 @@ import (
 )
 
 // RegisterCVSteps registers CV generation step definitions with Godog.
+//
+// Expected:
+//   - sc is a valid *godog.ScenarioContext.
+//
+// Side effects:
+//   - Registers step definitions with Godog.
 func RegisterCVSteps(sc *godog.ScenarioContext) {
 	registerCVPrerequisiteSteps(sc)
 	registerCVWizardSteps(sc)

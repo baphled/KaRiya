@@ -11,6 +11,12 @@ import (
 )
 
 // RegisterConfigureSteps registers configure system step definitions with Godog.
+//
+// Expected:
+//   - sc is a valid *godog.ScenarioContext.
+//
+// Side effects:
+//   - Registers step definitions with Godog.
 func RegisterConfigureSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I should see the domain selection screen$`, iShouldSeeTheDomainSelectionScreen)
 	sc.Step(`^I should still be on domain selection$`, iShouldStillBeOnDomainSelection)

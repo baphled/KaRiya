@@ -15,6 +15,12 @@ import (
 // Expected: sc is a valid ScenarioContext.
 // Returns: None.
 // Side effects: Registers step definitions with the scenario context.
+//
+// Expected:
+//   - sc is a valid *godog.ScenarioContext.
+//
+// Side effects:
+//   - Registers step definitions with Godog.
 func RegisterOnboardingSteps(sc *godog.ScenarioContext) {
 	registerOnboardingInputSteps(sc)
 	registerOnboardingNavigationSteps(sc)

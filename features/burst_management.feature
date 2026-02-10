@@ -84,7 +84,7 @@ Feature: Manage Career Bursts
     And I press escape
     Then I should still be on the burst list
 
-  @happy @wip
+  @happy
   Scenario: View burst events from detail modal
     Given I have a burst "Backend API Development" with 3 events
     When I select "burst_management" from the menu

@@ -285,6 +285,10 @@ if [ "$SKIP_TESTS" != "1" ]; then
         for pkg in $CHANGED_PACKAGES; do
             # Remove the /... suffix to get the directory
             pkg_dir=$(echo "$pkg" | sed 's|/\.\.\.$||' | sed 's|^\./||')
+            # Skip test infrastructure packages (features/, internal/testutil)
+            if [[ "$pkg_dir" == features/* ]] || [[ "$pkg_dir" == *"/testutil"* ]]; then
+                continue
+            fi
             if ls "$pkg_dir"/*_test.go > /dev/null 2>&1; then
                 TESTABLE_PACKAGES="$TESTABLE_PACKAGES $pkg"
             fi
