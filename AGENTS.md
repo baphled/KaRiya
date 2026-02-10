@@ -4,6 +4,18 @@ Go TUI application using Bubble Tea. Follow these rules strictly.
 
 ## Foundation Rules (MANDATORY)
 
+### ALWAYS
+- Follow the architecture and code style guidelines
+- Write tests FIRST (TDD)
+- Capture knowledge in memory (MCP) and obsidian (MCP) when DISCOVERING
+  or CHANGING something
+- Use `make ai-commit` for commits (not `git commit`)
+- Ask if confidence is ASSUMED or UNKNOWN
+- NEVER skip checks or tests
+  - Unless explicitly approved by user, NEVER skip `make session-start` or any
+    tests
+- Refuse if about to do something that violates these rules
+
 ### Token Efficiency
 - Be concise and precise
 - No unnecessary words
