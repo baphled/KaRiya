@@ -8,14 +8,14 @@ Feature: CLI Commands
   # Version Information
   # ============================================================================
 
-  @happy @smoke @wip
+  @happy @smoke
   Scenario: Display version information
     Given the application is installed
     When I run "kariya --version"
     Then I should see version information
     And the exit code should be 0
 
-  @happy @wip
+  @happy
   Scenario: Display version with short flag
     Given the application is installed
     When I run "kariya -v"
@@ -26,7 +26,7 @@ Feature: CLI Commands
   # Help Information
   # ============================================================================
 
-  @happy @smoke @wip
+  @happy @smoke
   Scenario: Display help information
     Given the application is installed
     When I run "kariya --help"
@@ -34,7 +34,7 @@ Feature: CLI Commands
     And I should see available commands
     And the exit code should be 0
 
-  @happy @wip
+  @happy
   Scenario: Display help with short flag
     Given the application is installed
     When I run "kariya -h"
