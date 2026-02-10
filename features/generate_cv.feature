@@ -46,7 +46,7 @@ Feature: Generate CV
     And I confirm selection
     Then I should move to the next field
 
-  @happy @wip
+  @happy
   Scenario: Select audience in wizard
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
@@ -94,7 +94,7 @@ Feature: Generate CV
     Then I should skip technology selection
     And I should see focus area options
 
-  @happy @wip
+  @happy
   Scenario: Select generalist focus shows multi-select
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
@@ -103,7 +103,7 @@ Feature: Generate CV
     Then I should see technology multi-select
     And I should be able to select multiple technologies
 
-  @happy @wip
+  @happy
   Scenario: Select specialist focus shows single-select
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
@@ -187,7 +187,7 @@ Feature: Generate CV
   # Technology Extraction
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: View technology extraction progress
     Given I have a complete profile with skills
     When I select "generate_cv" from the menu
@@ -206,7 +206,7 @@ Feature: Generate CV
   # CV Generation Progress
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: View CV generation progress
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
