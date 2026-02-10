@@ -126,7 +126,7 @@ Feature: Configure System
     And I should see "Frontend Technologies"
     And I should see "Core Strengths"
 
-  @happy @wip
+  @happy
   Scenario: Edit name and email
     When I select "configure_system" from the menu
     And I select "Profile" domain

@@ -350,7 +350,7 @@ Feature: Manage Career Bursts
     Then I should see the loading modal
     And I should see "Inferring"
 
-  @happy @wip
+  @happy
   Scenario: Skill inference not available for unconfirmed burst
     Given I have an unconfirmed burst "New Burst" with 3 events
     When I select "burst_management" from the menu
