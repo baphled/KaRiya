@@ -436,8 +436,8 @@ func iCompleteTheWizard(ctx context.Context) (context.Context, error) {
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	// Complete all wizard steps
-	env.Confirm()
+	// Skip wizard with Ctrl+S (uses default settings)
+	env.PressKey(tea.KeyCtrlS)
 	return ctx, nil
 }
 
@@ -455,13 +455,20 @@ func iSeeTheGeneratingProgress(ctx context.Context) error {
 }
 
 func theGenerationCompletes(ctx context.Context) error {
-	// Generation completion is async - just verify we're not stuck
+	// Wait for generation to complete and reach review screen
 	env := support.GetAppEnv(ctx)
 	if env == nil {
 		return godog.ErrPending
 	}
-	view := env.GetView()
-	gomega.Expect(view).NotTo(gomega.BeEmpty())
+	// Wait for review screen indicators
+	gomega.Eventually(func() string {
+		return env.GetView()
+	}, "5s", "100ms").Should(gomega.SatisfyAny(
+		gomega.ContainSubstring("Review"),
+		gomega.ContainSubstring("section"),
+		gomega.ContainSubstring("Experience"),
+		gomega.ContainSubstring("Skills"),
+	))
 	return nil
 }
 
