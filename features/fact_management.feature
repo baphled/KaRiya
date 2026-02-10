@@ -23,7 +23,7 @@ Feature: Manage Career Facts
   # Fact List Display
   # ============================================================================
 
-  @happy @smoke @wip
+  @happy @smoke
   Scenario: View fact list with facts
     Given I have 5 facts in my profile
     When I select "fact_management" from the menu
@@ -48,7 +48,7 @@ Feature: Manage Career Facts
     And I press up arrow
     Then I should still be on the fact list
 
-  @happy @wip
+  @happy
   Scenario: Page through fact list
     Given I have 20 facts in my profile
     When I select "fact_management" from the menu
@@ -57,7 +57,7 @@ Feature: Manage Career Facts
     When I press page up
     Then I should see the original facts
 
-  @happy @wip
+  @happy
   Scenario: Jump to first and last fact
     Given I have 20 facts in my profile
     When I select "fact_management" from the menu
@@ -66,7 +66,7 @@ Feature: Manage Career Facts
     When I press "g" to go to first
     Then I should be at the first fact
 
-  @happy @wip
+  @happy
   Scenario: Refresh fact list
     Given I have 3 facts in my profile
     When I select "fact_management" from the menu
@@ -78,7 +78,7 @@ Feature: Manage Career Facts
   # Fact Detail View
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: View fact details
     Given I have a fact "Led team of 5 engineers to deliver project on time"
     When I select "fact_management" from the menu
@@ -317,7 +317,7 @@ Feature: Manage Career Facts
   # Help Toggle
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Toggle help in list state
     Given I have 3 facts in my profile
     When I select "fact_management" from the menu
@@ -325,7 +325,7 @@ Feature: Manage Career Facts
     Then I should see help information
     And I should see available shortcuts
 
-  @happy @wip
+  @happy
   Scenario: Toggle help in detail state
     Given I have a fact "My fact"
     When I select "fact_management" from the menu
@@ -333,7 +333,7 @@ Feature: Manage Career Facts
     And I press "?" to toggle help
     Then I should see help information
 
-  @happy @wip
+  @happy
   Scenario: Toggle help in editor state
     Given the database is empty
     When I select "fact_management" from the menu
