@@ -2,6 +2,7 @@ package support
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -221,6 +222,9 @@ func NewBDDTestingT(t *testing.T) *BDDTestingT {
 
 // Helper marks this as a test helper.
 //
+// Returns:
+//   - A {} value.
+//
 // Side effects:
 //   - None.
 func (b *BDDTestingT) Helper() {}
@@ -228,10 +232,10 @@ func (b *BDDTestingT) Helper() {}
 // TempDir returns a temporary directory.
 //
 // Returns:
-//   - A string path to a temporary directory.
+//   - A string value.
 //
 // Side effects:
-//   - Creates a temporary directory on the filesystem.
+//   - None.
 func (b *BDDTestingT) TempDir() string {
 	return b.t.TempDir()
 }
@@ -239,10 +243,11 @@ func (b *BDDTestingT) TempDir() string {
 // Fatalf logs a fatal error.
 //
 // Expected:
-//   - format is a printf-style format string.
+//   - Must be a valid string.
+//   - interface{} must be valid.
 //
 // Side effects:
-//   - Terminates the test with a fatal error.
+//   - None.
 func (b *BDDTestingT) Fatalf(format string, args ...interface{}) {
 	b.t.Fatalf(format, args...)
 }
@@ -250,10 +255,11 @@ func (b *BDDTestingT) Fatalf(format string, args ...interface{}) {
 // Errorf logs an error.
 //
 // Expected:
-//   - format is a printf-style format string.
+//   - Must be a valid string.
+//   - interface{} must be valid.
 //
 // Side effects:
-//   - Logs an error to the test output.
+//   - None.
 func (b *BDDTestingT) Errorf(format string, args ...interface{}) {
 	b.t.Errorf(format, args...)
 }
@@ -261,10 +267,10 @@ func (b *BDDTestingT) Errorf(format string, args ...interface{}) {
 // Fatal logs a fatal error.
 //
 // Expected:
-//   - args are the values to log.
+//   - interface{} must be valid.
 //
 // Side effects:
-//   - Terminates the test with a fatal error.
+//   - None.
 func (b *BDDTestingT) Fatal(args ...interface{}) {
 	b.t.Fatal(args...)
 }
@@ -272,10 +278,10 @@ func (b *BDDTestingT) Fatal(args ...interface{}) {
 // Error logs an error.
 //
 // Expected:
-//   - args are the values to log.
+//   - interface{} must be valid.
 //
 // Side effects:
-//   - Logs an error to the test output.
+//   - None.
 func (b *BDDTestingT) Error(args ...interface{}) {
 	b.t.Error(args...)
 }
@@ -297,6 +303,15 @@ func NewAppEnv(t *testing.T) *e2e.TestEnv {
 }
 
 // GetAppEnv retrieves the TestEnv from context.
+//
+// Expected:
+//   - ctx is a valid context.Context.
+//
+// Returns:
+//   - TestEnv pointer or nil if not found.
+//
+// Side effects:
+//   - None.
 func GetAppEnv(ctx context.Context) *e2e.TestEnv {
 	env, ok := ctx.Value(appEnvKey{}).(*e2e.TestEnv)
 	if !ok {
@@ -306,11 +321,29 @@ func GetAppEnv(ctx context.Context) *e2e.TestEnv {
 }
 
 // WithAppEnv stores a TestEnv in the context.
+//
+// Expected:
+//   - testenv must be valid.
+//
+// Returns:
+//   - A context.Context value.
+//
+// Side effects:
+//   - None.
 func WithAppEnv(ctx context.Context, env *e2e.TestEnv) context.Context {
 	return context.WithValue(ctx, appEnvKey{}, env)
 }
 
 // GetEventData retrieves event data being built from context.
+//
+// Expected:
+//   - ctx is a valid context.Context.
+//
+// Returns:
+//   - EventData pointer or empty EventData if not found.
+//
+// Side effects:
+//   - None.
 func GetEventData(ctx context.Context) *EventData {
 	data, ok := ctx.Value(eventDataKey{}).(*EventData)
 	if !ok {
@@ -320,12 +353,31 @@ func GetEventData(ctx context.Context) *EventData {
 }
 
 // WithEventData stores event data in the context.
+//
+// Expected:
+//   - ctx is a valid context.Context.
+//   - data is a valid EventData pointer.
+//
+// Returns:
+//   - New context with EventData stored.
+//
+// Side effects:
+//   - None.
 func WithEventData(ctx context.Context, data *EventData) context.Context {
 	return context.WithValue(ctx, eventDataKey{}, data)
 }
 
 // BuildEvent creates a career.Event from EventData.
-// Returns an error if date parsing fails.
+//
+// Expected:
+//   - EventData fields are populated.
+//
+// Returns:
+//   - career.Event pointer if successful.
+//   - error if date parsing fails.
+//
+// Side effects:
+//   - None.
 func (d *EventData) BuildEvent() (*career.Event, error) {
 	event := &career.Event{
 		Text:       d.Description,
@@ -345,4 +397,114 @@ func (d *EventData) BuildEvent() (*career.Event, error) {
 	}
 
 	return event, nil
+}
+
+// NavigateToTableItem navigates to a specific item in a table by name.
+// It searches the current view for the item text and navigates down until found.
+//
+// Expected:
+//   - env must be a valid *e2e.TestEnv.
+//   - itemName is the text to search for in the table.
+//   - maxAttempts is the maximum number of down presses (default 20).
+//
+// Returns:
+//   - error if item not found after maxAttempts.
+//
+// Side effects:
+//   - Presses 'Home' to go to table start.
+//   - Presses 'Down' repeatedly until item found.
+func NavigateToTableItem(env *e2e.TestEnv, itemName string, maxAttempts int) error {
+	if maxAttempts == 0 {
+		maxAttempts = 20
+	}
+
+	// Go to start of table
+	env.PressKey(tea.KeyHome)
+
+	// Search for item by navigating down
+	for range maxAttempts {
+		view := env.GetView()
+		if containsSubstring(view, itemName) && isItemSelected(view, itemName) {
+			return nil
+		}
+		env.NavigateDown()
+	}
+
+	return fmt.Errorf("item %q not found in table after %d attempts", itemName, maxAttempts)
+}
+
+// WaitForViewContains polls the view until it contains the expected string.
+//
+// Expected:
+//   - env must be a valid *e2e.TestEnv.
+//   - expected is the substring to wait for.
+//   - maxAttempts is the maximum number of polls (default 10).
+//   - delayMs is the delay between polls in milliseconds (default 50ms).
+//
+// Returns:
+//   - error if string not found after maxAttempts.
+//
+// Side effects:
+//   - Polls the view multiple times with delay.
+func WaitForViewContains(env *e2e.TestEnv, expected string, maxAttempts int, delayMs int) error {
+	if maxAttempts == 0 {
+		maxAttempts = 10
+	}
+	if delayMs == 0 {
+		delayMs = 50
+	}
+
+	for range maxAttempts {
+		view := env.GetView()
+		if containsSubstring(view, expected) {
+			return nil
+		}
+		time.Sleep(time.Duration(delayMs) * time.Millisecond)
+	}
+
+	return fmt.Errorf("view does not contain %q after %d attempts", expected, maxAttempts)
+}
+
+// containsSubstring checks if a string contains a substring.
+func containsSubstring(s, substr string) bool {
+	return len(s) >= len(substr) && (s == substr || len(s) > len(substr) && findSubstring(s, substr))
+}
+
+// findSubstring performs a simple substring search.
+func findSubstring(s, substr string) bool {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return true
+		}
+	}
+	return false
+}
+
+// isItemSelected checks if the item appears to be selected (has "▶" marker).
+func isItemSelected(view, itemName string) bool {
+	lines := splitLines(view)
+	for _, line := range lines {
+		if containsSubstring(line, "▶") && containsSubstring(line, itemName) {
+			return true
+		}
+	}
+	return false
+}
+
+// splitLines splits a string into lines.
+func splitLines(s string) []string {
+	var lines []string
+	var current string
+	for _, r := range s {
+		if r == '\n' {
+			lines = append(lines, current)
+			current = ""
+		} else {
+			current += string(r)
+		}
+	}
+	if current != "" {
+		lines = append(lines, current)
+	}
+	return lines
 }

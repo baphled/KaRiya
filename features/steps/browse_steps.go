@@ -14,6 +14,18 @@ import (
 
 // RegisterBrowseSteps registers browse timeline step definitions with Godog.
 //
+// Expected:
+//   - sc is a valid *godog.ScenarioContext.
+//
+// Side effects:
+//   - Registers step definitions with Godog.
+//
+// Expected:
+//   - sc is a valid *godog.ScenarioContext.
+//
+// Side effects:
+//   - Registers step definitions with Godog.
+//
 //nolint:funlen // Step registration blocks are long by nature.
 func RegisterBrowseSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I have (\d+) events? in my timeline$`, iHaveNEventsInMyTimeline)
@@ -143,6 +155,14 @@ func iPressEnterToViewDetails(ctx context.Context) (context.Context, error) {
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
+
+	// If we have a target item name in context, navigate to it first
+	if itemName, ok := ctx.Value(currentBurstNameKey).(string); ok && itemName != "" {
+		if err := support.NavigateToTableItem(env, itemName, 20); err != nil {
+			return ctx, fmt.Errorf("failed to navigate to burst %q: %w", itemName, err)
+		}
+	}
+
 	env.Confirm()
 	return ctx, nil
 }

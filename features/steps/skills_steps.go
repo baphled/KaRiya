@@ -20,6 +20,12 @@ import (
 // RegisterSkillsSteps registers skills management step definitions with Godog.
 // Many steps are shared with browse_steps.go and registered there.
 //
+// Expected:
+//   - sc is a valid *godog.ScenarioContext.
+//
+// Side effects:
+//   - Registers step definitions with Godog.
+//
 //nolint:funlen // Registration function has many steps by design.
 func RegisterSkillsSteps(sc *godog.ScenarioContext) {
 	// Data setup

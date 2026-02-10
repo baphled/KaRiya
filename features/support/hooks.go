@@ -12,12 +12,24 @@ var testingT *testing.T
 
 // SetTestingT sets the testing.T to use for scenario setup.
 //
+// Expected:
+//   - t is a valid *testing.T.
+//
+// Side effects:
+//   - Stores t in package-level variable testingT.
+//
 //nolint:thelper // Not a test helper, configuration function for BDD framework.
 func SetTestingT(t *testing.T) {
 	testingT = t
 }
 
 // RegisterHooks registers BeforeScenario and AfterScenario hooks with Godog.
+//
+// Expected:
+//   - sc is a valid *godog.ScenarioContext.
+//
+// Side effects:
+//   - Registers Before and After hooks with Godog.
 func RegisterHooks(sc *godog.ScenarioContext) {
 	sc.Before(beforeScenario)
 	sc.After(afterScenario)
