@@ -238,14 +238,14 @@ Feature: Manage Career Facts
   # Delete Fact
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Open delete confirmation from list
     Given I have a fact "Fact to delete"
     When I select "fact_management" from the menu
     And I press "d" to delete
     Then I should see the delete confirmation
 
-  @happy @wip
+  @happy
   Scenario: Open delete confirmation from detail
     Given I have a fact "Fact to delete"
     When I select "fact_management" from the menu
@@ -262,7 +262,7 @@ Feature: Manage Career Facts
     Then I should still be on the fact list
     And there should be 1 fact
 
-  @happy @wip
+  @happy
   Scenario: Cancel delete with escape
     Given I have a fact "Fact to delete"
     When I select "fact_management" from the menu
