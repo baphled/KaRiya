@@ -690,8 +690,21 @@ func iPressEnterToConfirmCV(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-func theCVGenerationShouldComplete(_ context.Context) error {
-	return godog.ErrPending
+func theCVGenerationShouldComplete(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	// After confirmation, CV generation workflow completes
+	// We should see the main menu with action options
+	gomega.Eventually(func() string {
+		return env.GetView()
+	}, "5s", "100ms").Should(gomega.SatisfyAny(
+		gomega.ContainSubstring("Capture Event"),
+		gomega.ContainSubstring("Browse Timeline"),
+		gomega.ContainSubstring("Career Event Management System"),
+	))
+	return nil
 }
 
 func iPressYToConfirmCV(ctx context.Context) (context.Context, error) {
