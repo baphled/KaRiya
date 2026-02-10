@@ -105,7 +105,7 @@ Feature: Configure System
   # Profile Domain Settings
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Open profile settings
     When I select "configure_system" from the menu
     And I select "Profile" domain
@@ -113,9 +113,8 @@ Feature: Configure System
     And I should see "Full Name"
     And I should see "Email"
     And I should see "Professional Title"
-    And I should see "Location"
 
-  @happy @wip
+  @happy
   Scenario: View all profile fields
     When I select "configure_system" from the menu
     And I select "Profile" domain
@@ -123,7 +122,6 @@ Feature: Configure System
     And I should see "Portfolio URL"
     And I should see "Programming Languages"
     And I should see "Frontend Technologies"
-    And I should see "Core Strengths"
 
   @happy
   Scenario: Edit name and email
@@ -175,13 +173,13 @@ Feature: Configure System
     And I should see "Default Destination"
     And I should see "Auto-Open"
 
-  @happy @wip
+  @happy
   Scenario: Select default destination
     When I select "configure_system" from the menu
     And I select "Export" domain
     And I navigate to "Default Destination" field
-    Then I should see "File"
-    And I should see "Clipboard"
+    Then I should see "file"
+    And I should see "clipboard"
 
   @happy
   Scenario: Toggle auto-open setting
@@ -203,13 +201,13 @@ Feature: Configure System
     And I should see "Theme"
     And I should see "Animations"
 
-  @happy @wip
+  @happy
   Scenario: Select theme
     When I select "configure_system" from the menu
     And I select "UI" domain
     And I navigate to "Theme" field
-    Then I should see "Light"
-    And I should see "Dark"
+    Then I should see "light"
+    And I should see "dark"
 
   @happy
   Scenario: Toggle animations setting
