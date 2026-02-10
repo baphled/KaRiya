@@ -3,10 +3,9 @@ package steps
 
 import (
 	"context"
-	"strings"
 
 	"github.com/baphled/kariya/features/support"
-	tea "github.com/charmbracelet/bubbletea"
+	"github.com/baphled/kariya/features/support/helpers"
 	"github.com/cucumber/godog"
 	"github.com/onsi/gomega"
 )
@@ -140,20 +139,14 @@ func iShouldSeeTheEditSettingsModal(ctx context.Context) error {
 }
 
 func iNavigateToField(ctx context.Context, fieldLabel string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	form, err := helpers.NewFormHelper(ctx)
+	if err != nil {
+		return ctx, err
 	}
-	// Tab through fields until we find the one with matching label
-	// Max 20 tabs to avoid infinite loop
-	for i := 0; i < 20; i++ {
-		view := env.GetView()
-		if strings.Contains(view, fieldLabel) {
-			return ctx, nil // Field found and focused
-		}
-		env.Tab()
+	if err := form.NavigateToField(fieldLabel); err != nil {
+		return ctx, godog.ErrPending // Convert error to pending for BDD
 	}
-	return ctx, godog.ErrPending // Field not found
+	return ctx, nil
 }
 
 func iEnterValue(ctx context.Context, value string) (context.Context, error) {
@@ -176,12 +169,13 @@ func theFieldShouldShow(ctx context.Context, value string) error {
 }
 
 func iToggleTheBooleanValue(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	form, err := helpers.NewFormHelper(ctx)
+	if err != nil {
+		return ctx, err
 	}
-	// Press space or enter to toggle boolean field
-	env.Confirm()
+	// Toggle the currently focused boolean field
+	// (Field should already be focused by prior navigation)
+	form.ToggleBoolean("")
 	return ctx, nil
 }
 
@@ -224,12 +218,11 @@ func iEnterEmail(ctx context.Context, email string) (context.Context, error) {
 }
 
 func iSubmitSettings(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	form, err := helpers.NewFormHelper(ctx)
+	if err != nil {
+		return ctx, err
 	}
-	env.PressKey(tea.KeyCtrlS)
-	return ctx, nil
+	return ctx, form.SubmitForm()
 }
 
 func iShouldSeeTheReviewModal(ctx context.Context) error {
