@@ -136,7 +136,7 @@ Feature: Configure System
     And I submit settings
     Then I should see the review modal
 
-  @happy @wip
+  @happy
   Scenario: Edit list fields with comma-separated values
     When I select "configure_system" from the menu
     And I select "Profile" domain
@@ -184,7 +184,7 @@ Feature: Configure System
     Then I should see "File"
     And I should see "Clipboard"
 
-  @happy @wip
+  @happy
   Scenario: Toggle auto-open setting
     When I select "configure_system" from the menu
     And I select "Export" domain
@@ -240,7 +240,7 @@ Feature: Configure System
     When I press shift-tab
     Then I should move to the previous field
 
-  @happy @wip
+  @happy
   Scenario: Submit settings with Ctrl+S
     When I select "configure_system" from the menu
     And I select "System" domain
