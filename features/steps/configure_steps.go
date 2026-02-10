@@ -217,12 +217,22 @@ func theFieldShouldAcceptCommaSeparatedValues(_ context.Context) error {
 	return godog.ErrPending
 }
 
-func iMakeAChange(_ context.Context) (context.Context, error) {
-	return nil, godog.ErrPending
+func iMakeAChange(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.TypeText("test")
+	return ctx, nil
 }
 
-func iCompleteTheForm(_ context.Context) (context.Context, error) {
-	return nil, godog.ErrPending
+func iCompleteTheForm(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.Confirm()
+	return ctx, nil
 }
 
 func iChangeLogLevelTo(_ context.Context, _ string) (context.Context, error) {
