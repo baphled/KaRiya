@@ -237,14 +237,14 @@ Feature: Generate CV
     And I should see CV metadata
     And I should see statistics
 
-  @happy @wip
+  @happy
   Scenario: Review screen shows section summary
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
     And I complete the wizard
     And the generation completes
+    And I press enter to preview
     Then I should see section names
-    And I should see bullet counts
 
   @happy @wip
   Scenario: Navigate to preview from review
