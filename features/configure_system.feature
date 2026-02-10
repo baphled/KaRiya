@@ -68,7 +68,7 @@ Feature: Configure System
     And I should see "Auto Backup"
     And I should see "Backup Count"
 
-  @happy @wip
+  @happy
   Scenario: Edit log level setting
     When I select "configure_system" from the menu
     And I select "System" domain
@@ -78,7 +78,7 @@ Feature: Configure System
     And I should see "warn"
     And I should see "error"
 
-  @happy @wip
+  @happy
   Scenario: Edit data directory setting
     When I select "configure_system" from the menu
     And I select "System" domain
@@ -86,7 +86,7 @@ Feature: Configure System
     And I enter "/custom/data/path"
     Then the field should show "/custom/data/path"
 
-  @happy @wip
+  @happy
   Scenario: Toggle auto backup setting
     When I select "configure_system" from the menu
     And I select "System" domain
@@ -94,7 +94,7 @@ Feature: Configure System
     And I toggle the boolean value
     Then the value should change
 
-  @happy @wip
+  @happy
   Scenario: Edit backup count setting
     When I select "configure_system" from the menu
     And I select "System" domain
@@ -144,7 +144,7 @@ Feature: Configure System
     And I enter "Go,Python,TypeScript"
     Then the field should accept comma-separated values
 
-  @happy @wip
+  @happy
   Scenario: Select default role
     When I select "configure_system" from the menu
     And I select "Profile" domain
@@ -155,7 +155,7 @@ Feature: Configure System
     And I should see "Principal IC"
     And I should see "Manager"
 
-  @happy @wip
+  @happy
   Scenario: Select default audience
     When I select "configure_system" from the menu
     And I select "Profile" domain
@@ -212,7 +212,7 @@ Feature: Configure System
     Then I should see "Light"
     And I should see "Dark"
 
-  @happy @wip
+  @happy
   Scenario: Toggle animations setting
     When I select "configure_system" from the menu
     And I select "UI" domain

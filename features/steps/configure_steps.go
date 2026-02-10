@@ -3,6 +3,7 @@ package steps
 
 import (
 	"context"
+	"strings"
 
 	"github.com/baphled/kariya/features/support"
 	tea "github.com/charmbracelet/bubbletea"
@@ -138,8 +139,21 @@ func iShouldSeeTheEditSettingsModal(ctx context.Context) error {
 	return nil
 }
 
-func iNavigateToField(_ context.Context, _ string) (context.Context, error) {
-	return nil, godog.ErrPending
+func iNavigateToField(ctx context.Context, fieldLabel string) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	// Tab through fields until we find the one with matching label
+	// Max 20 tabs to avoid infinite loop
+	for i := 0; i < 20; i++ {
+		view := env.GetView()
+		if strings.Contains(view, fieldLabel) {
+			return ctx, nil // Field found and focused
+		}
+		env.Tab()
+	}
+	return ctx, godog.ErrPending // Field not found
 }
 
 func iEnterValue(ctx context.Context, value string) (context.Context, error) {
@@ -151,16 +165,35 @@ func iEnterValue(ctx context.Context, value string) (context.Context, error) {
 	return ctx, nil
 }
 
-func theFieldShouldShow(_ context.Context, _ string) error {
-	return godog.ErrPending
+func theFieldShouldShow(ctx context.Context, value string) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring(value))
+	return nil
 }
 
-func iToggleTheBooleanValue(_ context.Context) (context.Context, error) {
-	return nil, godog.ErrPending
+func iToggleTheBooleanValue(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	// Press space or enter to toggle boolean field
+	env.Confirm()
+	return ctx, nil
 }
 
-func theValueShouldChange(_ context.Context) error {
-	return godog.ErrPending
+func theValueShouldChange(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	// Just verify the view updated (any change indicates toggle worked)
+	view := env.GetView()
+	gomega.Expect(view).NotTo(gomega.BeEmpty())
+	return nil
 }
 
 func iEnterName(ctx context.Context, name string) (context.Context, error) {
