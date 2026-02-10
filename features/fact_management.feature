@@ -222,7 +222,7 @@ Feature: Manage Career Facts
     And I submit the fact form
     Then the fact should have categories "Leadership"
 
-  @happy @wip
+  @happy
   Scenario: Navigate form with tab and shift-tab
     Given the database is empty
     When I select "fact_management" from the menu
