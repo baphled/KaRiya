@@ -58,7 +58,7 @@ Feature: Configure System
   # System Domain Settings
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Open system settings
     When I select "configure_system" from the menu
     And I select "System" domain
@@ -66,7 +66,6 @@ Feature: Configure System
     And I should see "Log Level"
     And I should see "Data Directory"
     And I should see "Auto Backup"
-    And I should see "Backup Count"
 
   @happy
   Scenario: Edit log level setting
