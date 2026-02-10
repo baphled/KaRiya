@@ -485,8 +485,8 @@ var _ = Describe("Helper Methods", func() {
 		})
 	})
 
-	// BUG REGRESSION TESTS
-	Describe("BUG: handleFactExtractionComplete with nil selectedBurst", func() {
+	// Regression tests
+	Describe("handleFactExtractionComplete with nil selectedBurst", func() {
 		It("should not panic when selectedBurst is nil", func() {
 			// Ensure selectedBurst is nil.
 			intent.SetSelectedBurst(nil)
@@ -532,7 +532,7 @@ var _ = Describe("Helper Methods", func() {
 		})
 	})
 
-	Describe("BUG: State transition after suggestion modal shown", func() {
+	Describe("State transition after suggestion modal shown", func() {
 		It("should transition to StateSuggestionReview when suggestions are loaded", func() {
 			msg := burst_management.BurstSuggestionsLoadedMsg{
 				Suggestions: []burstfact.BurstSuggestion{
@@ -547,7 +547,7 @@ var _ = Describe("Helper Methods", func() {
 		})
 	})
 
-	Describe("BUG: Slice bounds in handleSuggestionReviewComplete", func() {
+	Describe("Slice bounds in handleSuggestionReviewComplete", func() {
 		It("should not panic when accepted count differs from created count", func() {
 			// This tests the slice bounds bug at helpers.go:672.
 			// If some bursts fail to create, the slice calculation is wrong.
@@ -760,7 +760,7 @@ var _ = Describe("Helper Methods", func() {
 			Expect(intent.GetState()).To(Equal(burst_management.StateSkillSuggestionReview))
 		})
 
-		It("should show 'all tracked' modal when all suggestions are existing", func() {
+		It("should show suggestions even when skills exist globally", func() {
 			intent.SetState(burst_management.StateInferringSkills)
 
 			msg := burst_management.SkillSuggestionsLoadedMsg{
@@ -773,12 +773,8 @@ var _ = Describe("Helper Methods", func() {
 
 			intent.Update(msg)
 
-			Expect(intent.GetState()).To(Equal(burst_management.StateList))
-			modal := intent.GetFeedbackModal()
-			Expect(modal).NotTo(BeNil())
-			Expect(modal.Type).To(Equal(feedback.ModalSuccess))
-			Expect(modal.Message).To(ContainSubstring("Go"))
-			Expect(modal.Message).To(ContainSubstring("Docker"))
+			// Now shows ALL suggestions, allowing skill reuse across bursts
+			Expect(intent.GetState()).To(Equal(burst_management.StateSkillSuggestionReview))
 		})
 
 		It("should filter existing and show only new suggestions", func() {
@@ -798,7 +794,7 @@ var _ = Describe("Helper Methods", func() {
 			Expect(intent.GetState()).To(Equal(burst_management.StateSkillSuggestionReview))
 		})
 
-		It("should filter case-insensitively", func() {
+		It("should show suggestions regardless of ExistingSkillNames case", func() {
 			intent.SetState(burst_management.StateInferringSkills)
 
 			msg := burst_management.SkillSuggestionsLoadedMsg{
@@ -811,10 +807,8 @@ var _ = Describe("Helper Methods", func() {
 
 			intent.Update(msg)
 
-			Expect(intent.GetState()).To(Equal(burst_management.StateList))
-			modal := intent.GetFeedbackModal()
-			Expect(modal).NotTo(BeNil())
-			Expect(modal.Type).To(Equal(feedback.ModalSuccess))
+			// Now shows ALL suggestions, ExistingSkillNames no longer filters
+			Expect(intent.GetState()).To(Equal(burst_management.StateSkillSuggestionReview))
 		})
 
 		It("should show warning when no suggestions detected at all", func() {

@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/behaviors"
@@ -22,29 +21,6 @@ import (
 	"github.com/baphled/kariya/internal/service/career/skillinference"
 	tea "github.com/charmbracelet/bubbletea"
 )
-
-// filterNewSuggestions removes suggestions whose names appear in existingNames.
-func filterNewSuggestions(
-	suggestions []skillinference.SkillSuggestion,
-	existingNames []string,
-) []skillinference.SkillSuggestion {
-	if len(existingNames) == 0 {
-		return suggestions
-	}
-
-	existingSet := make(map[string]bool, len(existingNames))
-	for _, name := range existingNames {
-		existingSet[strings.ToLower(name)] = true
-	}
-
-	filtered := make([]skillinference.SkillSuggestion, 0, len(suggestions))
-	for _, s := range suggestions {
-		if !existingSet[strings.ToLower(s.Name)] {
-			filtered = append(filtered, s)
-		}
-	}
-	return filtered
-}
 
 // getTerminalDimensions returns current terminal dimensions with fallback defaults.
 func (i *Intent) getTerminalDimensions() (width, height int) {
@@ -1083,6 +1059,9 @@ func (i *Intent) inferSkillsFromBurst(burst *career.Burst) tea.Cmd {
 
 // saveSkillFromSuggestion persists a single accepted skill suggestion synchronously.
 // This mirrors saveAndExtractBurst: save immediately on each 'a' press.
+//
+// Overrides EventIDs to link skill to ALL burst events.
+// This follows the Review Enrichment pattern (captureevent/handlers.go:418).
 func (i *Intent) saveSkillFromSuggestion(suggestion skillinference.SkillSuggestion) {
 	service := i.context.SkillInferenceService
 	if service == nil {
@@ -1093,6 +1072,11 @@ func (i *Intent) saveSkillFromSuggestion(suggestion skillinference.SkillSuggesti
 	ctx := i.getContext()
 	if ctx.Err() != nil {
 		return
+	}
+
+	// Override EventIDs to ensure skill is linked to ALL burst events
+	if i.selectedBurst != nil {
+		suggestion.EventIDs = i.selectedBurst.EventIDs
 	}
 
 	_, err := service.CreateSkillsFromSuggestions(ctx, []skillinference.SkillSuggestion{suggestion})

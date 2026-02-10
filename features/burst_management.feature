@@ -432,3 +432,20 @@ Feature: Manage Career Bursts
     Then I should still be on the burst list
     When I press escape
     Then I should be on the main menu
+
+  # ============================================================================
+  # BUG-018: Skill Inference - Reuse Existing Skills
+  # ============================================================================
+
+  @bug-018 @critical
+  Scenario: Infer and link existing skill to burst events
+    Given I have a skill "Go" in the global repository
+    And I have a confirmed burst "Backend Development Sprint" with 3 events mentioning "Go"
+    And none of the burst events have skills linked
+    When I select "burst_management" from the menu
+    And I press enter to view details
+    And I press "i" to infer skills
+    Then I should see the skill suggestion modal
+    And the modal should contain "Go"
+    When I accept the first suggestion
+    Then all 3 events in the burst should have "Go" linked

@@ -435,45 +435,31 @@ func (i *Intent) handleSkillSuggestionsLoaded(msg SkillSuggestionsLoadedMsg) tea
 		i.ShowErrorModal("No Skills Detected", "No skills detected from event.")
 		return nil
 	}
-	newSuggestions := filterNewSkillSuggestions(msg.Suggestions, msg.ExistingSkillNames)
-	if len(newSuggestions) == 0 {
-		i.ShowErrorModal("All Skills Tracked", "All detected skills already in profile.")
-		return nil
-	}
+	// Show ALL detected skills, not filtering by global existence.
+	// The EventID override in saveSkillFromSuggestion ensures correct linkage.
+	// This allows reusing existing skills across multiple events.
 	width, height := i.getTerminalDimensions()
-	i.skillSuggestionModal = burstModals.NewSkillSuggestionModal(newSuggestions, i.Theme())
+	i.skillSuggestionModal = burstModals.NewSkillSuggestionModal(msg.Suggestions, i.Theme())
 	i.skillSuggestionModal.SetDimensions(width, height)
 	i.skillSuggestionModal.Show()
 	return nil
 }
 
-func filterNewSkillSuggestions(suggestions []skillinference.SkillSuggestion, existingNames []string) []skillinference.SkillSuggestion {
-	existingMap := make(map[string]bool)
-	for _, name := range existingNames {
-		existingMap[name] = true
-	}
-	result := make([]skillinference.SkillSuggestion, 0)
-	for _, s := range suggestions {
-		if !existingMap[s.Name] {
-			result = append(result, s)
-		}
-	}
-	return result
-}
-
 func (i *Intent) saveSkillFromSuggestion(suggestion skillinference.SkillSuggestion) {
-	if i.context.SkillInferenceService == nil {
+	if i.context.SkillInferenceService == nil || i.selectedEvent == nil {
 		return
 	}
 	ctx := i.getContext()
-	skills, err := i.context.SkillInferenceService.CreateSkillsFromSuggestions(ctx, []skillinference.SkillSuggestion{suggestion})
+
+	// Override EventIDs to ensure skill is linked to THIS event only.
+	// This follows the Review Enrichment pattern (captureevent/handlers.go:418).
+	// The service will handle skill creation/reuse and linking via EventIDs.
+	suggestion.EventIDs = []string{i.selectedEvent.ID}
+
+	_, err := i.context.SkillInferenceService.CreateSkillsFromSuggestions(ctx, []skillinference.SkillSuggestion{suggestion})
 	if err != nil {
 		i.ShowErrorModal("Skill Creation Failed", err.Error())
 		return
 	}
-	if i.selectedEvent != nil && len(skills) > 0 {
-		if err := i.context.CLIEventService.LinkSkillToEvent(ctx, i.selectedEvent.ID, skills[0].ID); err != nil {
-			i.ShowErrorModal("Error Linking Skill", err.Error())
-		}
-	}
+	// Manual LinkSkillToEvent removed - service handles it via EventIDs
 }

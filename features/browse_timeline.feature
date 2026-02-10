@@ -423,3 +423,41 @@ Feature: Browse Career Timeline
     And I select company "Acme Corp"
     And I confirm filter
     Then I should see "Acme Corp" as an active filter indicator
+
+  # ============================================================================
+  # BUG-018: Skill Inference - Reuse Existing Skills
+  # ============================================================================
+
+  @bug-018 @critical
+  Scenario: Infer and link existing skill to new event
+    Given I have a skill "Go" in the global repository
+    And I have an event "Event A" with "Go" linked to it
+    And I have an event "Event B: Built CLI tool in Go" with no skills linked
+    When I select "browse_timeline" from the menu
+    And I select the event "Event B: Built CLI tool in Go"
+    And I press "s" to view skills
+    Then I should see 0 skills linked
+    When I press "i" to infer skills
+    Then I should see the skill suggestion modal
+    And the modal should contain "Go"
+    When I accept the first suggestion
+    Then "Go" should be linked to the event
+    And I should see 1 skill linked
+
+  @bug-018 @critical
+  Scenario: Reuse same skill across multiple events
+    Given I have a skill "Go" in the global repository
+    And I have an event "Event A: Built API in Go"
+    And I have an event "Event B: Created CLI tool in Go"
+    And "Go" is linked to "Event A: Built API in Go"
+    And "Go" is NOT linked to "Event B: Created CLI tool in Go"
+    When I select "browse_timeline" from the menu
+    And I select the event "Event B: Created CLI tool in Go"
+    And I press "s" to view skills
+    Then I should see 0 skills linked
+    When I press "i" to infer skills
+    Then I should see the skill suggestion modal
+    And the modal should contain "Go" as a suggestion
+    When I accept the first suggestion
+    Then "Go" should be linked to the event
+    And I should see 1 skill linked

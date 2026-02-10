@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/screens"
@@ -821,16 +820,10 @@ func (i *Intent) handleSkillSuggestionsLoaded(msg SkillSuggestionsLoadedMsg) tea
 		return nil
 	}
 
-	newSuggestions := filterNewSuggestions(msg.Suggestions, msg.ExistingSkillNames)
-	if len(newSuggestions) == 0 {
-		i.ShowSuccessModal("All Skills Already Tracked",
-			"Detected skills already in your profile: "+strings.Join(msg.ExistingSkillNames, ", "))
-		i.state = StateList
-		return nil
-	}
-
-	// Show skill suggestion modal with only new skills.
-	i.skillSuggestionModal = burstmodals.NewSkillSuggestionModal(newSuggestions, i.Theme())
+	// Show ALL detected skills, not filtering by global existence.
+	// The EventID override in saveSkillFromSuggestion ensures correct linkage.
+	// This allows reusing existing skills across multiple bursts.
+	i.skillSuggestionModal = burstmodals.NewSkillSuggestionModal(msg.Suggestions, i.Theme())
 	width, height := i.getTerminalDimensions()
 	i.skillSuggestionModal.SetDimensions(width, height)
 	i.skillSuggestionModal.Show()
