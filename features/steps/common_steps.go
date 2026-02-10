@@ -14,6 +14,12 @@ import (
 // Expected: sc is a valid ScenarioContext.
 // Returns: None.
 // Side effects: Registers step definitions with the scenario context.
+//
+// Expected:
+//   - sc is a valid *godog.ScenarioContext.
+//
+// Side effects:
+//   - Registers step definitions with Godog.
 func RegisterCommonSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I should see "([^"]*)"$`, iShouldSee)
 	sc.Step(`^I should not see "([^"]*)"$`, iShouldNotSee)

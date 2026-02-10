@@ -12,6 +12,12 @@ import (
 // Expected: sc is a valid ScenarioContext.
 // Returns: None.
 // Side effects: Registers step definitions with the scenario context.
+//
+// Expected:
+//   - sc is a valid *godog.ScenarioContext.
+//
+// Side effects:
+//   - Registers step definitions with Godog.
 func RegisterCLISteps(sc *godog.ScenarioContext) {
 	sc.Step(`^the application is installed$`, cliApplicationIsInstalled)
 	sc.Step(`^I run "([^"]*)"$`, cliRunCommand)

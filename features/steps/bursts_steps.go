@@ -17,9 +17,18 @@ import (
 // contextKey is a custom type for context keys to avoid collisions.
 type contextKey string
 
-const originalBurstsViewKey contextKey = "originalBurstsView"
+const (
+	originalBurstsViewKey contextKey = "originalBurstsView"
+	currentBurstNameKey   contextKey = "currentBurstName"
+)
 
 // RegisterBurstsSteps registers burst management step definitions with Godog.
+//
+// Expected:
+//   - sc is a valid *godog.ScenarioContext.
+//
+// Side effects:
+//   - Registers step definitions with Godog.
 func RegisterBurstsSteps(sc *godog.ScenarioContext) {
 	registerBurstViewSteps(sc)
 	registerBurstEditSteps(sc)
@@ -151,6 +160,9 @@ func iHaveABurstWithEvents(ctx context.Context, name string, count string) (cont
 	burst := fixtures.Burst("", eventIDs...)
 	burst.Name = name
 	env.AddBurst(burst)
+
+	// Store burst name in context for later navigation
+	ctx = context.WithValue(ctx, currentBurstNameKey, name)
 
 	return ctx, nil
 }

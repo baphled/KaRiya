@@ -10,6 +10,12 @@ import (
 )
 
 // RegisterFactsSteps registers fact management step definitions with Godog.
+//
+// Expected:
+//   - sc is a valid *godog.ScenarioContext.
+//
+// Side effects:
+//   - Registers step definitions with Godog.
 func RegisterFactsSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I have (\d+) facts? in my profile$`, iHaveNFactsInMyProfile)
 	sc.Step(`^I should see a list of facts$`, iShouldSeeAListOfFacts)

@@ -317,6 +317,11 @@ if [ -n "$ALL_STAGED" ]; then
             echo -e "${GREEN}✅ $pkg: skipped (BDD test infrastructure)${NC}"
             continue
         fi
+        # Skip test utilities (internal/testutil is test infrastructure, not production code)
+        if [[ "$pkg" == *"/testutil"* ]] || [[ "$pkg" == *"/testutil/"* ]]; then
+            echo -e "${GREEN}✅ $pkg: skipped (test infrastructure)${NC}"
+            continue
+        fi
         if [ -d "$pkg" ]; then
             COVERAGE_OUTPUT=$(go test -cover "./$pkg" 2>/dev/null || true)
             COVERAGE=$(echo "$COVERAGE_OUTPUT" | grep -oP 'coverage: \K[0-9.]+' || echo "0")
