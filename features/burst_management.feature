@@ -110,7 +110,7 @@ Feature: Manage Career Bursts
     And I press "f" to view facts
     Then I should see the burst facts modal
 
-  @happy @wip
+  @happy
   Scenario: Close burst facts modal
     Given I have a confirmed burst "Backend API Development" with facts
     When I select "burst_management" from the menu
@@ -119,7 +119,7 @@ Feature: Manage Career Bursts
     And I press escape
     Then I should see the burst detail modal
 
-  @happy @wip
+  @happy
   Scenario: View burst skills from detail modal
     Given I have a confirmed burst "Backend API Development" with skills
     When I select "burst_management" from the menu
@@ -127,7 +127,7 @@ Feature: Manage Career Bursts
     And I press "s" to view skills
     Then I should see the burst skills modal
 
-  @happy @wip
+  @happy
   Scenario: Close burst skills modal
     Given I have a confirmed burst "Backend API Development" with skills
     When I select "burst_management" from the menu

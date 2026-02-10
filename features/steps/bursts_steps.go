@@ -3,6 +3,7 @@ package steps
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -50,6 +51,7 @@ func registerBurstViewSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I press "f" to view facts$`, iPressFToViewFacts)
 	sc.Step(`^I should see the burst facts modal$`, iShouldSeeTheBurstFactsModal)
 	sc.Step(`^I have a confirmed burst "([^"]*)" with skills$`, iHaveAConfirmedBurstWithSkills)
+	sc.Step(`^I press "s" to view skills$`, iPressSToViewSkills)
 	sc.Step(`^I should see the burst skills modal$`, iShouldSeeTheBurstSkillsModal)
 }
 
@@ -218,8 +220,52 @@ func iShouldSeeEventDetails(ctx context.Context) error {
 	return nil
 }
 
-func iHaveAConfirmedBurstWithFacts(_ context.Context, _ string) (context.Context, error) {
-	return nil, godog.ErrPending
+func iHaveAConfirmedBurstWithFacts(ctx context.Context, name string) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+
+	// Create events first
+	var eventIDs []string
+	for range 3 {
+		eventInterface, err := fixtures.EventFactory.Create()
+		if err != nil {
+			return ctx, fmt.Errorf("failed to create event: %w", err)
+		}
+		event, ok := eventInterface.(*career.Event)
+		if !ok {
+			return ctx, errors.New("factory created wrong type: expected *career.Event")
+		}
+		event.ID = ""
+		env.AddEvent(event)
+		eventIDs = append(eventIDs, event.ID)
+	}
+
+	// Create confirmed burst with those events
+	burst := fixtures.BurstConfirmed("", eventIDs...)
+	burst.Name = name
+	env.AddBurst(burst)
+
+	// Create facts associated with this burst
+	for range 3 {
+		factInterface, err := fixtures.FactFactory.Create()
+		if err != nil {
+			return ctx, fmt.Errorf("failed to create fact: %w", err)
+		}
+		fact, ok := factInterface.(*career.Fact)
+		if !ok {
+			return ctx, errors.New("factory created wrong type: expected *career.Fact")
+		}
+		fact.ID = ""
+		fact.SourceBurstID = burst.ID
+		env.AddFact(fact)
+	}
+
+	// Store burst name in context for later navigation
+	ctx = context.WithValue(ctx, currentBurstNameKey, name)
+
+	return ctx, nil
 }
 
 func iPressFToViewFacts(ctx context.Context) (context.Context, error) {
@@ -244,8 +290,61 @@ func iShouldSeeTheBurstFactsModal(ctx context.Context) error {
 	return nil
 }
 
-func iHaveAConfirmedBurstWithSkills(_ context.Context, _ string) (context.Context, error) {
-	return nil, godog.ErrPending
+func iPressSToViewSkills(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.PressKeyRune('s')
+	return ctx, nil
+}
+
+func iHaveAConfirmedBurstWithSkills(ctx context.Context, name string) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+
+	// Create events first
+	var eventIDs []string
+	for range 3 {
+		eventInterface, err := fixtures.EventFactory.Create()
+		if err != nil {
+			return ctx, fmt.Errorf("failed to create event: %w", err)
+		}
+		event, ok := eventInterface.(*career.Event)
+		if !ok {
+			return ctx, errors.New("factory created wrong type: expected *career.Event")
+		}
+		event.ID = ""
+		env.AddEvent(event)
+		eventIDs = append(eventIDs, event.ID)
+	}
+
+	// Create confirmed burst with those events
+	burst := fixtures.BurstConfirmed("", eventIDs...)
+	burst.Name = name
+	env.AddBurst(burst)
+
+	// Create skills for the burst (ensure unique names)
+	for i := range 3 {
+		skillInterface, err := fixtures.SkillFactory.Create()
+		if err != nil {
+			return ctx, fmt.Errorf("failed to create skill: %w", err)
+		}
+		skill, ok := skillInterface.(*career.Skill)
+		if !ok {
+			return ctx, errors.New("factory created wrong type: expected *career.Skill")
+		}
+		skill.ID = ""
+		skill.Name = fmt.Sprintf("%s-%d", skill.Name, i)
+		env.AddSkill(skill)
+	}
+
+	// Store burst name in context for later navigation
+	ctx = context.WithValue(ctx, currentBurstNameKey, name)
+
+	return ctx, nil
 }
 
 func iShouldSeeTheBurstSkillsModal(ctx context.Context) error {
