@@ -352,7 +352,7 @@ Feature: Manage Career Facts
     And I press escape
     Then I should be on the main menu
 
-  @sad @wip
+  @sad
   Scenario: Full navigation escape path
     Given I have a fact "My fact"
     When I select "fact_management" from the menu

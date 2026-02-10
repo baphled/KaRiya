@@ -210,7 +210,7 @@ Feature: Manage Skills
   # Skill Inference
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Trigger skill inference
     Given I have an event "Built REST API in Go with PostgreSQL"
     When I select "manage_skills" from the menu
