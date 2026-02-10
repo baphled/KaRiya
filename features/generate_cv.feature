@@ -348,7 +348,7 @@ Feature: Generate CV
     And I press "e" to edit
     Then I should see the CV wizard modal
 
-  @happy @wip
+  @happy
   Scenario: Go back from preview to review
     Given I have generated a CV
     When I navigate to the CV preview screen
