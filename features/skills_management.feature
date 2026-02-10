@@ -277,7 +277,7 @@ Feature: Manage Skills
   # All Categories
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Create skills with all categories
     Given the database is empty
     When I create skills with all 15 categories
@@ -422,7 +422,7 @@ Feature: Manage Skills
     Then I should see "Python" first
     And I should see "Go" last
 
-  @happy @wip
+  @happy
   Scenario: Sort skills by level
     Given I have a skill "Go" with level "Expert"
     And I have a skill "Python" with level "Beginner"

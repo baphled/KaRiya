@@ -231,7 +231,7 @@ Feature: Configure System
     And I press escape
     Then I should be on domain selection
 
-  @happy @wip
+  @happy
   Scenario: Navigate form with tab
     When I select "configure_system" from the menu
     And I select "System" domain
@@ -381,13 +381,13 @@ Feature: Configure System
   # Help Toggle
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Toggle help in domain selection
     When I select "configure_system" from the menu
     And I press "?" to toggle help
     Then I should see help information
 
-  @happy @wip
+  @happy
   Scenario: Toggle help in edit settings
     When I select "configure_system" from the menu
     And I select "System" domain
