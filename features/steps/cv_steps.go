@@ -616,16 +616,49 @@ func iNavigateToTheCVPreviewScreen(ctx context.Context) (context.Context, error)
 	return iPressEnterToPreview(ctx)
 }
 
-func iShouldSeePersonalDetails(_ context.Context) error {
-	return godog.ErrPending
+func iShouldSeePersonalDetails(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	// Check for personal/professional information in CV preview
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("Professional Summary"),
+		gomega.ContainSubstring("Summary"),
+		gomega.ContainSubstring("CV Preview"),
+	))
+	return nil
 }
 
-func iShouldSeeAllCVSections(_ context.Context) error {
-	return godog.ErrPending
+func iShouldSeeAllCVSections(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	// Check for CV sections
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("Experience"),
+		gomega.ContainSubstring("Skills"),
+		gomega.ContainSubstring("Summary"),
+	))
+	return nil
 }
 
-func iShouldSeeBulletPoints(_ context.Context) error {
-	return godog.ErrPending
+func iShouldSeeBulletPoints(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	// Check for bullet points in CV content
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("•"),
+		gomega.ContainSubstring("-"),
+		gomega.ContainSubstring("*"),
+	))
+	return nil
 }
 
 func iHaveGeneratedALongCV(_ context.Context) (context.Context, error) {
