@@ -55,7 +55,7 @@ Feature: Generate CV
     And I should see "Recruiter"
     And I should see "Peer"
 
-  @happy @wip
+  @happy
   Scenario: Navigate wizard with tab
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
@@ -64,7 +64,7 @@ Feature: Generate CV
     When I press tab
     Then I should move to step 2
 
-  @happy @wip
+  @happy
   Scenario: Cancel wizard with escape
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
@@ -123,7 +123,7 @@ Feature: Generate CV
     And I should see "Fullstack"
     And I should see "DevOps"
 
-  @happy @wip
+  @happy
   Scenario: Navigate back to step 1 with escape
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
