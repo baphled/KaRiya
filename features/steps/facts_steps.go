@@ -3,8 +3,12 @@ package steps
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/baphled/kariya/features/support"
+	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	"github.com/cucumber/godog"
 	"github.com/onsi/gomega"
 )
@@ -58,8 +62,27 @@ func RegisterFactsSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I should see available shortcuts$`, iShouldSeeAvailableShortcuts)
 }
 
-func iHaveNFactsInMyProfile(_ context.Context, _ int) (context.Context, error) {
-	return nil, godog.ErrPending
+func iHaveNFactsInMyProfile(ctx context.Context, count int) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+
+	// Create N facts with test data
+	for range count {
+		factInterface, err := fixtures.FactFactory.Create()
+		if err != nil {
+			return ctx, fmt.Errorf("failed to create fact: %w", err)
+		}
+		fact, ok := factInterface.(*career.Fact)
+		if !ok {
+			return ctx, errors.New("factory created wrong type: expected *career.Fact")
+		}
+		fact.ID = ""
+		env.AddFact(fact)
+	}
+
+	return ctx, nil
 }
 
 func iShouldSeeAListOfFacts(ctx context.Context) error {
