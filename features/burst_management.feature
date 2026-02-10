@@ -268,7 +268,7 @@ Feature: Manage Career Bursts
   # Burst Suggestion (AI Detection)
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Trigger burst suggestion
     Given I have 5 unassigned events
     When I select "burst_management" from the menu

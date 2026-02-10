@@ -29,7 +29,7 @@ Feature: Manage Skills
     Then I should see a list of skills
     And I should see "5"
 
-  @happy @wip
+  @happy
   Scenario: Navigate through skills list with vim keys
     Given I have 5 skills in my profile
     When I select "manage_skills" from the menu
@@ -37,7 +37,7 @@ Feature: Manage Skills
     And I press "k" to navigate up
     Then I should still be on the skills list
 
-  @happy @wip
+  @happy
   Scenario: Navigate through skills list with arrow keys
     Given I have 5 skills in my profile
     When I select "manage_skills" from the menu
@@ -49,7 +49,7 @@ Feature: Manage Skills
   # Skill Detail View
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: View skill details
     Given I have a skill "Go" with category "backend"
     When I select "manage_skills" from the menu
@@ -57,7 +57,7 @@ Feature: Manage Skills
     Then I should see "Go"
     And I should see "backend"
 
-  @happy @wip
+  @happy
   Scenario: Close skill detail modal
     Given I have a skill "Go" with category "backend"
     When I select "manage_skills" from the menu
@@ -108,7 +108,7 @@ Feature: Manage Skills
     And I press "e" to edit
     Then I should see the edit skill form
 
-  @happy @wip
+  @happy
   Scenario: Cancel edit skill
     Given I have a skill "JavaScript" with category "backend"
     When I select "manage_skills" from the menu
@@ -132,14 +132,14 @@ Feature: Manage Skills
   # Delete Skill
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Open delete skill confirmation
     Given I have a skill "Ruby" with category "backend"
     When I select "manage_skills" from the menu
     And I press "d" to delete
     Then I should see the delete confirmation
 
-  @happy @wip
+  @happy
   Scenario: Cancel delete skill
     Given I have a skill "Ruby" with category "backend"
     When I select "manage_skills" from the menu
@@ -148,7 +148,7 @@ Feature: Manage Skills
     Then I should still be on the skills list
     And there should be 1 skill
 
-  @happy @wip
+  @happy
   Scenario: Confirm delete skill
     Given I have a skill "Ruby" with category "backend"
     When I select "manage_skills" from the menu
