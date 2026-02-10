@@ -261,7 +261,7 @@ func (s *EventReviewScreen) renderFacts(th theme.Theme) string {
 }
 
 // renderFooter renders footer with action shortcuts using UIKit badge primitives.
-// Only shows applicable actions based on available data.
+// Always shows all edit options for consistent UI navigation.
 func (s *EventReviewScreen) renderFooter() string {
 	th := s.resolveThemesTheme()
 
