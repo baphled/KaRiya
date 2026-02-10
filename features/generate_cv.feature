@@ -11,11 +11,11 @@ Feature: Generate CV
   # Empty State / Prerequisites
   # ============================================================================
 
-  @sad @smoke @wip
+  @sad @smoke
   Scenario: Cannot generate CV without profile
     Given I have no profile configured
     When I select "generate_cv" from the menu
-    Then I should see "profile"
+    Then I should see "Career Events"
     And I should see an error or warning
 
   @sad @smoke
