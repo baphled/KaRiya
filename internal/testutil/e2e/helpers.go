@@ -968,6 +968,12 @@ func (e *TestEnv) processCmdResult(msg tea.Msg) {
 		e.updateModelAndExecute(msg)
 	case burstmanagement.BurstConfirmedMsg:
 		e.updateModelAndExecute(msg)
+	case burstmanagement.BurstEventsLoadedMsg:
+		e.updateModelAndExecute(msg)
+	case burstmanagement.BurstFactsLoadedMsg:
+		e.updateModelAndExecute(msg)
+	case burstmanagement.BurstSkillsLoadedMsg:
+		e.updateModelAndExecute(msg)
 	case feedback.ModalCountdownTickMsg:
 		e.updateModelAndExecute(msg)
 	case feedback.ModalAutoDismissMsg:
