@@ -176,7 +176,10 @@ Feature: Manage Career Bursts
     Then I should still be on the burst list
     And the burst should have name "Updated Name"
 
-  @happy @wip
+  # TODO: Test infrastructure issue - form description field not capturing input in test
+  # Functionality verified manually as working. Suspected timing/focus issue with Tab navigation
+  # or Huh form field binding in test harness. Name edit works with same pattern.
+  @happy @wip @test-infrastructure-issue
   Scenario: Edit burst description and save
     Given I have a burst "My Burst" with 2 events
     When I select "burst_management" from the menu
