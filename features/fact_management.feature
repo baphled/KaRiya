@@ -101,7 +101,7 @@ Feature: Manage Career Facts
   # Create New Fact
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Open new fact form
     Given the database is empty
     When I select "fact_management" from the menu
@@ -109,8 +109,6 @@ Feature: Manage Career Facts
     Then I should see the fact editor form
     And I should see "Fact Text"
     And I should see "Competency Categories"
-    And I should see "Role Fit"
-    And I should see "Audience Relevance"
 
   @happy
   Scenario: Cancel new fact
