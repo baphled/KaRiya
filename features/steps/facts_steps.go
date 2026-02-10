@@ -125,8 +125,26 @@ func iShouldStillBeOnTheFactList(ctx context.Context) error {
 	return nil
 }
 
-func iHaveAFact(_ context.Context, _ string) (context.Context, error) {
-	return nil, godog.ErrPending
+func iHaveAFact(ctx context.Context, text string) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+
+	// Create fact with given text
+	factInterface, err := fixtures.FactFactory.Create()
+	if err != nil {
+		return ctx, fmt.Errorf("failed to create fact: %w", err)
+	}
+	fact, ok := factInterface.(*career.Fact)
+	if !ok {
+		return ctx, errors.New("factory created wrong type: expected *career.Fact")
+	}
+	fact.ID = ""
+	fact.Text = text
+	env.AddFact(fact)
+
+	return ctx, nil
 }
 
 func iShouldSeeTheFactDetailView(ctx context.Context) error {
@@ -257,8 +275,26 @@ func theFactShouldHaveAudiences(_ context.Context, _ string) error {
 	return godog.ErrPending
 }
 
-func iHaveAFactWithCategory(_ context.Context, _ string) (context.Context, error) {
-	return nil, godog.ErrPending
+func iHaveAFactWithCategory(ctx context.Context, category string) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+
+	// Create fact with given category
+	factInterface, err := fixtures.FactFactory.Create()
+	if err != nil {
+		return ctx, fmt.Errorf("failed to create fact: %w", err)
+	}
+	fact, ok := factInterface.(*career.Fact)
+	if !ok {
+		return ctx, errors.New("factory created wrong type: expected *career.Fact")
+	}
+	fact.ID = ""
+	fact.CompetencyCategories = []string{category}
+	env.AddFact(fact)
+
+	return ctx, nil
 }
 
 func iDeselectCompetencyCategory(_ context.Context, _ string) (context.Context, error) {
