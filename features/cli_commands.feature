@@ -45,25 +45,25 @@ Feature: CLI Commands
   # Direct Intent Launch
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Launch browse timeline directly
     Given the application is installed
     When I run "kariya browse"
     Then the application should start in browse timeline
 
-  @happy @wip
+  @happy
   Scenario: Launch capture event directly
     Given the application is installed
     When I run "kariya capture"
     Then the application should start in capture event
 
-  @happy @wip
+  @happy
   Scenario: Launch skills management directly
     Given the application is installed
     When I run "kariya skills"
     Then the application should start in skills management
 
-  @happy @wip
+  @happy
   Scenario: Launch configuration directly
     Given the application is installed
     When I run "kariya config"
@@ -73,7 +73,7 @@ Feature: CLI Commands
   # Quick Capture Commands
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Quick capture event from CLI
     Given the application is installed
     When I run "kariya add 'Built REST API' --company 'Acme Corp'"
@@ -81,7 +81,7 @@ Feature: CLI Commands
     And I should see confirmation message
     And the exit code should be 0
 
-  @happy @wip
+  @happy
   Scenario: Quick capture with multiple flags
     Given the application is installed
     When I run "kariya add 'Deployed Kubernetes' --company 'TechCo' --category 'technical' --project 'Infrastructure'"
@@ -92,7 +92,7 @@ Feature: CLI Commands
   # Export Commands
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Export CV to JSON
     Given the application is installed
     And I have events in my timeline
@@ -100,7 +100,7 @@ Feature: CLI Commands
     Then I should receive JSON output
     And the exit code should be 0
 
-  @happy @wip
+  @happy
   Scenario: Export CV to YAML
     Given the application is installed
     And I have events in my timeline
@@ -108,7 +108,7 @@ Feature: CLI Commands
     Then I should receive YAML output
     And the exit code should be 0
 
-  @happy @wip
+  @happy
   Scenario: Export CV to file
     Given the application is installed
     And I have events in my timeline
@@ -121,7 +121,7 @@ Feature: CLI Commands
   # Import Commands
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Import events from JSON
     Given the application is installed
     And I have a valid JSON file "events.json"
@@ -130,7 +130,7 @@ Feature: CLI Commands
     And I should see import summary
     And the exit code should be 0
 
-  @sad @wip
+  @sad
   Scenario: Import from invalid file
     Given the application is installed
     And I have an invalid JSON file "bad.json"
@@ -142,14 +142,14 @@ Feature: CLI Commands
   # Configuration Commands
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Display current configuration
     Given the application is installed
     When I run "kariya config show"
     Then I should see current configuration
     And the exit code should be 0
 
-  @happy @wip
+  @happy
   Scenario: Set configuration value
     Given the application is installed
     When I run "kariya config set log.level debug"
@@ -161,7 +161,7 @@ Feature: CLI Commands
   # Database Commands
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Initialize database
     Given the application is installed
     And no database exists
@@ -170,7 +170,7 @@ Feature: CLI Commands
     And migrations should be applied
     And the exit code should be 0
 
-  @happy @wip
+  @happy
   Scenario: Database status
     Given the application is installed
     When I run "kariya db status"
@@ -181,21 +181,21 @@ Feature: CLI Commands
   # Error Handling
   # ============================================================================
 
-  @sad @wip
+  @sad
   Scenario: Unknown command
     Given the application is installed
     When I run "kariya unknowncommand"
     Then I should see an error message about unknown command
     And the exit code should be non-zero
 
-  @sad @wip
+  @sad
   Scenario: Missing required argument
     Given the application is installed
     When I run "kariya add"
     Then I should see an error about missing description
     And the exit code should be non-zero
 
-  @sad @wip
+  @sad
   Scenario: Invalid flag
     Given the application is installed
     When I run "kariya --invalidflag"
