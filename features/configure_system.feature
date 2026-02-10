@@ -271,31 +271,31 @@ Feature: Configure System
     And I should see "log_level"
     And I should see "debug"
 
-  @happy @wip
+  @happy
   Scenario: Confirm changes from review
     When I am on the review changes modal
     And I press enter to confirm
     Then I should see the confirm modal
 
-  @happy @wip
+  @happy
   Scenario: Confirm changes with y key
     When I am on the review changes modal
     And I press "y" to confirm
     Then I should see the confirm modal
 
-  @happy @wip
+  @happy
   Scenario: Cancel review returns to edit
     When I am on the review changes modal
     And I press escape
     Then I should see the edit settings modal
 
-  @happy @wip
+  @happy
   Scenario: Cancel review with n key
     When I am on the review changes modal
     And I press "n" to cancel
     Then I should see the edit settings modal
 
-  @happy @wip
+  @happy
   Scenario: Cancel review with q key
     When I am on the review changes modal
     And I press "q" to cancel
@@ -305,31 +305,31 @@ Feature: Configure System
   # Confirm Modal
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: View confirm dialog
     When I am on the confirm modal
     Then I should see "Confirm Changes"
     And I should see "Are you sure"
 
-  @happy @wip
+  @happy
   Scenario: Confirm save with enter
     When I am on the confirm modal
     And I press enter to confirm
     Then I should see the saving modal
 
-  @happy @wip
+  @happy
   Scenario: Confirm save with y key
     When I am on the confirm modal
     And I press "y" to confirm
     Then I should see the saving modal
 
-  @happy @wip
+  @happy
   Scenario: Cancel confirm returns to review
     When I am on the confirm modal
     And I press escape
     Then I should see the review modal
 
-  @happy @wip
+  @happy
   Scenario: Cancel confirm with n key
     When I am on the confirm modal
     And I press "n" to cancel
@@ -346,7 +346,7 @@ Feature: Configure System
     And I should see "Saving"
     And I should see a spinner
 
-  @happy @wip
+  @happy
   Scenario: View success result
     When the save completes successfully
     Then I should see the success modal
@@ -358,7 +358,7 @@ Feature: Configure System
     Then the success modal should auto-dismiss
     And I should be on the main menu
 
-  @happy @wip
+  @happy
   Scenario: Dismiss success with enter
     When the save completes successfully
     And I press enter
