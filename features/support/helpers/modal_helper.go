@@ -75,7 +75,7 @@ func (m *ModalHelper) NavigateToPreview() error {
 
 // PressKeyToExport presses the specified key to open export modal.
 func (m *ModalHelper) PressKeyToExport(key string) error {
-	if len(key) > 0 {
+	if key != "" {
 		m.env.PressKeyRune(rune(key[0]))
 	}
 	return nil

@@ -40,7 +40,7 @@ func NewFormHelper(ctx context.Context) (*FormHelper, error) {
 func (f *FormHelper) NavigateToField(fieldLabel string) error {
 	const maxAttempts = 20
 
-	for i := 0; i < maxAttempts; i++ {
+	for range maxAttempts {
 		view := f.env.GetView()
 		if strings.Contains(view, fieldLabel) {
 			return nil // Field found and focused
@@ -70,7 +70,7 @@ func (f *FormHelper) SelectFieldOption(fieldLabel, option string) error {
 
 	// Navigate through options until we find the target
 	const maxOptions = 10
-	for i := 0; i < maxOptions; i++ {
+	for range maxOptions {
 		view := f.env.GetView()
 		if strings.Contains(view, option) {
 			f.env.Confirm() // Select this option
@@ -117,4 +117,27 @@ func (f *FormHelper) GetFieldValue(fieldLabel string) (string, error) {
 func (f *FormHelper) IsFieldVisible(fieldLabel string) bool {
 	view := f.env.GetView()
 	return strings.Contains(view, fieldLabel)
+}
+
+// FieldExistsInForm checks if a field exists in the form by tabbing through all fields.
+// This is less strict than IsFieldVisible - it will find fields even if off-screen.
+func (f *FormHelper) FieldExistsInForm(fieldLabel string, maxFields int) bool {
+	initialView := f.env.GetView()
+
+	//nolint:intrange // Need index for cycle detection
+	for i := 0; i < maxFields; i++ {
+		view := f.env.GetView()
+		if strings.Contains(view, fieldLabel) {
+			return true
+		}
+
+		// If we've cycled back to the initial view, we've checked all fields
+		if i > 0 && view == initialView {
+			return false
+		}
+
+		f.env.Tab()
+	}
+
+	return false
 }
