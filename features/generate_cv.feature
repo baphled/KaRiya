@@ -246,7 +246,7 @@ Feature: Generate CV
     And I press enter to preview
     Then I should see section names
 
-  @happy @wip
+  @happy
   Scenario: Navigate to preview from review
     Given I have generated a CV
     When I am on the CV review screen
@@ -285,7 +285,7 @@ Feature: Generate CV
   # CV Preview Screen
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: View full CV preview
     Given I have generated a CV
     When I navigate to the CV preview screen
