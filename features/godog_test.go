@@ -10,6 +10,7 @@ import (
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/format"
 )
 
 // opts holds the Godog options for test execution.
@@ -30,6 +31,9 @@ func init() {
 func TestFeatures(t *testing.T) {
 	RegisterTestingT(t)
 	support.SetTestingT(t)
+
+	// Increase Gomega's format.MaxLength to prevent truncation of long view outputs
+	format.MaxLength = 0 // 0 = unlimited
 
 	opts.Paths = []string{"./"}
 	opts.TestingT = t
