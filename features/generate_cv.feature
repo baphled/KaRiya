@@ -18,7 +18,7 @@ Feature: Generate CV
     Then I should see "profile"
     And I should see an error or warning
 
-  @sad @smoke @wip
+  @sad @smoke
   Scenario: Cannot generate CV without events
     Given I have a profile configured
     But the database is empty
@@ -30,7 +30,7 @@ Feature: Generate CV
   # CV Configuration Wizard - Step 1 (WHO)
   # ============================================================================
 
-  @happy @smoke @wip
+  @happy @smoke
   Scenario: Open CV wizard modal
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
@@ -38,7 +38,7 @@ Feature: Generate CV
     And I should see "Profile"
     And I should see "Audience"
 
-  @happy @wip
+  @happy
   Scenario: Select profile in wizard
     Given I have multiple profiles
     When I select "generate_cv" from the menu
