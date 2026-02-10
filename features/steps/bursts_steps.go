@@ -523,8 +523,27 @@ func theBurstShouldNotBeConfirmed(ctx context.Context) error {
 	return nil
 }
 
-func iHaveUnassignedEvents(_ context.Context, _ int) (context.Context, error) {
-	return nil, godog.ErrPending
+func iHaveUnassignedEvents(ctx context.Context, count int) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+
+	// Create unassigned events (not part of any burst)
+	for range count {
+		eventInterface, err := fixtures.EventFactory.Create()
+		if err != nil {
+			return ctx, fmt.Errorf("failed to create event: %w", err)
+		}
+		event, ok := eventInterface.(*career.Event)
+		if !ok {
+			return ctx, errors.New("factory created wrong type: expected *career.Event")
+		}
+		event.ID = ""
+		env.AddEvent(event)
+	}
+
+	return ctx, nil
 }
 
 func iPressSToSuggestBursts(ctx context.Context) (context.Context, error) {
