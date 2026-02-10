@@ -89,7 +89,7 @@ Feature: Manage Career Facts
     And I should see role fit
     And I should see audience relevance
 
-  @happy @wip
+  @happy
   Scenario: Close fact detail view
     Given I have a fact "Led team of 5 engineers to deliver project on time"
     When I select "fact_management" from the menu
@@ -174,7 +174,7 @@ Feature: Manage Career Facts
     Then I should see the fact editor form
     And I should see "Original fact text"
 
-  @happy @wip
+  @happy
   Scenario: Open edit fact form from detail
     Given I have a fact "Original fact text here"
     When I select "fact_management" from the menu
@@ -182,7 +182,7 @@ Feature: Manage Career Facts
     And I press "e" to edit
     Then I should see the fact editor form
 
-  @happy @wip
+  @happy
   Scenario: Cancel edit fact returns to list
     Given I have a fact "Original fact text here"
     When I select "fact_management" from the menu
@@ -191,7 +191,7 @@ Feature: Manage Career Facts
     Then I should still be on the fact list
     And the fact should have text "Original fact text"
 
-  @happy @wip
+  @happy
   Scenario: Cancel edit fact from detail returns to detail
     Given I have a fact "Original fact text here"
     When I select "fact_management" from the menu
@@ -253,7 +253,7 @@ Feature: Manage Career Facts
     And I press "d" to delete
     Then I should see the delete confirmation
 
-  @happy @wip
+  @happy
   Scenario: Cancel delete fact
     Given I have a fact "Fact to delete"
     When I select "fact_management" from the menu
@@ -271,7 +271,7 @@ Feature: Manage Career Facts
     Then I should still be on the fact list
     And there should be 1 fact
 
-  @happy @wip
+  @happy
   Scenario: Confirm delete fact with y
     Given I have a fact "Fact to delete"
     When I select "fact_management" from the menu
@@ -280,7 +280,7 @@ Feature: Manage Career Facts
     Then I should still be on the fact list
     And there should be 0 facts
 
-  @happy @wip
+  @happy
   Scenario: Confirm delete fact with enter
     Given I have a fact "Fact to delete"
     When I select "fact_management" from the menu
