@@ -3,11 +3,10 @@ package steps
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 
 	"github.com/baphled/kariya/features/support"
-	"github.com/baphled/kariya/internal/testutil/fixtures"
+	"github.com/baphled/kariya/internal/testutil/e2e"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/cucumber/godog"
 	"github.com/onsi/gomega"
@@ -154,16 +153,17 @@ func iHaveACompleteProfileWithEventsAndFacts(ctx context.Context) (context.Conte
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	// Add events
-	for i := range 3 {
-		event := fixtures.EventWith("", fmt.Sprintf("Event %d", i+1), fmt.Sprintf("Company%d", i+1), "")
-		env.AddEvent(event)
+
+	// Use fixtures to populate substantial test data for CV generation
+	// This creates realistic career data similar to CSV imports
+	env.PopulateTestData(50, 5, 30)
+
+	// Add skills - CV generation requires skills for sections
+	skills := e2e.CreateSampleSkills(20)
+	for _, skill := range skills {
+		env.AddSkill(skill)
 	}
-	// Add facts
-	for i := range 3 {
-		fact := fixtures.FactWith("", fmt.Sprintf("Fact %d text", i+1))
-		env.AddFact(fact)
-	}
+
 	return ctx, nil
 }
 
