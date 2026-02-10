@@ -4,6 +4,7 @@ package steps
 import (
 	"context"
 	"strconv"
+	"strings"
 
 	"github.com/baphled/kariya/features/support"
 	"github.com/baphled/kariya/internal/testutil/e2e"
@@ -93,6 +94,7 @@ func registerCVReviewSteps(sc *godog.ScenarioContext) {
 
 func registerCVExportSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I open the export options modal$`, iOpenTheExportOptionsModal)
+	sc.Step(`^I press "([^"]*)" to export$`, iPressKeyToExport)
 	sc.Step(`^I tab to location$`, iTabToLocation)
 	sc.Step(`^I select format "([^"]*)"$`, iSelectFormat)
 	sc.Step(`^I select location "([^"]*)"$`, iSelectLocation)
@@ -535,8 +537,29 @@ func iShouldSeeBulletCounts(ctx context.Context) error {
 }
 
 func iHaveGeneratedACV(ctx context.Context) (context.Context, error) {
-	// Simulate having generated a CV by setting up complete profile
-	return iHaveACompleteProfileWithEventsAndFacts(ctx)
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+
+	// Set up data
+	ctx, err := iHaveACompleteProfileWithEventsAndFacts(ctx)
+	if err != nil {
+		return ctx, err
+	}
+
+	// Navigate to generate_cv
+	env.SelectIntentByName("generate_cv")
+
+	// Skip wizard with Ctrl+S
+	env.PressKey(tea.KeyCtrlS)
+
+	// Wait for generation to complete and reach review screen
+	gomega.Eventually(func() string {
+		return env.GetView()
+	}, "5s", "100ms").Should(gomega.ContainSubstring("CV Review"))
+
+	return ctx, nil
 }
 
 func iAmOnTheCVReviewScreen(ctx context.Context) error {
@@ -588,8 +611,9 @@ func iShouldSeeTheExportOptionsModal(ctx context.Context) error {
 	return nil
 }
 
-func iNavigateToTheCVPreviewScreen(_ context.Context) (context.Context, error) {
-	return nil, godog.ErrPending
+func iNavigateToTheCVPreviewScreen(ctx context.Context) (context.Context, error) {
+	// Assumes we're already on review screen, just navigate to preview
+	return iPressEnterToPreview(ctx)
 }
 
 func iShouldSeePersonalDetails(_ context.Context) error {
@@ -646,36 +670,129 @@ func iPressYToConfirmCV(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-func iOpenTheExportOptionsModal(_ context.Context) (context.Context, error) {
-	return nil, godog.ErrPending
+func iOpenTheExportOptionsModal(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	// Press 'x' to open export modal from review/preview screen
+	env.PressKeyRune('x')
+	return ctx, nil
 }
 
-func iTabToLocation(_ context.Context) (context.Context, error) {
-	return nil, godog.ErrPending
+func iPressKeyToExport(ctx context.Context, key string) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	// Press the specified key to open export modal
+	if len(key) > 0 {
+		env.PressKeyRune(rune(key[0]))
+	}
+	return ctx, nil
 }
 
-func iSelectFormat(_ context.Context, _ string) (context.Context, error) {
-	return nil, godog.ErrPending
+func iTabToLocation(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.Tab()
+	return ctx, nil
 }
 
-func iSelectLocation(_ context.Context, _ string) (context.Context, error) {
-	return nil, godog.ErrPending
+func iSelectFormat(ctx context.Context, format string) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	// Format field is already focused when modal opens
+	// Navigate to the desired format and confirm
+	// Simple approach: assume options are in order (Text, Markdown, YAML)
+	// Navigate down until we find the format, then confirm
+	for i := 0; i < 3; i++ {
+		view := env.GetView()
+		if strings.Contains(view, format) {
+			env.Confirm()
+			return ctx, nil
+		}
+		env.NavigateDown()
+	}
+	return ctx, nil
 }
 
-func iConfirmExport(_ context.Context) (context.Context, error) {
-	return nil, godog.ErrPending
+func iSelectLocation(ctx context.Context, location string) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	// Location field should be focused after format selection
+	// Navigate to the desired location and confirm
+	for i := 0; i < 2; i++ {
+		view := env.GetView()
+		if strings.Contains(view, location) {
+			env.Confirm()
+			return ctx, nil
+		}
+		env.NavigateDown()
+	}
+	return ctx, nil
 }
 
-func iShouldSeeExportProgress(_ context.Context) error {
-	return godog.ErrPending
+func iConfirmExport(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	// Confirm the export (press enter on the final confirm button)
+	env.Confirm()
+	return ctx, nil
 }
 
-func theExportShouldComplete(_ context.Context) error {
-	return godog.ErrPending
+func iShouldSeeExportProgress(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	// Check for export-related progress indicators
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("Export"),
+		gomega.ContainSubstring("Progress"),
+		gomega.ContainSubstring("Saving"),
+	))
+	return nil
 }
 
-func iShouldReturnToPreviousScreen(_ context.Context) error {
-	return godog.ErrPending
+func theExportShouldComplete(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	// Wait for export to complete
+	gomega.Eventually(func() string {
+		return env.GetView()
+	}, "5s", "100ms").Should(gomega.SatisfyAny(
+		gomega.ContainSubstring("complete"),
+		gomega.ContainSubstring("success"),
+		gomega.ContainSubstring("exported"),
+		gomega.ContainSubstring("saved"),
+	))
+	return nil
+}
+
+func iShouldReturnToPreviousScreen(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	// After canceling, should see the review or preview screen
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("CV Review"),
+		gomega.ContainSubstring("CV Preview"),
+	))
+	return nil
 }
 
 func iStartAnExport(_ context.Context) (context.Context, error) {
