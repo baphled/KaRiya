@@ -334,7 +334,7 @@ Feature: Generate CV
     And I press "y" to confirm
     Then the CV generation should complete
 
-  @happy @wip
+  @happy
   Scenario: Export from preview
     Given I have generated a CV
     When I navigate to the CV preview screen
@@ -359,7 +359,7 @@ Feature: Generate CV
   # Export Options Modal
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: View export format options
     Given I have generated a CV
     When I open the export options modal
@@ -367,7 +367,7 @@ Feature: Generate CV
     And I should see "Markdown"
     And I should see "YAML"
 
-  @happy @wip
+  @happy
   Scenario: View export location options
     Given I have generated a CV
     When I open the export options modal
@@ -375,7 +375,7 @@ Feature: Generate CV
     Then I should see "File"
     And I should see "Clipboard"
 
-  @happy @wip
+  @happy
   Scenario: Export to file as text
     Given I have generated a CV
     When I open the export options modal
@@ -385,7 +385,7 @@ Feature: Generate CV
     Then I should see export progress
     And the export should complete
 
-  @happy @wip
+  @happy
   Scenario: Export to clipboard as markdown
     Given I have generated a CV
     When I open the export options modal
@@ -395,7 +395,7 @@ Feature: Generate CV
     Then I should see export progress
     And the export should complete
 
-  @happy @wip
+  @happy
   Scenario: Cancel export
     Given I have generated a CV
     When I open the export options modal
