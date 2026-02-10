@@ -226,7 +226,7 @@ Feature: Manage Skills
     And I press escape
     Then I should still be on the skills list
 
-  @happy @wip
+  @happy
   Scenario: Review skill suggestions
     Given I have an event "Built microservices in Go with PostgreSQL database"
     When I select "manage_skills" from the menu

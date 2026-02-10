@@ -287,7 +287,7 @@ Feature: Manage Career Bursts
     And I press escape
     Then I should still be on the burst list
 
-  @happy @wip
+  @happy
   Scenario: View burst suggestions after detection
     Given I have 5 unassigned events
     When I select "burst_management" from the menu

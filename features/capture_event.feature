@@ -133,7 +133,7 @@ Feature: Capture Career Events
     When I cancel
     Then I should be on the main menu
 
-  @sad @enrichment @wip
+  @sad @enrichment
   Scenario: Reject all suggestions and submit raw event
     When I select "capture_event" from the menu
     And I select quick capture strategy
@@ -231,7 +231,7 @@ Feature: Capture Career Events
   # Fact Editing Scenarios (Review State)
   # ============================================================================
 
-  @happy @enrichment @wip
+  @happy @enrichment
   Scenario: Edit inferred fact during review
     When I select "capture_event" from the menu
     And I select quick capture strategy
@@ -273,7 +273,7 @@ Feature: Capture Career Events
   # Review Navigation Scenarios
   # ============================================================================
 
-  @happy @enrichment @wip
+  @happy @enrichment
   Scenario: Navigate through review sections
     When I select "capture_event" from the menu
     And I select quick capture strategy
