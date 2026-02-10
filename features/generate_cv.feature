@@ -413,7 +413,7 @@ Feature: Generate CV
     Then I should see the progress modal
     And I should see "Exporting"
 
-  @happy @wip
+  @happy
   Scenario: Export success shows confirmation
     Given I have generated a CV
     When I complete an export
@@ -444,14 +444,14 @@ Feature: Generate CV
   # Navigation and Exit
   # ============================================================================
 
-  @sad @wip
+  @sad
   Scenario: Exit from wizard returns to menu
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
     And I press escape
     Then I should be on the main menu
 
-  @sad @wip
+  @sad
   Scenario: Full navigation escape path
     Given I have generated a CV
     When I navigate to the CV preview screen
