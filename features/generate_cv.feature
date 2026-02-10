@@ -341,7 +341,7 @@ Feature: Generate CV
     And I press "x" to export
     Then I should see the export options modal
 
-  @happy @wip
+  @happy
   Scenario: Edit from preview
     Given I have generated a CV
     When I navigate to the CV preview screen
