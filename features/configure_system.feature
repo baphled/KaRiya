@@ -364,14 +364,14 @@ Feature: Configure System
     And I press enter
     Then I should be on the main menu
 
-  @sad @wip
+  @sad
   Scenario: View error result
     When the save fails
     Then I should see the error modal
     And I should see "Save Failed"
     And I should see error details
 
-  @sad @wip
+  @sad
   Scenario: Dismiss error returns to edit
     When the save fails
     And I dismiss the error modal
