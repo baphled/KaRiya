@@ -227,7 +227,7 @@ Feature: Generate CV
   # CV Review Screen
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: View CV review after generation
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
@@ -253,28 +253,28 @@ Feature: Generate CV
     And I press enter to preview
     Then I should see the CV preview screen
 
-  @happy @wip
+  @happy
   Scenario: Navigate to preview with p key
     Given I have generated a CV
     When I am on the CV review screen
     And I press "p" to preview
     Then I should see the CV preview screen
 
-  @happy @wip
+  @happy
   Scenario: Export directly from review
     Given I have generated a CV
     When I am on the CV review screen
     And I press "x" to export
     Then I should see the export options modal
 
-  @happy @wip
+  @happy
   Scenario: Edit CV from review
     Given I have generated a CV
     When I am on the CV review screen
     And I press "e" to edit
     Then I should see the CV wizard modal
 
-  @happy @wip
+  @happy
   Scenario: Go back from review
     Given I have generated a CV
     When I am on the CV review screen

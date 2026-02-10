@@ -259,7 +259,7 @@ Feature: Manage Career Bursts
     Then I should see the loading modal
     And I should see "Extracting"
 
-  @happy @wip
+  @happy
   Scenario: Re-confirm burst shows re-extraction prompt
     Given I have a confirmed burst "Confirmed Burst" with facts
     When I select "burst_management" from the menu
