@@ -319,7 +319,7 @@ Feature: Generate CV
     When I press "g" to go to top
     Then I should be at the top
 
-  @happy @wip
+  @happy
   Scenario: Confirm CV from preview
     Given I have generated a CV
     When I navigate to the CV preview screen
@@ -327,7 +327,7 @@ Feature: Generate CV
     Then the CV generation should complete
     And I should be on the main menu
 
-  @happy @wip
+  @happy
   Scenario: Confirm CV with y key
     Given I have generated a CV
     When I navigate to the CV preview screen
