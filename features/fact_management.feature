@@ -32,7 +32,7 @@ Feature: Manage Career Facts
     And I should see strength signals
     And I should see categories
 
-  @happy @wip
+  @happy
   Scenario: Navigate through fact list with vim keys
     Given I have 5 facts in my profile
     When I select "fact_management" from the menu
@@ -40,7 +40,7 @@ Feature: Manage Career Facts
     And I press "k" to navigate up
     Then I should still be on the fact list
 
-  @happy @wip
+  @happy
   Scenario: Navigate through fact list with arrow keys
     Given I have 5 facts in my profile
     When I select "fact_management" from the menu
