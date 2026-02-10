@@ -301,7 +301,7 @@ Feature: Manage Skills
     And I should see "Built API in Go"
     And I should see "Wrote CLI tool in Go"
 
-  @happy @wip
+  @happy
   Scenario: View event detail from skill events modal
     Given I have a skill "Python" with category "backend"
     And I have an event "Built data pipeline" that uses skill "Python"
@@ -312,7 +312,7 @@ Feature: Manage Skills
     Then I should see "Built data pipeline"
     And I should see the full event description
 
-  @happy @wip
+  @happy
   Scenario: Close skill events modal returns to skill detail
     Given I have a skill "JavaScript" with category "backend"
     And I have an event "Built React app" that uses skill "JavaScript"
@@ -449,7 +449,7 @@ Feature: Manage Skills
   # Skill Count Display
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Skill shows event count
     Given I have a skill "Go" with category "backend"
     And I have 5 events that use skill "Go"

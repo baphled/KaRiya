@@ -166,7 +166,7 @@ Feature: Manage Career Facts
   # Edit Fact
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Open edit fact form from list
     Given I have a fact "Original fact text here"
     When I select "fact_management" from the menu
