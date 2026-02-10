@@ -279,7 +279,7 @@ Feature: Manage Career Bursts
     Then I should see the loading modal
     And I should see "Detecting"
 
-  @happy @wip
+  @happy
   Scenario: Cancel burst suggestion
     Given I have 5 unassigned events
     When I select "burst_management" from the menu
