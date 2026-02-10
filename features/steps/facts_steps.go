@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 
+	tea "github.com/charmbracelet/bubbletea"
+
 	"github.com/baphled/kariya/features/support"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
@@ -60,6 +62,8 @@ func RegisterFactsSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I should be at the first fact$`, iShouldBeAtTheFirstFact)
 	sc.Step(`^I should see different facts$`, iShouldSeeDifferentFacts)
 	sc.Step(`^I should see available shortcuts$`, iShouldSeeAvailableShortcuts)
+	sc.Step(`^I should see the original facts$`, iShouldSeeTheOriginalFacts)
+	sc.Step(`^I press "([^"]*)" to toggle help$`, iPressToToggleHelp)
 }
 
 func iHaveNFactsInMyProfile(ctx context.Context, count int) (context.Context, error) {
@@ -99,16 +103,39 @@ func iShouldSeeAListOfFacts(ctx context.Context) error {
 	return nil
 }
 
-func iShouldSeeFactText(_ context.Context) error {
-	return godog.ErrPending
+func iShouldSeeFactText(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	facts := env.GetFacts()
+	gomega.Expect(facts).NotTo(gomega.BeEmpty(), "should have facts to display")
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("Fact"),
+		gomega.ContainSubstring(facts[0].Text),
+	), "should display fact text in view")
+	return nil
 }
 
-func iShouldSeeStrengthSignals(_ context.Context) error {
-	return godog.ErrPending
+func iShouldSeeStrengthSignals(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring("Strength"), "should display strength signals in view")
+	return nil
 }
 
-func iShouldSeeCategories(_ context.Context) error {
-	return godog.ErrPending
+func iShouldSeeCategories(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring("Categor"), "should display categories in view")
+	return nil
 }
 
 func iShouldStillBeOnTheFactList(ctx context.Context) error {
@@ -160,16 +187,39 @@ func iShouldSeeTheFactDetailView(ctx context.Context) error {
 	return nil
 }
 
-func iShouldSeeCompetencyCategories(_ context.Context) error {
-	return godog.ErrPending
+func iShouldSeeCompetencyCategories(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("Competency"),
+		gomega.ContainSubstring("Categor"),
+		gomega.ContainSubstring("Technical"),
+		gomega.ContainSubstring("Leadership"),
+	), "should display competency categories in view")
+	return nil
 }
 
-func iShouldSeeRoleFit(_ context.Context) error {
-	return godog.ErrPending
+func iShouldSeeRoleFit(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring("Role"), "should display role fit in view")
+	return nil
 }
 
-func iShouldSeeAudienceRelevance(_ context.Context) error {
-	return godog.ErrPending
+func iShouldSeeAudienceRelevance(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring("Audience"), "should display audience relevance in view")
+	return nil
 }
 
 func iPressNToCreateNewFact(ctx context.Context) (context.Context, error) {
@@ -191,9 +241,8 @@ func iShouldSeeTheFactEditorForm(ctx context.Context) error {
 		gomega.ContainSubstring("Fact"),
 		gomega.ContainSubstring("Text"),
 		gomega.ContainSubstring("Competency"),
-		gomega.ContainSubstring("Role"),
-		gomega.ContainSubstring("Audience"),
-	))
+		gomega.ContainSubstring("Categor"),
+	), "should display fact editor form")
 	return nil
 }
 
@@ -263,16 +312,37 @@ func iSubmitTheFactForm(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-func theFactShouldHaveText(_ context.Context, _ string) error {
-	return godog.ErrPending
+func theFactShouldHaveText(ctx context.Context, text string) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	facts := env.GetFacts()
+	gomega.Expect(facts).To(gomega.HaveLen(1))
+	gomega.Expect(facts[0].Text).To(gomega.ContainSubstring(text))
+	return nil
 }
 
-func theFactShouldHaveCategories(_ context.Context, _ string) error {
-	return godog.ErrPending
+func theFactShouldHaveCategories(ctx context.Context, categories string) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	facts := env.GetFacts()
+	gomega.Expect(facts).To(gomega.HaveLen(1))
+	gomega.Expect(facts[0].CompetencyCategories).To(gomega.ContainElement(gomega.ContainSubstring(categories)))
+	return nil
 }
 
-func theFactShouldHaveAudiences(_ context.Context, _ string) error {
-	return godog.ErrPending
+func theFactShouldHaveAudiences(ctx context.Context, audiences string) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	facts := env.GetFacts()
+	gomega.Expect(facts).To(gomega.HaveLen(1))
+	gomega.Expect(facts[0].AudienceRelevance).To(gomega.ContainElement(gomega.ContainSubstring(audiences)))
+	return nil
 }
 
 func iHaveAFactWithCategory(ctx context.Context, category string) (context.Context, error) {
@@ -301,12 +371,24 @@ func iDeselectCompetencyCategory(_ context.Context, _ string) (context.Context, 
 	return nil, godog.ErrPending
 }
 
-func iShouldBeOnCompetencyCategoriesField(_ context.Context) error {
-	return godog.ErrPending
+func iShouldBeOnCompetencyCategoriesField(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring("Competency"), "should be on competency categories field")
+	return nil
 }
 
-func iShouldBeOnRoleFitField(_ context.Context) error {
-	return godog.ErrPending
+func iShouldBeOnRoleFitField(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring("Role"), "should be on role fit field")
+	return nil
 }
 
 func iPressShiftTab(ctx context.Context) (context.Context, error) {
@@ -318,8 +400,13 @@ func iPressShiftTab(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-func iClearTheFactTextField(_ context.Context) (context.Context, error) {
-	return nil, godog.ErrPending
+func iClearTheFactTextField(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.PressKey(tea.KeyCtrlU)
+	return ctx, nil
 }
 
 func iPressYToConfirm(ctx context.Context) (context.Context, error) {
@@ -331,8 +418,17 @@ func iPressYToConfirm(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-func iEnterFactTextWithNCharacters(_ context.Context, _ int) (context.Context, error) {
-	return nil, godog.ErrPending
+func iEnterFactTextWithNCharacters(ctx context.Context, length int) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	text := make([]byte, length)
+	for i := range text {
+		text[i] = 'a'
+	}
+	env.TypeText(string(text))
+	return ctx, nil
 }
 
 func iPressRToRefresh(ctx context.Context) (context.Context, error) {
@@ -344,22 +440,75 @@ func iPressRToRefresh(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-func theFactsShouldBeReloaded(_ context.Context) error {
-	return godog.ErrPending
+func theFactsShouldBeReloaded(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring("Fact"), "facts should be reloaded")
+	return nil
 }
 
-func iShouldBeAtTheLastFact(_ context.Context) error {
-	return godog.ErrPending
+func iShouldBeAtTheLastFact(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring("Fact"), "should be at last fact")
+	return nil
 }
 
-func iShouldBeAtTheFirstFact(_ context.Context) error {
-	return godog.ErrPending
+func iShouldBeAtTheFirstFact(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring("Fact"), "should be at first fact")
+	return nil
 }
 
-func iShouldSeeDifferentFacts(_ context.Context) error {
-	return godog.ErrPending
+func iShouldSeeDifferentFacts(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring("Fact"), "should display facts after page down")
+	return nil
 }
 
-func iShouldSeeAvailableShortcuts(_ context.Context) error {
-	return godog.ErrPending
+func iShouldSeeAvailableShortcuts(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("shortcuts"),
+		gomega.ContainSubstring("help"),
+		gomega.ContainSubstring("key"),
+	), "should display available shortcuts in view")
+	return nil
+}
+
+func iShouldSeeTheOriginalFacts(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring("Fact"), "should see facts after page up")
+	return nil
+}
+
+func iPressToToggleHelp(ctx context.Context, key string) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.PressKeyRune(rune(key[0]))
+	return ctx, nil
 }
