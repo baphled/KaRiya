@@ -68,6 +68,7 @@ func RegisterSkillsSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I press "/" to search$`, skillsPressSlashToSearch)
 	sc.Step(`^I press "j" to navigate down$`, skillsPressJToNavigateDown)
 	sc.Step(`^I press "k" to navigate up$`, skillsPressKToNavigateUp)
+	sc.Step(`^I press enter to view event details$`, iPressEnterToViewEventDetails)
 
 	// Form actions
 	sc.Step(`^I enter skill name "([^"]*)"$`, iEnterSkillName)
@@ -565,6 +566,15 @@ func skillsPressKToNavigateUp(ctx context.Context) (context.Context, error) {
 		return ctx, godog.ErrPending
 	}
 	env.PressKeyRune('k')
+	return ctx, nil
+}
+
+func iPressEnterToViewEventDetails(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.PressKey(tea.KeyEnter)
 	return ctx, nil
 }
 
