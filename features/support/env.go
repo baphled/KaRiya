@@ -1,8 +1,11 @@
 package support
 
 import (
+	"bytes"
 	"context"
+	"errors"
 	"fmt"
+	"os/exec"
 	"testing"
 	"time"
 
@@ -507,4 +510,109 @@ func splitLines(s string) []string {
 		lines = append(lines, current)
 	}
 	return lines
+}
+
+// =============================================================================
+// CLI Environment for testing command-line execution
+// =============================================================================
+
+// cliEnvKey is the context key for storing CLIEnv.
+type cliEnvKey struct{}
+
+// CLIEnv wraps CLI command execution for BDD testing.
+type CLIEnv struct {
+	binaryPath string
+	stdout     *bytes.Buffer
+	stderr     *bytes.Buffer
+	exitCode   int
+}
+
+// NewCLIEnv creates a new CLIEnv with the given binary path.
+//
+// Expected: binaryPath is the path to the kariya binary.
+// Returns: A new CLIEnv instance.
+// Side effects: None.
+func NewCLIEnv(binaryPath string) *CLIEnv {
+	return &CLIEnv{
+		binaryPath: binaryPath,
+		stdout:     &bytes.Buffer{},
+		stderr:     &bytes.Buffer{},
+		exitCode:   0,
+	}
+}
+
+// Run executes the CLI with the given arguments.
+//
+// Expected: args are command-line arguments.
+// Returns: error if execution fails.
+// Side effects: Captures stdout, stderr, and exit code.
+func (e *CLIEnv) Run(args ...string) error {
+	e.stdout.Reset()
+	e.stderr.Reset()
+	e.exitCode = 0
+
+	// #nosec G204 - binaryPath is controlled by test code, args come from test scenarios
+	cmd := exec.Command(e.binaryPath, args...)
+	cmd.Stdout = e.stdout
+	cmd.Stderr = e.stderr
+
+	err := cmd.Run()
+	if err != nil {
+		var exitErr *exec.ExitError
+		if !errors.As(err, &exitErr) {
+			return err
+		}
+		e.exitCode = exitErr.ExitCode()
+	}
+
+	return nil
+}
+
+// GetOutput returns the combined stdout output.
+//
+// Expected: Run has been called.
+// Returns: stdout as string.
+// Side effects: None.
+func (e *CLIEnv) GetOutput() string {
+	return e.stdout.String()
+}
+
+// GetErrorOutput returns the stderr output.
+//
+// Expected: Run has been called.
+// Returns: stderr as string.
+// Side effects: None.
+func (e *CLIEnv) GetErrorOutput() string {
+	return e.stderr.String()
+}
+
+// GetExitCode returns the exit code from the last command.
+//
+// Expected: Run has been called.
+// Returns: exit code (0 for success).
+// Side effects: None.
+func (e *CLIEnv) GetExitCode() int {
+	return e.exitCode
+}
+
+// GetCLIEnv retrieves the CLIEnv from context.
+//
+// Expected: ctx contains a CLIEnv stored with WithCLIEnv.
+// Returns: The CLIEnv or nil if not found.
+// Side effects: None.
+func GetCLIEnv(ctx context.Context) *CLIEnv {
+	env, ok := ctx.Value(cliEnvKey{}).(*CLIEnv)
+	if !ok {
+		return nil
+	}
+	return env
+}
+
+// WithCLIEnv stores a CLIEnv in the context.
+//
+// Expected: ctx is a valid context, env is a valid CLIEnv.
+// Returns: A new context with the CLIEnv stored.
+// Side effects: None.
+func WithCLIEnv(ctx context.Context, env *CLIEnv) context.Context {
+	return context.WithValue(ctx, cliEnvKey{}, env)
 }
