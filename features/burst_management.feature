@@ -102,7 +102,7 @@ Feature: Manage Career Bursts
     And I press escape
     Then I should see the burst detail modal
 
-  @happy @wip
+  @happy
   Scenario: View burst facts from detail modal
     Given I have a confirmed burst "Backend API Development" with facts
     When I select "burst_management" from the menu
@@ -420,7 +420,7 @@ Feature: Manage Career Bursts
     And I press escape
     Then I should be on the main menu
 
-  @sad @wip
+  @sad
   Scenario: Navigate back through modal stack
     Given I have a burst "My Burst" with 3 events
     When I select "burst_management" from the menu
