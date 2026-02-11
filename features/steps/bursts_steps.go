@@ -42,6 +42,7 @@ func RegisterBurstsSteps(sc *godog.ScenarioContext) {
 
 func registerBurstViewSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I have (\d+) bursts? in my profile$`, iHaveNBurstsInMyProfile)
+	sc.Step(`^I have (\d+) bursts?$`, iHaveNBurstsInMyProfile) // Alias
 	sc.Step(`^I should see a list of bursts$`, iShouldSeeAListOfBursts)
 	sc.Step(`^I should still be on the burst list$`, iShouldStillBeOnTheBurstList)
 	sc.Step(`^I have a burst "([^"]*)" with (\d+) events$`, iHaveABurstWithEvents)
@@ -55,6 +56,7 @@ func registerBurstViewSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I have a confirmed burst "([^"]*)" with skills$`, iHaveAConfirmedBurstWithSkills)
 	sc.Step(`^I press "s" to view skills$`, iPressSToViewSkills)
 	sc.Step(`^I should see the burst skills modal$`, iShouldSeeTheBurstSkillsModal)
+	sc.Step(`^I should still be on the burst detail modal$`, iShouldStillBeOnTheBurstDetailModal)
 }
 
 func registerBurstEditSteps(sc *godog.ScenarioContext) {
@@ -752,5 +754,19 @@ func iShouldNotSeeTheLoadingModal(ctx context.Context) error {
 	}
 	view := env.GetView()
 	gomega.Expect(view).NotTo(gomega.ContainSubstring("Loading"))
+	return nil
+}
+
+// iShouldStillBeOnTheBurstDetailModal asserts we're still on burst detail modal.
+func iShouldStillBeOnTheBurstDetailModal(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("Burst"),
+		gomega.ContainSubstring("Detail"),
+	))
 	return nil
 }

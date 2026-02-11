@@ -4,6 +4,8 @@ package steps
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
 
 	"github.com/baphled/kariya/features/support"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
@@ -72,6 +74,34 @@ func RegisterBrowseSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I press "g" to go to first$`, iPressLittleGToGoToFirst)
 	sc.Step(`^I should be at the last event$`, iShouldBeAtTheLastEvent)
 	sc.Step(`^I should be at the first event$`, iShouldBeAtTheFirstEvent)
+
+	// Event creation helpers
+	sc.Step(`^I have an event "([^"]*)"$`, iHaveAnEvent)
+	sc.Step(`^I have an event "([^"]*)" with category "([^"]*)"$`, iHaveAnEventWithCategory)
+	sc.Step(`^I have an event "([^"]*)" dated "([^"]*)"$`, iHaveAnEventDated)
+	sc.Step(`^I have an event "([^"]*)" with project "([^"]*)"$`, iHaveAnEventWithProject)
+
+	// Additional navigation
+	sc.Step(`^I press "G" to go to bottom$`, iPressGToGoToBottom)
+	sc.Step(`^I press "g" to go to top$`, iPressLittleGToGoToTop)
+	sc.Step(`^I press "j" to scroll down$`, iPressJToScrollDown)
+	sc.Step(`^I press "k" to scroll up$`, iPressKToScrollUp)
+	sc.Step(`^I press "a" to accept$`, iPressAToAccept)
+	sc.Step(`^I press "r" to reject$`, iPressRToReject)
+
+	// Assertions
+	sc.Step(`^I should see 1 event$`, iShouldSee1Event)
+	sc.Step(`^I should see skill categories$`, iShouldSeeSkillCategories)
+	sc.Step(`^I should see suggested skills$`, iShouldSeeSuggestedSkills)
+	sc.Step(`^I should see the event detail modal$`, iShouldSeeTheEventDetailModal)
+	sc.Step(`^I should see the skill suggestion modal$`, iShouldSeeTheSkillSuggestionModal)
+	sc.Step(`^I should see the skills detail modal$`, iShouldSeeTheSkillsDetailModal)
+	sc.Step(`^the event has skills "([^"]*)"$`, theEventHasSkills)
+
+	// Filter helpers
+	sc.Step(`^I select companies "([^"]*)"$`, iSelectCompanies)
+	sc.Step(`^I select project "([^"]*)"$`, iSelectProject)
+	sc.Step(`^I set date from "([^"]*)"$`, iSetDateFrom)
 }
 
 func iHaveNEventsInMyTimeline(ctx context.Context, count int) (context.Context, error) {
@@ -508,4 +538,245 @@ func iShouldBeAtTheLastEvent(_ context.Context) error {
 
 func iShouldBeAtTheFirstEvent(_ context.Context) error {
 	return godog.ErrPending
+}
+
+// iHaveAnEvent creates a simple event with just a description.
+func iHaveAnEvent(ctx context.Context, description string) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	event := fixtures.EventWith("", description, "", "")
+	env.AddEvent(event)
+	return ctx, nil
+}
+
+// iHaveAnEventWithCategory creates an event with a specific category.
+func iHaveAnEventWithCategory(ctx context.Context, description, category string) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	event := fixtures.EventWith("", description, "", "")
+	event.Categories = []string{category}
+	env.AddEvent(event)
+	return ctx, nil
+}
+
+// iHaveAnEventDated creates an event with a specific date.
+func iHaveAnEventDated(ctx context.Context, description, dateStr string) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	event := fixtures.EventWith("", description, "", "")
+	parsedDate, err := time.Parse("2006-01-02", dateStr)
+	if err != nil {
+		return ctx, err
+	}
+	event.Date = parsedDate
+	env.AddEvent(event)
+	return ctx, nil
+}
+
+// iHaveAnEventWithProject creates an event with a specific project.
+func iHaveAnEventWithProject(ctx context.Context, description, project string) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	event := fixtures.EventWith("", description, "", project)
+	env.AddEvent(event)
+	return ctx, nil
+}
+
+// iPressGToGoToBottom navigates to bottom.
+func iPressGToGoToBottom(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.PressKeyRune('G')
+	return ctx, nil
+}
+
+// iPressLittleGToGoToTop navigates to top.
+func iPressLittleGToGoToTop(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.PressKeyRune('g')
+	return ctx, nil
+}
+
+// iPressJToScrollDown scrolls down.
+func iPressJToScrollDown(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.PressKeyRune('j')
+	return ctx, nil
+}
+
+// iPressKToScrollUp scrolls up.
+func iPressKToScrollUp(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.PressKeyRune('k')
+	return ctx, nil
+}
+
+// iPressAToAccept presses 'a' to accept.
+func iPressAToAccept(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.PressKeyRune('a')
+	return ctx, nil
+}
+
+// iPressRToReject presses 'r' to reject.
+func iPressRToReject(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.PressKeyRune('r')
+	return ctx, nil
+}
+
+// iShouldSee1Event asserts exactly 1 event exists.
+func iShouldSee1Event(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	env.AssertEventCount(1)
+	return nil
+}
+
+// iShouldSeeSkillCategories asserts skill categories are visible.
+func iShouldSeeSkillCategories(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("Categor"),
+		gomega.ContainSubstring("categor"),
+		gomega.ContainSubstring("Skills"),
+	))
+	return nil
+}
+
+// iShouldSeeSuggestedSkills asserts suggested skills are visible.
+func iShouldSeeSuggestedSkills(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("Suggest"),
+		gomega.ContainSubstring("suggest"),
+		gomega.ContainSubstring("Skills"),
+	))
+	return nil
+}
+
+// iShouldSeeTheEventDetailModal asserts event detail modal is visible.
+func iShouldSeeTheEventDetailModal(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("Detail"),
+		gomega.ContainSubstring("Event"),
+		gomega.ContainSubstring("Description"),
+	))
+	return nil
+}
+
+// iShouldSeeTheSkillSuggestionModal asserts skill suggestion modal is visible.
+func iShouldSeeTheSkillSuggestionModal(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("Skill"),
+		gomega.ContainSubstring("Suggest"),
+	))
+	return nil
+}
+
+// iShouldSeeTheSkillsDetailModal asserts skills detail modal is visible.
+func iShouldSeeTheSkillsDetailModal(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("Skills"),
+		gomega.ContainSubstring("Detail"),
+	))
+	return nil
+}
+
+// theEventHasSkills asserts an event has specific skills.
+func theEventHasSkills(ctx context.Context, skillsStr string) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	events := env.GetEvents()
+	gomega.Expect(events).NotTo(gomega.BeEmpty())
+	expectedSkills := strings.Split(skillsStr, ",")
+	gomega.Expect(events[0].Skills).To(gomega.ConsistOf(expectedSkills))
+	return nil
+}
+
+// iSelectCompanies selects multiple companies in filter.
+func iSelectCompanies(ctx context.Context, companies string) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	companyList := strings.Split(companies, ",")
+	for _, company := range companyList {
+		env.TypeText(strings.TrimSpace(company))
+		env.Confirm()
+	}
+	return ctx, nil
+}
+
+// iSelectProject selects a project in filter.
+func iSelectProject(ctx context.Context, project string) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.TypeText(project)
+	env.Confirm()
+	return ctx, nil
+}
+
+// iSetDateFrom sets the date from field.
+func iSetDateFrom(ctx context.Context, dateStr string) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.TypeText(dateStr)
+	return ctx, nil
 }

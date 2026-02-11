@@ -27,6 +27,7 @@ import (
 //nolint:funlen // Registration function has many steps by design.
 func RegisterFactsSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I have (\d+) facts? in my profile$`, iHaveNFactsInMyProfile)
+	sc.Step(`^I have (\d+) facts?$`, iHaveNFactsInMyProfile) // Alias
 	sc.Step(`^I should see a list of facts$`, iShouldSeeAListOfFacts)
 	sc.Step(`^I should see fact text$`, iShouldSeeFactText)
 	sc.Step(`^I should see strength signals$`, iShouldSeeStrengthSignals)
@@ -67,6 +68,16 @@ func RegisterFactsSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I should see available shortcuts$`, iShouldSeeAvailableShortcuts)
 	sc.Step(`^I should see the original facts$`, iShouldSeeTheOriginalFacts)
 	sc.Step(`^I press "([^"]*)" to toggle help$`, iPressToToggleHelp)
+
+	// Additional fact management steps
+	sc.Step(`^I add a new fact "([^"]*)"$`, iAddANewFact)
+	sc.Step(`^I change fact text to "([^"]*)"$`, iChangeFactTextTo)
+	sc.Step(`^I edit the first fact$`, iEditTheFirstFact)
+	sc.Step(`^I open the facts editor$`, iOpenTheFactsEditor)
+	sc.Step(`^I reject all suggested facts$`, iRejectAllSuggestedFacts)
+	sc.Step(`^I save the fact edit$`, iSaveTheFactEdit)
+	sc.Step(`^there should be a fact with text "([^"]*)"$`, thereShouldBeAFactWithText)
+	sc.Step(`^I should be on audience field$`, iShouldBeOnAudienceField)
 }
 
 func iHaveNFactsInMyProfile(ctx context.Context, count int) (context.Context, error) {
@@ -561,4 +572,97 @@ func iPressToToggleHelp(ctx context.Context, key string) (context.Context, error
 	}
 	env.PressKeyRune(rune(key[0]))
 	return ctx, nil
+}
+
+// iAddANewFact creates a new fact with given text.
+func iAddANewFact(ctx context.Context, text string) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	fact := &career.Fact{Text: text}
+	env.SubmitFact(fact)
+	return ctx, nil
+}
+
+// iChangeFactTextTo changes the fact text in the editor.
+func iChangeFactTextTo(ctx context.Context, newText string) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.TypeText(newText)
+	return ctx, nil
+}
+
+// iEditTheFirstFact opens the editor for the first fact.
+func iEditTheFirstFact(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.PressKeyRune('e')
+	return ctx, nil
+}
+
+// iOpenTheFactsEditor opens the facts editor.
+func iOpenTheFactsEditor(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.PressKeyRune('f')
+	return ctx, nil
+}
+
+// iRejectAllSuggestedFacts rejects all suggested facts.
+func iRejectAllSuggestedFacts(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.PressKeyRune('r')
+	return ctx, nil
+}
+
+// iSaveTheFactEdit saves the current fact edit.
+func iSaveTheFactEdit(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.Confirm()
+	return ctx, nil
+}
+
+// thereShouldBeAFactWithText asserts a fact with specific text exists.
+func thereShouldBeAFactWithText(ctx context.Context, text string) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	facts := env.GetFacts()
+	found := false
+	for _, f := range facts {
+		if f.Text == text {
+			found = true
+			break
+		}
+	}
+	gomega.Expect(found).To(gomega.BeTrue(), "Should have fact with text: %s", text)
+	return nil
+}
+
+// iShouldBeOnAudienceField asserts the audience field is focused.
+func iShouldBeOnAudienceField(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("Audience"),
+		gomega.ContainSubstring("audience"),
+	))
+	return nil
 }
