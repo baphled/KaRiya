@@ -1169,6 +1169,8 @@ func (e *TestEnv) SubmitSkillUpdateWithError(skill *career.Skill, err error) *Te
 //
 // Side effects:
 //   - Creates the fact in the repository.
+//
+//nolint:dupl // Acceptable duplication in test helpers - similar to SubmitSkill pattern
 func (e *TestEnv) SubmitFact(fact *career.Fact) *TestEnv {
 	e.T.Helper()
 
@@ -1196,6 +1198,8 @@ func (e *TestEnv) SubmitFact(fact *career.Fact) *TestEnv {
 //
 // Side effects:
 //   - Updates the fact in the repository.
+//
+//nolint:dupl // Acceptable duplication in test helpers - similar to SubmitSkill pattern
 func (e *TestEnv) SubmitFactUpdate(fact *career.Fact) *TestEnv {
 	e.T.Helper()
 
@@ -1223,8 +1227,6 @@ func (e *TestEnv) SubmitFactUpdate(fact *career.Fact) *TestEnv {
 //
 // Side effects:
 //   - Updates the burst in the repository.
-//
-//nolint:dupl // Similar to other Submit methods - acceptable test helper duplication
 func (e *TestEnv) SubmitBurstUpdate(burst *career.Burst) *TestEnv {
 	e.T.Helper()
 
@@ -1236,6 +1238,33 @@ func (e *TestEnv) SubmitBurstUpdate(burst *career.Burst) *TestEnv {
 	err := burstRepo.Update(e.Ctx, burst)
 
 	return e.SendMessage(burstmanagement.BurstEditCompleteMsg{Burst: burst, Cancelled: false, Error: err})
+}
+
+// ConfirmBurst confirms a burst and shows the loading modal for fact extraction.
+// This bypasses the UI confirmation modal but triggers the loading state that tests expect.
+//
+// Expected:
+//   - burst must be valid with existing ID.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - Updates the burst as confirmed in the repository.
+//   - Shows loading modal (fact extraction runs but modal stays visible for test assertions).
+func (e *TestEnv) ConfirmBurst(burst *career.Burst) *TestEnv {
+	e.T.Helper()
+
+	// Confirm the burst via service
+	err := e.Service.ConfirmBurst(e.Ctx, burst)
+	if err != nil {
+		e.T.Fatalf("failed to confirm burst: %v", err)
+	}
+
+	// Trigger the loading state by sending a custom message
+	// The intent will show the loading modal when it processes this
+	// We don't complete the extraction immediately so tests can assert on the loading state
+	return e.SendMessage(burstmanagement.BurstConfirmedMsg{Burst: burst, Error: nil})
 }
 
 // DismissSuccessModal bypasses the auto-dismiss countdown and immediately
