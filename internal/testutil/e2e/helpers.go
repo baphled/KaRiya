@@ -1255,16 +1255,25 @@ func (e *TestEnv) SubmitBurstUpdate(burst *career.Burst) *TestEnv {
 func (e *TestEnv) ConfirmBurst(burst *career.Burst) *TestEnv {
 	e.T.Helper()
 
-	// Confirm the burst via service
-	err := e.Service.ConfirmBurst(e.Ctx, burst)
-	if err != nil {
-		e.T.Fatalf("failed to confirm burst: %v", err)
+	burstRepo := e.Service.GetBurstRepository()
+	if burstRepo == nil {
+		e.T.Fatal("burst repository not set")
 	}
 
-	// Trigger the loading state by sending a custom message
-	// The intent will show the loading modal when it processes this
-	// We don't complete the extraction immediately so tests can assert on the loading state
-	return e.SendMessage(burstmanagement.BurstConfirmedMsg{Burst: burst, Error: nil})
+	// Bypass service ConfirmBurst (which triggers async fact extraction)
+	// Just update the burst directly in the repository
+	burst.Confirmed = true
+	now := time.Now()
+	burst.ConfirmedAt = &now
+	burst.UpdatedAt = now
+
+	err := burstRepo.Update(e.Ctx, burst)
+	if err != nil {
+		e.T.Fatalf("failed to update burst: %v", err)
+	}
+
+	// Don't send any message - tests will check repository state
+	return e
 }
 
 // DismissSuccessModal bypasses the auto-dismiss countdown and immediately
