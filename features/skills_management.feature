@@ -385,7 +385,7 @@ Feature: Manage Skills
     And I have a skill "AWS" with category "cloud"
     When I select "manage_skills" from the menu
     And I press "f" to filter
-    And I select filter category "Languages"
+    And I select filter category "Backend"
     And I confirm filter
     Then I should see 1 skill
     And I should see "Go"
@@ -400,7 +400,7 @@ Feature: Manage Skills
     And I have a skill "AWS" with category "cloud"
     When I select "manage_skills" from the menu
     And I press "f" to filter
-    And I select filter categories "Languages,DevOps"
+    And I select filter categories "Backend,DevOps"
     And I confirm filter
     Then I should see 4 skills
     And I should not see "AWS"
