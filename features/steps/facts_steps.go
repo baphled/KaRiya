@@ -23,6 +23,8 @@ import (
 //
 // Side effects:
 //   - Registers step definitions with Godog.
+//
+//nolint:funlen // Registration function has many steps by design.
 func RegisterFactsSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I have (\d+) facts? in my profile$`, iHaveNFactsInMyProfile)
 	sc.Step(`^I should see a list of facts$`, iShouldSeeAListOfFacts)

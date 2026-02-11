@@ -40,7 +40,6 @@ func RegisterBurstsSteps(sc *godog.ScenarioContext) {
 	registerBurstNavigationSteps(sc)
 }
 
-//nolint:dupl // Step registration functions look similar but register different steps.
 func registerBurstViewSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I have (\d+) bursts? in my profile$`, iHaveNBurstsInMyProfile)
 	sc.Step(`^I should see a list of bursts$`, iShouldSeeAListOfBursts)
@@ -58,7 +57,6 @@ func registerBurstViewSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I should see the burst skills modal$`, iShouldSeeTheBurstSkillsModal)
 }
 
-//nolint:dupl // Step registration functions look similar but register different steps.
 func registerBurstEditSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I should see the edit burst form$`, iShouldSeeTheEditBurstForm)
 	sc.Step(`^I clear the burst name field$`, iClearTheBurstNameField)
@@ -111,8 +109,11 @@ func iHaveNBurstsInMyProfile(ctx context.Context, count int) (context.Context, e
 	}
 
 	// Create N bursts with test data
-	for i := 0; i < count; i++ {
-		burst := fixtures.BurstFactory.MustCreate().(*career.Burst)
+	for range count {
+		burst, ok := fixtures.BurstFactory.MustCreate().(*career.Burst)
+		if !ok {
+			return ctx, errors.New("factory did not create a Burst")
+		}
 		burst.ID = "" // Clear ID so repo generates one
 		env.AddBurst(burst)
 	}
@@ -156,8 +157,11 @@ func iHaveABurstWithEvents(ctx context.Context, name string, count string) (cont
 
 	// Create events first
 	var eventIDs []string
-	for i := 0; i < parseIntOrDefault(count, 3); i++ {
-		event := fixtures.EventFactory.MustCreate().(*career.Event)
+	for range parseIntOrDefault(count, 3) {
+		event, ok := fixtures.EventFactory.MustCreate().(*career.Event)
+		if !ok {
+			return ctx, errors.New("factory did not create an Event")
+		}
 		event.ID = ""
 		env.AddEvent(event)
 		eventIDs = append(eventIDs, event.ID)
@@ -503,8 +507,11 @@ func iHaveAnUnconfirmedBurst(ctx context.Context, name string, count int) (conte
 
 	// Create events first
 	var eventIDs []string
-	for i := 0; i < count; i++ {
-		event := fixtures.EventFactory.MustCreate().(*career.Event)
+	for range count {
+		event, ok := fixtures.EventFactory.MustCreate().(*career.Event)
+		if !ok {
+			return ctx, errors.New("factory did not create an Event")
+		}
 		event.ID = ""
 		env.AddEvent(event)
 		eventIDs = append(eventIDs, event.ID)
