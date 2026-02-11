@@ -661,8 +661,8 @@ func iShouldSeeBulletPoints(ctx context.Context) error {
 	return nil
 }
 
-func iHaveGeneratedALongCV(_ context.Context) (context.Context, error) {
-	return nil, godog.ErrPending
+func iHaveGeneratedALongCV(ctx context.Context) (context.Context, error) {
+	return ctx, godog.ErrPending
 }
 
 func iShouldScrollAFullPage(_ context.Context) error {
@@ -841,8 +841,8 @@ func iShouldReturnToPreviousScreen(ctx context.Context) error {
 	return nil
 }
 
-func iStartAnExport(_ context.Context) (context.Context, error) {
-	return nil, godog.ErrPending
+func iStartAnExport(ctx context.Context) (context.Context, error) {
+	return ctx, godog.ErrPending
 }
 
 func iCompleteAnExport(_ context.Context) error {
@@ -853,8 +853,8 @@ func iShouldSeeExportLocation(_ context.Context) error {
 	return godog.ErrPending
 }
 
-func cvGenerationWillFail(_ context.Context) (context.Context, error) {
-	return nil, godog.ErrPending
+func cvGenerationWillFail(ctx context.Context) (context.Context, error) {
+	return ctx, godog.ErrPending
 }
 
 func iShouldSeeAnErrorModal(ctx context.Context) error {
@@ -876,8 +876,8 @@ func iShouldSeeErrorDetails(_ context.Context) error {
 	return godog.ErrPending
 }
 
-func exportWillFail(_ context.Context) (context.Context, error) {
-	return nil, godog.ErrPending
+func exportWillFail(ctx context.Context) (context.Context, error) {
+	return ctx, godog.ErrPending
 }
 
 func iShouldBeAbleToRetry(_ context.Context) error {
