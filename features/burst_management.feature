@@ -179,7 +179,7 @@ Feature: Manage Career Bursts
   # TODO: Test infrastructure issue - form description field not capturing input in test
   # Functionality verified manually as working. Suspected timing/focus issue with Tab navigation
   # or Huh form field binding in test harness. Name edit works with same pattern.
-  @happy @wip @test-infrastructure-issue
+  @happy @test-infrastructure-issue
   Scenario: Edit burst description and save
     Given I have a burst "My Burst" with 2 events
     When I select "burst_management" from the menu
@@ -249,7 +249,7 @@ Feature: Manage Career Bursts
     Then I should see the burst detail modal
     And the burst should not be confirmed
 
-  @happy @wip
+  @happy
   Scenario: Confirm burst triggers fact extraction
     Given I have an unconfirmed burst "New Burst" with 3 events
     When I select "burst_management" from the menu
@@ -297,7 +297,7 @@ Feature: Manage Career Bursts
     And I should see suggested burst names
     And I should see confidence scores
 
-  @happy @wip
+  @happy
   Scenario: Navigate through burst suggestions
     Given I have burst suggestions available
     When I am on the burst suggestion modal
@@ -305,7 +305,7 @@ Feature: Manage Career Bursts
     And I press "k" to navigate up
     Then I should see different suggestions highlighted
 
-  @happy @wip
+  @happy
   Scenario: View events for burst suggestion
     Given I have burst suggestions available
     When I am on the burst suggestion modal
@@ -313,7 +313,7 @@ Feature: Manage Career Bursts
     Then I should see the suggestion events modal
     And I should see event details
 
-  @happy @wip
+  @happy
   Scenario: Accept burst suggestion
     Given I have burst suggestions available
     When I am on the burst suggestion modal
@@ -321,7 +321,7 @@ Feature: Manage Career Bursts
     Then I should see success message
     And there should be 1 burst
 
-  @happy @wip
+  @happy
   Scenario: Reject burst suggestion
     Given I have burst suggestions available
     When I am on the burst suggestion modal
@@ -329,7 +329,7 @@ Feature: Manage Career Bursts
     Then the suggestion should be marked as rejected
     And there should be 0 bursts
 
-  @happy @wip
+  @happy
   Scenario: Cancel burst suggestion review
     Given I have burst suggestions available
     When I am on the burst suggestion modal
@@ -341,7 +341,7 @@ Feature: Manage Career Bursts
   # Skill Inference from Burst
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Trigger skill inference from confirmed burst
     Given I have a confirmed burst "Backend Development" with 5 events
     When I select "burst_management" from the menu
@@ -359,7 +359,7 @@ Feature: Manage Career Bursts
     Then I should still be on the burst detail modal
     And I should not see the loading modal
 
-  @happy @wip
+  @happy
   Scenario: Cancel skill inference
     Given I have a confirmed burst "Backend Development" with 5 events
     When I select "burst_management" from the menu
@@ -368,7 +368,7 @@ Feature: Manage Career Bursts
     And I press escape
     Then I should see the burst detail modal
 
-  @happy @wip
+  @happy
   Scenario: View skill suggestions after inference
     Given I have a confirmed burst "Backend Development" with 5 events
     When I select "burst_management" from the menu
@@ -379,7 +379,7 @@ Feature: Manage Career Bursts
     And I should see suggested skills
     And I should see skill categories
 
-  @happy @wip
+  @happy
   Scenario: Navigate through skill suggestions
     Given I have skill suggestions from burst
     When I am on the skill suggestion modal
@@ -387,14 +387,14 @@ Feature: Manage Career Bursts
     And I press "k" to navigate up
     Then I should see different skills highlighted
 
-  @happy @wip
+  @happy
   Scenario: View events for skill suggestion
     Given I have skill suggestions from burst
     When I am on the skill suggestion modal
     And I press enter to view events
     Then I should see events that led to this skill
 
-  @happy @wip
+  @happy
   Scenario: Accept skill suggestion
     Given I have skill suggestions from burst
     When I am on the skill suggestion modal
@@ -402,7 +402,7 @@ Feature: Manage Career Bursts
     Then I should see success message
     And there should be 1 skill
 
-  @happy @wip
+  @happy
   Scenario: Reject skill suggestion
     Given I have skill suggestions from burst
     When I am on the skill suggestion modal

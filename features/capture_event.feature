@@ -50,7 +50,7 @@ Feature: Capture Career Events
     And the event should have tags "technical,project"
     And the event should have categories "technical,architecture"
 
-  @happy @enrichment @wip
+  @happy @enrichment
   Scenario: Accept suggested burst during review
     Given I have an event "Built user authentication service" at company "Acme Corp"
     Given I have an event "Implemented OAuth2 integration" at company "Acme Corp"
@@ -67,7 +67,7 @@ Feature: Capture Career Events
     Then I should be on the main menu
     And there should be 1 burst
 
-  @happy @enrichment @wip
+  @happy @enrichment
   Scenario: Accept inferred skill during review
     When I select "capture_event" from the menu
     And I select quick capture strategy
@@ -80,7 +80,7 @@ Feature: Capture Career Events
     Then I should be on the main menu
     And there should be skills including "Go"
 
-  @happy @enrichment @wip
+  @happy @enrichment
   Scenario: Edit suggested burst before accepting
     Given I have an event "Deployed Kubernetes cluster" at company "CloudCo"
     Given I have an event "Set up CI/CD pipeline" at company "CloudCo"
@@ -96,7 +96,7 @@ Feature: Capture Career Events
     And I confirm the review
     Then there should be 1 burst with name "Infrastructure Automation Initiative"
 
-  @happy @enrichment @wip
+  @happy @enrichment
   Scenario: Edit event metadata during review
     When I select "capture_event" from the menu
     And I select quick capture strategy
@@ -294,7 +294,7 @@ Feature: Capture Career Events
   # Skills Selection (Manual Capture)
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Manual capture with skills selection
     When I select "capture_event" from the menu
     And I select manual capture strategy

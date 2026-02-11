@@ -218,7 +218,7 @@ Feature: Manage Skills
     Then I should see the loading modal
     And I should see "Analyzing"
 
-  @happy @wip
+  @happy
   Scenario: Cancel skill inference
     Given I have an event "Built REST API in Go"
     When I select "manage_skills" from the menu
@@ -235,7 +235,7 @@ Feature: Manage Skills
     Then I should see the skill suggestions modal
     And I should see "Go"
 
-  @happy @wip
+  @happy
   Scenario: Accept skill suggestion
     Given I have an event "Built microservices in Go"
     When I select "manage_skills" from the menu
@@ -245,7 +245,7 @@ Feature: Manage Skills
     Then I should see "success"
     And there should be 1 skill
 
-  @happy @wip
+  @happy
   Scenario: Reject skill suggestion
     Given I have an event "Built microservices in Go"
     When I select "manage_skills" from the menu
@@ -326,7 +326,7 @@ Feature: Manage Skills
   # Proficiency Level
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Add skill with proficiency level
     Given the database is empty
     When I select "manage_skills" from the menu
@@ -338,7 +338,7 @@ Feature: Manage Skills
     Then there should be 1 skill
     And the skill should have level "Expert"
 
-  @happy @wip
+  @happy
   Scenario: Edit skill proficiency level
     Given I have a skill "Docker" with category "devops" and level "Intermediate"
     When I select "manage_skills" from the menu
@@ -352,7 +352,7 @@ Feature: Manage Skills
   # Years of Experience
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Add skill with years of experience
     Given the database is empty
     When I select "manage_skills" from the menu
@@ -364,7 +364,7 @@ Feature: Manage Skills
     Then there should be 1 skill
     And the skill should have years "8"
 
-  @happy @wip
+  @happy
   Scenario: Edit skill years of experience
     Given I have a skill "Python" with category "backend" and years "3"
     When I select "manage_skills" from the menu
@@ -378,7 +378,7 @@ Feature: Manage Skills
   # Filter by Category
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Filter skills by category
     Given I have a skill "Go" with category "backend"
     And I have a skill "Docker" with category "devops"
@@ -391,7 +391,7 @@ Feature: Manage Skills
     And I should see "Go"
     And I should not see "Docker"
 
-  @happy @wip
+  @happy
   Scenario: Filter skills by multiple categories
     Given I have a skill "Go" with category "backend"
     And I have a skill "Python" with category "backend"
@@ -409,7 +409,7 @@ Feature: Manage Skills
   # Sort Options
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Sort skills by years descending
     Given I have a skill "Go" with years "2"
     And I have a skill "Python" with years "8"
@@ -433,7 +433,7 @@ Feature: Manage Skills
     And I confirm sort
     Then I should see "Go" first
 
-  @happy @wip
+  @happy
   Scenario: Sort skills by name alphabetically
     Given I have a skill "Zebra"
     And I have a skill "Alpha"
@@ -460,7 +460,7 @@ Feature: Manage Skills
   # Category Grouping
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Skills are grouped by category
     Given I have a skill "Go" with category "backend"
     And I have a skill "Python" with category "backend"

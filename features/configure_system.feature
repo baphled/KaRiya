@@ -245,7 +245,7 @@ Feature: Configure System
     And I press Ctrl+S
     Then I should see the review modal
 
-  @happy @wip
+  @happy
   Scenario: Submit settings with Enter
     When I select "configure_system" from the menu
     And I select "System" domain
@@ -257,7 +257,7 @@ Feature: Configure System
   # Review Changes Modal
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: View pending changes
     When I select "configure_system" from the menu
     And I select "System" domain
@@ -336,7 +336,7 @@ Feature: Configure System
   # Saving and Result
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: View saving progress
     When I confirm save
     Then I should see the saving modal
@@ -395,7 +395,7 @@ Feature: Configure System
   # Full Workflow
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Complete configuration save workflow
     When I select "configure_system" from the menu
     And I select "System" domain
@@ -406,7 +406,7 @@ Feature: Configure System
     And the save completes
     Then I should be on the main menu
 
-  @happy @wip
+  @happy
   Scenario: Full escape navigation path
     When I select "configure_system" from the menu
     And I select "System" domain
