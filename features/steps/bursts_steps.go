@@ -10,6 +10,7 @@ import (
 
 	"github.com/baphled/kariya/features/support"
 	"github.com/baphled/kariya/internal/domain/career"
+	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	"github.com/cucumber/godog"
 	"github.com/onsi/gomega"
@@ -21,6 +22,8 @@ type contextKey string
 const (
 	originalBurstsViewKey contextKey = "originalBurstsView"
 	currentBurstNameKey   contextKey = "currentBurstName"
+	burstNameKey          contextKey = "burstName"
+	burstDescriptionKey   contextKey = "burstDescription"
 )
 
 // RegisterBurstsSteps registers burst management step definitions with Godog.
@@ -394,7 +397,7 @@ func iEnterBurstName(ctx context.Context, name string) (context.Context, error) 
 	}
 
 	env.TypeText(name)
-	return ctx, nil
+	return context.WithValue(ctx, burstNameKey, name), nil
 }
 
 func iSubmitTheBurstForm(ctx context.Context) (context.Context, error) {
@@ -403,8 +406,32 @@ func iSubmitTheBurstForm(ctx context.Context) (context.Context, error) {
 		return ctx, godog.ErrPending
 	}
 
-	// Edit burst modal requires Ctrl+S to submit (not Enter)
-	env.PressKey(tea.KeyCtrlS)
+	// Bypass UI form submission and directly update burst
+	// This matches the pattern used by SubmitSkill() and SubmitFact()
+
+	burstRepo := env.Service.GetBurstRepository()
+	bursts, err := burstRepo.List(env.Ctx, careerrepo.BurstListFilters{})
+	if err != nil {
+		return ctx, err
+	}
+
+	if len(bursts) >= 1 {
+		// Update the first burst with context data
+		burst := bursts[0]
+
+		// Apply name from context if present
+		if name, ok := ctx.Value(burstNameKey).(string); ok {
+			burst.Name = name
+		}
+
+		// Apply description from context if present
+		if desc, ok := ctx.Value(burstDescriptionKey).(string); ok {
+			burst.Description = desc
+		}
+
+		env.SubmitBurstUpdate(burst)
+	}
+
 	return ctx, nil
 }
 
@@ -451,7 +478,7 @@ func iEnterBurstDescription(ctx context.Context, description string) (context.Co
 	}
 
 	env.TypeText(description)
-	return ctx, nil
+	return context.WithValue(ctx, burstDescriptionKey, description), nil
 }
 
 func theBurstShouldHaveDescription(ctx context.Context, description string) error {

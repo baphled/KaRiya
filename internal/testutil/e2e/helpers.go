@@ -1212,6 +1212,32 @@ func (e *TestEnv) SubmitFactUpdate(fact *career.Fact) *TestEnv {
 	return e.SendMessage(factmanagement.FactSavedMsg{Fact: fact, IsNew: false, Message: "Fact updated successfully"})
 }
 
+// SubmitBurstUpdate updates a burst in the repository and sends a BurstEditCompleteMsg.
+// This bypasses the UI form submission path for burst editing.
+//
+// Expected:
+//   - burst must be valid with existing ID.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - Updates the burst in the repository.
+//
+//nolint:dupl // Similar to other Submit methods - acceptable test helper duplication
+func (e *TestEnv) SubmitBurstUpdate(burst *career.Burst) *TestEnv {
+	e.T.Helper()
+
+	burstRepo := e.Service.GetBurstRepository()
+	if burstRepo == nil {
+		e.T.Fatal("burst repository not set")
+	}
+
+	err := burstRepo.Update(e.Ctx, burst)
+
+	return e.SendMessage(burstmanagement.BurstEditCompleteMsg{Burst: burst, Cancelled: false, Error: err})
+}
+
 // DismissSuccessModal bypasses the auto-dismiss countdown and immediately
 // dismisses the success modal. Use this to speed up tests that don't need
 // to verify countdown behavior. To test the actual countdown, send

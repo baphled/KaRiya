@@ -119,7 +119,7 @@ Feature: Manage Career Facts
     Then I should still be on the fact list
     And there should be 0 facts
 
-  @happy @wip
+  @happy
   Scenario: Create new fact with all fields
     Given the database is empty
     When I select "fact_management" from the menu
@@ -136,7 +136,7 @@ Feature: Manage Career Facts
     And there should be 1 fact
     And the fact should have text "Reduced deployment time by 50%"
 
-  @happy @wip
+  @happy
   Scenario: Create fact with multiple competency categories
     Given the database is empty
     When I select "fact_management" from the menu
@@ -148,7 +148,7 @@ Feature: Manage Career Facts
     And I submit the fact form
     Then the fact should have categories "Technical,Leadership"
 
-  @happy @wip
+  @happy
   Scenario: Create fact with multiple audience types
     Given the database is empty
     When I select "fact_management" from the menu
@@ -198,7 +198,7 @@ Feature: Manage Career Facts
     And I press escape
     Then I should see the fact detail view
 
-  @happy @wip
+  @happy
   Scenario: Edit fact text and save
     Given I have a fact "Original fact text here"
     When I select "fact_management" from the menu
@@ -209,7 +209,7 @@ Feature: Manage Career Facts
     Then I should still be on the fact list
     And the fact should have text "Updated fact text"
 
-  @happy @wip
+  @happy
   Scenario: Edit fact competency categories
     Given I have a fact with category "Technical"
     When I select "fact_management" from the menu
@@ -301,7 +301,7 @@ Feature: Manage Career Facts
     Then I should see a validation error
     And I should see "10"
 
-  @sad @wip
+  @sad
   Scenario: Fact text maximum length validation
     Given the database is empty
     When I select "fact_management" from the menu
