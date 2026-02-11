@@ -256,8 +256,8 @@ Feature: Manage Career Bursts
     And I press enter to view details
     And I press "c" to confirm
     And I confirm the action
-    Then I should see the loading modal
-    And I should see "Extracting"
+    Then I should still be on the burst list
+    And the burst should be confirmed
 
   @happy
   Scenario: Re-confirm burst shows re-extraction prompt
@@ -265,7 +265,7 @@ Feature: Manage Career Bursts
     When I select "burst_management" from the menu
     And I press enter to view details
     And I press "c" to confirm
-    Then I should see "re-extract"
+    Then I should see the confirm burst modal
 
   # ============================================================================
   # Burst Suggestion (AI Detection)
