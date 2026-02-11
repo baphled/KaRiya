@@ -175,7 +175,9 @@ func iToggleTheBooleanValue(ctx context.Context) (context.Context, error) {
 	}
 	// Toggle the currently focused boolean field
 	// (Field should already be focused by prior navigation)
-	form.ToggleBoolean("")
+	if err := form.ToggleBoolean(""); err != nil {
+		return ctx, err
+	}
 	return ctx, nil
 }
 
