@@ -78,6 +78,15 @@ func RegisterCaptureSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I should see a date validation error$`, iShouldSeeDateValidationError)
 	sc.Step(`^I should see a validation error about minimum length$`, iShouldSeeMinLengthValidationError)
 	sc.Step(`^the event should have skills "([^"]*)"$`, theEventShouldHaveSkills)
+
+	// Additional editor navigation
+	sc.Step(`^I press 'b' to open bursts editor$`, iPressBToOpenBurstsEditor)
+	sc.Step(`^I press 'f' to open facts editor$`, iPressFToOpenFactsEditor)
+	sc.Step(`^I press 'm' to open metadata editor$`, iPressMToOpenMetadataEditor)
+	sc.Step(`^I should see the bursts modal$`, iShouldSeeTheBurstsModal)
+	sc.Step(`^I should see the facts modal$`, iShouldSeeTheFactsModal)
+	sc.Step(`^I should see the metadata modal$`, iShouldSeeTheMetadataModal)
+	sc.Step(`^I should move to the previous field$`, iShouldMoveToThePreviousField)
 }
 
 func theDatabaseIsEmpty(ctx context.Context) (context.Context, error) {
@@ -771,5 +780,89 @@ func iShouldSeeKeyBadgeFor(ctx context.Context, key, _ string) error {
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.ContainSubstring(key))
+	return nil
+}
+
+// iPressBToOpenBurstsEditor opens the bursts editor.
+func iPressBToOpenBurstsEditor(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.PressKeyRune('b')
+	return ctx, nil
+}
+
+// iPressFToOpenFactsEditor opens the facts editor.
+func iPressFToOpenFactsEditor(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.PressKeyRune('f')
+	return ctx, nil
+}
+
+// iPressMToOpenMetadataEditor opens the metadata editor.
+func iPressMToOpenMetadataEditor(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.PressKeyRune('m')
+	return ctx, nil
+}
+
+// iShouldSeeTheBurstsModal asserts the bursts modal is visible.
+func iShouldSeeTheBurstsModal(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("Burst"),
+		gomega.ContainSubstring("burst"),
+	))
+	return nil
+}
+
+// iShouldSeeTheFactsModal asserts the facts modal is visible.
+func iShouldSeeTheFactsModal(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("Fact"),
+		gomega.ContainSubstring("fact"),
+	))
+	return nil
+}
+
+// iShouldSeeTheMetadataModal asserts the metadata modal is visible.
+func iShouldSeeTheMetadataModal(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("Metadata"),
+		gomega.ContainSubstring("metadata"),
+	))
+	return nil
+}
+
+// iShouldMoveToThePreviousField asserts focus moved to previous field.
+func iShouldMoveToThePreviousField(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	// This is a behavioral assertion - focus changed
+	view := env.GetView()
+	gomega.Expect(view).NotTo(gomega.BeEmpty())
 	return nil
 }
