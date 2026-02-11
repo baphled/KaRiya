@@ -14,6 +14,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/intents"
 	burstmanagement "github.com/baphled/kariya/internal/cli/intents/burst_management"
 	"github.com/baphled/kariya/internal/cli/intents/captureevent"
+	"github.com/baphled/kariya/internal/cli/intents/factmanagement"
 	"github.com/baphled/kariya/internal/cli/intents/generatecv"
 	"github.com/baphled/kariya/internal/cli/intents/skillsmanagement"
 	"github.com/baphled/kariya/internal/cli/service"
@@ -974,6 +975,12 @@ func (e *TestEnv) processCmdResult(msg tea.Msg) {
 		e.updateModelAndExecute(msg)
 	case burstmanagement.BurstSkillsLoadedMsg:
 		e.updateModelAndExecute(msg)
+	case factmanagement.FactsLoadedMsg:
+		e.updateModelAndExecute(msg)
+	case factmanagement.FactSavedMsg:
+		e.updateModelAndExecute(msg)
+	case factmanagement.FactDeletedMsg:
+		e.updateModelAndExecute(msg)
 	case feedback.ModalCountdownTickMsg:
 		e.updateModelAndExecute(msg)
 	case feedback.ModalAutoDismissMsg:
@@ -1149,6 +1156,60 @@ func (e *TestEnv) SubmitSkillUpdateWithError(skill *career.Skill, err error) *Te
 	e.T.Helper()
 
 	return e.SendMessage(skillsmanagement.SkillUpdatedMsg{Skill: skill, Error: err})
+}
+
+// SubmitFact creates a fact in the repository and sends a FactSavedMsg.
+// This bypasses the UI form submission path for fact creation.
+//
+// Expected:
+//   - fact must be valid.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - Creates the fact in the repository.
+func (e *TestEnv) SubmitFact(fact *career.Fact) *TestEnv {
+	e.T.Helper()
+
+	factRepo := e.Service.GetFactRepository()
+	if factRepo == nil {
+		e.T.Fatal("fact repository not set")
+	}
+
+	err := factRepo.Create(e.Ctx, fact)
+	if err != nil {
+		return e.SendMessage(factmanagement.FactSavedMsg{Fact: fact, IsNew: true, Message: err.Error()})
+	}
+
+	return e.SendMessage(factmanagement.FactSavedMsg{Fact: fact, IsNew: true, Message: "Fact saved successfully"})
+}
+
+// SubmitFactUpdate updates a fact in the repository and sends a FactSavedMsg.
+// This bypasses the UI form submission path for fact editing.
+//
+// Expected:
+//   - fact must be valid with existing ID.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - Updates the fact in the repository.
+func (e *TestEnv) SubmitFactUpdate(fact *career.Fact) *TestEnv {
+	e.T.Helper()
+
+	factRepo := e.Service.GetFactRepository()
+	if factRepo == nil {
+		e.T.Fatal("fact repository not set")
+	}
+
+	err := factRepo.Update(e.Ctx, fact)
+	if err != nil {
+		return e.SendMessage(factmanagement.FactSavedMsg{Fact: fact, IsNew: false, Message: err.Error()})
+	}
+
+	return e.SendMessage(factmanagement.FactSavedMsg{Fact: fact, IsNew: false, Message: "Fact updated successfully"})
 }
 
 // DismissSuccessModal bypasses the auto-dismiss countdown and immediately

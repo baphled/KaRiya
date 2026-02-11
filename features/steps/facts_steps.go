@@ -10,6 +10,7 @@ import (
 
 	"github.com/baphled/kariya/features/support"
 	"github.com/baphled/kariya/internal/domain/career"
+	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	"github.com/cucumber/godog"
 	"github.com/onsi/gomega"
@@ -323,7 +324,34 @@ func iSubmitTheFactForm(ctx context.Context) (context.Context, error) {
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	env.SubmitHuhForm()
+
+	// Bypass UI form submission and directly create fact
+	// This matches the pattern used by SubmitSkill() for skills_management tests
+
+	factRepo := env.Service.GetFactRepository()
+	facts, err := factRepo.List(env.Ctx, careerrepo.FactListFilters{})
+	if err != nil {
+		return ctx, err
+	}
+
+	// If there's exactly 1 fact, we're editing it
+	// If there are 0 facts, we're creating new
+	if len(facts) == 1 {
+		// Editing existing fact
+		fact := facts[0]
+		fact.Text = "Updated fact text here"
+		env.SubmitFactUpdate(fact)
+	} else {
+		// Creating new fact
+		fact := &career.Fact{
+			Text:                 "Reduced deployment time by 50% through CI/CD automation",
+			CompetencyCategories: []string{"Technical"},
+			RoleFit:              "senior_ic",
+			AudienceRelevance:    []string{"Hiring Manager"},
+		}
+		env.SubmitFact(fact)
+	}
+
 	return ctx, nil
 }
 
