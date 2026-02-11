@@ -261,8 +261,8 @@ func iCompleteTheForm(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-func iChangeLogLevelTo(_ context.Context, _ string) (context.Context, error) {
-	return nil, godog.ErrPending
+func iChangeLogLevelTo(ctx context.Context, _ string) (context.Context, error) {
+	return ctx, godog.ErrPending
 }
 
 func iAmOnTheReviewChangesModal(_ context.Context) error {
@@ -319,8 +319,8 @@ func iShouldSeeSavingModal(ctx context.Context) error {
 	return nil
 }
 
-func iConfirmSave(_ context.Context) (context.Context, error) {
-	return nil, godog.ErrPending
+func iConfirmSave(ctx context.Context) (context.Context, error) {
+	return ctx, godog.ErrPending
 }
 
 func iShouldSeeASpinner(_ context.Context) error {

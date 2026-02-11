@@ -637,8 +637,8 @@ func iShouldSeeConfidenceScores(_ context.Context) error {
 	return godog.ErrPending
 }
 
-func iHaveBurstSuggestionsAvailable(_ context.Context) (context.Context, error) {
-	return nil, godog.ErrPending
+func iHaveBurstSuggestionsAvailable(ctx context.Context) (context.Context, error) {
+	return ctx, godog.ErrPending
 }
 
 func iAmOnTheBurstSuggestionModal(_ context.Context) error {
@@ -653,12 +653,12 @@ func iShouldSeeTheSuggestionEventsModal(_ context.Context) error {
 	return godog.ErrPending
 }
 
-func iHaveAConfirmedBurstWithNEvents(_ context.Context, _ string, _ int) (context.Context, error) {
-	return nil, godog.ErrPending
+func iHaveAConfirmedBurstWithNEvents(ctx context.Context, _ string, _ int) (context.Context, error) {
+	return ctx, godog.ErrPending
 }
 
-func iHaveSkillSuggestionsFromBurst(_ context.Context) (context.Context, error) {
-	return nil, godog.ErrPending
+func iHaveSkillSuggestionsFromBurst(ctx context.Context) (context.Context, error) {
+	return ctx, godog.ErrPending
 }
 
 func iAmOnTheSkillSuggestionModalBursts(_ context.Context) error {
