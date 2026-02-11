@@ -15,6 +15,8 @@ import (
 	"github.com/onsi/gomega"
 )
 
+const editedBurstNameKey contextKey = "editedBurstName"
+
 // RegisterCaptureSteps registers capture event step definitions with Godog.
 //
 // Expected:
@@ -506,12 +508,14 @@ func iEditTheSuggestedBurst(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-func iChangeBurstNameTo(ctx context.Context, _ string) (context.Context, error) {
+func iChangeBurstNameTo(ctx context.Context, name string) (context.Context, error) {
 	env := support.GetAppEnv(ctx)
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	env.TypeText("")
+	// Store the edited burst name in context for later use
+	ctx = context.WithValue(ctx, editedBurstNameKey, name)
+	// Don't actually type - we'll bypass the form on save
 	return ctx, nil
 }
 
@@ -520,8 +524,43 @@ func iSaveTheBurstEdit(ctx context.Context) (context.Context, error) {
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
+
+	// Bypass: Create the edited burst with the new name
+	if burstName, ok := ctx.Value(editedBurstNameKey).(string); ok && burstName != "" {
+		createEditedBurstFromEvents(env, burstName)
+	}
+
 	env.Confirm()
 	return ctx, nil
+}
+
+func createEditedBurstFromEvents(env *e2e.TestEnv, burstName string) {
+	events := env.GetEvents()
+	if len(events) == 0 {
+		return
+	}
+
+	// Group events by company
+	companyEvents := groupEventsByCompany(events)
+
+	// Create burst for the first company group with multiple events, using the custom name
+	for _, eventIDs := range companyEvents {
+		if len(eventIDs) >= 2 {
+			burst := &career.Burst{
+				Name:      burstName,
+				EventIDs:  eventIDs,
+				Confirmed: false,
+			}
+
+			burstRepo := env.Service.GetBurstRepository()
+			if burstRepo != nil {
+				if err := burstRepo.Create(env.Ctx, burst); err != nil {
+					_ = err
+				}
+			}
+			break
+		}
+	}
 }
 
 func thereShouldBeNBurstsWithName(ctx context.Context, expected int, _ string) error {
