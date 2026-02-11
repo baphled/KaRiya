@@ -15,6 +15,8 @@ Go TUI application using Bubble Tea. Follow these rules strictly.
   - Unless explicitly approved by user, NEVER skip `make session-start` or any
     tests
 - Refuse if about to do something that violates these rules
+- **NEVER declare a task "done" or "complete" - only the USER decides when work is finished**
+- **NEVER decide to skip, postpone, or deprioritize work - only the USER makes these decisions**
 
 ### Token Efficiency
 - Be concise and precise
@@ -124,6 +126,9 @@ App -> Intents -> Screens/Modals -> UIKit -> Behaviors
 - Use `git commit` instead of `make ai-commit`
 - Add TODO/FIXME comments
 - Import `intents/` from `screens/`
+- **Commit code when tests are failing or hanging without explicit user approval**
+- **Declare task complete when the USER has not confirmed completion**
+- **Make scope decisions (what's "separate", what's "additional", what can wait)**
 
 ## When to ASK
 
@@ -131,6 +136,9 @@ App -> Intents -> Screens/Modals -> UIKit -> Behaviors
 - Multiple valid interpretations exist
 - Tests fail but unsure if test or code is wrong
 - About to "fix" something that might be intentional
+- **When you encounter ANY blocker, failure, or issue - NEVER decide independently to skip it**
+- **When tests don't pass - NEVER commit and declare it "mostly done" without user approval**
+- **When you want to mark something as "needs investigation" - ASK FIRST**
 
 ## Key Docs
 
