@@ -154,24 +154,47 @@ func (m *FilterModal) buildFilterFields(categoryOptions, levelOptions []forms.Se
 	return fields
 }
 
+// ValidateYearsInput validates years input for the filter form.
+//
+// Expected:
+//   - s must be a string.
+//
+// Returns:
+//   - error if validation fails, nil otherwise.
+//
+// Side effects:
+//   - None.
+func ValidateYearsInput(s string) error {
+	if s == "" {
+		return nil
+	}
+	years, err := strconv.Atoi(s)
+	if err != nil {
+		return errors.New("must be a number")
+	}
+	if years < 0 {
+		return errors.New("must be positive")
+	}
+	return nil
+}
+
 // buildYearsInput creates a validated years input field.
+//
+// Expected:
+//   - title must be a valid string.
+//   - placeholder must be a valid string.
+//   - value must be a valid pointer or nil.
+//
+// Returns:
+//   - A forms.Input value.
+//
+// Side effects:
+//   - None.
 func (m *FilterModal) buildYearsInput(title, placeholder string, value *string) forms.Input {
 	return forms.NewInput(forms.FieldConfig{
 		Title:       title,
 		Placeholder: placeholder,
-		Validate: func(s string) error {
-			if s == "" {
-				return nil
-			}
-			years, err := strconv.Atoi(s)
-			if err != nil {
-				return errors.New("must be a number")
-			}
-			if years < 0 {
-				return errors.New("must be positive")
-			}
-			return nil
-		},
+		Validate:    ValidateYearsInput,
 	}).Value(value)
 }
 

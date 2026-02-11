@@ -86,11 +86,10 @@ func (m *AddEditModal) buildForm() {
 		modalWidth = 50
 	}
 
-	// Let Huh use natural height
-	formHeight := 0
+	formWidth := forms.ModalFormWidth(modalWidth)
+	formHeight := forms.ModalFormHeight(m.height)
 
-	// Create form with dimensions
-	m.form = forms.NewSkillForm(m.formData, modalWidth, formHeight)
+	m.form = forms.NewSkillForm(m.formData, formWidth, formHeight)
 }
 
 // Init initializes the modal and its form.

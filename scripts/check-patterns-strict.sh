@@ -81,15 +81,17 @@ echo "3. FORBIDDEN COMMENT MARKERS CHECK"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 for file in $ALL_STAGED; do
-    # IMPORTANT markers are allowed for critical implementation notes
-    FORBIDDEN=$(grep -n 'TODO\|FIXME\|XXX\|HACK\|NOTE:\|BUG' "$file" 2>/dev/null | grep -v '_test.go' || true)
-    if [ -n "$FORBIDDEN" ]; then
-        echo -e "${RED}❌ Forbidden comment markers found${NC}"
-        echo "   File: $file"
-        echo "   Forbidden: TODO, FIXME, XXX, HACK, NOTE, BUG"
-        echo "   Use task tracking instead or refactor code"
-        echo "$FORBIDDEN" | head -3 | sed 's/^/   /'
-        VIOLATIONS=$((VIOLATIONS+1))
+    # Skip test files - they can reference bug numbers and issue markers
+    if [[ ! "$file" =~ _test\.go$ ]]; then
+        FORBIDDEN=$(grep -n 'TODO\|FIXME\|XXX\|HACK\|NOTE:\|BUG' "$file" 2>/dev/null || true)
+        if [ -n "$FORBIDDEN" ]; then
+            echo -e "${RED}❌ Forbidden comment markers found${NC}"
+            echo "   File: $file"
+            echo "   Forbidden: TODO, FIXME, XXX, HACK, NOTE, BUG"
+            echo "   Use task tracking instead or refactor code"
+            echo "$FORBIDDEN" | head -3 | sed 's/^/   /'
+            VIOLATIONS=$((VIOLATIONS+1))
+        fi
     fi
 done
 
@@ -225,7 +227,10 @@ BUG_FILES=$(git diff --cached --name-only | grep 'bugs/BUG-' || true)
 for bug in $BUG_FILES; do
     BUG_NUM=$(echo "$bug" | grep -oP 'BUG-\d+' || true)
     if [ -n "$BUG_NUM" ]; then
-        REGRESSION_TEST=$(git diff --cached | grep -l "$BUG_NUM" 2>/dev/null | grep '_test.go' || true)
+        # Find test files that mention the bug number in their diff
+        REGRESSION_TEST=$(git diff --cached --name-only | grep '_test.go' | while read testfile; do
+            git diff --cached "$testfile" | grep -q "$BUG_NUM" && echo "$testfile"
+        done)
         if [ -z "$REGRESSION_TEST" ]; then
             echo -e "${RED}❌ Bug fix missing regression test${NC}"
             echo "   Bug: $BUG_NUM"
