@@ -75,7 +75,7 @@ Feature: Generate CV
   # CV Configuration Wizard - Step 2 (TECH)
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: View step 2 technology options
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
@@ -85,7 +85,7 @@ Feature: Generate CV
     And I should see "Generalist"
     And I should see "Specialist"
 
-  @happy @wip
+  @happy
   Scenario: Select language agnostic focus
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
@@ -112,7 +112,7 @@ Feature: Generate CV
     Then I should see technology single-select
     And I should only select one technology
 
-  @happy @wip
+  @happy
   Scenario: View focus area options
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
@@ -135,7 +135,7 @@ Feature: Generate CV
   # CV Configuration Wizard - Step 3 (FORMAT)
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: View step 3 format options
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
@@ -145,7 +145,7 @@ Feature: Generate CV
     And I should see "Skills Limit"
     And I should see "CV Length"
 
-  @happy @wip
+  @happy
   Scenario: Select skills format
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
@@ -154,7 +154,7 @@ Feature: Generate CV
     Then I should see "Grouped"
     And I should see "Flat"
 
-  @happy @wip
+  @happy
   Scenario: Set skills limit
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
@@ -164,7 +164,7 @@ Feature: Generate CV
     And I enter skills limit "10"
     Then the skills limit should be 10
 
-  @happy @wip
+  @happy
   Scenario: Select CV length
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
@@ -194,7 +194,7 @@ Feature: Generate CV
     Then I should see the progress modal
     And I should see "Extracting Technologies"
 
-  @happy @wip
+  @happy
   Scenario: Cancel technology extraction
     Given I have a complete profile with skills
     When I select "generate_cv" from the menu
@@ -214,7 +214,7 @@ Feature: Generate CV
     Then I should see the progress modal
     And I should see "Generating CV"
 
-  @happy @wip
+  @happy
   Scenario: Cancel CV generation
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
@@ -293,7 +293,7 @@ Feature: Generate CV
     And I should see all CV sections
     And I should see bullet points
 
-  @happy @wip
+  @happy
   Scenario: Scroll through CV preview
     Given I have generated a long CV
     When I navigate to the CV preview screen
@@ -301,7 +301,7 @@ Feature: Generate CV
     And I press "k" to scroll up
     Then I should see different content
 
-  @happy @wip
+  @happy
   Scenario: Page scroll in preview
     Given I have generated a long CV
     When I navigate to the CV preview screen
@@ -310,7 +310,7 @@ Feature: Generate CV
     When I press page up
     Then I should scroll back
 
-  @happy @wip
+  @happy
   Scenario: Jump to top and bottom of preview
     Given I have generated a long CV
     When I navigate to the CV preview screen
@@ -406,7 +406,7 @@ Feature: Generate CV
   # Export Progress
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: View export progress
     Given I have generated a CV
     When I start an export
@@ -424,7 +424,7 @@ Feature: Generate CV
   # Error Handling
   # ============================================================================
 
-  @sad @wip
+  @sad
   Scenario: Handle generation error
     Given CV generation will fail
     When I select "generate_cv" from the menu
@@ -432,7 +432,7 @@ Feature: Generate CV
     Then I should see an error modal
     And I should see error details
 
-  @sad @wip
+  @sad
   Scenario: Handle export error
     Given I have generated a CV
     And export will fail
