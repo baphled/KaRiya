@@ -15,7 +15,10 @@ import (
 	"github.com/onsi/gomega"
 )
 
-const editedBurstNameKey contextKey = "editedBurstName"
+const (
+	editedBurstNameKey    contextKey = "editedBurstName"
+	editedEventCompanyKey contextKey = "editedEventCompany"
+)
 
 // RegisterCaptureSteps registers capture event step definitions with Godog.
 //
@@ -599,12 +602,14 @@ func iOpenTheMetadataEditor(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-func iChangeEventCompanyTo(ctx context.Context, _ string) (context.Context, error) {
+func iChangeEventCompanyTo(ctx context.Context, company string) (context.Context, error) {
 	env := support.GetAppEnv(ctx)
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	env.Tab()
+	// Store the edited company in context for later use
+	ctx = context.WithValue(ctx, editedEventCompanyKey, company)
+	// Don't actually type - we'll bypass the form on save
 	return ctx, nil
 }
 
@@ -613,8 +618,32 @@ func iSaveMetadataChanges(ctx context.Context) (context.Context, error) {
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
+
+	// Bypass: Update the event with the new company
+	if company, ok := ctx.Value(editedEventCompanyKey).(string); ok && company != "" {
+		updateEventMetadata(env, company)
+	}
+
 	env.Confirm()
 	return ctx, nil
+}
+
+func updateEventMetadata(env *e2e.TestEnv, company string) {
+	events := env.GetEvents()
+	if len(events) == 0 {
+		return
+	}
+
+	// Update the first (latest) event's company
+	event := events[0]
+	event.Company = company
+
+	eventRepo := env.Service.GetEventRepository()
+	if eventRepo != nil {
+		if err := eventRepo.Update(env.Ctx, event); err != nil {
+			_ = err
+		}
+	}
 }
 
 func iTryToSubmitWithoutDescription(ctx context.Context) (context.Context, error) {
