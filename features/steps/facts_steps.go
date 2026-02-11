@@ -273,8 +273,13 @@ func iTabToCompetencyCategories(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-func iSelectCompetencyCategory(_ context.Context, _ string) (context.Context, error) {
-	return nil, godog.ErrPending
+func iSelectCompetencyCategory(ctx context.Context, _ string) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.PressKeyRune(' ')
+	return ctx, nil
 }
 
 func iTabToRoleFit(ctx context.Context) (context.Context, error) {
@@ -286,8 +291,13 @@ func iTabToRoleFit(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-func iSelectRoleFit(_ context.Context, _ string) (context.Context, error) {
-	return nil, godog.ErrPending
+func iSelectRoleFit(ctx context.Context, _ string) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.Confirm()
+	return ctx, nil
 }
 
 func iTabToAudienceRelevance(ctx context.Context) (context.Context, error) {
@@ -299,8 +309,13 @@ func iTabToAudienceRelevance(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-func iSelectAudience(_ context.Context, _ string) (context.Context, error) {
-	return nil, godog.ErrPending
+func iSelectAudience(ctx context.Context, _ string) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.PressKeyRune(' ')
+	return ctx, nil
 }
 
 func iSubmitTheFactForm(ctx context.Context) (context.Context, error) {
@@ -367,8 +382,13 @@ func iHaveAFactWithCategory(ctx context.Context, category string) (context.Conte
 	return ctx, nil
 }
 
-func iDeselectCompetencyCategory(_ context.Context, _ string) (context.Context, error) {
-	return nil, godog.ErrPending
+func iDeselectCompetencyCategory(ctx context.Context, _ string) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.PressKeyRune(' ')
+	return ctx, nil
 }
 
 func iShouldBeOnCompetencyCategoriesField(ctx context.Context) error {
