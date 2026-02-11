@@ -1,3 +1,4 @@
+// Package helpers provides test helper utilities for BDD scenarios.
 package helpers
 
 import (
@@ -29,7 +30,7 @@ func NewListHelper(ctx context.Context) (*ListHelper, error) {
 func (l *ListHelper) NavigateToItem(itemName string) error {
 	const maxAttempts = 20
 
-	for i := 0; i < maxAttempts; i++ {
+	for range maxAttempts {
 		view := l.env.GetView()
 		if strings.Contains(view, itemName) {
 			return nil

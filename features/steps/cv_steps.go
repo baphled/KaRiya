@@ -732,7 +732,7 @@ func iPressKeyToExport(ctx context.Context, key string) (context.Context, error)
 		return ctx, godog.ErrPending
 	}
 	// Press the specified key to open export modal
-	if len(key) > 0 {
+	if key != "" {
 		env.PressKeyRune(rune(key[0]))
 	}
 	return ctx, nil
@@ -756,7 +756,7 @@ func iSelectFormat(ctx context.Context, format string) (context.Context, error) 
 	// Navigate to the desired format and confirm
 	// Simple approach: assume options are in order (Text, Markdown, YAML)
 	// Navigate down until we find the format, then confirm
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		view := env.GetView()
 		if strings.Contains(view, format) {
 			env.Confirm()
@@ -774,7 +774,7 @@ func iSelectLocation(ctx context.Context, location string) (context.Context, err
 	}
 	// Location field should be focused after format selection
 	// Navigate to the desired location and confirm
-	for i := 0; i < 2; i++ {
+	for range 2 {
 		view := env.GetView()
 		if strings.Contains(view, location) {
 			env.Confirm()
