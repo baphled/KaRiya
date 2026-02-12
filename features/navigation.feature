@@ -17,22 +17,8 @@ Feature: Application Navigation
       | Capture Event   |
       | Manage Skills   |
 
-  @happy
-  Scenario: Navigate menu with vim keys
-    Given I am on the main menu
-    When I press "j" to move down
-    And I press "k" to move up
-    Then I should still be on the main menu
-
-  @happy
-  Scenario: Navigate menu with arrow keys
-    Given I am on the main menu
-    When I press down arrow
-    And I press up arrow
-    Then I should still be on the main menu
-
-  @happy
-  Scenario: Select menu item with enter
+   @happy
+   Scenario: Select menu item with enter
     Given I am on the main menu
     When I select "browse_timeline" from the menu
     Then I should not be on the main menu

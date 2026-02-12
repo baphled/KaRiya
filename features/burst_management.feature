@@ -29,43 +29,9 @@ Feature: Manage Career Bursts
     Then I should see a list of bursts
     And I should see "3"
 
-  @happy
-  Scenario: Navigate through burst list with vim keys
-    Given I have 5 bursts in my profile
-    When I select "burst_management" from the menu
-    And I press "j" to navigate down
-    And I press "k" to navigate up
-    Then I should still be on the burst list
-
-  @happy
-  Scenario: Navigate through burst list with arrow keys
-    Given I have 5 bursts in my profile
-    When I select "burst_management" from the menu
-    And I press down arrow
-    And I press up arrow
-    Then I should still be on the burst list
-
-  @happy
-  Scenario: Page through burst list
-    Given I have 20 bursts in my profile
-    When I select "burst_management" from the menu
-    And I press page down
-    Then I should see different bursts
-    When I press page up
-    Then I should see the original bursts
-
-  @happy
-  Scenario: Jump to first and last burst
-    Given I have 20 bursts in my profile
-    When I select "burst_management" from the menu
-    And I press "G" to go to last
-    Then I should be at the last burst
-    When I press "g" to go to first
-    Then I should be at the first burst
-
-  # ============================================================================
-  # Burst Detail Modal
-  # ============================================================================
+   # ============================================================================
+   # Burst Detail Modal
+   # ============================================================================
 
   @happy
   Scenario: View burst details

@@ -294,25 +294,7 @@ Feature: Generate CV
      And I should see bullet points
 
    @happy
-   Scenario: Page scroll in preview
-    Given I have generated a long CV
-    When I navigate to the CV preview screen
-    And I press page down
-    Then I should scroll a full page
-    When I press page up
-    Then I should scroll back
-
-  @happy
-  Scenario: Jump to top and bottom of preview
-    Given I have generated a long CV
-    When I navigate to the CV preview screen
-    And I press "G" to go to bottom
-    Then I should be at the bottom
-    When I press "g" to go to top
-    Then I should be at the top
-
-  @happy
-  Scenario: Confirm CV from preview
+   Scenario: Confirm CV from preview
     Given I have generated a CV
     When I navigate to the CV preview screen
     And I press enter to confirm

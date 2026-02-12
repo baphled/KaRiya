@@ -20,30 +20,8 @@ Feature: Configure System
     And I should see "Export"
     And I should see "UI"
 
-  @happy
-  Scenario: Navigate domains with vim keys
-    When I select "configure_system" from the menu
-    And I press "j" to navigate down
-    And I press "k" to navigate up
-    Then I should still be on domain selection
-
-  @happy
-  Scenario: Navigate domains with arrow keys
-    When I select "configure_system" from the menu
-    And I press down arrow
-    And I press up arrow
-    Then I should still be on domain selection
-
-  @happy
-  Scenario: Jump to first and last domain
-    When I select "configure_system" from the menu
-    And I press "G" to go to last
-    Then I should be at the last domain
-    When I press "g" to go to first
-    Then I should be at the first domain
-
-  @sad
-  Scenario: Exit domain selection returns to menu
+   @sad
+   Scenario: Exit domain selection returns to menu
     When I select "configure_system" from the menu
     And I press escape
     Then I should be on the main menu

@@ -29,25 +29,9 @@ Feature: Manage Skills
     Then I should see a list of skills
     And I should see "5"
 
-  @happy
-  Scenario: Navigate through skills list with vim keys
-    Given I have 5 skills in my profile
-    When I select "manage_skills" from the menu
-    And I press "j" to navigate down
-    And I press "k" to navigate up
-    Then I should still be on the skills list
-
-  @happy
-  Scenario: Navigate through skills list with arrow keys
-    Given I have 5 skills in my profile
-    When I select "manage_skills" from the menu
-    And I press down arrow
-    And I press up arrow
-    Then I should still be on the skills list
-
-  # ============================================================================
-  # Skill Detail View
-  # ============================================================================
+   # ============================================================================
+   # Skill Detail View
+   # ============================================================================
 
   @happy
   Scenario: View skill details

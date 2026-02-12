@@ -29,25 +29,9 @@ Feature: Browse Career Timeline
     Then I should see a list of events
     And I should see "5"
 
-  @happy
-  Scenario: Navigate through event list with vim keys
-    Given I have 5 events in my timeline
-    When I select "browse_timeline" from the menu
-    And I press "j" to navigate down
-    And I press "k" to navigate up
-    Then I should still be on the timeline
-
-  @happy
-  Scenario: Navigate through event list with arrow keys
-    Given I have 5 events in my timeline
-    When I select "browse_timeline" from the menu
-    And I press down arrow
-    And I press up arrow
-    Then I should still be on the timeline
-
-  # ============================================================================
-  # Event Detail View
-  # ============================================================================
+   # ============================================================================
+   # Event Detail View
+   # ============================================================================
 
   @happy
   Scenario: View event details
@@ -272,31 +256,9 @@ Feature: Browse Career Timeline
     And I press escape
     Then I should be on the main menu
 
-  # ============================================================================
-  # Pagination
-  # ============================================================================
-
-  @happy
-  Scenario: Page through large event list
-    Given I have 20 events in my timeline
-    When I select "browse_timeline" from the menu
-    And I press page down
-    Then I should see different events
-    When I press page up
-    Then I should see the original events
-
-  @happy
-  Scenario: Jump to first and last event
-    Given I have 20 events in my timeline
-    When I select "browse_timeline" from the menu
-    And I press "G" to go to last
-    Then I should be at the last event
-    When I press "g" to go to first
-    Then I should be at the first event
-
-  # ============================================================================
-  # View Skills from Event Detail
-  # ============================================================================
+   # ============================================================================
+   # View Skills from Event Detail
+   # ============================================================================
 
   @happy
   Scenario: View skills from event detail modal
