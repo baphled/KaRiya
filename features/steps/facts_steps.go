@@ -649,7 +649,9 @@ func thereShouldBeAFactWithText(ctx context.Context, text string) error {
 			break
 		}
 	}
-	gomega.Expect(found).To(gomega.BeTrue(), "Should have fact with text: %s", text)
+	if !found {
+		return fmt.Errorf("expected to find fact with text: %s, but it was not found", text)
+	}
 	return nil
 }
 
