@@ -9,7 +9,14 @@
 
 KaRiya's BDD testing standards have been integrated into a **Global BDD Standards Library** that applies to ALL projects, not just KaRiya.
 
-### Global Standards Location
+### Global Standards Locations
+
+**Primary (Obsidian Vault - RECOMMENDED)**:
+```
+/home/baphled/vaults/baphled/3. Resources/Knowledge Base/Skills/Testing-BDD/
+```
+
+**Secondary (Source Files)**:
 ```
 /home/baphled/Projects/Standards/BDD/
 ```
@@ -20,6 +27,7 @@ KaRiya's BDD testing standards have been integrated into a **Global BDD Standard
 - **Language-Neutral**: Go, Python, JavaScript, Java, Ruby, C#, PHP, etc.
 - **Single Source of Truth**: One set of standards for all projects
 - **Always Current**: Updates in one place benefit all projects
+- **Integrated Knowledge Base**: Part of comprehensive Obsidian vault with cross-references
 
 ---
 
