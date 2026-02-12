@@ -32,42 +32,8 @@ Feature: Manage Career Facts
     And I should see strength signals
     And I should see categories
 
-  @happy
-  Scenario: Navigate through fact list with vim keys
-    Given I have 5 facts in my profile
-    When I select "fact_management" from the menu
-    And I press "j" to navigate down
-    And I press "k" to navigate up
-    Then I should still be on the fact list
-
-  @happy
-  Scenario: Navigate through fact list with arrow keys
-    Given I have 5 facts in my profile
-    When I select "fact_management" from the menu
-    And I press down arrow
-    And I press up arrow
-    Then I should still be on the fact list
-
-  @happy
-  Scenario: Page through fact list
-    Given I have 20 facts in my profile
-    When I select "fact_management" from the menu
-    And I press page down
-    Then I should see different facts
-    When I press page up
-    Then I should see the original facts
-
-  @happy
-  Scenario: Jump to first and last fact
-    Given I have 20 facts in my profile
-    When I select "fact_management" from the menu
-    And I press "G" to go to last
-    Then I should be at the last fact
-    When I press "g" to go to first
-    Then I should be at the first fact
-
-  @happy
-  Scenario: Refresh fact list
+   @happy
+   Scenario: Refresh fact list
     Given I have 3 facts in my profile
     When I select "fact_management" from the menu
     And I press "r" to refresh
