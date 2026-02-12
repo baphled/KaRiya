@@ -23,6 +23,20 @@ var _ = Describe("SortModal", func() {
 		}
 	})
 
+	Describe("Modal Reopening", func() {
+		It("should be re-openable after cancel", func() {
+			modal = modals.NewSortModal(events, nil, 80, 24)
+			Expect(modal.IsVisible()).To(BeTrue())
+
+			escMsg := tea.KeyMsg{Type: tea.KeyEsc}
+			modal.Update(escMsg)
+			Expect(modal.IsVisible()).To(BeFalse())
+
+			modal.Show()
+			Expect(modal.IsVisible()).To(BeTrue())
+		})
+	})
+
 	Describe("NewSortModal", func() {
 		It("creates modal with default sort config", func() {
 			modal = modals.NewSortModal(events, nil, 80, 24)

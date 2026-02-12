@@ -279,4 +279,21 @@ var _ = Describe("BurstSkillsModal", func() {
 			Expect(view).To(ContainSubstring("Skill without level"))
 		})
 	})
+
+	Describe("Esc Visibility", func() {
+		BeforeEach(func() {
+			modal = modals.NewBurstSkillsModal(burstID, burstName, skills, theme)
+			modal.SetDimensions(80, 24)
+		})
+
+		It("IsVisible should be false after Esc", func() {
+			modal.Show()
+			Expect(modal.IsVisible()).To(BeTrue())
+
+			escMsg := tea.KeyMsg{Type: tea.KeyEsc}
+			modal.Update(escMsg)
+
+			Expect(modal.IsVisible()).To(BeFalse())
+		})
+	})
 })

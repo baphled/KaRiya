@@ -293,6 +293,38 @@ var _ = Describe("SkillsListScreen", func() {
 		})
 	})
 
+	Describe("Empty List Safeguards (Phase 2-Tier 3)", func() {
+		It("should return nil for edit 'e' on empty list", func() {
+			emptyScreen := skills.NewSkillsListScreen([]*career.Skill{})
+
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}}
+			_, result := emptyScreen.Update(msg)
+
+			Expect(result).To(BeNil())
+		})
+
+		It("should return nil for delete 'd' on empty list", func() {
+			emptyScreen := skills.NewSkillsListScreen([]*career.Skill{})
+
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'d'}}
+			_, result := emptyScreen.Update(msg)
+
+			Expect(result).To(BeNil())
+		})
+
+		It("should allow add 'a' action on empty list", func() {
+			emptyScreen := skills.NewSkillsListScreen([]*career.Skill{})
+
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}}
+			_, result := emptyScreen.Update(msg)
+
+			Expect(result).NotTo(BeNil())
+			Expect(result.Type()).To(Equal(screens.ResultNavigate))
+			data := result.Data().(map[string]interface{})
+			Expect(data["action"]).To(Equal("add"))
+		})
+	})
+
 	Describe("View Rendering", func() {
 		BeforeEach(func() {
 			screen = skills.NewSkillsListScreen(skillsList)
@@ -415,6 +447,18 @@ var _ = Describe("SkillsListScreen", func() {
 
 			view := screen.View()
 			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("should return help action on '?' key", func() {
+			screen = skills.NewSkillsListScreen(skillsList)
+			screen.SetTerminalInfo(120, 40)
+
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}}
+			_, result := screen.Update(msg)
+
+			Expect(result).NotTo(BeNil())
+			data := result.Data().(map[string]interface{})
+			Expect(data["action"]).To(Equal("help"))
 		})
 	})
 })

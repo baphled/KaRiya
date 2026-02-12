@@ -290,5 +290,23 @@ var _ = Describe("EditModal", func() {
 				Expect(result.CreatedAt.Month()).To(Equal(time.June))
 			})
 		})
+
+		Describe("Modal Reopening", func() {
+			BeforeEach(func() {
+				event = fixtures.EventWith("test-event-id", "Original event text", "Test Company", "Test Project")
+			})
+
+			It("should be re-openable after cancel", func() {
+				modal = modals.NewEditModal(event, 80, 24)
+				Expect(modal.IsVisible()).To(BeTrue())
+
+				escMsg := tea.KeyMsg{Type: tea.KeyEsc}
+				modal.Update(escMsg)
+				Expect(modal.IsVisible()).To(BeFalse())
+
+				modal.Show()
+				Expect(modal.IsVisible()).To(BeTrue())
+			})
+		})
 	})
 })

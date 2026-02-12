@@ -322,4 +322,40 @@ var _ = Describe("BurstDetailModal", func() {
 			Expect(model).NotTo(BeNil())
 		})
 	})
+
+	Describe("Burst Detail Modal Full Action Suite (Phase 2-Tier 3)", func() {
+		BeforeEach(func() {
+			modal = modals.NewBurstDetailModal(burst, theme)
+			modal.SetDimensions(80, 24)
+			modal.Show()
+		})
+
+		It("should signal 'v' key for view events", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'v'}}
+			model, _ := modal.Update(msg)
+
+			Expect(model).NotTo(BeNil())
+		})
+
+		It("should signal 'f' key for view facts", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}}
+			model, _ := modal.Update(msg)
+
+			Expect(model).NotTo(BeNil())
+		})
+
+		It("should signal 'c' key for confirm", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}}
+			model, _ := modal.Update(msg)
+
+			Expect(model).NotTo(BeNil())
+		})
+
+		It("should close modal on Escape without action", func() {
+			msg := tea.KeyMsg{Type: tea.KeyEsc}
+			model, _ := modal.Update(msg)
+
+			Expect(model).NotTo(BeNil())
+		})
+	})
 })

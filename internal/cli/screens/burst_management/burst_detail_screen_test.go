@@ -282,4 +282,22 @@ var _ = Describe("BurstDetailScreen", func() {
 			Expect(content).NotTo(BeEmpty())
 		})
 	})
+
+	Describe("Help Toggle", func() {
+		BeforeEach(func() {
+			screen = burstscreens.NewBurstDetailScreen(burst)
+			screen.SetTerminalInfo(120, 40)
+		})
+
+		It("should return help action on '?' key", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}}
+			_, result := screen.Update(msg)
+
+			Expect(result).NotTo(BeNil())
+			Expect(result.Type()).To(Equal(screens.ResultNavigate))
+			navResult := result.(*screens.NavigateResult)
+			data := navResult.ResultData.(map[string]interface{})
+			Expect(data["action"]).To(Equal("help"))
+		})
+	})
 })
