@@ -439,4 +439,42 @@ var _ = Describe("FormScreen", func() {
 			Expect(view).NotTo(BeEmpty())
 		})
 	})
+
+	Describe("Form Escape Edge Cases (Phase 2-Tier 3)", func() {
+		BeforeEach(func() {
+			builder := func(data *TestFormData, width, height int) *huh.Form {
+				group := huh.NewGroup(
+					huh.NewInput().
+						Key("name").
+						Title("Name").
+						Value(&data.Name),
+				)
+				return huh.NewForm(group).WithWidth(width).WithHeight(height)
+			}
+			screen = base.NewBaseFormScreen([]string{"Test"}, builder, formData)
+			screen.SetTerminalInfo(80, 24)
+		})
+
+		It("should return CancelResult on Escape with input text (does not submit)", func() {
+			formData.Name = "non-empty-input"
+			msg := tea.KeyMsg{Type: tea.KeyEsc}
+			cmd, result := screen.Update(msg)
+
+			Expect(result).NotTo(BeNil())
+			Expect(result.Type()).To(Equal(screens.ResultCancel))
+			_ = cmd
+		})
+
+		It("should return CancelResult after typing text then Escape", func() {
+			// Simulate typing
+			formData.Name = "some text entered"
+
+			msg := tea.KeyMsg{Type: tea.KeyEsc}
+			cmd, result := screen.Update(msg)
+
+			Expect(result).NotTo(BeNil())
+			Expect(result.Type()).To(Equal(screens.ResultCancel))
+			_ = cmd
+		})
+	})
 })

@@ -26,6 +26,20 @@ var _ = Describe("FilterModal", func() {
 		events = []*career.Event{e1, e2, e3}
 	})
 
+	Describe("Modal Reopening", func() {
+		It("should be re-openable after cancel", func() {
+			modal = modals.NewFilterModal(events, nil, 80, 24)
+			Expect(modal.IsVisible()).To(BeTrue())
+
+			escMsg := tea.KeyMsg{Type: tea.KeyEsc}
+			modal.Update(escMsg)
+			Expect(modal.IsVisible()).To(BeFalse())
+
+			modal.Show()
+			Expect(modal.IsVisible()).To(BeTrue())
+		})
+	})
+
 	Describe("NewFilterModal", func() {
 		It("creates modal with default filters", func() {
 			modal = modals.NewFilterModal(events, nil, 80, 24)

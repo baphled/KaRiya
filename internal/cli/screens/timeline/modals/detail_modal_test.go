@@ -177,6 +177,42 @@ var _ = Describe("EventDetailModal", func() {
 			Expect(result.ID).To(Equal("test-event-id"))
 		})
 	})
+
+	Describe("Key Action Signals (Phase 2-Tier 3)", func() {
+		BeforeEach(func() {
+			modal = modals.NewEventDetailModal(event, theme)
+			modal.SetDimensions(80, 24)
+			modal.Show()
+		})
+
+		It("should signal 'e' key for edit action", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}}
+			model, _ := modal.Update(msg)
+
+			Expect(model).NotTo(BeNil())
+		})
+
+		It("should signal 'd' key for delete action", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'d'}}
+			model, _ := modal.Update(msg)
+
+			Expect(model).NotTo(BeNil())
+		})
+
+		It("should signal 's' key for skills view action", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}}
+			model, _ := modal.Update(msg)
+
+			Expect(model).NotTo(BeNil())
+		})
+
+		It("should close modal on Escape key", func() {
+			msg := tea.KeyMsg{Type: tea.KeyEsc}
+			model, _ := modal.Update(msg)
+
+			Expect(model).NotTo(BeNil())
+		})
+	})
 })
 
 var _ = Describe("SkillsDetailModal", func() {

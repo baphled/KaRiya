@@ -365,4 +365,15 @@ var _ = Describe("BurstListScreen", func() {
 			Expect(screen.GetSelectedIndex()).To(Equal(1))
 		})
 	})
+
+	Describe("Empty List Safeguards - Burst Management (Phase 2-Tier 3)", func() {
+		It("should return nil for view on empty list", func() {
+			emptyScreen := burst_management.NewBurstListScreen([]*career.Burst{})
+
+			msg := tea.KeyMsg{Type: tea.KeyEnter}
+			_, result := emptyScreen.Update(msg)
+
+			Expect(result).To(BeNil())
+		})
+	})
 })
