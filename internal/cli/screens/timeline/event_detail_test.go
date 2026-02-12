@@ -68,6 +68,27 @@ var _ = Describe("EventDetailScreen", func() {
 			Expect(data["action"]).To(Equal("delete"))
 			Expect(data["event"]).To(Equal(event))
 		})
+
+		It("should return skills action on 's' key", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}}
+			_, result := screen.Update(msg)
+
+			Expect(result).NotTo(BeNil())
+			navResult := result.(*screens.NavigateResult)
+			data := navResult.ResultData.(map[string]interface{})
+			Expect(data["action"]).To(Equal("skills"))
+			Expect(data["event"]).To(Equal(event))
+		})
+
+		It("should return help action on '?' key", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}}
+			_, result := screen.Update(msg)
+
+			Expect(result).NotTo(BeNil())
+			navResult := result.(*screens.NavigateResult)
+			data := navResult.ResultData.(map[string]interface{})
+			Expect(data["action"]).To(Equal("help"))
+		})
 	})
 
 	Describe("Navigation", func() {
