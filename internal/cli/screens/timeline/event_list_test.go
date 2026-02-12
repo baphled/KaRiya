@@ -106,6 +106,74 @@ var _ = Describe("EventListScreen", func() {
 			screen.Update(msg)
 			Expect(screen.GetSelectedIndex()).To(Equal(2))
 		})
+
+		It("should move to first item with 'home' key", func() {
+			// Navigate to middle
+			screen.Update(tea.KeyMsg{Type: tea.KeyDown})
+			screen.Update(tea.KeyMsg{Type: tea.KeyDown})
+			Expect(screen.GetSelectedIndex()).To(Equal(2))
+
+			// Go to home
+			msg := tea.KeyMsg{Type: tea.KeyHome}
+			screen.Update(msg)
+			Expect(screen.GetSelectedIndex()).To(Equal(0))
+		})
+
+		It("should move to last item with 'end' key", func() {
+			// Start at first item
+			Expect(screen.GetSelectedIndex()).To(Equal(0))
+
+			// Go to end
+			msg := tea.KeyMsg{Type: tea.KeyEnd}
+			screen.Update(msg)
+			Expect(screen.GetSelectedIndex()).To(Equal(2))
+		})
+
+		It("should move to first item with 'g' key (vim)", func() {
+			// Navigate to middle
+			screen.Update(tea.KeyMsg{Type: tea.KeyDown})
+			screen.Update(tea.KeyMsg{Type: tea.KeyDown})
+			Expect(screen.GetSelectedIndex()).To(Equal(2))
+
+			// Go to home with vim 'g'
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'g'}}
+			screen.Update(msg)
+			Expect(screen.GetSelectedIndex()).To(Equal(0))
+		})
+
+		It("should move to last item with 'G' key (vim)", func() {
+			// Start at first item
+			Expect(screen.GetSelectedIndex()).To(Equal(0))
+
+			// Go to end with vim 'G'
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'G'}}
+			screen.Update(msg)
+			Expect(screen.GetSelectedIndex()).To(Equal(2))
+		})
+
+		It("should handle Ctrl+D for navigation", func() {
+			// Ctrl+D is one of the handled keys
+			msg := tea.KeyMsg{Type: tea.KeyCtrlD}
+			screen.Update(msg)
+			// The tableBehavior should handle this via HandleNavigation
+			// With 3 items total, behavior depends on page size and current selection
+			Expect(screen.GetSelectedIndex()).To(BeNumerically(">=", 0))
+			Expect(screen.GetSelectedIndex()).To(BeNumerically("<=", 2))
+		})
+
+		It("should handle Ctrl+U for navigation", func() {
+			// Move down first to have room to move up
+			screen.Update(tea.KeyMsg{Type: tea.KeyDown})
+			screen.Update(tea.KeyMsg{Type: tea.KeyDown})
+			Expect(screen.GetSelectedIndex()).To(Equal(2))
+
+			// Ctrl+U moves up
+			msg := tea.KeyMsg{Type: tea.KeyCtrlU}
+			screen.Update(msg)
+			// Should still be within bounds
+			Expect(screen.GetSelectedIndex()).To(BeNumerically(">=", 0))
+			Expect(screen.GetSelectedIndex()).To(BeNumerically("<=", 2))
+		})
 	})
 
 	Describe("Selection", func() {
