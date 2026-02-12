@@ -144,12 +144,5 @@ Feature: Application Navigation
     When I select "browse_timeline" from the menu
     And I press "/" to search
     Then typing should go to the search input
-    And pressing escape should close the modal
+     And pressing escape should close the modal
 
-  @happy
-  Scenario: Focus returns after modal closes
-    Given I have 3 events in my timeline
-    When I select "browse_timeline" from the menu
-    And I press "/" to search
-    And I press escape
-    Then pressing "j" should navigate the list

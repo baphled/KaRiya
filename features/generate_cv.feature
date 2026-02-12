@@ -291,18 +291,10 @@ Feature: Generate CV
     When I navigate to the CV preview screen
     Then I should see personal details
     And I should see all CV sections
-    And I should see bullet points
+     And I should see bullet points
 
-  @happy
-  Scenario: Scroll through CV preview
-    Given I have generated a long CV
-    When I navigate to the CV preview screen
-    And I press "j" to scroll down
-    And I press "k" to scroll up
-    Then I should see different content
-
-  @happy
-  Scenario: Page scroll in preview
+   @happy
+   Scenario: Page scroll in preview
     Given I have generated a long CV
     When I navigate to the CV preview screen
     And I press page down

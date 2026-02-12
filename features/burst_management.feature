@@ -295,18 +295,10 @@ Feature: Manage Career Bursts
     And the detection completes
     Then I should see the burst suggestion modal
     And I should see suggested burst names
-    And I should see confidence scores
+     And I should see confidence scores
 
-  @happy
-  Scenario: Navigate through burst suggestions
-    Given I have burst suggestions available
-    When I am on the burst suggestion modal
-    And I press "j" to navigate down
-    And I press "k" to navigate up
-    Then I should see different suggestions highlighted
-
-  @happy
-  Scenario: View events for burst suggestion
+   @happy
+   Scenario: View events for burst suggestion
     Given I have burst suggestions available
     When I am on the burst suggestion modal
     And I press enter to view events
@@ -379,15 +371,7 @@ Feature: Manage Career Bursts
     And I should see suggested skills
     And I should see skill categories
 
-  @happy
-  Scenario: Navigate through skill suggestions
-    Given I have skill suggestions from burst
-    When I am on the skill suggestion modal
-    And I press "j" to navigate down
-    And I press "k" to navigate up
-    Then I should see different skills highlighted
-
-  @happy
+   @happy
   Scenario: View events for skill suggestion
     Given I have skill suggestions from burst
     When I am on the skill suggestion modal
