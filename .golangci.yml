@@ -563,6 +563,11 @@ linters:
           - contextcheck
         text: "non-inherited new context"
 
+      # BDD step files use Godog context (test orchestration), not request pipeline context
+      - path: 'features/steps/(.*)\.go'
+        linters:
+          - contextcheck
+
       # Modal type assertions
       - path: 'internal/cli/screens/.*/modals/(.*)\.go'
         linters:
