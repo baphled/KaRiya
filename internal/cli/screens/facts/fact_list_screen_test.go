@@ -95,6 +95,42 @@ var _ = Describe("FactListScreen", func() {
 
 			Expect(result).To(BeNil())
 		})
+
+		It("should handle home key (go to first)", func() {
+			msg := tea.KeyMsg{Type: tea.KeyHome}
+			_, result := screen.Update(msg)
+			Expect(result).To(BeNil())
+		})
+
+		It("should handle end key (go to last)", func() {
+			msg := tea.KeyMsg{Type: tea.KeyEnd}
+			_, result := screen.Update(msg)
+			Expect(result).To(BeNil())
+		})
+
+		It("should handle g key (vim go to first)", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'g'}}
+			_, result := screen.Update(msg)
+			Expect(result).To(BeNil())
+		})
+
+		It("should handle G key (vim go to last)", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'G'}}
+			_, result := screen.Update(msg)
+			Expect(result).To(BeNil())
+		})
+
+		It("should handle Ctrl+D for page down", func() {
+			msg := tea.KeyMsg{Type: tea.KeyCtrlD}
+			_, result := screen.Update(msg)
+			Expect(result).To(BeNil())
+		})
+
+		It("should handle Ctrl+U for page up", func() {
+			msg := tea.KeyMsg{Type: tea.KeyCtrlU}
+			_, result := screen.Update(msg)
+			Expect(result).To(BeNil())
+		})
 	})
 
 	Describe("Rendering", func() {

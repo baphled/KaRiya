@@ -106,6 +106,42 @@ var _ = Describe("SkillsListScreen", func() {
 
 			Expect(screen.GetSelectedIndex()).To(Equal(3)) // Last item
 		})
+
+		It("should jump to top with home key", func() {
+			screen.SetSelectedIndex(3)
+
+			msg := tea.KeyMsg{Type: tea.KeyHome}
+			screen.Update(msg)
+
+			Expect(screen.GetSelectedIndex()).To(Equal(0))
+		})
+
+		It("should jump to bottom with end key", func() {
+			msg := tea.KeyMsg{Type: tea.KeyEnd}
+			screen.Update(msg)
+
+			Expect(screen.GetSelectedIndex()).To(Equal(3)) // Last item
+		})
+
+		It("should handle Ctrl+D for page down", func() {
+			initialIndex := screen.GetSelectedIndex()
+
+			msg := tea.KeyMsg{Type: tea.KeyCtrlD}
+			_, result := screen.Update(msg)
+
+			Expect(result).To(BeNil())
+			Expect(screen.GetSelectedIndex()).To(BeNumerically(">=", initialIndex))
+		})
+
+		It("should handle Ctrl+U for page up", func() {
+			screen.SetSelectedIndex(3)
+
+			msg := tea.KeyMsg{Type: tea.KeyCtrlU}
+			_, result := screen.Update(msg)
+
+			Expect(result).To(BeNil())
+			Expect(screen.GetSelectedIndex()).To(BeNumerically("<=", 3))
+		})
 	})
 
 	Describe("Actions", func() {
