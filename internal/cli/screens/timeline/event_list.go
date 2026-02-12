@@ -12,12 +12,14 @@ import (
 
 // TimelineEventListState identifies the timeline event list view in the
 // state matrix. On this screen the user sees a paginated table of career
-// events with columns for date, truncated event text, company, and
-// project. Arrow keys or j/k navigate the highlighted row, and Ctrl+D/U
-// or PgDn/PgUp page through larger lists. Pressing Enter opens the
-// selected event detail view. Action keys allow adding an event (a),
-// editing the selected event (e), deleting it (d), or opening the filter
-// screen (f). Escape returns to the main menu.
+// events with columns for date, truncated event text, company, and project.
+//
+// Navigation keys: Arrow keys or j/k navigate the highlighted row, and
+// Ctrl+D/U or PgDn/PgUp page through larger lists.
+//
+// Action keys: Pressing Enter opens the selected event detail view. Action
+// keys allow adding an event (a), editing the selected event (e), deleting
+// it (d), or opening the filter screen (f). Escape returns to the main menu.
 const TimelineEventListState = "timeline_event_list"
 
 // eventRowFormatter formats a career event for table display.

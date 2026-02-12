@@ -10,9 +10,10 @@ import (
 
 // ParseDateString parses a date string in various formats.
 // Supports:
-// - YYYY-MM-DD format
-// - "today"
-// - Relative dates like "1 week ago", "2 days ago".
+// - YYYY-MM-DD format (e.g., "2024-01-15")
+// - "today" (case-insensitive)
+// - Short relative format: -Nd, -Nw, -Nm (e.g., "-7d", "-2w", "-1m" for days/weeks/months ago)
+// - Long relative format: N (day|days|week|weeks|month|months) ago (e.g., "1 week ago", "2 days ago")
 //
 // Expected:
 //   - s must be a valid date string.
