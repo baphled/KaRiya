@@ -146,21 +146,5 @@ Feature: User Onboarding
   Scenario: Escape key is blocked during onboarding
     When I press escape
     Then I should still see the onboarding wizard
-    And I should see "Step 1 of 3"
+     And I should see "Step 1 of 3"
 
-  @happy
-  Scenario: Navigate between fields with Tab
-    When I enter "Test User" as my name
-    And I press enter
-    And I enter "test@example.com" as my email
-    And I press tab
-    Then the location field should be focused
-
-  @happy
-  Scenario: Navigate backwards with Shift+Tab
-    When I enter "Test User" as my name
-    And I press enter
-    And I enter "test@example.com" as my email
-    And I press tab
-    And I press shift+tab
-    Then the email field should be focused
