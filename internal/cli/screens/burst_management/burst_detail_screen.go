@@ -111,7 +111,7 @@ func (s *BurstDetailScreen) handleKeyMsg(msg tea.KeyMsg) (tea.Cmd, screens.Scree
 	return s.handleActionKey(msg.String())
 }
 
-// handleActionKey processes action keys (v, f, e, d, c).
+// handleActionKey processes action keys (v, f, e, d, c, s, i, ?).
 func (s *BurstDetailScreen) handleActionKey(key string) (tea.Cmd, screens.ScreenResult) {
 	switch key {
 	case "v":
@@ -128,6 +128,19 @@ func (s *BurstDetailScreen) handleActionKey(key string) (tea.Cmd, screens.Screen
 
 	case "c":
 		return nil, s.actionResult("confirm")
+
+	case "s":
+		return nil, s.actionResult("skills")
+
+	case "i":
+		// Only allow infer if burst is confirmed
+		if s.burst != nil && s.burst.Confirmed {
+			return nil, s.actionResult("infer")
+		}
+		return nil, nil
+
+	case "?":
+		return nil, s.actionResult("help")
 	}
 
 	return nil, nil

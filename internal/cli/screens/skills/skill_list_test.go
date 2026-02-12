@@ -209,6 +209,88 @@ var _ = Describe("SkillsListScreen", func() {
 			Expect(result).NotTo(BeNil())
 			Expect(result.Type()).To(Equal(screens.ResultCancel))
 		})
+
+		It("should return filter action on 'f' key", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}}
+			_, result := screen.Update(msg)
+
+			Expect(result).NotTo(BeNil())
+			Expect(result.Type()).To(Equal(screens.ResultNavigate))
+
+			data := result.Data().(map[string]interface{})
+			Expect(data["action"]).To(Equal("filter"))
+		})
+
+		It("should return sort action on 's' key", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}}
+			_, result := screen.Update(msg)
+
+			Expect(result).NotTo(BeNil())
+			Expect(result.Type()).To(Equal(screens.ResultNavigate))
+
+			data := result.Data().(map[string]interface{})
+			Expect(data["action"]).To(Equal("sort"))
+		})
+
+		It("should return search action on '/' key", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'/'}}
+			_, result := screen.Update(msg)
+
+			Expect(result).NotTo(BeNil())
+			Expect(result.Type()).To(Equal(screens.ResultNavigate))
+
+			data := result.Data().(map[string]interface{})
+			Expect(data["action"]).To(Equal("search"))
+		})
+
+		It("should return infer action on 'i' key", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}}
+			_, result := screen.Update(msg)
+
+			Expect(result).NotTo(BeNil())
+			Expect(result.Type()).To(Equal(screens.ResultNavigate))
+
+			data := result.Data().(map[string]interface{})
+			Expect(data["action"]).To(Equal("infer"))
+		})
+
+		It("should return help action on '?' key", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}}
+			_, result := screen.Update(msg)
+
+			Expect(result).NotTo(BeNil())
+			Expect(result.Type()).To(Equal(screens.ResultNavigate))
+
+			data := result.Data().(map[string]interface{})
+			Expect(data["action"]).To(Equal("help"))
+		})
+
+		It("should return nil for edit 'e' on empty list", func() {
+			emptyScreen := skills.NewSkillsListScreen([]*career.Skill{})
+
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}}
+			_, result := emptyScreen.Update(msg)
+
+			Expect(result).To(BeNil())
+		})
+
+		It("should return nil for delete 'd' on empty list", func() {
+			emptyScreen := skills.NewSkillsListScreen([]*career.Skill{})
+
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'d'}}
+			_, result := emptyScreen.Update(msg)
+
+			Expect(result).To(BeNil())
+		})
+
+		It("should return nil for Enter on empty list", func() {
+			emptyScreen := skills.NewSkillsListScreen([]*career.Skill{})
+
+			msg := tea.KeyMsg{Type: tea.KeyEnter}
+			_, result := emptyScreen.Update(msg)
+
+			Expect(result).To(BeNil())
+		})
 	})
 
 	Describe("View Rendering", func() {
