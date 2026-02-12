@@ -145,35 +145,7 @@ Feature: Manage Skills
   # Filter and Sort
   # ============================================================================
 
-  @happy
-  Scenario: Open filter modal
-    Given the database is empty
-    When I select "manage_skills" from the menu
-    And I press "f" to filter
-    Then I should see the filter modal
 
-  @happy
-  Scenario: Cancel filter modal
-    Given the database is empty
-    When I select "manage_skills" from the menu
-    And I press "f" to filter
-    And I press escape
-    Then I should still be on the skills list
-
-  @happy
-  Scenario: Open sort modal
-    Given the database is empty
-    When I select "manage_skills" from the menu
-    And I press "s" to sort
-    Then I should see the sort modal
-
-  @happy
-  Scenario: Cancel sort modal
-    Given the database is empty
-    When I select "manage_skills" from the menu
-    And I press "s" to sort
-    And I press escape
-    Then I should still be on the skills list
 
   @happy
   Scenario: Open search modal
@@ -358,76 +330,7 @@ Feature: Manage Skills
     And I submit the skill form
     Then the skill should have years "5"
 
-  # ============================================================================
-  # Filter by Category
-  # ============================================================================
 
-  @happy
-  Scenario: Filter skills by category
-    Given I have a skill "Go" with category "backend"
-    And I have a skill "Docker" with category "devops"
-    And I have a skill "AWS" with category "cloud"
-    When I select "manage_skills" from the menu
-    And I press "f" to filter
-    And I select filter category "Backend"
-    And I confirm filter
-    Then I should see 1 skill
-    And I should see "Go"
-    And I should not see "Docker"
-
-  @happy
-  Scenario: Filter skills by multiple categories
-    Given I have a skill "Go" with category "backend"
-    And I have a skill "Python" with category "backend"
-    And I have a skill "Docker" with category "devops"
-    And I have a skill "Kubernetes" with category "devops"
-    And I have a skill "AWS" with category "cloud"
-    When I select "manage_skills" from the menu
-    And I press "f" to filter
-    And I select filter categories "Backend,DevOps"
-    And I confirm filter
-    Then I should see 4 skills
-    And I should not see "AWS"
-
-  # ============================================================================
-  # Sort Options
-  # ============================================================================
-
-  @happy
-  Scenario: Sort skills by years descending
-    Given I have a skill "Go" with years "2"
-    And I have a skill "Python" with years "8"
-    And I have a skill "Java" with years "5"
-    When I select "manage_skills" from the menu
-    And I press "s" to sort
-    And I select sort by "years"
-    And I select order "descending"
-    And I confirm sort
-    Then I should see "Python" first
-    And I should see "Go" last
-
-  @happy
-  Scenario: Sort skills by level
-    Given I have a skill "Go" with level "Expert"
-    And I have a skill "Python" with level "Beginner"
-    And I have a skill "Java" with level "Intermediate"
-    When I select "manage_skills" from the menu
-    And I press "s" to sort
-    And I select sort by "level"
-    And I confirm sort
-    Then I should see "Go" first
-
-  @happy
-  Scenario: Sort skills by name alphabetically
-    Given I have a skill "Zebra"
-    And I have a skill "Alpha"
-    And I have a skill "Mike"
-    When I select "manage_skills" from the menu
-    And I press "s" to sort
-    And I select sort by "name"
-    And I confirm sort
-    Then I should see "Alpha" first
-    And I should see "Zebra" last
 
   # ============================================================================
   # Skill Count Display

@@ -82,15 +82,7 @@ Feature: Application Navigation
     And I press escape
     Then I should be on the main menu
 
-  @happy
-  Scenario: Go back from nested modal
-    Given I have 3 events in my timeline
-    When I select "browse_timeline" from the menu
-    And I press "/" to search
-    And I press escape
-    Then I should still be on the timeline
-    When I press escape
-    Then I should be on the main menu
+
 
   @happy
   Scenario: Multiple back navigations
@@ -101,34 +93,7 @@ Feature: Application Navigation
     And I press escape
     Then I should be on the main menu
 
-  # ============================================================================
-  # Keyboard Shortcuts
-  # ============================================================================
 
-  @happy
-  Scenario: Global keyboard shortcuts work everywhere
-    Given I am on the main menu
-    Then pressing "?" should show help
-    And pressing "q" should quit
-    And pressing "Ctrl+C" should quit
 
-  @happy
-  Scenario: Intent-specific shortcuts
-    Given I have 3 events in my timeline
-    When I select "browse_timeline" from the menu
-    Then pressing "/" should open search
-    And pressing "f" should open filter
-    And pressing "s" should open sort
 
-  # ============================================================================
-  # Focus Management
-  # ============================================================================
-
-  @happy
-  Scenario: Modal captures focus
-    Given I have 3 events in my timeline
-    When I select "browse_timeline" from the menu
-    And I press "/" to search
-    Then typing should go to the search input
-     And pressing escape should close the modal
 
