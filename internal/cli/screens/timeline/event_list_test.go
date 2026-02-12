@@ -520,5 +520,16 @@ var _ = Describe("EventListScreen", func() {
 			// Should have page navigation hint
 			Expect(view).To(ContainSubstring("Page"))
 		})
+
+		It("should return help action on '?' key", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}}
+			_, result := screen.Update(msg)
+
+			Expect(result).NotTo(BeNil())
+			Expect(result.Type()).To(Equal(screens.ResultNavigate))
+			navResult := result.(*screens.NavigateResult)
+			data := navResult.ResultData.(map[string]interface{})
+			Expect(data["action"]).To(Equal("help"))
+		})
 	})
 })

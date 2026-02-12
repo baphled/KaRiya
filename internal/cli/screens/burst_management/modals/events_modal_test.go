@@ -258,4 +258,18 @@ var _ = Describe("BurstEventsModal", func() {
 			Expect(result).To(Equal(burstID))
 		})
 	})
+
+	Describe("Esc Visibility", func() {
+		It("IsVisible should be false after Esc", func() {
+			modal = modals.NewBurstEventsModal(burstID, burstName, events, theme)
+			modal.SetDimensions(80, 24)
+			modal.Show()
+			Expect(modal.IsVisible()).To(BeTrue())
+
+			escMsg := tea.KeyMsg{Type: tea.KeyEsc}
+			modal.Update(escMsg)
+
+			Expect(modal.IsVisible()).To(BeFalse())
+		})
+	})
 })
