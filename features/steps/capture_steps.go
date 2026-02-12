@@ -3,6 +3,7 @@ package steps
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -809,7 +810,7 @@ func iPressMToOpenMetadataEditor(ctx context.Context) (context.Context, error) {
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	env.PressKeyRune('m')
+	env.PressKeyRune('e')
 	return ctx, nil
 }
 
@@ -820,10 +821,9 @@ func iShouldSeeTheBurstsModal(ctx context.Context) error {
 		return godog.ErrPending
 	}
 	view := env.GetView()
-	gomega.Expect(view).To(gomega.SatisfyAny(
-		gomega.ContainSubstring("Burst"),
-		gomega.ContainSubstring("burst"),
-	))
+	if !strings.Contains(view, "Burst") && !strings.Contains(view, "burst") {
+		return fmt.Errorf("expected bursts modal to be visible (containing 'Burst' or 'burst'), got view: %s", view)
+	}
 	return nil
 }
 
@@ -834,10 +834,9 @@ func iShouldSeeTheFactsModal(ctx context.Context) error {
 		return godog.ErrPending
 	}
 	view := env.GetView()
-	gomega.Expect(view).To(gomega.SatisfyAny(
-		gomega.ContainSubstring("Fact"),
-		gomega.ContainSubstring("fact"),
-	))
+	if !strings.Contains(view, "Fact") && !strings.Contains(view, "fact") {
+		return fmt.Errorf("expected facts modal to be visible (containing 'Fact' or 'fact'), got view: %s", view)
+	}
 	return nil
 }
 
@@ -848,10 +847,9 @@ func iShouldSeeTheMetadataModal(ctx context.Context) error {
 		return godog.ErrPending
 	}
 	view := env.GetView()
-	gomega.Expect(view).To(gomega.SatisfyAny(
-		gomega.ContainSubstring("Metadata"),
-		gomega.ContainSubstring("metadata"),
-	))
+	if !strings.Contains(view, "Metadata") && !strings.Contains(view, "metadata") {
+		return fmt.Errorf("expected metadata modal to be visible (containing 'Metadata' or 'metadata'), got view: %s", view)
+	}
 	return nil
 }
 

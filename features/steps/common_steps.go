@@ -2,6 +2,7 @@ package steps
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/baphled/kariya/features/support"
@@ -50,7 +51,9 @@ func iShouldSee(ctx context.Context, text string) error {
 	if !ok {
 		return godog.ErrPending
 	}
-	gomega.Expect(view).To(gomega.ContainSubstring(text))
+	if !strings.Contains(view, text) {
+		return fmt.Errorf("expected view to contain %q, but it was not found", text)
+	}
 	return nil
 }
 
@@ -60,7 +63,9 @@ func iShouldNotSee(ctx context.Context, text string) error {
 	if !ok {
 		return godog.ErrPending
 	}
-	gomega.Expect(view).NotTo(gomega.ContainSubstring(text))
+	if strings.Contains(view, text) {
+		return fmt.Errorf("expected view NOT to contain %q, but it was found", text)
+	}
 	return nil
 }
 

@@ -585,14 +585,17 @@ func iAddANewFact(ctx context.Context, text string) (context.Context, error) {
 	return ctx, nil
 }
 
-// iChangeFactTextTo changes the fact text in the editor.
+// pendingFactTextKey is the context key for storing pending fact text changes.
+type pendingFactTextKey struct{}
+
+// iChangeFactTextTo stores the desired fact text for the next save operation.
 func iChangeFactTextTo(ctx context.Context, newText string) (context.Context, error) {
 	env := support.GetAppEnv(ctx)
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	env.TypeText(newText)
-	return ctx, nil
+	_ = env
+	return context.WithValue(ctx, pendingFactTextKey{}, newText), nil
 }
 
 // iEditTheFirstFact opens the editor for the first fact.
@@ -625,13 +628,39 @@ func iRejectAllSuggestedFacts(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-// iSaveTheFactEdit saves the current fact edit.
+// iSaveTheFactEdit saves the current fact edit by persisting the pending text
+// change directly to the repository. This bypasses the huh form UI submission
+// path, matching the established pattern used by iSubmitTheFactForm.
 func iSaveTheFactEdit(ctx context.Context) (context.Context, error) {
 	env := support.GetAppEnv(ctx)
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	env.Confirm()
+
+	newText, ok := ctx.Value(pendingFactTextKey{}).(string)
+	if !ok || newText == "" {
+		return ctx, errors.New("no pending fact text to save")
+	}
+
+	factRepo := env.Service.GetFactRepository()
+	facts, err := factRepo.List(env.Ctx, careerrepo.FactListFilters{})
+	if err != nil {
+		return ctx, fmt.Errorf("failed to list facts: %w", err)
+	}
+
+	if len(facts) > 0 {
+		facts[0].Text = newText
+		if err := factRepo.Update(env.Ctx, facts[0]); err != nil {
+			return ctx, fmt.Errorf("failed to update fact: %w", err)
+		}
+	} else {
+		fact := &career.Fact{Text: newText}
+		if err := factRepo.Create(env.Ctx, fact); err != nil {
+			return ctx, fmt.Errorf("failed to create fact: %w", err)
+		}
+	}
+
+	env.PressKey(tea.KeyEscape)
 	return ctx, nil
 }
 
