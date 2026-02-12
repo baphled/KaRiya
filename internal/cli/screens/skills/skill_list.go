@@ -187,16 +187,12 @@ func (s *SkillsListScreen) handleActionKey(msg tea.KeyMsg) (tea.Cmd, screens.Scr
 		return s.handleViewAction()
 	}
 
-	// Handle 's' key - view skill events.
+	// Handle 's' key - sort skills.
 	if msg.Type == tea.KeyRunes && len(msg.Runes) > 0 && msg.Runes[0] == 's' {
-		// Navigate to skill events screen for selected skill
-		if selected := s.tableBehavior.GetSelectedItem(); selected != nil {
-			return nil, &screens.NavigateResult{
-				ResultData: map[string]interface{}{
-					"action": "view_events",
-					"skill":  *selected,
-				},
-			}
+		return nil, &screens.NavigateResult{
+			ResultData: map[string]interface{}{
+				"action": "sort",
+			},
 		}
 	}
 
@@ -208,6 +204,30 @@ func (s *SkillsListScreen) handleActionKey(msg tea.KeyMsg) (tea.Cmd, screens.Scr
 		return s.handleEditAction()
 	case "d":
 		return s.handleDeleteAction()
+	case "f":
+		return nil, &screens.NavigateResult{
+			ResultData: map[string]interface{}{
+				"action": "filter",
+			},
+		}
+	case "/":
+		return nil, &screens.NavigateResult{
+			ResultData: map[string]interface{}{
+				"action": "search",
+			},
+		}
+	case "i":
+		return nil, &screens.NavigateResult{
+			ResultData: map[string]interface{}{
+				"action": "infer",
+			},
+		}
+	case "?":
+		return nil, &screens.NavigateResult{
+			ResultData: map[string]interface{}{
+				"action": "help",
+			},
+		}
 	}
 	return nil, nil
 }

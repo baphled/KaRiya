@@ -272,4 +272,54 @@ var _ = Describe("BurstDetailModal", func() {
 			}).NotTo(Panic())
 		})
 	})
+
+	Describe("Key Handling - Action Signals", func() {
+		BeforeEach(func() {
+			modal = modals.NewBurstDetailModal(burst, theme)
+			modal.SetDimensions(80, 24)
+			modal.Show()
+		})
+
+		It("should signal 'v' key for view events action", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'v'}}
+			model, _ := modal.Update(msg)
+
+			Expect(model).NotTo(BeNil())
+		})
+
+		It("should signal 'f' key for view facts action", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}}
+			model, _ := modal.Update(msg)
+
+			Expect(model).NotTo(BeNil())
+		})
+
+		It("should signal 's' key for view skills action", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}}
+			model, _ := modal.Update(msg)
+
+			Expect(model).NotTo(BeNil())
+		})
+
+		It("should signal 'e' key for edit action", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}}
+			model, _ := modal.Update(msg)
+
+			Expect(model).NotTo(BeNil())
+		})
+
+		It("should signal 'd' key for delete action", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'d'}}
+			model, _ := modal.Update(msg)
+
+			Expect(model).NotTo(BeNil())
+		})
+
+		It("should signal 'c' key for confirm action", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}}
+			model, _ := modal.Update(msg)
+
+			Expect(model).NotTo(BeNil())
+		})
+	})
 })

@@ -109,6 +109,60 @@ var _ = Describe("BurstDetailScreen", func() {
 			Expect(data["action"]).To(Equal("confirm"))
 			Expect(data["burst"]).To(Equal(burst))
 		})
+
+		It("should return skills action on 's' key", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}}
+			_, result := screen.Update(msg)
+
+			Expect(result).NotTo(BeNil())
+			Expect(result.Type()).To(Equal(screens.ResultNavigate))
+			navResult := result.(*screens.NavigateResult)
+			data := navResult.ResultData.(map[string]interface{})
+			Expect(data["action"]).To(Equal("skills"))
+			Expect(data["burst"]).To(Equal(burst))
+		})
+
+		It("should return infer action on 'i' key", func() {
+			// Create a confirmed burst for this test
+			confirmedBurst := fixtures.Burst("burst-confirmed", "event-1", "event-2", "event-3")
+			confirmedBurst.Name = "Senior Backend Engineer"
+			confirmedBurst.Confirmed = true
+			confirmedScreen := burstscreens.NewBurstDetailScreen(confirmedBurst)
+			confirmedScreen.SetTerminalInfo(120, 40)
+
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}}
+			_, result := confirmedScreen.Update(msg)
+
+			Expect(result).NotTo(BeNil())
+			Expect(result.Type()).To(Equal(screens.ResultNavigate))
+			navResult := result.(*screens.NavigateResult)
+			data := navResult.ResultData.(map[string]interface{})
+			Expect(data["action"]).To(Equal("infer"))
+			Expect(data["burst"]).To(Equal(confirmedBurst))
+		})
+
+		It("should return help action on '?' key", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}}
+			_, result := screen.Update(msg)
+
+			Expect(result).NotTo(BeNil())
+			Expect(result.Type()).To(Equal(screens.ResultNavigate))
+			navResult := result.(*screens.NavigateResult)
+			data := navResult.ResultData.(map[string]interface{})
+			Expect(data["action"]).To(Equal("help"))
+		})
+
+		It("should return nil for 'i' on unconfirmed burst", func() {
+			unconfirmedBurst := fixtures.Burst("burst-unconfirmed", "event-1", "event-2")
+			unconfirmedBurst.Confirmed = false
+			unconfirmedScreen := burstscreens.NewBurstDetailScreen(unconfirmedBurst)
+			unconfirmedScreen.SetTerminalInfo(120, 40)
+
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}}
+			_, result := unconfirmedScreen.Update(msg)
+
+			Expect(result).To(BeNil())
+		})
 	})
 
 	Describe("Navigation", func() {

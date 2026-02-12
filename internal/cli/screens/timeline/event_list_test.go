@@ -185,6 +185,76 @@ var _ = Describe("EventListScreen", func() {
 			Expect(data["action"]).To(Equal("filter"))
 		})
 
+		It("should return sort action on 's' key", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}}
+			_, result := screen.Update(msg)
+
+			Expect(result).NotTo(BeNil())
+			navResult := result.(*screens.NavigateResult)
+			data := navResult.ResultData.(map[string]interface{})
+			Expect(data["action"]).To(Equal("sort"))
+		})
+
+		It("should return search action on '/' key", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'/'}}
+			_, result := screen.Update(msg)
+
+			Expect(result).NotTo(BeNil())
+			navResult := result.(*screens.NavigateResult)
+			data := navResult.ResultData.(map[string]interface{})
+			Expect(data["action"]).To(Equal("search"))
+		})
+
+		It("should return clear filters action on 'x' key", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}}
+			_, result := screen.Update(msg)
+
+			Expect(result).NotTo(BeNil())
+			navResult := result.(*screens.NavigateResult)
+			data := navResult.ResultData.(map[string]interface{})
+			Expect(data["action"]).To(Equal("clear"))
+		})
+
+		It("should return help action on '?' key", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}}
+			_, result := screen.Update(msg)
+
+			Expect(result).NotTo(BeNil())
+			navResult := result.(*screens.NavigateResult)
+			data := navResult.ResultData.(map[string]interface{})
+			Expect(data["action"]).To(Equal("help"))
+		})
+
+		It("should be safe on empty list for action keys", func() {
+			emptyScreen := timeline.NewTimelineEventListScreen([]*career.Event{})
+			emptyScreen.SetTerminalInfo(120, 40)
+
+			// sort should work on empty list
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}}
+			_, result := emptyScreen.Update(msg)
+			Expect(result).NotTo(BeNil())
+
+			// search should work on empty list
+			msg = tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'/'}}
+			_, result = emptyScreen.Update(msg)
+			Expect(result).NotTo(BeNil())
+
+			// filter should work on empty list
+			msg = tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}}
+			_, result = emptyScreen.Update(msg)
+			Expect(result).NotTo(BeNil())
+
+			// help should work on empty list
+			msg = tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}}
+			_, result = emptyScreen.Update(msg)
+			Expect(result).NotTo(BeNil())
+
+			// clear should work on empty list
+			msg = tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}}
+			_, result = emptyScreen.Update(msg)
+			Expect(result).NotTo(BeNil())
+		})
+
 		Context("after navigating to different event", func() {
 			BeforeEach(func() {
 				// Navigate to second event

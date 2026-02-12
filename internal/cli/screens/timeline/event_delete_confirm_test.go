@@ -3,12 +3,13 @@ package timeline_test
 import (
 	"time"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-
+	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/timeline"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
+	tea "github.com/charmbracelet/bubbletea"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("EventDeleteConfirmScreen", func() {
@@ -110,6 +111,77 @@ var _ = Describe("EventDeleteConfirmScreen", func() {
 	Describe("State constant", func() {
 		It("has correct state name for state matrix", func() {
 			Expect(timeline.EventDeleteConfirmState).To(Equal("event_delete_confirm"))
+		})
+	})
+
+	Describe("Key Handling", func() {
+		BeforeEach(func() {
+			screen = timeline.NewEventDeleteConfirmScreen(event)
+			screen.SetTerminalInfo(120, 40)
+		})
+
+		It("should return CancelResult on escape key", func() {
+			msg := tea.KeyMsg{Type: tea.KeyEsc}
+			_, result := screen.Update(msg)
+
+			Expect(result).NotTo(BeNil())
+			Expect(result.Type()).To(Equal(screens.ResultCancel))
+		})
+
+		It("should return NavigateResult with false on 'n' key", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}}
+			_, result := screen.Update(msg)
+
+			Expect(result).NotTo(BeNil())
+			Expect(result.Type()).To(Equal(screens.ResultNavigate))
+			navResult := result.(*screens.NavigateResult)
+			Expect(navResult.ResultData).To(BeFalse())
+		})
+
+		It("should return NavigateResult with true on 'y' key", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}}
+			_, result := screen.Update(msg)
+
+			Expect(result).NotTo(BeNil())
+			Expect(result.Type()).To(Equal(screens.ResultNavigate))
+			navResult := result.(*screens.NavigateResult)
+			Expect(navResult.ResultData).To(BeTrue())
+		})
+
+		It("should return NavigateResult on Enter key with current selection", func() {
+			msg := tea.KeyMsg{Type: tea.KeyEnter}
+			_, result := screen.Update(msg)
+
+			Expect(result).NotTo(BeNil())
+			Expect(result.Type()).To(Equal(screens.ResultNavigate))
+			// Result data should be the current selection state (true or false)
+			navResult := result.(*screens.NavigateResult)
+			Expect(navResult.ResultData).To(BeAssignableToTypeOf(false))
+		})
+
+		It("should toggle selection with arrow keys", func() {
+			// Get initial state by pressing Enter without navigation
+			initialMsg := tea.KeyMsg{Type: tea.KeyEnter}
+			_, initialResult := screen.Update(initialMsg)
+
+			initialSelection := initialResult.(*screens.NavigateResult).ResultData.(bool)
+
+			// Reset by creating a new screen
+			screen = timeline.NewEventDeleteConfirmScreen(event)
+			screen.SetTerminalInfo(120, 40)
+
+			// Press right arrow to toggle selection
+			arrowMsg := tea.KeyMsg{Type: tea.KeyRight}
+			screen.Update(arrowMsg)
+
+			// Check new selection state
+			enterMsg := tea.KeyMsg{Type: tea.KeyEnter}
+			_, newResult := screen.Update(enterMsg)
+
+			newSelection := newResult.(*screens.NavigateResult).ResultData.(bool)
+
+			// Selection should have toggled
+			Expect(newSelection).NotTo(Equal(initialSelection))
 		})
 	})
 })
