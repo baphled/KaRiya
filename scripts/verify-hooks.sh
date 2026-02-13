@@ -17,7 +17,7 @@ INVALID_HOOKS=()
 echo "Git Hooks Verification"
 echo ""
 
-if [ ! -d ".git" ]; then
+if [ ! -e ".git" ]; then
     echo -e "${RED}Error: Not in a git repository${NC}"
     exit 1
 fi

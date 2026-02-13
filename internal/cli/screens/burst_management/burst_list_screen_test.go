@@ -123,6 +123,34 @@ var _ = Describe("BurstListScreen", func() {
 				Expect(cmd).To(BeNil())
 				Expect(result).To(BeNil())
 			})
+
+			It("should handle home key (go to first)", func() {
+				msg := tea.KeyMsg{Type: tea.KeyHome}
+				cmd, result := screen.Update(msg)
+				Expect(cmd).To(BeNil())
+				Expect(result).To(BeNil())
+			})
+
+			It("should handle end key (go to last)", func() {
+				msg := tea.KeyMsg{Type: tea.KeyEnd}
+				cmd, result := screen.Update(msg)
+				Expect(cmd).To(BeNil())
+				Expect(result).To(BeNil())
+			})
+
+			It("should handle g key (vim go to first)", func() {
+				msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'g'}}
+				cmd, result := screen.Update(msg)
+				Expect(cmd).To(BeNil())
+				Expect(result).To(BeNil())
+			})
+
+			It("should handle G key (vim go to last)", func() {
+				msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'G'}}
+				cmd, result := screen.Update(msg)
+				Expect(cmd).To(BeNil())
+				Expect(result).To(BeNil())
+			})
 		})
 
 		Context("enter key - view details", func() {
@@ -335,6 +363,17 @@ var _ = Describe("BurstListScreen", func() {
 			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}}
 			screen.Update(msg)
 			Expect(screen.GetSelectedIndex()).To(Equal(1))
+		})
+	})
+
+	Describe("Empty List Safeguards - Burst Management (Phase 2-Tier 3)", func() {
+		It("should return nil for view on empty list", func() {
+			emptyScreen := burst_management.NewBurstListScreen([]*career.Burst{})
+
+			msg := tea.KeyMsg{Type: tea.KeyEnter}
+			_, result := emptyScreen.Update(msg)
+
+			Expect(result).To(BeNil())
 		})
 	})
 })

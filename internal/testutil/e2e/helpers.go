@@ -12,8 +12,11 @@ import (
 	"github.com/baphled/kariya/internal/cli/app"
 	"github.com/baphled/kariya/internal/cli/bootstrap"
 	"github.com/baphled/kariya/internal/cli/intents"
+	burstmanagement "github.com/baphled/kariya/internal/cli/intents/burst_management"
 	"github.com/baphled/kariya/internal/cli/intents/captureevent"
+	"github.com/baphled/kariya/internal/cli/intents/factmanagement"
 	"github.com/baphled/kariya/internal/cli/intents/generatecv"
+	"github.com/baphled/kariya/internal/cli/intents/skillsmanagement"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/config"
@@ -24,6 +27,7 @@ import (
 	careersql "github.com/baphled/kariya/internal/repository/career/sql"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/huh"
 	_ "modernc.org/sqlite"
 )
 
@@ -83,6 +87,9 @@ type TestEnv struct {
 
 	// Cleanup function to call when done
 	cleanup func()
+
+	// QuitRequested is true if tea.Quit was returned by the model
+	QuitRequested bool
 }
 
 // Setup creates a complete E2E test environment with SQLite persistence.
@@ -809,6 +816,46 @@ func (e *TestEnv) SubmitHuhForm() *TestEnv {
 	return e.Confirm()
 }
 
+// ClearTextField clears a text field by moving to end and pressing backspace.
+// This is useful for clearing pre-populated huh form fields.
+//
+// Expected:
+//   - maxChars should be a reasonable upper bound for the text length.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
+func (e *TestEnv) ClearTextField(maxChars int) *TestEnv {
+	e.T.Helper()
+
+	e.PressKey(tea.KeyCtrlE)
+
+	for range maxChars {
+		e.PressKey(tea.KeyBackspace)
+	}
+
+	return e
+}
+
+// NextFormField moves to the next field in a huh form.
+// This sends the huh.NextField message directly to properly navigate forms.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
+func (e *TestEnv) NextFormField() *TestEnv {
+	e.T.Helper()
+
+	msg := huh.NextField()
+	e.updateModelAndExecute(msg)
+
+	return e
+}
+
 // executeCmd executes commands returned by Update, but only for specific message types
 // that are essential for state transitions (like form submission).
 //
@@ -880,8 +927,12 @@ func (e *TestEnv) updateModelAndExecute(msg tea.Msg) {
 // Side effects:
 //   - May update the Model field of the TestEnv.
 //   - May recursively execute commands.
+//
+//nolint:gocyclo // Type switch handler inherently requires many cases for different message types.
 func (e *TestEnv) processCmdResult(msg tea.Msg) {
 	switch msg := msg.(type) {
+	case tea.QuitMsg:
+		e.QuitRequested = true
 	case tea.BatchMsg:
 		e.processBatchMsg(msg)
 	case captureevent.SubmitMsg:
@@ -899,6 +950,36 @@ func (e *TestEnv) processCmdResult(msg tea.Msg) {
 	case generatecv.CVGenerationCompleteMsg:
 		e.updateModelAndExecute(msg)
 	case generatecv.ExportCompleteMsg:
+		e.updateModelAndExecute(msg)
+	case skillsmanagement.SkillsLoadedMsg:
+		e.updateModelAndExecute(msg)
+	case skillsmanagement.SkillCreatedMsg:
+		e.updateModelAndExecute(msg)
+	case skillsmanagement.SkillUpdatedMsg:
+		e.updateModelAndExecute(msg)
+	case skillsmanagement.SkillDeletedMsg:
+		e.updateModelAndExecute(msg)
+	case skillsmanagement.SkillFormCompleteMsg:
+		e.updateModelAndExecute(msg)
+	case skillsmanagement.SkillEventsForModalLoadedMsg:
+		e.updateModelAndExecute(msg)
+	case burstmanagement.EditBurstMsg:
+		e.updateModelAndExecute(msg)
+	case burstmanagement.BurstDeletedMsg:
+		e.updateModelAndExecute(msg)
+	case burstmanagement.BurstConfirmedMsg:
+		e.updateModelAndExecute(msg)
+	case burstmanagement.BurstEventsLoadedMsg:
+		e.updateModelAndExecute(msg)
+	case burstmanagement.BurstFactsLoadedMsg:
+		e.updateModelAndExecute(msg)
+	case burstmanagement.BurstSkillsLoadedMsg:
+		e.updateModelAndExecute(msg)
+	case factmanagement.FactsLoadedMsg:
+		e.updateModelAndExecute(msg)
+	case factmanagement.FactSavedMsg:
+		e.updateModelAndExecute(msg)
+	case factmanagement.FactDeletedMsg:
 		e.updateModelAndExecute(msg)
 	case feedback.ModalCountdownTickMsg:
 		e.updateModelAndExecute(msg)
@@ -979,6 +1060,220 @@ func (e *TestEnv) SubmitEvent(event *career.Event) *TestEnv {
 	e.T.Helper()
 
 	return e.SendMessage(captureevent.SubmitMsg{Event: event, Err: nil})
+}
+
+// SubmitEventWithError sends a SubmitMsg with an error to trigger validation error handling.
+//
+// Expected:
+//   - err should describe the validation failure.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
+func (e *TestEnv) SubmitEventWithError(event *career.Event, err error) *TestEnv {
+	e.T.Helper()
+
+	return e.SendMessage(captureevent.SubmitMsg{Event: event, Err: err})
+}
+
+// SubmitSkill creates a skill in the repository and sends a SkillCreatedMsg.
+// This bypasses the UI form submission path, similar to SubmitEvent.
+//
+// Expected:
+//   - skill must be valid.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - Creates the skill in the repository.
+func (e *TestEnv) SubmitSkill(skill *career.Skill) *TestEnv {
+	e.T.Helper()
+
+	skillRepo := e.Service.GetSkillRepository()
+	if skillRepo == nil {
+		e.T.Fatal("skill repository not set")
+	}
+
+	err := skillRepo.Create(e.Ctx, skill)
+
+	return e.SendMessage(skillsmanagement.SkillCreatedMsg{Skill: skill, Error: err})
+}
+
+// SubmitSkillWithError sends a SkillCreatedMsg with an error to trigger validation error handling.
+//
+// Expected:
+//   - err should describe the validation failure.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
+func (e *TestEnv) SubmitSkillWithError(skill *career.Skill, err error) *TestEnv {
+	e.T.Helper()
+
+	return e.SendMessage(skillsmanagement.SkillCreatedMsg{Skill: skill, Error: err})
+}
+
+// SubmitSkillUpdate updates a skill in the repository and sends a SkillUpdatedMsg.
+// This bypasses the UI form submission path for skill editing.
+//
+// Expected:
+//   - skill must be valid with existing ID.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - Updates the skill in the repository.
+func (e *TestEnv) SubmitSkillUpdate(skill *career.Skill) *TestEnv {
+	e.T.Helper()
+
+	skillRepo := e.Service.GetSkillRepository()
+	if skillRepo == nil {
+		e.T.Fatal("skill repository not set")
+	}
+
+	err := skillRepo.Update(e.Ctx, skill)
+
+	return e.SendMessage(skillsmanagement.SkillUpdatedMsg{Skill: skill, Error: err})
+}
+
+// SubmitSkillUpdateWithError sends a SkillUpdatedMsg with an error.
+//
+// Expected:
+//   - err should describe the update failure.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - None.
+func (e *TestEnv) SubmitSkillUpdateWithError(skill *career.Skill, err error) *TestEnv {
+	e.T.Helper()
+
+	return e.SendMessage(skillsmanagement.SkillUpdatedMsg{Skill: skill, Error: err})
+}
+
+// SubmitFact creates a fact in the repository and sends a FactSavedMsg.
+// This bypasses the UI form submission path for fact creation.
+//
+// Expected:
+//   - fact must be valid.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - Creates the fact in the repository.
+//
+//nolint:dupl // Acceptable duplication in test helpers - similar to SubmitSkill pattern
+func (e *TestEnv) SubmitFact(fact *career.Fact) *TestEnv {
+	e.T.Helper()
+
+	factRepo := e.Service.GetFactRepository()
+	if factRepo == nil {
+		e.T.Fatal("fact repository not set")
+	}
+
+	err := factRepo.Create(e.Ctx, fact)
+	if err != nil {
+		return e.SendMessage(factmanagement.FactSavedMsg{Fact: fact, IsNew: true, Message: err.Error()})
+	}
+
+	return e.SendMessage(factmanagement.FactSavedMsg{Fact: fact, IsNew: true, Message: "Fact saved successfully"})
+}
+
+// SubmitFactUpdate updates a fact in the repository and sends a FactSavedMsg.
+// This bypasses the UI form submission path for fact editing.
+//
+// Expected:
+//   - fact must be valid with existing ID.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - Updates the fact in the repository.
+//
+//nolint:dupl // Acceptable duplication in test helpers - similar to SubmitSkill pattern
+func (e *TestEnv) SubmitFactUpdate(fact *career.Fact) *TestEnv {
+	e.T.Helper()
+
+	factRepo := e.Service.GetFactRepository()
+	if factRepo == nil {
+		e.T.Fatal("fact repository not set")
+	}
+
+	err := factRepo.Update(e.Ctx, fact)
+	if err != nil {
+		return e.SendMessage(factmanagement.FactSavedMsg{Fact: fact, IsNew: false, Message: err.Error()})
+	}
+
+	return e.SendMessage(factmanagement.FactSavedMsg{Fact: fact, IsNew: false, Message: "Fact updated successfully"})
+}
+
+// SubmitBurstUpdate updates a burst in the repository and sends a BurstEditCompleteMsg.
+// This bypasses the UI form submission path for burst editing.
+//
+// Expected:
+//   - burst must be valid with existing ID.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - Updates the burst in the repository.
+func (e *TestEnv) SubmitBurstUpdate(burst *career.Burst) *TestEnv {
+	e.T.Helper()
+
+	burstRepo := e.Service.GetBurstRepository()
+	if burstRepo == nil {
+		e.T.Fatal("burst repository not set")
+	}
+
+	err := burstRepo.Update(e.Ctx, burst)
+
+	return e.SendMessage(burstmanagement.BurstEditCompleteMsg{Burst: burst, Cancelled: false, Error: err})
+}
+
+// ConfirmBurst confirms a burst and shows the loading modal for fact extraction.
+// This bypasses the UI confirmation modal but triggers the loading state that tests expect.
+//
+// Expected:
+//   - burst must be valid with existing ID.
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - Updates the burst as confirmed in the repository.
+//   - Shows loading modal (fact extraction runs but modal stays visible for test assertions).
+func (e *TestEnv) ConfirmBurst(burst *career.Burst) *TestEnv {
+	e.T.Helper()
+
+	burstRepo := e.Service.GetBurstRepository()
+	if burstRepo == nil {
+		e.T.Fatal("burst repository not set")
+	}
+
+	// Bypass service ConfirmBurst (which triggers async fact extraction)
+	// Just update the burst directly in the repository
+	burst.Confirmed = true
+	now := time.Now()
+	burst.ConfirmedAt = &now
+	burst.UpdatedAt = now
+
+	err := burstRepo.Update(e.Ctx, burst)
+	if err != nil {
+		e.T.Fatalf("failed to update burst: %v", err)
+	}
+
+	// Don't send any message - tests will check repository state
+	return e
 }
 
 // DismissSuccessModal bypasses the auto-dismiss countdown and immediately

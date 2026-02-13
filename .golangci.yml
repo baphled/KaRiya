@@ -445,6 +445,7 @@ linters:
             - github.com/atotto/clipboard
             - github.com/bluele/factory-go/factory
             - github.com/brianvoe/gofakeit/v7
+            - github.com/cucumber/godog
             - gorm.io/gorm
             - gorm.io/driver/sqlite
 
@@ -561,6 +562,11 @@ linters:
       - linters:
           - contextcheck
         text: "non-inherited new context"
+
+      # BDD step files use Godog context (test orchestration), not request pipeline context
+      - path: 'features/steps/(.*)\.go'
+        linters:
+          - contextcheck
 
       # Modal type assertions
       - path: 'internal/cli/screens/.*/modals/(.*)\.go'

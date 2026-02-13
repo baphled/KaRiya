@@ -183,6 +183,29 @@ var _ = Describe("EditSettingsScreen", func() {
 			Expect(formData.BoolValues).NotTo(BeNil())
 		})
 	})
+
+	Describe("Configure Screen Escape/Help - EditSettings (Phase 2-Tier 3)", func() {
+		BeforeEach(func() {
+			screen = configure.NewEditSettingsScreen(intents.DomainSystem, settings)
+		})
+
+		It("should return CancelResult on Escape key", func() {
+			msg := tea.KeyMsg{Type: tea.KeyEsc}
+			_, result := screen.Update(msg)
+
+			Expect(result).NotTo(BeNil())
+			Expect(result.Type()).To(Equal(screens.ResultCancel))
+		})
+
+		It("should handle '?' key without panic", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}}
+			_, _ = screen.Update(msg)
+
+			// '?' key may trigger help or other actions
+			// Just verify the screen handles it without panic
+			Expect(screen).NotTo(BeNil())
+		})
+	})
 })
 
 var _ = Describe("ReviewChangesScreen", func() {

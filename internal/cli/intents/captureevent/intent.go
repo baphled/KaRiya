@@ -128,10 +128,16 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 		return nil
 
 	case SubmitMsg:
-		if i.currentState == StateForm && msg.Err == nil && msg.Event != nil {
-			formData := forms.GetCaptureEventFormData(msg.Event)
-			formData.SubmitConfirmed = true
-			return i.handleScreenResult(&screens.SubmitResult{FormData: formData})
+		if i.currentState == StateForm {
+			// Handle validation errors from form submission
+			if msg.Err != nil {
+				return i.showValidationErrorModal(msg.Err.Error())
+			}
+			if msg.Event != nil {
+				formData := forms.GetCaptureEventFormData(msg.Event)
+				formData.SubmitConfirmed = true
+				return i.handleScreenResult(&screens.SubmitResult{FormData: formData})
+			}
 		}
 		return nil
 	}
