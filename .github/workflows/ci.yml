@@ -246,6 +246,13 @@ jobs:
         with:
           args: '-no-fail -fmt sarif -out gosec.sarif ./...'
 
+      - name: Fix SARIF relationships format
+        if: always()
+        run: |
+          if [ -f gosec.sarif ]; then
+            bash scripts/fix-sarif-output.sh gosec.sarif
+          fi
+
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@v3
         with:
