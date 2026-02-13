@@ -102,6 +102,9 @@ func NewEventReviewScreen(
 // Parameters:
 //   - skills: The updated list of accepted skills.
 //
+// Expected:
+//   - skills can be nil or an empty slice.
+//
 // Side effects:
 //   - Updates the acceptedSkills field.
 func (s *EventReviewScreen) SetAcceptedSkills(skills []skillinference.SkillSuggestion) {
@@ -123,6 +126,9 @@ func (s *EventReviewScreen) GetSuggestedSkills() []skillinference.SkillSuggestio
 //
 // Parameters:
 //   - skills: The new list of skill suggestions.
+//
+// Expected:
+//   - skills can be nil or an empty slice.
 //
 // Side effects:
 //   - Updates the skills field.
