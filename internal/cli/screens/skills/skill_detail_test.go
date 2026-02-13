@@ -81,6 +81,32 @@ var _ = Describe("SkillDetailScreen", func() {
 			Expect(result.Type()).To(Equal(screens.ResultNavigate))
 			Expect(result.Data()).To(Equal("back"))
 		})
+
+		It("should return events action on 's' key", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}}
+			_, result := screen.Update(msg)
+
+			Expect(result).NotTo(BeNil())
+			Expect(result.Type()).To(Equal(screens.ResultNavigate))
+			Expect(result.Data()).To(Equal("events"))
+		})
+
+		It("should return help action on '?' key", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}}
+			_, result := screen.Update(msg)
+
+			Expect(result).NotTo(BeNil())
+			Expect(result.Type()).To(Equal(screens.ResultNavigate))
+			Expect(result.Data()).To(Equal("help"))
+		})
+
+		It("should return CancelResult on backspace", func() {
+			msg := tea.KeyMsg{Type: tea.KeyBackspace}
+			_, result := screen.Update(msg)
+
+			Expect(result).NotTo(BeNil())
+			Expect(result.Type()).To(Equal(screens.ResultCancel))
+		})
 	})
 
 	Describe("View Rendering", func() {
@@ -190,6 +216,39 @@ var _ = Describe("SkillDetailScreen", func() {
 			view := screen.View()
 
 			Expect(view).NotTo(BeEmpty())
+		})
+	})
+
+	Describe("Skill Detail Screen Complete Suite (Phase 2-Tier 3)", func() {
+		BeforeEach(func() {
+			screen = skills.NewSkillDetailScreen(skill)
+		})
+
+		It("should signal 's' key for events view", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}}
+			_, result := screen.Update(msg)
+
+			Expect(result).NotTo(BeNil())
+			Expect(result.Type()).To(Equal(screens.ResultNavigate))
+			Expect(result.Data()).To(Equal("events"))
+		})
+
+		It("should return CancelResult on Escape key", func() {
+			msg := tea.KeyMsg{Type: tea.KeyEsc}
+			_, result := screen.Update(msg)
+
+			Expect(result).NotTo(BeNil())
+			Expect(result.Type()).To(Equal(screens.ResultCancel))
+		})
+
+		It("should return help action on '?' key", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}}
+			_, result := screen.Update(msg)
+
+			Expect(result).NotTo(BeNil())
+			Expect(result.Type()).To(Equal(screens.ResultNavigate))
+			data := result.Data().(string)
+			Expect(data).To(Equal("help"))
 		})
 	})
 })

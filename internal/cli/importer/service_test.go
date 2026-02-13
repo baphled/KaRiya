@@ -30,8 +30,8 @@ var _ = Describe("Import Service", func() {
 	Describe("PrepareImport", func() {
 		It("should parse CSV and return parsed rows", func() {
 			csv := `Text,Date,Categories,Tags,Project,Company
-Event 1,2024-01,Technical,technical,Project1,Company1
-Event 2,2024-02,Leadership,leadership,Project2,Company2`
+First event description,2024-01,Technical,technical,Project1,Company1
+Second event description,2024-02,Leadership,leadership,Project2,Company2`
 
 			reader := bytes.NewReader([]byte(csv))
 			rows, err := importSvc.PrepareImport(ctx, reader)
@@ -46,8 +46,8 @@ Event 2,2024-02,Leadership,leadership,Project2,Company2`
 	Describe("ImportRows", func() {
 		It("should import selected valid rows", func() {
 			csv := `Text,Date,Categories,Tags,Project,Company
-Event 1,2024-01,Technical,technical,Project1,Company1
-Event 2,2024-02,Leadership,leadership,Project2,Company2`
+First event description,2024-01,Technical,technical,Project1,Company1
+Second event description,2024-02,Leadership,leadership,Project2,Company2`
 
 			reader := bytes.NewReader([]byte(csv))
 			rows, err := importSvc.PrepareImport(ctx, reader)
@@ -91,7 +91,7 @@ Improved API response times,2024-02-05,Technical,technical,Performance,TechCorp`
 
 		It("should handle burst detection failure gracefully", func() {
 			csv := `Text,Date,Categories,Tags,Project,Company
-Event 1,2024-01,Technical,technical,Project1,Company1`
+First event description,2024-01,Technical,technical,Project1,Company1`
 
 			reader := bytes.NewReader([]byte(csv))
 			rows, err := importSvc.PrepareImport(ctx, reader)

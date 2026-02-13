@@ -106,6 +106,74 @@ var _ = Describe("EventListScreen", func() {
 			screen.Update(msg)
 			Expect(screen.GetSelectedIndex()).To(Equal(2))
 		})
+
+		It("should move to first item with 'home' key", func() {
+			// Navigate to middle
+			screen.Update(tea.KeyMsg{Type: tea.KeyDown})
+			screen.Update(tea.KeyMsg{Type: tea.KeyDown})
+			Expect(screen.GetSelectedIndex()).To(Equal(2))
+
+			// Go to home
+			msg := tea.KeyMsg{Type: tea.KeyHome}
+			screen.Update(msg)
+			Expect(screen.GetSelectedIndex()).To(Equal(0))
+		})
+
+		It("should move to last item with 'end' key", func() {
+			// Start at first item
+			Expect(screen.GetSelectedIndex()).To(Equal(0))
+
+			// Go to end
+			msg := tea.KeyMsg{Type: tea.KeyEnd}
+			screen.Update(msg)
+			Expect(screen.GetSelectedIndex()).To(Equal(2))
+		})
+
+		It("should move to first item with 'g' key (vim)", func() {
+			// Navigate to middle
+			screen.Update(tea.KeyMsg{Type: tea.KeyDown})
+			screen.Update(tea.KeyMsg{Type: tea.KeyDown})
+			Expect(screen.GetSelectedIndex()).To(Equal(2))
+
+			// Go to home with vim 'g'
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'g'}}
+			screen.Update(msg)
+			Expect(screen.GetSelectedIndex()).To(Equal(0))
+		})
+
+		It("should move to last item with 'G' key (vim)", func() {
+			// Start at first item
+			Expect(screen.GetSelectedIndex()).To(Equal(0))
+
+			// Go to end with vim 'G'
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'G'}}
+			screen.Update(msg)
+			Expect(screen.GetSelectedIndex()).To(Equal(2))
+		})
+
+		It("should handle Ctrl+D for navigation", func() {
+			// Ctrl+D is one of the handled keys
+			msg := tea.KeyMsg{Type: tea.KeyCtrlD}
+			screen.Update(msg)
+			// The tableBehavior should handle this via HandleNavigation
+			// With 3 items total, behavior depends on page size and current selection
+			Expect(screen.GetSelectedIndex()).To(BeNumerically(">=", 0))
+			Expect(screen.GetSelectedIndex()).To(BeNumerically("<=", 2))
+		})
+
+		It("should handle Ctrl+U for navigation", func() {
+			// Move down first to have room to move up
+			screen.Update(tea.KeyMsg{Type: tea.KeyDown})
+			screen.Update(tea.KeyMsg{Type: tea.KeyDown})
+			Expect(screen.GetSelectedIndex()).To(Equal(2))
+
+			// Ctrl+U moves up
+			msg := tea.KeyMsg{Type: tea.KeyCtrlU}
+			screen.Update(msg)
+			// Should still be within bounds
+			Expect(screen.GetSelectedIndex()).To(BeNumerically(">=", 0))
+			Expect(screen.GetSelectedIndex()).To(BeNumerically("<=", 2))
+		})
 	})
 
 	Describe("Selection", func() {
@@ -183,6 +251,76 @@ var _ = Describe("EventListScreen", func() {
 			navResult := result.(*screens.NavigateResult)
 			data := navResult.ResultData.(map[string]interface{})
 			Expect(data["action"]).To(Equal("filter"))
+		})
+
+		It("should return sort action on 's' key", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}}
+			_, result := screen.Update(msg)
+
+			Expect(result).NotTo(BeNil())
+			navResult := result.(*screens.NavigateResult)
+			data := navResult.ResultData.(map[string]interface{})
+			Expect(data["action"]).To(Equal("sort"))
+		})
+
+		It("should return search action on '/' key", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'/'}}
+			_, result := screen.Update(msg)
+
+			Expect(result).NotTo(BeNil())
+			navResult := result.(*screens.NavigateResult)
+			data := navResult.ResultData.(map[string]interface{})
+			Expect(data["action"]).To(Equal("search"))
+		})
+
+		It("should return clear filters action on 'x' key", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}}
+			_, result := screen.Update(msg)
+
+			Expect(result).NotTo(BeNil())
+			navResult := result.(*screens.NavigateResult)
+			data := navResult.ResultData.(map[string]interface{})
+			Expect(data["action"]).To(Equal("clear"))
+		})
+
+		It("should return help action on '?' key", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}}
+			_, result := screen.Update(msg)
+
+			Expect(result).NotTo(BeNil())
+			navResult := result.(*screens.NavigateResult)
+			data := navResult.ResultData.(map[string]interface{})
+			Expect(data["action"]).To(Equal("help"))
+		})
+
+		It("should be safe on empty list for action keys", func() {
+			emptyScreen := timeline.NewTimelineEventListScreen([]*career.Event{})
+			emptyScreen.SetTerminalInfo(120, 40)
+
+			// sort should work on empty list
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}}
+			_, result := emptyScreen.Update(msg)
+			Expect(result).NotTo(BeNil())
+
+			// search should work on empty list
+			msg = tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'/'}}
+			_, result = emptyScreen.Update(msg)
+			Expect(result).NotTo(BeNil())
+
+			// filter should work on empty list
+			msg = tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}}
+			_, result = emptyScreen.Update(msg)
+			Expect(result).NotTo(BeNil())
+
+			// help should work on empty list
+			msg = tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}}
+			_, result = emptyScreen.Update(msg)
+			Expect(result).NotTo(BeNil())
+
+			// clear should work on empty list
+			msg = tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}}
+			_, result = emptyScreen.Update(msg)
+			Expect(result).NotTo(BeNil())
 		})
 
 		Context("after navigating to different event", func() {
@@ -449,6 +587,17 @@ var _ = Describe("EventListScreen", func() {
 
 			// Should have page navigation hint
 			Expect(view).To(ContainSubstring("Page"))
+		})
+
+		It("should return help action on '?' key", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}}
+			_, result := screen.Update(msg)
+
+			Expect(result).NotTo(BeNil())
+			Expect(result.Type()).To(Equal(screens.ResultNavigate))
+			navResult := result.(*screens.NavigateResult)
+			data := navResult.ResultData.(map[string]interface{})
+			Expect(data["action"]).To(Equal("help"))
 		})
 	})
 })

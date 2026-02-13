@@ -298,4 +298,21 @@ var _ = Describe("BurstFactsModal", func() {
 			Expect(view).To(ContainSubstring("Fact without strength"))
 		})
 	})
+
+	Describe("Esc Visibility", func() {
+		BeforeEach(func() {
+			modal = modals.NewBurstFactsModal(burstID, burstName, facts, theme)
+			modal.SetDimensions(80, 24)
+		})
+
+		It("IsVisible should be false after Esc", func() {
+			modal.Show()
+			Expect(modal.IsVisible()).To(BeTrue())
+
+			escMsg := tea.KeyMsg{Type: tea.KeyEsc}
+			modal.Update(escMsg)
+
+			Expect(modal.IsVisible()).To(BeFalse())
+		})
+	})
 })

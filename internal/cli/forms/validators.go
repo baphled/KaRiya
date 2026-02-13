@@ -10,9 +10,10 @@ import (
 
 // ParseDateString parses a date string in various formats.
 // Supports:
-// - YYYY-MM-DD format
-// - "today"
-// - Relative dates like "1 week ago", "2 days ago".
+// - YYYY-MM-DD format (e.g., "2024-01-15")
+// - "today" (case-insensitive)
+// - Short relative format: -Nd, -Nw, -Nm (e.g., "-7d", "-2w", "-1m" for days/weeks/months ago)
+// - Long relative format: N (day|days|week|weeks|month|months) ago (e.g., "1 week ago", "2 days ago")
 //
 // Expected:
 //   - s must be a valid date string.
@@ -37,8 +38,26 @@ func ParseDateString(s string) (time.Time, error) {
 		return t, nil
 	}
 
+	// Try short relative format (e.g., "-7d", "-2w", "-1m")
+	if matches := shortRelativeRegex.FindStringSubmatch(strings.ToLower(s)); len(matches) == 3 {
+		var amount int
+		if _, err := fmt.Sscanf(matches[1], "%d", &amount); err != nil {
+			amount = 0
+		}
+		unit := matches[2]
+
+		now := time.Now()
+		switch unit {
+		case "d":
+			return now.AddDate(0, 0, -amount), nil
+		case "w":
+			return now.AddDate(0, 0, -amount*7), nil
+		case "m":
+			return now.AddDate(0, -amount, 0), nil
+		}
+	}
+
 	// Try relative dates (e.g., "1 week ago", "2 days ago")
-	relativeRegex := regexp.MustCompile(`^(\d+)\s+(day|days|week|weeks|month|months)\s+ago$`)
 	if matches := relativeRegex.FindStringSubmatch(strings.ToLower(s)); len(matches) == 3 {
 		var amount int
 		if _, err := fmt.Sscanf(matches[1], "%d", &amount); err != nil {
@@ -59,6 +78,18 @@ func ParseDateString(s string) (time.Time, error) {
 
 	return time.Time{}, fmt.Errorf("invalid date format: %s", s)
 }
+
+// Pre-compiled regexes for validation (compiled once at package init).
+var (
+	shortRelativeRegex = regexp.MustCompile(`^-(\d+)([dwm])$`)
+	relativeRegex      = regexp.MustCompile(`^(\d+)\s+(day|days|week|weeks|month|months)\s+ago$`)
+	dateRegex          = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
+	emailRegex         = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+	urlRegex           = regexp.MustCompile(`^https?://[^\s/$.?#].\S*$`)
+	alphaNumRegex      = regexp.MustCompile(`^[a-zA-Z0-9]+$`)
+	noSpecialCharsRe   = regexp.MustCompile(`^[a-zA-Z0-9\s\-_]+$`)
+	githubUsernameRe   = regexp.MustCompile(`^[a-zA-Z0-9-]+$`)
+)
 
 // Common validation errors.
 var (
@@ -165,7 +196,6 @@ func DateFormat(value string) error {
 	}
 
 	// Check format with regex
-	dateRegex := regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
 	if !dateRegex.MatchString(value) {
 		return ErrInvalidDate
 	}
@@ -211,7 +241,6 @@ func Email(value string) error {
 		return nil
 	}
 
-	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
 	if !emailRegex.MatchString(value) {
 		return ErrInvalidEmail
 	}
@@ -234,7 +263,6 @@ func URL(value string) error {
 		return nil
 	}
 
-	urlRegex := regexp.MustCompile(`^https?://[^\s/$.?#].\S*$`)
 	if !urlRegex.MatchString(value) {
 		return errors.New("invalid URL format")
 	}
@@ -257,7 +285,6 @@ func AlphaNumeric(value string) error {
 		return nil
 	}
 
-	alphaNumRegex := regexp.MustCompile(`^[a-zA-Z0-9]+$`)
 	if !alphaNumRegex.MatchString(value) {
 		return errors.New("must contain only letters and numbers")
 	}
@@ -281,8 +308,7 @@ func NoSpecialChars(value string) error {
 	}
 
 	// Allow letters, numbers, spaces, hyphens, underscores
-	validRegex := regexp.MustCompile(`^[a-zA-Z0-9\s\-_]+$`)
-	if !validRegex.MatchString(value) {
+	if !noSpecialCharsRe.MatchString(value) {
 		return errors.New("contains invalid special characters")
 	}
 
@@ -555,8 +581,7 @@ func GitHubUsername(value string) error {
 	}
 
 	// Must contain only alphanumeric and hyphens
-	validChars := regexp.MustCompile(`^[a-zA-Z0-9-]+$`)
-	if !validChars.MatchString(value) {
+	if !githubUsernameRe.MatchString(value) {
 		return ErrGitHubUsernameChars
 	}
 

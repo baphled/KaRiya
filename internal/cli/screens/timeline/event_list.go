@@ -12,12 +12,14 @@ import (
 
 // TimelineEventListState identifies the timeline event list view in the
 // state matrix. On this screen the user sees a paginated table of career
-// events with columns for date, truncated event text, company, and
-// project. Arrow keys or j/k navigate the highlighted row, and Ctrl+D/U
-// or PgDn/PgUp page through larger lists. Pressing Enter opens the
-// selected event detail view. Action keys allow adding an event (a),
-// editing the selected event (e), deleting it (d), or opening the filter
-// screen (f). Escape returns to the main menu.
+// events with columns for date, truncated event text, company, and project.
+//
+// Navigation keys: Arrow keys or j/k navigate the highlighted row, and
+// Ctrl+D/U or PgDn/PgUp page through larger lists.
+//
+// Action keys: Pressing Enter opens the selected event detail view. Action
+// keys allow adding an event (a), editing the selected event (e), deleting
+// it (d), or opening the filter screen (f). Escape returns to the main menu.
 const TimelineEventListState = "timeline_event_list"
 
 // eventRowFormatter formats a career event for table display.
@@ -128,57 +130,92 @@ func (s *EventListScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 		return nil, nil
 
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc":
-			return nil, &screens.CancelResult{}
+		return s.handleKeyMessage(msg)
+	}
 
-		case "up", "k", "down", "j", "ctrl+d", "ctrl+u", "pgup", "pgdown", "home", "end", "g", "G":
-			s.tableBehavior.HandleNavigation(msg.String())
-			return nil, nil
+	return nil, nil
+}
 
-		case "enter":
-			if selected := s.tableBehavior.GetSelectedItem(); selected != nil {
-				return nil, &screens.NavigateResult{
-					ResultData: *selected,
-				}
+// handleKeyMessage processes keyboard input for the event list.
+func (s *EventListScreen) handleKeyMessage(msg tea.KeyMsg) (tea.Cmd, screens.ScreenResult) {
+	switch msg.String() {
+	case "esc":
+		return nil, &screens.CancelResult{}
+
+	case "up", "k", "down", "j", "ctrl+d", "ctrl+u", "pgup", "pgdown", "home", "end", "g", "G":
+		s.tableBehavior.HandleNavigation(msg.String())
+		return nil, nil
+
+	case "enter":
+		if selected := s.tableBehavior.GetSelectedItem(); selected != nil {
+			return nil, &screens.NavigateResult{
+				ResultData: *selected,
 			}
-			return nil, nil
+		}
+		return nil, nil
 
-		case "a":
+	case "a":
+		return nil, &screens.NavigateResult{
+			ResultData: map[string]interface{}{
+				"action": "add",
+			},
+		}
+
+	case "e":
+		if selected := s.tableBehavior.GetSelectedItem(); selected != nil {
 			return nil, &screens.NavigateResult{
 				ResultData: map[string]interface{}{
-					"action": "add",
+					"action": "edit",
+					"event":  *selected,
 				},
 			}
+		}
+		return nil, nil
 
-		case "e":
-			if selected := s.tableBehavior.GetSelectedItem(); selected != nil {
-				return nil, &screens.NavigateResult{
-					ResultData: map[string]interface{}{
-						"action": "edit",
-						"event":  *selected,
-					},
-				}
-			}
-			return nil, nil
-
-		case "d":
-			if selected := s.tableBehavior.GetSelectedItem(); selected != nil {
-				return nil, &screens.NavigateResult{
-					ResultData: map[string]interface{}{
-						"action": "delete",
-						"event":  *selected,
-					},
-				}
-			}
-			return nil, nil
-
-		case "f":
+	case "d":
+		if selected := s.tableBehavior.GetSelectedItem(); selected != nil {
 			return nil, &screens.NavigateResult{
 				ResultData: map[string]interface{}{
-					"action": "filter",
+					"action": "delete",
+					"event":  *selected,
 				},
 			}
+		}
+		return nil, nil
+
+	case "f":
+		return nil, &screens.NavigateResult{
+			ResultData: map[string]interface{}{
+				"action": "filter",
+			},
+		}
+
+	case "s":
+		return nil, &screens.NavigateResult{
+			ResultData: map[string]interface{}{
+				"action": "sort",
+			},
+		}
+
+	case "/":
+		return nil, &screens.NavigateResult{
+			ResultData: map[string]interface{}{
+				"action": "search",
+			},
+		}
+
+	case "x":
+		return nil, &screens.NavigateResult{
+			ResultData: map[string]interface{}{
+				"action": "clear",
+			},
+		}
+
+	case "?":
+		return nil, &screens.NavigateResult{
+			ResultData: map[string]interface{}{
+				"action": "help",
+			},
 		}
 	}
 

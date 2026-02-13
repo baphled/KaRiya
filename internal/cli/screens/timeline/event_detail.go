@@ -104,6 +104,21 @@ func (s *EventDetailScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) 
 					"event":  s.event,
 				},
 			}
+
+		case "s":
+			return nil, &screens.NavigateResult{
+				ResultData: map[string]interface{}{
+					"action": "skills",
+					"event":  s.event,
+				},
+			}
+
+		case "?":
+			return nil, &screens.NavigateResult{
+				ResultData: map[string]interface{}{
+					"action": "help",
+				},
+			}
 		}
 	}
 

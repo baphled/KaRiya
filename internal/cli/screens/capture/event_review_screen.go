@@ -261,21 +261,17 @@ func (s *EventReviewScreen) renderFacts(th theme.Theme) string {
 }
 
 // renderFooter renders footer with action shortcuts using UIKit badge primitives.
-// Only shows applicable actions based on available data.
+// Always shows all edit options regardless of whether bursts/facts exist,
+// ensuring users discover available actions and maintain spatial consistency
+// across review states (badges shifting would disorient users).
 func (s *EventReviewScreen) renderFooter() string {
 	th := s.resolveThemesTheme()
 
 	badges := []*primitives.Badge{
 		primitives.ConfirmBadge(th),
 		primitives.HelpKeyBadge("e", "Edit metadata", th),
-	}
-
-	if len(s.bursts) > 0 {
-		badges = append(badges, primitives.HelpKeyBadge("b", "Edit bursts", th))
-	}
-
-	if len(s.facts) > 0 {
-		badges = append(badges, primitives.HelpKeyBadge("f", "Edit facts", th))
+		primitives.HelpKeyBadge("b", "Edit bursts", th),
+		primitives.HelpKeyBadge("f", "Edit facts", th),
 	}
 
 	badges = append(badges,

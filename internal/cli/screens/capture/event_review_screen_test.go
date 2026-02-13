@@ -6,6 +6,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/capture"
+	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
@@ -174,16 +175,16 @@ var _ = Describe("EventReviewScreen", func() {
 			Expect(view).To(ContainSubstring("Edit facts"))
 		})
 
-		It("should hide edit bursts badge when no bursts", func() {
+		It("should show edit bursts badge even when no bursts", func() {
 			screen = capture.NewEventReviewScreen(breadcrumbs, testEvent, nil, testFacts)
 			view := screen.View()
-			Expect(view).NotTo(ContainSubstring("Edit bursts"))
+			Expect(view).To(ContainSubstring("Edit bursts"))
 		})
 
-		It("should hide edit facts badge when no facts", func() {
+		It("should show edit facts badge even when no facts", func() {
 			screen = capture.NewEventReviewScreen(breadcrumbs, testEvent, testBursts, nil)
 			view := screen.View()
-			Expect(view).NotTo(ContainSubstring("Edit facts"))
+			Expect(view).To(ContainSubstring("Edit facts"))
 		})
 
 		It("should show back and quit badges", func() {
@@ -242,6 +243,33 @@ var _ = Describe("EventReviewScreen", func() {
 			cmd, result := screen.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 			Expect(cmd).To(BeNil())
 			Expect(result).To(BeNil())
+		})
+	})
+
+	Describe("Key Handling Edge Cases", func() {
+		It("should ignore unknown rune keys", func() {
+			cmd, result := screen.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
+			Expect(cmd).To(BeNil())
+			Expect(result).To(BeNil())
+		})
+
+		It("should ignore non-key messages", func() {
+			cmd, result := screen.Update("some other message")
+			Expect(cmd).To(BeNil())
+			Expect(result).To(BeNil())
+		})
+	})
+
+	Describe("Theme Resolution", func() {
+		It("should use default theme when no theme set", func() {
+			view := screen.View()
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("should handle theme resolution in footer", func() {
+			screen.SetTheme(themes.NewDefaultTheme())
+			view := screen.View()
+			Expect(view).To(ContainSubstring("Confirm"))
 		})
 	})
 })

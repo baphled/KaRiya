@@ -165,4 +165,58 @@ var _ = Describe("SearchModal", func() {
 			Expect(result).To(ContainSubstring("Search"))
 		})
 	})
+
+	Describe("Modal Reopening", func() {
+		It("should be re-openable after cancel", func() {
+			modal = modals.NewSearchModal("", 80, 24)
+			modal.Show()
+			Expect(modal.IsVisible()).To(BeTrue())
+
+			escMsg := tea.KeyMsg{Type: tea.KeyEsc}
+			modal.Update(escMsg)
+			Expect(modal.IsVisible()).To(BeFalse())
+
+			modal.Show()
+			Expect(modal.IsVisible()).To(BeTrue())
+		})
+
+		It("should restore focus when reopened", func() {
+			modal = modals.NewSearchModal("", 80, 24)
+			modal.Show()
+			modal.Init()
+
+			escMsg := tea.KeyMsg{Type: tea.KeyEsc}
+			modal.Update(escMsg)
+
+			modal.Show()
+			modal.Init()
+			view := modal.View()
+			Expect(view).To(ContainSubstring("Search"))
+		})
+
+		It("should be re-hideable after being shown", func() {
+			modal = modals.NewSearchModal("test search", 80, 24)
+			modal.Show()
+			Expect(modal.IsVisible()).To(BeTrue())
+
+			modal.Hide()
+			Expect(modal.IsVisible()).To(BeFalse())
+			view := modal.View()
+			Expect(view).To(BeEmpty())
+		})
+	})
+
+	Describe("Search Modal No Side-Effect (Phase 2-Tier 3)", func() {
+		It("should return nil search data after escape (no side effects)", func() {
+			modal = modals.NewSearchModal("initial search", 80, 24)
+			modal.Init()
+
+			escMsg := tea.KeyMsg{Type: tea.KeyEsc}
+			_, applied, data := modal.Update(escMsg)
+
+			Expect(applied).To(BeFalse())
+			Expect(data).To(BeNil())
+			Expect(modal.IsVisible()).To(BeFalse())
+		})
+	})
 })

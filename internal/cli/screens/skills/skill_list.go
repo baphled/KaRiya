@@ -189,12 +189,42 @@ func (s *SkillsListScreen) handleActionKey(msg tea.KeyMsg) (tea.Cmd, screens.Scr
 
 	// Handle character keys for other actions.
 	switch msg.String() {
+	case "s":
+		return nil, &screens.NavigateResult{
+			ResultData: map[string]interface{}{
+				"action": "sort",
+			},
+		}
 	case "a":
 		return s.handleAddAction()
 	case "e":
 		return s.handleEditAction()
 	case "d":
 		return s.handleDeleteAction()
+	case "f":
+		return nil, &screens.NavigateResult{
+			ResultData: map[string]interface{}{
+				"action": "filter",
+			},
+		}
+	case "/":
+		return nil, &screens.NavigateResult{
+			ResultData: map[string]interface{}{
+				"action": "search",
+			},
+		}
+	case "i":
+		return nil, &screens.NavigateResult{
+			ResultData: map[string]interface{}{
+				"action": "infer",
+			},
+		}
+	case "?":
+		return nil, &screens.NavigateResult{
+			ResultData: map[string]interface{}{
+				"action": "help",
+			},
+		}
 	}
 	return nil, nil
 }
