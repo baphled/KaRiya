@@ -61,7 +61,7 @@ var _ = Describe("Skills Handling (Internal)", func() {
 
 			// Mock active screen to verify it gets updated
 			breadcrumbs := []string{"Test"}
-			screen := captureScreens.NewEventReviewScreen(breadcrumbs, intent.reviewState.Event, nil, nil)
+			screen := captureScreens.NewEventReviewScreen(breadcrumbs, intent.reviewState.Event, nil, nil, nil)
 			intent.activeScreen = screen
 		})
 

@@ -50,7 +50,7 @@ var _ = Describe("EventReviewScreen", func() {
 		testFacts = []*career.Fact{fact}
 
 		breadcrumbs = []string{"Main Menu", "Capture Event", "Review"}
-		screen = capture.NewEventReviewScreen(breadcrumbs, testEvent, testBursts, testFacts)
+		screen = capture.NewEventReviewScreen(breadcrumbs, testEvent, testBursts, testFacts, nil)
 	})
 
 	Describe("Creation", func() {
@@ -59,13 +59,13 @@ var _ = Describe("EventReviewScreen", func() {
 		})
 
 		It("should handle nil event", func() {
-			screen = capture.NewEventReviewScreen(breadcrumbs, nil, testBursts, testFacts)
+			screen = capture.NewEventReviewScreen(breadcrumbs, nil, testBursts, testFacts, nil)
 			view := screen.View()
 			Expect(view).NotTo(BeEmpty())
 		})
 
 		It("should handle empty bursts and facts", func() {
-			screen = capture.NewEventReviewScreen(breadcrumbs, testEvent, nil, nil)
+			screen = capture.NewEventReviewScreen(breadcrumbs, testEvent, nil, nil, nil)
 			view := screen.View()
 			Expect(view).To(ContainSubstring(testEvent.Text))
 		})
@@ -121,7 +121,7 @@ var _ = Describe("EventReviewScreen", func() {
 
 		Context("with nil event", func() {
 			It("should show no event data message", func() {
-				screen = capture.NewEventReviewScreen(breadcrumbs, nil, testBursts, testFacts)
+				screen = capture.NewEventReviewScreen(breadcrumbs, nil, testBursts, testFacts, nil)
 				view := screen.View()
 				Expect(view).To(ContainSubstring("No event data"))
 			})
@@ -129,7 +129,7 @@ var _ = Describe("EventReviewScreen", func() {
 
 		Context("with empty bursts", func() {
 			It("should show no bursts detected message", func() {
-				screen = capture.NewEventReviewScreen(breadcrumbs, testEvent, nil, testFacts)
+				screen = capture.NewEventReviewScreen(breadcrumbs, testEvent, nil, testFacts, nil)
 				view := screen.View()
 				Expect(view).To(ContainSubstring("No bursts detected"))
 			})
@@ -137,7 +137,7 @@ var _ = Describe("EventReviewScreen", func() {
 
 		Context("with empty facts", func() {
 			It("should show no facts detected message", func() {
-				screen = capture.NewEventReviewScreen(breadcrumbs, testEvent, testBursts, nil)
+				screen = capture.NewEventReviewScreen(breadcrumbs, testEvent, testBursts, nil, nil)
 				view := screen.View()
 				Expect(view).To(ContainSubstring("No facts detected"))
 			})
@@ -146,7 +146,7 @@ var _ = Describe("EventReviewScreen", func() {
 		Context("with event missing optional fields", func() {
 			It("should omit company when empty", func() {
 				noCompanyEvent := fixtures.EventWith("evt-2", "Simple event", "", "")
-				screen = capture.NewEventReviewScreen(breadcrumbs, noCompanyEvent, nil, nil)
+				screen = capture.NewEventReviewScreen(breadcrumbs, noCompanyEvent, nil, nil, nil)
 				view := screen.View()
 				Expect(view).To(ContainSubstring("Simple event"))
 				Expect(view).NotTo(ContainSubstring("Company"))
@@ -177,13 +177,13 @@ var _ = Describe("EventReviewScreen", func() {
 		})
 
 		It("should show edit bursts badge even when no bursts", func() {
-			screen = capture.NewEventReviewScreen(breadcrumbs, testEvent, nil, testFacts)
+			screen = capture.NewEventReviewScreen(breadcrumbs, testEvent, nil, testFacts, nil)
 			view := screen.View()
 			Expect(view).To(ContainSubstring("Edit bursts"))
 		})
 
 		It("should show edit facts badge even when no facts", func() {
-			screen = capture.NewEventReviewScreen(breadcrumbs, testEvent, testBursts, nil)
+			screen = capture.NewEventReviewScreen(breadcrumbs, testEvent, testBursts, nil, nil)
 			view := screen.View()
 			Expect(view).To(ContainSubstring("Edit facts"))
 		})

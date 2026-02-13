@@ -13,6 +13,7 @@ import (
 	captureScreens "github.com/baphled/kariya/internal/cli/screens/capture"
 	"github.com/baphled/kariya/internal/domain/career"
 	burstfact "github.com/baphled/kariya/internal/service/career/burstfact"
+	"github.com/baphled/kariya/internal/service/career/skillinference"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -219,10 +220,20 @@ func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
 			}
 			bursts, _ := reviewData["bursts"].([]*career.Burst)
 			facts, _ := reviewData["facts"].([]*career.Fact)
+			suggestedSkills, _ := reviewData["skills"].([]skillinference.SkillSuggestion)
+
+			var convertedSkills []*career.Skill
+			for _, s := range suggestedSkills {
+				convertedSkills = append(convertedSkills, &career.Skill{
+					Name:     s.Name,
+					Category: s.Category,
+				})
+			}
 
 			i.reviewState.Event = event
 			i.reviewState.AcceptedBursts = bursts
 			i.reviewState.AcceptedFacts = facts
+			i.reviewState.AcceptedSkills = convertedSkills
 
 			// Post-save review: event already persisted, just complete the intent.
 			if i.postSaveReview {
@@ -232,6 +243,7 @@ func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
 						Event:  event,
 						Bursts: bursts,
 						Facts:  facts,
+						Skills: convertedSkills,
 					},
 				}
 				i.active = false
@@ -250,6 +262,15 @@ func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
 			}
 			bursts, _ := submitData["bursts"].([]*career.Burst)
 			facts, _ := submitData["facts"].([]*career.Fact)
+			skills, _ := submitData["skills"].([]skillinference.SkillSuggestion)
+
+			var convertedSkills []*career.Skill
+			for _, s := range skills {
+				convertedSkills = append(convertedSkills, &career.Skill{
+					Name:     s.Name,
+					Category: s.Category,
+				})
+			}
 
 			i.result = &intents.IntentResult[*Result]{
 				Status: intents.Completed,
@@ -257,6 +278,7 @@ func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
 					Event:  event,
 					Bursts: bursts,
 					Facts:  facts,
+					Skills: convertedSkills,
 				},
 			}
 			i.active = false

@@ -93,7 +93,7 @@ type ReviewInferredEventState struct {
 	AcceptedFacts []*career.Fact
 
 	// AcceptedSkills holds the skills the user has accepted during review.
-	AcceptedSkills []skillinference.SkillSuggestion
+	AcceptedSkills []*career.Skill
 
 	// RejectedItems maps item IDs to rejection reasons for items the user rejected.
 	RejectedItems map[string]string
