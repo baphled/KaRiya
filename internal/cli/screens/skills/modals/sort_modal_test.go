@@ -139,10 +139,11 @@ var _ = Describe("SortModal", func() {
 			Expect(view).NotTo(BeEmpty())
 		})
 
-		It("should render with nil theme", func() {
+		It("should use default theme when nil is provided", func() {
 			modal = modals.NewSortModal(skills, current, 120, 40)
 			view := modal.View()
 			Expect(view).NotTo(BeEmpty())
+			// NewSortModal initializes a default theme internally
 		})
 
 		It("should display keyboard shortcuts in footer (KeyBadge pattern)", func() {

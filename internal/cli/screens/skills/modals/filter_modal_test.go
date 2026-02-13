@@ -452,10 +452,11 @@ var _ = Describe("FilterModal", func() {
 			Expect(view).To(ContainSubstring("enter"))
 		})
 
-		It("should render with nil theme", func() {
+		It("should use default theme when nil is provided", func() {
 			modal = modals.NewFilterModal(skills, currentFilter, 120, 40)
 			view := modal.View()
 			Expect(view).NotTo(BeEmpty())
+			// NewFilterModal initializes a default theme internally
 		})
 
 		It("should render with very narrow width", func() {

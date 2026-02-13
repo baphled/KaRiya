@@ -22,7 +22,7 @@ var _ = Describe("E2E Skills Modal Workflow", func() {
 		It("ensures skill modal uses ModalFormHeight for proper scrolling on small terminals", func() {
 			env.SelectIntentByName("manage_skills")
 
-			env.PressKey('a')
+			env.PressKeyRune('a')
 
 			view := env.GetView()
 			Expect(view).NotTo(BeEmpty())

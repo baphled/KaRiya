@@ -34,7 +34,7 @@ The `AddEditModal` passes `formHeight := 0` to `forms.NewSkillForm()`, which flo
 - **Affected code**: Lines 89-93 in `buildForm()` method
 - **Pattern used by other modals**: `forms.ModalFormWidth()` + `forms.ModalFormHeight()` (5+ examples in codebase)
 - **OS**: Linux (affects all platforms)
-- **Go version**: 1.23+
+- **Go version**: 1.25+
 - **Branch**: `feature/task-57-bdd-godog-coverage`
 
 ## Root Cause Analysis
