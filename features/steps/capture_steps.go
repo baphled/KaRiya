@@ -188,13 +188,15 @@ func iSubmitTheEvent(ctx context.Context) (context.Context, error) {
 	event, err := data.BuildEvent()
 	if err != nil {
 		env.SubmitEventWithError(event, err)
-	} else {
-		// Bypass: Persist event directly if it has skills to avoid async race conditions
-		if len(event.Skills) > 0 {
-			persistEventWithSkills(env, event)
-		}
-		env.SubmitEvent(event)
+		return ctx, nil
 	}
+
+	if len(event.Skills) > 0 {
+		if err := persistEventWithSkills(env, event); err != nil {
+			return ctx, err
+		}
+	}
+	env.SubmitEvent(event)
 
 	return ctx, nil
 }
@@ -407,30 +409,31 @@ func iAcceptTheSuggestedBurst(ctx context.Context) (context.Context, error) {
 		return ctx, godog.ErrPending
 	}
 
-	// Bypass UI confirmation and directly create the suggested burst
-	createSuggestedBurstFromEvents(env)
+	if err := createSuggestedBurstFromEvents(env); err != nil {
+		return ctx, err
+	}
 
-	// Still confirm the UI to advance the flow
 	env.Confirm()
 	return ctx, nil
 }
 
-func createSuggestedBurstFromEvents(env *e2e.TestEnv) {
+func createSuggestedBurstFromEvents(env *e2e.TestEnv) error {
 	events := env.GetEvents()
 	if len(events) == 0 {
-		return
+		return nil
 	}
 
-	// Group events by company
 	companyEvents := groupEventsByCompany(events)
 
-	// Create burst for the first company group with multiple events
 	for company, eventIDs := range companyEvents {
 		if len(eventIDs) >= 2 {
-			createBurstForCompany(env, company, eventIDs)
+			if err := createBurstForCompany(env, company, eventIDs); err != nil {
+				return err
+			}
 			break
 		}
 	}
+	return nil
 }
 
 func groupEventsByCompany(events []*career.Event) map[string][]string {
@@ -443,7 +446,7 @@ func groupEventsByCompany(events []*career.Event) map[string][]string {
 	return companyEvents
 }
 
-func createBurstForCompany(env *e2e.TestEnv, company string, eventIDs []string) {
+func createBurstForCompany(env *e2e.TestEnv, company string, eventIDs []string) error {
 	burst := &career.Burst{
 		Name:      company + " Development",
 		EventIDs:  eventIDs,
@@ -453,10 +456,10 @@ func createBurstForCompany(env *e2e.TestEnv, company string, eventIDs []string) 
 	burstRepo := env.Service.GetBurstRepository()
 	if burstRepo != nil {
 		if err := burstRepo.Create(env.Ctx, burst); err != nil {
-			// Ignore error in test bypass - burst creation is best-effort
-			_ = err
+			return fmt.Errorf("creating burst for %s: %w", company, err)
 		}
 	}
+	return nil
 }
 
 func iAcceptAllInferredSkills(ctx context.Context) (context.Context, error) {
@@ -542,25 +545,24 @@ func iSaveTheBurstEdit(ctx context.Context) (context.Context, error) {
 		return ctx, godog.ErrPending
 	}
 
-	// Bypass: Create the edited burst with the new name
 	if burstName, ok := ctx.Value(editedBurstNameKey).(string); ok && burstName != "" {
-		createEditedBurstFromEvents(env, burstName)
+		if err := createEditedBurstFromEvents(env, burstName); err != nil {
+			return ctx, err
+		}
 	}
 
 	env.Confirm()
 	return ctx, nil
 }
 
-func createEditedBurstFromEvents(env *e2e.TestEnv, burstName string) {
+func createEditedBurstFromEvents(env *e2e.TestEnv, burstName string) error {
 	events := env.GetEvents()
 	if len(events) == 0 {
-		return
+		return nil
 	}
 
-	// Group events by company
 	companyEvents := groupEventsByCompany(events)
 
-	// Create burst for the first company group with multiple events, using the custom name
 	for _, eventIDs := range companyEvents {
 		if len(eventIDs) >= 2 {
 			burst := &career.Burst{
@@ -572,12 +574,13 @@ func createEditedBurstFromEvents(env *e2e.TestEnv, burstName string) {
 			burstRepo := env.Service.GetBurstRepository()
 			if burstRepo != nil {
 				if err := burstRepo.Create(env.Ctx, burst); err != nil {
-					_ = err
+					return fmt.Errorf("creating edited burst %q: %w", burstName, err)
 				}
 			}
 			break
 		}
 	}
+	return nil
 }
 
 func thereShouldBeNBurstsWithName(ctx context.Context, expected int, _ string) error {
@@ -633,41 +636,42 @@ func iSaveMetadataChanges(ctx context.Context) (context.Context, error) {
 		return ctx, godog.ErrPending
 	}
 
-	// Bypass: Update the event with the new company
 	if company, ok := ctx.Value(editedEventCompanyKey).(string); ok && company != "" {
-		updateEventMetadata(env, company)
+		if err := updateEventMetadata(env, company); err != nil {
+			return ctx, err
+		}
 	}
 
 	env.Confirm()
 	return ctx, nil
 }
 
-func updateEventMetadata(env *e2e.TestEnv, company string) {
+func updateEventMetadata(env *e2e.TestEnv, company string) error {
 	events := env.GetEvents()
 	if len(events) == 0 {
-		return
+		return nil
 	}
 
-	// Update the first (latest) event's company
 	event := events[0]
 	event.Company = company
 
 	eventRepo := env.Service.GetEventRepository()
 	if eventRepo != nil {
 		if err := eventRepo.Update(env.Ctx, event); err != nil {
-			_ = err
+			return fmt.Errorf("updating event metadata: %w", err)
 		}
 	}
+	return nil
 }
 
-func persistEventWithSkills(env *e2e.TestEnv, event *career.Event) {
+func persistEventWithSkills(env *e2e.TestEnv, event *career.Event) error {
 	eventRepo := env.Service.GetEventRepository()
 	if eventRepo != nil {
 		if err := eventRepo.Create(env.Ctx, event); err != nil {
-			// Ignore error in test bypass - event creation is best-effort
-			_ = err
+			return fmt.Errorf("persisting event with skills: %w", err)
 		}
 	}
+	return nil
 }
 
 func iTryToSubmitWithoutDescription(ctx context.Context) (context.Context, error) {

@@ -187,17 +187,14 @@ func (s *SkillsListScreen) handleActionKey(msg tea.KeyMsg) (tea.Cmd, screens.Scr
 		return s.handleViewAction()
 	}
 
-	// Handle 's' key - sort skills.
-	if msg.Type == tea.KeyRunes && len(msg.Runes) > 0 && msg.Runes[0] == 's' {
+	// Handle character keys for other actions.
+	switch msg.String() {
+	case "s":
 		return nil, &screens.NavigateResult{
 			ResultData: map[string]interface{}{
 				"action": "sort",
 			},
 		}
-	}
-
-	// Handle character keys for other actions.
-	switch msg.String() {
 	case "a":
 		return s.handleAddAction()
 	case "e":
