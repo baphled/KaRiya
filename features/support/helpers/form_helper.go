@@ -124,7 +124,7 @@ func (f *FormHelper) IsFieldVisible(fieldLabel string) bool {
 func (f *FormHelper) FieldExistsInForm(fieldLabel string, maxFields int) bool {
 	initialView := f.env.GetView()
 
-	//nolint:intrange // Need index for cycle detection
+	//nolint:intrange // Traditional loop required: i is used for cycle detection (i > 0 guard below)
 	for i := 0; i < maxFields; i++ {
 		view := f.env.GetView()
 		if strings.Contains(view, fieldLabel) {
