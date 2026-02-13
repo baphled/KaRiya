@@ -115,9 +115,11 @@ func (i *Intent) showSubmitModal() tea.Cmd {
 //   - Calls CareerService.CaptureEvent to persist the event.
 //   - Calls CareerService.SaveFact for each accepted fact without an ID.
 //   - Sets a default date for quick-strategy events with a zero date.
+//   - Persists accepted skills using the skill repository.
 func (i *Intent) performSubmit() tea.Cmd {
 	event := i.reviewState.Event
 	acceptedFacts := i.reviewState.AcceptedFacts
+	acceptedSkills := i.reviewState.AcceptedSkills
 	strategy := i.strategy
 	careerService := i.context.CareerService
 	skillService := i.context.SkillInferenceService
@@ -186,6 +188,32 @@ func (i *Intent) performSubmit() tea.Cmd {
 				Code:    "PARTIAL_SAVE",
 				Message: fmt.Sprintf("Event saved but %d fact(s) failed: %s", len(factErrors), strings.Join(factErrors, "; ")),
 				Cause:   fmt.Errorf("fact save failures: %s", strings.Join(factErrors, "; ")),
+			}
+		}
+
+		// Persist accepted skills using the skill repository.
+		if len(acceptedSkills) > 0 && careerService != nil {
+			skillRepo := careerService.GetSkillRepository()
+			eventRepo := careerService.GetEventRepository()
+			for _, skill := range acceptedSkills {
+				if skill.ID == "" {
+					// New skill - create it
+					if err := skillRepo.Create(ctx, skill); err != nil {
+						return SubmitErrorMsg{
+							Code:    "SKILL_SAVE_ERROR",
+							Message: fmt.Sprintf("Failed to save skill %s: %v", skill.Name, err),
+							Cause:   err,
+						}
+					}
+				}
+				// Link skill to event using event repository
+				if err := eventRepo.LinkSkill(ctx, event.ID, skill.ID); err != nil {
+					return SubmitErrorMsg{
+						Code:    "SKILL_LINK_ERROR",
+						Message: fmt.Sprintf("Failed to link skill %s to event: %v", skill.Name, err),
+						Cause:   err,
+					}
+				}
 			}
 		}
 

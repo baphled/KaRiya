@@ -227,6 +227,24 @@ func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
 			i.reviewState.AcceptedSkills = convertedSkills
 
 			if i.postSaveReview {
+				// Persist accepted skills that were edited after initial save.
+				if len(convertedSkills) > 0 && i.context.CareerService != nil {
+					ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+					defer cancel()
+					skillRepo := i.context.CareerService.GetSkillRepository()
+					eventRepo := i.context.CareerService.GetEventRepository()
+					for _, skill := range convertedSkills {
+						if skill.ID == "" {
+							if err := skillRepo.Create(ctx, skill); err != nil {
+								return i.setFailedCmd("SKILL_SAVE_ERROR", fmt.Sprintf("Failed to save skill: %v", err), err)
+							}
+						}
+						if err := eventRepo.LinkSkill(ctx, event.ID, skill.ID); err != nil {
+							return i.setFailedCmd("SKILL_LINK_ERROR", fmt.Sprintf("Failed to link skill: %v", err), err)
+						}
+					}
+				}
+
 				i.result = &intents.IntentResult[*Result]{
 					Status: intents.Completed,
 					Data: &Result{
