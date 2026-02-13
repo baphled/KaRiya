@@ -154,6 +154,12 @@ var _ = Describe("SearchModal", func() {
 			// Cmd may or may not be nil depending on form state
 			_ = cmd
 		})
+
+		It("should handle window resize messages", func() {
+			_, applied, data := modal.Update(tea.WindowSizeMsg{Width: 100, Height: 30})
+			Expect(applied).To(BeFalse())
+			Expect(data).To(BeNil())
+		})
 	})
 
 	Describe("View", func() {
@@ -176,6 +182,31 @@ var _ = Describe("SearchModal", func() {
 			It("should contain search field", func() {
 				view := modal.View()
 				Expect(view).To(ContainSubstring("Search"))
+			})
+
+			It("should render with narrow width", func() {
+				modal.SetSize(40, 24)
+				view := modal.View()
+				Expect(view).NotTo(BeEmpty())
+			})
+
+			It("should render with wide width", func() {
+				modal.SetSize(200, 24)
+				view := modal.View()
+				Expect(view).NotTo(BeEmpty())
+			})
+
+			It("should render with different heights", func() {
+				modal.SetSize(80, 50)
+				view := modal.View()
+				Expect(view).NotTo(BeEmpty())
+			})
+
+			It("should render multiple times consistently", func() {
+				view1 := modal.View()
+				view2 := modal.View()
+				Expect(view1).NotTo(BeEmpty())
+				Expect(view2).NotTo(BeEmpty())
 			})
 		})
 	})
