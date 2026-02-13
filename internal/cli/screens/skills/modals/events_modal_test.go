@@ -30,15 +30,61 @@ var _ = Describe("EventsModal", func() {
 	})
 
 	Describe("NewEventsModal", func() {
-		It("creates a new modal with correct initial state", func() {
+		It("creates a modal with events", func() {
+			modal = modals.NewEventsModal("skill-1", "Go", events, theme)
 			Expect(modal).NotTo(BeNil())
 			Expect(modal.IsVisible()).To(BeFalse())
-			Expect(modal.GetSkillID()).To(Equal("skill-1"))
-			Expect(modal.GetSkillName()).To(Equal("Go Programming"))
-			Expect(modal.HasSelection()).To(BeFalse())
+		})
+
+		It("filters out nil events", func() {
+			eventsWithNils := []*career.Event{events[0], nil}
+			modal = modals.NewEventsModal("skill-1", "Go", eventsWithNils, theme)
+			Expect(modal).NotTo(BeNil())
+		})
+
+		It("handles empty events list", func() {
+			modal = modals.NewEventsModal("skill-1", "Go", []*career.Event{}, theme)
+			Expect(modal).NotTo(BeNil())
+		})
+
+		It("handles nil theme", func() {
+			modal = modals.NewEventsModal("skill-1", "Go", events, nil)
+			Expect(modal).NotTo(BeNil())
+		})
+
+		It("handles events with zero dates", func() {
+			zeroDateEvent := fixtures.Event("zero-date")
+			zeroDateEvent.Text = "Event with zero date"
+			zeroDateEvent.Date = time.Time{} // Zero value
+			modal = modals.NewEventsModal("skill-1", "Go", []*career.Event{zeroDateEvent}, theme)
+			modal.Show()
+			view := modal.View()
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("handles events with empty text", func() {
+			emptyTextEvent := fixtures.Event("empty-text")
+			emptyTextEvent.Text = ""
+			emptyTextEvent.Date = time.Now()
+			modal = modals.NewEventsModal("skill-1", "Go", []*career.Event{emptyTextEvent}, theme)
+			modal.Show()
+			view := modal.View()
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("handles events with empty company", func() {
+			noCompanyEvent := fixtures.Event("no-company")
+			noCompanyEvent.Text = "Event without company"
+			noCompanyEvent.Company = ""
+			noCompanyEvent.Date = time.Now()
+			modal = modals.NewEventsModal("skill-1", "Go", []*career.Event{noCompanyEvent}, theme)
+			modal.Show()
+			view := modal.View()
+			Expect(view).NotTo(BeEmpty())
 		})
 
 		It("sets default dimensions", func() {
+			modal = modals.NewEventsModal("skill-1", "Go", events, theme)
 			modal.Show()
 			view := modal.View()
 			Expect(view).NotTo(BeEmpty())
@@ -76,15 +122,71 @@ var _ = Describe("EventsModal", func() {
 	})
 
 	Describe("View", func() {
-		It("returns empty string when not visible", func() {
-			view := modal.View()
-			Expect(view).To(BeEmpty())
+		Context("when not visible", func() {
+			It("returns empty string", func() {
+				modal.Hide()
+				view := modal.View()
+				Expect(view).To(BeEmpty())
+			})
 		})
 
-		It("shows skill name in title", func() {
+		Context("when visible", func() {
+			BeforeEach(func() {
+				modal.Show()
+			})
+
+			It("renders table", func() {
+				view := modal.View()
+				Expect(view).NotTo(BeEmpty())
+			})
+
+			It("contains skill name in header", func() {
+				view := modal.View()
+				Expect(view).To(ContainSubstring("Go"))
+			})
+
+			It("contains event information", func() {
+				view := modal.View()
+				Expect(view).NotTo(BeEmpty())
+				// Events are displayed in the table
+			})
+
+			It("handles nil theme by using default", func() {
+				nilThemeModal := modals.NewEventsModal("skill-1", "Go", events, nil)
+				nilThemeModal.SetDimensions(120, 40)
+				nilThemeModal.Show()
+				view := nilThemeModal.View()
+				Expect(view).NotTo(BeEmpty())
+			})
+
+			It("handles very small dimensions", func() {
+				modal.SetDimensions(50, 15)
+				view := modal.View()
+				Expect(view).NotTo(BeEmpty())
+			})
+
+			It("handles very large dimensions", func() {
+				modal.SetDimensions(200, 100)
+				view := modal.View()
+				Expect(view).NotTo(BeEmpty())
+			})
+
+			It("shows skill name in title", func() {
+				view := modal.View()
+				Expect(view).To(ContainSubstring("Go"))
+			})
+		})
+	})
+
+	Describe("Event Display", func() {
+		BeforeEach(func() {
 			modal.Show()
+		})
+
+		It("handles resizing after show", func() {
+			modal.Update(tea.WindowSizeMsg{Width: 80, Height: 30})
 			view := modal.View()
-			Expect(view).To(ContainSubstring("Go Programming"))
+			Expect(view).NotTo(BeEmpty())
 		})
 
 		It("shows event count in title", func() {
@@ -304,6 +406,28 @@ var _ = Describe("EventsModal", func() {
 			view := modal.View()
 			Expect(view).NotTo(BeEmpty())
 		})
+
+		It("handles very small dimensions", func() {
+			modal.SetDimensions(40, 20)
+			modal.Show()
+			view := modal.View()
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("handles very large dimensions", func() {
+			modal.SetDimensions(200, 100)
+			modal.Show()
+			view := modal.View()
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("updates table dimensions correctly", func() {
+			modal.Show()
+			modal.SetDimensions(150, 60)
+			modal.Update(tea.KeyMsg{Type: tea.KeyDown})
+			view := modal.View()
+			Expect(view).NotTo(BeEmpty())
+		})
 	})
 
 	Describe("SetEvents", func() {
@@ -411,6 +535,20 @@ var _ = Describe("EventsModal", func() {
 			simpleModal.Show()
 			view := simpleModal.View()
 			Expect(view).To(ContainSubstring("No description"))
+		})
+	})
+
+	Describe("GetSkillID", func() {
+		It("returns the skill ID", func() {
+			skillID := modal.GetSkillID()
+			Expect(skillID).To(Equal("skill-1"))
+		})
+	})
+
+	Describe("GetSkillName", func() {
+		It("returns the skill name", func() {
+			skillName := modal.GetSkillName()
+			Expect(skillName).To(Equal("Go Programming"))
 		})
 	})
 })

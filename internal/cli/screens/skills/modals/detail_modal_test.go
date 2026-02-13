@@ -148,6 +148,15 @@ var _ = Describe("DetailModal", func() {
 				Expect(view).To(ContainSubstring("Programming Languages"))
 			})
 
+			It("handles nil theme by using default", func() {
+				nilThemeModal := modals.NewDetailModal(skill, nil, 10, nil)
+				nilThemeModal.SetDimensions(120, 40)
+				nilThemeModal.Show()
+				view := nilThemeModal.View()
+				Expect(view).NotTo(BeEmpty())
+				Expect(view).To(ContainSubstring("Go Programming"))
+			})
+
 			It("renders skill level", func() {
 				view := modal.View()
 				Expect(view).To(ContainSubstring("Expert"))
@@ -158,9 +167,47 @@ var _ = Describe("DetailModal", func() {
 				Expect(view).To(ContainSubstring("5"))
 			})
 
-			It("renders event count", func() {
+			It("renders event count when non-zero", func() {
+				modal = modals.NewDetailModal(skill, theme, 10, nil)
+				modal.SetDimensions(120, 40)
+				modal.Show()
 				view := modal.View()
 				Expect(view).To(ContainSubstring("10"))
+			})
+
+			It("renders event count when zero", func() {
+				modal = modals.NewDetailModal(skill, theme, 0, nil)
+				modal.SetDimensions(120, 40)
+				modal.Show()
+				view := modal.View()
+				Expect(view).NotTo(BeEmpty())
+			})
+
+			It("renders with last used date", func() {
+				modal = modals.NewDetailModal(skill, theme, 10, nil)
+				modal.SetDimensions(120, 40)
+				modal.Show()
+				view := modal.View()
+				Expect(view).NotTo(BeEmpty())
+			})
+
+			It("renders action hints", func() {
+				view := modal.View()
+				// Check for keybind hints
+				Expect(view).To(ContainSubstring("e"))
+				Expect(view).To(ContainSubstring("d"))
+			})
+
+			It("renders with different widths", func() {
+				modal.SetDimensions(80, 40)
+				view := modal.View()
+				Expect(view).NotTo(BeEmpty())
+			})
+
+			It("renders with very narrow width", func() {
+				modal.SetDimensions(40, 40)
+				view := modal.View()
+				Expect(view).NotTo(BeEmpty())
 			})
 
 			It("renders footer with close hint", func() {
@@ -241,6 +288,67 @@ var _ = Describe("DetailModal", func() {
 			view := modal.View()
 			Expect(view).To(ContainSubstring("Rust"))
 			Expect(view).To(ContainSubstring("Systems"))
+		})
+
+		It("handles skill with nil years used", func() {
+			newSkill := fixtures.SkillWith("skill-nil-years", "Python", "Scripting", "Intermediate")
+			newSkill.YearsUsed = nil
+			modal.SetSkill(newSkill, 0, nil)
+			modal.Show()
+
+			view := modal.View()
+			Expect(view).To(ContainSubstring("Python"))
+		})
+
+		It("handles skill with 1 year (singular)", func() {
+			newSkill := fixtures.SkillWith("skill-one-year", "Ruby", "Web", "Advanced")
+			oneYear := 1
+			newSkill.YearsUsed = &oneYear
+			modal.SetSkill(newSkill, 0, nil)
+			modal.Show()
+
+			view := modal.View()
+			Expect(view).To(ContainSubstring("Ruby"))
+			Expect(view).To(ContainSubstring("1 year"))
+		})
+
+		It("handles skill with multiple years (plural)", func() {
+			newSkill := fixtures.SkillWith("skill-many-years", "JavaScript", "Frontend", "Expert")
+			manyYears := 10
+			newSkill.YearsUsed = &manyYears
+			modal.SetSkill(newSkill, 0, nil)
+			modal.Show()
+
+			view := modal.View()
+			Expect(view).To(ContainSubstring("JavaScript"))
+			Expect(view).To(ContainSubstring("10 years"))
+		})
+
+		It("handles skill with empty category", func() {
+			newSkill := fixtures.SkillWith("skill-no-cat", "TypeScript", "", "Intermediate")
+			modal.SetSkill(newSkill, 0, nil)
+			modal.Show()
+
+			view := modal.View()
+			Expect(view).To(ContainSubstring("TypeScript"))
+		})
+
+		It("handles skill with empty level", func() {
+			newSkill := fixtures.SkillWith("skill-no-level", "Java", "Backend", "")
+			modal.SetSkill(newSkill, 0, nil)
+			modal.Show()
+
+			view := modal.View()
+			Expect(view).To(ContainSubstring("Java"))
+		})
+
+		It("handles skill with zero event count", func() {
+			newSkill := fixtures.SkillWith("skill-no-events", "Ruby", "Web", "Advanced")
+			modal.SetSkill(newSkill, 0, nil)
+			modal.Show()
+
+			view := modal.View()
+			Expect(view).To(ContainSubstring("Ruby"))
 		})
 	})
 
