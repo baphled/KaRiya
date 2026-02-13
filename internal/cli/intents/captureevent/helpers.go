@@ -13,6 +13,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
+	"github.com/baphled/kariya/internal/service/career/skillinference"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -119,6 +120,7 @@ func (i *Intent) performSubmit() tea.Cmd {
 	acceptedFacts := i.reviewState.AcceptedFacts
 	strategy := i.strategy
 	careerService := i.context.CareerService
+	skillService := i.context.SkillInferenceService
 
 	return func() tea.Msg {
 		if event == nil {
@@ -187,7 +189,19 @@ func (i *Intent) performSubmit() tea.Cmd {
 			}
 		}
 
-		return SubmitCompleteMsg{}
+		var inferredSkills []skillinference.SkillSuggestion
+		if skillService != nil {
+			inferResult, inferErr := skillService.InferSkillsFromEvents(ctx, []*career.Event{event})
+			if inferErr == nil && inferResult != nil {
+				inferredSkills = inferResult.Suggestions
+			}
+		}
+
+		return SubmitCompleteMsg{
+			InferredSkills: inferredSkills,
+			InferredFacts:  nil,
+			InferredBursts: nil,
+		}
 	}
 }
 
@@ -430,4 +444,45 @@ func renderBurstModalFooter(editing bool) string {
 		primitives.EditBadge(th),
 		primitives.BackBadge(th),
 	)
+}
+
+// extractSkillsFromReviewData converts the "skills" field from review data
+// into []*career.Skill, supporting both []skillinference.SkillSuggestion
+// and []*career.Skill input types.
+//
+// Expected:
+//   - reviewData contains a "skills" key with either type.
+//
+// Returns:
+//   - Converted []*career.Skill slice, empty-named entries excluded.
+//   - nil if "skills" key is missing or unrecognised type.
+//
+// Side effects: None.
+func extractSkillsFromReviewData(reviewData map[string]interface{}) []*career.Skill {
+	if suggestions, ok := reviewData["skills"].([]skillinference.SkillSuggestion); ok {
+		var result []*career.Skill
+		for _, s := range suggestions {
+			if s.Name == "" {
+				continue
+			}
+			result = append(result, &career.Skill{
+				Name:     s.Name,
+				Category: s.Category,
+			})
+		}
+		return result
+	}
+
+	if skills, ok := reviewData["skills"].([]*career.Skill); ok {
+		var result []*career.Skill
+		for _, s := range skills {
+			if s == nil || s.Name == "" {
+				continue
+			}
+			result = append(result, s)
+		}
+		return result
+	}
+
+	return nil
 }

@@ -1,6 +1,8 @@
 package captureevent
 
-import "github.com/baphled/kariya/internal/domain/career"
+import (
+	"github.com/baphled/kariya/internal/domain/career"
+)
 
 // Result is the output of a completed CaptureEvent intent.
 //
@@ -15,6 +17,9 @@ type Result struct {
 
 	// Facts are the career facts inferred from the event (may be empty).
 	Facts []*career.Fact
+
+	// Skills are the skills inferred/accepted from the event (may be empty).
+	Skills []*career.Skill
 
 	// AcceptedFields tracks which enrichment fields the user accepted.
 	AcceptedFields map[string]bool

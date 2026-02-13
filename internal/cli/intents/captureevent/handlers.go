@@ -114,7 +114,6 @@ func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 			return i.reviewState.skillModal.Init()
 
 		default:
-
 			return i.setFailedCmd("INVALID_NAVIGATION", "Unknown navigation action: "+action, nil)
 		}
 	}
@@ -220,22 +219,13 @@ func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
 			}
 			bursts, _ := reviewData["bursts"].([]*career.Burst)
 			facts, _ := reviewData["facts"].([]*career.Fact)
-			suggestedSkills, _ := reviewData["skills"].([]skillinference.SkillSuggestion)
-
-			var convertedSkills []*career.Skill
-			for _, s := range suggestedSkills {
-				convertedSkills = append(convertedSkills, &career.Skill{
-					Name:     s.Name,
-					Category: s.Category,
-				})
-			}
+			convertedSkills := extractSkillsFromReviewData(reviewData)
 
 			i.reviewState.Event = event
 			i.reviewState.AcceptedBursts = bursts
 			i.reviewState.AcceptedFacts = facts
 			i.reviewState.AcceptedSkills = convertedSkills
 
-			// Post-save review: event already persisted, just complete the intent.
 			if i.postSaveReview {
 				i.result = &intents.IntentResult[*Result]{
 					Status: intents.Completed,
@@ -262,15 +252,6 @@ func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
 			}
 			bursts, _ := submitData["bursts"].([]*career.Burst)
 			facts, _ := submitData["facts"].([]*career.Fact)
-			skills, _ := submitData["skills"].([]skillinference.SkillSuggestion)
-
-			var convertedSkills []*career.Skill
-			for _, s := range skills {
-				convertedSkills = append(convertedSkills, &career.Skill{
-					Name:     s.Name,
-					Category: s.Category,
-				})
-			}
 
 			i.result = &intents.IntentResult[*Result]{
 				Status: intents.Completed,
@@ -278,7 +259,7 @@ func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
 					Event:  event,
 					Bursts: bursts,
 					Facts:  facts,
-					Skills: convertedSkills,
+					Skills: extractSkillsFromReviewData(submitData),
 				},
 			}
 			i.active = false
@@ -399,6 +380,9 @@ func (i *Intent) updateEditingModal(msg tea.Msg) tea.Cmd {
 				accepted := i.reviewState.skillModal.GetAcceptedSkills()
 				if len(accepted) > 0 {
 					for _, s := range accepted {
+						if s.Name == "" {
+							continue
+						}
 						i.reviewState.AcceptedSkills = append(i.reviewState.AcceptedSkills, &career.Skill{
 							Name:     s.Name,
 							Category: s.Category,
@@ -406,7 +390,18 @@ func (i *Intent) updateEditingModal(msg tea.Msg) tea.Cmd {
 					}
 
 					if screen, ok := i.activeScreen.(*captureScreens.EventReviewScreen); ok {
-						screen.SetAcceptedSkills(i.reviewState.AcceptedSkills)
+						var screenSkills []skillinference.SkillSuggestion
+						for _, sk := range i.reviewState.AcceptedSkills {
+							if sk.Name == "" {
+								continue
+							}
+							screenSkills = append(screenSkills, skillinference.SkillSuggestion{
+								Name:       sk.Name,
+								Category:   sk.Category,
+								Confidence: 1.0,
+							})
+						}
+						screen.SetAcceptedSkills(screenSkills)
 					}
 				}
 				i.reviewState.skillModal = nil

@@ -3,10 +3,15 @@ package captureevent
 import (
 	"github.com/baphled/kariya/internal/domain/career"
 	burstfact "github.com/baphled/kariya/internal/service/career/burstfact"
+	"github.com/baphled/kariya/internal/service/career/skillinference"
 )
 
 // SubmitCompleteMsg is sent when event persistence succeeds.
-type SubmitCompleteMsg struct{}
+type SubmitCompleteMsg struct {
+	InferredBursts []*career.Burst
+	InferredFacts  []*career.Fact
+	InferredSkills []skillinference.SkillSuggestion
+}
 
 // SubmitErrorMsg is sent when event persistence fails.
 type SubmitErrorMsg struct {

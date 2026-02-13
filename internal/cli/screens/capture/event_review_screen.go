@@ -53,7 +53,7 @@ type EventReviewScreen struct {
 	skills []skillinference.SkillSuggestion
 
 	// acceptedSkills are skills the user has accepted.
-	acceptedSkills []*career.Skill
+	acceptedSkills []skillinference.SkillSuggestion
 
 	// breadcrumbs for the view header.
 	breadcrumbs []string
@@ -104,7 +104,7 @@ func NewEventReviewScreen(
 //
 // Side effects:
 //   - Updates the acceptedSkills field.
-func (s *EventReviewScreen) SetAcceptedSkills(skills []*career.Skill) {
+func (s *EventReviewScreen) SetAcceptedSkills(skills []skillinference.SkillSuggestion) {
 	s.acceptedSkills = skills
 }
 
