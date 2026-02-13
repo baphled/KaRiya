@@ -222,6 +222,12 @@ func (i *Intent) View() string {
 	}
 
 	if i.reviewState != nil && i.reviewState.EditingMode != EditingModeNone {
+		if i.reviewState.EditingMode == EditingModeSkills && i.reviewState.skillModal != nil {
+			rendered := i.reviewState.skillModal.View()
+			modal := &behaviors.StaticViewModel{Content: rendered}
+			return behaviors.RenderModalOverlay(modal, baseView)
+		}
+
 		modalContent := i.getEditingModalContent()
 		if modalContent != nil {
 			return i.renderModalOverlay(baseView, modalContent)

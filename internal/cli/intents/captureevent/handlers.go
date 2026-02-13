@@ -9,6 +9,8 @@ import (
 	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/screens"
+	"github.com/baphled/kariya/internal/cli/screens/burst_management/modals"
+	captureScreens "github.com/baphled/kariya/internal/cli/screens/capture"
 	"github.com/baphled/kariya/internal/domain/career"
 	burstfact "github.com/baphled/kariya/internal/service/career/burstfact"
 	tea "github.com/charmbracelet/bubbletea"
@@ -96,7 +98,22 @@ func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 			)
 			return i.reviewState.factModal.Init()
 
+		case "edit_skills":
+			i.reviewState.EditingMode = EditingModeSkills
+			i.reviewState.skillModal = modals.NewSkillSuggestionModal(
+				i.reviewState.InferredSkills,
+				i.Theme(),
+			)
+
+			dims := i.terminalDimensions()
+			if dims != nil {
+				i.reviewState.skillModal.SetDimensions(dims.TerminalWidth, dims.TerminalHeight)
+			}
+
+			return i.reviewState.skillModal.Init()
+
 		default:
+
 			return i.setFailedCmd("INVALID_NAVIGATION", "Unknown navigation action: "+action, nil)
 		}
 	}
@@ -344,6 +361,33 @@ func (i *Intent) updateEditingModal(msg tea.Msg) tea.Cmd {
 				i.reviewState.EditingMode = EditingModeNone
 			} else if i.reviewState.factModal.IsCancelled() {
 				i.reviewState.factModal = nil
+				i.reviewState.EditingMode = EditingModeNone
+			}
+			return cmd
+		}
+
+	case EditingModeSkills:
+		if i.reviewState.skillModal != nil {
+			model, cmd := i.reviewState.skillModal.Update(msg)
+			if typed, ok := model.(*modals.SuggestionReviewModal); ok {
+				i.reviewState.skillModal = typed
+			}
+
+			if !i.reviewState.skillModal.IsVisible() {
+				accepted := i.reviewState.skillModal.GetAcceptedSkills()
+				if len(accepted) > 0 {
+					for _, s := range accepted {
+						i.reviewState.AcceptedSkills = append(i.reviewState.AcceptedSkills, &career.Skill{
+							Name:     s.Name,
+							Category: s.Category,
+						})
+					}
+
+					if screen, ok := i.activeScreen.(*captureScreens.EventReviewScreen); ok {
+						screen.SetAcceptedSkills(i.reviewState.AcceptedSkills)
+					}
+				}
+				i.reviewState.skillModal = nil
 				i.reviewState.EditingMode = EditingModeNone
 			}
 			return cmd

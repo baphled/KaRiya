@@ -51,4 +51,7 @@ const (
 
 	// EditingModeFacts means the fact editor modal is active.
 	EditingModeFacts EditingMode = "facts"
+
+	// EditingModeSkills means the skill editor modal is active.
+	EditingModeSkills EditingMode = "skills"
 )

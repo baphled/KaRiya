@@ -4,6 +4,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/screens"
+	modals "github.com/baphled/kariya/internal/cli/screens/burst_management/modals"
 	"github.com/baphled/kariya/internal/cli/screens/capture"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
@@ -105,6 +106,9 @@ type ReviewInferredEventState struct {
 
 	// factModal is the form model for editing fact suggestions.
 	factModal *FactEditorModelNew
+
+	// skillModal is the modal for editing skill suggestions.
+	skillModal *modals.SuggestionReviewModal
 
 	// SelectedItemType tracks which item kind ("burst" or "fact") is highlighted.
 	SelectedItemType string
