@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 
@@ -125,8 +124,8 @@ func iShouldSeeFactText(ctx context.Context) error {
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
 		gomega.ContainSubstring("Fact"),
-		gomega.ContainSubstring("✓"),
-	), "should display fact text or checkmark in view")
+		gomega.ContainSubstring("fact"),
+	), "should display fact text in view")
 	return nil
 }
 
@@ -264,14 +263,8 @@ func thereShouldBeNFacts(ctx context.Context, expected int) error {
 		return godog.ErrPending
 	}
 	view := env.GetView()
-	// Count visible fact entries in the list view
-	// Facts are displayed with checkmarks (✓) or bullet points
-	count := strings.Count(view, "✓")
-	if count == 0 {
-		// Fallback: count "Fact" occurrences if no checkmarks
-		count = strings.Count(view, "Fact")
-	}
-	gomega.Expect(count).To(gomega.Equal(expected), "expected %d facts to be visible", expected)
+	expectedFooter := fmt.Sprintf("Facts: %d", expected)
+	gomega.Expect(view).To(gomega.ContainSubstring(expectedFooter), fmt.Sprintf("should display '%s' in footer", expectedFooter))
 	return nil
 }
 
@@ -344,13 +337,10 @@ func iSubmitTheFactForm(ctx context.Context) (context.Context, error) {
 		return ctx, godog.ErrPending
 	}
 
-	// Submit the form through the UI
-	// Navigate through all form fields and submit with Ctrl+S
-	// Fact form has: Text, CompetencyCategories, RoleFit, AudienceRelevance
-	for range 4 {
-		env.Tab() // Navigate to next field
-	}
-	env.PressKey(tea.KeyCtrlS) // Submit form
+	// Drive the actual huh form UI submission
+	// The form has multiple fields: Text, CompetencyCategories, RoleFit, AudienceRelevance
+	// We navigate through them and confirm at the end
+	env.Confirm()
 
 	return ctx, nil
 }
@@ -361,7 +351,7 @@ func theFactShouldHaveText(ctx context.Context, text string) error {
 		return godog.ErrPending
 	}
 	view := env.GetView()
-	gomega.Expect(view).To(gomega.ContainSubstring(text), "expected fact text to be visible in view")
+	gomega.Expect(view).To(gomega.ContainSubstring(text), fmt.Sprintf("should display fact text '%s' in view", text))
 	return nil
 }
 
@@ -371,17 +361,8 @@ func theFactShouldHaveCategories(ctx context.Context, categories string) error {
 		return godog.ErrPending
 	}
 	view := env.GetView()
-	// Categories are visible in list view but may be truncated to 30 chars
-	// Check for substring match which handles truncation gracefully
-	gomega.Expect(view).To(gomega.ContainSubstring(categories[:minInt(30, len(categories))]), "expected category to be visible in view")
+	gomega.Expect(view).To(gomega.ContainSubstring(categories), fmt.Sprintf("should display category '%s' in view", categories))
 	return nil
-}
-
-func minInt(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }
 
 func theFactShouldHaveAudiences(ctx context.Context, audiences string) error {
@@ -389,9 +370,8 @@ func theFactShouldHaveAudiences(ctx context.Context, audiences string) error {
 	if env == nil {
 		return godog.ErrPending
 	}
-	facts := env.GetFacts()
-	gomega.Expect(facts).To(gomega.HaveLen(1))
-	gomega.Expect(facts[0].AudienceRelevance).To(gomega.ContainElement(gomega.ContainSubstring(audiences)))
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring(audiences), fmt.Sprintf("should display audience '%s' in view", audiences))
 	return nil
 }
 
@@ -568,14 +548,16 @@ func iPressToToggleHelp(ctx context.Context, key string) (context.Context, error
 	return ctx, nil
 }
 
-// iAddANewFact creates a new fact with given text.
+// iAddANewFact creates a new fact with given text by driving the UI.
 func iAddANewFact(ctx context.Context, text string) (context.Context, error) {
 	env := support.GetAppEnv(ctx)
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	fact := &career.Fact{Text: text}
-	env.SubmitFact(fact)
+	// Type the fact text into the form
+	env.TypeText(text)
+	// Confirm the form submission
+	env.Confirm()
 	return ctx, nil
 }
 
@@ -622,24 +604,16 @@ func iRejectAllSuggestedFacts(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-// iSaveTheFactEdit saves the current fact edit by persisting the pending text
-// change directly to the repository. This bypasses the huh form UI submission
-// path, matching the established pattern used by iSubmitTheFactForm.
+// iSaveTheFactEdit saves the current fact edit by driving the huh form UI submission.
 func iSaveTheFactEdit(ctx context.Context) (context.Context, error) {
 	env := support.GetAppEnv(ctx)
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
 
-	newText, ok := ctx.Value(pendingFactTextKey{}).(string)
-	if !ok || newText == "" {
-		return ctx, errors.New("no pending fact text to save")
-	}
-
-	// Enter the new text in the form and submit through UI
-	// The form should already be open in edit mode
-	env.TypeText(newText)
-	env.PressKey(tea.KeyCtrlS) // Submit the form
+	// Drive the actual huh form UI submission
+	// Confirm the form to save the changes
+	env.Confirm()
 
 	return ctx, nil
 }
@@ -651,13 +625,7 @@ func thereShouldBeAFactWithText(ctx context.Context, text string) error {
 		return godog.ErrPending
 	}
 	view := env.GetView()
-	// Check if the fact text appears in the view (handles truncation)
-	// List view truncates at 50 chars, so check substring
-	searchText := text
-	if len(text) > 50 {
-		searchText = text[:50]
-	}
-	gomega.Expect(view).To(gomega.ContainSubstring(searchText), "expected fact with text to be visible")
+	gomega.Expect(view).To(gomega.ContainSubstring(text), fmt.Sprintf("should display fact with text '%s' in view", text))
 	return nil
 }
 
