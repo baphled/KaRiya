@@ -3,7 +3,6 @@ package captureevent
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/forms"
@@ -11,6 +10,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/burst_management/modals"
 	captureScreens "github.com/baphled/kariya/internal/cli/screens/capture"
+	domcapture "github.com/baphled/kariya/internal/domain/capture"
 	"github.com/baphled/kariya/internal/domain/career"
 	burstfact "github.com/baphled/kariya/internal/service/career/burstfact"
 	"github.com/baphled/kariya/internal/service/career/skillinference"
@@ -433,6 +433,7 @@ func (i *Intent) updateEditingModal(msg tea.Msg) tea.Cmd {
 }
 
 // eventFromFormData converts CaptureEventFormData to a career.Event.
+// Delegates to the pure domain function capture.NewEventFromInput.
 //
 // Expected:
 //   - data must not be nil.
@@ -444,28 +445,12 @@ func (i *Intent) updateEditingModal(msg tea.Msg) tea.Cmd {
 // Side effects:
 //   - None.
 func eventFromFormData(data *forms.CaptureEventFormData) (*career.Event, error) {
-	var eventDate time.Time
-	var err error
-
-	if data.Date == "" {
-		eventDate = time.Now()
-	} else {
-		eventDate, err = forms.ParseDateString(data.Date)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	event := &career.Event{
+	return domcapture.NewEventFromInput(domcapture.EventInput{
 		Text:       data.Text,
-		Date:       eventDate,
+		Date:       data.Date,
 		Company:    data.Company,
 		Project:    data.Project,
 		Tags:       data.Tags,
 		Categories: data.Categories,
-		CreatedAt:  time.Now(),
-		UpdatedAt:  time.Now(),
-	}
-
-	return event, nil
+	})
 }

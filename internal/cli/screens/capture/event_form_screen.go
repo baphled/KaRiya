@@ -5,6 +5,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/screens/base"
 	"github.com/baphled/kariya/internal/cli/types"
+	"github.com/baphled/kariya/internal/domain/capture"
 	"github.com/baphled/kariya/internal/domain/career"
 )
 
@@ -101,6 +102,26 @@ func NewEventFormScreen(
 	return &EventFormScreen{
 		FormScreen: baseScreen,
 		strategy:   strategy,
+	}
+}
+
+// ExtractInput returns the current form data as a pure domain EventInput.
+// This bridges the TUI form data to the domain layer without any Huh dependencies.
+//
+// Returns:
+//   - A capture.EventInput struct ready for capture.NewEventFromInput().
+//
+// Side effects:
+//   - None.
+func (s *EventFormScreen) ExtractInput() capture.EventInput {
+	data := s.GetFormData()
+	return capture.EventInput{
+		Text:       data.Text,
+		Date:       data.Date,
+		Company:    data.Company,
+		Project:    data.Project,
+		Tags:       data.Tags,
+		Categories: data.Categories,
 	}
 }
 

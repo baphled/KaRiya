@@ -13,6 +13,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens/facts"
 	"github.com/baphled/kariya/internal/cli/screens/timeline"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
+	domcapture "github.com/baphled/kariya/internal/domain/capture"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -648,48 +649,40 @@ func (i *Intent) handleFactExtractionComplete(msg FactExtractionCompleteMsg) tea
 }
 
 // handleEditBurstMsg handles the EditBurstMsg sent by the edit modal.
+// Delegates validation and field application to the pure domain function
+// capture.ApplyBurstEdit, keeping only repository persistence and UI
+// transitions in the intent.
 func (i *Intent) handleEditBurstMsg(msg EditBurstMsg) tea.Cmd {
 	if i.selectedBurst == nil || i.selectedBurst.ID != msg.BurstID {
-		// Burst mismatch or nil - show error.
 		i.feedbackModal = feedback.NewErrorModal("Edit Failed", "Burst not found")
 		i.state = StateDetail
 		return nil
 	}
 
-	// Validate the name is not empty.
-	if msg.Name == "" {
-		// Name is required - keep modal open and show error.
-		// Re-open the edit modal with an error indication.
+	originalName := i.selectedBurst.Name
+	originalDescription := i.selectedBurst.Description
+
+	input := domcapture.BurstEditInputFromFields(msg.Name, msg.Description)
+	_, err := domcapture.ApplyBurstEdit(i.selectedBurst, input)
+	if err != nil {
 		i.state = StateEdit
 		return nil
 	}
 
-	// Clear the edit modal (it's already been closed by handleModalUpdates or test).
 	i.editModal = nil
 
-	// Save original values in case we need to rollback.
-	originalName := i.selectedBurst.Name
-	originalDescription := i.selectedBurst.Description
-
-	// Update burst with new values.
-	i.selectedBurst.Name = msg.Name
-	i.selectedBurst.Description = msg.Description
-
-	// Save to repository if available.
 	if i.context.BurstRepository != nil {
 		ctx := i.getContext()
-		err := i.context.BurstRepository.Update(ctx, i.selectedBurst)
-		if err != nil {
-			// Rollback in-memory changes on failure.
+		repoErr := i.context.BurstRepository.Update(ctx, i.selectedBurst)
+		if repoErr != nil {
 			i.selectedBurst.Name = originalName
 			i.selectedBurst.Description = originalDescription
-			i.editError = err
-			i.feedbackModal = feedback.NewErrorModal("Update Failed", err.Error())
+			i.editError = repoErr
+			i.feedbackModal = feedback.NewErrorModal("Update Failed", repoErr.Error())
 			return nil
 		}
 	}
 
-	// Return to detail modal showing updated burst.
 	return i.showBurstDetailModal(i.selectedBurst)
 }
 

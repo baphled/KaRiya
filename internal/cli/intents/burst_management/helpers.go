@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/intents"
@@ -16,6 +15,7 @@ import (
 	skillmodals "github.com/baphled/kariya/internal/cli/screens/skills/modals"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
+	domcapture "github.com/baphled/kariya/internal/domain/capture"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/service/career/burstfact"
@@ -298,13 +298,13 @@ func (i *Intent) loadBurstFacts(burst *career.Burst) []*career.Fact {
 }
 
 // confirmBurst marks the selected burst as confirmed and triggers fact extraction.
+// When no service is available, delegates timestamp logic to the pure domain function
+// capture.ConfirmBurstTimestamps.
 func (i *Intent) confirmBurst() tea.Cmd {
 	if i.selectedBurst == nil {
 		return nil
 	}
 
-	// Delegate to the service which handles Confirmed, ConfirmedAt, UpdatedAt,
-	// and rolls back correctly on failure.
 	if i.context.Service != nil {
 		ctx := i.getContext()
 		if err := i.context.Service.ConfirmBurst(ctx, i.selectedBurst); err != nil {
@@ -313,13 +313,9 @@ func (i *Intent) confirmBurst() tea.Cmd {
 			return nil
 		}
 	} else {
-		now := time.Now()
-		i.selectedBurst.Confirmed = true
-		i.selectedBurst.ConfirmedAt = &now
-		i.selectedBurst.UpdatedAt = now
+		domcapture.ConfirmBurstTimestamps(i.selectedBurst)
 	}
 
-	// Trigger fact extraction for the confirmed burst.
 	return i.extractFactsForBurst(i.selectedBurst)
 }
 
@@ -899,13 +895,13 @@ func (i *Intent) createBurstsFromSuggestions(suggestions []burstfact.BurstSugges
 }
 
 // createBurstFromSuggestion creates and saves a single burst from a suggestion.
+// Delegates burst creation to the pure domain function capture.CreateBurstFromSuggestion.
 func (i *Intent) createBurstFromSuggestion(suggestion burstfact.BurstSuggestion) *career.Burst {
-	burst := &career.Burst{
+	burst := domcapture.CreateBurstFromSuggestion(domcapture.BurstSuggestionInput{
 		Name:        suggestion.Name,
 		Description: suggestion.Description,
 		EventIDs:    suggestion.EventIDs,
-		Confirmed:   true,
-	}
+	})
 
 	if i.context.BurstRepository != nil {
 		if err := i.context.BurstRepository.Create(i.getContext(), burst); err != nil {
@@ -947,17 +943,14 @@ func (i *Intent) saveAndExtractBurst(suggestion burstfact.BurstSuggestion) tea.C
 }
 
 // saveAndExtractBurstWithResult saves a burst and returns both the burst and the extraction command.
-// This is used when we need to display the burst detail modal after saving.
+// Delegates burst creation to the pure domain function capture.CreateBurstFromSuggestion.
 func (i *Intent) saveAndExtractBurstWithResult(suggestion burstfact.BurstSuggestion) (*career.Burst, tea.Cmd) {
-	burst := &career.Burst{
-		ID:          "",
+	burst := domcapture.CreateBurstFromSuggestion(domcapture.BurstSuggestionInput{
 		Name:        suggestion.Name,
 		Description: suggestion.Description,
 		EventIDs:    suggestion.EventIDs,
-		Confirmed:   true,
-	}
+	})
 
-	// Save to repository if available.
 	if i.context.BurstRepository != nil {
 		ctx := i.getContext()
 		err := i.context.BurstRepository.Create(ctx, burst)
@@ -967,11 +960,9 @@ func (i *Intent) saveAndExtractBurstWithResult(suggestion burstfact.BurstSuggest
 		}
 	}
 
-	// Add to filtered bursts list immediately.
 	i.filteredBursts = append(i.filteredBursts, burst)
 	i.context.Bursts = append(i.context.Bursts, burst)
 
-	// Trigger fact extraction immediately (runs async in background).
 	return burst, i.extractFactsForBurst(burst)
 }
 
