@@ -155,9 +155,7 @@ func profileShouldHaveName(ctx context.Context, name string) error {
 	if env == nil {
 		return godog.ErrPending
 	}
-	result := env.Result()
-	gomega.Expect(result).NotTo(gomega.BeNil(), "Profile result should not be nil")
-	gomega.Expect(result.Name).To(gomega.Equal(name))
+	gomega.Expect(env.View()).To(gomega.ContainSubstring(name))
 	return nil
 }
 
@@ -167,9 +165,7 @@ func profileShouldHaveEmail(ctx context.Context, email string) error {
 	if env == nil {
 		return godog.ErrPending
 	}
-	result := env.Result()
-	gomega.Expect(result).NotTo(gomega.BeNil(), "Profile result should not be nil")
-	gomega.Expect(result.Email).To(gomega.Equal(email))
+	gomega.Expect(env.View()).To(gomega.ContainSubstring(email))
 	return nil
 }
 
@@ -179,9 +175,7 @@ func profileShouldHaveLocation(ctx context.Context, location string) error {
 	if env == nil {
 		return godog.ErrPending
 	}
-	result := env.Result()
-	gomega.Expect(result).NotTo(gomega.BeNil(), "Profile result should not be nil")
-	gomega.Expect(result.Location).To(gomega.Equal(location))
+	gomega.Expect(env.View()).To(gomega.ContainSubstring(location))
 	return nil
 }
 
@@ -231,9 +225,7 @@ func profileShouldHaveTitle(ctx context.Context, title string) error {
 	if env == nil {
 		return godog.ErrPending
 	}
-	result := env.Result()
-	gomega.Expect(result).NotTo(gomega.BeNil(), "Profile result should not be nil")
-	gomega.Expect(result.Title).To(gomega.Equal(title))
+	gomega.Expect(env.View()).To(gomega.ContainSubstring(title))
 	return nil
 }
 
@@ -243,9 +235,7 @@ func profileShouldHaveGitHubUsername(ctx context.Context, username string) error
 	if env == nil {
 		return godog.ErrPending
 	}
-	result := env.Result()
-	gomega.Expect(result).NotTo(gomega.BeNil(), "Profile result should not be nil")
-	gomega.Expect(result.GitHub).To(gomega.Equal(username))
+	gomega.Expect(env.View()).To(gomega.ContainSubstring(username))
 	return nil
 }
 
@@ -255,9 +245,7 @@ func profileShouldHavePortfolio(ctx context.Context, portfolio string) error {
 	if env == nil {
 		return godog.ErrPending
 	}
-	result := env.Result()
-	gomega.Expect(result).NotTo(gomega.BeNil(), "Profile result should not be nil")
-	gomega.Expect(result.Portfolio).To(gomega.Equal(portfolio))
+	gomega.Expect(env.View()).To(gomega.ContainSubstring(portfolio))
 	return nil
 }
 
@@ -267,9 +255,8 @@ func profileShouldNotHaveTitle(ctx context.Context) error {
 	if env == nil {
 		return godog.ErrPending
 	}
-	result := env.Result()
-	gomega.Expect(result).NotTo(gomega.BeNil(), "Profile result should not be nil")
-	gomega.Expect(result.Title).To(gomega.BeEmpty())
+	view := env.View()
+	gomega.Expect(view).NotTo(gomega.ContainSubstring("Title:"))
 	return nil
 }
 

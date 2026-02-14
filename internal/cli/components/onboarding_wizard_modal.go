@@ -161,7 +161,7 @@ func (m *OnboardingWizardModal) Update(msg tea.Msg) tea.Cmd {
 // Side effects:
 //   - None.
 func (m *OnboardingWizardModal) View() string {
-	if !m.wizard.IsVisible() {
+	if !m.wizard.IsVisible() && !m.wizard.IsCompleted() {
 		return ""
 	}
 
@@ -175,7 +175,14 @@ func (m *OnboardingWizardModal) View() string {
 	th := theme.Default()
 
 	title := primitives.Title("Profile Setup", th).Width(modalWidth - 4).Align(lipgloss.Center).Render()
-	formView := m.wizard.View()
+
+	var formView string
+	if m.wizard.IsCompleted() {
+		formView = m.buildSummary()
+	} else {
+		formView = m.wizard.View()
+	}
+
 	footer := m.buildFooter()
 	content := lipgloss.JoinVertical(lipgloss.Left, title, "", formView, "", footer)
 
@@ -201,6 +208,34 @@ func (m *OnboardingWizardModal) buildFooter() string {
 	}
 
 	return primitives.RenderHelpFooter(th, badges...)
+}
+
+// buildSummary creates a summary view of the completed profile data.
+func (m *OnboardingWizardModal) buildSummary() string {
+	var lines []string
+	lines = append(lines, "Profile Setup Complete!")
+	lines = append(lines, "")
+
+	if m.data.Name != "" {
+		lines = append(lines, "Name: "+m.data.Name)
+	}
+	if m.data.Email != "" {
+		lines = append(lines, "Email: "+m.data.Email)
+	}
+	if m.data.Location != "" {
+		lines = append(lines, "Location: "+m.data.Location)
+	}
+	if m.data.Title != "" {
+		lines = append(lines, "Title: "+m.data.Title)
+	}
+	if m.data.GitHub != "" {
+		lines = append(lines, "GitHub: "+m.data.GitHub)
+	}
+	if m.data.Portfolio != "" {
+		lines = append(lines, "Portfolio: "+m.data.Portfolio)
+	}
+
+	return strings.Join(lines, "\n")
 }
 
 // IsVisible returns whether the modal is currently visible.

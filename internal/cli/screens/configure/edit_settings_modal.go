@@ -107,6 +107,15 @@ func (m *EditSettingsModal) rebuildForm() {
 		}
 	}
 
+	// Add submit button as the last field to enable form completion
+	submitValue := true
+	fields = append(fields, huh.NewConfirm().
+		Key("submit").
+		Title("Submit Settings").
+		Affirmative("Submit").
+		Negative("Cancel").
+		Value(&submitValue))
+
 	group := huh.NewGroup(fields...)
 
 	modalWidth := m.width - 10
@@ -242,6 +251,12 @@ func (m *EditSettingsModal) Update(msg tea.Msg) tea.Cmd {
 
 	// Delegate to form
 	if m.form != nil {
+		// Special handling for Enter key on the submit button
+		if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.Type == tea.KeyEnter {
+			// Simulate pressing 'y' to select "Submit" on the Confirm field
+			msg = tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}}
+		}
+
 		model, cmd := m.form.Update(msg)
 		if f, ok := model.(*huh.Form); ok {
 			m.form = f
