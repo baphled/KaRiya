@@ -1,0 +1,63 @@
+Burst View Audit - Task 0
+===========================
+
+Entity: career.Burst
+Domain Fields:
+  - ID (string)
+  - Name (string)
+  - Description (string, optional)
+  - EventIDs ([]string)
+  - Confirmed (bool)
+  - ConfirmedAt (*time.Time, optional)
+  - CreatedAt (time.Time)
+  - UpdatedAt (time.Time)
+
+=== BURST LIST VIEW (burst_management > BurstListScreen) ===
+Source: internal/cli/screens/burst_management/burst_list_screen.go (burstRowFormatter)
+
+Table Columns:
+  | Field       | Visible | Column        | Width | Notes                      |
+  |-------------|---------|--------------|-------|----------------------------|
+  | Name        | YES     | "Name"       | 30    | Truncated to 27 chars      |
+  | Description | YES     | "Description"| 35    | Truncated to 32 chars, "-" |
+  | Confirmed   | YES     | "Confirmed"  | 10    | "✓ Yes" / "✗ No"          |
+  | EventIDs    | YES     | "Events"     | 8     | Count of EventIDs          |
+  | CreatedAt   | YES     | "Created"    | 12    | YYYY-MM-DD                 |
+  | ID          | NO      | -            | -     | Not displayed              |
+  | ConfirmedAt | NO      | -            | -     | Not in table               |
+  | UpdatedAt   | NO      | -            | -     | Not in table               |
+
+=== BURST DETAIL VIEW (burst_management > BurstDetailModal) ===
+Source: internal/cli/screens/burst_management/modals/detail_modal.go (renderBurstDetailContent)
+
+Detail Fields:
+  | Field       | Visible | Label          | Notes                           |
+  |-------------|---------|----------------|---------------------------------|
+  | Confirmed   | YES*    | Badge          | "✓ Confirmed" badge if true     |
+  | Name        | YES     | "Name:"        | Bold label, raw value           |
+  | Description | YES*    | "Description:" | Only if non-empty               |
+  | EventIDs    | YES     | "Events:"      | Count (len(EventIDs))           |
+  | ConfirmedAt | YES*    | "Confirmed:"   | Only if Confirmed && non-nil    |
+  | CreatedAt   | YES     | "Created:"     | YYYY-MM-DD                      |
+  | UpdatedAt   | YES     | "Updated:"     | YYYY-MM-DD                      |
+  | ID          | NO      | -              | Not displayed                   |
+
+* = conditionally visible
+
+=== BDD DB ASSERTION FIELDS ===
+Fields checked by BDD steps via DB queries (GetBursts, AssertBurstCount):
+  - Name (burst name assertions)
+  - Description (burst description assertions)
+  - Confirmed (confirmation status assertions)
+  - EventIDs (event count in burst)
+  - Burst count (AssertBurstCount)
+
+=== VISIBILITY GAP ANALYSIS ===
+Fields checked by DB but NOT visible in list view:
+  - ConfirmedAt, UpdatedAt, ID
+
+Fields checked by DB and visible in BOTH list and detail:
+  - Name, Description, Confirmed, EventIDs (count), CreatedAt
+
+Fields checked by DB and NOT visible in ANY view:
+  - ID

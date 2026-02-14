@@ -1,0 +1,66 @@
+Fact View Audit - Task 0
+=========================
+
+Entity: career.Fact
+Domain Fields:
+  - ID (string)
+  - Text (string)
+  - CompetencyCategories ([]string)
+  - RoleFit (RoleFit/string)
+  - AudienceRelevance ([]string)
+  - StrengthSignal (string)
+  - SourceEventID (string, optional)
+  - SourceBurstID (string, optional)
+  - CreatedAt (time.Time)
+  - UpdatedAt (time.Time)
+
+=== FACT LIST VIEW (fact_management > FactManagement intent) ===
+Source: internal/cli/intents/factmanagement/intent.go (factRowFormatter)
+
+Table Columns:
+  | Field                | Visible | Column       | Width | Notes                    |
+  |----------------------|---------|-------------|-------|--------------------------|
+  | Text                 | YES     | "Fact"      | 50    | Truncated to 50 chars    |
+  | StrengthSignal       | YES     | "Strength"  | 15    | Shows "-" if empty       |
+  | CompetencyCategories | YES     | "Categories"| 30    | fmt.Sprintf, truncated   |
+  | ID                   | NO      | -           | -     | Not displayed            |
+  | RoleFit              | NO      | -           | -     | Not in table             |
+  | AudienceRelevance    | NO      | -           | -     | Not in table             |
+  | SourceEventID        | NO      | -           | -     | Not in table             |
+  | SourceBurstID        | NO      | -           | -     | Not in table             |
+  | CreatedAt            | NO      | -           | -     | Not in table             |
+  | UpdatedAt            | NO      | -           | -     | Not in table             |
+
+=== FACT DETAIL VIEW (fact_management > RenderFactDetail) ===
+Source: internal/cli/screens/facts/views.go
+
+Detail Fields:
+  | Field                | Visible | Label                | Notes                   |
+  |----------------------|---------|----------------------|-------------------------|
+  | Text                 | YES     | "Text"               | Full text displayed     |
+  | CompetencyCategories | YES     | "Categories"         | %v format               |
+  | StrengthSignal       | YES     | "Strength Signal"    | Raw value               |
+  | RoleFit              | YES     | "Role Fit"           | %v format               |
+  | AudienceRelevance    | YES     | "Audience Relevance" | %v format               |
+  | CreatedAt            | YES     | "Created"            | YYYY-MM-DD HH:MM       |
+  | ID                   | NO      | -                    | Not displayed           |
+  | SourceEventID        | NO      | -                    | Not displayed           |
+  | SourceBurstID        | NO      | -                    | Not displayed           |
+  | UpdatedAt            | NO      | -                    | Not displayed           |
+
+=== BDD DB ASSERTION FIELDS ===
+Fields checked by BDD steps via DB queries (GetFacts, AssertFactCount):
+  - Text (fact text assertions)
+  - CompetencyCategories (category assertions)
+  - AudienceRelevance (audience assertions)
+  - Fact count (AssertFactCount)
+
+=== VISIBILITY GAP ANALYSIS ===
+Fields checked by DB but NOT visible in list view:
+  - RoleFit, AudienceRelevance, SourceEventID, SourceBurstID, CreatedAt, UpdatedAt
+
+Fields checked by DB but visible in detail view:
+  - Text (full), CompetencyCategories, StrengthSignal, RoleFit, AudienceRelevance
+  
+Fields checked by DB and NOT visible in ANY view:
+  - ID, SourceEventID, SourceBurstID, UpdatedAt

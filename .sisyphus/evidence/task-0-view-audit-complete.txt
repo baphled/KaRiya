@@ -1,0 +1,189 @@
+# View Audit - Cucumber DB vs View Assertions
+Generated: 2026-02-14
+Worktree: cucumber-view-assertions
+
+## Summary
+
+### DB Assertions Found: 37 calls across 5 files
+- capture_steps.go: 24 calls
+- facts_steps.go: 6 calls  
+- skills_steps.go: 5 calls
+- bursts_steps.go: 4 calls
+- browse_steps.go: 2 calls
+
+### UI-Bypassing Repo Calls Found: 16 calls across 5 files
+- capture_steps.go: 4 calls (burstRepo.Create, eventRepo.Update/Create)
+- facts_steps.go: 4 calls (factRepo.List/Update/Create)
+- skills_steps.go: 4 calls (skillRepo.Create/List)
+- browse_steps.go: 2 calls (skillRepo.Create, eventRepo.Update)
+- bursts_steps.go: 2 calls (burstRepo.List)
+
+## Detailed Breakdown by Domain
+
+### 1. Capture Domain (capture_steps.go)
+
+#### DB Assertions (24 calls):
+- env.AssertEventCount(0) - line 98
+- env.AssertEventCount(expected) - line 292
+- env.AssertBurstCount(expected) - line 301
+- env.GetEvents() - lines 310, 321, 332, 343, 355, 367, 378, 389, 421, 480, 559, 650, 721, 732, 744
+- env.GetBursts() - line 591
+- env.GetSkills() - line 601
+
+#### UI-Bypassing Repo Calls (4 calls):
+- burstRepo.Create - lines 458, 576
+- eventRepo.Update - line 660
+- eventRepo.Create - line 670
+
+#### Fields Being Checked:
+- Event: Description, Company, Project, Tags, Categories, Skills, Date
+- Burst: Name, Description, Confirmation status
+- Skills: Names
+
+### 2. Facts Domain (facts_steps.go)
+
+#### DB Assertions (6 calls):
+- env.GetFacts() - lines 125, 376, 387, 398, 673
+- env.AssertFactCount(expected) - line 268
+
+#### UI-Bypassing Repo Calls (4 calls):
+- factRepo.List - lines 345, 646
+- factRepo.Update - line 653
+- factRepo.Create - line 658
+
+#### Fields Being Checked:
+- Fact: Text, Categories, Audiences
+
+### 3. Skills Domain (skills_steps.go)
+
+#### DB Assertions (5 calls):
+- env.AssertSkillCount(expected) - line 799
+- env.GetSkills() - lines 808, 826, 844, 886
+
+#### UI-Bypassing Repo Calls (4 calls):
+- skillRepo.Create - line 138
+- skillRepo.List - lines 235, 265, 637
+
+#### Fields Being Checked:
+- Skill: Name, Level, Years, Category
+
+### 4. Bursts Domain (bursts_steps.go)
+
+#### DB Assertions (4 calls):
+- env.GetBursts() - lines 452, 497, 581, 594
+
+#### UI-Bypassing Repo Calls (2 calls):
+- burstRepo.List - lines 420, 562
+
+#### Fields Being Checked:
+- Burst: Name, Description, Confirmation status
+
+### 5. Browse Domain (browse_steps.go)
+
+#### DB Assertions (2 calls):
+- env.AssertEventCount(1) - line 660
+- env.GetEvents() - line 774
+
+#### UI-Bypassing Repo Calls (2 calls):
+- skillRepo.Create - line 763
+- eventRepo.Update - line 781
+
+#### Fields Being Checked:
+- Event: Skills assignment
+
+## View Visibility Analysis (FIELD-LEVEL)
+
+### Event (career.Event) — browse_timeline intent
+
+Domain Field          | List View | Detail View | DB Asserted | Migration Ready
+----------------------|-----------|-------------|-------------|----------------
+ID                    | NO        | NO          | indirect    | NO (never shown)
+Text                  | YES (40c) | YES (full)  | YES         | YES (detail)
+Date                  | YES       | YES         | NO          | YES
+Company               | YES       | YES*        | YES         | YES (list)
+Project               | YES       | YES*        | NO          | YES
+Tags                  | NO        | YES*        | NO          | PARTIAL (detail)
+Categories            | NO        | YES*        | NO          | PARTIAL (detail)
+Skills                | NO        | YES* (cnt)  | YES (link)  | PARTIAL (detail)
+CreatedAt             | NO        | NO          | NO          | NO (not shown)
+UpdatedAt             | NO        | NO          | NO          | NO (not shown)
+
+Source: event_list.go (eventRowFormatter), event_detail.go (RenderContent)
+
+### Fact (career.Fact) — fact_management intent
+
+Domain Field          | List View | Detail View | DB Asserted | Migration Ready
+----------------------|-----------|-------------|-------------|----------------
+ID                    | NO        | NO          | indirect    | NO (never shown)
+Text                  | YES (50c) | YES (full)  | YES         | YES (detail)
+CompetencyCategories  | YES (30c) | YES         | YES         | YES (both)
+StrengthSignal        | YES       | YES         | NO          | YES
+RoleFit               | NO        | YES         | NO          | PARTIAL (detail)
+AudienceRelevance     | NO        | YES         | YES         | PARTIAL (detail)
+SourceEventID         | NO        | NO          | NO          | NO (not shown)
+SourceBurstID         | NO        | NO          | NO          | NO (not shown)
+CreatedAt             | NO        | YES         | NO          | PARTIAL (detail)
+UpdatedAt             | NO        | NO          | NO          | NO (not shown)
+
+Source: intent.go (factRowFormatter), views.go (RenderFactDetail)
+
+### Skill (career.Skill) — manage_skills intent
+
+Domain Field          | List View | Detail View | DB Asserted | Migration Ready
+----------------------|-----------|-------------|-------------|----------------
+ID                    | NO        | NO          | indirect    | NO (never shown)
+Name                  | YES       | YES         | YES         | YES (both)
+Category              | YES       | YES         | YES         | YES (both)
+Level                 | YES       | YES         | YES         | YES (both)
+YearsUsed             | YES       | YES*        | YES         | YES (both)
+LastUsed              | NO        | YES*        | NO          | PARTIAL (detail)
+EventCount            | YES       | YES         | NO          | YES (both)
+CreatedAt             | NO        | YES (muted) | NO          | PARTIAL (detail)
+UpdatedAt             | NO        | YES (muted) | NO          | PARTIAL (detail)
+
+Source: skill_list.go (skillRowFormatter), modals/detail_modal.go (renderSkillDetails)
+
+### Burst (career.Burst) — burst_management intent
+
+Domain Field          | List View | Detail View | DB Asserted | Migration Ready
+----------------------|-----------|-------------|-------------|----------------
+ID                    | NO        | NO          | indirect    | NO (never shown)
+Name                  | YES (27c) | YES         | YES         | YES (both)
+Description           | YES (32c) | YES*        | YES         | YES (both)
+Confirmed             | YES       | YES*        | YES         | YES (both)
+EventIDs (count)      | YES       | YES         | YES         | YES (both)
+ConfirmedAt           | NO        | YES*        | NO          | PARTIAL (detail)
+CreatedAt             | YES       | YES         | NO          | YES (both)
+UpdatedAt             | NO        | YES         | NO          | PARTIAL (detail)
+
+Source: burst_list_screen.go (burstRowFormatter), modals/detail_modal.go (renderBurstDetailContent)
+
+Key: * = conditionally visible, (Nc) = truncated to N chars, (cnt) = count only
+
+## Blocked Steps Requiring View Updates
+
+### Can Migrate NOW (DB field visible in view):
+1. Event: Text, Company assertions → visible in list/detail
+2. Fact: Text, CompetencyCategories assertions → visible in list/detail
+3. Skill: Name, Category, Level, YearsUsed → visible in list/detail
+4. Burst: Name, Description, Confirmed → visible in list/detail
+5. All count assertions (event/fact/skill/burst count) → table row count
+
+### BLOCKED (DB field NOT visible, need view update first):
+1. Event Tags — only visible in detail view (if non-empty)
+2. Event Categories — only visible in detail view (if non-empty)
+3. Event Skills — only visible as count in detail view
+4. Fact AudienceRelevance — only visible in detail view
+5. Fact RoleFit — only visible in detail view
+
+### NOT MIGRATABLE (field never shown in any view):
+1. Entity IDs (Event.ID, Fact.ID, Skill.ID, Burst.ID)
+2. Source references (Fact.SourceEventID, Fact.SourceBurstID)
+3. UpdatedAt timestamps (except Skill detail modal)
+
+## Migration Strategy
+1. Start with fields visible in LIST views (no navigation needed)
+2. Then handle fields visible in DETAIL views (navigate + check)
+3. BLOCKED items need view updates before migration
+4. NOT MIGRATABLE items must remain as DB assertions or be removed
+

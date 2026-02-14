@@ -1,0 +1,65 @@
+Event View Audit - Task 0
+==========================
+
+Entity: career.Event
+Domain Fields:
+  - ID (string)
+  - Text (string)
+  - Date (time.Time)
+  - Company (string, optional)
+  - Project (string, optional)
+  - Tags ([]string)
+  - Categories ([]string, optional)
+  - Skills ([]string, optional)
+  - CreatedAt (time.Time)
+  - UpdatedAt (time.Time)
+
+=== EVENT LIST VIEW (browse_timeline > EventListScreen) ===
+Source: internal/cli/screens/timeline/event_list.go
+
+Table Columns (eventRowFormatter):
+  | Field   | Visible | Column  | Width | Notes                    |
+  |---------|---------|---------|-------|--------------------------|
+  | Date    | YES     | "Date"  | 12    | Formatted YYYY-MM-DD     |
+  | Text    | YES     | "Event" | 40    | Truncated to 40 chars    |
+  | Company | YES     | "Company"| 18   | Shows "-" if empty       |
+  | Project | YES     | "Project"| 15   | Shows "-" if empty       |
+  | ID      | NO      | -       | -     | Not displayed            |
+  | Tags    | NO      | -       | -     | Not in table             |
+  | Categories | NO   | -       | -     | Not in table             |
+  | Skills  | NO      | -       | -     | Not in table             |
+  | CreatedAt | NO    | -       | -     | Not in table             |
+  | UpdatedAt | NO    | -       | -     | Not in table             |
+
+=== EVENT DETAIL VIEW (browse_timeline > EventDetailScreen) ===
+Source: internal/cli/screens/timeline/event_detail.go
+
+DetailView Fields (RenderContent):
+  | Field      | Visible | Label       | Notes                          |
+  |------------|---------|-------------|--------------------------------|
+  | Date       | YES     | "Date"      | Formatted YYYY-MM-DD           |
+  | Company    | YES*    | "Company"   | Only if non-empty (FieldIf)    |
+  | Project    | YES*    | "Project"   | Only if non-empty (FieldIf)    |
+  | Text       | YES     | "Text"      | Full text displayed            |
+  | Tags       | YES*    | "Tags"      | List format, only if non-empty |
+  | Categories | YES*    | "Categories"| List format, only if non-empty |
+  | Skills     | YES*    | "Skills"    | Count only ("N associated")    |
+  | ID         | NO      | -           | Not displayed                  |
+  | CreatedAt  | NO      | -           | Not displayed                  |
+  | UpdatedAt  | NO      | -           | Not displayed                  |
+
+* = conditionally visible (only when field has value)
+
+=== BDD DB ASSERTION FIELDS ===
+Fields checked by BDD steps via DB queries (GetEvents, AssertEventCount):
+  - Text (event description assertions)
+  - Company (event company assertions)
+  - Event count (AssertEventCount)
+  - Skills (via skill linking)
+
+=== VISIBILITY GAP ANALYSIS ===
+Fields checked by DB but NOT visible in list view:
+  - Tags, Categories, Skills, ID, CreatedAt, UpdatedAt
+
+Fields checked by DB but visible in detail view:
+  - Text (full), Company, Date, Tags, Categories, Skills (count)

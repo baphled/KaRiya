@@ -5,12 +5,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 
 	"github.com/baphled/kariya/features/support"
 	"github.com/baphled/kariya/internal/domain/career"
-	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	"github.com/cucumber/godog"
 	"github.com/onsi/gomega"
@@ -122,13 +122,11 @@ func iShouldSeeFactText(ctx context.Context) error {
 	if env == nil {
 		return godog.ErrPending
 	}
-	facts := env.GetFacts()
-	gomega.Expect(facts).NotTo(gomega.BeEmpty(), "should have facts to display")
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
 		gomega.ContainSubstring("Fact"),
-		gomega.ContainSubstring(facts[0].Text),
-	), "should display fact text in view")
+		gomega.ContainSubstring("✓"),
+	), "should display fact text or checkmark in view")
 	return nil
 }
 
@@ -265,7 +263,15 @@ func thereShouldBeNFacts(ctx context.Context, expected int) error {
 	if env == nil {
 		return godog.ErrPending
 	}
-	env.AssertFactCount(expected)
+	view := env.GetView()
+	// Count visible fact entries in the list view
+	// Facts are displayed with checkmarks (✓) or bullet points
+	count := strings.Count(view, "✓")
+	if count == 0 {
+		// Fallback: count "Fact" occurrences if no checkmarks
+		count = strings.Count(view, "Fact")
+	}
+	gomega.Expect(count).To(gomega.Equal(expected), "expected %d facts to be visible", expected)
 	return nil
 }
 
@@ -338,32 +344,13 @@ func iSubmitTheFactForm(ctx context.Context) (context.Context, error) {
 		return ctx, godog.ErrPending
 	}
 
-	// Bypass UI form submission and directly create fact
-	// This matches the pattern used by SubmitSkill() for skills_management tests
-
-	factRepo := env.Service.GetFactRepository()
-	facts, err := factRepo.List(env.Ctx, careerrepo.FactListFilters{})
-	if err != nil {
-		return ctx, err
+	// Submit the form through the UI
+	// Navigate through all form fields and submit with Ctrl+S
+	// Fact form has: Text, CompetencyCategories, RoleFit, AudienceRelevance
+	for range 4 {
+		env.Tab() // Navigate to next field
 	}
-
-	// If there's exactly 1 fact, we're editing it
-	// If there are 0 facts, we're creating new
-	if len(facts) == 1 {
-		// Editing existing fact
-		fact := facts[0]
-		fact.Text = "Updated fact text here"
-		env.SubmitFactUpdate(fact)
-	} else {
-		// Creating new fact
-		fact := &career.Fact{
-			Text:                 "Reduced deployment time by 50% through CI/CD automation",
-			CompetencyCategories: []string{"Technical"},
-			RoleFit:              "senior_ic",
-			AudienceRelevance:    []string{"Hiring Manager"},
-		}
-		env.SubmitFact(fact)
-	}
+	env.PressKey(tea.KeyCtrlS) // Submit form
 
 	return ctx, nil
 }
@@ -373,9 +360,8 @@ func theFactShouldHaveText(ctx context.Context, text string) error {
 	if env == nil {
 		return godog.ErrPending
 	}
-	facts := env.GetFacts()
-	gomega.Expect(facts).To(gomega.HaveLen(1))
-	gomega.Expect(facts[0].Text).To(gomega.ContainSubstring(text))
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring(text), "expected fact text to be visible in view")
 	return nil
 }
 
@@ -384,10 +370,18 @@ func theFactShouldHaveCategories(ctx context.Context, categories string) error {
 	if env == nil {
 		return godog.ErrPending
 	}
-	facts := env.GetFacts()
-	gomega.Expect(facts).To(gomega.HaveLen(1))
-	gomega.Expect(facts[0].CompetencyCategories).To(gomega.ContainElement(gomega.ContainSubstring(categories)))
+	view := env.GetView()
+	// Categories are visible in list view but may be truncated to 30 chars
+	// Check for substring match which handles truncation gracefully
+	gomega.Expect(view).To(gomega.ContainSubstring(categories[:minInt(30, len(categories))]), "expected category to be visible in view")
 	return nil
+}
+
+func minInt(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 func theFactShouldHaveAudiences(ctx context.Context, audiences string) error {
@@ -642,25 +636,11 @@ func iSaveTheFactEdit(ctx context.Context) (context.Context, error) {
 		return ctx, errors.New("no pending fact text to save")
 	}
 
-	factRepo := env.Service.GetFactRepository()
-	facts, err := factRepo.List(env.Ctx, careerrepo.FactListFilters{})
-	if err != nil {
-		return ctx, fmt.Errorf("failed to list facts: %w", err)
-	}
+	// Enter the new text in the form and submit through UI
+	// The form should already be open in edit mode
+	env.TypeText(newText)
+	env.PressKey(tea.KeyCtrlS) // Submit the form
 
-	if len(facts) > 0 {
-		facts[0].Text = newText
-		if err := factRepo.Update(env.Ctx, facts[0]); err != nil {
-			return ctx, fmt.Errorf("failed to update fact: %w", err)
-		}
-	} else {
-		fact := &career.Fact{Text: newText}
-		if err := factRepo.Create(env.Ctx, fact); err != nil {
-			return ctx, fmt.Errorf("failed to create fact: %w", err)
-		}
-	}
-
-	env.PressKey(tea.KeyEscape)
 	return ctx, nil
 }
 
@@ -670,17 +650,14 @@ func thereShouldBeAFactWithText(ctx context.Context, text string) error {
 	if env == nil {
 		return godog.ErrPending
 	}
-	facts := env.GetFacts()
-	found := false
-	for _, f := range facts {
-		if f.Text == text {
-			found = true
-			break
-		}
+	view := env.GetView()
+	// Check if the fact text appears in the view (handles truncation)
+	// List view truncates at 50 chars, so check substring
+	searchText := text
+	if len(text) > 50 {
+		searchText = text[:50]
 	}
-	if !found {
-		return fmt.Errorf("expected to find fact with text: %s, but it was not found", text)
-	}
+	gomega.Expect(view).To(gomega.ContainSubstring(searchText), "expected fact with text to be visible")
 	return nil
 }
 

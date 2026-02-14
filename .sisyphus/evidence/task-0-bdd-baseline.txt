@@ -1,0 +1,65 @@
+BDD Baseline - Task 0 View Audit
+==================================
+Date: 2026-02-14
+Branch: cucumber-view-assertions
+Command: make bdd
+
+Results Summary
+---------------
+PASS: 120
+FAIL: 25
+PENDING: 0
+
+Overall: FAIL (25 failures)
+Duration: ~398s
+
+Failing Tests (25)
+------------------
+CLI Command Tests (22 failures - all CLI subcommand tests):
+  - Display_version_information
+  - Display_version_with_short_flag
+  - Display_help_information
+  - Display_help_with_short_flag
+  - Launch_browse_timeline_directly
+  - Launch_capture_event_directly
+  - Launch_skills_management_directly
+  - Launch_configuration_directly
+  - Quick_capture_event_from_CLI
+  - Quick_capture_with_multiple_flags
+  - Export_CV_to_JSON
+  - Export_CV_to_YAML
+  - Export_CV_to_file
+  - Import_events_from_JSON
+  - Import_from_invalid_file
+  - Display_current_configuration
+  - Set_configuration_value
+  - Initialize_database
+  - Database_status
+  - Unknown_command
+  - Missing_required_argument
+  - Invalid_flag
+
+Configure System Tests (2 failures):
+  - View_all_profile_fields
+  - Submit_settings_with_Enter
+
+Feature Breakdown (from feature files):
+- browse_timeline.feature: 19 scenarios
+- burst_management.feature: 34 scenarios
+- capture_event.feature: ~30 scenarios
+- chained_workflows.feature: ~12 scenarios
+- cli_commands.feature: ~22 scenarios
+- configure_system.feature: ~20 scenarios
+- fact_management.feature: 29 scenarios
+- generate_cv.feature: ~8 scenarios
+- navigation.feature: ~8 scenarios
+- onboarding.feature: ~10 scenarios
+- skills_management.feature: 30 scenarios
+
+Notes:
+- 22/25 failures are CLI command tests (not TUI-related)
+- 2/25 are configure_system tests
+- 1/25 is the parent TestFeatures marker
+- All browse_timeline, capture_event, skills_management, fact_management,
+  burst_management, and navigation TUI tests PASS
+- No pending tests (all scenarios have step implementations)

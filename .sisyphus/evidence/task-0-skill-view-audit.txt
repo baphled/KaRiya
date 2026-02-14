@@ -1,0 +1,65 @@
+Skill View Audit - Task 0
+===========================
+
+Entity: career.Skill
+Domain Fields:
+  - ID (string)
+  - Name (string)
+  - Category (string)
+  - Level (string, optional)
+  - YearsUsed (*int, optional)
+  - LastUsed (*time.Time, optional)
+  - CreatedAt (time.Time)
+  - UpdatedAt (time.Time)
+
+=== SKILL LIST VIEW (manage_skills > SkillsListScreen) ===
+Source: internal/cli/screens/skills/skill_list.go (skillRowFormatter)
+
+Table Columns:
+  | Field     | Visible | Column     | Width | Notes                     |
+  |-----------|---------|------------|-------|---------------------------|
+  | Name      | YES     | "Name"     | 25    | Raw value                 |
+  | Category  | YES     | "Category" | 15    | Shows "-" if empty        |
+  | Level     | YES     | "Level"    | 12    | Shows "-" if empty        |
+  | YearsUsed | YES     | "Years"    | 8     | Shows "-" if nil/0        |
+  | EventCount| YES     | "Events"   | 8     | From eventCounts map      |
+  | ID        | NO      | -          | -     | Not displayed             |
+  | LastUsed  | NO      | -          | -     | Not in table              |
+  | CreatedAt | NO      | -          | -     | Not in table              |
+  | UpdatedAt | NO      | -          | -     | Not in table              |
+
+=== SKILL DETAIL VIEW (manage_skills > DetailModal) ===
+Source: internal/cli/screens/skills/modals/detail_modal.go (renderSkillDetails)
+
+Detail Fields:
+  | Field      | Visible | Label         | Notes                        |
+  |------------|---------|---------------|------------------------------|
+  | Name       | YES     | "Name:"       | Raw value                    |
+  | Category   | YES     | "Category:"   | Shows "-" if empty           |
+  | Level      | YES     | "Level:"      | Shows "-" if empty           |
+  | YearsUsed  | YES*    | "Years Used:" | Only if non-nil, "N year(s)" |
+  | EventCount | YES     | "Event Count:"| From modal constructor param |
+  | LastUsed   | YES*    | "Last Used:"  | Only if non-nil, YYYY-MM-DD  |
+  | CreatedAt  | YES     | "Created:"    | Muted, YYYY-MM-DD HH:MM     |
+  | UpdatedAt  | YES     | "Updated:"    | Muted, YYYY-MM-DD HH:MM     |
+  | ID         | NO      | -             | Not displayed                |
+
+* = conditionally visible
+
+=== BDD DB ASSERTION FIELDS ===
+Fields checked by BDD steps via DB queries (GetSkills, AssertSkillCount):
+  - Name (skill name assertions)
+  - Category (category assertions)
+  - Level (proficiency level assertions)
+  - YearsUsed (years assertions)
+  - Skill count (AssertSkillCount)
+
+=== VISIBILITY GAP ANALYSIS ===
+Fields checked by DB but NOT visible in list view:
+  - LastUsed, CreatedAt, UpdatedAt, ID
+
+Fields checked by DB and visible in BOTH list and detail:
+  - Name, Category, Level, YearsUsed, EventCount
+
+Fields checked by DB and NOT visible in ANY view:
+  - ID
