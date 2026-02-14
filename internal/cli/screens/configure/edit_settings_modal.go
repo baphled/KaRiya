@@ -251,12 +251,6 @@ func (m *EditSettingsModal) Update(msg tea.Msg) tea.Cmd {
 
 	// Delegate to form
 	if m.form != nil {
-		// Special handling for Enter key on the submit button
-		if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.Type == tea.KeyEnter {
-			// Simulate pressing 'y' to select "Submit" on the Confirm field
-			msg = tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}}
-		}
-
 		model, cmd := m.form.Update(msg)
 		if f, ok := model.(*huh.Form); ok {
 			m.form = f
@@ -441,4 +435,15 @@ func (m *EditSettingsModal) Show() {
 //   - None.
 func (m *EditSettingsModal) Hide() {
 	m.visible = false
+}
+
+// GetFormData returns the current form data.
+//
+// Returns:
+//   - A fully initialized SettingsFormData ready for use.
+//
+// Side effects:
+//   - None.
+func (m *EditSettingsModal) GetFormData() *SettingsFormData {
+	return m.formData
 }
