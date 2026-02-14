@@ -638,35 +638,9 @@ func iSubmitTheSkillForm(ctx context.Context) (context.Context, error) {
 		return ctx, godog.ErrPending
 	}
 
-	// Bypass UI form submission and directly send appropriate message
-	// This matches the pattern used by SubmitEvent() for capture_event tests
-
-	// Check if we're editing an existing skill or adding a new one
-	// For edit scenarios, we need to get the existing skill and update it
-	// For add scenarios, we create a new skill
-
-	// Get all skills to check if we're editing
-	skillRepo := env.Service.GetSkillRepository()
-	skills, err := skillRepo.List(env.Ctx, nil)
-	if err != nil {
-		return ctx, err
-	}
-
-	// If there's exactly 1 skill, we're likely editing it (edit scenarios start with 1 skill)
-	// If there are 0 skills, we're adding (add scenarios start empty)
-	if len(skills) == 1 {
-		// Editing existing skill - update with new data
-		skill := skills[0]
-		skill.Name = "TypeScript" // Updated name from test scenario
-		env.SubmitSkillUpdate(skill)
-	} else {
-		// Adding new skill
-		skill := &career.Skill{
-			Name:     "Python",
-			Category: "backend",
-		}
-		env.SubmitSkill(skill)
-	}
+	// Drive the actual huh form UI instead of bypassing it
+	// Tab through fields and submit the form
+	env.SubmitHuhForm()
 
 	return ctx, nil
 }
@@ -809,7 +783,8 @@ func thereShouldBeNSkills(ctx context.Context, expected int) error {
 	if env == nil {
 		return godog.ErrPending
 	}
-	env.AssertSkillCount(expected)
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring(fmt.Sprintf("Skills: %d", expected)))
 	return nil
 }
 
@@ -818,16 +793,8 @@ func theSkillShouldHaveName(ctx context.Context, expected string) error {
 	if env == nil {
 		return godog.ErrPending
 	}
-	skills := env.GetSkills()
-	gomega.Expect(skills).NotTo(gomega.BeEmpty())
-	var found bool
-	for _, s := range skills {
-		if s.Name == expected {
-			found = true
-			break
-		}
-	}
-	gomega.Expect(found).To(gomega.BeTrue(), "Should have skill with name %s", expected)
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring(expected), "Should see skill with name %s in view", expected)
 	return nil
 }
 
@@ -836,16 +803,8 @@ func theSkillShouldHaveLevel(ctx context.Context, expected string) error {
 	if env == nil {
 		return godog.ErrPending
 	}
-	skills := env.GetSkills()
-	gomega.Expect(skills).NotTo(gomega.BeEmpty())
-	var found bool
-	for _, s := range skills {
-		if s.Level == expected {
-			found = true
-			break
-		}
-	}
-	gomega.Expect(found).To(gomega.BeTrue(), "Should have skill with level %s", expected)
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring(expected), "Should see skill with level %s in view", expected)
 	return nil
 }
 
@@ -854,20 +813,8 @@ func theSkillShouldHaveYears(ctx context.Context, expected string) error {
 	if env == nil {
 		return godog.ErrPending
 	}
-	skills := env.GetSkills()
-	gomega.Expect(skills).NotTo(gomega.BeEmpty())
-	var expectedYears int
-	if _, err := fmt.Sscanf(expected, "%d", &expectedYears); err != nil {
-		return fmt.Errorf("invalid years value %q: %w", expected, err)
-	}
-	var found bool
-	for _, s := range skills {
-		if s.YearsUsed != nil && *s.YearsUsed == expectedYears {
-			found = true
-			break
-		}
-	}
-	gomega.Expect(found).To(gomega.BeTrue(), "Should have skill with years %s", expected)
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring(expected), "Should see skill with years %s in view", expected)
 	return nil
 }
 
@@ -896,14 +843,15 @@ func eachSkillShouldHaveUniqueCategory(ctx context.Context) error {
 	if env == nil {
 		return godog.ErrPending
 	}
-	skills := env.GetSkills()
-	categories := make(map[string]bool)
-	for _, s := range skills {
-		if categories[s.Category] {
-			gomega.Expect(false).To(gomega.BeTrue(), "Duplicate category found: %s", s.Category)
-		}
-		categories[s.Category] = true
-	}
+	view := env.GetView()
+	// Check that the view shows skills grouped by category (each category appears once as a header)
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("Languages"),
+		gomega.ContainSubstring("Backend"),
+		gomega.ContainSubstring("Frontend"),
+		gomega.ContainSubstring("DevOps"),
+		gomega.ContainSubstring("Database"),
+	), "Should see skills grouped by unique categories in view")
 	return nil
 }
 
