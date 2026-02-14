@@ -21,6 +21,15 @@ type FormHelper struct {
 }
 
 // NewFormHelper creates a form helper for the given context.
+//
+// Expected:
+//   - ctx must contain a valid TestEnv set by the BDD environment.
+//
+// Returns:
+//   - A FormHelper bound to the test environment, or error if env is nil.
+//
+// Side effects:
+//   - None.
 func NewFormHelper(ctx context.Context) (*FormHelper, error) {
 	env := support.GetAppEnv(ctx)
 	if env == nil {
@@ -32,11 +41,14 @@ func NewFormHelper(ctx context.Context) (*FormHelper, error) {
 // NavigateToField tabs through form fields until the target label is visible.
 // This centralizes field navigation - if navigation mechanism changes, update here only.
 //
-// Parameters:
-//   - fieldLabel: The visible label of the field to navigate to
+// Expected:
+//   - fieldLabel must be a non-empty string matching a visible form label.
 //
 // Returns:
-//   - error if field not found after max attempts
+//   - error if field not found after max attempts.
+//
+// Side effects:
+//   - Sends Tab key events to the test environment.
 func (f *FormHelper) NavigateToField(fieldLabel string) error {
 	const maxAttempts = 20
 
@@ -53,6 +65,16 @@ func (f *FormHelper) NavigateToField(fieldLabel string) error {
 
 // SetFieldValue navigates to a field and enters the specified value.
 // Single place to change how values are entered if UI changes.
+//
+// Expected:
+//   - fieldLabel must match a visible form label.
+//   - value must be a valid string to type into the field.
+//
+// Returns:
+//   - error if the field cannot be found.
+//
+// Side effects:
+//   - Sends Tab and text key events to the test environment.
 func (f *FormHelper) SetFieldValue(fieldLabel, value string) error {
 	if err := f.NavigateToField(fieldLabel); err != nil {
 		return err
@@ -63,6 +85,16 @@ func (f *FormHelper) SetFieldValue(fieldLabel, value string) error {
 
 // SelectFieldOption navigates to a select field and chooses an option.
 // Centralizes select field interaction.
+//
+// Expected:
+//   - fieldLabel must match a visible form label.
+//   - option must match a visible option text in the select field.
+//
+// Returns:
+//   - error if the field or option cannot be found.
+//
+// Side effects:
+//   - Sends Tab, navigation, and confirm key events to the test environment.
 func (f *FormHelper) SelectFieldOption(fieldLabel, option string) error {
 	if err := f.NavigateToField(fieldLabel); err != nil {
 		return err
@@ -83,6 +115,15 @@ func (f *FormHelper) SelectFieldOption(fieldLabel, option string) error {
 }
 
 // ToggleBoolean toggles a boolean field (checkbox/switch).
+//
+// Expected:
+//   - fieldLabel must match a visible boolean form field.
+//
+// Returns:
+//   - error if the field cannot be found.
+//
+// Side effects:
+//   - Sends Tab and confirm key events to the test environment.
 func (f *FormHelper) ToggleBoolean(fieldLabel string) error {
 	if err := f.NavigateToField(fieldLabel); err != nil {
 		return err
@@ -93,18 +134,39 @@ func (f *FormHelper) ToggleBoolean(fieldLabel string) error {
 
 // SubmitForm submits the form using Ctrl+S.
 // Single place to change submission method.
+//
+// Returns:
+//   - nil always (error interface for consistency).
+//
+// Side effects:
+//   - Sends Ctrl+S key event to the test environment.
 func (f *FormHelper) SubmitForm() error {
 	f.env.PressKey(tea.KeyCtrlS)
 	return nil
 }
 
 // CancelForm cancels the form using Escape.
+//
+// Returns:
+//   - nil always (error interface for consistency).
+//
+// Side effects:
+//   - Sends Escape key event to the test environment.
 func (f *FormHelper) CancelForm() error {
 	f.env.PressKey(tea.KeyEscape)
 	return nil
 }
 
 // GetFieldValue returns the current field value (visible in view).
+//
+// Expected:
+//   - fieldLabel must match a visible form label.
+//
+// Returns:
+//   - The current view content as a string, or error if field not found.
+//
+// Side effects:
+//   - Sends Tab key events to navigate to the field.
 func (f *FormHelper) GetFieldValue(fieldLabel string) (string, error) {
 	if err := f.NavigateToField(fieldLabel); err != nil {
 		return "", err
@@ -114,6 +176,15 @@ func (f *FormHelper) GetFieldValue(fieldLabel string) (string, error) {
 }
 
 // IsFieldVisible checks if a field label is currently visible.
+//
+// Expected:
+//   - fieldLabel must be a non-empty string.
+//
+// Returns:
+//   - true if the field label appears in the current view.
+//
+// Side effects:
+//   - None.
 func (f *FormHelper) IsFieldVisible(fieldLabel string) bool {
 	view := f.env.GetView()
 	return strings.Contains(view, fieldLabel)
@@ -121,6 +192,16 @@ func (f *FormHelper) IsFieldVisible(fieldLabel string) bool {
 
 // FieldExistsInForm checks if a field exists in the form by tabbing through all fields.
 // This is less strict than IsFieldVisible - it will find fields even if off-screen.
+//
+// Expected:
+//   - fieldLabel must be a non-empty string.
+//   - maxFields must be a positive integer limiting the search depth.
+//
+// Returns:
+//   - true if the field label is found within maxFields tab presses.
+//
+// Side effects:
+//   - Sends Tab key events to the test environment.
 func (f *FormHelper) FieldExistsInForm(fieldLabel string, maxFields int) bool {
 	initialView := f.env.GetView()
 

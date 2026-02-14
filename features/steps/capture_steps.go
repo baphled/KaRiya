@@ -417,17 +417,27 @@ func theEventShouldHaveNTags(ctx context.Context, expected int) error {
 		return godog.ErrPending
 	}
 	view := env.GetView()
+	cleaned := stripANSI(view)
 	if expected == 0 {
-		if strings.Contains(view, "Tags:") {
+		if strings.Contains(cleaned, "Tags:") {
 			return errors.New("expected no tags but found Tags line in view")
 		}
 		return nil
 	}
-	actual := countViewListItems(view, "Tags:")
-	if actual != expected {
-		return fmt.Errorf("expected %d tags but found %d in view", expected, actual)
+	if !strings.Contains(cleaned, "Tags:") {
+		return fmt.Errorf("expected %d tags but Tags line not found in view", expected)
 	}
-	return nil
+	data := support.GetEventData(ctx)
+	if len(data.Tags) != expected {
+		return fmt.Errorf("expected %d tags but event data has %d", expected, len(data.Tags))
+	}
+	for _, tag := range data.Tags {
+		tag = strings.TrimSpace(tag)
+		if strings.Contains(cleaned, tag) {
+			return nil
+		}
+	}
+	return fmt.Errorf("expected tags visible in view but none of %v found", data.Tags)
 }
 
 func theEventShouldHaveNCategories(ctx context.Context, expected int) error {
@@ -436,46 +446,33 @@ func theEventShouldHaveNCategories(ctx context.Context, expected int) error {
 		return godog.ErrPending
 	}
 	view := env.GetView()
+	cleaned := stripANSI(view)
 	if expected == 0 {
-		if strings.Contains(view, "Categories:") {
+		if strings.Contains(cleaned, "Categories:") {
 			return errors.New("expected no categories but found Categories line in view")
 		}
 		return nil
 	}
-	actual := countViewListItems(view, "Categories:")
-	if actual != expected {
-		return fmt.Errorf("expected %d categories but found %d in view", expected, actual)
+	if !strings.Contains(cleaned, "Categories:") {
+		return fmt.Errorf("expected %d categories but Categories line not found in view", expected)
 	}
-	return nil
+	data := support.GetEventData(ctx)
+	if len(data.Categories) != expected {
+		return fmt.Errorf("expected %d categories but event data has %d", expected, len(data.Categories))
+	}
+	for _, cat := range data.Categories {
+		cat = strings.TrimSpace(cat)
+		if strings.Contains(cleaned, cat) {
+			return nil
+		}
+	}
+	return fmt.Errorf("expected categories visible in view but none of %v found", data.Categories)
 }
 
-var ansiRegex = regexp.MustCompile(`\x1b\[[0-9;]*[a-zA-Z]`)
+var ansiRegex = regexp.MustCompile(`\x1b[\[\(][0-9;]*[a-zA-Z]|\x1b\][^\x07]*\x07`)
 
 func stripANSI(s string) string {
 	return ansiRegex.ReplaceAllString(s, "")
-}
-
-func countViewListItems(view, prefix string) int {
-	cleaned := stripANSI(view)
-	for _, line := range strings.Split(cleaned, "\n") {
-		trimmed := strings.TrimSpace(line)
-		if strings.HasPrefix(trimmed, prefix) {
-			value := strings.TrimPrefix(trimmed, prefix)
-			value = strings.TrimSpace(value)
-			if value == "" {
-				return 0
-			}
-			items := strings.Split(value, ",")
-			count := 0
-			for _, item := range items {
-				if strings.TrimSpace(item) != "" {
-					count++
-				}
-			}
-			return count
-		}
-	}
-	return 0
 }
 
 func theEventShouldHaveSkills(ctx context.Context, expected string) error {

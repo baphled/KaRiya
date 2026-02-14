@@ -31,6 +31,15 @@ import (
 	_ "modernc.org/sqlite"
 )
 
+// Terminal dimensions for test environments.
+// Large dimensions accommodate forms with many fields (e.g. Profile with 11+ fields).
+// Compact dimensions are used for shared environments where full form height is not needed.
+const (
+	TerminalWidth        = 120
+	TerminalHeightLarge  = 100
+	TerminalHeightShared = 40
+)
+
 // sharedEnv holds the shared test environment for BeforeSuite/AfterSuite pattern.
 // This avoids recreating the database for every test.
 var sharedEnv *TestEnv
@@ -160,8 +169,7 @@ func Setup(t TestingT) *TestEnv {
 
 	// Set terminal dimensions to ensure forms render correctly.
 	// Without this, viewport calculations may use default 80x24, truncating forms.
-	// Use 120x100 to accommodate large forms like Profile with 11+ fields.
-	model.Update(tea.WindowSizeMsg{Width: 120, Height: 100})
+	model.Update(tea.WindowSizeMsg{Width: TerminalWidth, Height: TerminalHeightLarge})
 
 	cleanup := func() {
 		// Issue-007 fix: Restore previous config path (from BeforeSuite) instead of clearing
@@ -250,7 +258,7 @@ func SetupShared() {
 
 	// Set terminal dimensions to ensure modals render correctly.
 	// Without this, viewport calculations may use 0 height, showing only last lines.
-	model.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+	model.Update(tea.WindowSizeMsg{Width: TerminalWidth, Height: TerminalHeightShared})
 
 	sharedEnv = &TestEnv{
 		T:          nil,
@@ -313,7 +321,7 @@ func GetSharedEnv(t TestingT) *TestEnv {
 
 	// Set terminal dimensions so modals and overlays render correctly.
 	// Without this, viewport calculations use 0x0, causing empty views.
-	model.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+	model.Update(tea.WindowSizeMsg{Width: TerminalWidth, Height: TerminalHeightShared})
 
 	// Update only what changes per-test
 	sharedEnv.T = t
@@ -1813,7 +1821,7 @@ func (e *TestEnv) InitModel() *TestEnv {
 	_ = e.Model.Init()
 
 	// Send a WindowSizeMsg to trigger form layout
-	e.SendMessage(tea.WindowSizeMsg{Width: 120, Height: 40})
+	e.SendMessage(tea.WindowSizeMsg{Width: TerminalWidth, Height: TerminalHeightShared})
 
 	// Type and delete a character to force the form to render its fields
 	// This workaround activates huh's internal rendering state

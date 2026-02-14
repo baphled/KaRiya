@@ -306,7 +306,10 @@ func (b *BDDTestingT) Error(args ...interface{}) {
 // Side effects:
 //   - Creates a temporary database for testing.
 //
-//nolint:thelper // Factory function, not a test helper.
+// this function is not a test assertion helper; it constructs the environment and any failure
+// should point to this function, not the caller.
+//
+//nolint:thelper // Factory constructor that returns a new TestEnv — t.Helper() is inappropriate here because
 func NewAppEnv(t *testing.T) *e2e.TestEnv {
 	return e2e.Setup(&BDDTestingT{t: t})
 }
@@ -636,7 +639,10 @@ func WithCLIEnv(ctx context.Context, env *CLIEnv) context.Context {
 // Side effects:
 //   - Creates repositories, services, and application model from the GORM connection.
 //
-//nolint:thelper // Factory function, not a test helper.
+// this function is not a test assertion helper; it constructs the environment and any failure
+// should point to this function, not the caller.
+//
+//nolint:thelper // Factory constructor that returns a new TestEnv — t.Helper() is inappropriate here because
 func NewAppEnvFromGormDB(t *testing.T, gormDB *gorm.DB) *e2e.TestEnv {
 	ctx := context.Background()
 
@@ -653,8 +659,7 @@ func NewAppEnvFromGormDB(t *testing.T, gormDB *gorm.DB) *e2e.TestEnv {
 	bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
 
 	model := app.NewModel(cliService, svc, bootstrapResult)
-	// Use 120x100 to accommodate large forms like Profile with 11+ fields.
-	model.Update(tea.WindowSizeMsg{Width: 120, Height: 100})
+	model.Update(tea.WindowSizeMsg{Width: e2e.TerminalWidth, Height: e2e.TerminalHeightLarge})
 
 	return &e2e.TestEnv{
 		T:          &BDDTestingT{t: t},
