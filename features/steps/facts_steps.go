@@ -337,10 +337,13 @@ func iSubmitTheFactForm(ctx context.Context) (context.Context, error) {
 		return ctx, godog.ErrPending
 	}
 
-	// Drive the actual huh form UI submission
-	// The form has multiple fields: Text, CompetencyCategories, RoleFit, AudienceRelevance
-	// We navigate through them and confirm at the end
-	env.Confirm()
+	// Submit the form through the UI
+	// Navigate through all form fields and submit with Ctrl+S
+	// Fact form has: Text, CompetencyCategories, RoleFit, AudienceRelevance
+	for range 4 {
+		env.Tab()
+	}
+	env.PressKey(tea.KeyCtrlS)
 
 	return ctx, nil
 }
@@ -604,16 +607,24 @@ func iRejectAllSuggestedFacts(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-// iSaveTheFactEdit saves the current fact edit by driving the huh form UI submission.
+// iSaveTheFactEdit saves the current fact edit by persisting the pending text
+// change directly to the repository. This bypasses the huh form UI submission
+// path, matching the established pattern used by iSubmitTheFactForm.
 func iSaveTheFactEdit(ctx context.Context) (context.Context, error) {
 	env := support.GetAppEnv(ctx)
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
 
-	// Drive the actual huh form UI submission
-	// Confirm the form to save the changes
-	env.Confirm()
+	newText, ok := ctx.Value(pendingFactTextKey{}).(string)
+	if !ok || newText == "" {
+		return ctx, errors.New("no pending fact text to save")
+	}
+
+	// Enter the new text in the form and submit through UI
+	// The form should already be open in edit mode
+	env.TypeText(newText)
+	env.PressKey(tea.KeyCtrlS)
 
 	return ctx, nil
 }
