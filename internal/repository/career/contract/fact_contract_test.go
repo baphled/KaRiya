@@ -36,15 +36,15 @@ var _ = Describe("FactRepository Contract", func() {
 	}
 
 	Describe("Gap 2: Pagination limit=0 defaults to 100", func() {
-		It("memory: returns at most 100 facts when limit is 0", func() {
+		runForBoth("returns at most 100 facts when limit is 0", func(repo career_repo.FactRepository) {
 			for i := range 110 {
 				fact := fixtures.Fact(fmt.Sprintf("fact-%d", i), fmt.Sprintf("event-%d", i))
 				fact.Text = fmt.Sprintf("Reduced system latency by %d percent through redesign", i+10)
-				err := memRepo.Create(ctx, fact)
+				err := repo.Create(ctx, fact)
 				Expect(err).NotTo(HaveOccurred())
 			}
 
-			results, err := memRepo.List(ctx, *fixtures.FactListFiltersWithLimit(0, 0))
+			results, err := repo.List(ctx, *fixtures.FactListFiltersWithLimit(0, 0))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(results)).To(BeNumerically("<=", 100))
 		})

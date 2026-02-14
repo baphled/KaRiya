@@ -36,7 +36,7 @@ var _ = Describe("SkillRepository Contract", func() {
 	}
 
 	Describe("Gap 2: Pagination limit=0 defaults to 100", func() {
-		It("memory: returns at most 100 skills when limit is 0", func() {
+		runForBoth("returns at most 100 skills when limit is 0", func(repo career_repo.SkillRepository) {
 			for i := range 110 {
 				skill := fixtures.SkillWith(
 					fmt.Sprintf("skill-%d", i),
@@ -44,11 +44,11 @@ var _ = Describe("SkillRepository Contract", func() {
 					"backend",
 					"intermediate",
 				)
-				err := memRepo.Create(ctx, skill)
+				err := repo.Create(ctx, skill)
 				Expect(err).NotTo(HaveOccurred())
 			}
 
-			results, err := memRepo.List(ctx, fixtures.SkillListFiltersWithLimit(0, 0))
+			results, err := repo.List(ctx, fixtures.SkillListFiltersWithLimit(0, 0))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(results)).To(BeNumerically("<=", 100))
 		})

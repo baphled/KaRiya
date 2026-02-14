@@ -36,7 +36,7 @@ var _ = Describe("BurstRepository Contract", func() {
 	}
 
 	Describe("Gap 2: Pagination limit=0 defaults to 100", func() {
-		It("memory: returns at most 100 bursts when limit is 0", func() {
+		runForBoth("returns at most 100 bursts when limit is 0", func(repo career_repo.BurstRepository) {
 			for i := range 110 {
 				burst := fixtures.Burst(
 					fmt.Sprintf("burst-%d", i),
@@ -44,11 +44,11 @@ var _ = Describe("BurstRepository Contract", func() {
 					fmt.Sprintf("event-b-%d", i),
 				)
 				burst.Name = fmt.Sprintf("Burst %d", i)
-				err := memRepo.Create(ctx, burst)
+				err := repo.Create(ctx, burst)
 				Expect(err).NotTo(HaveOccurred())
 			}
 
-			results, err := memRepo.List(ctx, *fixtures.BurstListFiltersWithLimit(0, 0))
+			results, err := repo.List(ctx, *fixtures.BurstListFiltersWithLimit(0, 0))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(results)).To(BeNumerically("<=", 100))
 		})

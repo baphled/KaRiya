@@ -4,6 +4,8 @@ coverage.html
 *.test
 *.out
 
+.sisyphus
+
 docs/STATE_MATRIX.md
 docs/state_matrix.json
 
