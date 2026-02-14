@@ -12,6 +12,9 @@ import (
 	_ "modernc.org/sqlite"
 )
 
+// defaultPaginationLimit caps the number of rows returned when no explicit limit is set.
+const defaultPaginationLimit = 100
+
 // NewGormDB creates a GORM database connection from an existing sql.DB.
 func NewGormDB(sqlDB *sql.DB) (*gorm.DB, error) {
 	return gorm.Open(sqlite.New(sqlite.Config{

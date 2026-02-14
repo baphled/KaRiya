@@ -142,14 +142,18 @@ func (r *EventRepository) Delete(_ context.Context, id string) error {
 	copy(skillIDs, event.Skills)
 	skillRepo := r.skillRepo
 
+	// Delete event and disassociate skills atomically under the same lock
+	// to prevent concurrent LinkSkill/UnlinkSkill calls from racing against
+	// a half-deleted event where skills still reference it.
 	delete(r.events, id)
-	r.mu.Unlock()
 
 	if skillRepo != nil {
 		for _, skillID := range skillIDs {
 			skillRepo.DisassociateSkillFromEvent(skillID, id)
 		}
 	}
+
+	r.mu.Unlock()
 
 	return nil
 }

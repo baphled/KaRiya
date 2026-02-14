@@ -236,11 +236,13 @@ func (r *SkillRepository) applySorting(query *gorm.DB, filters *career_repo.Skil
 
 func (r *SkillRepository) applyPagination(query *gorm.DB, filters *career_repo.SkillListFilters) *gorm.DB {
 	if filters == nil {
-		return query
+		return query.Limit(defaultPaginationLimit)
 	}
-	if filters.Limit > 0 {
-		query = query.Limit(filters.Limit)
+	limit := filters.Limit
+	if limit == 0 {
+		limit = defaultPaginationLimit
 	}
+	query = query.Limit(limit)
 	if filters.Offset > 0 {
 		query = query.Offset(filters.Offset)
 	}
