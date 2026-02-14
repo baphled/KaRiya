@@ -1,7 +1,7 @@
 # Spike: :memory: SQLite + GORM Transaction Rollback
 
-**Date**: 2026-02-13
-**Status**: VALIDATED - Approach works
+**Date**: 2026-02-14 (re-validated from 2026-02-13)
+**Status**: VALIDATED — All 6 spike tests pass
 **Spike file**: `internal/repository/career/sql/spike_memory_txn_test.go` (deleted after documentation)
 
 ## Summary
@@ -91,3 +91,23 @@ tx.Rollback() // instant cleanup, ~8µs
 **GO AHEAD with `:memory:` + transaction rollback for BDD test isolation.**
 
 The pattern is proven, fast (~8µs per test cleanup vs ~2.8ms for full DB recreation), and handles all edge cases including repository methods that internally use `db.Transaction()`.
+
+## Re-validation (2026-02-14)
+
+Re-ran all spike tests to confirm results:
+
+| Test | Result | Time |
+|------|--------|------|
+| Core txn rollback (steps 1–7) | PASS | 0.004s |
+| Tables persist after rollback (step 8) | PASS | 0.002s |
+| Timing: :memory: vs on-disk | PASS — 1.5× speedup | 0.045s |
+| SavePoint/RollbackTo | PASS | 0.003s |
+| db.Transaction() nested in outer txn | PASS | 0.003s |
+| 5-cycle isolation simulation | PASS | 0.003s |
+
+**Updated timing (10 iterations):**
+- `:memory:` avg: **1.8ms** (total: 18ms)
+- On-disk avg: **2.6ms** (total: 26ms)
+- Speedup: **1.5×**
+
+All findings from 2026-02-13 confirmed. No regressions.
