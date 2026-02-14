@@ -3,7 +3,9 @@ package steps
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -293,12 +295,38 @@ func thereShouldBeNEvents(ctx context.Context, expected int) error {
 	if env == nil {
 		return godog.ErrPending
 	}
+
+	navigateToMainMenu(env)
+	env.SelectIntentByName("browse_timeline")
+
 	view := env.GetView()
 	expectedFooter := fmt.Sprintf("Events: %d", expected)
 	if !strings.Contains(view, expectedFooter) {
 		return fmt.Errorf("expected footer '%s' not found in view", expectedFooter)
 	}
+
+	if expected > 0 {
+		env.Confirm()
+	}
+
 	return nil
+}
+
+func navigateToMainMenu(env *e2e.TestEnv) {
+	for range 10 {
+		if isOnMainMenu(env) {
+			return
+		}
+		env.Cancel()
+	}
+}
+
+func isOnMainMenu(env *e2e.TestEnv) bool {
+	view := env.GetView()
+	return strings.Contains(view, "Career Event Management System") &&
+		strings.Contains(view, "Capture Event") &&
+		strings.Contains(view, "Browse Timeline") &&
+		strings.Contains(view, "Enter Select")
 }
 
 func thereShouldBeNBursts(ctx context.Context, expected int) error {
@@ -306,11 +334,16 @@ func thereShouldBeNBursts(ctx context.Context, expected int) error {
 	if env == nil {
 		return godog.ErrPending
 	}
+
+	navigateToMainMenu(env)
+	env.SelectIntentByName("burst_management")
+
 	view := env.GetView()
 	expectedFooter := fmt.Sprintf("Bursts: %d", expected)
 	if !strings.Contains(view, expectedFooter) {
 		return fmt.Errorf("expected footer '%s' not found in view", expectedFooter)
 	}
+
 	return nil
 }
 
@@ -384,11 +417,15 @@ func theEventShouldHaveNTags(ctx context.Context, expected int) error {
 		return godog.ErrPending
 	}
 	view := env.GetView()
-	if expected == 0 && !strings.Contains(view, "Tags: 0") {
-		return fmt.Errorf("expected no tags in view")
+	if expected == 0 {
+		if strings.Contains(view, "Tags:") {
+			return errors.New("expected no tags but found Tags line in view")
+		}
+		return nil
 	}
-	if expected > 0 && !strings.Contains(view, fmt.Sprintf("Tags: %d", expected)) {
-		return fmt.Errorf("expected %d tags not found in view", expected)
+	actual := countViewListItems(view, "Tags:")
+	if actual != expected {
+		return fmt.Errorf("expected %d tags but found %d in view", expected, actual)
 	}
 	return nil
 }
@@ -399,13 +436,46 @@ func theEventShouldHaveNCategories(ctx context.Context, expected int) error {
 		return godog.ErrPending
 	}
 	view := env.GetView()
-	if expected == 0 && !strings.Contains(view, "Categories: 0") {
-		return fmt.Errorf("expected no categories in view")
+	if expected == 0 {
+		if strings.Contains(view, "Categories:") {
+			return errors.New("expected no categories but found Categories line in view")
+		}
+		return nil
 	}
-	if expected > 0 && !strings.Contains(view, fmt.Sprintf("Categories: %d", expected)) {
-		return fmt.Errorf("expected %d categories not found in view", expected)
+	actual := countViewListItems(view, "Categories:")
+	if actual != expected {
+		return fmt.Errorf("expected %d categories but found %d in view", expected, actual)
 	}
 	return nil
+}
+
+var ansiRegex = regexp.MustCompile(`\x1b\[[0-9;]*[a-zA-Z]`)
+
+func stripANSI(s string) string {
+	return ansiRegex.ReplaceAllString(s, "")
+}
+
+func countViewListItems(view, prefix string) int {
+	cleaned := stripANSI(view)
+	for _, line := range strings.Split(cleaned, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, prefix) {
+			value := strings.TrimPrefix(trimmed, prefix)
+			value = strings.TrimSpace(value)
+			if value == "" {
+				return 0
+			}
+			items := strings.Split(value, ",")
+			count := 0
+			for _, item := range items {
+				if strings.TrimSpace(item) != "" {
+					count++
+				}
+			}
+			return count
+		}
+	}
+	return 0
 }
 
 func theEventShouldHaveSkills(ctx context.Context, expected string) error {
@@ -635,21 +705,18 @@ func iSaveMetadataChanges(ctx context.Context) (context.Context, error) {
 	}
 
 	if company, ok := ctx.Value(editedEventCompanyKey).(string); ok && company != "" {
-		if err := updateEventMetadata(env, company); err != nil {
-			return ctx, err
-		}
+		updateEventMetadata(env, company)
 	}
 
 	env.Confirm()
 	return ctx, nil
 }
 
-func updateEventMetadata(env *e2e.TestEnv, company string) error {
+func updateEventMetadata(env *e2e.TestEnv, company string) {
 	// This is a "When" helper - it updates the latest event's company via test simulation
 	// Use view to simulate update without direct DB call
 	env.TypeText(company)
 	env.PressKey(tea.KeyTab)
-	return nil
 }
 
 func persistEventWithSkills(env *e2e.TestEnv, event *career.Event) error {

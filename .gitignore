@@ -85,3 +85,4 @@ PLAN.md
 .session-active
 .tdd-state
 tmp/
+.sisyphus/
