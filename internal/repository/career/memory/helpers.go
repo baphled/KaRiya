@@ -43,15 +43,19 @@ func filterByDateRange[T any](items []T, getTime func(T) time.Time, start, end *
 	return filtered
 }
 
+// defaultPaginationLimit is the maximum number of items returned when no
+// explicit limit is provided. This matches the SQL repository behaviour.
+const defaultPaginationLimit = 100
+
 // paginate returns a subset of items based on offset and limit.
-// A limit of 0 or less means no limit (return everything from offset).
+// A limit of 0 or less defaults to 100 to match SQL repository behaviour.
 func paginate[T any](items []T, offset, limit int) []T {
 	if offset > len(items) {
 		return nil
 	}
 
 	if limit <= 0 {
-		return items[offset:]
+		limit = defaultPaginationLimit
 	}
 
 	end := offset + limit

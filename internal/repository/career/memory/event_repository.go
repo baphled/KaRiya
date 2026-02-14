@@ -131,13 +131,26 @@ func (r *EventRepository) Update(_ context.Context, event *career.Event) error {
 //   - None.
 func (r *EventRepository) Delete(_ context.Context, id string) error {
 	r.mu.Lock()
-	defer r.mu.Unlock()
 
-	if _, exists := r.events[id]; !exists {
+	event, exists := r.events[id]
+	if !exists {
+		r.mu.Unlock()
 		return career_repo.ErrEventNotFound
 	}
 
+	skillIDs := make([]string, len(event.Skills))
+	copy(skillIDs, event.Skills)
+	skillRepo := r.skillRepo
+
 	delete(r.events, id)
+	r.mu.Unlock()
+
+	if skillRepo != nil {
+		for _, skillID := range skillIDs {
+			skillRepo.DisassociateSkillFromEvent(skillID, id)
+		}
+	}
+
 	return nil
 }
 
