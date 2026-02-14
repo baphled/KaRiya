@@ -9,12 +9,18 @@ import (
 	"testing"
 	"time"
 
+	"github.com/baphled/kariya/internal/cli/app"
 	"github.com/baphled/kariya/internal/cli/bootstrap"
 	"github.com/baphled/kariya/internal/cli/forms"
+	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/logger"
+	careersql "github.com/baphled/kariya/internal/repository/career/sql"
+	careerservice "github.com/baphled/kariya/internal/service/career"
 	"github.com/baphled/kariya/internal/testutil/e2e"
 	tea "github.com/charmbracelet/bubbletea"
+	"gorm.io/gorm"
 )
 
 // onboardingKey is the context key for storing OnboardingTestModel.
@@ -615,4 +621,50 @@ func GetCLIEnv(ctx context.Context) *CLIEnv {
 // Side effects: None.
 func WithCLIEnv(ctx context.Context, env *CLIEnv) context.Context {
 	return context.WithValue(ctx, cliEnvKey{}, env)
+}
+
+// NewAppEnvFromGormDB creates a TestEnv from a GORM database connection (typically a transaction).
+// This avoids per-scenario DB creation + migration overhead by reusing a shared connection.
+//
+// Expected:
+//   - t must be a valid *testing.T.
+//   - gormDB must be a valid *gorm.DB (can be a transaction).
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - Creates repositories, services, and application model from the GORM connection.
+//
+//nolint:thelper // Factory function, not a test helper.
+func NewAppEnvFromGormDB(t *testing.T, gormDB *gorm.DB) *e2e.TestEnv {
+	ctx := context.Background()
+
+	repos := careersql.NewRepositoriesFromDB(gormDB)
+
+	svc := careerservice.NewService(repos.Event)
+	svc.SetBurstRepository(repos.Burst)
+	svc.SetFactRepository(repos.Fact)
+	svc.SetSkillRepository(repos.Skill)
+
+	cliService := service.NewCLIEventService(svc)
+
+	log := logger.DefaultLogger()
+	bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+
+	model := app.NewModel(cliService, svc, bootstrapResult)
+	// Use 120x100 to accommodate large forms like Profile with 11+ fields.
+	model.Update(tea.WindowSizeMsg{Width: 120, Height: 100})
+
+	return &e2e.TestEnv{
+		T:          &BDDTestingT{t: t},
+		Model:      model,
+		EventRepo:  repos.Event,
+		BurstRepo:  repos.Burst,
+		FactRepo:   repos.Fact,
+		SkillRepo:  repos.Skill,
+		Service:    svc,
+		CLIService: cliService,
+		Ctx:        ctx,
+	}
 }

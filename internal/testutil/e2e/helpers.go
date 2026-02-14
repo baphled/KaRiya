@@ -158,6 +158,11 @@ func Setup(t TestingT) *TestEnv {
 	// Create application model
 	model := app.NewModel(cliService, svc, bootstrapResult)
 
+	// Set terminal dimensions to ensure forms render correctly.
+	// Without this, viewport calculations may use default 80x24, truncating forms.
+	// Use 120x100 to accommodate large forms like Profile with 11+ fields.
+	model.Update(tea.WindowSizeMsg{Width: 120, Height: 100})
+
 	cleanup := func() {
 		// Issue-007 fix: Restore previous config path (from BeforeSuite) instead of clearing
 		// This allows nested isolation without breaking suite-level isolation
