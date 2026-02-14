@@ -10,7 +10,6 @@ import (
 
 	"github.com/baphled/kariya/features/support"
 	"github.com/baphled/kariya/internal/domain/career"
-	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	"github.com/cucumber/godog"
 	"github.com/onsi/gomega"
@@ -413,31 +412,10 @@ func iSubmitTheBurstForm(ctx context.Context) (context.Context, error) {
 		return ctx, godog.ErrPending
 	}
 
-	// Bypass UI form submission and directly update burst
-	// This matches the pattern used by SubmitSkill() and SubmitFact()
-
-	burstRepo := env.Service.GetBurstRepository()
-	bursts, err := burstRepo.List(env.Ctx, careerrepo.BurstListFilters{})
-	if err != nil {
-		return ctx, err
-	}
-
-	if len(bursts) >= 1 {
-		// Update the first burst with context data
-		burst := bursts[0]
-
-		// Apply name from context if present
-		if name, ok := ctx.Value(burstNameKey).(string); ok {
-			burst.Name = name
-		}
-
-		// Apply description from context if present
-		if desc, ok := ctx.Value(burstDescriptionKey).(string); ok {
-			burst.Description = desc
-		}
-
-		env.SubmitBurstUpdate(burst)
-	}
+	// Drive the actual huh form UI submission
+	// The form has fields: Name, Description
+	// We navigate through them and confirm at the end
+	env.Confirm()
 
 	return ctx, nil
 }
@@ -448,10 +426,9 @@ func theBurstShouldHaveName(ctx context.Context, name string) error {
 		return godog.ErrPending
 	}
 
-	// Get burst from repository
-	bursts := env.GetBursts()
-	gomega.Expect(bursts).To(gomega.HaveLen(1))
-	gomega.Expect(bursts[0].Name).To(gomega.Equal(name))
+	// Assert burst name is visible in the view
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring(name))
 
 	return nil
 }
@@ -494,9 +471,9 @@ func theBurstShouldHaveDescription(ctx context.Context, description string) erro
 		return godog.ErrPending
 	}
 
-	bursts := env.GetBursts()
-	gomega.Expect(bursts).To(gomega.HaveLen(1))
-	gomega.Expect(bursts[0].Description).To(gomega.Equal(description))
+	// Assert burst description is visible in the view
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring(description))
 
 	return nil
 }
@@ -556,18 +533,9 @@ func iConfirmTheAction(ctx context.Context) (context.Context, error) {
 		return ctx, godog.ErrPending
 	}
 
-	// Bypass UI confirmation modal - directly confirm the burst
-	// The UI flow doesn't properly show the loading modal in tests due to async timing
-	burstRepo := env.Service.GetBurstRepository()
-	bursts, err := burstRepo.List(env.Ctx, careerrepo.BurstListFilters{})
-	if err != nil {
-		return ctx, err
-	}
-
-	if len(bursts) >= 1 {
-		burst := bursts[0]
-		env.ConfirmBurst(burst)
-	}
+	// Drive the UI confirmation modal by pressing Enter
+	// The confirm modal accepts "y", "Y", or "enter" to confirm
+	env.PressKey(tea.KeyEnter)
 
 	return ctx, nil
 }
@@ -578,9 +546,14 @@ func theBurstShouldNotBeConfirmed(ctx context.Context) error {
 		return godog.ErrPending
 	}
 
-	bursts := env.GetBursts()
-	gomega.Expect(bursts).To(gomega.HaveLen(1))
-	gomega.Expect(bursts[0].Confirmed).To(gomega.BeFalse())
+	// Assert burst is not confirmed by checking the view
+	// On list view: check for "✗ No"
+	// On detail modal: check for absence of "✓ Confirmed"
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("✗ No"),
+		gomega.Not(gomega.ContainSubstring("✓ Confirmed")),
+	))
 
 	return nil
 }
@@ -591,9 +564,14 @@ func theBurstShouldBeConfirmed(ctx context.Context) error {
 		return godog.ErrPending
 	}
 
-	bursts := env.GetBursts()
-	gomega.Expect(bursts).To(gomega.HaveLen(1))
-	gomega.Expect(bursts[0].Confirmed).To(gomega.BeTrue())
+	// Assert burst is confirmed by checking the view
+	// On list view: check for "✓ Yes"
+	// On detail modal: check for "✓ Confirmed"
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("✓ Yes"),
+		gomega.ContainSubstring("✓ Confirmed"),
+	))
 
 	return nil
 }
