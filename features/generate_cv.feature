@@ -18,13 +18,13 @@ Feature: Generate CV
     Then I should see "Career Events"
     And I should see an error or warning
 
-  @sad @smoke
-  Scenario: Cannot generate CV without events
-    Given I have a profile configured
-    But the database is empty
-    When I select "generate_cv" from the menu
-    Then I should see "events"
-    And I should see an error or warning
+   @sad @smoke
+   Scenario: Cannot generate CV without events
+     Given I have a profile configured
+     But I have no data
+     When I select "generate_cv" from the menu
+     Then I should see "events"
+     And I should see an error or warning
 
   # ============================================================================
   # CV Configuration Wizard - Step 1 (WHO)

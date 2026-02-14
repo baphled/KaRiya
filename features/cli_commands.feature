@@ -73,20 +73,20 @@ Feature: CLI Commands
   # Quick Capture Commands
   # ============================================================================
 
-  @happy
-  Scenario: Quick capture event from CLI
-    Given the application is installed
-    When I run "kariya add 'Built REST API' --company 'Acme Corp'"
-    Then the event should be saved
-    And I should see confirmation message
-    And the exit code should be 0
+   @happy
+   Scenario: Quick capture event from CLI
+     Given the application is installed
+     When I run "kariya add 'Built REST API' --company 'Acme Corp'"
+     Then I should see the event in the system
+     And I should see confirmation message
+     And the exit code should be 0
 
-  @happy
-  Scenario: Quick capture with multiple flags
-    Given the application is installed
-    When I run "kariya add 'Deployed Kubernetes' --company 'TechCo' --category 'technical' --project 'Infrastructure'"
-    Then the event should be saved with all metadata
-    And the exit code should be 0
+   @happy
+   Scenario: Quick capture with multiple flags
+     Given the application is installed
+     When I run "kariya add 'Deployed Kubernetes' --company 'TechCo' --category 'technical' --project 'Infrastructure'"
+     Then I should see the event with all metadata in the system
+     And the exit code should be 0
 
   # ============================================================================
   # Export Commands
@@ -161,21 +161,21 @@ Feature: CLI Commands
   # Database Commands
   # ============================================================================
 
-  @happy
-  Scenario: Initialize database
-    Given the application is installed
-    And no database exists
-    When I run "kariya init"
-    Then the database should be created
-    And migrations should be applied
-    And the exit code should be 0
+   @happy
+   Scenario: Initialize database
+     Given the application is installed
+     And no database exists
+     When I run "kariya init"
+     Then the system is initialized
+     And migrations should be applied
+     And the exit code should be 0
 
-  @happy
-  Scenario: Database status
-    Given the application is installed
-    When I run "kariya db status"
-    Then I should see database status
-    And the exit code should be 0
+   @happy
+   Scenario: Database status
+     Given the application is installed
+     When I run "kariya db status"
+     Then I should see system status
+     And the exit code should be 0
 
   # ============================================================================
   # Error Handling

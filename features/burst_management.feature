@@ -11,12 +11,12 @@ Feature: Manage Career Bursts
   # Empty State
   # ============================================================================
 
-  @happy @smoke
-  Scenario: View empty burst list
-    Given the database is empty
-    When I select "burst_management" from the menu
-    Then I should see "No bursts"
-    And I should be able to go back to the menu
+   @happy @smoke
+   Scenario: View empty burst list
+     Given I have no data
+     When I select "burst_management" from the menu
+     Then I should see "No bursts"
+     And I should be able to go back to the menu
 
   # ============================================================================
   # Burst List Display
@@ -363,12 +363,12 @@ Feature: Manage Career Bursts
   # Navigation and Exit
   # ============================================================================
 
-  @sad
-  Scenario: Exit burst list returns to menu
-    Given the database is empty
-    When I select "burst_management" from the menu
-    And I press escape
-    Then I should be on the main menu
+   @sad
+   Scenario: Exit burst list returns to menu
+     Given I have no data
+     When I select "burst_management" from the menu
+     And I press escape
+     Then I should be on the main menu
 
   @sad
   Scenario: Navigate back through modal stack

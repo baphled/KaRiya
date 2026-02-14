@@ -5,7 +5,7 @@ Feature: Capture Career Events
   So that I can build my work history for CV generation
 
   Background:
-    Given the database is empty
+    Given I have no data
     And I am on the main menu
 
   @happy @smoke

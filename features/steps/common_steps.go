@@ -22,6 +22,7 @@ import (
 // Side effects:
 //   - Registers step definitions with Godog.
 func RegisterCommonSteps(sc *godog.ScenarioContext) {
+	sc.Step(`^I have no data$`, iHaveNoData)
 	sc.Step(`^I should see "([^"]*)"$`, iShouldSee)
 	sc.Step(`^I should not see "([^"]*)"$`, iShouldNotSee)
 	sc.Step(`^I should see one of:$`, iShouldSeeOneOf)
@@ -187,4 +188,14 @@ func iShouldSeeDifferentContent(ctx context.Context) error {
 	view := env.GetView()
 	gomega.Expect(view).NotTo(gomega.BeEmpty())
 	return nil
+}
+
+// iHaveNoData asserts that the system has no data (empty state).
+func iHaveNoData(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.AssertEventCount(0)
+	return ctx, nil
 }

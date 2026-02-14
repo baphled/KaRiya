@@ -11,12 +11,12 @@ Feature: Browse Career Timeline
   # Empty State
   # ============================================================================
 
-  @happy @smoke
-  Scenario: View empty timeline
-    Given the database is empty
-    When I select "browse_timeline" from the menu
-    Then I should see "No events"
-    And I should be able to go back to the menu
+   @happy @smoke
+   Scenario: View empty timeline
+     Given I have no data
+     When I select "browse_timeline" from the menu
+     Then I should see "No events"
+     And I should be able to go back to the menu
 
   # ============================================================================
   # Event List Display
@@ -65,31 +65,31 @@ Feature: Browse Career Timeline
   # Quick Add Event
   # ============================================================================
 
-  @happy
-  Scenario: Open quick add modal
-    Given the database is empty
-    When I select "browse_timeline" from the menu
-    And I press "a" to add event
-    Then I should see the add event form
+   @happy
+   Scenario: Open quick add modal
+     Given I have no data
+     When I select "browse_timeline" from the menu
+     And I press "a" to add event
+     Then I should see the add event form
 
-  @happy
-  Scenario: Cancel quick add
-    Given the database is empty
-    When I select "browse_timeline" from the menu
-    And I press "a" to add event
-    And I press escape
-    Then I should still be on the timeline
-    And there should be 0 events
+   @happy
+   Scenario: Cancel quick add
+     Given I have no data
+     When I select "browse_timeline" from the menu
+     And I press "a" to add event
+     And I press escape
+     Then I should still be on the timeline
+     And there should be 0 events
 
-  @happy
-  Scenario: Add event from timeline
-    Given the database is empty
-    When I select "browse_timeline" from the menu
-    And I press "a" to add event
-    And I enter "New event from timeline" as description
-    And I submit the form
-    Then I should still be on the timeline
-    And there should be 1 event
+   @happy
+   Scenario: Add event from timeline
+     Given I have no data
+     When I select "browse_timeline" from the menu
+     And I press "a" to add event
+     And I enter "New event from timeline" as description
+     And I submit the form
+     Then I should still be on the timeline
+     And there should be 1 event
 
   # ============================================================================
   # Edit Event
@@ -166,7 +166,7 @@ Feature: Browse Career Timeline
 
   @sad
   Scenario: Go back from empty timeline
-    Given the database is empty
+    Given I have no data
     When I select "browse_timeline" from the menu
     And I press escape
     Then I should be on the main menu
