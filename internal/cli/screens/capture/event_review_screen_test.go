@@ -8,6 +8,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens/capture"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/service/career/skillinference"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
@@ -49,7 +50,7 @@ var _ = Describe("EventReviewScreen", func() {
 		testFacts = []*career.Fact{fact}
 
 		breadcrumbs = []string{"Main Menu", "Capture Event", "Review"}
-		screen = capture.NewEventReviewScreen(breadcrumbs, testEvent, testBursts, testFacts)
+		screen = capture.NewEventReviewScreen(breadcrumbs, testEvent, testBursts, testFacts, nil)
 	})
 
 	Describe("Creation", func() {
@@ -58,13 +59,13 @@ var _ = Describe("EventReviewScreen", func() {
 		})
 
 		It("should handle nil event", func() {
-			screen = capture.NewEventReviewScreen(breadcrumbs, nil, testBursts, testFacts)
+			screen = capture.NewEventReviewScreen(breadcrumbs, nil, testBursts, testFacts, nil)
 			view := screen.View()
 			Expect(view).NotTo(BeEmpty())
 		})
 
 		It("should handle empty bursts and facts", func() {
-			screen = capture.NewEventReviewScreen(breadcrumbs, testEvent, nil, nil)
+			screen = capture.NewEventReviewScreen(breadcrumbs, testEvent, nil, nil, nil)
 			view := screen.View()
 			Expect(view).To(ContainSubstring(testEvent.Text))
 		})
@@ -120,7 +121,7 @@ var _ = Describe("EventReviewScreen", func() {
 
 		Context("with nil event", func() {
 			It("should show no event data message", func() {
-				screen = capture.NewEventReviewScreen(breadcrumbs, nil, testBursts, testFacts)
+				screen = capture.NewEventReviewScreen(breadcrumbs, nil, testBursts, testFacts, nil)
 				view := screen.View()
 				Expect(view).To(ContainSubstring("No event data"))
 			})
@@ -128,7 +129,7 @@ var _ = Describe("EventReviewScreen", func() {
 
 		Context("with empty bursts", func() {
 			It("should show no bursts detected message", func() {
-				screen = capture.NewEventReviewScreen(breadcrumbs, testEvent, nil, testFacts)
+				screen = capture.NewEventReviewScreen(breadcrumbs, testEvent, nil, testFacts, nil)
 				view := screen.View()
 				Expect(view).To(ContainSubstring("No bursts detected"))
 			})
@@ -136,7 +137,7 @@ var _ = Describe("EventReviewScreen", func() {
 
 		Context("with empty facts", func() {
 			It("should show no facts detected message", func() {
-				screen = capture.NewEventReviewScreen(breadcrumbs, testEvent, testBursts, nil)
+				screen = capture.NewEventReviewScreen(breadcrumbs, testEvent, testBursts, nil, nil)
 				view := screen.View()
 				Expect(view).To(ContainSubstring("No facts detected"))
 			})
@@ -145,7 +146,7 @@ var _ = Describe("EventReviewScreen", func() {
 		Context("with event missing optional fields", func() {
 			It("should omit company when empty", func() {
 				noCompanyEvent := fixtures.EventWith("evt-2", "Simple event", "", "")
-				screen = capture.NewEventReviewScreen(breadcrumbs, noCompanyEvent, nil, nil)
+				screen = capture.NewEventReviewScreen(breadcrumbs, noCompanyEvent, nil, nil, nil)
 				view := screen.View()
 				Expect(view).To(ContainSubstring("Simple event"))
 				Expect(view).NotTo(ContainSubstring("Company"))
@@ -176,13 +177,13 @@ var _ = Describe("EventReviewScreen", func() {
 		})
 
 		It("should show edit bursts badge even when no bursts", func() {
-			screen = capture.NewEventReviewScreen(breadcrumbs, testEvent, nil, testFacts)
+			screen = capture.NewEventReviewScreen(breadcrumbs, testEvent, nil, testFacts, nil)
 			view := screen.View()
 			Expect(view).To(ContainSubstring("Edit bursts"))
 		})
 
 		It("should show edit facts badge even when no facts", func() {
-			screen = capture.NewEventReviewScreen(breadcrumbs, testEvent, testBursts, nil)
+			screen = capture.NewEventReviewScreen(breadcrumbs, testEvent, testBursts, nil, nil)
 			view := screen.View()
 			Expect(view).To(ContainSubstring("Edit facts"))
 		})
@@ -270,6 +271,135 @@ var _ = Describe("EventReviewScreen", func() {
 			screen.SetTheme(themes.NewDefaultTheme())
 			view := screen.View()
 			Expect(view).To(ContainSubstring("Confirm"))
+		})
+	})
+
+	Describe("Skill Integration", func() {
+		var testSkills []skillinference.SkillSuggestion
+
+		BeforeEach(func() {
+			testSkills = []skillinference.SkillSuggestion{
+				{
+					Name:       "Go",
+					Category:   "backend",
+					Confidence: 0.95,
+					EventIDs:   []string{"evt-1"},
+					Contexts:   []string{"golang code"},
+				},
+				{
+					Name:       "Kubernetes",
+					Category:   "devops",
+					Confidence: 0.87,
+					EventIDs:   []string{"evt-1"},
+					Contexts:   []string{"container orchestration"},
+				},
+			}
+		})
+
+		Describe("SetSuggestedSkills", func() {
+			It("should set suggested skills", func() {
+				screen.SetSuggestedSkills(testSkills)
+				view := screen.View()
+				Expect(view).To(ContainSubstring("Inferred Skills"))
+				Expect(view).To(ContainSubstring("Go"))
+			})
+
+			It("should return suggested skills via View", func() {
+				screen.SetSuggestedSkills(testSkills)
+				view := screen.View()
+				Expect(view).To(ContainSubstring("Go"))
+				Expect(view).To(ContainSubstring("Kubernetes"))
+			})
+
+			It("should handle empty suggested skills", func() {
+				screen.SetSuggestedSkills([]skillinference.SkillSuggestion{})
+				view := screen.View()
+				Expect(view).To(ContainSubstring("No skills detected"))
+			})
+		})
+
+		Describe("SetAcceptedSkills", func() {
+			It("should set accepted skills", func() {
+				screen.SetAcceptedSkills([]skillinference.SkillSuggestion{
+					{Name: "Go", Category: "programming", Confidence: 1.0},
+				})
+				view := screen.View()
+				Expect(view).NotTo(BeEmpty())
+			})
+
+			It("should handle empty accepted skills", func() {
+				screen.SetAcceptedSkills([]skillinference.SkillSuggestion{})
+				view := screen.View()
+				Expect(view).NotTo(BeEmpty())
+			})
+		})
+
+		Describe("Skill Rendering", func() {
+			It("should display accepted skills in view", func() {
+				screen.SetAcceptedSkills([]skillinference.SkillSuggestion{
+					{Name: "Go", Category: "programming", Confidence: 1.0},
+				})
+				view := screen.View()
+				Expect(view).NotTo(BeEmpty())
+			})
+
+			It("should display suggested skills with confidence in view", func() {
+				screen.SetSuggestedSkills(testSkills)
+				view := screen.View()
+				Expect(view).To(ContainSubstring("Go"))
+				Expect(view).To(ContainSubstring("95%"))
+				Expect(view).To(ContainSubstring("Kubernetes"))
+				Expect(view).To(ContainSubstring("87%"))
+			})
+
+			It("should show 'No skills detected' when empty", func() {
+				screen.SetSuggestedSkills([]skillinference.SkillSuggestion{})
+				view := screen.View()
+				Expect(view).To(ContainSubstring("No skills detected"))
+			})
+		})
+
+		Describe("Skill Navigation", func() {
+			It("should return NavigateResult for 's' (edit skills)", func() {
+				screen.SetSuggestedSkills(testSkills)
+				_, result := screen.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
+				Expect(result.Type()).To(Equal(screens.ResultNavigate))
+				navResult := result.(*screens.NavigateResult)
+				Expect(navResult.Data()).To(Equal("edit_skills"))
+			})
+
+			It("should not show skills badge when no skills", func() {
+				screen.SetSuggestedSkills([]skillinference.SkillSuggestion{})
+				view := screen.View()
+				Expect(view).NotTo(ContainSubstring("Edit skills"))
+			})
+
+			It("should show skills badge when skills exist", func() {
+				screen.SetSuggestedSkills(testSkills)
+				view := screen.View()
+				Expect(view).To(ContainSubstring("Edit skills"))
+			})
+		})
+
+		Describe("Skill Submission", func() {
+			It("should include accepted skills in SubmitResult", func() {
+				screen.SetAcceptedSkills([]skillinference.SkillSuggestion{
+					{Name: "Go", Category: "programming", Confidence: 1.0},
+				})
+				_, result := screen.Update(tea.KeyMsg{Type: tea.KeyEnter})
+				submitResult := result.(*screens.SubmitResult)
+				data := submitResult.Data().(map[string]interface{})
+				Expect(data["skills"]).To(HaveLen(1))
+				Expect(data["skills"].([]skillinference.SkillSuggestion)[0].Name).To(Equal("Go"))
+			})
+
+			It("should include empty skills array when no skills accepted", func() {
+				screen.SetAcceptedSkills([]skillinference.SkillSuggestion{})
+				_, result := screen.Update(tea.KeyMsg{Type: tea.KeyEnter})
+				submitResult := result.(*screens.SubmitResult)
+				data := submitResult.Data().(map[string]interface{})
+				Expect(data["skills"]).To(BeEmpty())
+			})
 		})
 	})
 })

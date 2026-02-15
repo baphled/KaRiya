@@ -9,8 +9,11 @@ import (
 	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/screens"
+	"github.com/baphled/kariya/internal/cli/screens/burst_management/modals"
+	captureScreens "github.com/baphled/kariya/internal/cli/screens/capture"
 	"github.com/baphled/kariya/internal/domain/career"
 	burstfact "github.com/baphled/kariya/internal/service/career/burstfact"
+	"github.com/baphled/kariya/internal/service/career/skillinference"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -95,6 +98,20 @@ func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 				i.context.CareerService,
 			)
 			return i.reviewState.factModal.Init()
+
+		case "edit_skills":
+			i.reviewState.EditingMode = EditingModeSkills
+			i.reviewState.skillModal = modals.NewSkillSuggestionModal(
+				i.reviewState.InferredSkills,
+				i.Theme(),
+			)
+
+			dims := i.terminalDimensions()
+			if dims != nil {
+				i.reviewState.skillModal.SetDimensions(dims.TerminalWidth, dims.TerminalHeight)
+			}
+
+			return i.reviewState.skillModal.Init()
 
 		default:
 			return i.setFailedCmd("INVALID_NAVIGATION", "Unknown navigation action: "+action, nil)
@@ -202,19 +219,39 @@ func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
 			}
 			bursts, _ := reviewData["bursts"].([]*career.Burst)
 			facts, _ := reviewData["facts"].([]*career.Fact)
+			convertedSkills := extractSkillsFromReviewData(reviewData)
 
 			i.reviewState.Event = event
 			i.reviewState.AcceptedBursts = bursts
 			i.reviewState.AcceptedFacts = facts
+			i.reviewState.AcceptedSkills = convertedSkills
 
-			// Post-save review: event already persisted, just complete the intent.
 			if i.postSaveReview {
+				// Persist accepted skills that were edited after initial save.
+				if len(convertedSkills) > 0 && i.context.CareerService != nil {
+					ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+					defer cancel()
+					skillRepo := i.context.CareerService.GetSkillRepository()
+					eventRepo := i.context.CareerService.GetEventRepository()
+					for _, skill := range convertedSkills {
+						if skill.ID == "" {
+							if err := skillRepo.Create(ctx, skill); err != nil {
+								return i.setFailedCmd("SKILL_SAVE_ERROR", fmt.Sprintf("Failed to save skill: %v", err), err)
+							}
+						}
+						if err := eventRepo.LinkSkill(ctx, event.ID, skill.ID); err != nil {
+							return i.setFailedCmd("SKILL_LINK_ERROR", fmt.Sprintf("Failed to link skill: %v", err), err)
+						}
+					}
+				}
+
 				i.result = &intents.IntentResult[*Result]{
 					Status: intents.Completed,
 					Data: &Result{
 						Event:  event,
 						Bursts: bursts,
 						Facts:  facts,
+						Skills: convertedSkills,
 					},
 				}
 				i.active = false
@@ -240,6 +277,7 @@ func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
 					Event:  event,
 					Bursts: bursts,
 					Facts:  facts,
+					Skills: extractSkillsFromReviewData(submitData),
 				},
 			}
 			i.active = false
@@ -344,6 +382,47 @@ func (i *Intent) updateEditingModal(msg tea.Msg) tea.Cmd {
 				i.reviewState.EditingMode = EditingModeNone
 			} else if i.reviewState.factModal.IsCancelled() {
 				i.reviewState.factModal = nil
+				i.reviewState.EditingMode = EditingModeNone
+			}
+			return cmd
+		}
+
+	case EditingModeSkills:
+		if i.reviewState.skillModal != nil {
+			model, cmd := i.reviewState.skillModal.Update(msg)
+			if typed, ok := model.(*modals.SuggestionReviewModal); ok {
+				i.reviewState.skillModal = typed
+			}
+
+			if !i.reviewState.skillModal.IsVisible() {
+				accepted := i.reviewState.skillModal.GetAcceptedSkills()
+				if len(accepted) > 0 {
+					for _, s := range accepted {
+						if s.Name == "" {
+							continue
+						}
+						i.reviewState.AcceptedSkills = append(i.reviewState.AcceptedSkills, &career.Skill{
+							Name:     s.Name,
+							Category: s.Category,
+						})
+					}
+
+					if screen, ok := i.activeScreen.(*captureScreens.EventReviewScreen); ok {
+						var screenSkills []skillinference.SkillSuggestion
+						for _, sk := range i.reviewState.AcceptedSkills {
+							if sk.Name == "" {
+								continue
+							}
+							screenSkills = append(screenSkills, skillinference.SkillSuggestion{
+								Name:       sk.Name,
+								Category:   sk.Category,
+								Confidence: 1.0,
+							})
+						}
+						screen.SetAcceptedSkills(screenSkills)
+					}
+				}
+				i.reviewState.skillModal = nil
 				i.reviewState.EditingMode = EditingModeNone
 			}
 			return cmd

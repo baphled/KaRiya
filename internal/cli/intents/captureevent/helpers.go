@@ -13,6 +13,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
+	"github.com/baphled/kariya/internal/service/career/skillinference"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -114,11 +115,14 @@ func (i *Intent) showSubmitModal() tea.Cmd {
 //   - Calls CareerService.CaptureEvent to persist the event.
 //   - Calls CareerService.SaveFact for each accepted fact without an ID.
 //   - Sets a default date for quick-strategy events with a zero date.
+//   - Persists accepted skills using the skill repository.
 func (i *Intent) performSubmit() tea.Cmd {
 	event := i.reviewState.Event
 	acceptedFacts := i.reviewState.AcceptedFacts
+	acceptedSkills := i.reviewState.AcceptedSkills
 	strategy := i.strategy
 	careerService := i.context.CareerService
+	skillService := i.context.SkillInferenceService
 
 	return func() tea.Msg {
 		if event == nil {
@@ -187,7 +191,45 @@ func (i *Intent) performSubmit() tea.Cmd {
 			}
 		}
 
-		return SubmitCompleteMsg{}
+		// Persist accepted skills using the skill repository.
+		if len(acceptedSkills) > 0 && careerService != nil {
+			skillRepo := careerService.GetSkillRepository()
+			eventRepo := careerService.GetEventRepository()
+			for _, skill := range acceptedSkills {
+				if skill.ID == "" {
+					// New skill - create it
+					if err := skillRepo.Create(ctx, skill); err != nil {
+						return SubmitErrorMsg{
+							Code:    "SKILL_SAVE_ERROR",
+							Message: fmt.Sprintf("Failed to save skill %s: %v", skill.Name, err),
+							Cause:   err,
+						}
+					}
+				}
+				// Link skill to event using event repository
+				if err := eventRepo.LinkSkill(ctx, event.ID, skill.ID); err != nil {
+					return SubmitErrorMsg{
+						Code:    "SKILL_LINK_ERROR",
+						Message: fmt.Sprintf("Failed to link skill %s to event: %v", skill.Name, err),
+						Cause:   err,
+					}
+				}
+			}
+		}
+
+		var inferredSkills []skillinference.SkillSuggestion
+		if skillService != nil {
+			inferResult, inferErr := skillService.InferSkillsFromEvents(ctx, []*career.Event{event})
+			if inferErr == nil && inferResult != nil {
+				inferredSkills = inferResult.Suggestions
+			}
+		}
+
+		return SubmitCompleteMsg{
+			InferredSkills: inferredSkills,
+			InferredFacts:  nil,
+			InferredBursts: nil,
+		}
 	}
 }
 
@@ -430,4 +472,45 @@ func renderBurstModalFooter(editing bool) string {
 		primitives.EditBadge(th),
 		primitives.BackBadge(th),
 	)
+}
+
+// extractSkillsFromReviewData converts the "skills" field from review data
+// into []*career.Skill, supporting both []skillinference.SkillSuggestion
+// and []*career.Skill input types.
+//
+// Expected:
+//   - reviewData contains a "skills" key with either type.
+//
+// Returns:
+//   - Converted []*career.Skill slice, empty-named entries excluded.
+//   - nil if "skills" key is missing or unrecognised type.
+//
+// Side effects: None.
+func extractSkillsFromReviewData(reviewData map[string]interface{}) []*career.Skill {
+	if suggestions, ok := reviewData["skills"].([]skillinference.SkillSuggestion); ok {
+		var result []*career.Skill
+		for _, s := range suggestions {
+			if s.Name == "" {
+				continue
+			}
+			result = append(result, &career.Skill{
+				Name:     s.Name,
+				Category: s.Category,
+			})
+		}
+		return result
+	}
+
+	if skills, ok := reviewData["skills"].([]*career.Skill); ok {
+		var result []*career.Skill
+		for _, s := range skills {
+			if s == nil || s.Name == "" {
+				continue
+			}
+			result = append(result, s)
+		}
+		return result
+	}
+
+	return nil
 }
