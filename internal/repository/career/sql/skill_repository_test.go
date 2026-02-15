@@ -638,5 +638,6 @@ var _ = Describe("SQL Repositories", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(repos).NotTo(BeNil())
 		Expect(repos.Event).NotTo(BeNil())
+		DeferCleanup(repos.Close)
 	})
 })
