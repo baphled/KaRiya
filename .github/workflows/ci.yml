@@ -171,6 +171,9 @@ jobs:
       - name: Run tests
         run: ginkgo -v --race --cover --coverprofile=coverage.out --skip-package=testdata,noinlinecareer/testdata,features ./...
 
+      - name: Run BDD tests
+        run: make bdd
+
       - name: Upload coverage to Codecov
         if: matrix.os == 'ubuntu-latest'
         uses: codecov/codecov-action@v3

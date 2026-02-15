@@ -71,7 +71,6 @@ func registerCVReviewSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I should see CV metadata$`, iShouldSeeCVMetadata)
 	sc.Step(`^I should see statistics$`, iShouldSeeStatistics)
 	sc.Step(`^I should see section names$`, iShouldSeeSectionNames)
-	sc.Step(`^I should see bullet counts$`, iShouldSeeBulletCounts)
 	sc.Step(`^I have generated a CV$`, iHaveGeneratedACV)
 	sc.Step(`^I am on the CV review screen$`, iAmOnTheCVReviewScreen)
 	sc.Step(`^I press enter to preview$`, iPressEnterToPreview)
@@ -82,11 +81,6 @@ func registerCVReviewSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I should see personal details$`, iShouldSeePersonalDetails)
 	sc.Step(`^I should see all CV sections$`, iShouldSeeAllCVSections)
 	sc.Step(`^I should see bullet points$`, iShouldSeeBulletPoints)
-	sc.Step(`^I have generated a long CV$`, iHaveGeneratedALongCV)
-	sc.Step(`^I should scroll a full page$`, iShouldScrollAFullPage)
-	sc.Step(`^I should scroll back$`, iShouldScrollBack)
-	sc.Step(`^I should be at the bottom$`, iShouldBeAtTheBottom)
-	sc.Step(`^I should be at the top$`, iShouldBeAtTheTop)
 	sc.Step(`^I press enter to confirm$`, iPressEnterToConfirmCV)
 	sc.Step(`^the CV generation should complete$`, theCVGenerationShouldComplete)
 	sc.Step(`^I press "y" to confirm$`, iPressYToConfirmCV)
@@ -526,16 +520,6 @@ func iShouldSeeSectionNames(ctx context.Context) error {
 	return nil
 }
 
-func iShouldSeeBulletCounts(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
-	}
-	view := env.GetView()
-	gomega.Expect(view).To(gomega.MatchRegexp(`\d+\s+(bullet|item)`))
-	return nil
-}
-
 func iHaveGeneratedACV(ctx context.Context) (context.Context, error) {
 	env := support.GetAppEnv(ctx)
 	if env == nil {
@@ -659,26 +643,6 @@ func iShouldSeeBulletPoints(ctx context.Context) error {
 		gomega.ContainSubstring("*"),
 	))
 	return nil
-}
-
-func iHaveGeneratedALongCV(ctx context.Context) (context.Context, error) {
-	return ctx, godog.ErrPending
-}
-
-func iShouldScrollAFullPage(_ context.Context) error {
-	return godog.ErrPending
-}
-
-func iShouldScrollBack(_ context.Context) error {
-	return godog.ErrPending
-}
-
-func iShouldBeAtTheBottom(_ context.Context) error {
-	return godog.ErrPending
-}
-
-func iShouldBeAtTheTop(_ context.Context) error {
-	return godog.ErrPending
 }
 
 func iPressEnterToConfirmCV(ctx context.Context) (context.Context, error) {

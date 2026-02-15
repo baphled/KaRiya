@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/baphled/kariya/features/support"
 	"github.com/baphled/kariya/internal/domain/career"
@@ -33,32 +32,17 @@ import (
 func RegisterBrowseSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I have (\d+) events? in my timeline$`, iHaveNEventsInMyTimeline)
 	sc.Step(`^I should see a list of events$`, iShouldSeeAListOfEvents)
-	sc.Step(`^I press "j" to navigate down$`, iPressJToNavigateDown)
-	sc.Step(`^I press "k" to navigate up$`, iPressKToNavigateUp)
-	sc.Step(`^I press down arrow$`, iPressDownArrow)
-	sc.Step(`^I press up arrow$`, iPressUpArrow)
 	sc.Step(`^I should still be on the timeline$`, iShouldStillBeOnTheTimeline)
 	sc.Step(`^I press enter to view details$`, iPressEnterToViewDetails)
 	sc.Step(`^I press escape$`, iPressEscape)
 	sc.Step(`^I press "/" to search$`, iPressSlashToSearch)
 	sc.Step(`^I should see the search modal$`, iShouldSeeTheSearchModal)
-	sc.Step(`^I type "([^"]*)" in the search$`, iTypeInTheSearch)
-	sc.Step(`^I submit the search$`, iSubmitTheSearch)
-
-	sc.Step(`^I press "f" to filter$`, iPressFToFilter)
-	sc.Step(`^I should see the filter modal$`, iShouldSeeTheFilterModal)
-	sc.Step(`^I select company "([^"]*)"$`, iSelectCompany)
-	sc.Step(`^I apply the filter$`, iApplyTheFilter)
-	sc.Step(`^I press "x" to clear filter$`, iPressXToClearFilter)
-	sc.Step(`^I press "s" to sort$`, iPressSToSort)
-	sc.Step(`^I should see the sort modal$`, iShouldSeeTheSortModal)
 	sc.Step(`^I press "a" to add event$`, iPressAToAddEvent)
 	sc.Step(`^I should see the add event form$`, iShouldSeeTheAddEventForm)
 	sc.Step(`^I enter "([^"]*)" as description$`, iEnterAsDescription)
 	sc.Step(`^I submit the form$`, iSubmitTheForm)
 	sc.Step(`^I press "e" to edit$`, iPressEToEdit)
 	sc.Step(`^I should see the edit event form$`, iShouldSeeTheEditEventForm)
-	sc.Step(`^I clear the description field$`, iClearTheDescriptionField)
 	sc.Step(`^I navigate to company field$`, iNavigateToCompanyField)
 	sc.Step(`^I clear the company field$`, iClearTheCompanyField)
 	sc.Step(`^I enter "([^"]*)" as company$`, iEnterAsCompany)
@@ -67,31 +51,13 @@ func RegisterBrowseSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I cancel the confirmation$`, iCancelTheConfirmation)
 	sc.Step(`^I confirm the deletion$`, iConfirmTheDeletion)
 	sc.Step(`^I should be able to go back to the menu$`, iShouldBeAbleToGoBackToTheMenu)
-	sc.Step(`^I press page down$`, iPressPageDown)
-	sc.Step(`^I press page up$`, iPressPageUp)
-	sc.Step(`^I should see different events$`, iShouldSeeDifferentEvents)
-	sc.Step(`^I should see the original events$`, iShouldSeeTheOriginalEvents)
-	sc.Step(`^I press "G" to go to last$`, iPressGToGoToLast)
-	sc.Step(`^I press "g" to go to first$`, iPressLittleGToGoToFirst)
-	sc.Step(`^I should be at the last event$`, iShouldBeAtTheLastEvent)
-	sc.Step(`^I should be at the first event$`, iShouldBeAtTheFirstEvent)
-
 	// Event creation helpers
 	sc.Step(`^I have an event "([^"]*)"$`, iHaveAnEvent)
-	sc.Step(`^I have an event "([^"]*)" with category "([^"]*)"$`, iHaveAnEventWithCategory)
-	sc.Step(`^I have an event "([^"]*)" dated "([^"]*)"$`, iHaveAnEventDated)
-	sc.Step(`^I have an event "([^"]*)" with project "([^"]*)"$`, iHaveAnEventWithProject)
-
 	// Additional navigation
-	sc.Step(`^I press "G" to go to bottom$`, iPressGToGoToBottom)
-	sc.Step(`^I press "g" to go to top$`, iPressLittleGToGoToTop)
-	sc.Step(`^I press "j" to scroll down$`, iPressJToScrollDown)
-	sc.Step(`^I press "k" to scroll up$`, iPressKToScrollUp)
 	sc.Step(`^I press "a" to accept$`, iPressAToAccept)
 	sc.Step(`^I press "r" to reject$`, iPressRToReject)
 
 	// Assertions
-	sc.Step(`^I should see 1 event$`, iShouldSee1Event)
 	sc.Step(`^I should see skill categories$`, iShouldSeeSkillCategories)
 	sc.Step(`^I should see suggested skills$`, iShouldSeeSuggestedSkills)
 	sc.Step(`^I should see the event detail modal$`, iShouldSeeTheEventDetailModal)
@@ -100,9 +66,6 @@ func RegisterBrowseSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^the event has skills "([^"]*)"$`, theEventHasSkills)
 
 	// Filter helpers
-	sc.Step(`^I select companies "([^"]*)"$`, iSelectCompanies)
-	sc.Step(`^I select project "([^"]*)"$`, iSelectProject)
-	sc.Step(`^I set date from "([^"]*)"$`, iSetDateFrom)
 }
 
 func iHaveNEventsInMyTimeline(ctx context.Context, count int) (context.Context, error) {
@@ -129,42 +92,6 @@ func iShouldSeeAListOfEvents(ctx context.Context) error {
 		gomega.ContainSubstring("Date"),
 	))
 	return nil
-}
-
-func iPressJToNavigateDown(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.PressKeyRune('j')
-	return ctx, nil
-}
-
-func iPressKToNavigateUp(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.PressKeyRune('k')
-	return ctx, nil
-}
-
-func iPressDownArrow(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.NavigateDown()
-	return ctx, nil
-}
-
-func iPressUpArrow(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.NavigateUp()
-	return ctx, nil
 }
 
 func iShouldStillBeOnTheTimeline(ctx context.Context) error {
@@ -218,105 +145,6 @@ func iShouldSeeTheSearchModal(ctx context.Context) error {
 	gomega.Expect(view).To(gomega.SatisfyAny(
 		gomega.ContainSubstring("Search"),
 		gomega.ContainSubstring("search"),
-	))
-	return nil
-}
-
-func iTypeInTheSearch(ctx context.Context, text string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.TypeText(text)
-	return ctx, nil
-}
-
-func iSubmitTheSearch(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.PressEnterWithFormProcessing()
-	return ctx, nil
-}
-
-func iPressFToFilter(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.PressKeyRune('f')
-	return ctx, nil
-}
-
-func iShouldSeeTheFilterModal(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
-	}
-	view := env.GetView()
-	gomega.Expect(view).To(gomega.SatisfyAny(
-		gomega.ContainSubstring("Filter"),
-		gomega.ContainSubstring("filter"),
-		gomega.ContainSubstring("Company"),
-		gomega.ContainSubstring("Category"),
-		gomega.ContainSubstring("Level"),
-		gomega.ContainSubstring("Apply"),
-		gomega.ContainSubstring("Cancel"),
-	))
-	return nil
-}
-
-func iSelectCompany(ctx context.Context, _ string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.NavigateDown()
-	env.PressKeyRune('x')
-	return ctx, nil
-}
-
-func iApplyTheFilter(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.Confirm()
-	env.Confirm()
-	env.Confirm()
-	return ctx, nil
-}
-
-func iPressXToClearFilter(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.PressKeyRune('x')
-	return ctx, nil
-}
-
-func iPressSToSort(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.PressKeyRune('s')
-	return ctx, nil
-}
-
-func iShouldSeeTheSortModal(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
-	}
-	view := env.GetView()
-	gomega.Expect(view).To(gomega.SatisfyAny(
-		gomega.ContainSubstring("Sort"),
-		gomega.ContainSubstring("sort"),
-		gomega.ContainSubstring("Date"),
-		gomega.ContainSubstring("Order"),
 	))
 	return nil
 }
@@ -390,15 +218,6 @@ func iShouldSeeTheEditEventForm(ctx context.Context) error {
 		gomega.ContainSubstring("Submit"),
 	))
 	return nil
-}
-
-func iClearTheDescriptionField(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.ClearTextField(100)
-	return ctx, nil
 }
 
 func iNavigateToCompanyField(ctx context.Context) (context.Context, error) {
@@ -482,58 +301,6 @@ func iShouldBeAbleToGoBackToTheMenu(ctx context.Context) error {
 	return nil
 }
 
-func iPressPageDown(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.PressKey(tea.KeyPgDown)
-	return ctx, nil
-}
-
-func iPressPageUp(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.PressKey(tea.KeyPgUp)
-	return ctx, nil
-}
-
-func iShouldSeeDifferentEvents(_ context.Context) error {
-	return godog.ErrPending
-}
-
-func iShouldSeeTheOriginalEvents(_ context.Context) error {
-	return godog.ErrPending
-}
-
-func iPressGToGoToLast(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.PressKeyRune('G')
-	return ctx, nil
-}
-
-func iPressLittleGToGoToFirst(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.PressKeyRune('g')
-	return ctx, nil
-}
-
-func iShouldBeAtTheLastEvent(_ context.Context) error {
-	return godog.ErrPending
-}
-
-func iShouldBeAtTheFirstEvent(_ context.Context) error {
-	return godog.ErrPending
-}
-
 // iHaveAnEvent creates a simple event with just a description.
 func iHaveAnEvent(ctx context.Context, description string) (context.Context, error) {
 	env := support.GetAppEnv(ctx)
@@ -546,83 +313,18 @@ func iHaveAnEvent(ctx context.Context, description string) (context.Context, err
 }
 
 // iHaveAnEventWithCategory creates an event with a specific category.
-func iHaveAnEventWithCategory(ctx context.Context, description, category string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	event := fixtures.EventWith("", description, "", "")
-	event.Categories = []string{category}
-	env.AddEvent(event)
-	return ctx, nil
-}
 
 // iHaveAnEventDated creates an event with a specific date.
-func iHaveAnEventDated(ctx context.Context, description, dateStr string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	event := fixtures.EventWith("", description, "", "")
-	parsedDate, err := time.Parse("2006-01-02", dateStr)
-	if err != nil {
-		return ctx, err
-	}
-	event.Date = parsedDate
-	env.AddEvent(event)
-	return ctx, nil
-}
 
 // iHaveAnEventWithProject creates an event with a specific project.
-func iHaveAnEventWithProject(ctx context.Context, description, project string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	event := fixtures.EventWith("", description, "", project)
-	env.AddEvent(event)
-	return ctx, nil
-}
 
 // iPressGToGoToBottom navigates to bottom.
-func iPressGToGoToBottom(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.PressKeyRune('G')
-	return ctx, nil
-}
 
 // iPressLittleGToGoToTop navigates to top.
-func iPressLittleGToGoToTop(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.PressKeyRune('g')
-	return ctx, nil
-}
 
 // iPressJToScrollDown scrolls down.
-func iPressJToScrollDown(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.PressKeyRune('j')
-	return ctx, nil
-}
 
 // iPressKToScrollUp scrolls up.
-func iPressKToScrollUp(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.PressKeyRune('k')
-	return ctx, nil
-}
 
 // iPressAToAccept presses 'a' to accept.
 func iPressAToAccept(ctx context.Context) (context.Context, error) {
@@ -645,21 +347,6 @@ func iPressRToReject(ctx context.Context) (context.Context, error) {
 }
 
 // iShouldSee1Event asserts exactly 1 event exists.
-func iShouldSee1Event(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
-	}
-	view := env.GetView()
-	// Count occurrences of table row indicators or event entries in the view
-	// Each event should have a company name or description displayed
-	gomega.Expect(view).To(gomega.SatisfyAny(
-		gomega.ContainSubstring("Company"),
-		gomega.ContainSubstring("Description"),
-		gomega.MatchRegexp(`\d+\s+entries`),
-	))
-	return nil
-}
 
 // iShouldSeeSkillCategories asserts skill categories are visible.
 func iShouldSeeSkillCategories(ctx context.Context) error {
@@ -788,36 +475,7 @@ func theEventHasSkills(ctx context.Context, skillsStr string) (context.Context, 
 }
 
 // iSelectCompanies selects multiple companies in filter.
-func iSelectCompanies(ctx context.Context, companies string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	companyList := strings.Split(companies, ",")
-	for _, company := range companyList {
-		env.TypeText(strings.TrimSpace(company))
-		env.Confirm()
-	}
-	return ctx, nil
-}
 
 // iSelectProject selects a project in filter.
-func iSelectProject(ctx context.Context, project string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.TypeText(project)
-	env.Confirm()
-	return ctx, nil
-}
 
 // iSetDateFrom sets the date from field.
-func iSetDateFrom(ctx context.Context, dateStr string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.TypeText(dateStr)
-	return ctx, nil
-}

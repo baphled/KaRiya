@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/cucumber/godog"
@@ -33,11 +32,8 @@ func RegisterSkillsSteps(sc *godog.ScenarioContext) {
 	// Data setup
 	sc.Step(`^I have (\d+) skills? in my profile$`, iHaveNSkillsInMyProfile)
 	sc.Step(`^I have a skill "([^"]*)" with category "([^"]*)"$`, iHaveASkillWithCategory)
-	sc.Step(`^I have a skill "([^"]*)"$`, iHaveASkill)
 	sc.Step(`^I have a skill "([^"]*)" with category "([^"]*)" and level "([^"]*)"$`, iHaveASkillWithCategoryAndLevel)
 	sc.Step(`^I have a skill "([^"]*)" with category "([^"]*)" and years "([^"]*)"$`, iHaveASkillWithCategoryAndYears)
-	sc.Step(`^I have a skill "([^"]*)" with level "([^"]*)"$`, iHaveASkillWithLevel)
-	sc.Step(`^I have a skill "([^"]*)" with years "([^"]*)"$`, iHaveASkillWithYears)
 	sc.Step(`^I have an event "([^"]*)" that uses skill "([^"]*)"$`, iHaveAnEventThatUsesSkill)
 	sc.Step(`^I have (\d+) events that use skill "([^"]*)"$`, iHaveNEventsThatUseSkill)
 
@@ -51,9 +47,6 @@ func RegisterSkillsSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I should still be on the skill suggestions modal$`, iShouldStillBeOnSkillSuggestionsModal)
 	sc.Step(`^I should see the skill detail view$`, iShouldSeeTheSkillDetailView)
 	sc.Step(`^I should see the skill events modal$`, iShouldSeeTheSkillEventsModal)
-	sc.Step(`^I should see (\d+) skills?$`, iShouldSeeNSkills)
-	sc.Step(`^I should see "([^"]*)" first$`, iShouldSeeFirst)
-	sc.Step(`^I should see "([^"]*)" last$`, iShouldSeeLast)
 	sc.Step(`^I should see "([^"]*)" with event count "([^"]*)"$`, iShouldSeeWithEventCount)
 	sc.Step(`^I should see skills grouped by category$`, iShouldSeeSkillsGroupedByCategory)
 	sc.Step(`^I should see "([^"]*)" section with (\d+) skills?$`, iShouldSeeSectionWithNSkills)
@@ -64,12 +57,8 @@ func RegisterSkillsSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I press "a" to add skill$`, iPressAToAddSkill)
 	sc.Step(`^I press "i" to infer skills$`, iPressIToInferSkills)
 	sc.Step(`^I press "d" to delete$`, skillsPressDToDelete)
-	sc.Step(`^I press "f" to filter$`, skillsPressFToFilter)
-	sc.Step(`^I press "s" to sort$`, skillsPressSToSort)
 	sc.Step(`^I press "s" to view events$`, skillsPressSToViewEvents)
 	sc.Step(`^I press "/" to search$`, skillsPressSlashToSearch)
-	sc.Step(`^I press "j" to navigate down$`, skillsPressJToNavigateDown)
-	sc.Step(`^I press "k" to navigate up$`, skillsPressKToNavigateUp)
 	sc.Step(`^I press enter to view event details$`, iPressEnterToViewEventDetails)
 
 	// Form actions
@@ -85,13 +74,6 @@ func RegisterSkillsSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I select skill "([^"]*)"$`, iSelectSkill)
 
 	// Filter/Sort actions
-	sc.Step(`^I select filter category "([^"]*)"$`, iSelectFilterCategory)
-	sc.Step(`^I select filter categories "([^"]*)"$`, iSelectFilterCategories)
-	sc.Step(`^I confirm filter$`, iConfirmFilter)
-	sc.Step(`^I select sort by "([^"]*)"$`, iSelectSortBy)
-	sc.Step(`^I select order "([^"]*)"$`, iSelectOrder)
-	sc.Step(`^I confirm sort$`, iConfirmSort)
-
 	// Inference actions
 	sc.Step(`^the inference completes$`, theInferenceCompletes)
 	sc.Step(`^I accept the first suggestion$`, iAcceptTheFirstSuggestion)
@@ -161,19 +143,6 @@ func iHaveASkillWithCategory(ctx context.Context, name, category string) (contex
 	return ctx, nil
 }
 
-func iHaveASkill(ctx context.Context, name string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	skill := &career.Skill{
-		Name:     name,
-		Category: "other",
-	}
-	env.AddSkill(skill)
-	return ctx, nil
-}
-
 func iHaveASkillWithCategoryAndLevel(ctx context.Context, name, category, level string) (context.Context, error) {
 	env := support.GetAppEnv(ctx)
 	if env == nil {
@@ -200,38 +169,6 @@ func iHaveASkillWithCategoryAndYears(ctx context.Context, name, category, years 
 	skill := &career.Skill{
 		Name:      name,
 		Category:  category,
-		YearsUsed: &yearsInt,
-	}
-	env.AddSkill(skill)
-	return ctx, nil
-}
-
-func iHaveASkillWithLevel(ctx context.Context, name, level string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	skill := &career.Skill{
-		Name:     name,
-		Category: "General",
-		Level:    level,
-	}
-	env.AddSkill(skill)
-	return ctx, nil
-}
-
-func iHaveASkillWithYears(ctx context.Context, name, years string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	var yearsInt int
-	if _, err := fmt.Sscanf(years, "%d", &yearsInt); err != nil {
-		return ctx, fmt.Errorf("invalid years value %q: %w", years, err)
-	}
-	skill := &career.Skill{
-		Name:      name,
-		Category:  "General",
 		YearsUsed: &yearsInt,
 	}
 	env.AddSkill(skill)
@@ -411,36 +348,6 @@ func iShouldSeeTheSkillEventsModal(ctx context.Context) error {
 	return nil
 }
 
-func iShouldSeeNSkills(ctx context.Context, expected int) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
-	}
-	view := env.GetView()
-	gomega.Expect(view).To(gomega.ContainSubstring(strconv.Itoa(expected)))
-	return nil
-}
-
-func iShouldSeeFirst(ctx context.Context, text string) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
-	}
-	view := env.GetView()
-	gomega.Expect(view).To(gomega.ContainSubstring(text))
-	return nil
-}
-
-func iShouldSeeLast(ctx context.Context, text string) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
-	}
-	view := env.GetView()
-	gomega.Expect(view).To(gomega.ContainSubstring(text))
-	return nil
-}
-
 func iShouldSeeWithEventCount(ctx context.Context, skillName, count string) error {
 	env := support.GetAppEnv(ctx)
 	if env == nil {
@@ -528,24 +435,6 @@ func skillsPressDToDelete(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-func skillsPressFToFilter(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.PressKeyRune('f')
-	return ctx, nil
-}
-
-func skillsPressSToSort(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.PressKeyRune('s')
-	return ctx, nil
-}
-
 func skillsPressSToViewEvents(ctx context.Context) (context.Context, error) {
 	env := support.GetAppEnv(ctx)
 	if env == nil {
@@ -561,24 +450,6 @@ func skillsPressSlashToSearch(ctx context.Context) (context.Context, error) {
 		return ctx, godog.ErrPending
 	}
 	env.PressKeyRune('/')
-	return ctx, nil
-}
-
-func skillsPressJToNavigateDown(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.PressKeyRune('j')
-	return ctx, nil
-}
-
-func skillsPressKToNavigateUp(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.PressKeyRune('k')
 	return ctx, nil
 }
 
@@ -687,66 +558,6 @@ func iSelectSkill(ctx context.Context, _ string) (context.Context, error) {
 }
 
 // Filter/Sort action functions
-
-func iSelectFilterCategory(ctx context.Context, _ string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.NavigateDown()
-	env.Confirm()
-	return ctx, nil
-}
-
-func iSelectFilterCategories(ctx context.Context, categories string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	cats := strings.Split(categories, ",")
-	for range cats {
-		env.NavigateDown()
-		env.Confirm()
-	}
-	return ctx, nil
-}
-
-func iConfirmFilter(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.SubmitHuhForm()
-	return ctx, nil
-}
-
-func iSelectSortBy(ctx context.Context, _ string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.NavigateDown()
-	return ctx, nil
-}
-
-func iSelectOrder(ctx context.Context, _ string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.Tab()
-	env.NavigateDown()
-	return ctx, nil
-}
-
-func iConfirmSort(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.SubmitHuhForm()
-	return ctx, nil
-}
 
 // Inference action functions
 

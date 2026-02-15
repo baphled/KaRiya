@@ -3,7 +3,6 @@ package steps
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/baphled/kariya/features/support"
 	"github.com/cucumber/godog"
@@ -38,10 +37,8 @@ func registerOnboardingInputSteps(sc *godog.ScenarioContext) {
 }
 
 func registerOnboardingNavigationSteps(sc *godog.ScenarioContext) {
-	sc.Step(`^I am on step (\d+) of (\d+)$`, iAmOnStep)
 	sc.Step(`^I press enter$`, iPressEnter)
 	sc.Step(`^I press tab$`, iPressTab)
-	sc.Step(`^I press shift\+tab$`, iPressShiftTabOnboarding)
 	sc.Step(`^I skip the optional fields$`, iSkipOptionalFields)
 }
 
@@ -57,7 +54,6 @@ func registerOnboardingAssertionSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I should still be on step (\d+)$`, iShouldStillBeOnStep)
 	sc.Step(`^I should see a validation error$`, iShouldSeeValidationErrorOnboarding)
 	sc.Step(`^I should still see the onboarding wizard$`, iShouldStillSeeOnboardingWizard)
-	sc.Step(`^the (email|location|name) field should be focused$`, fieldShouldBeFocused)
 }
 
 // iStartTheOnboardingWizard initializes the onboarding wizard.
@@ -67,15 +63,6 @@ func iStartTheOnboardingWizard(ctx context.Context) (context.Context, error) {
 }
 
 // iAmOnStep verifies the current step number.
-func iAmOnStep(ctx context.Context, current, total int) error {
-	env := support.GetOnboardingEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
-	}
-	expected := fmt.Sprintf("Step %d of %d", current, total)
-	gomega.Expect(env.View()).To(gomega.ContainSubstring(expected))
-	return nil
-}
 
 // iEnterAsMyName types the name into the name field.
 func iEnterAsMyName(ctx context.Context, name string) error {
@@ -210,14 +197,6 @@ func iEnterAsMyPortfolio(ctx context.Context, portfolio string) error {
 }
 
 // iPressShiftTabOnboarding presses shift+tab to go to previous field in onboarding.
-func iPressShiftTabOnboarding(ctx context.Context) error {
-	env := support.GetOnboardingEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
-	}
-	// Onboarding uses app TestEnv for shift+tab, return pending for now
-	return godog.ErrPending
-}
 
 // profileShouldHaveTitle verifies the profile has the expected title.
 func profileShouldHaveTitle(ctx context.Context, title string) error {
@@ -305,12 +284,3 @@ func iShouldStillSeeOnboardingWizard(ctx context.Context) error {
 }
 
 // fieldShouldBeFocused verifies the specified field is focused.
-func fieldShouldBeFocused(ctx context.Context, field string) error {
-	env := support.GetOnboardingEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
-	}
-	view := env.View()
-	gomega.Expect(strings.ToLower(view)).To(gomega.ContainSubstring(strings.ToLower(field)), "Field should be visible (focused): "+field)
-	return nil
-}

@@ -61,11 +61,7 @@ func RegisterFactsSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I enter fact text with (\d+) characters$`, iEnterFactTextWithNCharacters)
 	sc.Step(`^I press "r" to refresh$`, iPressRToRefresh)
 	sc.Step(`^the facts should be reloaded$`, theFactsShouldBeReloaded)
-	sc.Step(`^I should be at the last fact$`, iShouldBeAtTheLastFact)
-	sc.Step(`^I should be at the first fact$`, iShouldBeAtTheFirstFact)
-	sc.Step(`^I should see different facts$`, iShouldSeeDifferentFacts)
 	sc.Step(`^I should see available shortcuts$`, iShouldSeeAvailableShortcuts)
-	sc.Step(`^I should see the original facts$`, iShouldSeeTheOriginalFacts)
 	sc.Step(`^I press "([^"]*)" to toggle help$`, iPressToToggleHelp)
 
 	// Additional fact management steps
@@ -155,11 +151,15 @@ func iShouldStillBeOnTheFactList(ctx context.Context) error {
 		return godog.ErrPending
 	}
 	view := env.GetView()
+	// Check that we're on the fact list, not in the editor
+	// The fact list shows "Facts:" in the footer or "No facts" in the content
+	// The editor shows "Fact Editor" or "Fact Text"
 	gomega.Expect(view).To(gomega.SatisfyAny(
-		gomega.ContainSubstring("Facts"),
-		gomega.ContainSubstring("Fact"),
+		gomega.ContainSubstring("Facts:"),
 		gomega.ContainSubstring("No facts"),
-	))
+	), "Should be on fact list view, not in editor")
+	// Also verify we're not in the editor
+	gomega.Expect(view).NotTo(gomega.ContainSubstring("Fact Text"), "Should not be in fact editor")
 	return nil
 }
 
@@ -263,6 +263,8 @@ func thereShouldBeNFacts(ctx context.Context, expected int) error {
 		return godog.ErrPending
 	}
 	view := env.GetView()
+	// Ensure we're not in the editor - the footer with fact count is only visible in list view
+	gomega.Expect(view).NotTo(gomega.ContainSubstring("Fact Text"), "Should not be in fact editor when checking fact count")
 	expectedFooter := fmt.Sprintf("Facts: %d", expected)
 	gomega.Expect(view).To(gomega.ContainSubstring(expectedFooter), fmt.Sprintf("should display '%s' in footer", expectedFooter))
 	return nil
@@ -488,36 +490,6 @@ func theFactsShouldBeReloaded(ctx context.Context) error {
 	return nil
 }
 
-func iShouldBeAtTheLastFact(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
-	}
-	view := env.GetView()
-	gomega.Expect(view).To(gomega.ContainSubstring("Fact"), "should be at last fact")
-	return nil
-}
-
-func iShouldBeAtTheFirstFact(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
-	}
-	view := env.GetView()
-	gomega.Expect(view).To(gomega.ContainSubstring("Fact"), "should be at first fact")
-	return nil
-}
-
-func iShouldSeeDifferentFacts(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
-	}
-	view := env.GetView()
-	gomega.Expect(view).To(gomega.ContainSubstring("Fact"), "should display facts after page down")
-	return nil
-}
-
 func iShouldSeeAvailableShortcuts(ctx context.Context) error {
 	env := support.GetAppEnv(ctx)
 	if env == nil {
@@ -529,16 +501,6 @@ func iShouldSeeAvailableShortcuts(ctx context.Context) error {
 		gomega.ContainSubstring("help"),
 		gomega.ContainSubstring("key"),
 	), "should display available shortcuts in view")
-	return nil
-}
-
-func iShouldSeeTheOriginalFacts(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
-	}
-	view := env.GetView()
-	gomega.Expect(view).To(gomega.ContainSubstring("Fact"), "should see facts after page up")
 	return nil
 }
 

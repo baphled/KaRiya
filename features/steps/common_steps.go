@@ -24,7 +24,6 @@ import (
 func RegisterCommonSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I have no data$`, iHaveNoData)
 	sc.Step(`^I should see "([^"]*)"$`, iShouldSee)
-	sc.Step(`^I should not see "([^"]*)"$`, iShouldNotSee)
 	sc.Step(`^I should see one of:$`, iShouldSeeOneOf)
 	sc.Step(`^I close the modal$`, iCloseTheModal)
 	sc.Step(`^I restart the application$`, iRestartTheApplication)
@@ -32,7 +31,6 @@ func RegisterCommonSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I should see success message$`, iShouldSeeSuccessMessage)
 	sc.Step(`^I should see the error modal$`, iShouldSeeTheErrorModal)
 	sc.Step(`^I should see the progress modal$`, iShouldSeeTheProgressModal)
-	sc.Step(`^I should see different content$`, iShouldSeeDifferentContent)
 }
 
 // getViewFromContext returns the current view from either app or onboarding env.
@@ -59,16 +57,6 @@ func iShouldSee(ctx context.Context, text string) error {
 }
 
 // iShouldNotSee asserts that the view does not contain the given text.
-func iShouldNotSee(ctx context.Context, text string) error {
-	view, ok := getViewFromContext(ctx)
-	if !ok {
-		return godog.ErrPending
-	}
-	if strings.Contains(view, text) {
-		return fmt.Errorf("expected view NOT to contain %q, but it was found", text)
-	}
-	return nil
-}
 
 // iShouldSeeOneOf asserts that the view contains at least one of the given texts.
 func iShouldSeeOneOf(ctx context.Context, table *godog.Table) error {
@@ -179,16 +167,6 @@ func iShouldSeeTheProgressModal(ctx context.Context) error {
 }
 
 // iShouldSeeDifferentContent asserts the view has changed.
-func iShouldSeeDifferentContent(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
-	}
-	// Simply verify we have a non-empty view
-	view := env.GetView()
-	gomega.Expect(view).NotTo(gomega.BeEmpty())
-	return nil
-}
 
 // iHaveNoData asserts that the system has no data (empty state).
 func iHaveNoData(ctx context.Context) (context.Context, error) {

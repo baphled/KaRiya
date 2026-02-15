@@ -65,7 +65,6 @@ func registerBurstEditSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I submit the burst form$`, iSubmitTheBurstForm)
 	sc.Step(`^the burst should have name "([^"]*)"$`, theBurstShouldHaveName)
 	sc.Step(`^I tab to description field$`, iTabToDescriptionField)
-	sc.Step(`^I clear the burst description field$`, iClearTheBurstDescriptionField)
 	sc.Step(`^I enter burst description "([^"]*)"$`, iEnterBurstDescription)
 	sc.Step(`^the burst should have description "([^"]*)"$`, theBurstShouldHaveDescription)
 	sc.Step(`^I have an unconfirmed burst "([^"]*)" with (\d+) events$`, iHaveAnUnconfirmedBurst)
@@ -85,21 +84,15 @@ func registerBurstSuggestionSteps(sc *godog.ScenarioContext) { //nolint:dupl // 
 	sc.Step(`^I should see confidence scores$`, iShouldSeeConfidenceScores)
 	sc.Step(`^I have burst suggestions available$`, iHaveBurstSuggestionsAvailable)
 	sc.Step(`^I am on the burst suggestion modal$`, iAmOnTheBurstSuggestionModal)
-	sc.Step(`^I should see different suggestions highlighted$`, iShouldSeeDifferentSuggestionsHighlighted)
 	sc.Step(`^I should see the suggestion events modal$`, iShouldSeeTheSuggestionEventsModal)
 	sc.Step(`^I have a confirmed burst "([^"]*)" with (\d+) events$`, iHaveAConfirmedBurstWithNEvents)
 	sc.Step(`^I have skill suggestions from burst$`, iHaveSkillSuggestionsFromBurst)
 	sc.Step(`^I am on the skill suggestion modal$`, iAmOnTheSkillSuggestionModalBursts)
-	sc.Step(`^I should see different skills highlighted$`, iShouldSeeDifferentSkillsHighlighted)
 	sc.Step(`^I should see events that led to this skill$`, iShouldSeeEventsThatLedToThisSkill)
 	sc.Step(`^the skill should be marked as rejected$`, theSkillShouldBeMarkedAsRejectedBursts)
 }
 
 func registerBurstNavigationSteps(sc *godog.ScenarioContext) {
-	sc.Step(`^I should be at the last burst$`, iShouldBeAtTheLastBurst)
-	sc.Step(`^I should be at the first burst$`, iShouldBeAtTheFirstBurst)
-	sc.Step(`^I should see different bursts$`, iShouldSeeDifferentBursts)
-	sc.Step(`^I should see the original bursts$`, iShouldSeeTheOriginalBursts)
 	sc.Step(`^I should not see the loading modal$`, iShouldNotSeeTheLoadingModal)
 }
 
@@ -444,17 +437,6 @@ func iTabToDescriptionField(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-func iClearTheBurstDescriptionField(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-
-	// Clear the description field using Ctrl+U (Unix line-kill)
-	env.PressKey(tea.KeyCtrlU)
-	return ctx, nil
-}
-
 func iEnterBurstDescription(ctx context.Context, description string) (context.Context, error) {
 	env := support.GetAppEnv(ctx)
 	if env == nil {
@@ -632,10 +614,6 @@ func iAmOnTheBurstSuggestionModal(_ context.Context) error {
 	return godog.ErrPending
 }
 
-func iShouldSeeDifferentSuggestionsHighlighted(_ context.Context) error {
-	return godog.ErrPending
-}
-
 func iShouldSeeTheSuggestionEventsModal(_ context.Context) error {
 	return godog.ErrPending
 }
@@ -652,77 +630,12 @@ func iAmOnTheSkillSuggestionModalBursts(_ context.Context) error {
 	return godog.ErrPending
 }
 
-func iShouldSeeDifferentSkillsHighlighted(_ context.Context) error {
-	return godog.ErrPending
-}
-
 func iShouldSeeEventsThatLedToThisSkill(_ context.Context) error {
 	return godog.ErrPending
 }
 
 func theSkillShouldBeMarkedAsRejectedBursts(_ context.Context) error {
 	return godog.ErrPending
-}
-
-func iShouldBeAtTheLastBurst(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
-	}
-	view := env.GetView()
-	// Last burst in a list of 20 would show "20" in some indicator
-	// For now, just verify we're still on the burst list
-	gomega.Expect(view).To(gomega.ContainSubstring("Burst"))
-	return nil
-}
-
-func iShouldBeAtTheFirstBurst(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
-	}
-	view := env.GetView()
-	// Verify we're on the burst list
-	gomega.Expect(view).To(gomega.ContainSubstring("Burst"))
-	return nil
-}
-
-func iShouldSeeDifferentBursts(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-
-	// Store current view for later comparison
-	currentView := env.GetView()
-	ctx = context.WithValue(ctx, originalBurstsViewKey, currentView)
-
-	// Just verify we're still on burst list (actual difference check is complex)
-	gomega.Expect(currentView).To(gomega.ContainSubstring("Burst"))
-	return ctx, nil
-}
-
-func iShouldSeeTheOriginalBursts(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
-	}
-
-	// Get the stored original view
-	originalView, ok := ctx.Value(originalBurstsViewKey).(string)
-	if !ok {
-		return godog.ErrPending
-	}
-
-	currentView := env.GetView()
-
-	// Views should be similar (both showing burst list)
-	// But exact match is hard due to selection state changes
-	// Just verify we're back on the burst list
-	gomega.Expect(currentView).To(gomega.ContainSubstring("Burst"))
-	gomega.Expect(originalView).To(gomega.ContainSubstring("Burst"))
-
-	return nil
 }
 
 func iShouldNotSeeTheLoadingModal(ctx context.Context) error {

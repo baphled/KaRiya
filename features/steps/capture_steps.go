@@ -32,7 +32,6 @@ const (
 //
 //nolint:funlen // Registration function has many steps by design.
 func RegisterCaptureSteps(sc *godog.ScenarioContext) {
-	sc.Step(`^the database is empty$`, theDatabaseIsEmpty)
 	sc.Step(`^I am on the main menu$`, iAmOnTheMainMenu)
 	sc.Step(`^I select "([^"]*)" from the menu$`, iSelectFromTheMenu)
 	sc.Step(`^I select quick capture strategy$`, iSelectQuickCaptureStrategy)
@@ -89,19 +88,6 @@ func RegisterCaptureSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I should see the facts modal$`, iShouldSeeTheFactsModal)
 	sc.Step(`^I should see the metadata modal$`, iShouldSeeTheMetadataModal)
 	sc.Step(`^I should move to the previous field$`, iShouldMoveToThePreviousField)
-}
-
-func theDatabaseIsEmpty(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	view := env.GetView()
-	expectedFooter := fmt.Sprintf("Events: %d", 0)
-	if !strings.Contains(view, expectedFooter) {
-		return ctx, fmt.Errorf("expected empty state, view contains: %s", view)
-	}
-	return ctx, nil
 }
 
 func iAmOnTheMainMenu(ctx context.Context) (context.Context, error) {

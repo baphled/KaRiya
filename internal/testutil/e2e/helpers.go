@@ -596,7 +596,16 @@ func (e *TestEnv) Cleanup() {
 func (e *TestEnv) SelectIntent(index int) *TestEnv {
 	e.T.Helper()
 
-	// Navigate to the menu item
+	// Ensure we're in menu state before attempting navigation
+	if !e.IsInMenuState() {
+		e.T.Fatalf("Cannot select intent: not in menu state. Current view:\n%s", e.GetView())
+	}
+
+	// Navigate to the menu item from position 0
+	// Press 'g' to ensure we're at the top of the menu first
+	e.PressKeyRune('g')
+
+	// Navigate down to the desired index
 	for range index {
 		e.PressKeyRune('j')
 	}

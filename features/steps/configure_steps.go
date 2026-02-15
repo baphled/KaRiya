@@ -19,9 +19,6 @@ import (
 //   - Registers step definitions with Godog.
 func RegisterConfigureSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I should see the domain selection screen$`, iShouldSeeTheDomainSelectionScreen)
-	sc.Step(`^I should still be on domain selection$`, iShouldStillBeOnDomainSelection)
-	sc.Step(`^I should be at the last domain$`, iShouldBeAtTheLastDomain)
-	sc.Step(`^I should be at the first domain$`, iShouldBeAtTheFirstDomain)
 	sc.Step(`^I press "q" to quit$`, iPressQToQuit)
 	sc.Step(`^I select "([^"]*)" domain$`, iSelectDomain)
 	sc.Step(`^I should see the edit settings modal$`, iShouldSeeTheEditSettingsModal)
@@ -71,29 +68,6 @@ func iShouldSeeTheDomainSelectionScreen(ctx context.Context) error {
 		gomega.ContainSubstring("Profile"),
 	))
 	return nil
-}
-
-func iShouldStillBeOnDomainSelection(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
-	}
-	view := env.GetView()
-	gomega.Expect(view).To(gomega.SatisfyAny(
-		gomega.ContainSubstring("System"),
-		gomega.ContainSubstring("Profile"),
-		gomega.ContainSubstring("Export"),
-		gomega.ContainSubstring("UI"),
-	))
-	return nil
-}
-
-func iShouldBeAtTheLastDomain(_ context.Context) error {
-	return godog.ErrPending
-}
-
-func iShouldBeAtTheFirstDomain(_ context.Context) error {
-	return godog.ErrPending
 }
 
 func iPressQToQuit(ctx context.Context) (context.Context, error) {
