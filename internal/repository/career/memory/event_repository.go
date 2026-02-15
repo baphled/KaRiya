@@ -164,8 +164,14 @@ func (r *EventRepository) List(_ context.Context, filters career_repo.EventListF
 	defer r.mu.RUnlock()
 
 	var events []*career.Event
-	for _, event := range r.events {
-		events = append(events, event)
+	// Iterate in deterministic order by sorting keys first
+	keys := make([]string, 0, len(r.events))
+	for k := range r.events {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		events = append(events, r.events[k])
 	}
 
 	events = r.applyFilters(events, filters)
