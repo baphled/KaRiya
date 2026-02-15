@@ -580,6 +580,11 @@ linters:
           - dupl
           - funlen
 
+      # Memory repository duplication (same interface, different types)
+      - path: 'internal/repository/career/memory/(.*)_repository\.go'
+        linters:
+          - dupl
+
       - path: 'internal/cli/screens/.*/modals/(.*)\.go'
         linters:
           - gocritic

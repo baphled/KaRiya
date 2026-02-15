@@ -3,7 +3,6 @@ package steps
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -411,62 +410,43 @@ func theEventShouldHaveCategories(ctx context.Context, expected string) error {
 	return nil
 }
 
-func theEventShouldHaveNTags(ctx context.Context, expected int) error {
+func checkEventItems(ctx context.Context, expected int, itemType string, items []string) error {
 	env := support.GetAppEnv(ctx)
 	if env == nil {
 		return godog.ErrPending
 	}
 	view := env.GetView()
 	cleaned := stripANSI(view)
+	headerStr := itemType + ":"
 	if expected == 0 {
-		if strings.Contains(cleaned, "Tags:") {
-			return errors.New("expected no tags but found Tags line in view")
+		if strings.Contains(cleaned, headerStr) {
+			return fmt.Errorf("expected no %s but found %s line in view", itemType, itemType)
 		}
 		return nil
 	}
-	if !strings.Contains(cleaned, "Tags:") {
-		return fmt.Errorf("expected %d tags but Tags line not found in view", expected)
+	if !strings.Contains(cleaned, headerStr) {
+		return fmt.Errorf("expected %d %s but %s line not found in view", expected, itemType, itemType)
 	}
-	data := support.GetEventData(ctx)
-	if len(data.Tags) != expected {
-		return fmt.Errorf("expected %d tags but event data has %d", expected, len(data.Tags))
+	if len(items) != expected {
+		return fmt.Errorf("expected %d %s but event data has %d", expected, itemType, len(items))
 	}
-	for _, tag := range data.Tags {
-		tag = strings.TrimSpace(tag)
-		if strings.Contains(cleaned, tag) {
+	for _, item := range items {
+		item = strings.TrimSpace(item)
+		if strings.Contains(cleaned, item) {
 			return nil
 		}
 	}
-	return fmt.Errorf("expected tags visible in view but none of %v found", data.Tags)
+	return fmt.Errorf("expected %s visible in view but none of %v found", itemType, items)
+}
+
+func theEventShouldHaveNTags(ctx context.Context, expected int) error {
+	data := support.GetEventData(ctx)
+	return checkEventItems(ctx, expected, "Tags", data.Tags)
 }
 
 func theEventShouldHaveNCategories(ctx context.Context, expected int) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
-	}
-	view := env.GetView()
-	cleaned := stripANSI(view)
-	if expected == 0 {
-		if strings.Contains(cleaned, "Categories:") {
-			return errors.New("expected no categories but found Categories line in view")
-		}
-		return nil
-	}
-	if !strings.Contains(cleaned, "Categories:") {
-		return fmt.Errorf("expected %d categories but Categories line not found in view", expected)
-	}
 	data := support.GetEventData(ctx)
-	if len(data.Categories) != expected {
-		return fmt.Errorf("expected %d categories but event data has %d", expected, len(data.Categories))
-	}
-	for _, cat := range data.Categories {
-		cat = strings.TrimSpace(cat)
-		if strings.Contains(cleaned, cat) {
-			return nil
-		}
-	}
-	return fmt.Errorf("expected categories visible in view but none of %v found", data.Categories)
+	return checkEventItems(ctx, expected, "Categories", data.Categories)
 }
 
 var ansiRegex = regexp.MustCompile(`\x1b[\[\(][0-9;]*[a-zA-Z]|\x1b\][^\x07]*\x07`)
