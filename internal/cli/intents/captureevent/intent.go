@@ -90,6 +90,9 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 
 	switch msg := msg.(type) {
 	case SubmitCompleteMsg:
+		i.reviewState.InferredSkills = msg.InferredSkills
+		i.reviewState.InferredBursts = msg.InferredBursts
+		i.reviewState.InferredFacts = msg.InferredFacts
 		i.submitModal = feedback.NewSuccessModal("Event saved!")
 		return i.submitModal.Init()
 
@@ -112,6 +115,7 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 				i.reviewState.Event,
 				i.reviewState.InferredBursts,
 				i.reviewState.InferredFacts,
+				i.reviewState.InferredSkills,
 			)
 
 			termInfo := i.GetTerminalInfo()
@@ -222,6 +226,12 @@ func (i *Intent) View() string {
 	}
 
 	if i.reviewState != nil && i.reviewState.EditingMode != EditingModeNone {
+		if i.reviewState.EditingMode == EditingModeSkills && i.reviewState.skillModal != nil {
+			rendered := i.reviewState.skillModal.View()
+			modal := &behaviors.StaticViewModel{Content: rendered}
+			return behaviors.RenderModalOverlay(modal, baseView)
+		}
+
 		modalContent := i.getEditingModalContent()
 		if modalContent != nil {
 			return i.renderModalOverlay(baseView, modalContent)

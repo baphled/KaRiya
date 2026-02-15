@@ -11,6 +11,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/uikit/theme"
 	"github.com/baphled/kariya/internal/cli/uikit/widgets"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/service/career/skillinference"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -48,6 +49,12 @@ type EventReviewScreen struct {
 	// facts inferred from event.
 	facts []*career.Fact
 
+	// skills inferred from event.
+	skills []skillinference.SkillSuggestion
+
+	// acceptedSkills are skills the user has accepted.
+	acceptedSkills []skillinference.SkillSuggestion
+
 	// breadcrumbs for the view header.
 	breadcrumbs []string
 }
@@ -59,12 +66,14 @@ type EventReviewScreen struct {
 //   - event: Captured event to review
 //   - bursts: Inferred bursts (may be nil or empty)
 //   - facts: Inferred facts (may be nil or empty)
+//   - skills: Inferred skills (may be nil or empty)
 //
 // Expected:
 //   - breadcrumbs must be a valid slice of strings.
 //   - event must be a valid *career.Event.
 //   - bursts must be a valid slice of *career.Burst (can be nil or empty).
 //   - facts must be a valid slice of *career.Fact (can be nil or empty).
+//   - skills must be a valid slice of skillinference.SkillSuggestion (can be nil or empty).
 //
 // Returns:
 //   - A fully initialized EventReviewScreen ready for use.
@@ -76,14 +85,55 @@ func NewEventReviewScreen(
 	event *career.Event,
 	bursts []*career.Burst,
 	facts []*career.Fact,
+	skills []skillinference.SkillSuggestion,
 ) *EventReviewScreen {
 	return &EventReviewScreen{
 		Screen:      base.NewBaseScreen(),
 		event:       event,
 		bursts:      bursts,
 		facts:       facts,
+		skills:      skills,
 		breadcrumbs: breadcrumbs,
 	}
+}
+
+// SetAcceptedSkills updates the accepted skills list.
+//
+// Parameters:
+//   - skills: The updated list of accepted skills.
+//
+// Expected:
+//   - skills can be nil or an empty slice.
+//
+// Side effects:
+//   - Updates the acceptedSkills field.
+func (s *EventReviewScreen) SetAcceptedSkills(skills []skillinference.SkillSuggestion) {
+	s.acceptedSkills = skills
+}
+
+// GetSuggestedSkills returns the list of inferred skill suggestions.
+//
+// Returns:
+//   - A []skillinference.SkillSuggestion value.
+//
+// Side effects:
+//   - None.
+func (s *EventReviewScreen) GetSuggestedSkills() []skillinference.SkillSuggestion {
+	return s.skills
+}
+
+// SetSuggestedSkills updates the inferred skill suggestions.
+//
+// Parameters:
+//   - skills: The new list of skill suggestions.
+//
+// Expected:
+//   - skills can be nil or an empty slice.
+//
+// Side effects:
+//   - Updates the skills field.
+func (s *EventReviewScreen) SetSuggestedSkills(skills []skillinference.SkillSuggestion) {
+	s.skills = skills
 }
 
 // Update implements the Screen interface.
@@ -118,6 +168,7 @@ func (s *EventReviewScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) 
 					"event":  s.event,
 					"bursts": s.bursts,
 					"facts":  s.facts,
+					"skills": s.acceptedSkills,
 				},
 			}
 
@@ -148,6 +199,11 @@ func (s *EventReviewScreen) handleRuneKey(keyMsg tea.KeyMsg) (tea.Cmd, screens.S
 	case "f":
 		return nil, &screens.NavigateResult{
 			ResultData: "edit_facts",
+		}
+
+	case "s":
+		return nil, &screens.NavigateResult{
+			ResultData: "edit_skills",
 		}
 	}
 
@@ -188,6 +244,9 @@ func (s *EventReviewScreen) renderContent() string {
 
 	// Inferred facts section.
 	parts = append(parts, s.renderFacts(th))
+
+	// Inferred skills section.
+	parts = append(parts, s.renderSkills(th))
 
 	return primitives.JoinVertical(primitives.AlignLeft, parts...)
 }
@@ -260,6 +319,30 @@ func (s *EventReviewScreen) renderFacts(th theme.Theme) string {
 	return b.String()
 }
 
+// renderSkills renders the inferred skills list using UIKit primitives.
+func (s *EventReviewScreen) renderSkills(th theme.Theme) string {
+	var b strings.Builder
+
+	b.WriteString(primitives.Subtitle("Inferred Skills", th).
+		MarginTop(1).
+		Render())
+	b.WriteString("\n")
+
+	if len(s.skills) == 0 {
+		b.WriteString(primitives.Muted("  No skills detected", th).Render())
+		b.WriteString("\n")
+		return b.String()
+	}
+
+	for i, skill := range s.skills {
+		confidence := fmt.Sprintf("%.0f%%", skill.Confidence*100)
+		b.WriteString(primitives.Body(fmt.Sprintf("  %d. %s (%s) %s", i+1, skill.Name, skill.Category, confidence), th).Render())
+		b.WriteString("\n")
+	}
+
+	return b.String()
+}
+
 // renderFooter renders footer with action shortcuts using UIKit badge primitives.
 // Always shows all edit options regardless of whether bursts/facts exist,
 // ensuring users discover available actions and maintain spatial consistency
@@ -272,6 +355,10 @@ func (s *EventReviewScreen) renderFooter() string {
 		primitives.HelpKeyBadge("e", "Edit metadata", th),
 		primitives.HelpKeyBadge("b", "Edit bursts", th),
 		primitives.HelpKeyBadge("f", "Edit facts", th),
+	}
+
+	if len(s.skills) > 0 {
+		badges = append(badges, primitives.HelpKeyBadge("s", "Edit skills", th))
 	}
 
 	badges = append(badges,

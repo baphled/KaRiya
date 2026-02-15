@@ -17,6 +17,7 @@ import (
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	cv "github.com/baphled/kariya/internal/service/career/cv"
+	"github.com/baphled/kariya/internal/service/career/skillinference"
 )
 
 // IntentRegistrar defines the interface for registering intents with the router.
@@ -29,7 +30,7 @@ type IntentRegistrar interface {
 type RegistrarConfig struct {
 	CLIService            *service.CLIEventService
 	CareerService         *careerservice.Service
-	SkillInferenceService burstmanagement.SkillInferenceService
+	SkillInferenceService skillinference.SkillInferenceService
 	Log                   *logger.Logger
 	CVGenService          cv.CVGenerationService
 	CVExportService       *cv.ExportService
@@ -90,10 +91,11 @@ func (r *DefaultIntentRegistrar) registerCaptureEvent(router *intents.DefaultInt
 			return nil
 		}
 		captureCtx := &captureevent.IntentContext{
-			CaptureStrategy: "manual",
-			Metadata:        make(map[string]string),
-			CLIEventService: r.config.CLIService,
-			CareerService:   r.config.CareerService,
+			CaptureStrategy:       "manual",
+			Metadata:              make(map[string]string),
+			CLIEventService:       r.config.CLIService,
+			CareerService:         r.config.CareerService,
+			SkillInferenceService: r.config.SkillInferenceService,
 		}
 		intent, err := captureevent.NewIntent(captureCtx)
 		if err != nil {
