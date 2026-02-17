@@ -281,8 +281,15 @@ jobs:
 
             const threads = result.repository.pullRequest.reviewThreads.nodes;
 
-            // Filter for unresolved, non-outdated threads
-            const unresolvedThreads = threads.filter(t => !t.isResolved && !t.isOutdated);
+            // Filter for unresolved, non-outdated threads, excluding bot comments
+            const unresolvedThreads = threads.filter(t => {
+              if (t.isResolved || t.isOutdated) return false;
+              const comment = t.comments.nodes[0];
+              if (!comment) return false;
+              // Exclude bot-authored comments (e.g., Copilot)
+              const isBot = comment.author?.type === 'Bot' || comment.author?.login?.includes('[bot]');
+              return !isBot;
+            });
 
             console.log(`\nTotal review threads: ${threads.length}`);
             console.log(`Unresolved threads: ${unresolvedThreads.length}`);
