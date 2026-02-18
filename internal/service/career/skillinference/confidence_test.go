@@ -17,8 +17,8 @@ var _ = Describe("Confidence Scoring", func() {
 	)
 
 	BeforeEach(func() {
-		ctx = context.Background()                                  //nolint:fatcontext // test setup
-		service = skillinference.NewSkillInferenceService(nil, nil) // No persistence needed for confidence tests
+		ctx = context.Background()                                       //nolint:fatcontext // test setup
+		service = skillinference.NewSkillInferenceService(nil, nil, nil) // No persistence needed for confidence tests
 	})
 
 	Describe("High Confidence Patterns (0.95)", func() {

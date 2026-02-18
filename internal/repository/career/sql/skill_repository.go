@@ -321,6 +321,29 @@ func (r *SkillRepository) GetSkillsForEvent(ctx context.Context, eventID string)
 	return skills, nil
 }
 
+// GetSkillsForEvents retrieves all unique skills linked to any of the given events.
+func (r *SkillRepository) GetSkillsForEvents(ctx context.Context, eventIDs []string) ([]*career.Skill, error) {
+	if len(eventIDs) == 0 {
+		return []*career.Skill{}, nil
+	}
+
+	var results []models.Skill
+	err := r.db.WithContext(ctx).
+		Joins("JOIN event_skills ON event_skills.skill_id = skills.id").
+		Where("event_skills.event_id IN ?", eventIDs).
+		Distinct().
+		Find(&results).Error
+	if err != nil {
+		return nil, err
+	}
+
+	skills := make([]*career.Skill, len(results))
+	for i := range results {
+		skills[i] = results[i].ToDomain()
+	}
+	return skills, nil
+}
+
 // GetEventCountsForSkills returns a map of skill IDs to event counts.
 func (r *SkillRepository) GetEventCountsForSkills(ctx context.Context) (map[string]int, error) {
 	type result struct {

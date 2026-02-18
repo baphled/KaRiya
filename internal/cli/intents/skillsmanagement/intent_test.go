@@ -308,7 +308,7 @@ var _ = Describe("Intent", func() {
 
 			BeforeEach(func() {
 				eventRepo := careermemory.NewEventRepository()
-				skillInferenceService := skillinference.NewSkillInferenceService(mockRepo, eventRepo)
+				skillInferenceService := skillinference.NewSkillInferenceService(mockRepo, mockRepo, eventRepo)
 
 				intentCtx := skillsmanagement.NewIntentContext(ctx, mockRepo)
 				intentCtx.EventRepository = eventRepo

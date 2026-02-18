@@ -170,6 +170,21 @@ func (mr *MockSkillRepositoryMockRecorder) GetSkillsForEvent(arg0, arg1 interfac
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSkillsForEvent", reflect.TypeOf((*MockSkillRepository)(nil).GetSkillsForEvent), arg0, arg1)
 }
 
+// GetSkillsForEvents mocks base method.
+func (m *MockSkillRepository) GetSkillsForEvents(arg0 context.Context, arg1 []string) ([]*career.Skill, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSkillsForEvents", arg0, arg1)
+	ret0, _ := ret[0].([]*career.Skill)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSkillsForEvents indicates an expected call of GetSkillsForEvents.
+func (mr *MockSkillRepositoryMockRecorder) GetSkillsForEvents(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSkillsForEvents", reflect.TypeOf((*MockSkillRepository)(nil).GetSkillsForEvents), arg0, arg1)
+}
+
 // List mocks base method.
 func (m *MockSkillRepository) List(arg0 context.Context, arg1 *career0.SkillListFilters) ([]*career.Skill, error) {
 	m.ctrl.T.Helper()

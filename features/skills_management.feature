@@ -212,6 +212,64 @@ Feature: Manage Skills
     And the suggestion should be marked as rejected
 
   # ============================================================================
+  # Skill Inference with Save (PR #172 - event-skill linkage)
+  # ============================================================================
+
+  @happy @inference
+  Scenario: Infer skill and save links it to the event
+    Given I have an event "Built REST API in Go with PostgreSQL"
+    And no skills are linked to the event
+    When I select "manage_skills" from the menu
+    And I infer and accept skill "Go" for the event
+    Then "Go" should be linked to the event
+    And there should be 1 skill
+
+  @happy @inference
+  Scenario: Globally existing skill not linked to event appears as suggestion
+    Given I have a skill "Go" with category "backend"
+    And I have an event "Built microservices in Go with gRPC"
+    And "Go" is not linked to the event
+    When I trigger inference for the event
+    Then "Go" should be suggested as a new skill
+    And "Go" should not be in the existing skills list
+
+  @happy @inference
+  Scenario: Skill already linked to event appears as existing
+    Given I have a skill "Go" with category "backend"
+    And I have an event "Built API in Go" that uses skill "Go"
+    When I trigger inference for the event
+    Then "Go" should be in the existing skills list
+    And "Go" should not be suggested as a new skill
+
+  @happy @inference
+  Scenario: Accept inferred skill persists link in event_skills
+    Given I have an event "Deployed apps on AWS using Terraform"
+    When I select "manage_skills" from the menu
+    And I infer and accept skill "AWS" for the event
+    And I infer and accept skill "Terraform" for the event
+    Then "AWS" should be linked to the event
+    And "Terraform" should be linked to the event
+    And there should be 2 skills
+
+  @happy @inference
+  Scenario: Verify inferred skill is persisted after acceptance
+    Given I have an event "Built API in Go"
+    When I select "manage_skills" from the menu
+    And I infer and accept skill "Go" for the event
+    And I press escape
+    And I select "manage_skills" from the menu
+    Then there should be 1 skill
+    And the skill should have name "Go"
+
+  @happy @inference
+  Scenario: Re-running inference after save shows skill as existing
+    Given I have an event "Built REST API in Go"
+    When I select "manage_skills" from the menu
+    And I infer and accept skill "Go" for the event
+    And I trigger inference for the event
+    Then "Go" should be in the existing skills list
+
+  # ============================================================================
   # Navigation and Exit
   # ============================================================================
 

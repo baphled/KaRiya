@@ -38,6 +38,9 @@ func (r *failingSkillRepository) GetByCategory(_ context.Context, _ string) ([]*
 func (r *failingSkillRepository) GetSkillsForEvent(_ context.Context, _ string) ([]*career.Skill, error) {
 	return nil, errNotImplemented
 }
+func (r *failingSkillRepository) GetSkillsForEvents(_ context.Context, _ []string) ([]*career.Skill, error) {
+	return nil, errNotImplemented
+}
 func (r *failingSkillRepository) GetEventCountsForSkills(_ context.Context) (map[string]int, error) {
 	return nil, errNotImplemented
 }
