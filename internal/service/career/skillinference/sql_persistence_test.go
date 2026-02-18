@@ -29,7 +29,7 @@ var _ = Describe("Skill Persistence (SQL-backed)", func() {
 		repos, err = careersql.NewRepositoriesFromPath(dbPath)
 		Expect(err).NotTo(HaveOccurred())
 
-		service = skillinference.NewSkillInferenceService(repos.Skill, repos.Event)
+		service = skillinference.NewSkillInferenceService(repos.Skill, repos.Skill, repos.Event)
 		ctx = context.Background() //nolint:fatcontext // test setup
 	})
 

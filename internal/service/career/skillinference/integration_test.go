@@ -39,7 +39,7 @@ var _ = Describe("Skill Inference Integration", func() {
 			events: make(map[string]*career.Event),
 		}
 
-		service = skillinference.NewSkillInferenceService(skillRepo, eventRepo)
+		service = skillinference.NewSkillInferenceService(skillRepo, skillRepo, eventRepo)
 		ctx = context.Background() //nolint:fatcontext // test setup
 
 		// Simulate a confirmed burst with events

@@ -18,8 +18,8 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 	)
 
 	BeforeEach(func() {
-		ctx = context.Background()                                  //nolint:fatcontext // test setup
-		service = skillinference.NewSkillInferenceService(nil, nil) // No persistence needed for detection tests
+		ctx = context.Background()                                       //nolint:fatcontext // test setup
+		service = skillinference.NewSkillInferenceService(nil, nil, nil) // No persistence needed for detection tests
 	})
 
 	Describe("Word Boundary Detection", func() {
@@ -348,7 +348,7 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 			eventRepo = &mockEventRepository{
 				events: make(map[string]*career.Event),
 			}
-			service = skillinference.NewSkillInferenceService(skillRepo, eventRepo)
+			service = skillinference.NewSkillInferenceService(skillRepo, skillRepo, eventRepo)
 		})
 
 		Context("when skill exists globally but is NOT linked to event", func() {

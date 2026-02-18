@@ -14,12 +14,16 @@ import (
 	"github.com/baphled/kariya/internal/service/career/technology"
 )
 
-// SkillRepository provides data access for skill records.
+// SkillRepository provides core data access for skill records.
 type SkillRepository interface {
 	Create(ctx context.Context, skill *career.Skill) error
 	Update(ctx context.Context, skill *career.Skill) error
 	GetByName(ctx context.Context, name string) (*career.Skill, error)
 	GetByID(ctx context.Context, id string) (*career.Skill, error)
+}
+
+// SkillQueryRepository provides query access for skill records.
+type SkillQueryRepository interface {
 	GetSkillsForEvent(ctx context.Context, eventID string) ([]*career.Skill, error)
 	GetSkillsForEvents(ctx context.Context, eventIDs []string) ([]*career.Skill, error)
 }
@@ -34,15 +38,17 @@ type EventRepository interface {
 // DefaultSkillInferenceService implements SkillInferenceService using
 // keyword-based detection with word boundary regex matching.
 type DefaultSkillInferenceService struct {
-	skillRepo  SkillRepository
-	eventRepo  EventRepository
-	keywordMap map[string]technology.Entry
+	skillRepo      SkillRepository
+	skillQueryRepo SkillQueryRepository
+	eventRepo      EventRepository
+	keywordMap     map[string]technology.Entry
 }
 
 // NewSkillInferenceService creates a new skill inference service.
 //
 // Expected:
 //   - skillrepository must be valid.
+//   - skillqueryrepository must be valid.
 //   - eventrepository must be valid.
 //
 // Returns:
@@ -50,11 +56,16 @@ type DefaultSkillInferenceService struct {
 //
 // Side effects:
 //   - None.
-func NewSkillInferenceService(skillRepo SkillRepository, eventRepo EventRepository) SkillInferenceService {
+func NewSkillInferenceService(
+	skillRepo SkillRepository,
+	skillQueryRepo SkillQueryRepository,
+	eventRepo EventRepository,
+) SkillInferenceService {
 	return &DefaultSkillInferenceService{
-		skillRepo:  skillRepo,
-		eventRepo:  eventRepo,
-		keywordMap: technology.GetKeywordMap(),
+		skillRepo:      skillRepo,
+		skillQueryRepo: skillQueryRepo,
+		eventRepo:      eventRepo,
+		keywordMap:     technology.GetKeywordMap(),
 	}
 }
 
@@ -146,7 +157,7 @@ func (s *DefaultSkillInferenceService) findExistingSkillNames(
 		eventIDs = append(eventIDs, event.ID)
 	}
 
-	linkedSkills, err := s.skillRepo.GetSkillsForEvents(ctx, eventIDs)
+	linkedSkills, err := s.skillQueryRepo.GetSkillsForEvents(ctx, eventIDs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get skills for events: %w", err)
 	}

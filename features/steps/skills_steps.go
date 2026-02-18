@@ -3,6 +3,7 @@ package steps
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -916,11 +917,11 @@ type inferenceResultKey struct{}
 func getLastEvent(ctx context.Context) (*career.Event, error) {
 	env := support.GetAppEnv(ctx)
 	if env == nil {
-		return nil, fmt.Errorf("app env not found")
+		return nil, errors.New("app env not found")
 	}
 	events := env.GetEvents()
 	if len(events) == 0 {
-		return nil, fmt.Errorf("no events found")
+		return nil, errors.New("no events found")
 	}
 	return events[len(events)-1], nil
 }
@@ -977,7 +978,7 @@ func iInferAndAcceptSkillForTheEvent(ctx context.Context, skillName string) (con
 
 	skillRepo := env.Service.GetSkillRepository()
 	eventRepo := env.Service.GetEventRepository()
-	svc := skillinference.NewSkillInferenceService(skillRepo, eventRepo)
+	svc := skillinference.NewSkillInferenceService(skillRepo, skillRepo, eventRepo)
 
 	result, err := svc.InferSkillsFromEvents(env.Ctx, []*career.Event{event})
 	if err != nil {
@@ -1018,7 +1019,7 @@ func iTriggerInferenceForTheEvent(ctx context.Context) (context.Context, error) 
 
 	skillRepo := env.Service.GetSkillRepository()
 	eventRepo := env.Service.GetEventRepository()
-	svc := skillinference.NewSkillInferenceService(skillRepo, eventRepo)
+	svc := skillinference.NewSkillInferenceService(skillRepo, skillRepo, eventRepo)
 
 	result, err := svc.InferSkillsFromEvents(env.Ctx, []*career.Event{event})
 	if err != nil {
@@ -1057,7 +1058,7 @@ func skillShouldBeLinkedToTheEvent(ctx context.Context, skillName string) error 
 func skillShouldBeSuggestedAsNewSkill(ctx context.Context, skillName string) error {
 	result, ok := ctx.Value(inferenceResultKey{}).(*skillinference.InferenceResult)
 	if !ok || result == nil {
-		return fmt.Errorf("no inference result found in context; call 'I trigger inference for the event' first")
+		return errors.New("no inference result found in context; call 'I trigger inference for the event' first")
 	}
 	filtered := filterNewSuggestionsForTest(result.Suggestions, result.ExistingSkillNames)
 	var found bool
@@ -1074,7 +1075,7 @@ func skillShouldBeSuggestedAsNewSkill(ctx context.Context, skillName string) err
 func skillShouldNotBeSuggestedAsNewSkill(ctx context.Context, skillName string) error {
 	result, ok := ctx.Value(inferenceResultKey{}).(*skillinference.InferenceResult)
 	if !ok || result == nil {
-		return fmt.Errorf("no inference result found in context; call 'I trigger inference for the event' first")
+		return errors.New("no inference result found in context; call 'I trigger inference for the event' first")
 	}
 	filtered := filterNewSuggestionsForTest(result.Suggestions, result.ExistingSkillNames)
 	for _, s := range filtered {
@@ -1086,7 +1087,7 @@ func skillShouldNotBeSuggestedAsNewSkill(ctx context.Context, skillName string) 
 func skillShouldBeInExistingSkillsList(ctx context.Context, skillName string) error {
 	result, ok := ctx.Value(inferenceResultKey{}).(*skillinference.InferenceResult)
 	if !ok || result == nil {
-		return fmt.Errorf("no inference result found in context; call 'I trigger inference for the event' first")
+		return errors.New("no inference result found in context; call 'I trigger inference for the event' first")
 	}
 	var found bool
 	for _, name := range result.ExistingSkillNames {
@@ -1102,7 +1103,7 @@ func skillShouldBeInExistingSkillsList(ctx context.Context, skillName string) er
 func skillShouldNotBeInExistingSkillsList(ctx context.Context, skillName string) error {
 	result, ok := ctx.Value(inferenceResultKey{}).(*skillinference.InferenceResult)
 	if !ok || result == nil {
-		return fmt.Errorf("no inference result found in context; call 'I trigger inference for the event' first")
+		return errors.New("no inference result found in context; call 'I trigger inference for the event' first")
 	}
 	for _, name := range result.ExistingSkillNames {
 		gomega.Expect(name).NotTo(gomega.Equal(skillName), "Skill %q should not be in existing skills", skillName)

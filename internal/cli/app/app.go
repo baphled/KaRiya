@@ -75,6 +75,7 @@ func NewModel(
 	// Create skill inference service.
 	skillInferenceService := skillinference.NewSkillInferenceService(
 		careerService.GetSkillRepository(),
+		careerService.GetSkillRepository(),
 		careerService.GetEventRepository(),
 	)
 

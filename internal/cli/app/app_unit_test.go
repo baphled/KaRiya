@@ -3,6 +3,7 @@ package app_test
 
 import (
 	"context"
+	"errors"
 	"path/filepath"
 	"time"
 
@@ -15,7 +16,9 @@ import (
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/uikit/display"
 	"github.com/baphled/kariya/internal/config"
+	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
+	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	"github.com/baphled/kariya/internal/service/career/skillinference"
@@ -989,6 +992,63 @@ func (m *mockIntent) Update(_ tea.Msg) tea.Cmd                   { return nil }
 func (m *mockIntent) View() string                               { return "mock intent view" }
 func (m *mockIntent) Result() *intents.IntentResult[interface{}] { return nil }
 
+// completionTriggerMsg is a custom message that causes mockCompletingIntent to complete.
+type completionTriggerMsg struct{}
+
+// mockCompletingIntent completes when it receives a completionTriggerMsg.
+type mockCompletingIntent struct {
+	completed bool
+}
+
+func (m *mockCompletingIntent) Init() tea.Cmd { return nil }
+func (m *mockCompletingIntent) Update(msg tea.Msg) tea.Cmd {
+	if _, ok := msg.(completionTriggerMsg); ok {
+		m.completed = true
+	}
+	return nil
+}
+func (m *mockCompletingIntent) View() string { return "completing intent view" }
+func (m *mockCompletingIntent) Result() *intents.IntentResult[interface{}] {
+	if m.completed {
+		return intents.NewCompletedResult[interface{}](nil)
+	}
+	return nil
+}
+
+// mockCompletingRegistrar registers a mockCompletingIntent as capture_event.
+type mockCompletingRegistrar struct{}
+
+func (m *mockCompletingRegistrar) RegisterAll(_ context.Context, router *intents.DefaultIntentRouter) error {
+	return router.RegisterIntent("capture_event", func() intents.Intent {
+		return &mockCompletingIntent{}
+	})
+}
+
+// emptyRegistrar registers no intents (for Init error path tests).
+type emptyRegistrar struct{}
+
+func (m *emptyRegistrar) RegisterAll(_ context.Context, _ *intents.DefaultIntentRouter) error {
+	return nil
+}
+
+// failingEventRepo embeds the memory event repo and overrides List to return an error.
+type failingEventRepo struct {
+	*careermemory.EventRepository
+}
+
+func (f *failingEventRepo) List(_ context.Context, _ careerrepo.EventListFilters) ([]*career.Event, error) {
+	return nil, errors.New("simulated event list error")
+}
+
+// failingFactRepo embeds the memory fact repo and overrides List to return an error.
+type failingFactRepo struct {
+	*careermemory.FactRepository
+}
+
+func (f *failingFactRepo) List(_ context.Context, _ careerrepo.FactListFilters) ([]*career.Fact, error) {
+	return nil, errors.New("simulated fact list error")
+}
+
 var _ = Describe("IntentRegistrar DI Tests", func() {
 	var (
 		repo       *careermemory.EventRepository
@@ -1323,7 +1383,7 @@ var _ = Describe("IntentRegistrar DI Tests", func() {
 			careerSvc.SetFactRepository(factRepo)
 
 			// Create skill inference service
-			skillInferenceService := skillinference.NewSkillInferenceService(skillRepo, eventRepo)
+			skillInferenceService := skillinference.NewSkillInferenceService(skillRepo, skillRepo, eventRepo)
 
 			// Create registrar config with SkillInferenceService
 			log := logger.DefaultLogger()
@@ -1370,7 +1430,7 @@ var _ = Describe("IntentRegistrar DI Tests", func() {
 			careerSvc.SetBurstRepository(burstRepo)
 			careerSvc.SetFactRepository(factRepo)
 
-			skillInferenceService := skillinference.NewSkillInferenceService(skillRepo, eventRepo)
+			skillInferenceService := skillinference.NewSkillInferenceService(skillRepo, skillRepo, eventRepo)
 
 			log := logger.DefaultLogger()
 			registrar := app.NewDefaultIntentRegistrar(&app.RegistrarConfig{
@@ -1440,6 +1500,242 @@ var _ = Describe("IntentRegistrar DI Tests", func() {
 			Expect(testCtx).NotTo(BeNil(), "Intent context should not be nil")
 			Expect(testCtx.SkillRepository).NotTo(BeNil(), "SkillRepository should be wired up in context")
 			Expect(testCtx.EventRepository).NotTo(BeNil(), "EventRepository should be wired up in context")
+		})
+	})
+})
+
+var _ = Describe("App Coverage - Additional Paths", func() {
+	var (
+		model      *app.Model
+		repo       *careermemory.EventRepository
+		svc        *careerservice.Service
+		cliService *service.CLIEventService
+	)
+
+	BeforeEach(func() {
+		config.SetConfigPathForTesting(filepath.Join(GinkgoT().TempDir(), "config.yaml"))
+		repo = careermemory.NewEventRepository()
+		burstRepo := careermemory.NewBurstRepository()
+		factRepo := careermemory.NewFactRepository()
+		skillRepo := careermemory.NewSkillRepository()
+		svc = careerservice.NewService(repo)
+		svc.SetBurstRepository(burstRepo)
+		svc.SetFactRepository(factRepo)
+		svc.SetSkillRepository(skillRepo)
+		cliService = service.NewCLIEventService(svc)
+
+		log := logger.DefaultLogger()
+		bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+		model = app.NewModel(cliService, svc, bootstrapResult)
+	})
+
+	AfterEach(func() {
+		config.ResetConfigPath()
+	})
+
+	Describe("handleKeyMsg - Escape Dismisses Help", func() {
+		It("should dismiss help screen when escape is pressed while help is showing", func() {
+			helpMsg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("?")}
+			newModel, _ := model.Update(helpMsg)
+			model = newModel.(*app.Model)
+
+			view := model.View()
+			Expect(view).To(ContainSubstring("Keyboard Reference"))
+
+			escMsg := tea.KeyMsg{Type: tea.KeyEsc}
+			newModel, cmd := model.Update(escMsg)
+			model = newModel.(*app.Model)
+
+			Expect(cmd).To(BeNil())
+			view = model.View()
+			Expect(view).NotTo(ContainSubstring("Keyboard Reference"))
+		})
+	})
+
+	Describe("handleDefaultMsg - Intent Completion via Non-Key Message", func() {
+		It("should return to menu when intent completes from a non-key message", func() {
+			log := logger.DefaultLogger()
+			bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+			mockReg := &mockCompletingRegistrar{}
+			testModel := app.NewModel(cliService, svc, bootstrapResult, app.WithIntentRegistrar(mockReg))
+
+			newModel, _ := testModel.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			testModel = newModel.(*app.Model)
+			Expect(testModel.GetState()).To(Equal(app.StateIntent))
+
+			newModel, cmd := testModel.Update(completionTriggerMsg{})
+			testModel = newModel.(*app.Model)
+
+			Expect(testModel.GetState()).To(Equal(app.StateMenu))
+			Expect(cmd).NotTo(BeNil())
+		})
+	})
+
+	Describe("Init Error Paths", func() {
+		It("should handle Init error when browse_timeline is not registered", func() {
+			log := logger.DefaultLogger()
+			bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+			testModel := app.NewModel(cliService, svc, bootstrapResult, app.WithIntentRegistrar(&emptyRegistrar{}))
+			testModel.SetInitialScreen(app.ListScreen)
+
+			cmd := testModel.Init()
+			Expect(cmd).NotTo(BeNil())
+
+			Expect(testModel.GetState()).To(Equal(app.StateMenu))
+		})
+
+		It("should handle Init error when capture_event is not registered", func() {
+			log := logger.DefaultLogger()
+			bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+			testModel := app.NewModel(cliService, svc, bootstrapResult, app.WithIntentRegistrar(&emptyRegistrar{}))
+			testModel.SetInitialCaptureMode("manual")
+
+			cmd := testModel.Init()
+			Expect(cmd).NotTo(BeNil())
+
+			Expect(testModel.GetState()).To(Equal(app.StateMenu))
+		})
+	})
+
+	Describe("handleEditEventRequest - ActivateIntent Error", func() {
+		It("should handle ActivateIntent error when pre-registered factory returns nil", func() {
+			log := logger.DefaultLogger()
+			bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+			testModel := app.NewModel(cliService, svc, bootstrapResult)
+
+			router := testModel.GetIntentRouter()
+			router.RegisterIntent("capture_event_edit", func() intents.Intent {
+				return nil
+			})
+
+			event := fixtures.EventWith("test-edit-fail", "Test Event for Edit Error", "", "")
+			msg := intents.RequestEditEventMsg{Event: event}
+			_, cmd := testModel.Update(msg)
+
+			Expect(cmd).To(BeNil())
+		})
+	})
+
+	Describe("Registrar Factory - Missing Service Paths", func() {
+		It("should handle manage_skills factory failure with nil CareerService", func() {
+			log := logger.DefaultLogger()
+			registrar := app.NewDefaultIntentRegistrar(&app.RegistrarConfig{
+				CLIService:    nil,
+				CareerService: nil,
+				Log:           log,
+			})
+
+			router := intents.NewDefaultIntentRouter()
+			registrar.RegisterAll(context.Background(), router)
+
+			_, err := router.ActivateIntent("manage_skills", nil)
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should handle manage_skills factory failure when SkillRepository is nil", func() {
+			eventRepo := careermemory.NewEventRepository()
+			burstRepo := careermemory.NewBurstRepository()
+			factRepo := careermemory.NewFactRepository()
+
+			careerSvc := careerservice.NewService(eventRepo)
+			careerSvc.SetBurstRepository(burstRepo)
+			careerSvc.SetFactRepository(factRepo)
+
+			log := logger.DefaultLogger()
+			registrar := app.NewDefaultIntentRegistrar(&app.RegistrarConfig{
+				CareerService: careerSvc,
+				Log:           log,
+			})
+
+			router := intents.NewDefaultIntentRouter()
+			err := registrar.RegisterAll(context.Background(), router)
+			Expect(err).ToNot(HaveOccurred())
+
+			_, err = router.ActivateIntent("manage_skills", nil)
+			Expect(err).To(HaveOccurred())
+		})
+	})
+
+	Describe("Registrar Factory - Failing Repository Paths", func() {
+		It("should handle browse_timeline event list error gracefully", func() {
+			failRepo := &failingEventRepo{EventRepository: careermemory.NewEventRepository()}
+			burstRepo := careermemory.NewBurstRepository()
+			factRepo := careermemory.NewFactRepository()
+			skillRepo := careermemory.NewSkillRepository()
+
+			careerSvc := careerservice.NewService(failRepo)
+			careerSvc.SetBurstRepository(burstRepo)
+			careerSvc.SetFactRepository(factRepo)
+			careerSvc.SetSkillRepository(skillRepo)
+
+			cliSvc := service.NewCLIEventService(careerSvc)
+
+			log := logger.DefaultLogger()
+			registrar := app.NewDefaultIntentRegistrar(&app.RegistrarConfig{
+				CLIService:    cliSvc,
+				CareerService: careerSvc,
+				Log:           log,
+			})
+
+			router := intents.NewDefaultIntentRouter()
+			err := registrar.RegisterAll(context.Background(), router)
+			Expect(err).ToNot(HaveOccurred())
+
+			_, err = router.ActivateIntent("browse_timeline", nil)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("should handle generate_cv event list error and NewIntent validation failure", func() {
+			failRepo := &failingEventRepo{EventRepository: careermemory.NewEventRepository()}
+			burstRepo := careermemory.NewBurstRepository()
+			factRepo := careermemory.NewFactRepository()
+			skillRepo := careermemory.NewSkillRepository()
+
+			careerSvc := careerservice.NewService(failRepo)
+			careerSvc.SetBurstRepository(burstRepo)
+			careerSvc.SetFactRepository(factRepo)
+			careerSvc.SetSkillRepository(skillRepo)
+
+			log := logger.DefaultLogger()
+			registrar := app.NewDefaultIntentRegistrar(&app.RegistrarConfig{
+				CareerService: careerSvc,
+				Log:           log,
+			})
+
+			router := intents.NewDefaultIntentRouter()
+			err := registrar.RegisterAll(context.Background(), router)
+			Expect(err).ToNot(HaveOccurred())
+
+			_, err = router.ActivateIntent("generate_cv", nil)
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should handle generate_cv fact list error gracefully", func() {
+			eventRepo := careermemory.NewEventRepository()
+			err := eventRepo.Create(context.Background(), fixtures.Event("cv-test-event"))
+			Expect(err).ToNot(HaveOccurred())
+
+			failFacts := &failingFactRepo{FactRepository: careermemory.NewFactRepository()}
+			burstRepo := careermemory.NewBurstRepository()
+			skillRepo := careermemory.NewSkillRepository()
+
+			careerSvc := careerservice.NewService(eventRepo)
+			careerSvc.SetBurstRepository(burstRepo)
+			careerSvc.SetFactRepository(failFacts)
+			careerSvc.SetSkillRepository(skillRepo)
+
+			log := logger.DefaultLogger()
+			registrar := app.NewDefaultIntentRegistrar(&app.RegistrarConfig{
+				CareerService: careerSvc,
+				Log:           log,
+			})
+
+			router := intents.NewDefaultIntentRouter()
+			err = registrar.RegisterAll(context.Background(), router)
+			Expect(err).ToNot(HaveOccurred())
+
+			_, err = router.ActivateIntent("generate_cv", nil)
+			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 })
