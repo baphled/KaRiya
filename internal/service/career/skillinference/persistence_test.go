@@ -30,6 +30,7 @@ var _ = Describe("Skill Persistence", func() {
 		skillRepo = &mockSkillRepository{
 			skills:        make(map[string]*career.Skill),
 			skillsByID:    make(map[string]*career.Skill),
+			eventSkills:   make(map[string][]string),
 			notFoundError: career_repo.ErrSkillNotFound,
 		}
 		eventRepo = &mockEventRepository{
@@ -440,6 +441,7 @@ func findSkillByName(skills []*career.Skill, name string) *career.Skill {
 type mockSkillRepository struct {
 	skills        map[string]*career.Skill // Key: lowercase name
 	skillsByID    map[string]*career.Skill
+	eventSkills   map[string][]string // Key: eventID, Value: skillIDs
 	createError   error
 	updateError   error
 	notFoundError error
@@ -488,6 +490,45 @@ func (m *mockSkillRepository) GetByID(ctx context.Context, id string) (*career.S
 		return nil, errors.New("skill not found")
 	}
 	return skill, nil
+}
+
+func (m *mockSkillRepository) GetSkillsForEvent(_ context.Context, eventID string) ([]*career.Skill, error) {
+	skillIDs, exists := m.eventSkills[eventID]
+	if !exists {
+		return []*career.Skill{}, nil
+	}
+
+	var result []*career.Skill
+	for _, skillID := range skillIDs {
+		if skill, ok := m.skillsByID[skillID]; ok {
+			result = append(result, skill)
+		}
+	}
+
+	return result, nil
+}
+
+func (m *mockSkillRepository) GetSkillsForEvents(_ context.Context, eventIDs []string) ([]*career.Skill, error) {
+	seen := make(map[string]bool)
+	var result []*career.Skill
+
+	for _, eventID := range eventIDs {
+		skillIDs, exists := m.eventSkills[eventID]
+		if !exists {
+			continue
+		}
+		for _, skillID := range skillIDs {
+			if seen[skillID] {
+				continue
+			}
+			seen[skillID] = true
+			if skill, ok := m.skillsByID[skillID]; ok {
+				result = append(result, skill)
+			}
+		}
+	}
+
+	return result, nil
 }
 
 type mockEventRepository struct {
