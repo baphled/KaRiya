@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/baphled/kariya/internal/domain/career"
+	career_repo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/service/career/skillinference"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
@@ -17,8 +18,8 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 	)
 
 	BeforeEach(func() {
-		ctx = context.Background()                                  //nolint:fatcontext // test setup
-		service = skillinference.NewSkillInferenceService(nil, nil) // No persistence needed for detection tests
+		ctx = context.Background()                                       //nolint:fatcontext // test setup
+		service = skillinference.NewSkillInferenceService(nil, nil, nil) // No persistence needed for detection tests
 	})
 
 	Describe("Word Boundary Detection", func() {
@@ -328,6 +329,115 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 			reactSkill := findByName(result.Suggestions, "React")
 			Expect(reactSkill).NotTo(BeNil())
 			Expect(reactSkill.Category).To(Equal("frontend"))
+		})
+	})
+
+	Describe("ExistingSkillNames (event-skill linkage)", func() {
+		var (
+			skillRepo *mockSkillRepository
+			eventRepo *mockEventRepository
+		)
+
+		BeforeEach(func() {
+			skillRepo = &mockSkillRepository{
+				skills:        make(map[string]*career.Skill),
+				skillsByID:    make(map[string]*career.Skill),
+				eventSkills:   make(map[string][]string),
+				notFoundError: career_repo.ErrSkillNotFound,
+			}
+			eventRepo = &mockEventRepository{
+				events: make(map[string]*career.Event),
+			}
+			service = skillinference.NewSkillInferenceService(skillRepo, skillRepo, eventRepo)
+		})
+
+		Context("when skill exists globally but is NOT linked to event", func() {
+			It("should NOT report skill as existing", func() {
+				goSkill := fixtures.SkillWith("skill-1", "Go", "backend", "intermediate")
+				skillRepo.skills["go"] = goSkill
+				skillRepo.skillsByID["skill-1"] = goSkill
+
+				events := []*career.Event{
+					fixtures.EventWith("evt-1", "Built API using Go", "", ""),
+				}
+
+				result, err := service.InferSkillsFromEvents(ctx, events)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result.ExistingSkillNames).To(BeEmpty())
+				names := extractNames(result.Suggestions)
+				Expect(names).To(ContainElement("Go"))
+			})
+		})
+
+		Context("when skill exists globally AND is linked to event", func() {
+			It("should report skill as existing", func() {
+				goSkill := fixtures.SkillWith("skill-1", "Go", "backend", "intermediate")
+				skillRepo.skills["go"] = goSkill
+				skillRepo.skillsByID["skill-1"] = goSkill
+				skillRepo.eventSkills["evt-1"] = []string{"skill-1"}
+
+				events := []*career.Event{
+					fixtures.EventWith("evt-1", "Built API using Go", "", ""),
+				}
+
+				result, err := service.InferSkillsFromEvents(ctx, events)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result.ExistingSkillNames).To(ContainElement("Go"))
+			})
+		})
+
+		Context("when skill is linked to one event but not another in batch", func() {
+			It("should report skill as existing (linked to ANY)", func() {
+				goSkill := fixtures.SkillWith("skill-1", "Go", "backend", "intermediate")
+				skillRepo.skills["go"] = goSkill
+				skillRepo.skillsByID["skill-1"] = goSkill
+				skillRepo.eventSkills["evt-1"] = []string{"skill-1"}
+
+				events := []*career.Event{
+					fixtures.EventWith("evt-1", "Built API using Go", "", ""),
+					fixtures.EventWith("evt-2", "Wrote Go microservices", "", ""),
+				}
+
+				result, err := service.InferSkillsFromEvents(ctx, events)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result.ExistingSkillNames).To(ContainElement("Go"))
+			})
+		})
+
+		Context("cross-event skill linking", func() {
+			It("should report skill as existing when linked to different event in batch", func() {
+				goSkill := fixtures.SkillWith("skill-1", "Go", "backend", "intermediate")
+				skillRepo.skills["go"] = goSkill
+				skillRepo.skillsByID["skill-1"] = goSkill
+				skillRepo.eventSkills["evt-1"] = []string{"skill-1"}
+
+				events := []*career.Event{
+					fixtures.EventWith("evt-1", "Worked on legacy system", "", ""),
+					fixtures.EventWith("evt-2", "Built API using Go", "", ""),
+				}
+
+				result, err := service.InferSkillsFromEvents(ctx, events)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result.ExistingSkillNames).To(ContainElement("Go"))
+			})
+		})
+
+		Context("when no skills are linked to event", func() {
+			It("should return empty ExistingSkillNames", func() {
+				events := []*career.Event{
+					fixtures.EventWith("evt-1", "Built API using Go and PostgreSQL", "", ""),
+				}
+
+				result, err := service.InferSkillsFromEvents(ctx, events)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result.ExistingSkillNames).To(BeEmpty())
+				Expect(result.Suggestions).NotTo(BeEmpty())
+			})
 		})
 	})
 })

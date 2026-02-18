@@ -3,6 +3,7 @@ package steps
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -14,6 +15,7 @@ import (
 	"github.com/baphled/kariya/features/support"
 	skillsmanagement "github.com/baphled/kariya/internal/cli/intents/skillsmanagement"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/service/career/skillinference"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
@@ -95,6 +97,17 @@ func RegisterSkillsSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I accept the first suggestion$`, iAcceptTheFirstSuggestion)
 	sc.Step(`^I reject the first suggestion$`, iRejectTheFirstSuggestion)
 	sc.Step(`^the suggestion should be marked as rejected$`, theSuggestionShouldBeMarkedAsRejected)
+
+	// Inference with save (PR #172 - event-skill linkage)
+	sc.Step(`^no skills are linked to the event$`, noSkillsAreLinkedToTheEvent)
+	sc.Step(`^"([^"]*)" is not linked to the event$`, skillIsNotLinkedToTheEvent)
+	sc.Step(`^I infer and accept skill "([^"]*)" for the event$`, iInferAndAcceptSkillForTheEvent)
+	sc.Step(`^I trigger inference for the event$`, iTriggerInferenceForTheEvent)
+	sc.Step(`^"([^"]*)" should be linked to the event$`, skillShouldBeLinkedToTheEvent)
+	sc.Step(`^"([^"]*)" should be suggested as a new skill$`, skillShouldBeSuggestedAsNewSkill)
+	sc.Step(`^"([^"]*)" should not be suggested as a new skill$`, skillShouldNotBeSuggestedAsNewSkill)
+	sc.Step(`^"([^"]*)" should be in the existing skills list$`, skillShouldBeInExistingSkillsList)
+	sc.Step(`^"([^"]*)" should not be in the existing skills list$`, skillShouldNotBeInExistingSkillsList)
 
 	// Skill assertions
 	sc.Step(`^there should be (\d+) skills?$`, thereShouldBeNSkills)
@@ -892,4 +905,233 @@ func eachSkillShouldHaveUniqueCategory(ctx context.Context) error {
 		categories[s.Category] = true
 	}
 	return nil
+}
+
+// ============================================================================
+// Inference with Save Steps (PR #172 - event-skill linkage)
+// ============================================================================
+
+// inferenceResultKey stores the latest InferenceResult in context.
+type inferenceResultKey struct{}
+
+func getLastEvent(ctx context.Context) (*career.Event, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return nil, errors.New("app env not found")
+	}
+	events := env.GetEvents()
+	if len(events) == 0 {
+		return nil, errors.New("no events found")
+	}
+	return events[len(events)-1], nil
+}
+
+func noSkillsAreLinkedToTheEvent(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	event, err := getLastEvent(ctx)
+	if err != nil {
+		return ctx, err
+	}
+	skillRepo := env.Service.GetSkillRepository()
+	linked, err := skillRepo.GetSkillsForEvent(env.Ctx, event.ID)
+	if err != nil {
+		return ctx, fmt.Errorf("checking linked skills: %w", err)
+	}
+	gomega.Expect(linked).To(gomega.BeEmpty(), "Expected no skills linked to event")
+	return ctx, nil
+}
+
+func skillIsNotLinkedToTheEvent(ctx context.Context, skillName string) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	event, err := getLastEvent(ctx)
+	if err != nil {
+		return ctx, err
+	}
+	skillRepo := env.Service.GetSkillRepository()
+	linked, err := skillRepo.GetSkillsForEvent(env.Ctx, event.ID)
+	if err != nil {
+		return ctx, fmt.Errorf("checking linked skills: %w", err)
+	}
+	for _, s := range linked {
+		if s.Name == skillName {
+			return ctx, fmt.Errorf("skill %q should not be linked to event, but it is", skillName)
+		}
+	}
+	return ctx, nil
+}
+
+func iInferAndAcceptSkillForTheEvent(ctx context.Context, skillName string) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	event, err := getLastEvent(ctx)
+	if err != nil {
+		return ctx, err
+	}
+
+	skillRepo := env.Service.GetSkillRepository()
+	eventRepo := env.Service.GetEventRepository()
+	svc := skillinference.NewSkillInferenceService(skillRepo, skillRepo, eventRepo)
+
+	result, err := svc.InferSkillsFromEvents(env.Ctx, []*career.Event{event})
+	if err != nil {
+		return ctx, fmt.Errorf("inference failed: %w", err)
+	}
+
+	var target *skillinference.SkillSuggestion
+	for idx := range result.Suggestions {
+		if result.Suggestions[idx].Name == skillName {
+			target = &result.Suggestions[idx]
+			break
+		}
+	}
+	if target == nil {
+		return ctx, fmt.Errorf("skill %q not found in inference suggestions", skillName)
+	}
+
+	skills, err := svc.CreateSkillsFromSuggestions(env.Ctx, []skillinference.SkillSuggestion{*target})
+	if err != nil {
+		return ctx, fmt.Errorf("creating skill from suggestion: %w", err)
+	}
+	gomega.Expect(skills).NotTo(gomega.BeEmpty(), "Expected at least one skill created")
+
+	env.SendMessage(skillsmanagement.SkillsCreatedMsg{Skills: skills})
+
+	return ctx, nil
+}
+
+func iTriggerInferenceForTheEvent(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	event, err := getLastEvent(ctx)
+	if err != nil {
+		return ctx, err
+	}
+
+	skillRepo := env.Service.GetSkillRepository()
+	eventRepo := env.Service.GetEventRepository()
+	svc := skillinference.NewSkillInferenceService(skillRepo, skillRepo, eventRepo)
+
+	result, err := svc.InferSkillsFromEvents(env.Ctx, []*career.Event{event})
+	if err != nil {
+		return ctx, fmt.Errorf("inference failed: %w", err)
+	}
+
+	ctx = context.WithValue(ctx, inferenceResultKey{}, result)
+	return ctx, nil
+}
+
+func skillShouldBeLinkedToTheEvent(ctx context.Context, skillName string) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	event, err := getLastEvent(ctx)
+	if err != nil {
+		return err
+	}
+	skillRepo := env.Service.GetSkillRepository()
+	linked, err := skillRepo.GetSkillsForEvent(env.Ctx, event.ID)
+	if err != nil {
+		return fmt.Errorf("getting linked skills: %w", err)
+	}
+	var found bool
+	for _, s := range linked {
+		if s.Name == skillName {
+			found = true
+			break
+		}
+	}
+	gomega.Expect(found).To(gomega.BeTrue(), "Expected skill %q to be linked to event %q", skillName, event.ID)
+	return nil
+}
+
+func skillShouldBeSuggestedAsNewSkill(ctx context.Context, skillName string) error {
+	result, ok := ctx.Value(inferenceResultKey{}).(*skillinference.InferenceResult)
+	if !ok || result == nil {
+		return errors.New("no inference result found in context; call 'I trigger inference for the event' first")
+	}
+	filtered := filterNewSuggestionsForTest(result.Suggestions, result.ExistingSkillNames)
+	var found bool
+	for _, s := range filtered {
+		if s.Name == skillName {
+			found = true
+			break
+		}
+	}
+	gomega.Expect(found).To(gomega.BeTrue(), "Expected %q in new suggestions, got: %v", skillName, suggestionNames(filtered))
+	return nil
+}
+
+func skillShouldNotBeSuggestedAsNewSkill(ctx context.Context, skillName string) error {
+	result, ok := ctx.Value(inferenceResultKey{}).(*skillinference.InferenceResult)
+	if !ok || result == nil {
+		return errors.New("no inference result found in context; call 'I trigger inference for the event' first")
+	}
+	filtered := filterNewSuggestionsForTest(result.Suggestions, result.ExistingSkillNames)
+	for _, s := range filtered {
+		gomega.Expect(s.Name).NotTo(gomega.Equal(skillName), "Skill %q should not be in new suggestions", skillName)
+	}
+	return nil
+}
+
+func skillShouldBeInExistingSkillsList(ctx context.Context, skillName string) error {
+	result, ok := ctx.Value(inferenceResultKey{}).(*skillinference.InferenceResult)
+	if !ok || result == nil {
+		return errors.New("no inference result found in context; call 'I trigger inference for the event' first")
+	}
+	var found bool
+	for _, name := range result.ExistingSkillNames {
+		if name == skillName {
+			found = true
+			break
+		}
+	}
+	gomega.Expect(found).To(gomega.BeTrue(), "Expected %q in existing skills, got: %v", skillName, result.ExistingSkillNames)
+	return nil
+}
+
+func skillShouldNotBeInExistingSkillsList(ctx context.Context, skillName string) error {
+	result, ok := ctx.Value(inferenceResultKey{}).(*skillinference.InferenceResult)
+	if !ok || result == nil {
+		return errors.New("no inference result found in context; call 'I trigger inference for the event' first")
+	}
+	for _, name := range result.ExistingSkillNames {
+		gomega.Expect(name).NotTo(gomega.Equal(skillName), "Skill %q should not be in existing skills", skillName)
+	}
+	return nil
+}
+
+func suggestionNames(suggestions []skillinference.SkillSuggestion) []string {
+	names := make([]string, len(suggestions))
+	for i, s := range suggestions {
+		names[i] = s.Name
+	}
+	return names
+}
+
+func filterNewSuggestionsForTest(
+	suggestions []skillinference.SkillSuggestion,
+	existingNames []string,
+) []skillinference.SkillSuggestion {
+	existingMap := make(map[string]bool, len(existingNames))
+	for _, name := range existingNames {
+		existingMap[name] = true
+	}
+	filtered := make([]skillinference.SkillSuggestion, 0, len(suggestions))
+	for _, s := range suggestions {
+		if !existingMap[s.Name] {
+			filtered = append(filtered, s)
+		}
+	}
+	return filtered
 }

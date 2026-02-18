@@ -397,6 +397,37 @@ func (r *SkillRepository) GetSkillsForEvent(_ context.Context, eventID string) (
 	return result, nil
 }
 
+// GetSkillsForEvents retrieves all unique skills linked to any of the given events.
+func (r *SkillRepository) GetSkillsForEvents(_ context.Context, eventIDs []string) ([]*career.Skill, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	if len(eventIDs) == 0 {
+		return []*career.Skill{}, nil
+	}
+
+	seen := make(map[string]bool)
+	var result []*career.Skill
+
+	for _, eventID := range eventIDs {
+		skillIDs, exists := r.eventSkills[eventID]
+		if !exists {
+			continue
+		}
+		for _, skillID := range skillIDs {
+			if seen[skillID] {
+				continue
+			}
+			seen[skillID] = true
+			if skill, exists := r.skills[skillID]; exists {
+				result = append(result, skill)
+			}
+		}
+	}
+
+	return result, nil
+}
+
 // GetEventCountsForSkills returns a map of skill IDs to event counts.
 func (r *SkillRepository) GetEventCountsForSkills(_ context.Context) (map[string]int, error) {
 	r.mu.RLock()

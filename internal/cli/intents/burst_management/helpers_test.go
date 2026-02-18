@@ -836,7 +836,7 @@ var _ = Describe("Helper Methods", func() {
 
 	Describe("FactExtractionCompleteMsg.Burst fallback", func() {
 		BeforeEach(func() {
-			ctx.SkillInferenceService = skillinference.NewSkillInferenceService(nil, nil)
+			ctx.SkillInferenceService = skillinference.NewSkillInferenceService(nil, nil, nil)
 		})
 
 		It("should use msg.Burst when selectedBurst is nil and trigger skill inference", func() {

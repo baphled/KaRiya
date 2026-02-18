@@ -424,6 +424,10 @@ func (i *Intent) updateSkillSuggestionModal(msg tea.Msg) tea.Cmd {
 			i.ShowErrorModal("Skills Created", fmt.Sprintf("Successfully created %d skill(s)", len(accepted)))
 		}
 		i.skillSuggestionModal = nil
+		// Refresh event detail modal if visible to show newly linked skills
+		if i.viewDetailModal != nil && i.selectedEvent != nil {
+			i.viewDetailModal.SetEvent(i.selectedEvent)
+		}
 		return tea.Batch(cmd, i.refreshSkillsModal())
 	}
 	return cmd

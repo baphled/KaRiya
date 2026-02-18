@@ -31,14 +31,15 @@ var _ = Describe("Skill Inference Integration", func() {
 
 	BeforeEach(func() {
 		skillRepo = &mockSkillRepository{
-			skills:     make(map[string]*career.Skill),
-			skillsByID: make(map[string]*career.Skill),
+			skills:      make(map[string]*career.Skill),
+			skillsByID:  make(map[string]*career.Skill),
+			eventSkills: make(map[string][]string),
 		}
 		eventRepo = &mockEventRepository{
 			events: make(map[string]*career.Event),
 		}
 
-		service = skillinference.NewSkillInferenceService(skillRepo, eventRepo)
+		service = skillinference.NewSkillInferenceService(skillRepo, skillRepo, eventRepo)
 		ctx = context.Background() //nolint:fatcontext // test setup
 
 		// Simulate a confirmed burst with events
@@ -134,6 +135,7 @@ var _ = Describe("Skill Inference Integration", func() {
 			existingSkill.LastUsed = &existingTime
 			skillRepo.skills["go"] = existingSkill
 			skillRepo.skillsByID["skill-existing"] = existingSkill
+			skillRepo.eventSkills["event-1"] = []string{"skill-existing"}
 
 			result, err := service.InferSkillsFromBurst(ctx, testBurst, testEvents)
 			Expect(err).NotTo(HaveOccurred())
@@ -159,6 +161,8 @@ var _ = Describe("Skill Inference Integration", func() {
 			pgSkill.LastUsed = &existingTime
 			skillRepo.skills["postgresql"] = pgSkill
 			skillRepo.skillsByID["skill-pg"] = pgSkill
+
+			skillRepo.eventSkills["event-1"] = []string{"skill-go", "skill-pg"}
 
 			result, err := service.InferSkillsFromBurst(ctx, testBurst, testEvents)
 			Expect(err).NotTo(HaveOccurred())

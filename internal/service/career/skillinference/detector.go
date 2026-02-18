@@ -14,12 +14,18 @@ import (
 	"github.com/baphled/kariya/internal/service/career/technology"
 )
 
-// SkillRepository provides data access for skill records.
+// SkillRepository provides core data access for skill records.
 type SkillRepository interface {
 	Create(ctx context.Context, skill *career.Skill) error
 	Update(ctx context.Context, skill *career.Skill) error
 	GetByName(ctx context.Context, name string) (*career.Skill, error)
 	GetByID(ctx context.Context, id string) (*career.Skill, error)
+}
+
+// SkillQueryRepository provides query access for skill records.
+type SkillQueryRepository interface {
+	GetSkillsForEvent(ctx context.Context, eventID string) ([]*career.Skill, error)
+	GetSkillsForEvents(ctx context.Context, eventIDs []string) ([]*career.Skill, error)
 }
 
 // EventRepository provides data access for event-skill linking.
@@ -32,15 +38,17 @@ type EventRepository interface {
 // DefaultSkillInferenceService implements SkillInferenceService using
 // keyword-based detection with word boundary regex matching.
 type DefaultSkillInferenceService struct {
-	skillRepo  SkillRepository
-	eventRepo  EventRepository
-	keywordMap map[string]technology.Entry
+	skillRepo      SkillRepository
+	skillQueryRepo SkillQueryRepository
+	eventRepo      EventRepository
+	keywordMap     map[string]technology.Entry
 }
 
 // NewSkillInferenceService creates a new skill inference service.
 //
 // Expected:
 //   - skillrepository must be valid.
+//   - skillqueryrepository must be valid.
 //   - eventrepository must be valid.
 //
 // Returns:
@@ -48,15 +56,30 @@ type DefaultSkillInferenceService struct {
 //
 // Side effects:
 //   - None.
-func NewSkillInferenceService(skillRepo SkillRepository, eventRepo EventRepository) SkillInferenceService {
+func NewSkillInferenceService(
+	skillRepo SkillRepository,
+	skillQueryRepo SkillQueryRepository,
+	eventRepo EventRepository,
+) SkillInferenceService {
 	return &DefaultSkillInferenceService{
-		skillRepo:  skillRepo,
-		eventRepo:  eventRepo,
-		keywordMap: technology.GetKeywordMap(),
+		skillRepo:      skillRepo,
+		skillQueryRepo: skillQueryRepo,
+		eventRepo:      eventRepo,
+		keywordMap:     technology.GetKeywordMap(),
 	}
 }
 
 // InferSkillsFromEvents analyzes all events for technology mentions.
+//
+// Expected:
+//   - ctx must not be cancelled.
+//   - events may be empty or nil.
+//
+// Returns:
+//   - An InferenceResult with suggestions and existing skill names.
+//
+// Side effects:
+//   - None.
 func (s *DefaultSkillInferenceService) InferSkillsFromEvents(
 	ctx context.Context,
 	events []*career.Event,
@@ -71,7 +94,7 @@ func (s *DefaultSkillInferenceService) InferSkillsFromEvents(
 
 	suggestionMap := s.buildSuggestionMap(events)
 
-	existingNames, err := s.findExistingSkillNames(ctx, suggestionMap)
+	existingNames, err := s.findExistingSkillNames(ctx, events, suggestionMap)
 	if err != nil {
 		return nil, err
 	}
@@ -122,21 +145,31 @@ func (s *DefaultSkillInferenceService) mergeSuggestion(suggestionMap map[string]
 
 func (s *DefaultSkillInferenceService) findExistingSkillNames(
 	ctx context.Context,
+	events []*career.Event,
 	suggestionMap map[string]*SkillSuggestion,
 ) ([]string, error) {
 	if s.skillRepo == nil {
 		return nil, nil
 	}
 
+	eventIDs := make([]string, 0, len(events))
+	for _, event := range events {
+		eventIDs = append(eventIDs, event.ID)
+	}
+
+	linkedSkills, err := s.skillQueryRepo.GetSkillsForEvents(ctx, eventIDs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get skills for events: %w", err)
+	}
+
+	linkedSkillNames := make(map[string]bool, len(linkedSkills))
+	for _, skill := range linkedSkills {
+		linkedSkillNames[skill.Name] = true
+	}
+
 	var existingNames []string
-
 	for name := range suggestionMap {
-		existing, err := s.skillRepo.GetByName(ctx, name)
-		if err != nil && !errors.Is(err, career_repo.ErrSkillNotFound) {
-			return nil, fmt.Errorf("failed to check existing skill %s: %w", name, err)
-		}
-
-		if existing != nil {
+		if linkedSkillNames[name] {
 			existingNames = append(existingNames, name)
 		}
 	}
@@ -146,6 +179,17 @@ func (s *DefaultSkillInferenceService) findExistingSkillNames(
 
 // InferSkillsFromBurst analyzes events within a specific burst.
 // Delegates to InferSkillsFromEvents after filtering events.
+//
+// Expected:
+//   - ctx must not be cancelled.
+//   - burst may be nil.
+//   - events contains all candidate events to filter.
+//
+// Returns:
+//   - An InferenceResult scoped to the burst's events.
+//
+// Side effects:
+//   - None.
 func (s *DefaultSkillInferenceService) InferSkillsFromBurst(
 	ctx context.Context,
 	burst *career.Burst,
@@ -358,7 +402,16 @@ func (s *DefaultSkillInferenceService) containsPattern(text string, words []stri
 //     d. Link skill to events via eventRepo.LinkSkill()
 //  4. Return created/updated skills
 //
-// Returns empty slice if no suggestions provided (not an error).
+// Expected:
+//   - ctx must not be cancelled.
+//   - suggestions may be empty.
+//
+// Returns:
+//   - Created or updated skill records. Empty slice if no suggestions provided.
+//
+// Side effects:
+//   - Creates or updates skills in the skill repository.
+//   - Links skills to events via event repository.
 func (s *DefaultSkillInferenceService) CreateSkillsFromSuggestions(
 	ctx context.Context,
 	suggestions []SkillSuggestion,
