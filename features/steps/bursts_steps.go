@@ -39,7 +39,7 @@ func RegisterBurstsSteps(sc *godog.ScenarioContext) {
 	registerBurstNavigationSteps(sc)
 }
 
-func registerBurstViewSteps(sc *godog.ScenarioContext) { //nolint:dupl // Structural match, different step patterns
+func registerBurstViewSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I have (\d+) bursts? in my profile$`, iHaveNBurstsInMyProfile)
 	sc.Step(`^I have (\d+) bursts?$`, iHaveNBurstsInMyProfile) // Alias
 	sc.Step(`^I should see a list of bursts$`, iShouldSeeAListOfBursts)
@@ -75,7 +75,7 @@ func registerBurstEditSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^the burst should be confirmed$`, theBurstShouldBeConfirmed)
 }
 
-func registerBurstSuggestionSteps(sc *godog.ScenarioContext) { //nolint:dupl // Structural match, different step patterns
+func registerBurstSuggestionSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I have (\d+) unassigned events$`, iHaveUnassignedEvents)
 	sc.Step(`^I press "s" to suggest bursts$`, iPressSToSuggestBursts)
 	sc.Step(`^the detection completes$`, theDetectionCompletes)

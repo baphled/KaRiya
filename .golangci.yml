@@ -563,6 +563,11 @@ linters:
           - contextcheck
         text: "non-inherited new context"
 
+      # BDD step registration functions are structurally similar by design
+      - path: 'features/steps/(.*)\.go'
+        linters:
+          - dupl
+
       # BDD step files use Godog context (test orchestration), not request pipeline context
       - path: 'features/steps/(.*)\.go'
         linters:

@@ -27,8 +27,6 @@ import (
 //
 // Side effects:
 //   - Registers step definitions with Godog.
-//
-//nolint:funlen // Step registration blocks are long by nature.
 func RegisterBrowseSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I have (\d+) events? in my timeline$`, iHaveNEventsInMyTimeline)
 	sc.Step(`^I should see a list of events$`, iShouldSeeAListOfEvents)

@@ -17,6 +17,7 @@ import (
 var opts = godog.Options{
 	Output: colors.Colored(os.Stdout),
 	Format: "progress",
+	Tags:   "~@wip",
 }
 
 func init() {

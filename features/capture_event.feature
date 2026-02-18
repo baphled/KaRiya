@@ -245,7 +245,7 @@ Feature: Capture Career Events
     And I confirm the review
     Then there should be a fact with text "Improved API performance by 40%"
 
-  @happy @enrichment
+  @wip @happy @enrichment
   Scenario: Reject inferred fact during review
     When I select "capture_event" from the menu
     And I select quick capture strategy

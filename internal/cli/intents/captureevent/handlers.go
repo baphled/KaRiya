@@ -3,6 +3,7 @@ package captureevent
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/forms"
