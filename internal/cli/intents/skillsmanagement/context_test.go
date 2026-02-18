@@ -111,6 +111,10 @@ func (m *MockSkillRepository) GetSkillsForEvent(_ context.Context, _ string) ([]
 	return m.skills, nil
 }
 
+func (m *MockSkillRepository) GetSkillsForEvents(_ context.Context, _ []string) ([]*career.Skill, error) {
+	return m.skills, nil
+}
+
 func (m *MockSkillRepository) GetEventCountsForSkills(_ context.Context) (map[string]int, error) {
 	return m.eventCounts, nil
 }

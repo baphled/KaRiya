@@ -64,6 +64,11 @@ var (
 //     eventID parameter is the event UUID. Returns the matching
 //     []*career.Skill slice and nil, or nil and an error on failure.
 //
+//   - GetSkillsForEvents returns all unique skills linked to any of the
+//     given events in a single query. The eventIDs parameter is a slice of
+//     event UUIDs. Returns the deduplicated []*career.Skill slice and nil,
+//     or nil and an error on failure.
+//
 //   - GetEventCountsForSkills returns a map[string]int keyed by skill ID
 //     whose values are the number of events associated with each skill.
 //     The ctx parameter is the only input. Returns the map and nil, or nil
@@ -87,6 +92,7 @@ type SkillRepository interface {
 	Delete(ctx context.Context, id string) error
 	GetByCategory(ctx context.Context, category string) ([]*career.Skill, error)
 	GetSkillsForEvent(ctx context.Context, eventID string) ([]*career.Skill, error)
+	GetSkillsForEvents(ctx context.Context, eventIDs []string) ([]*career.Skill, error)
 	GetEventCountsForSkills(ctx context.Context) (map[string]int, error)
 	GetLastUsedForSkills(ctx context.Context) (map[string]time.Time, error)
 	GetEventsUsingSkill(ctx context.Context, skillID string) ([]*career.Event, error)
