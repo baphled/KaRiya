@@ -67,13 +67,6 @@ type PostSavePersistenceCompleteMsg struct {
 	Skills []*career.Skill
 }
 
-// PostSavePersistenceErrorMsg is sent when post-save review persistence fails.
-type PostSavePersistenceErrorMsg struct {
-	Code    string
-	Message string
-	Cause   error
-}
-
 // BurstProcessingCompleteMsg is sent when burst suggestion workflow is done.
 type BurstProcessingCompleteMsg struct {
 	ConfirmedCount int

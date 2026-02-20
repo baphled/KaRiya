@@ -119,7 +119,7 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 
 	case SubmitErrorMsg:
 		i.submitModal = feedback.NewErrorModal("Save Failed", msg.Message)
-		return nil
+		return i.submitModal.Init()
 
 	case feedback.ModalAutoDismissMsg:
 		return func() tea.Msg { return DismissModalMsg{} }
