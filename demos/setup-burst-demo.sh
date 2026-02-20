@@ -158,10 +158,14 @@ INSERT INTO goose_db_version (version_id, is_applied) VALUES (4, 1);
 INSERT INTO goose_db_version (version_id, is_applied) VALUES (5, 1);
 INSERT INTO goose_db_version (version_id, is_applied) VALUES (6, 1);
 
--- Seed two events with company='TechCo' so SuggestBursts can group them
+-- Seed two events within the last 6 months so SuggestBursts temporal window includes them.
+-- Both events share the token "microservices" and "reducing", giving a text similarity of
+-- 0.22. Combined with company match (TechCo) and empty-keyword/project scores, the pair
+-- reaches a combined similarity of 0.61 — just above the 0.60 MinConfidence threshold —
+-- so DetectBursts forms a cluster and returns a burst suggestion.
 INSERT INTO career_events (id, text, date, company, created_at, updated_at) VALUES
-  ('evt_01', 'Built microservices in Go, reducing deployment time by 30%', '2024-01-15 10:00:00', 'TechCo', '2024-01-15 10:00:00', '2024-01-15 10:00:00'),
-  ('evt_02', 'Deployed production services with Docker and Kubernetes', '2024-02-10 10:00:00', 'TechCo', '2024-02-10 10:00:00', '2024-02-10 10:00:00');
+  ('evt_01', 'Built microservices in Go, reducing deployment time by 30%', date('now', '-60 days'), 'TechCo', datetime('now', '-60 days'), datetime('now', '-60 days')),
+  ('evt_02', 'Deployed microservices to production, reducing query latency by 40%', date('now', '-30 days'), 'TechCo', datetime('now', '-30 days'), datetime('now', '-30 days'));
 SQLEOF
 
 echo "Burst demo environment setup complete at $FAKE_HOME"

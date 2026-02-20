@@ -53,15 +53,16 @@ Sleep 2s
 Type "Reduced API latency by 40% through caching optimization"
 Sleep 500ms
 
-# Submit the form (Enter)
-Enter
-Sleep 5s
+# Submit the form with Ctrl+S (quick submit — skips navigating to Submit button)
+Ctrl+S
+Sleep 8s
 
-# Review screen now shows inferred results
+# Success modal auto-dismisses after countdown
+# Enrichment review screen is now visible
 # The 'f' badge in the footer indicates facts were inferred
 # Press 'f' to open the fact suggestion modal
 Type "f"
-Sleep 3s
+Sleep 4s
 
 # Fact suggestion modal is open
 # Accept the first (and any remaining) fact suggestion with 'a'

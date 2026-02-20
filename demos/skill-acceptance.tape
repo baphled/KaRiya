@@ -53,15 +53,16 @@ Sleep 2s
 Type "Built REST API in Go using Gin framework and PostgreSQL"
 Sleep 500ms
 
-# Submit the form (Enter)
-Enter
-Sleep 5s
+# Submit the form with Ctrl+S (quick submit — skips navigating to Submit button)
+Ctrl+S
+Sleep 8s
 
-# Review screen now shows inferred results
+# Success modal auto-dismisses after countdown
+# Enrichment review screen is now visible
 # The 's' badge in the footer indicates skills were inferred
 # Press 's' to open the skill suggestion modal
 Type "s"
-Sleep 3s
+Sleep 4s
 
 # Skill suggestion modal is open
 # Accept the first skill suggestion with 'a'

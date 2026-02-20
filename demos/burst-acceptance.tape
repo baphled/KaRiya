@@ -54,15 +54,16 @@ Sleep 2s
 Type "Completed database migration reducing query time by 50%"
 Sleep 500ms
 
-# Submit the form (Enter)
-Enter
-Sleep 5s
+# Submit the form with Ctrl+S (quick submit — skips navigating to Submit button)
+Ctrl+S
+Sleep 8s
 
-# Review screen now shows inferred results
+# Success modal auto-dismisses after countdown
+# Enrichment review screen is now visible
 # The 'b' badge in the footer indicates bursts were detected
 # Press 'b' to open the burst suggestion modal
 Type "b"
-Sleep 3s
+Sleep 4s
 
 # Burst suggestion modal is open
 # Confirm the burst suggestion with 'y'
