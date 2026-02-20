@@ -961,6 +961,8 @@ func (e *TestEnv) processCmdResult(msg tea.Msg) {
 		e.updateModelAndExecute(msg)
 	case captureevent.SubmitCompleteMsg:
 		e.processSubmitCompleteMsg(msg)
+	case captureevent.InferenceCompleteMsg:
+		e.updateModelAndExecute(msg)
 	case captureevent.SubmitErrorMsg:
 		e.updateModelAndExecute(msg)
 	case captureevent.DismissModalMsg:

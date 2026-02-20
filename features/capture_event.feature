@@ -160,7 +160,19 @@ Feature: Capture Career Events
   # Fact Editing Scenarios (Review State)
   # ============================================================================
 
-  @wip @happy @enrichment
+  @happy @enrichment
+  Scenario: Accept inferred fact during review
+    When I select "capture_event" from the menu
+    And I select quick capture strategy
+    And I enter event description "Reduced API latency by 40% through caching optimization"
+    And I submit the event
+    And I dismiss the success modal
+    When I open the facts editor
+    And I accept all suggested facts
+    And I confirm the review
+    Then there should be a fact with text "Reduced API latency by 40% through caching optimization"
+
+  @happy @enrichment
   Scenario: Reject inferred fact during review
     When I select "capture_event" from the menu
     And I select quick capture strategy
@@ -171,6 +183,27 @@ Feature: Capture Career Events
     And I reject all suggested facts
     And I confirm the review
     Then there should be 0 facts
+
+  # ============================================================================
+  # Review Navigation Scenarios
+  # ============================================================================
+
+  @happy @enrichment
+  Scenario: Navigate through review sections
+    When I select "capture_event" from the menu
+    And I select quick capture strategy
+    And I enter event description "Built microservices architecture"
+    And I submit the event
+    And I dismiss the success modal
+    Then I should be on the enrichment review screen
+    When I press 'm' to open metadata editor
+    Then I should see the metadata modal
+    When I close the modal
+    And I press 'b' to open bursts editor
+    Then I should see the bursts modal
+    When I close the modal
+    And I press 'f' to open facts editor
+    Then I should see the facts modal
   # ============================================================================
   # Skills Selection (Manual Capture)
   # ============================================================================

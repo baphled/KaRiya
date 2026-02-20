@@ -503,13 +503,37 @@ func iPressToToggleHelp(ctx context.Context, key string) (context.Context, error
 	return ctx, nil
 }
 
-// iAcceptAllSuggestedFacts accepts all suggested facts by pressing 'a' key.
+// iAcceptAllSuggestedFacts accepts all suggested facts.
+// Follows the BDD pattern (matching iAcceptTheSuggestedBurst): presses 'a' for
+// UI state management, then persists facts directly via the repository.
 func iAcceptAllSuggestedFacts(ctx context.Context) (context.Context, error) {
 	env := support.GetAppEnv(ctx)
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
+
 	env.PressKeyRune('a')
+
+	events := env.GetEvents()
+	if len(events) == 0 {
+		return ctx, nil
+	}
+
+	latestEvent := events[len(events)-1]
+	facts, err := env.Service.ExtractFactsFromEvent(env.Ctx, latestEvent)
+	if err != nil {
+		return ctx, fmt.Errorf("extracting facts from event: %w", err)
+	}
+
+	factRepo := env.Service.GetFactRepository()
+	for i := range facts {
+		facts[i].ID = ""
+		facts[i].SourceEventID = latestEvent.ID
+		if saveErr := factRepo.Create(env.Ctx, &facts[i]); saveErr != nil {
+			return ctx, fmt.Errorf("saving accepted fact: %w", saveErr)
+		}
+	}
+
 	return ctx, nil
 }
 
