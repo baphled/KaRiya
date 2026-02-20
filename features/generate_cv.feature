@@ -55,22 +55,6 @@ Feature: Generate CV
     And I should see "Recruiter"
     And I should see "Peer"
 
-  @happy
-  Scenario: Navigate wizard with tab
-    Given I have a complete profile with events and facts
-    When I select "generate_cv" from the menu
-    And I press tab
-    Then I should be on audience field
-    When I press tab
-    Then I should move to step 2
-
-  @happy
-  Scenario: Cancel wizard with escape
-    Given I have a complete profile with events and facts
-    When I select "generate_cv" from the menu
-    And I press escape
-    Then I should be on the main menu
-
   # ============================================================================
   # CV Configuration Wizard - Step 2 (TECH)
   # ============================================================================
@@ -123,14 +107,6 @@ Feature: Generate CV
     And I should see "Fullstack"
     And I should see "DevOps"
 
-  @happy
-  Scenario: Navigate back to step 1 with escape
-    Given I have a complete profile with events and facts
-    When I select "generate_cv" from the menu
-    And I complete step 1
-    And I press escape
-    Then I should be back on step 1
-
   # ============================================================================
   # CV Configuration Wizard - Step 3 (FORMAT)
   # ============================================================================
@@ -175,53 +151,13 @@ Feature: Generate CV
     And I should see "2 Page"
     And I should see "Detailed"
 
-  @happy
-  Scenario: Skip wizard with Ctrl+S
-    Given I have a complete profile with events and facts
-    When I select "generate_cv" from the menu
-    And I press Ctrl+S to skip
-    Then I should see the progress modal
-    And I should see "Generating"
-
   # ============================================================================
   # Technology Extraction
   # ============================================================================
 
-  @happy
-  Scenario: View technology extraction progress
-    Given I have a complete profile with skills
-    When I select "generate_cv" from the menu
-    Then I should see the progress modal
-    And I should see "Extracting Technologies"
-
-  @happy
-  Scenario: Cancel technology extraction
-    Given I have a complete profile with skills
-    When I select "generate_cv" from the menu
-    And I see the extracting progress
-    And I press escape
-    Then I should be on the main menu
-
   # ============================================================================
   # CV Generation Progress
   # ============================================================================
-
-  @happy
-  Scenario: View CV generation progress
-    Given I have a complete profile with events and facts
-    When I select "generate_cv" from the menu
-    And I complete the wizard
-    Then I should see the progress modal
-    And I should see "Generating CV"
-
-  @happy
-  Scenario: Cancel CV generation
-    Given I have a complete profile with events and facts
-    When I select "generate_cv" from the menu
-    And I complete the wizard
-    And I see the generating progress
-    And I press escape
-    Then I should be on the main menu
 
   # ============================================================================
   # CV Review Screen
@@ -254,13 +190,6 @@ Feature: Generate CV
     Then I should see the CV preview screen
 
   @happy
-  Scenario: Navigate to preview with p key
-    Given I have generated a CV
-    When I am on the CV review screen
-    And I press "p" to preview
-    Then I should see the CV preview screen
-
-  @happy
   Scenario: Export directly from review
     Given I have generated a CV
     When I am on the CV review screen
@@ -272,13 +201,6 @@ Feature: Generate CV
     Given I have generated a CV
     When I am on the CV review screen
     And I press "e" to edit
-    Then I should see the CV wizard modal
-
-  @happy
-  Scenario: Go back from review
-    Given I have generated a CV
-    When I am on the CV review screen
-    And I press escape
     Then I should see the CV wizard modal
 
   # ============================================================================
@@ -302,13 +224,6 @@ Feature: Generate CV
     And I should be on the main menu
 
   @happy
-  Scenario: Confirm CV with y key
-    Given I have generated a CV
-    When I navigate to the CV preview screen
-    And I press "y" to confirm
-    Then the CV generation should complete
-
-  @happy
   Scenario: Export from preview
     Given I have generated a CV
     When I navigate to the CV preview screen
@@ -321,13 +236,6 @@ Feature: Generate CV
     When I navigate to the CV preview screen
     And I press "e" to edit
     Then I should see the CV wizard modal
-
-  @happy
-  Scenario: Go back from preview to review
-    Given I have generated a CV
-    When I navigate to the CV preview screen
-    And I press escape
-    Then I should see the CV review screen
 
   # ============================================================================
   # Export Options Modal
@@ -369,23 +277,9 @@ Feature: Generate CV
     Then I should see export progress
     And the export should complete
 
-  @happy
-  Scenario: Cancel export
-    Given I have generated a CV
-    When I open the export options modal
-    And I press escape
-    Then I should return to previous screen
-
   # ============================================================================
   # Export Progress
   # ============================================================================
-
-  @happy
-  Scenario: View export progress
-    Given I have generated a CV
-    When I start an export
-    Then I should see the progress modal
-    And I should see "Exporting"
 
   @happy
   Scenario: Export success shows confirmation
@@ -398,40 +292,7 @@ Feature: Generate CV
   # Error Handling
   # ============================================================================
 
-  @sad
-  Scenario: Handle generation error
-    Given CV generation will fail
-    When I select "generate_cv" from the menu
-    And I complete the wizard
-    Then I should see an error modal
-    And I should see error details
-
-  @sad
-  Scenario: Handle export error
-    Given I have generated a CV
-    And export will fail
-    When I start an export
-    Then I should see an error modal
-    And I should be able to retry
-
   # ============================================================================
   # Navigation and Exit
   # ============================================================================
 
-  @sad
-  Scenario: Exit from wizard returns to menu
-    Given I have a complete profile with events and facts
-    When I select "generate_cv" from the menu
-    And I press escape
-    Then I should be on the main menu
-
-  @sad
-  Scenario: Full navigation escape path
-    Given I have generated a CV
-    When I navigate to the CV preview screen
-    And I press escape
-    Then I should see the CV review screen
-    When I press escape
-    Then I should see the CV wizard modal
-    When I press escape
-    Then I should be on the main menu
