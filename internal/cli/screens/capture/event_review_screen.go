@@ -415,10 +415,6 @@ func (s *EventReviewScreen) renderBursts(th theme.Theme) string {
 		label := primitives.Body(fmt.Sprintf("  %d. %s", i+1, burst.Name), th).Render()
 		b.WriteString(primitives.JoinHorizontal(primitives.AlignLeft, indicator, " ", label))
 		b.WriteString("\n")
-		if burst.Description != "" {
-			b.WriteString(primitives.Muted("     "+burst.Description, th).Render())
-			b.WriteString("\n")
-		}
 	}
 
 	return b.String()

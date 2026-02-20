@@ -14,6 +14,7 @@ import (
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/cucumber/godog"
+	"github.com/google/uuid"
 	"github.com/onsi/gomega"
 )
 
@@ -502,25 +503,30 @@ func theAcceptedBurstShouldHaveAtLeastNEventIDs(ctx context.Context, minCount in
 }
 
 func createSuggestedBurstFromEvents(env *e2e.TestEnv) error {
-	// This is a "When" helper - bypass UI and directly create a burst from latest event
-	// Get latest event via view state parsing
-	view := env.GetView()
-	if view == "" {
-		return nil
+	events := env.GetEvents()
+	if len(events) == 0 {
+		return fmt.Errorf("no events found in database")
 	}
 
-	// Create a default suggested burst
+	eventIDs := make([]string, 0, len(events))
+	for _, e := range events {
+		eventIDs = append(eventIDs, e.ID)
+	}
+
 	burst := &career.Burst{
+		ID:        uuid.New().String(),
 		Name:      "Suggested Burst",
-		EventIDs:  []string{},
+		EventIDs:  eventIDs,
 		Confirmed: false,
 	}
 
 	burstRepo := env.Service.GetBurstRepository()
-	if burstRepo != nil {
-		if err := burstRepo.Create(env.Ctx, burst); err != nil {
-			return fmt.Errorf("creating suggested burst: %w", err)
-		}
+	if burstRepo == nil {
+		return fmt.Errorf("burst repository not set")
+	}
+
+	if err := burstRepo.Create(env.Ctx, burst); err != nil {
+		return fmt.Errorf("creating suggested burst: %w", err)
 	}
 	return nil
 }

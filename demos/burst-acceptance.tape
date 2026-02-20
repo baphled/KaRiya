@@ -66,8 +66,8 @@ Type "b"
 Sleep 4s
 
 # Burst suggestion modal is open
-# Confirm the burst suggestion with 'y'
-Type "y"
+# Accept the burst suggestion with 'a'
+Type "a"
 Sleep 2s
 
 # Modal auto-closes when the suggestion is processed

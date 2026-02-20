@@ -441,4 +441,103 @@ var _ = Describe("Burst SuggestionReviewModal in CaptureEvent", func() {
 			Expect(intent.reviewState.AcceptedSkills).To(BeEmpty())
 		})
 	})
+
+	Describe("Full-flow burst acceptance through intent.Update", func() {
+		var (
+			screen   *captureScreens.EventReviewScreen
+			inferred *career.Burst
+		)
+
+		BeforeEach(func() {
+			inferred = fixtures.Burst("inferred-burst-uuid-1", "evt-1", "evt-2")
+			inferred.Name = "API Development"
+			inferred.Description = "Built REST APIs"
+
+			repos := memoryrepo.NewRepositories()
+			svc := careerservice.NewService(repos.Event)
+			intent.context.CareerService = svc
+
+			intent.currentState = StateReview
+			intent.reviewState = &ReviewInferredEventState{
+				Event:          fixtures.EventWith("evt-1", "Built services in Go", "", ""),
+				InferredBursts: []*career.Burst{inferred},
+				InferredBurstSuggestions: []burstfact.BurstSuggestion{
+					{Name: "API Development", Description: "Built REST APIs", EventIDs: []string{"evt-1", "evt-2"}, ConfidenceScore: 0.9},
+				},
+				AcceptedBursts: make([]*career.Burst, 0),
+				EditingMode:    EditingModeNone,
+			}
+
+			screen = captureScreens.NewEventReviewScreen(
+				[]string{"Test"},
+				intent.reviewState.Event,
+				intent.reviewState.InferredBursts,
+				nil,
+				nil,
+			)
+			intent.activeScreen = screen
+		})
+
+		It("shows ● indicator after pressing b then a through intent.Update", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'b'}})
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+
+			Expect(screen.View()).To(ContainSubstring("●"))
+		})
+
+		It("sets AcceptedBursts on reviewState", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'b'}})
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+
+			Expect(intent.reviewState.AcceptedBursts).To(HaveLen(1))
+			Expect(intent.reviewState.AcceptedBursts[0].Name).To(Equal("API Development"))
+		})
+
+		It("resets EditingMode to None after acceptance", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'b'}})
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+
+			Expect(intent.reviewState.EditingMode).To(Equal(EditingModeNone))
+		})
+	})
+
+	Describe("Full-flow skill acceptance through intent.Update (comparison)", func() {
+		var screen *captureScreens.EventReviewScreen
+
+		BeforeEach(func() {
+			intent.currentState = StateReview
+			intent.reviewState = &ReviewInferredEventState{
+				Event: fixtures.EventWith("evt-1", "Built services in Go", "", ""),
+				InferredSkills: []skillinference.SkillSuggestion{
+					{Name: "Go", Category: "backend", Confidence: 0.95},
+				},
+				AcceptedSkills: make([]*career.Skill, 0),
+				EditingMode:    EditingModeNone,
+			}
+
+			screen = captureScreens.NewEventReviewScreen(
+				[]string{"Test"},
+				intent.reviewState.Event,
+				nil,
+				nil,
+				intent.reviewState.InferredSkills,
+			)
+			intent.activeScreen = screen
+		})
+
+		It("shows ● indicator after pressing s then a through intent.Update", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+
+			Expect(screen.View()).To(ContainSubstring("●"))
+		})
+
+		It("sets AcceptedSkills on reviewState", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+
+			Expect(intent.reviewState.AcceptedSkills).To(HaveLen(1))
+			Expect(intent.reviewState.AcceptedSkills[0].Name).To(Equal("Go"))
+		})
+	})
 })
