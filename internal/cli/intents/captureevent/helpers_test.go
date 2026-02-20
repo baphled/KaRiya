@@ -288,6 +288,44 @@ var _ = Describe("Helper Methods", func() {
 			})
 		})
 
+		Context("with a valid event and career service", func() {
+			var (
+				svc       *careerservice.Service
+				eventRepo *memoryrepo.EventRepository
+				burstRepo *memoryrepo.BurstRepository
+			)
+
+			BeforeEach(func() {
+				repos := memoryrepo.NewRepositories()
+				eventRepo = repos.Event.(*memoryrepo.EventRepository)
+				burstRepo = repos.Burst.(*memoryrepo.BurstRepository)
+
+				svc = careerservice.NewService(eventRepo)
+				svc.SetBurstRepository(burstRepo)
+				svc.SetSkillRepository(repos.Skill)
+
+				intent.context.CareerService = svc
+			})
+
+			It("should return SubmitCompleteMsg without inference data", func() {
+				event := fixtures.EventWith("", "Valid event text for testing submission", "", "")
+				intent.reviewState = &ReviewInferredEventState{
+					Event:          event,
+					AcceptedFacts:  make([]*career.Fact, 0),
+					AcceptedBursts: make([]*career.Burst, 0),
+				}
+
+				cmd := intent.performSubmit()
+				Expect(cmd).NotTo(BeNil())
+
+				msg := cmd()
+				_, ok := msg.(SubmitCompleteMsg)
+				Expect(ok).To(BeTrue(), "expected SubmitCompleteMsg, got %T", msg)
+			})
+		})
+	})
+
+	Describe("performInference", func() {
 		Context("burst detection and fact extraction", func() {
 			var (
 				svc       *careerservice.Service
@@ -318,7 +356,7 @@ var _ = Describe("Helper Methods", func() {
 					Expect(eventRepo.Create(ctx, existing2)).To(Succeed())
 				})
 
-				It("should return SubmitCompleteMsg with inferred bursts", func() {
+				It("should return InferenceCompleteMsg with inferred bursts", func() {
 					event := fixtures.EventWith("", "Valid event text for testing submission", "", "")
 					intent.reviewState = &ReviewInferredEventState{
 						Event:          event,
@@ -326,16 +364,16 @@ var _ = Describe("Helper Methods", func() {
 						AcceptedBursts: make([]*career.Burst, 0),
 					}
 
-					cmd := intent.performSubmit()
+					cmd := intent.performInference()
 					Expect(cmd).NotTo(BeNil())
 
 					msg := cmd()
-					completeMsg, ok := msg.(SubmitCompleteMsg)
-					Expect(ok).To(BeTrue(), "expected SubmitCompleteMsg, got %T", msg)
+					completeMsg, ok := msg.(InferenceCompleteMsg)
+					Expect(ok).To(BeTrue(), "expected InferenceCompleteMsg, got %T", msg)
 					Expect(completeMsg.InferredBursts).NotTo(BeNil())
 				})
 
-				It("should return SubmitCompleteMsg with inferred facts from bursts", func() {
+				It("should return InferenceCompleteMsg with inferred facts from bursts", func() {
 					event := fixtures.EventWith("", "Valid event text for testing submission", "", "")
 					intent.reviewState = &ReviewInferredEventState{
 						Event:          event,
@@ -343,14 +381,14 @@ var _ = Describe("Helper Methods", func() {
 						AcceptedBursts: make([]*career.Burst, 0),
 					}
 
-					cmd := intent.performSubmit()
+					cmd := intent.performInference()
 					msg := cmd()
-					completeMsg, ok := msg.(SubmitCompleteMsg)
-					Expect(ok).To(BeTrue(), "expected SubmitCompleteMsg, got %T", msg)
+					completeMsg, ok := msg.(InferenceCompleteMsg)
+					Expect(ok).To(BeTrue(), "expected InferenceCompleteMsg, got %T", msg)
 					Expect(completeMsg.InferredFacts).NotTo(BeNil())
 				})
 
-				It("should not break submission when burst detection errors occur", func() {
+				It("should not break when burst detection errors occur", func() {
 					event := fixtures.EventWith("", "Valid event text for testing submission", "", "")
 					intent.reviewState = &ReviewInferredEventState{
 						Event:          event,
@@ -358,41 +396,43 @@ var _ = Describe("Helper Methods", func() {
 						AcceptedBursts: make([]*career.Burst, 0),
 					}
 
-					cmd := intent.performSubmit()
+					cmd := intent.performInference()
 					msg := cmd()
-					_, ok := msg.(SubmitCompleteMsg)
-					Expect(ok).To(BeTrue(), "expected SubmitCompleteMsg even with errors, got %T", msg)
+					_, ok := msg.(InferenceCompleteMsg)
+					Expect(ok).To(BeTrue(), "expected InferenceCompleteMsg even with errors, got %T", msg)
 				})
 			})
 
 			Context("when <2 events exist", func() {
 				It("should fallback to ExtractFactsFromEvent", func() {
 					event := fixtures.EventWith("", "Valid event text for testing submission", "", "")
+					Expect(eventRepo.Create(context.Background(), event)).To(Succeed())
 					intent.reviewState = &ReviewInferredEventState{
 						Event:          event,
 						AcceptedFacts:  make([]*career.Fact, 0),
 						AcceptedBursts: make([]*career.Burst, 0),
 					}
 
-					cmd := intent.performSubmit()
+					cmd := intent.performInference()
 					msg := cmd()
-					completeMsg, ok := msg.(SubmitCompleteMsg)
-					Expect(ok).To(BeTrue(), "expected SubmitCompleteMsg, got %T", msg)
+					completeMsg, ok := msg.(InferenceCompleteMsg)
+					Expect(ok).To(BeTrue(), "expected InferenceCompleteMsg, got %T", msg)
 					Expect(completeMsg.InferredFacts).NotTo(BeNil())
 					Expect(completeMsg.InferredBursts).To(BeEmpty())
 				})
 
 				It("should return empty bursts slice", func() {
 					event := fixtures.EventWith("", "Valid event text for testing submission", "", "")
+					Expect(eventRepo.Create(context.Background(), event)).To(Succeed())
 					intent.reviewState = &ReviewInferredEventState{
 						Event:          event,
 						AcceptedFacts:  make([]*career.Fact, 0),
 						AcceptedBursts: make([]*career.Burst, 0),
 					}
 
-					cmd := intent.performSubmit()
+					cmd := intent.performInference()
 					msg := cmd()
-					completeMsg, ok := msg.(SubmitCompleteMsg)
+					completeMsg, ok := msg.(InferenceCompleteMsg)
 					Expect(ok).To(BeTrue())
 					Expect(completeMsg.InferredBursts).To(BeEmpty())
 				})
@@ -411,16 +451,17 @@ var _ = Describe("Helper Methods", func() {
 
 				It("should fallback to ExtractFactsFromEvent", func() {
 					event := fixtures.EventWith("", "Valid event text for testing submission", "", "")
+					Expect(eventRepo.Create(context.Background(), event)).To(Succeed())
 					intent.reviewState = &ReviewInferredEventState{
 						Event:          event,
 						AcceptedFacts:  make([]*career.Fact, 0),
 						AcceptedBursts: make([]*career.Burst, 0),
 					}
 
-					cmd := intent.performSubmit()
+					cmd := intent.performInference()
 					msg := cmd()
-					completeMsg, ok := msg.(SubmitCompleteMsg)
-					Expect(ok).To(BeTrue(), "expected SubmitCompleteMsg, got %T", msg)
+					completeMsg, ok := msg.(InferenceCompleteMsg)
+					Expect(ok).To(BeTrue(), "expected InferenceCompleteMsg, got %T", msg)
 					Expect(completeMsg.InferredFacts).NotTo(BeNil())
 				})
 			})
@@ -431,16 +472,17 @@ var _ = Describe("Helper Methods", func() {
 					intent.context.CareerService = svcWithoutBurst
 
 					event := fixtures.EventWith("", "Valid event text for testing submission", "", "")
+					Expect(eventRepo.Create(context.Background(), event)).To(Succeed())
 					intent.reviewState = &ReviewInferredEventState{
 						Event:          event,
 						AcceptedFacts:  make([]*career.Fact, 0),
 						AcceptedBursts: make([]*career.Burst, 0),
 					}
 
-					cmd := intent.performSubmit()
+					cmd := intent.performInference()
 					msg := cmd()
-					completeMsg, ok := msg.(SubmitCompleteMsg)
-					Expect(ok).To(BeTrue(), "expected SubmitCompleteMsg, got %T", msg)
+					completeMsg, ok := msg.(InferenceCompleteMsg)
+					Expect(ok).To(BeTrue(), "expected InferenceCompleteMsg, got %T", msg)
 					Expect(completeMsg.InferredFacts).NotTo(BeNil())
 				})
 			})
@@ -453,11 +495,28 @@ var _ = Describe("Helper Methods", func() {
 					AcceptedBursts: make([]*career.Burst, 0),
 				}
 
-				cmd := intent.performSubmit()
+				cmd := intent.performInference()
 				msg := cmd()
-				completeMsg, ok := msg.(SubmitCompleteMsg)
+				completeMsg, ok := msg.(InferenceCompleteMsg)
 				Expect(ok).To(BeTrue())
 				Expect(completeMsg.InferredSkills).To(BeNil())
+			})
+		})
+
+		Context("when CareerService is nil", func() {
+			It("should return InferenceCompleteMsg with empty results", func() {
+				intent.context.CareerService = nil
+				intent.reviewState = &ReviewInferredEventState{
+					Event: fixtures.EventWith("", "Valid event text for testing", "", ""),
+				}
+
+				cmd := intent.performInference()
+				msg := cmd()
+				completeMsg, ok := msg.(InferenceCompleteMsg)
+				Expect(ok).To(BeTrue())
+				Expect(completeMsg.InferredSkills).To(BeNil())
+				Expect(completeMsg.InferredFacts).To(BeNil())
+				Expect(completeMsg.InferredBursts).To(BeNil())
 			})
 		})
 	})
@@ -466,13 +525,13 @@ var _ = Describe("Helper Methods", func() {
 		It("should return empty slice for nil input", func() {
 			result := factsToPointers(nil)
 			Expect(result).NotTo(BeNil())
-			Expect(result).To(HaveLen(0))
+			Expect(result).To(BeEmpty())
 		})
 
 		It("should return empty slice for empty input", func() {
 			result := factsToPointers([]career.Fact{})
 			Expect(result).NotTo(BeNil())
-			Expect(result).To(HaveLen(0))
+			Expect(result).To(BeEmpty())
 		})
 
 		It("should convert facts to pointers", func() {

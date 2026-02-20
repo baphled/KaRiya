@@ -123,7 +123,6 @@ func (i *Intent) performSubmit() tea.Cmd {
 	acceptedSkills := i.reviewState.AcceptedSkills
 	strategy := i.strategy
 	careerService := i.context.CareerService
-	skillService := i.context.SkillInferenceService
 
 	return func() tea.Msg {
 		if event == nil {
@@ -198,7 +197,6 @@ func (i *Intent) performSubmit() tea.Cmd {
 			eventRepo := careerService.GetEventRepository()
 			for _, skill := range acceptedSkills {
 				if skill.ID == "" {
-					// New skill - create it
 					if err := skillRepo.Create(ctx, skill); err != nil {
 						return SubmitErrorMsg{
 							Code:    "SKILL_SAVE_ERROR",
@@ -207,7 +205,6 @@ func (i *Intent) performSubmit() tea.Cmd {
 						}
 					}
 				}
-				// Link skill to event using event repository
 				if err := eventRepo.LinkSkill(ctx, event.ID, skill.ID); err != nil {
 					return SubmitErrorMsg{
 						Code:    "SKILL_LINK_ERROR",
@@ -217,6 +214,125 @@ func (i *Intent) performSubmit() tea.Cmd {
 				}
 			}
 		}
+
+		return SubmitCompleteMsg{}
+	}
+}
+
+// performPostSavePersistence persists skills, facts, and confirms bursts after
+// the initial event save during post-save review.
+//
+// Expected:
+//   - event is non-nil and has a valid ID.
+//   - facts, skills, bursts may be empty or nil.
+//
+// Returns:
+//   - A tea.Cmd that runs asynchronously and produces a
+//     PostSavePersistenceCompleteMsg on success or a SubmitErrorMsg on failure.
+//
+// Side effects:
+//   - Creates skills via skillRepo.Create and links them via eventRepo.LinkSkill.
+//   - Saves facts via careerService.SaveFact (sets SourceEventID if empty).
+//   - Confirms bursts via careerService.ConfirmBurst.
+func (i *Intent) performPostSavePersistence(
+	event *career.Event,
+	facts []*career.Fact,
+	skills []*career.Skill,
+	bursts []*career.Burst,
+) tea.Cmd {
+	careerService := i.context.CareerService
+
+	return func() tea.Msg {
+		if careerService == nil {
+			return PostSavePersistenceCompleteMsg{
+				Event:  event,
+				Bursts: bursts,
+				Facts:  facts,
+				Skills: skills,
+			}
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		skillRepo := careerService.GetSkillRepository()
+		eventRepo := careerService.GetEventRepository()
+
+		for _, skill := range skills {
+			if skill.ID == "" {
+				if err := skillRepo.Create(ctx, skill); err != nil {
+					return SubmitErrorMsg{
+						Code:    "SKILL_SAVE_ERROR",
+						Message: fmt.Sprintf("Failed to save skill: %v", err),
+						Cause:   err,
+					}
+				}
+			}
+			if err := eventRepo.LinkSkill(ctx, event.ID, skill.ID); err != nil {
+				return SubmitErrorMsg{
+					Code:    "SKILL_LINK_ERROR",
+					Message: fmt.Sprintf("Failed to link skill: %v", err),
+					Cause:   err,
+				}
+			}
+		}
+
+		for _, fact := range facts {
+			if fact.ID == "" {
+				fact.SourceEventID = event.ID
+				if err := careerService.SaveFact(ctx, fact); err != nil {
+					return SubmitErrorMsg{
+						Code:    "FACT_SAVE_ERROR",
+						Message: fmt.Sprintf("Failed to save fact: %v", err),
+						Cause:   err,
+					}
+				}
+			}
+		}
+
+		for _, burst := range bursts {
+			if err := careerService.ConfirmBurst(ctx, burst); err != nil {
+				return SubmitErrorMsg{
+					Code:    "BURST_CONFIRM_ERROR",
+					Message: fmt.Sprintf("Failed to confirm burst: %v", err),
+					Cause:   err,
+				}
+			}
+		}
+
+		return PostSavePersistenceCompleteMsg{
+			Event:  event,
+			Bursts: bursts,
+			Facts:  facts,
+			Skills: skills,
+		}
+	}
+}
+
+// performInference runs LLM inference calls (skill inference, burst suggestion,
+// fact extraction) in a background tea.Cmd with its own timeout. This is
+// decoupled from performSubmit so that event persistence completes promptly
+// without waiting for potentially slow LLM calls.
+//
+// Expected:
+//   - i.reviewState.Event is non-nil (event was already saved).
+//   - i.context.CareerService may be nil (inference is skipped).
+//
+// Returns:
+//   - A tea.Cmd that runs asynchronously and produces an InferenceCompleteMsg.
+//
+// Side effects:
+//   - Calls SkillInferenceService.InferSkillsFromEvents.
+//   - Calls CareerService.SuggestBursts and ExtractFactsFromBurst/Event.
+//   - May persist burst suggestions via SaveBurstSuggestions.
+func (i *Intent) performInference() tea.Cmd {
+	event := i.reviewState.Event
+	careerService := i.context.CareerService
+	skillService := i.context.SkillInferenceService
+
+	return func() tea.Msg {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
 
 		var inferredSkills []skillinference.SkillSuggestion
 		if skillService != nil {
@@ -229,38 +345,40 @@ func (i *Intent) performSubmit() tea.Cmd {
 		var inferredFacts []*career.Fact
 		var inferredBursts []*career.Burst
 
-		allEvents, listErr := careerService.ListEvents(ctx, repo.EventListFilters{Limit: -1})
-		if listErr == nil && len(allEvents) >= 2 {
-			var allEventIDs []string
-			for _, e := range allEvents {
-				allEventIDs = append(allEventIDs, e.ID)
+		if careerService != nil {
+			allEvents, listErr := careerService.ListEvents(ctx, repo.EventListFilters{Limit: -1})
+			if listErr == nil && len(allEvents) >= 2 {
+				var allEventIDs []string
+				for _, e := range allEvents {
+					allEventIDs = append(allEventIDs, e.ID)
+				}
+
+				suggestions, suggestErr := careerService.SuggestBursts(ctx, allEventIDs)
+				if suggestErr == nil && len(suggestions) > 0 {
+					savedBursts, saveErr := careerService.SaveBurstSuggestions(ctx, suggestions)
+					if saveErr == nil && len(savedBursts) > 0 {
+						inferredBursts = savedBursts
+						var allFacts []career.Fact
+						for _, burst := range savedBursts {
+							facts, extractErr := careerService.ExtractFactsFromBurst(ctx, burst)
+							if extractErr == nil {
+								allFacts = append(allFacts, facts...)
+							}
+						}
+						inferredFacts = factsToPointers(allFacts)
+					}
+				}
 			}
 
-			suggestions, suggestErr := careerService.SuggestBursts(ctx, allEventIDs)
-			if suggestErr == nil && len(suggestions) > 0 {
-				savedBursts, saveErr := careerService.SaveBurstSuggestions(ctx, suggestions)
-				if saveErr == nil && len(savedBursts) > 0 {
-					inferredBursts = savedBursts
-					var allFacts []career.Fact
-					for _, burst := range savedBursts {
-						facts, extractErr := careerService.ExtractFactsFromBurst(ctx, burst)
-						if extractErr == nil {
-							allFacts = append(allFacts, facts...)
-						}
-					}
-					inferredFacts = factsToPointers(allFacts)
+			if len(inferredFacts) == 0 {
+				eventFacts, extractErr := careerService.ExtractFactsFromEvent(ctx, event)
+				if extractErr == nil {
+					inferredFacts = factsToPointers(eventFacts)
 				}
 			}
 		}
 
-		if len(inferredFacts) == 0 {
-			eventFacts, extractErr := careerService.ExtractFactsFromEvent(ctx, event)
-			if extractErr == nil {
-				inferredFacts = factsToPointers(eventFacts)
-			}
-		}
-
-		return SubmitCompleteMsg{
+		return InferenceCompleteMsg{
 			InferredSkills: inferredSkills,
 			InferredFacts:  inferredFacts,
 			InferredBursts: inferredBursts,
