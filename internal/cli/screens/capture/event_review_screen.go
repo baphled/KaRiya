@@ -487,10 +487,10 @@ func (s *EventReviewScreen) isBurstAccepted(burst *career.Burst) bool {
 	return false
 }
 
-// isFactAccepted returns true if the fact's ID appears in acceptedFacts.
+// isFactAccepted returns true if the fact's Text appears in acceptedFacts.
 func (s *EventReviewScreen) isFactAccepted(fact *career.Fact) bool {
 	for _, af := range s.acceptedFacts {
-		if af.ID == fact.ID {
+		if af.Text == fact.Text {
 			return true
 		}
 	}
