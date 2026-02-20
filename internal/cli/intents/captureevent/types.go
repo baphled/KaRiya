@@ -58,10 +58,6 @@ type Intent struct {
 
 	// submitModal is the loading/success/error modal shown during async submission.
 	submitModal *feedback.Modal
-
-	// postSaveReview is true when reviewing enriched data after a successful save,
-	// as opposed to the pre-save review.
-	postSaveReview bool
 }
 
 // ReviewInferredEventState holds all data for the review sub-flow where the user

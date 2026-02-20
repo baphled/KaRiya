@@ -6,6 +6,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/burst_management/modals"
 	captureScreens "github.com/baphled/kariya/internal/cli/screens/capture"
+	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/repository/career/memory"
 	careerservice "github.com/baphled/kariya/internal/service/career"
@@ -343,7 +344,7 @@ var _ = Describe("Skill Inference in CaptureEvent", func() {
 
 		It("completes intent when review submits accepted skills as career.Skill", func() {
 			intent.currentState = StateReview
-			intent.postSaveReview = true
+			intent.submitModal = feedback.NewSuccessModal("Event saved!")
 			intent.reviewState = &ReviewInferredEventState{
 				Event: fixtures.EventWith("evt-1", "test", "", ""),
 			}
@@ -395,7 +396,7 @@ var _ = Describe("Skill Inference in CaptureEvent", func() {
 
 			intent.context.CareerService = svc
 			intent.currentState = StateReview
-			intent.postSaveReview = true
+			intent.submitModal = feedback.NewSuccessModal("Event saved!")
 			intent.reviewState = &ReviewInferredEventState{
 				Event: testEvent,
 			}

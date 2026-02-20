@@ -7,6 +7,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/burst_management/modals"
 	captureScreens "github.com/baphled/kariya/internal/cli/screens/capture"
+	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/domain/career"
 	memoryrepo "github.com/baphled/kariya/internal/repository/career/memory"
 	careerservice "github.com/baphled/kariya/internal/service/career"
@@ -234,7 +235,7 @@ var _ = Describe("Fact Suggestion in CaptureEvent", func() {
 				)
 
 				intent.currentState = StateReview
-				intent.postSaveReview = true
+				intent.submitModal = feedback.NewSuccessModal("Event saved!")
 				intent.reviewState = &ReviewInferredEventState{
 					Event: event,
 				}
@@ -271,7 +272,7 @@ var _ = Describe("Fact Suggestion in CaptureEvent", func() {
 				Expect(factRepo.Create(ctx, existingFact)).To(Succeed())
 
 				intent.currentState = StateReview
-				intent.postSaveReview = true
+				intent.submitModal = feedback.NewSuccessModal("Event saved!")
 				intent.reviewState = &ReviewInferredEventState{
 					Event: event,
 				}
@@ -304,7 +305,7 @@ var _ = Describe("Fact Suggestion in CaptureEvent", func() {
 
 				intent.context.CareerService = nil
 				intent.currentState = StateReview
-				intent.postSaveReview = true
+				intent.submitModal = feedback.NewSuccessModal("Event saved!")
 				intent.reviewState = &ReviewInferredEventState{
 					Event: event,
 				}

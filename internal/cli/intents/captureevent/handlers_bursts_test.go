@@ -5,6 +5,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/screens"
+	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/domain/career"
 	memoryrepo "github.com/baphled/kariya/internal/repository/career/memory"
 	careerservice "github.com/baphled/kariya/internal/service/career"
@@ -98,7 +99,7 @@ var _ = Describe("burst persistence in postSaveReview", func() {
 			Expect(burst.Confirmed).To(BeFalse())
 
 			intent.currentState = StateReview
-			intent.postSaveReview = true
+			intent.submitModal = feedback.NewSuccessModal("Event saved!")
 			intent.reviewState = &ReviewInferredEventState{
 				Event: event,
 			}
@@ -130,7 +131,7 @@ var _ = Describe("burst persistence in postSaveReview", func() {
 			Expect(burstRepo.Create(ctx, burst)).To(Succeed())
 
 			intent.currentState = StateReview
-			intent.postSaveReview = true
+			intent.submitModal = feedback.NewSuccessModal("Event saved!")
 			intent.reviewState = &ReviewInferredEventState{
 				Event: event,
 			}
@@ -161,7 +162,7 @@ var _ = Describe("burst persistence in postSaveReview", func() {
 
 			intent.context.CareerService = nil
 			intent.currentState = StateReview
-			intent.postSaveReview = true
+			intent.submitModal = feedback.NewSuccessModal("Event saved!")
 			intent.reviewState = &ReviewInferredEventState{
 				Event: event,
 			}

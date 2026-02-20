@@ -127,8 +127,9 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 
 	case DismissModalMsg:
 		if i.submitModal != nil {
+			wasSuccess := i.submitModal.Type == feedback.ModalSuccess
 			i.submitModal = nil
-			if i.postSaveReview {
+			if wasSuccess {
 				i.currentState = StateReview
 
 				breadcrumbs := []string{"Main Menu", "Capture Event", "Review Enrichment"}

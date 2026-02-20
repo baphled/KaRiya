@@ -239,11 +239,7 @@ func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
 			i.reviewState.AcceptedFacts = facts
 			i.reviewState.AcceptedSkills = convertedSkills
 
-			if i.postSaveReview {
-				return i.performPostSavePersistence(event, facts, convertedSkills, bursts)
-			}
-
-			return i.showSubmitModal()
+			return i.performPostSavePersistence(event, facts, convertedSkills, bursts)
 		}
 		return i.setFailedCmd("INVALID_REVIEW_DATA", fmt.Sprintf("Invalid review data type: %T", data), nil)
 

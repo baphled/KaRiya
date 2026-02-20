@@ -8,6 +8,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens"
 	cliservice "github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/terminal"
+	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/domain/career"
 	memoryrepo "github.com/baphled/kariya/internal/repository/career/memory"
 	careerservice "github.com/baphled/kariya/internal/service/career"
@@ -368,7 +369,7 @@ var _ = Describe("Coverage gaps", func() {
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 			intent.context.CareerService = svc
-			intent.postSaveReview = true
+			intent.submitModal = feedback.NewSuccessModal("Event saved!")
 			intent.currentState = StateReview
 
 			event := fixtures.EventWith("ps-review", "Valid post-save review event text", "Corp", "Proj")
