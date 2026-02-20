@@ -27,19 +27,16 @@ type TapeData struct {
 // Returns: Rendered tape content as string, or error if template rendering fails.
 // Side effects: None.
 func RenderTape(data TapeData) (string, error) {
-	// Read the embedded template
 	tmplContent, err := templateFS.ReadFile("templates/base.tape.tmpl")
 	if err != nil {
 		return "", fmt.Errorf("reading template: %w", err)
 	}
 
-	// Parse the template
 	tmpl, err := template.New("base.tape").Parse(string(tmplContent))
 	if err != nil {
 		return "", fmt.Errorf("parsing template: %w", err)
 	}
 
-	// Render the template
 	var buf strings.Builder
 	if err := tmpl.Execute(&buf, data); err != nil {
 		return "", fmt.Errorf("executing template: %w", err)

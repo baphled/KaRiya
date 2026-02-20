@@ -106,7 +106,6 @@ func ListTranslatablePatterns() []StepPattern {
 //nolint:funlen // matcher registration is long by design
 func buildMatchers() []stepMatcher {
 	return []stepMatcher{
-		// Form-bypass (UNTRANSLATABLE) — checked first.
 		formBypassMatcher(`^I submit the event$`),
 		formBypassMatcher(`^I submit the skill form$`),
 		formBypassMatcher(`^I confirm filter$`),
@@ -117,7 +116,6 @@ func buildMatchers() []stepMatcher {
 		formBypassMatcher(`^I save metadata changes$`),
 		formBypassMatcher(`^I confirm the review$`),
 
-		// Menu selection — Down×index + Enter.
 		{
 			pattern:      regexp.MustCompile(`^I select "([^"]*)" from the menu$`),
 			translatable: true,
@@ -144,11 +142,8 @@ func buildMatchers() []stepMatcher {
 			},
 		},
 
-		// Specific key presses — verified against step definition bodies.
-		// DISCREPANCY: step text says "s" but body sends tea.KeyCtrlE.
 		verifiedKeyMatcher(`^I press "s" to view events$`, CtrlE,
 			`I press "s" to view events`),
-		// DISCREPANCY: step text says 'm' but body sends 'e' rune
 		charKeyMatcher(`^I press 'm' to open metadata editor$`, "e",
 			`I press 'm' to open metadata editor`),
 		charKeyMatcher(`^I press "a" to add skill$`, "a",
@@ -170,7 +165,6 @@ func buildMatchers() []stepMatcher {
 		verifiedKeyMatcher(`^I press Ctrl\+S$`, CtrlS,
 			`I press Ctrl+S`),
 
-		// Navigation primitives
 		navMatcher(`^I press enter`, Enter, `I press enter`),
 		navMatcher(`^I close the modal$`, Escape, `I close the modal`),
 		navMatcher(`^I press escape$`, Escape, `I press escape`),
@@ -183,7 +177,6 @@ func buildMatchers() []stepMatcher {
 			`I press "k" to navigate up`),
 		navMatcher(`^I press tab$`, Tab, `I press tab`),
 
-		// Text input — Type@100ms "text"
 		inputMatcher(`^I enter event description "([^"]*)"$`,
 			`I enter event description "Built a REST API"`),
 		inputMatcher(`^I enter skill name "([^"]*)"$`,
@@ -197,7 +190,6 @@ func buildMatchers() []stepMatcher {
 		inputMatcher(`^I enter "([^"]*)"$`,
 			`I enter "test input"`),
 
-		// Setup steps (Given) — translatable, no VHS commands
 		setupMatcher(`^the database is empty$`,
 			`the database is empty`),
 		setupMatcher(`^I am on the main menu$`,
