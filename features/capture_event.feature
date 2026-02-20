@@ -249,7 +249,7 @@ Feature: Capture Career Events
     And I submit the event
     And I dismiss the success modal
     Then I should be on the enrichment review screen
-    When I press 'm' to open metadata editor
+    When I press 'e' to open metadata editor
     Then I should see the metadata modal
     When I close the modal
     And I press 'b' to open bursts editor

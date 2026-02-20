@@ -88,9 +88,11 @@ func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 		case "suggest_facts":
 			i.reviewState.EditingMode = EditingModeFacts
 
-			facts := make([]career.Fact, len(i.reviewState.InferredFacts))
-			for idx, f := range i.reviewState.InferredFacts {
-				facts[idx] = *f
+			var facts []career.Fact
+			for _, f := range i.reviewState.InferredFacts {
+				if f != nil {
+					facts = append(facts, *f)
+				}
 			}
 
 			i.reviewState.factSuggestionModal = modals.NewFactSuggestionModal(
