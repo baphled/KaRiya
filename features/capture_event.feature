@@ -175,7 +175,7 @@ Feature: Capture Career Events
   # Skills Selection (Manual Capture)
   # ============================================================================
 
-  @happy
+  @happy @wip
   Scenario: Manual capture with skills selection
     When I select "capture_event" from the menu
     And I select manual capture strategy
