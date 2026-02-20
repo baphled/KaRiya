@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -609,6 +610,490 @@ var _ = Describe("vhsgen CLI", func() {
 				Expect(filtered).To(HaveLen(1))
 				Expect(filtered[0].scenario.Name).To(Equal("Present Scenario"))
 			})
+		})
+	})
+
+	Describe("run subcommand", func() {
+		var tmpDir string
+
+		BeforeEach(func() {
+			var err error
+			tmpDir, err = os.MkdirTemp("", "vhsgen-run-*")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			os.RemoveAll(tmpDir)
+		})
+
+		Context("--output missing", func() {
+			It("returns exit code 1 with error message", func() {
+				var out, errOut bytes.Buffer
+				code := run([]string{"run", "--all", "--features", "../../features/"}, &out, &errOut)
+
+				Expect(code).To(Equal(1))
+				Expect(errOut.String()).To(ContainSubstring("--output is required"))
+			})
+		})
+
+		Context("no filter flags", func() {
+			It("returns exit code 1 requiring --all, --feature, or --scenario", func() {
+				var out, errOut bytes.Buffer
+				code := run([]string{"run", "--output", tmpDir}, &out, &errOut)
+
+				Expect(code).To(Equal(1))
+				Expect(errOut.String()).To(ContainSubstring("--all"))
+			})
+		})
+
+		Context("unknown flag", func() {
+			It("returns exit code 1 with error message", func() {
+				var out, errOut bytes.Buffer
+				code := run([]string{"run", "--unknown-flag-xyz"}, &out, &errOut)
+
+				Expect(code).To(Equal(1))
+				Expect(errOut.String()).To(ContainSubstring("Error parsing flags"))
+			})
+		})
+
+		Context("with non-existent features directory", func() {
+			It("returns exit code 1", func() {
+				var out, errOut bytes.Buffer
+				code := run([]string{
+					"run",
+					"--all",
+					"--features", "/nonexistent/features/",
+					"--scenarios-dir", "/nonexistent/scenarios/",
+					"--output", tmpDir,
+				}, &out, &errOut)
+
+				Expect(code).To(Equal(1))
+			})
+		})
+
+		Context("--all flag with no translatable scenarios", func() {
+			It("exits 0 with empty report", func() {
+				emptyFeaturesDir := GinkgoT().TempDir()
+
+				var out, errOut bytes.Buffer
+				code := run([]string{
+					"run",
+					"--all",
+					"--features", emptyFeaturesDir,
+					"--scenarios-dir", emptyFeaturesDir,
+					"--output", tmpDir,
+				}, &out, &errOut)
+
+				Expect(code).To(Equal(0))
+				output := out.String()
+				Expect(output).To(ContainSubstring("No translatable scenarios found."))
+				Expect(output).To(ContainSubstring("Results: 0 PASS, 0 FAIL, 0 NEW"))
+			})
+		})
+
+		Context("when vhs binary is missing from PATH", func() {
+			var origPath string
+
+			BeforeEach(func() {
+				origPath = os.Getenv("PATH")
+				Expect(os.Setenv("PATH", "")).To(Succeed())
+			})
+
+			AfterEach(func() {
+				Expect(os.Setenv("PATH", origPath)).To(Succeed())
+			})
+
+			It("returns exit code 1 with render error when translatable scenarios exist", func() {
+				var out, errOut bytes.Buffer
+				code := run([]string{
+					"run",
+					"--all",
+					"--features", "../../features/",
+					"--scenarios-dir", "../../demos/vhs/scenarios/",
+					"--output", tmpDir,
+				}, &out, &errOut)
+
+				Expect(code).To(Equal(1))
+				Expect(errOut.String()).To(ContainSubstring("Error rendering tapes"))
+			})
+		})
+	})
+
+	Describe("parseRunFlags", func() {
+		It("returns error when output is missing", func() {
+			var errOut bytes.Buffer
+			_, err := parseRunFlags([]string{"--all"}, &errOut)
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("returns error when no filter is specified", func() {
+			var errOut bytes.Buffer
+			_, err := parseRunFlags([]string{"--output", "/tmp"}, &errOut)
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("parses valid --all flag successfully", func() {
+			var errOut bytes.Buffer
+			opts, err := parseRunFlags([]string{"--output", "/tmp", "--all"}, &errOut)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(*opts.outputDir).To(Equal("/tmp"))
+			Expect(*opts.runAll).To(BeTrue())
+		})
+
+		It("parses --feature flag successfully", func() {
+			var errOut bytes.Buffer
+			opts, err := parseRunFlags([]string{"--output", "/tmp", "--feature", "Onboarding"}, &errOut)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(*opts.featureFilter).To(Equal("Onboarding"))
+		})
+
+		It("parses --scenario flag successfully", func() {
+			var errOut bytes.Buffer
+			opts, err := parseRunFlags([]string{"--output", "/tmp", "--scenario", "My Scenario"}, &errOut)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(*opts.scenarioFilter).To(Equal("My Scenario"))
+		})
+
+		It("applies default golden dir", func() {
+			var errOut bytes.Buffer
+			opts, err := parseRunFlags([]string{"--output", "/tmp", "--all"}, &errOut)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(*opts.goldenDir).To(Equal("demos/vhs/golden/"))
+		})
+
+		It("applies default timeout", func() {
+			var errOut bytes.Buffer
+			opts, err := parseRunFlags([]string{"--output", "/tmp", "--all"}, &errOut)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(*opts.timeoutSec).To(Equal(120))
+		})
+
+		It("returns error for unknown flag", func() {
+			var errOut bytes.Buffer
+			_, err := parseRunFlags([]string{"--unknown-flag-xyz"}, &errOut)
+			Expect(err).To(HaveOccurred())
+		})
+	})
+
+	Describe("update-baseline subcommand", func() {
+		var tmpDir string
+
+		BeforeEach(func() {
+			var err error
+			tmpDir, err = os.MkdirTemp("", "vhsgen-update-*")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			os.RemoveAll(tmpDir)
+		})
+
+		Context("--output missing", func() {
+			It("returns exit code 1 with error message", func() {
+				var out, errOut bytes.Buffer
+				code := run([]string{"update-baseline", "--all"}, &out, &errOut)
+
+				Expect(code).To(Equal(1))
+				Expect(errOut.String()).To(ContainSubstring("--output is required"))
+			})
+		})
+
+		Context("no --all and no positional scenario", func() {
+			It("returns exit code 1 with error message", func() {
+				var out, errOut bytes.Buffer
+				code := run([]string{"update-baseline", "--output", tmpDir}, &out, &errOut)
+
+				Expect(code).To(Equal(1))
+				Expect(errOut.String()).To(ContainSubstring("--all or a scenario name is required"))
+			})
+		})
+
+		Context("unknown flag", func() {
+			It("returns exit code 1 with error message", func() {
+				var out, errOut bytes.Buffer
+				code := run([]string{"update-baseline", "--unknown-flag-xyz"}, &out, &errOut)
+
+				Expect(code).To(Equal(1))
+				Expect(errOut.String()).To(ContainSubstring("Error parsing flags"))
+			})
+		})
+
+		Context("--all flag with empty output directory", func() {
+			It("exits 0 reporting 0 baselines updated", func() {
+				goldenDir := GinkgoT().TempDir()
+				outputDir := GinkgoT().TempDir()
+
+				var out, errOut bytes.Buffer
+				code := run([]string{
+					"update-baseline",
+					"--all",
+					"--output", outputDir,
+					"--golden", goldenDir,
+				}, &out, &errOut)
+
+				Expect(code).To(Equal(0))
+				Expect(out.String()).To(ContainSubstring("Updated 0 baselines."))
+			})
+		})
+
+		Context("--all flag with ascii files present", func() {
+			It("updates each baseline and reports count", func() {
+				goldenDir := GinkgoT().TempDir()
+				outputDir := GinkgoT().TempDir()
+
+				asciiPath := filepath.Join(outputDir, "my-scenario.ascii")
+				gifPath := filepath.Join(outputDir, "my-scenario.gif")
+				Expect(os.WriteFile(asciiPath, []byte("ascii content"), 0o600)).To(Succeed())
+				Expect(os.WriteFile(gifPath, []byte("gif content"), 0o600)).To(Succeed())
+
+				var out, errOut bytes.Buffer
+				code := run([]string{
+					"update-baseline",
+					"--all",
+					"--output", outputDir,
+					"--golden", goldenDir,
+				}, &out, &errOut)
+
+				Expect(code).To(Equal(0))
+				Expect(out.String()).To(ContainSubstring("Updated 1 baselines."))
+				Expect(out.String()).To(ContainSubstring("Updated:"))
+			})
+		})
+
+		Context("positional scenario name", func() {
+			It("updates the named scenario baseline", func() {
+				goldenDir := GinkgoT().TempDir()
+				outputDir := GinkgoT().TempDir()
+
+				asciiPath := filepath.Join(outputDir, "my-scenario.ascii")
+				gifPath := filepath.Join(outputDir, "my-scenario.gif")
+				Expect(os.WriteFile(asciiPath, []byte("ascii content"), 0o600)).To(Succeed())
+				Expect(os.WriteFile(gifPath, []byte("gif content"), 0o600)).To(Succeed())
+
+				var out, errOut bytes.Buffer
+				code := run([]string{
+					"update-baseline",
+					"--output", outputDir,
+					"--golden", goldenDir,
+					"my-scenario",
+				}, &out, &errOut)
+
+				Expect(code).To(Equal(0))
+				Expect(out.String()).To(ContainSubstring("Updated 1 baselines."))
+			})
+		})
+
+		Context("--all flag with non-existent output directory", func() {
+			It("exits 0 reporting 0 baselines (missing dir is not an error)", func() {
+				goldenDir := GinkgoT().TempDir()
+
+				var out, errOut bytes.Buffer
+				code := run([]string{
+					"update-baseline",
+					"--all",
+					"--output", "/nonexistent/output/dir/",
+					"--golden", goldenDir,
+				}, &out, &errOut)
+
+				Expect(code).To(Equal(0))
+				Expect(out.String()).To(ContainSubstring("Updated 0 baselines."))
+			})
+		})
+
+		Context("--all flag when UpdateBaseline fails due to read-only golden dir", func() {
+			It("returns exit code 1 with error message", func() {
+				goldenDir := GinkgoT().TempDir()
+				outputDir := GinkgoT().TempDir()
+
+				asciiPath := filepath.Join(outputDir, "my-scenario.ascii")
+				gifPath := filepath.Join(outputDir, "my-scenario.gif")
+				Expect(os.WriteFile(asciiPath, []byte("ascii content"), 0o600)).To(Succeed())
+				Expect(os.WriteFile(gifPath, []byte("gif content"), 0o600)).To(Succeed())
+
+				Expect(os.Chmod(goldenDir, 0o000)).To(Succeed())
+				defer os.Chmod(goldenDir, 0o755) //nolint:errcheck
+
+				var out, errOut bytes.Buffer
+				code := run([]string{
+					"update-baseline",
+					"--all",
+					"--output", outputDir,
+					"--golden", goldenDir,
+				}, &out, &errOut)
+
+				Expect(code).To(Equal(1))
+				Expect(errOut.String()).To(ContainSubstring("Error updating baseline"))
+			})
+		})
+
+		Context("positional scenario when UpdateBaseline fails due to read-only golden dir", func() {
+			It("returns exit code 1 with error message", func() {
+				goldenDir := GinkgoT().TempDir()
+				outputDir := GinkgoT().TempDir()
+
+				asciiPath := filepath.Join(outputDir, "my-scenario.ascii")
+				gifPath := filepath.Join(outputDir, "my-scenario.gif")
+				Expect(os.WriteFile(asciiPath, []byte("ascii content"), 0o600)).To(Succeed())
+				Expect(os.WriteFile(gifPath, []byte("gif content"), 0o600)).To(Succeed())
+
+				Expect(os.Chmod(goldenDir, 0o000)).To(Succeed())
+				defer os.Chmod(goldenDir, 0o755) //nolint:errcheck
+
+				var out, errOut bytes.Buffer
+				code := run([]string{
+					"update-baseline",
+					"--output", outputDir,
+					"--golden", goldenDir,
+					"my-scenario",
+				}, &out, &errOut)
+
+				Expect(code).To(Equal(1))
+				Expect(errOut.String()).To(ContainSubstring("Error updating baseline"))
+			})
+		})
+	})
+
+	Describe("parseUpdateBaselineFlags", func() {
+		It("returns error when output is missing", func() {
+			var errOut bytes.Buffer
+			_, _, err := parseUpdateBaselineFlags([]string{"--all"}, &errOut)
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("parses --all flag successfully", func() {
+			var errOut bytes.Buffer
+			opts, _, err := parseUpdateBaselineFlags([]string{"--all", "--output", "/tmp"}, &errOut)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(*opts.updateAll).To(BeTrue())
+		})
+
+		It("applies default golden dir", func() {
+			var errOut bytes.Buffer
+			opts, _, err := parseUpdateBaselineFlags([]string{"--all", "--output", "/tmp"}, &errOut)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(*opts.goldenDir).To(Equal("demos/vhs/golden/"))
+		})
+
+		It("captures positional scenario names", func() {
+			var errOut bytes.Buffer
+			_, positional, err := parseUpdateBaselineFlags(
+				[]string{"--output", "/tmp", "scenario-a", "scenario-b"},
+				&errOut,
+			)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(positional).To(ConsistOf("scenario-a", "scenario-b"))
+		})
+
+		It("returns error for unknown flag", func() {
+			var errOut bytes.Buffer
+			_, _, err := parseUpdateBaselineFlags([]string{"--unknown-flag-xyz"}, &errOut)
+			Expect(err).To(HaveOccurred())
+		})
+	})
+
+	Describe("reportPipelineResults", func() {
+		It("returns 0 when all results are PASS", func() {
+			results := []vhsgen.ValidationResult{
+				{Scenario: "scenario-a", Status: vhsgen.ValidationPass},
+				{Scenario: "scenario-b", Status: vhsgen.ValidationPass},
+			}
+			var out bytes.Buffer
+			code := reportPipelineResults(&out, results)
+			Expect(code).To(Equal(0))
+			Expect(out.String()).To(ContainSubstring("[PASS] scenario-a"))
+			Expect(out.String()).To(ContainSubstring("[PASS] scenario-b"))
+			Expect(out.String()).To(ContainSubstring("Results: 2 PASS, 0 FAIL, 0 NEW"))
+		})
+
+		It("returns 1 when any result is FAIL", func() {
+			results := []vhsgen.ValidationResult{
+				{Scenario: "scenario-a", Status: vhsgen.ValidationPass},
+				{Scenario: "scenario-b", Status: vhsgen.ValidationFail},
+			}
+			var out bytes.Buffer
+			code := reportPipelineResults(&out, results)
+			Expect(code).To(Equal(1))
+			Expect(out.String()).To(ContainSubstring("[FAIL] scenario-b"))
+			Expect(out.String()).To(ContainSubstring("Results: 1 PASS, 1 FAIL, 0 NEW"))
+		})
+
+		It("returns 0 when results are NEW", func() {
+			results := []vhsgen.ValidationResult{
+				{Scenario: "scenario-new", Status: vhsgen.ValidationNew},
+			}
+			var out bytes.Buffer
+			code := reportPipelineResults(&out, results)
+			Expect(code).To(Equal(0))
+			Expect(out.String()).To(ContainSubstring("[NEW]  scenario-new"))
+			Expect(out.String()).To(ContainSubstring("Results: 0 PASS, 0 FAIL, 1 NEW"))
+		})
+
+		It("returns 0 with empty results", func() {
+			var out bytes.Buffer
+			code := reportPipelineResults(&out, []vhsgen.ValidationResult{})
+			Expect(code).To(Equal(0))
+			Expect(out.String()).To(ContainSubstring("Results: 0 PASS, 0 FAIL, 0 NEW"))
+		})
+	})
+
+	Describe("collectOutputASCIIFiles", func() {
+		It("returns empty slice for non-existent directory", func() {
+			files, err := collectOutputASCIIFiles("/nonexistent/path/")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(files).To(BeEmpty())
+		})
+
+		It("returns empty slice for empty directory", func() {
+			dir := GinkgoT().TempDir()
+			files, err := collectOutputASCIIFiles(dir)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(files).To(BeEmpty())
+		})
+
+		It("returns ascii files in directory", func() {
+			dir := GinkgoT().TempDir()
+			Expect(os.WriteFile(filepath.Join(dir, "a.ascii"), []byte("x"), 0o600)).To(Succeed())
+			Expect(os.WriteFile(filepath.Join(dir, "b.gif"), []byte("x"), 0o600)).To(Succeed())
+
+			files, err := collectOutputASCIIFiles(dir)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(files).To(HaveLen(1))
+			Expect(files[0]).To(HaveSuffix("a.ascii"))
+		})
+	})
+
+	Describe("deriveScenarioName", func() {
+		It("strips output dir prefix and .ascii suffix, slugifies", func() {
+			outputDir := "/tmp/output"
+			asciiPath := "/tmp/output/feature-a/scenario-b.ascii"
+			result := deriveScenarioName(outputDir, asciiPath)
+			Expect(result).To(Equal("feature-a-scenario-b"))
+		})
+
+		It("handles root-level ascii files", func() {
+			outputDir := "/tmp/output"
+			asciiPath := "/tmp/output/my-scenario.ascii"
+			result := deriveScenarioName(outputDir, asciiPath)
+			Expect(result).To(Equal("my-scenario"))
+		})
+	})
+
+	Describe("deriveGIFPath", func() {
+		It("replaces .ascii extension with .gif", func() {
+			result := deriveGIFPath("/tmp/output/my-scenario.ascii")
+			Expect(result).To(Equal("/tmp/output/my-scenario.gif"))
+		})
+	})
+
+	Describe("pipelineTimeout", func() {
+		It("converts seconds to duration", func() {
+			d := pipelineTimeout(60)
+			Expect(d).To(Equal(60 * time.Second))
+		})
+
+		It("handles zero seconds", func() {
+			d := pipelineTimeout(0)
+			Expect(d).To(Equal(time.Duration(0)))
 		})
 	})
 
