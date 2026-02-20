@@ -4,6 +4,8 @@ coverage.html
 *.test
 *.out
 
+.sisyphus
+
 docs/STATE_MATRIX.md
 docs/state_matrix.json
 
@@ -85,3 +87,4 @@ PLAN.md
 .session-active
 .tdd-state
 tmp/
+.sisyphus/

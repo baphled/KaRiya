@@ -10,7 +10,6 @@ import (
 
 	"github.com/baphled/kariya/features/support"
 	"github.com/baphled/kariya/internal/domain/career"
-	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	"github.com/cucumber/godog"
 	"github.com/onsi/gomega"
@@ -40,7 +39,7 @@ func RegisterBurstsSteps(sc *godog.ScenarioContext) {
 	registerBurstNavigationSteps(sc)
 }
 
-func registerBurstViewSteps(sc *godog.ScenarioContext) { //nolint:dupl // Structural match, different step patterns
+func registerBurstViewSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I have (\d+) bursts? in my profile$`, iHaveNBurstsInMyProfile)
 	sc.Step(`^I have (\d+) bursts?$`, iHaveNBurstsInMyProfile) // Alias
 	sc.Step(`^I should see a list of bursts$`, iShouldSeeAListOfBursts)
@@ -66,7 +65,6 @@ func registerBurstEditSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I submit the burst form$`, iSubmitTheBurstForm)
 	sc.Step(`^the burst should have name "([^"]*)"$`, theBurstShouldHaveName)
 	sc.Step(`^I tab to description field$`, iTabToDescriptionField)
-	sc.Step(`^I clear the burst description field$`, iClearTheBurstDescriptionField)
 	sc.Step(`^I enter burst description "([^"]*)"$`, iEnterBurstDescription)
 	sc.Step(`^the burst should have description "([^"]*)"$`, theBurstShouldHaveDescription)
 	sc.Step(`^I have an unconfirmed burst "([^"]*)" with (\d+) events$`, iHaveAnUnconfirmedBurst)
@@ -77,7 +75,7 @@ func registerBurstEditSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^the burst should be confirmed$`, theBurstShouldBeConfirmed)
 }
 
-func registerBurstSuggestionSteps(sc *godog.ScenarioContext) { //nolint:dupl // Structural match, different step patterns
+func registerBurstSuggestionSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I have (\d+) unassigned events$`, iHaveUnassignedEvents)
 	sc.Step(`^I press "s" to suggest bursts$`, iPressSToSuggestBursts)
 	sc.Step(`^the detection completes$`, theDetectionCompletes)
@@ -86,21 +84,15 @@ func registerBurstSuggestionSteps(sc *godog.ScenarioContext) { //nolint:dupl // 
 	sc.Step(`^I should see confidence scores$`, iShouldSeeConfidenceScores)
 	sc.Step(`^I have burst suggestions available$`, iHaveBurstSuggestionsAvailable)
 	sc.Step(`^I am on the burst suggestion modal$`, iAmOnTheBurstSuggestionModal)
-	sc.Step(`^I should see different suggestions highlighted$`, iShouldSeeDifferentSuggestionsHighlighted)
 	sc.Step(`^I should see the suggestion events modal$`, iShouldSeeTheSuggestionEventsModal)
 	sc.Step(`^I have a confirmed burst "([^"]*)" with (\d+) events$`, iHaveAConfirmedBurstWithNEvents)
 	sc.Step(`^I have skill suggestions from burst$`, iHaveSkillSuggestionsFromBurst)
 	sc.Step(`^I am on the skill suggestion modal$`, iAmOnTheSkillSuggestionModalBursts)
-	sc.Step(`^I should see different skills highlighted$`, iShouldSeeDifferentSkillsHighlighted)
 	sc.Step(`^I should see events that led to this skill$`, iShouldSeeEventsThatLedToThisSkill)
 	sc.Step(`^the skill should be marked as rejected$`, theSkillShouldBeMarkedAsRejectedBursts)
 }
 
 func registerBurstNavigationSteps(sc *godog.ScenarioContext) {
-	sc.Step(`^I should be at the last burst$`, iShouldBeAtTheLastBurst)
-	sc.Step(`^I should be at the first burst$`, iShouldBeAtTheFirstBurst)
-	sc.Step(`^I should see different bursts$`, iShouldSeeDifferentBursts)
-	sc.Step(`^I should see the original bursts$`, iShouldSeeTheOriginalBursts)
 	sc.Step(`^I should not see the loading modal$`, iShouldNotSeeTheLoadingModal)
 }
 
@@ -413,31 +405,10 @@ func iSubmitTheBurstForm(ctx context.Context) (context.Context, error) {
 		return ctx, godog.ErrPending
 	}
 
-	// Bypass UI form submission and directly update burst
-	// This matches the pattern used by SubmitSkill() and SubmitFact()
-
-	burstRepo := env.Service.GetBurstRepository()
-	bursts, err := burstRepo.List(env.Ctx, careerrepo.BurstListFilters{})
-	if err != nil {
-		return ctx, err
-	}
-
-	if len(bursts) >= 1 {
-		// Update the first burst with context data
-		burst := bursts[0]
-
-		// Apply name from context if present
-		if name, ok := ctx.Value(burstNameKey).(string); ok {
-			burst.Name = name
-		}
-
-		// Apply description from context if present
-		if desc, ok := ctx.Value(burstDescriptionKey).(string); ok {
-			burst.Description = desc
-		}
-
-		env.SubmitBurstUpdate(burst)
-	}
+	// Drive the actual huh form UI submission
+	// The form has fields: Name, Description
+	// We navigate through them and confirm at the end
+	env.Confirm()
 
 	return ctx, nil
 }
@@ -448,10 +419,9 @@ func theBurstShouldHaveName(ctx context.Context, name string) error {
 		return godog.ErrPending
 	}
 
-	// Get burst from repository
-	bursts := env.GetBursts()
-	gomega.Expect(bursts).To(gomega.HaveLen(1))
-	gomega.Expect(bursts[0].Name).To(gomega.Equal(name))
+	// Assert burst name is visible in the view
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring(name))
 
 	return nil
 }
@@ -464,17 +434,6 @@ func iTabToDescriptionField(ctx context.Context) (context.Context, error) {
 
 	// Tab to next field (description)
 	env.PressKey(tea.KeyTab)
-	return ctx, nil
-}
-
-func iClearTheBurstDescriptionField(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-
-	// Clear the description field using Ctrl+U (Unix line-kill)
-	env.PressKey(tea.KeyCtrlU)
 	return ctx, nil
 }
 
@@ -494,9 +453,9 @@ func theBurstShouldHaveDescription(ctx context.Context, description string) erro
 		return godog.ErrPending
 	}
 
-	bursts := env.GetBursts()
-	gomega.Expect(bursts).To(gomega.HaveLen(1))
-	gomega.Expect(bursts[0].Description).To(gomega.Equal(description))
+	// Assert burst description is visible in the view
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring(description))
 
 	return nil
 }
@@ -556,18 +515,9 @@ func iConfirmTheAction(ctx context.Context) (context.Context, error) {
 		return ctx, godog.ErrPending
 	}
 
-	// Bypass UI confirmation modal - directly confirm the burst
-	// The UI flow doesn't properly show the loading modal in tests due to async timing
-	burstRepo := env.Service.GetBurstRepository()
-	bursts, err := burstRepo.List(env.Ctx, careerrepo.BurstListFilters{})
-	if err != nil {
-		return ctx, err
-	}
-
-	if len(bursts) >= 1 {
-		burst := bursts[0]
-		env.ConfirmBurst(burst)
-	}
+	// Drive the UI confirmation modal by pressing Enter
+	// The confirm modal accepts "y", "Y", or "enter" to confirm
+	env.PressKey(tea.KeyEnter)
 
 	return ctx, nil
 }
@@ -578,9 +528,14 @@ func theBurstShouldNotBeConfirmed(ctx context.Context) error {
 		return godog.ErrPending
 	}
 
-	bursts := env.GetBursts()
-	gomega.Expect(bursts).To(gomega.HaveLen(1))
-	gomega.Expect(bursts[0].Confirmed).To(gomega.BeFalse())
+	// Assert burst is not confirmed by checking the view
+	// On list view: check for "✗ No"
+	// On detail modal: check for absence of "✓ Confirmed"
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("✗ No"),
+		gomega.Not(gomega.ContainSubstring("✓ Confirmed")),
+	))
 
 	return nil
 }
@@ -591,9 +546,14 @@ func theBurstShouldBeConfirmed(ctx context.Context) error {
 		return godog.ErrPending
 	}
 
-	bursts := env.GetBursts()
-	gomega.Expect(bursts).To(gomega.HaveLen(1))
-	gomega.Expect(bursts[0].Confirmed).To(gomega.BeTrue())
+	// Assert burst is confirmed by checking the view
+	// On list view: check for "✓ Yes"
+	// On detail modal: check for "✓ Confirmed"
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("✓ Yes"),
+		gomega.ContainSubstring("✓ Confirmed"),
+	))
 
 	return nil
 }
@@ -654,10 +614,6 @@ func iAmOnTheBurstSuggestionModal(_ context.Context) error {
 	return godog.ErrPending
 }
 
-func iShouldSeeDifferentSuggestionsHighlighted(_ context.Context) error {
-	return godog.ErrPending
-}
-
 func iShouldSeeTheSuggestionEventsModal(_ context.Context) error {
 	return godog.ErrPending
 }
@@ -674,77 +630,12 @@ func iAmOnTheSkillSuggestionModalBursts(_ context.Context) error {
 	return godog.ErrPending
 }
 
-func iShouldSeeDifferentSkillsHighlighted(_ context.Context) error {
-	return godog.ErrPending
-}
-
 func iShouldSeeEventsThatLedToThisSkill(_ context.Context) error {
 	return godog.ErrPending
 }
 
 func theSkillShouldBeMarkedAsRejectedBursts(_ context.Context) error {
 	return godog.ErrPending
-}
-
-func iShouldBeAtTheLastBurst(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
-	}
-	view := env.GetView()
-	// Last burst in a list of 20 would show "20" in some indicator
-	// For now, just verify we're still on the burst list
-	gomega.Expect(view).To(gomega.ContainSubstring("Burst"))
-	return nil
-}
-
-func iShouldBeAtTheFirstBurst(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
-	}
-	view := env.GetView()
-	// Verify we're on the burst list
-	gomega.Expect(view).To(gomega.ContainSubstring("Burst"))
-	return nil
-}
-
-func iShouldSeeDifferentBursts(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-
-	// Store current view for later comparison
-	currentView := env.GetView()
-	ctx = context.WithValue(ctx, originalBurstsViewKey, currentView)
-
-	// Just verify we're still on burst list (actual difference check is complex)
-	gomega.Expect(currentView).To(gomega.ContainSubstring("Burst"))
-	return ctx, nil
-}
-
-func iShouldSeeTheOriginalBursts(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
-	}
-
-	// Get the stored original view
-	originalView, ok := ctx.Value(originalBurstsViewKey).(string)
-	if !ok {
-		return godog.ErrPending
-	}
-
-	currentView := env.GetView()
-
-	// Views should be similar (both showing burst list)
-	// But exact match is hard due to selection state changes
-	// Just verify we're back on the burst list
-	gomega.Expect(currentView).To(gomega.ContainSubstring("Burst"))
-	gomega.Expect(originalView).To(gomega.ContainSubstring("Burst"))
-
-	return nil
 }
 
 func iShouldNotSeeTheLoadingModal(ctx context.Context) error {

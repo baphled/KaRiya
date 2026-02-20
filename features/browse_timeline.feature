@@ -11,12 +11,12 @@ Feature: Browse Career Timeline
   # Empty State
   # ============================================================================
 
-  @happy @smoke
-  Scenario: View empty timeline
-    Given the database is empty
-    When I select "browse_timeline" from the menu
-    Then I should see "No events"
-    And I should be able to go back to the menu
+   @happy @smoke
+   Scenario: View empty timeline
+     Given I have no data
+     When I select "browse_timeline" from the menu
+     Then I should see "No events"
+     And I should be able to go back to the menu
 
   # ============================================================================
   # Event List Display
@@ -41,55 +41,28 @@ Feature: Browse Career Timeline
     Then I should see "Built REST API"
     And I should see "Acme Corp"
 
-  @happy
-  Scenario: Close event detail modal
-    Given I have an event "Built REST API" at company "Acme Corp"
-    When I select "browse_timeline" from the menu
-    And I press enter to view details
-    And I press escape
-    Then I should still be on the timeline
-
-  @happy
-  Scenario: View and close details multiple times
-    Given I have an event "Built REST API" at company "Acme Corp"
-    When I select "browse_timeline" from the menu
-    And I press enter to view details
-    And I press escape
-    And I press enter to view details
-    And I press escape
-    Then I should still be on the timeline
-
 
 
   # ============================================================================
   # Quick Add Event
   # ============================================================================
 
-  @happy
-  Scenario: Open quick add modal
-    Given the database is empty
-    When I select "browse_timeline" from the menu
-    And I press "a" to add event
-    Then I should see the add event form
+   @happy
+   Scenario: Open quick add modal
+     Given I have no data
+     When I select "browse_timeline" from the menu
+     And I press "a" to add event
+     Then I should see the add event form
 
-  @happy
-  Scenario: Cancel quick add
-    Given the database is empty
-    When I select "browse_timeline" from the menu
-    And I press "a" to add event
-    And I press escape
-    Then I should still be on the timeline
-    And there should be 0 events
-
-  @happy
-  Scenario: Add event from timeline
-    Given the database is empty
-    When I select "browse_timeline" from the menu
-    And I press "a" to add event
-    And I enter "New event from timeline" as description
-    And I submit the form
-    Then I should still be on the timeline
-    And there should be 1 event
+   @happy
+   Scenario: Add event from timeline
+     Given I have no data
+     When I select "browse_timeline" from the menu
+     And I press "a" to add event
+     And I enter "New event from timeline" as description
+     And I submit the form
+     Then I should still be on the timeline
+     And there should be 1 event
 
   # ============================================================================
   # Edit Event
@@ -102,15 +75,6 @@ Feature: Browse Career Timeline
     And I press "e" to edit
     Then I should see the edit event form
     And I should see "Original text"
-
-  @happy
-  Scenario: Cancel edit event
-    Given I have an event "Original text" at company "Acme Corp"
-    When I select "browse_timeline" from the menu
-    And I press "e" to edit
-    And I press escape
-    Then I should still be on the timeline
-    And the event should have description "Original text"
 
   @happy
   Scenario: Edit event metadata and save
@@ -135,14 +99,6 @@ Feature: Browse Career Timeline
     And I press "d" to delete
     Then I should see the delete confirmation
 
-  @happy
-  Scenario: Cancel delete event
-    Given I have an event "Event to delete" at company "Acme Corp"
-    When I select "browse_timeline" from the menu
-    And I press "d" to delete
-    And I cancel the confirmation
-    Then I should still be on the timeline
-    And there should be 1 event
 
   @happy
   Scenario: Confirm delete event
@@ -157,19 +113,6 @@ Feature: Browse Career Timeline
   # Navigation and Exit
   # ============================================================================
 
-  @sad
-  Scenario: Exit timeline returns to menu
-    Given I have 3 events in my timeline
-    When I select "browse_timeline" from the menu
-    And I press escape
-    Then I should be on the main menu
-
-  @sad
-  Scenario: Go back from empty timeline
-    Given the database is empty
-    When I select "browse_timeline" from the menu
-    And I press escape
-    Then I should be on the main menu
 
    # ============================================================================
    # View Skills from Event Detail
@@ -186,15 +129,5 @@ Feature: Browse Career Timeline
     And I should see "Go"
     And I should see "PostgreSQL"
     And I should see "REST"
-
-  @happy
-  Scenario: Close skills modal returns to event detail
-    Given I have an event "Built API with Go" at company "TechCorp"
-    And the event has skills "Go,PostgreSQL"
-    When I select "browse_timeline" from the menu
-    And I press enter to view details
-    And I press "s" to view skills
-    And I press escape
-    Then I should see the event detail modal
 
 

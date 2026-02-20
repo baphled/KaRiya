@@ -136,8 +136,14 @@ func (r *BurstRepository) List(_ context.Context, filters career_repo.BurstListF
 	defer r.mu.RUnlock()
 
 	var bursts []*career.Burst
-	for _, burst := range r.bursts {
-		bursts = append(bursts, burst)
+	// Iterate in deterministic order by sorting keys first
+	keys := make([]string, 0, len(r.bursts))
+	for k := range r.bursts {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		bursts = append(bursts, r.bursts[k])
 	}
 
 	bursts = r.applyFilters(bursts, filters)

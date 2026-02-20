@@ -9,6 +9,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/containers"
+	domcapture "github.com/baphled/kariya/internal/domain/capture"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	burstfact "github.com/baphled/kariya/internal/service/career/burstfact"
@@ -697,16 +698,11 @@ func (m *BurstSuggestionModelNew) getTheme() themes.Theme {
 }
 
 // createBurstFromSuggestion converts a BurstSuggestion into a Burst domain object.
+// Delegates to the pure domain function capture.CreateBurstFromSuggestion.
 func (m *BurstSuggestionModelNew) createBurstFromSuggestion(suggestion burstfact.BurstSuggestion) *career.Burst {
-	// Generate a name if none provided
-	name := suggestion.Name
-	if name == "" {
-		name = fmt.Sprintf("Burst of %d events", len(suggestion.EventIDs))
-	}
-
-	return &career.Burst{
-		Name:        name,
+	return domcapture.CreateBurstFromSuggestion(domcapture.BurstSuggestionInput{
+		Name:        suggestion.Name,
 		Description: suggestion.Description,
 		EventIDs:    suggestion.EventIDs,
-	}
+	})
 }

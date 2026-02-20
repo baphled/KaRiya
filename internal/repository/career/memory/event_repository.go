@@ -131,13 +131,30 @@ func (r *EventRepository) Update(_ context.Context, event *career.Event) error {
 //   - None.
 func (r *EventRepository) Delete(_ context.Context, id string) error {
 	r.mu.Lock()
-	defer r.mu.Unlock()
 
-	if _, exists := r.events[id]; !exists {
+	event, exists := r.events[id]
+	if !exists {
+		r.mu.Unlock()
 		return career_repo.ErrEventNotFound
 	}
 
+	skillIDs := make([]string, len(event.Skills))
+	copy(skillIDs, event.Skills)
+	skillRepo := r.skillRepo
+
+	// Delete event and disassociate skills atomically under the same lock
+	// to prevent concurrent LinkSkill/UnlinkSkill calls from racing against
+	// a half-deleted event where skills still reference it.
 	delete(r.events, id)
+
+	if skillRepo != nil {
+		for _, skillID := range skillIDs {
+			skillRepo.DisassociateSkillFromEvent(skillID, id)
+		}
+	}
+
+	r.mu.Unlock()
+
 	return nil
 }
 
@@ -147,8 +164,14 @@ func (r *EventRepository) List(_ context.Context, filters career_repo.EventListF
 	defer r.mu.RUnlock()
 
 	var events []*career.Event
-	for _, event := range r.events {
-		events = append(events, event)
+	// Iterate in deterministic order by sorting keys first
+	keys := make([]string, 0, len(r.events))
+	for k := range r.events {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		events = append(events, r.events[k])
 	}
 
 	events = r.applyFilters(events, filters)

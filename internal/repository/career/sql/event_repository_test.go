@@ -357,4 +357,113 @@ var _ = Describe("Event Repository", func() {
 			Expect(retrieved.Skills).To(ContainElement("skill-2"))
 		})
 	})
+
+	Describe("List with skill associations", func() {
+		It("loads skill IDs for listed events", func() {
+			event := fixtures.EventWith("", "Built microservice", "", "")
+			event.Skills = []string{"skill-1", "skill-2"}
+			Expect(repo.Create(ctx, event)).To(Succeed())
+
+			events, err := repo.List(ctx, *fixtures.EventListFilters())
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(events).To(HaveLen(1))
+			Expect(events[0].Skills).To(ConsistOf("skill-1", "skill-2"))
+		})
+
+		It("handles events with no skills in list", func() {
+			event := fixtures.EventWith("", "No skills event", "", "")
+			Expect(repo.Create(ctx, event)).To(Succeed())
+
+			events, err := repo.List(ctx, *fixtures.EventListFilters())
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(events).To(HaveLen(1))
+			Expect(events[0].Skills).To(BeEmpty())
+		})
+	})
+
+	Describe("Create with empty skills", func() {
+		It("creates event with no skill associations", func() {
+			event := fixtures.EventWith("", "No skills", "", "")
+			event.Skills = []string{}
+
+			err := repo.Create(ctx, event)
+
+			Expect(err).NotTo(HaveOccurred())
+
+			found, err := repo.GetByID(ctx, event.ID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(found.Skills).To(BeEmpty())
+		})
+	})
+
+	Describe("End date filter", func() {
+		It("filters by end date", func() {
+			now := time.Now()
+			e1 := fixtures.EventWith("", "Old event", "", "")
+			e1.Date = now.Add(-72 * time.Hour)
+			e2 := fixtures.EventWith("", "New event", "", "")
+			e2.Date = now
+			Expect(repo.Create(ctx, e1)).To(Succeed())
+			Expect(repo.Create(ctx, e2)).To(Succeed())
+
+			end := now.Add(-24 * time.Hour)
+			events, err := repo.List(ctx, *fixtures.EventListFiltersWithDateRange(nil, &end))
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(events).To(HaveLen(1))
+			Expect(events[0].Text).To(Equal("Old event"))
+		})
+	})
+
+	Describe("Error handling with closed DB", func() {
+		var closedRepo *EventRepository
+
+		BeforeEach(func() {
+			closedDB, err := stdsql.Open("sqlite", ":memory:")
+			Expect(err).NotTo(HaveOccurred())
+			gormDB, err := gorm.Open(sqlite.New(sqlite.Config{Conn: closedDB}), &gorm.Config{})
+			Expect(err).NotTo(HaveOccurred())
+			closedDB.Close()
+			closedRepo = NewEventRepository(gormDB)
+		})
+
+		It("returns error on Create with closed DB", func() {
+			event := fixtures.EventWith("", "Test", "", "")
+			err := closedRepo.Create(ctx, event)
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("returns error on GetByID with closed DB", func() {
+			_, err := closedRepo.GetByID(ctx, "id")
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("returns error on Update with closed DB", func() {
+			event := fixtures.EventWith("id", "Test", "", "")
+			err := closedRepo.Update(ctx, event)
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("returns error on List with closed DB", func() {
+			_, err := closedRepo.List(ctx, *fixtures.EventListFilters())
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("returns error on Count with closed DB", func() {
+			_, err := closedRepo.Count(ctx, *fixtures.EventListFilters())
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("returns error on LinkSkill with closed DB", func() {
+			err := closedRepo.LinkSkill(ctx, "e1", "s1")
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("returns error on UnlinkSkill with closed DB", func() {
+			err := closedRepo.UnlinkSkill(ctx, "e1", "s1")
+			Expect(err).To(HaveOccurred())
+		})
+	})
 })

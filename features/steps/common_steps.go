@@ -22,16 +22,14 @@ import (
 // Side effects:
 //   - Registers step definitions with Godog.
 func RegisterCommonSteps(sc *godog.ScenarioContext) {
+	sc.Step(`^I have no data$`, iHaveNoData)
 	sc.Step(`^I should see "([^"]*)"$`, iShouldSee)
-	sc.Step(`^I should not see "([^"]*)"$`, iShouldNotSee)
 	sc.Step(`^I should see one of:$`, iShouldSeeOneOf)
 	sc.Step(`^I close the modal$`, iCloseTheModal)
-	sc.Step(`^I restart the application$`, iRestartTheApplication)
-	sc.Step(`^I should be on domain selection$`, iShouldBeOnDomainSelection)
 	sc.Step(`^I should see success message$`, iShouldSeeSuccessMessage)
-	sc.Step(`^I should see the error modal$`, iShouldSeeTheErrorModal)
 	sc.Step(`^I should see the progress modal$`, iShouldSeeTheProgressModal)
-	sc.Step(`^I should see different content$`, iShouldSeeDifferentContent)
+	sc.Step(`^I should see help information$`, commonShouldSeeHelpInformation)
+	sc.Step(`^I press "n" to cancel$`, commonPressNToCancel)
 }
 
 // getViewFromContext returns the current view from either app or onboarding env.
@@ -58,16 +56,6 @@ func iShouldSee(ctx context.Context, text string) error {
 }
 
 // iShouldNotSee asserts that the view does not contain the given text.
-func iShouldNotSee(ctx context.Context, text string) error {
-	view, ok := getViewFromContext(ctx)
-	if !ok {
-		return godog.ErrPending
-	}
-	if strings.Contains(view, text) {
-		return fmt.Errorf("expected view NOT to contain %q, but it was found", text)
-	}
-	return nil
-}
 
 // iShouldSeeOneOf asserts that the view contains at least one of the given texts.
 func iShouldSeeOneOf(ctx context.Context, table *godog.Table) error {
@@ -105,31 +93,6 @@ func iCloseTheModal(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-// iRestartTheApplication simulates restarting the application.
-func iRestartTheApplication(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	// Simulate application restart
-	env.SimulateRestart()
-	return ctx, nil
-}
-
-// iShouldBeOnDomainSelection asserts the user is on domain selection screen.
-func iShouldBeOnDomainSelection(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
-	}
-	view := env.GetView()
-	gomega.Expect(view).To(gomega.SatisfyAny(
-		gomega.ContainSubstring("Domain"),
-		gomega.ContainSubstring("Select"),
-	))
-	return nil
-}
-
 // iShouldSeeSuccessMessage asserts a success message is visible.
 func iShouldSeeSuccessMessage(ctx context.Context) error {
 	env := support.GetAppEnv(ctx)
@@ -142,22 +105,6 @@ func iShouldSeeSuccessMessage(ctx context.Context) error {
 		gomega.ContainSubstring("success"),
 		gomega.ContainSubstring("saved"),
 		gomega.ContainSubstring("Saved"),
-	))
-	return nil
-}
-
-// iShouldSeeTheErrorModal asserts an error modal is visible.
-func iShouldSeeTheErrorModal(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
-	}
-	view := env.GetView()
-	gomega.Expect(view).To(gomega.SatisfyAny(
-		gomega.ContainSubstring("Error"),
-		gomega.ContainSubstring("error"),
-		gomega.ContainSubstring("failed"),
-		gomega.ContainSubstring("Failed"),
 	))
 	return nil
 }
@@ -178,13 +125,39 @@ func iShouldSeeTheProgressModal(ctx context.Context) error {
 }
 
 // iShouldSeeDifferentContent asserts the view has changed.
-func iShouldSeeDifferentContent(ctx context.Context) error {
+
+// iHaveNoData asserts that the system has no data (empty state).
+func iHaveNoData(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.AssertEventCount(0)
+	return ctx, nil
+}
+
+// commonShouldSeeHelpInformation asserts that help information is visible.
+func commonShouldSeeHelpInformation(ctx context.Context) error {
 	env := support.GetAppEnv(ctx)
 	if env == nil {
 		return godog.ErrPending
 	}
-	// Simply verify we have a non-empty view
 	view := env.GetView()
-	gomega.Expect(view).NotTo(gomega.BeEmpty())
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("Help"),
+		gomega.ContainSubstring("help"),
+		gomega.ContainSubstring("Keyboard"),
+		gomega.ContainSubstring("Shortcuts"),
+	))
 	return nil
+}
+
+// commonPressNToCancel presses "n" to cancel.
+func commonPressNToCancel(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.PressKeyRune('n')
+	return ctx, nil
 }

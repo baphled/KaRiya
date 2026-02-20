@@ -177,6 +177,40 @@ func FactListFiltersWithAudience(audience string) *repo.FactListFilters {
 	}
 }
 
+// BurstListFiltersWithDateRange creates a BurstListFilters with date range.
+//
+// Expected:
+//   - time must be valid.
+//
+// Returns:
+//   - A fully initialized repo.BurstListFilters ready for use.
+//
+// Side effects:
+//   - None.
+func BurstListFiltersWithDateRange(startDate, endDate *time.Time) *repo.BurstListFilters {
+	return &repo.BurstListFilters{
+		StartDate: startDate,
+		EndDate:   endDate,
+	}
+}
+
+// FactListFiltersWithDateRange creates a FactListFilters with date range.
+//
+// Expected:
+//   - time must be valid.
+//
+// Returns:
+//   - A fully initialized repo.FactListFilters ready for use.
+//
+// Side effects:
+//   - None.
+func FactListFiltersWithDateRange(startDate, endDate *time.Time) *repo.FactListFilters {
+	return &repo.FactListFilters{
+		StartDate: startDate,
+		EndDate:   endDate,
+	}
+}
+
 // BurstListFilters creates a minimal BurstListFilters with sensible defaults.
 //
 // Returns:

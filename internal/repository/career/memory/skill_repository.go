@@ -124,8 +124,14 @@ func (r *SkillRepository) List(ctx context.Context, filters *career_repo.SkillLi
 	eventCounts := r.buildEventCounts()
 
 	var skills []*career.Skill
-	for _, skill := range r.skills {
-		skills = append(skills, skill)
+	// Iterate in deterministic order by sorting keys first
+	keys := make([]string, 0, len(r.skills))
+	for k := range r.skills {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		skills = append(skills, r.skills[k])
 	}
 
 	skills = r.applyFilters(skills, filters, eventCounts)

@@ -9,6 +9,7 @@ import (
 	cliservice "github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/selectors"
+	"github.com/baphled/kariya/internal/domain/capture"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
@@ -205,6 +206,25 @@ func (m *MetadataEditorModelNew) handleFormCompletion() (tea.Model, tea.Cmd) {
 
 	m.submitted = true
 	return m, nil
+}
+
+// ExtractInput returns the current form data as a pure domain MetadataInput.
+// This bridges the TUI form data to the domain layer without any Huh dependencies.
+//
+// Returns:
+//   - A capture.MetadataInput struct.
+//
+// Side effects:
+//   - None.
+func (m *MetadataEditorModelNew) ExtractInput() capture.MetadataInput {
+	return capture.MetadataInput{
+		Date:       m.formData.Date,
+		Company:    m.formData.Company,
+		Project:    m.formData.Project,
+		Tags:       m.formData.Tags,
+		Categories: m.formData.Categories,
+		Skills:     m.formData.Skills,
+	}
 }
 
 // GetEvent returns the edited event

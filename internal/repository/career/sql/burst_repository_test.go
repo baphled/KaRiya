@@ -210,4 +210,107 @@ var _ = Describe("Burst Repository", func() {
 			Expect(found.ConfirmedAt).NotTo(BeNil())
 		})
 	})
+
+	Describe("Date range filters", func() {
+		BeforeEach(func() {
+			now := time.Now()
+			b1 := fixtures.Burst("", "e1")
+			b1.Name = "Old Burst"
+			Expect(repo.Create(ctx, b1)).To(Succeed())
+			db.Model(&models.Burst{}).Where("id = ?", b1.ID).Update("created_at", now.Add(-72*time.Hour))
+
+			time.Sleep(10 * time.Millisecond)
+			b2 := fixtures.Burst("", "e2")
+			b2.Name = "Recent Burst"
+			Expect(repo.Create(ctx, b2)).To(Succeed())
+		})
+
+		It("filters by start date", func() {
+			start := time.Now().Add(-24 * time.Hour)
+			filters := fixtures.BurstListFiltersWithDateRange(&start, nil)
+
+			bursts, err := repo.List(ctx, *filters)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(bursts).To(HaveLen(1))
+			Expect(bursts[0].Name).To(Equal("Recent Burst"))
+		})
+
+		It("filters by end date", func() {
+			end := time.Now().Add(-24 * time.Hour)
+			filters := fixtures.BurstListFiltersWithDateRange(nil, &end)
+
+			bursts, err := repo.List(ctx, *filters)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(bursts).To(HaveLen(1))
+			Expect(bursts[0].Name).To(Equal("Old Burst"))
+		})
+	})
+
+	Describe("Sort by event_count", func() {
+		It("sorts by event count", func() {
+			b1 := fixtures.Burst("", "e1")
+			b1.Name = "Single"
+			b2 := fixtures.Burst("", "e1", "e2", "e3")
+			b2.Name = "Triple"
+			Expect(repo.Create(ctx, b1)).To(Succeed())
+			Expect(repo.Create(ctx, b2)).To(Succeed())
+
+			bursts, err := repo.List(ctx, *fixtures.BurstListFiltersWithSort("event_count", "desc"))
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(bursts[0].Name).To(Equal("Triple"))
+		})
+	})
+
+	Describe("Pagination with offset", func() {
+		It("applies offset correctly", func() {
+			for i := range 5 {
+				b := fixtures.Burst("", "e1")
+				b.Name = "Burst " + string(rune('A'+i))
+				Expect(repo.Create(ctx, b)).To(Succeed())
+				time.Sleep(5 * time.Millisecond)
+			}
+
+			bursts, err := repo.List(ctx, *fixtures.BurstListFiltersWithLimit(2, 2))
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(bursts).To(HaveLen(2))
+		})
+	})
+
+	Describe("Error handling with closed DB", func() {
+		var closedRepo *BurstRepository
+
+		BeforeEach(func() {
+			closedDB, err := stdsql.Open("sqlite", ":memory:")
+			Expect(err).NotTo(HaveOccurred())
+			gormDB, err := gorm.Open(sqlite.New(sqlite.Config{Conn: closedDB}), &gorm.Config{})
+			Expect(err).NotTo(HaveOccurred())
+			closedDB.Close()
+			closedRepo = NewBurstRepository(gormDB)
+		})
+
+		It("returns error on GetByID with closed DB", func() {
+			_, err := closedRepo.GetByID(ctx, "id")
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("returns error on Update with closed DB", func() {
+			burst := fixtures.Burst("id", "e1")
+			err := closedRepo.Update(ctx, burst)
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("returns error on List with closed DB", func() {
+			_, err := closedRepo.List(ctx, *fixtures.BurstListFilters())
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("returns error on Count with closed DB", func() {
+			_, err := closedRepo.Count(ctx, *fixtures.BurstListFilters())
+			Expect(err).To(HaveOccurred())
+		})
+	})
 })

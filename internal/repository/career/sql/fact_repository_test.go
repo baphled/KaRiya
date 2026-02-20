@@ -252,4 +252,124 @@ var _ = Describe("Fact Repository", func() {
 			Expect(facts[0].Text).To(Equal("F1"))
 		})
 	})
+
+	Describe("Audience filter", func() {
+		It("filters by audience relevance", func() {
+			f1 := fixtures.FactWithCategories("", "Fact A", "", []string{"cat"}, []string{"technical"})
+			f1.RoleFit = career.RoleFitSeniorIC
+			f2 := fixtures.FactWithCategories("", "Fact B", "", []string{"cat"}, []string{"hr"})
+			f2.RoleFit = career.RoleFitSeniorIC
+			Expect(repo.Create(ctx, f1)).To(Succeed())
+			Expect(repo.Create(ctx, f2)).To(Succeed())
+
+			facts, err := repo.List(ctx, *fixtures.FactListFiltersWithAudience("technical"))
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(facts).To(HaveLen(1))
+			Expect(facts[0].Text).To(Equal("Fact A"))
+		})
+	})
+
+	Describe("Date range filter", func() {
+		It("filters by start and end date", func() {
+			now := time.Now()
+			f1 := fixtures.FactWithCategories("", "Old fact", "", []string{"cat"}, []string{"aud"})
+			f1.RoleFit = career.RoleFitSeniorIC
+			Expect(repo.Create(ctx, f1)).To(Succeed())
+			db.Model(&models.Fact{}).Where("id = ?", f1.ID).Update("created_at", now.Add(-72*time.Hour))
+
+			f2 := fixtures.FactWithCategories("", "New fact", "", []string{"cat"}, []string{"aud"})
+			f2.RoleFit = career.RoleFitSeniorIC
+			Expect(repo.Create(ctx, f2)).To(Succeed())
+
+			start := now.Add(-24 * time.Hour)
+			filters := fixtures.FactListFiltersWithDateRange(&start, nil)
+			facts, err := repo.List(ctx, *filters)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(facts).To(HaveLen(1))
+			Expect(facts[0].Text).To(Equal("New fact"))
+		})
+
+		It("filters by end date only", func() {
+			now := time.Now()
+			f1 := fixtures.FactWithCategories("", "Old fact", "", []string{"cat"}, []string{"aud"})
+			f1.RoleFit = career.RoleFitSeniorIC
+			Expect(repo.Create(ctx, f1)).To(Succeed())
+			db.Model(&models.Fact{}).Where("id = ?", f1.ID).Update("created_at", now.Add(-72*time.Hour))
+
+			f2 := fixtures.FactWithCategories("", "New fact", "", []string{"cat"}, []string{"aud"})
+			f2.RoleFit = career.RoleFitSeniorIC
+			Expect(repo.Create(ctx, f2)).To(Succeed())
+
+			end := now.Add(-24 * time.Hour)
+			filters := fixtures.FactListFiltersWithDateRange(nil, &end)
+			facts, err := repo.List(ctx, *filters)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(facts).To(HaveLen(1))
+			Expect(facts[0].Text).To(Equal("Old fact"))
+		})
+	})
+
+	Describe("Pagination with offset", func() {
+		It("applies offset correctly", func() {
+			for i := range 5 {
+				f := fixtures.FactWithCategories("", "Fact "+string(rune('A'+i)), "", []string{"cat"}, []string{"aud"})
+				f.RoleFit = career.RoleFitSeniorIC
+				Expect(repo.Create(ctx, f)).To(Succeed())
+				time.Sleep(5 * time.Millisecond)
+			}
+
+			facts, err := repo.List(ctx, *fixtures.FactListFiltersWithLimit(2, 2))
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(facts).To(HaveLen(2))
+		})
+	})
+
+	Describe("Error handling with closed DB", func() {
+		var closedRepo *FactRepository
+
+		BeforeEach(func() {
+			closedDB, err := stdsql.Open("sqlite", ":memory:")
+			Expect(err).NotTo(HaveOccurred())
+			gormDB, err := gorm.Open(sqlite.New(sqlite.Config{Conn: closedDB}), &gorm.Config{})
+			Expect(err).NotTo(HaveOccurred())
+			closedDB.Close()
+			closedRepo = NewFactRepository(gormDB)
+		})
+
+		It("returns error on GetByID with closed DB", func() {
+			_, err := closedRepo.GetByID(ctx, "id")
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("returns error on Update with closed DB", func() {
+			f := fixtures.FactWithCategories("id", "Test", "", []string{"cat"}, []string{"aud"})
+			f.RoleFit = career.RoleFitSeniorIC
+			err := closedRepo.Update(ctx, f)
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("returns error on List with closed DB", func() {
+			_, err := closedRepo.List(ctx, *fixtures.FactListFilters())
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("returns error on Count with closed DB", func() {
+			_, err := closedRepo.Count(ctx, *fixtures.FactListFilters())
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("returns error on GetBySourceEventID with closed DB", func() {
+			_, err := closedRepo.GetBySourceEventID(ctx, "e1")
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("returns error on GetBySourceBurstID with closed DB", func() {
+			_, err := closedRepo.GetBySourceBurstID(ctx, "b1")
+			Expect(err).To(HaveOccurred())
+		})
+	})
 })

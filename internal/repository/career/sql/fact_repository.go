@@ -213,9 +213,11 @@ func (r *FactRepository) applySorting(query *gorm.DB, filters career_repo.FactLi
 }
 
 func (r *FactRepository) applyPagination(query *gorm.DB, filters career_repo.FactListFilters) *gorm.DB {
-	if filters.Limit > 0 {
-		query = query.Limit(filters.Limit)
+	limit := filters.Limit
+	if limit == 0 {
+		limit = defaultPaginationLimit
 	}
+	query = query.Limit(limit)
 	if filters.Offset > 0 {
 		query = query.Offset(filters.Offset)
 	}

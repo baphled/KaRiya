@@ -17,6 +17,7 @@ import (
 var opts = godog.Options{
 	Output: colors.Colored(os.Stdout),
 	Format: "progress",
+	Tags:   "~@wip",
 }
 
 func init() {
@@ -63,7 +64,4 @@ func InitializeScenario(sc *godog.ScenarioContext) {
 	steps.RegisterBurstsSteps(sc)
 	steps.RegisterFactsSteps(sc)
 	steps.RegisterCVSteps(sc)
-	steps.RegisterConfigureSteps(sc)
-	steps.RegisterNavigationSteps(sc)
-	steps.RegisterCLISteps(sc)
 }

@@ -563,6 +563,11 @@ linters:
           - contextcheck
         text: "non-inherited new context"
 
+      # BDD step registration functions are structurally similar by design
+      - path: 'features/steps/(.*)\.go'
+        linters:
+          - dupl
+
       # BDD step files use Godog context (test orchestration), not request pipeline context
       - path: 'features/steps/(.*)\.go'
         linters:
@@ -579,6 +584,11 @@ linters:
         linters:
           - dupl
           - funlen
+
+      # Memory repository duplication (same interface, different types)
+      - path: 'internal/repository/career/memory/(.*)_repository\.go'
+        linters:
+          - dupl
 
       - path: 'internal/cli/screens/.*/modals/(.*)\.go'
         linters:
@@ -1374,6 +1384,11 @@ linters:
         text: "var-naming: avoid meaningless package names"
 
       - path: 'internal/cli/types/capture_types\.go'
+        linters:
+          - revive
+        text: "var-naming: avoid meaningless package names"
+
+      - path: 'internal/cli/types/doc\.go'
         linters:
           - revive
         text: "var-naming: avoid meaningless package names"

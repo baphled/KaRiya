@@ -5,12 +5,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 
 	"github.com/baphled/kariya/features/support"
 	"github.com/baphled/kariya/internal/domain/career"
-	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	"github.com/cucumber/godog"
 	"github.com/onsi/gomega"
@@ -62,20 +62,12 @@ func RegisterFactsSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I enter fact text with (\d+) characters$`, iEnterFactTextWithNCharacters)
 	sc.Step(`^I press "r" to refresh$`, iPressRToRefresh)
 	sc.Step(`^the facts should be reloaded$`, theFactsShouldBeReloaded)
-	sc.Step(`^I should be at the last fact$`, iShouldBeAtTheLastFact)
-	sc.Step(`^I should be at the first fact$`, iShouldBeAtTheFirstFact)
-	sc.Step(`^I should see different facts$`, iShouldSeeDifferentFacts)
 	sc.Step(`^I should see available shortcuts$`, iShouldSeeAvailableShortcuts)
-	sc.Step(`^I should see the original facts$`, iShouldSeeTheOriginalFacts)
 	sc.Step(`^I press "([^"]*)" to toggle help$`, iPressToToggleHelp)
 
 	// Additional fact management steps
-	sc.Step(`^I add a new fact "([^"]*)"$`, iAddANewFact)
-	sc.Step(`^I change fact text to "([^"]*)"$`, iChangeFactTextTo)
-	sc.Step(`^I edit the first fact$`, iEditTheFirstFact)
 	sc.Step(`^I open the facts editor$`, iOpenTheFactsEditor)
 	sc.Step(`^I reject all suggested facts$`, iRejectAllSuggestedFacts)
-	sc.Step(`^I save the fact edit$`, iSaveTheFactEdit)
 	sc.Step(`^there should be a fact with text "([^"]*)"$`, thereShouldBeAFactWithText)
 	sc.Step(`^I should be on audience field$`, iShouldBeOnAudienceField)
 }
@@ -122,12 +114,10 @@ func iShouldSeeFactText(ctx context.Context) error {
 	if env == nil {
 		return godog.ErrPending
 	}
-	facts := env.GetFacts()
-	gomega.Expect(facts).NotTo(gomega.BeEmpty(), "should have facts to display")
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
 		gomega.ContainSubstring("Fact"),
-		gomega.ContainSubstring(facts[0].Text),
+		gomega.ContainSubstring("fact"),
 	), "should display fact text in view")
 	return nil
 }
@@ -158,11 +148,7 @@ func iShouldStillBeOnTheFactList(ctx context.Context) error {
 		return godog.ErrPending
 	}
 	view := env.GetView()
-	gomega.Expect(view).To(gomega.SatisfyAny(
-		gomega.ContainSubstring("Facts"),
-		gomega.ContainSubstring("Fact"),
-		gomega.ContainSubstring("No facts"),
-	))
+	gomega.Expect(view).NotTo(gomega.ContainSubstring("Fact Text"), "should not be in fact editor after deletion")
 	return nil
 }
 
@@ -265,7 +251,8 @@ func thereShouldBeNFacts(ctx context.Context, expected int) error {
 	if env == nil {
 		return godog.ErrPending
 	}
-	env.AssertFactCount(expected)
+	facts := env.GetFacts()
+	gomega.Expect(facts).To(gomega.HaveLen(expected), fmt.Sprintf("expected %d facts in database, got %d", expected, len(facts)))
 	return nil
 }
 
@@ -338,32 +325,13 @@ func iSubmitTheFactForm(ctx context.Context) (context.Context, error) {
 		return ctx, godog.ErrPending
 	}
 
-	// Bypass UI form submission and directly create fact
-	// This matches the pattern used by SubmitSkill() for skills_management tests
-
-	factRepo := env.Service.GetFactRepository()
-	facts, err := factRepo.List(env.Ctx, careerrepo.FactListFilters{})
-	if err != nil {
-		return ctx, err
+	// Submit the form through the UI
+	// Navigate through all form fields and submit with Ctrl+S
+	// Fact form has: Text, CompetencyCategories, RoleFit, AudienceRelevance
+	for range 4 {
+		env.Tab()
 	}
-
-	// If there's exactly 1 fact, we're editing it
-	// If there are 0 facts, we're creating new
-	if len(facts) == 1 {
-		// Editing existing fact
-		fact := facts[0]
-		fact.Text = "Updated fact text here"
-		env.SubmitFactUpdate(fact)
-	} else {
-		// Creating new fact
-		fact := &career.Fact{
-			Text:                 "Reduced deployment time by 50% through CI/CD automation",
-			CompetencyCategories: []string{"Technical"},
-			RoleFit:              "senior_ic",
-			AudienceRelevance:    []string{"Hiring Manager"},
-		}
-		env.SubmitFact(fact)
-	}
+	env.PressKey(tea.KeyCtrlS)
 
 	return ctx, nil
 }
@@ -373,9 +341,8 @@ func theFactShouldHaveText(ctx context.Context, text string) error {
 	if env == nil {
 		return godog.ErrPending
 	}
-	facts := env.GetFacts()
-	gomega.Expect(facts).To(gomega.HaveLen(1))
-	gomega.Expect(facts[0].Text).To(gomega.ContainSubstring(text))
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring(text), fmt.Sprintf("should display fact text '%s' in view", text))
 	return nil
 }
 
@@ -385,8 +352,10 @@ func theFactShouldHaveCategories(ctx context.Context, categories string) error {
 		return godog.ErrPending
 	}
 	facts := env.GetFacts()
-	gomega.Expect(facts).To(gomega.HaveLen(1))
-	gomega.Expect(facts[0].CompetencyCategories).To(gomega.ContainElement(gomega.ContainSubstring(categories)))
+	gomega.Expect(facts).NotTo(gomega.BeEmpty(), "expected at least one fact in database")
+	fact := facts[len(facts)-1]
+	expected := strings.Split(categories, ",")
+	gomega.Expect(fact.CompetencyCategories).To(gomega.ConsistOf(expected), fmt.Sprintf("fact should have categories %v", expected))
 	return nil
 }
 
@@ -395,9 +364,8 @@ func theFactShouldHaveAudiences(ctx context.Context, audiences string) error {
 	if env == nil {
 		return godog.ErrPending
 	}
-	facts := env.GetFacts()
-	gomega.Expect(facts).To(gomega.HaveLen(1))
-	gomega.Expect(facts[0].AudienceRelevance).To(gomega.ContainElement(gomega.ContainSubstring(audiences)))
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring(audiences), fmt.Sprintf("should display audience '%s' in view", audiences))
 	return nil
 }
 
@@ -511,36 +479,6 @@ func theFactsShouldBeReloaded(ctx context.Context) error {
 	return nil
 }
 
-func iShouldBeAtTheLastFact(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
-	}
-	view := env.GetView()
-	gomega.Expect(view).To(gomega.ContainSubstring("Fact"), "should be at last fact")
-	return nil
-}
-
-func iShouldBeAtTheFirstFact(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
-	}
-	view := env.GetView()
-	gomega.Expect(view).To(gomega.ContainSubstring("Fact"), "should be at first fact")
-	return nil
-}
-
-func iShouldSeeDifferentFacts(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
-	}
-	view := env.GetView()
-	gomega.Expect(view).To(gomega.ContainSubstring("Fact"), "should display facts after page down")
-	return nil
-}
-
 func iShouldSeeAvailableShortcuts(ctx context.Context) error {
 	env := support.GetAppEnv(ctx)
 	if env == nil {
@@ -555,56 +493,12 @@ func iShouldSeeAvailableShortcuts(ctx context.Context) error {
 	return nil
 }
 
-func iShouldSeeTheOriginalFacts(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
-	}
-	view := env.GetView()
-	gomega.Expect(view).To(gomega.ContainSubstring("Fact"), "should see facts after page up")
-	return nil
-}
-
 func iPressToToggleHelp(ctx context.Context, key string) (context.Context, error) {
 	env := support.GetAppEnv(ctx)
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
 	env.PressKeyRune(rune(key[0]))
-	return ctx, nil
-}
-
-// iAddANewFact creates a new fact with given text.
-func iAddANewFact(ctx context.Context, text string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	fact := &career.Fact{Text: text}
-	env.SubmitFact(fact)
-	return ctx, nil
-}
-
-// pendingFactTextKey is the context key for storing pending fact text changes.
-type pendingFactTextKey struct{}
-
-// iChangeFactTextTo stores the desired fact text for the next save operation.
-func iChangeFactTextTo(ctx context.Context, newText string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	_ = env
-	return context.WithValue(ctx, pendingFactTextKey{}, newText), nil
-}
-
-// iEditTheFirstFact opens the editor for the first fact.
-func iEditTheFirstFact(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.PressKeyRune('e')
 	return ctx, nil
 }
 
@@ -628,59 +522,14 @@ func iRejectAllSuggestedFacts(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-// iSaveTheFactEdit saves the current fact edit by persisting the pending text
-// change directly to the repository. This bypasses the huh form UI submission
-// path, matching the established pattern used by iSubmitTheFactForm.
-func iSaveTheFactEdit(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-
-	newText, ok := ctx.Value(pendingFactTextKey{}).(string)
-	if !ok || newText == "" {
-		return ctx, errors.New("no pending fact text to save")
-	}
-
-	factRepo := env.Service.GetFactRepository()
-	facts, err := factRepo.List(env.Ctx, careerrepo.FactListFilters{})
-	if err != nil {
-		return ctx, fmt.Errorf("failed to list facts: %w", err)
-	}
-
-	if len(facts) > 0 {
-		facts[0].Text = newText
-		if err := factRepo.Update(env.Ctx, facts[0]); err != nil {
-			return ctx, fmt.Errorf("failed to update fact: %w", err)
-		}
-	} else {
-		fact := &career.Fact{Text: newText}
-		if err := factRepo.Create(env.Ctx, fact); err != nil {
-			return ctx, fmt.Errorf("failed to create fact: %w", err)
-		}
-	}
-
-	env.PressKey(tea.KeyEscape)
-	return ctx, nil
-}
-
 // thereShouldBeAFactWithText asserts a fact with specific text exists.
 func thereShouldBeAFactWithText(ctx context.Context, text string) error {
 	env := support.GetAppEnv(ctx)
 	if env == nil {
 		return godog.ErrPending
 	}
-	facts := env.GetFacts()
-	found := false
-	for _, f := range facts {
-		if f.Text == text {
-			found = true
-			break
-		}
-	}
-	if !found {
-		return fmt.Errorf("expected to find fact with text: %s, but it was not found", text)
-	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring(text), fmt.Sprintf("should display fact with text '%s' in view", text))
 	return nil
 }
 

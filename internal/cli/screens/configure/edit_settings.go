@@ -111,18 +111,22 @@ func (s *EditSettingsScreen) rebuildForm() {
 		}
 	}
 
+	// Add submit button as the last field to enable form completion
+	submitValue := true
+	fields = append(fields, huh.NewConfirm().
+		Key("submit").
+		Title("Submit Settings").
+		Affirmative("Submit").
+		Negative("Cancel").
+		Value(&submitValue))
+
 	group := huh.NewGroup(fields...)
 
 	huhTheme := themes.GenerateHuhTheme(s.theme)
-	formHeight := s.termInfo.Height - 20
-	if formHeight < 10 {
-		formHeight = 10
-	}
 
 	s.form = huh.NewForm(group).
 		WithTheme(huhTheme).
-		WithWidth(s.termInfo.Width - 10).
-		WithHeight(formHeight)
+		WithWidth(s.termInfo.Width - 10)
 }
 
 // createFieldForSetting creates the appropriate huh field for a setting.
@@ -232,11 +236,18 @@ func (s *EditSettingsScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult)
 	}
 
 	if s.form != nil {
+		// Special handling for Enter key on the submit button
+		if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.Type == tea.KeyEnter {
+			// Simulate pressing 'y' to select "Submit" on the Confirm field
+			msg = tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}}
+		}
+
 		model, cmd := s.form.Update(msg)
 		if f, ok := model.(*huh.Form); ok {
 			s.form = f
 		}
 
+		// Check if form reached completion state
 		if s.form.State == huh.StateCompleted {
 			s.formData.SubmitConfirmed = true
 			return cmd, &screens.SubmitResult{FormData: s.GetChanges()}

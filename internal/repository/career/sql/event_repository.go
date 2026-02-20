@@ -231,7 +231,7 @@ func (r *EventRepository) applySorting(query *gorm.DB, filters career_repo.Event
 func (r *EventRepository) applyPagination(query *gorm.DB, filters career_repo.EventListFilters) *gorm.DB {
 	limit := filters.Limit
 	if limit == 0 {
-		limit = 100
+		limit = defaultPaginationLimit
 	}
 	return query.Limit(limit).Offset(filters.Offset)
 }

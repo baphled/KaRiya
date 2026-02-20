@@ -136,8 +136,14 @@ func (r *FactRepository) List(_ context.Context, filters career_repo.FactListFil
 	defer r.mu.RUnlock()
 
 	var facts []*career.Fact
-	for _, fact := range r.facts {
-		facts = append(facts, fact)
+	// Iterate in deterministic order by sorting keys first
+	keys := make([]string, 0, len(r.facts))
+	for k := range r.facts {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		facts = append(facts, r.facts[k])
 	}
 
 	facts = r.applyFilters(facts, filters)

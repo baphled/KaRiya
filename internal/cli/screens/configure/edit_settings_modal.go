@@ -107,6 +107,15 @@ func (m *EditSettingsModal) rebuildForm() {
 		}
 	}
 
+	// Add submit button as the last field to enable form completion
+	submitValue := true
+	fields = append(fields, huh.NewConfirm().
+		Key("submit").
+		Title("Submit Settings").
+		Affirmative("Submit").
+		Negative("Cancel").
+		Value(&submitValue))
+
 	group := huh.NewGroup(fields...)
 
 	modalWidth := m.width - 10
@@ -426,4 +435,15 @@ func (m *EditSettingsModal) Show() {
 //   - None.
 func (m *EditSettingsModal) Hide() {
 	m.visible = false
+}
+
+// GetFormData returns the current form data.
+//
+// Returns:
+//   - A fully initialized SettingsFormData ready for use.
+//
+// Side effects:
+//   - None.
+func (m *EditSettingsModal) GetFormData() *SettingsFormData {
+	return m.formData
 }
