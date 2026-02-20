@@ -274,6 +274,54 @@ var _ = Describe("Burst SuggestionReviewModal in CaptureEvent", func() {
 		})
 	})
 
+	Describe("accepted burst indicator on review screen", func() {
+		It("shows ● indicator when accepted burst name matches an inferred burst", func() {
+			inferred := fixtures.Burst("inferred-burst-uuid-1", "evt-1", "evt-2")
+			inferred.Name = "API Development"
+			inferred.Description = "Built REST APIs"
+			intent.currentState = StateReview
+			intent.reviewState = &ReviewInferredEventState{
+				Event:          fixtures.EventWith("evt-1", "Built services in Go", "", ""),
+				InferredBursts: []*career.Burst{inferred},
+				AcceptedBursts: make([]*career.Burst, 0),
+				EditingMode:    EditingModeBursts,
+			}
+			suggestions := []burstfact.BurstSuggestion{
+				{Name: "API Development", Description: "Built REST APIs", EventIDs: []string{"evt-1", "evt-2"}, ConfidenceScore: 0.9},
+			}
+			intent.reviewState.burstModal = modals.NewSuggestionReviewModal(suggestions, nil)
+			screen := captureScreens.NewEventReviewScreen([]string{"Test"}, intent.reviewState.Event, intent.reviewState.InferredBursts, nil, nil)
+			intent.activeScreen = screen
+
+			intent.updateEditingModal(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+
+			Expect(screen.View()).To(ContainSubstring("●"))
+		})
+
+		It("shows ● indicator when InferredBursts is empty and accepted burst falls back to new UUID", func() {
+			inferred := fixtures.Burst("inferred-burst-uuid-1", "evt-1", "evt-2")
+			inferred.Name = "API Development"
+			inferred.Description = "Built REST APIs"
+			intent.currentState = StateReview
+			intent.reviewState = &ReviewInferredEventState{
+				Event:          fixtures.EventWith("evt-1", "Built services in Go", "", ""),
+				InferredBursts: []*career.Burst{},
+				AcceptedBursts: make([]*career.Burst, 0),
+				EditingMode:    EditingModeBursts,
+			}
+			suggestions := []burstfact.BurstSuggestion{
+				{Name: "API Development", Description: "Built REST APIs", EventIDs: []string{"evt-1", "evt-2"}, ConfidenceScore: 0.9},
+			}
+			intent.reviewState.burstModal = modals.NewSuggestionReviewModal(suggestions, nil)
+			screen := captureScreens.NewEventReviewScreen([]string{"Test"}, intent.reviewState.Event, []*career.Burst{inferred}, nil, nil)
+			intent.activeScreen = screen
+
+			intent.updateEditingModal(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+
+			Expect(screen.View()).To(ContainSubstring("●"))
+		})
+	})
+
 	Describe("appending to existing accepted bursts", func() {
 		BeforeEach(func() {
 			existingBurst := fixtures.BurstConfirmed("burst-1")

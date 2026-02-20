@@ -477,10 +477,10 @@ func (s *EventReviewScreen) renderSkills(th theme.Theme) string {
 	return b.String()
 }
 
-// isBurstAccepted returns true if the burst's ID appears in acceptedBursts.
+// isBurstAccepted returns true if the burst matches any entry in acceptedBursts by ID or Name.
 func (s *EventReviewScreen) isBurstAccepted(burst *career.Burst) bool {
 	for _, ab := range s.acceptedBursts {
-		if ab.ID == burst.ID {
+		if ab.ID == burst.ID || ab.Name == burst.Name {
 			return true
 		}
 	}
