@@ -1,0 +1,705 @@
+=== RUN   TestGeneratorConfigConstruction
+--- PASS: TestGeneratorConfigConstruction (0.00s)
+PASS
+ok  	github.com/baphled/kariya/internal/vhsgen	(cached)
+=== RUN   TestGenerateTapeContainsExpectedDirectives
+=== RUN   TestGenerateTapeContainsExpectedDirectives/Source_directive
+=== RUN   TestGenerateTapeContainsExpectedDirectives/GIF_output
+=== RUN   TestGenerateTapeContainsExpectedDirectives/ASCII_output
+=== RUN   TestGenerateTapeContainsExpectedDirectives/Hide_block
+=== RUN   TestGenerateTapeContainsExpectedDirectives/Show_block
+=== RUN   TestGenerateTapeContainsExpectedDirectives/Ctrl+C_ending
+=== RUN   TestGenerateTapeContainsExpectedDirectives/Enter_command
+=== RUN   TestGenerateTapeContainsExpectedDirectives/Type_command
+=== RUN   TestGenerateTapeContainsExpectedDirectives/Sleep_between_steps
+=== RUN   TestGenerateTapeContainsExpectedDirectives/Feature_comment
+=== RUN   TestGenerateTapeContainsExpectedDirectives/Scenario_comment
+--- PASS: TestGenerateTapeContainsExpectedDirectives (0.00s)
+    --- PASS: TestGenerateTapeContainsExpectedDirectives/Source_directive (0.00s)
+    --- PASS: TestGenerateTapeContainsExpectedDirectives/GIF_output (0.00s)
+    --- PASS: TestGenerateTapeContainsExpectedDirectives/ASCII_output (0.00s)
+    --- PASS: TestGenerateTapeContainsExpectedDirectives/Hide_block (0.00s)
+    --- PASS: TestGenerateTapeContainsExpectedDirectives/Show_block (0.00s)
+    --- PASS: TestGenerateTapeContainsExpectedDirectives/Ctrl+C_ending (0.00s)
+    --- PASS: TestGenerateTapeContainsExpectedDirectives/Enter_command (0.00s)
+    --- PASS: TestGenerateTapeContainsExpectedDirectives/Type_command (0.00s)
+    --- PASS: TestGenerateTapeContainsExpectedDirectives/Sleep_between_steps (0.00s)
+    --- PASS: TestGenerateTapeContainsExpectedDirectives/Feature_comment (0.00s)
+    --- PASS: TestGenerateTapeContainsExpectedDirectives/Scenario_comment (0.00s)
+=== RUN   TestGenerateTapeDualOutputDirectives
+--- PASS: TestGenerateTapeDualOutputDirectives (0.00s)
+=== RUN   TestGenerateTapeUntranslatableStepProducesTODO
+--- PASS: TestGenerateTapeUntranslatableStepProducesTODO (0.00s)
+=== RUN   TestGenerateTapeNoCleanupCommands
+--- PASS: TestGenerateTapeNoCleanupCommands (0.00s)
+=== RUN   TestGenerateTapeRejectsForbiddenInSteps
+--- PASS: TestGenerateTapeRejectsForbiddenInSteps (0.00s)
+=== RUN   TestGenerateTapeDefaultConfig
+--- PASS: TestGenerateTapeDefaultConfig (0.00s)
+=== RUN   TestGenerateTapeSleepBetweenStepsOnly
+--- PASS: TestGenerateTapeSleepBetweenStepsOnly (0.00s)
+=== RUN   TestGenerateTapeSetupStepsNoCommands
+--- PASS: TestGenerateTapeSetupStepsNoCommands (0.00s)
+=== RUN   TestGenerateTapeRenderCommandVariants
+=== RUN   TestGenerateTapeRenderCommandVariants/Down_key
+=== RUN   TestGenerateTapeRenderCommandVariants/Up_key
+=== RUN   TestGenerateTapeRenderCommandVariants/Enter_key
+=== RUN   TestGenerateTapeRenderCommandVariants/Escape_key
+=== RUN   TestGenerateTapeRenderCommandVariants/Tab_key
+=== RUN   TestGenerateTapeRenderCommandVariants/Type_char
+=== RUN   TestGenerateTapeRenderCommandVariants/Type_with_speed
+=== RUN   TestGenerateTapeRenderCommandVariants/Ctrl+E
+=== RUN   TestGenerateTapeRenderCommandVariants/Ctrl+S
+--- PASS: TestGenerateTapeRenderCommandVariants (0.00s)
+    --- PASS: TestGenerateTapeRenderCommandVariants/Down_key (0.00s)
+    --- PASS: TestGenerateTapeRenderCommandVariants/Up_key (0.00s)
+    --- PASS: TestGenerateTapeRenderCommandVariants/Enter_key (0.00s)
+    --- PASS: TestGenerateTapeRenderCommandVariants/Escape_key (0.00s)
+    --- PASS: TestGenerateTapeRenderCommandVariants/Tab_key (0.00s)
+    --- PASS: TestGenerateTapeRenderCommandVariants/Type_char (0.00s)
+    --- PASS: TestGenerateTapeRenderCommandVariants/Type_with_speed (0.00s)
+    --- PASS: TestGenerateTapeRenderCommandVariants/Ctrl+E (0.00s)
+    --- PASS: TestGenerateTapeRenderCommandVariants/Ctrl+S (0.00s)
+=== RUN   TestSlugify
+=== RUN   TestSlugify/simple_spaces
+=== RUN   TestSlugify/already_slug
+=== RUN   TestSlugify/special_chars
+=== RUN   TestSlugify/multiple_spaces
+=== RUN   TestSlugify/leading_trailing_spaces
+=== RUN   TestSlugify/empty_string
+=== RUN   TestSlugify/underscores_to_hyphens
+=== RUN   TestSlugify/mixed_separators
+=== RUN   TestSlugify/consecutive_special
+=== RUN   TestSlugify/only_special_chars
+=== RUN   TestSlugify/numbers
+--- PASS: TestSlugify (0.00s)
+    --- PASS: TestSlugify/simple_spaces (0.00s)
+    --- PASS: TestSlugify/already_slug (0.00s)
+    --- PASS: TestSlugify/special_chars (0.00s)
+    --- PASS: TestSlugify/multiple_spaces (0.00s)
+    --- PASS: TestSlugify/leading_trailing_spaces (0.00s)
+    --- PASS: TestSlugify/empty_string (0.00s)
+    --- PASS: TestSlugify/underscores_to_hyphens (0.00s)
+    --- PASS: TestSlugify/mixed_separators (0.00s)
+    --- PASS: TestSlugify/consecutive_special (0.00s)
+    --- PASS: TestSlugify/only_special_chars (0.00s)
+    --- PASS: TestSlugify/numbers (0.00s)
+=== RUN   TestWriteTapeCreatesFile
+--- PASS: TestWriteTapeCreatesFile (0.00s)
+=== RUN   TestWriteTapeCreatesDirectories
+--- PASS: TestWriteTapeCreatesDirectories (0.00s)
+PASS
+ok  	github.com/baphled/kariya/internal/vhsgen	(cached)
+=== RUN   TestGenerateTapeContainsExpectedDirectives
+=== RUN   TestGenerateTapeContainsExpectedDirectives/Source_directive
+=== RUN   TestGenerateTapeContainsExpectedDirectives/GIF_output
+=== RUN   TestGenerateTapeContainsExpectedDirectives/ASCII_output
+=== RUN   TestGenerateTapeContainsExpectedDirectives/Hide_block
+=== RUN   TestGenerateTapeContainsExpectedDirectives/Show_block
+=== RUN   TestGenerateTapeContainsExpectedDirectives/Ctrl+C_ending
+=== RUN   TestGenerateTapeContainsExpectedDirectives/Enter_command
+=== RUN   TestGenerateTapeContainsExpectedDirectives/Type_command
+=== RUN   TestGenerateTapeContainsExpectedDirectives/Sleep_between_steps
+=== RUN   TestGenerateTapeContainsExpectedDirectives/Feature_comment
+=== RUN   TestGenerateTapeContainsExpectedDirectives/Scenario_comment
+--- PASS: TestGenerateTapeContainsExpectedDirectives (0.00s)
+    --- PASS: TestGenerateTapeContainsExpectedDirectives/Source_directive (0.00s)
+    --- PASS: TestGenerateTapeContainsExpectedDirectives/GIF_output (0.00s)
+    --- PASS: TestGenerateTapeContainsExpectedDirectives/ASCII_output (0.00s)
+    --- PASS: TestGenerateTapeContainsExpectedDirectives/Hide_block (0.00s)
+    --- PASS: TestGenerateTapeContainsExpectedDirectives/Show_block (0.00s)
+    --- PASS: TestGenerateTapeContainsExpectedDirectives/Ctrl+C_ending (0.00s)
+    --- PASS: TestGenerateTapeContainsExpectedDirectives/Enter_command (0.00s)
+    --- PASS: TestGenerateTapeContainsExpectedDirectives/Type_command (0.00s)
+    --- PASS: TestGenerateTapeContainsExpectedDirectives/Sleep_between_steps (0.00s)
+    --- PASS: TestGenerateTapeContainsExpectedDirectives/Feature_comment (0.00s)
+    --- PASS: TestGenerateTapeContainsExpectedDirectives/Scenario_comment (0.00s)
+=== RUN   TestGenerateTapeDualOutputDirectives
+--- PASS: TestGenerateTapeDualOutputDirectives (0.00s)
+=== RUN   TestGenerateTapeUntranslatableStepProducesTODO
+--- PASS: TestGenerateTapeUntranslatableStepProducesTODO (0.00s)
+=== RUN   TestGenerateTapeNoCleanupCommands
+--- PASS: TestGenerateTapeNoCleanupCommands (0.00s)
+=== RUN   TestGenerateTapeRejectsForbiddenInSteps
+--- PASS: TestGenerateTapeRejectsForbiddenInSteps (0.00s)
+=== RUN   TestGenerateTapeDefaultConfig
+--- PASS: TestGenerateTapeDefaultConfig (0.00s)
+=== RUN   TestGenerateTapeSleepBetweenStepsOnly
+--- PASS: TestGenerateTapeSleepBetweenStepsOnly (0.00s)
+=== RUN   TestGenerateTapeSetupStepsNoCommands
+--- PASS: TestGenerateTapeSetupStepsNoCommands (0.00s)
+=== RUN   TestGenerateTapeRenderCommandVariants
+=== RUN   TestGenerateTapeRenderCommandVariants/Down_key
+=== RUN   TestGenerateTapeRenderCommandVariants/Up_key
+=== RUN   TestGenerateTapeRenderCommandVariants/Enter_key
+=== RUN   TestGenerateTapeRenderCommandVariants/Escape_key
+=== RUN   TestGenerateTapeRenderCommandVariants/Tab_key
+=== RUN   TestGenerateTapeRenderCommandVariants/Type_char
+=== RUN   TestGenerateTapeRenderCommandVariants/Type_with_speed
+=== RUN   TestGenerateTapeRenderCommandVariants/Ctrl+E
+=== RUN   TestGenerateTapeRenderCommandVariants/Ctrl+S
+--- PASS: TestGenerateTapeRenderCommandVariants (0.00s)
+    --- PASS: TestGenerateTapeRenderCommandVariants/Down_key (0.00s)
+    --- PASS: TestGenerateTapeRenderCommandVariants/Up_key (0.00s)
+    --- PASS: TestGenerateTapeRenderCommandVariants/Enter_key (0.00s)
+    --- PASS: TestGenerateTapeRenderCommandVariants/Escape_key (0.00s)
+    --- PASS: TestGenerateTapeRenderCommandVariants/Tab_key (0.00s)
+    --- PASS: TestGenerateTapeRenderCommandVariants/Type_char (0.00s)
+    --- PASS: TestGenerateTapeRenderCommandVariants/Type_with_speed (0.00s)
+    --- PASS: TestGenerateTapeRenderCommandVariants/Ctrl+E (0.00s)
+    --- PASS: TestGenerateTapeRenderCommandVariants/Ctrl+S (0.00s)
+=== RUN   TestSlugify
+=== RUN   TestSlugify/simple_spaces
+=== RUN   TestSlugify/already_slug
+=== RUN   TestSlugify/special_chars
+=== RUN   TestSlugify/multiple_spaces
+=== RUN   TestSlugify/leading_trailing_spaces
+=== RUN   TestSlugify/empty_string
+=== RUN   TestSlugify/underscores_to_hyphens
+=== RUN   TestSlugify/mixed_separators
+=== RUN   TestSlugify/consecutive_special
+=== RUN   TestSlugify/only_special_chars
+=== RUN   TestSlugify/numbers
+--- PASS: TestSlugify (0.00s)
+    --- PASS: TestSlugify/simple_spaces (0.00s)
+    --- PASS: TestSlugify/already_slug (0.00s)
+    --- PASS: TestSlugify/special_chars (0.00s)
+    --- PASS: TestSlugify/multiple_spaces (0.00s)
+    --- PASS: TestSlugify/leading_trailing_spaces (0.00s)
+    --- PASS: TestSlugify/empty_string (0.00s)
+    --- PASS: TestSlugify/underscores_to_hyphens (0.00s)
+    --- PASS: TestSlugify/mixed_separators (0.00s)
+    --- PASS: TestSlugify/consecutive_special (0.00s)
+    --- PASS: TestSlugify/only_special_chars (0.00s)
+    --- PASS: TestSlugify/numbers (0.00s)
+=== RUN   TestWriteTapeCreatesFile
+--- PASS: TestWriteTapeCreatesFile (0.00s)
+=== RUN   TestWriteTapeCreatesDirectories
+--- PASS: TestWriteTapeCreatesDirectories (0.00s)
+=== RUN   TestMenuAllSevenIntents
+=== RUN   TestMenuAllSevenIntents/capture_event_is_first_(0_downs)
+=== RUN   TestMenuAllSevenIntents/browse_timeline_is_second_(1_down)
+=== RUN   TestMenuAllSevenIntents/manage_skills_is_third_(2_downs)
+=== RUN   TestMenuAllSevenIntents/generate_cv_is_fourth_(3_downs)
+=== RUN   TestMenuAllSevenIntents/configure_system_is_fifth_(4_downs)
+=== RUN   TestMenuAllSevenIntents/burst_management_is_sixth_(5_downs)
+=== RUN   TestMenuAllSevenIntents/fact_management_is_seventh_(6_downs)
+--- PASS: TestMenuAllSevenIntents (0.00s)
+    --- PASS: TestMenuAllSevenIntents/capture_event_is_first_(0_downs) (0.00s)
+    --- PASS: TestMenuAllSevenIntents/browse_timeline_is_second_(1_down) (0.00s)
+    --- PASS: TestMenuAllSevenIntents/manage_skills_is_third_(2_downs) (0.00s)
+    --- PASS: TestMenuAllSevenIntents/generate_cv_is_fourth_(3_downs) (0.00s)
+    --- PASS: TestMenuAllSevenIntents/configure_system_is_fifth_(4_downs) (0.00s)
+    --- PASS: TestMenuAllSevenIntents/burst_management_is_sixth_(5_downs) (0.00s)
+    --- PASS: TestMenuAllSevenIntents/fact_management_is_seventh_(6_downs) (0.00s)
+=== RUN   TestMenuCaptureEventEnterOnly
+--- PASS: TestMenuCaptureEventEnterOnly (0.00s)
+=== RUN   TestMenuManageSkillsTwoDowns
+--- PASS: TestMenuManageSkillsTwoDowns (0.00s)
+=== RUN   TestMenuFactManagementSixDowns
+--- PASS: TestMenuFactManagementSixDowns (0.00s)
+=== RUN   TestMenuUnknownIntentReturnsNilCommands
+--- PASS: TestMenuUnknownIntentReturnsNilCommands (0.00s)
+=== RUN   TestUntranslatableFormBypass
+=== RUN   TestUntranslatableFormBypass/I_submit_the_event
+=== RUN   TestUntranslatableFormBypass/I_submit_the_skill_form
+=== RUN   TestUntranslatableFormBypass/I_confirm_filter
+=== RUN   TestUntranslatableFormBypass/I_confirm_sort
+=== RUN   TestUntranslatableFormBypass/I_accept_the_suggested_burst
+=== RUN   TestUntranslatableFormBypass/I_accept_all_inferred_skills
+=== RUN   TestUntranslatableFormBypass/I_save_the_burst_edit
+=== RUN   TestUntranslatableFormBypass/I_save_metadata_changes
+=== RUN   TestUntranslatableFormBypass/I_confirm_the_review
+--- PASS: TestUntranslatableFormBypass (0.00s)
+    --- PASS: TestUntranslatableFormBypass/I_submit_the_event (0.00s)
+    --- PASS: TestUntranslatableFormBypass/I_submit_the_skill_form (0.00s)
+    --- PASS: TestUntranslatableFormBypass/I_confirm_filter (0.00s)
+    --- PASS: TestUntranslatableFormBypass/I_confirm_sort (0.00s)
+    --- PASS: TestUntranslatableFormBypass/I_accept_the_suggested_burst (0.00s)
+    --- PASS: TestUntranslatableFormBypass/I_accept_all_inferred_skills (0.00s)
+    --- PASS: TestUntranslatableFormBypass/I_save_the_burst_edit (0.00s)
+    --- PASS: TestUntranslatableFormBypass/I_save_metadata_changes (0.00s)
+    --- PASS: TestUntranslatableFormBypass/I_confirm_the_review (0.00s)
+=== RUN   TestUntranslatableUnknownStep
+--- PASS: TestUntranslatableUnknownStep (0.00s)
+=== RUN   TestListTranslatablePatternsNotEmpty
+--- PASS: TestListTranslatablePatternsNotEmpty (0.00s)
+=== RUN   TestListTranslatablePatternsMenuEnum
+--- PASS: TestListTranslatablePatternsMenuEnum (0.00s)
+=== RUN   TestListTranslatablePatternsCategories
+--- PASS: TestListTranslatablePatternsCategories (0.00s)
+=== RUN   TestListTranslatablePatternsExcludesFormBypass
+--- PASS: TestListTranslatablePatternsExcludesFormBypass (0.00s)
+=== RUN   TestTranslateNavigationPrimitives
+=== RUN   TestTranslateNavigationPrimitives/I_press_enter
+=== RUN   TestTranslateNavigationPrimitives/I_press_enter_to_view_event_details
+=== RUN   TestTranslateNavigationPrimitives/I_press_escape
+=== RUN   TestTranslateNavigationPrimitives/I_close_the_modal
+=== RUN   TestTranslateNavigationPrimitives/I_cancel
+=== RUN   TestTranslateNavigationPrimitives/I_navigate_down
+=== RUN   TestTranslateNavigationPrimitives/I_press_"j"_to_navigate_down
+=== RUN   TestTranslateNavigationPrimitives/I_navigate_up
+=== RUN   TestTranslateNavigationPrimitives/I_press_"k"_to_navigate_up
+=== RUN   TestTranslateNavigationPrimitives/I_press_tab
+--- PASS: TestTranslateNavigationPrimitives (0.00s)
+    --- PASS: TestTranslateNavigationPrimitives/I_press_enter (0.00s)
+    --- PASS: TestTranslateNavigationPrimitives/I_press_enter_to_view_event_details (0.00s)
+    --- PASS: TestTranslateNavigationPrimitives/I_press_escape (0.00s)
+    --- PASS: TestTranslateNavigationPrimitives/I_close_the_modal (0.00s)
+    --- PASS: TestTranslateNavigationPrimitives/I_cancel (0.00s)
+    --- PASS: TestTranslateNavigationPrimitives/I_navigate_down (0.00s)
+    --- PASS: TestTranslateNavigationPrimitives/I_press_"j"_to_navigate_down (0.00s)
+    --- PASS: TestTranslateNavigationPrimitives/I_navigate_up (0.00s)
+    --- PASS: TestTranslateNavigationPrimitives/I_press_"k"_to_navigate_up (0.00s)
+    --- PASS: TestTranslateNavigationPrimitives/I_press_tab (0.00s)
+=== RUN   TestTranslateKeyDiscrepancies
+=== RUN   TestTranslateKeyDiscrepancies/press_s_to_view_events_sends_CtrlE
+=== RUN   TestTranslateKeyDiscrepancies/press_m_to_open_metadata_sends_e
+--- PASS: TestTranslateKeyDiscrepancies (0.00s)
+    --- PASS: TestTranslateKeyDiscrepancies/press_s_to_view_events_sends_CtrlE (0.00s)
+    --- PASS: TestTranslateKeyDiscrepancies/press_m_to_open_metadata_sends_e (0.00s)
+=== RUN   TestTranslateTextInput
+--- PASS: TestTranslateTextInput (0.00s)
+=== RUN   TestTranslateSetupSteps
+=== RUN   TestTranslateSetupSteps/the_database_is_empty
+=== RUN   TestTranslateSetupSteps/I_am_on_the_main_menu
+=== RUN   TestTranslateSetupSteps/I_have_3_skills_in_my_profile
+=== RUN   TestTranslateSetupSteps/I_have_a_skill_"Python"
+=== RUN   TestTranslateSetupSteps/I_have_a_skill_"Go"_with_category_"backend"
+=== RUN   TestTranslateSetupSteps/I_have_an_event_"Built_API"_at_company_"Acme"
+=== RUN   TestTranslateSetupSteps/I_have_2_events_that_use_skill_"Go"
+--- PASS: TestTranslateSetupSteps (0.00s)
+    --- PASS: TestTranslateSetupSteps/the_database_is_empty (0.00s)
+    --- PASS: TestTranslateSetupSteps/I_am_on_the_main_menu (0.00s)
+    --- PASS: TestTranslateSetupSteps/I_have_3_skills_in_my_profile (0.00s)
+    --- PASS: TestTranslateSetupSteps/I_have_a_skill_"Python" (0.00s)
+    --- PASS: TestTranslateSetupSteps/I_have_a_skill_"Go"_with_category_"backend" (0.00s)
+    --- PASS: TestTranslateSetupSteps/I_have_an_event_"Built_API"_at_company_"Acme" (0.00s)
+    --- PASS: TestTranslateSetupSteps/I_have_2_events_that_use_skill_"Go" (0.00s)
+=== RUN   TestRenderTape
+--- PASS: TestRenderTape (0.00s)
+=== RUN   TestRenderTapeMinimalData
+--- PASS: TestRenderTapeMinimalData (0.00s)
+=== RUN   TestRenderTapeWithSpecialCharacters
+--- PASS: TestRenderTapeWithSpecialCharacters (0.00s)
+=== RUN   TestSourceTypeConstants
+=== RUN   TestSourceTypeConstants/SourceBusiness_constant
+=== RUN   TestSourceTypeConstants/SourceVHSOnly_constant
+--- PASS: TestSourceTypeConstants (0.00s)
+    --- PASS: TestSourceTypeConstants/SourceBusiness_constant (0.00s)
+    --- PASS: TestSourceTypeConstants/SourceVHSOnly_constant (0.00s)
+=== RUN   TestVHSCommandTypeConstants
+=== RUN   TestVHSCommandTypeConstants/Type_command
+=== RUN   TestVHSCommandTypeConstants/Down_command
+=== RUN   TestVHSCommandTypeConstants/Up_command
+=== RUN   TestVHSCommandTypeConstants/Enter_command
+=== RUN   TestVHSCommandTypeConstants/Escape_command
+=== RUN   TestVHSCommandTypeConstants/Tab_command
+=== RUN   TestVHSCommandTypeConstants/Sleep_command
+=== RUN   TestVHSCommandTypeConstants/Hide_command
+=== RUN   TestVHSCommandTypeConstants/Show_command
+=== RUN   TestVHSCommandTypeConstants/Screenshot_command
+=== RUN   TestVHSCommandTypeConstants/Source_command
+=== RUN   TestVHSCommandTypeConstants/Output_command
+=== RUN   TestVHSCommandTypeConstants/CtrlC_command
+--- PASS: TestVHSCommandTypeConstants (0.00s)
+    --- PASS: TestVHSCommandTypeConstants/Type_command (0.00s)
+    --- PASS: TestVHSCommandTypeConstants/Down_command (0.00s)
+    --- PASS: TestVHSCommandTypeConstants/Up_command (0.00s)
+    --- PASS: TestVHSCommandTypeConstants/Enter_command (0.00s)
+    --- PASS: TestVHSCommandTypeConstants/Escape_command (0.00s)
+    --- PASS: TestVHSCommandTypeConstants/Tab_command (0.00s)
+    --- PASS: TestVHSCommandTypeConstants/Sleep_command (0.00s)
+    --- PASS: TestVHSCommandTypeConstants/Hide_command (0.00s)
+    --- PASS: TestVHSCommandTypeConstants/Show_command (0.00s)
+    --- PASS: TestVHSCommandTypeConstants/Screenshot_command (0.00s)
+    --- PASS: TestVHSCommandTypeConstants/Source_command (0.00s)
+    --- PASS: TestVHSCommandTypeConstants/Output_command (0.00s)
+    --- PASS: TestVHSCommandTypeConstants/CtrlC_command (0.00s)
+=== RUN   TestVHSCommandConstruction
+=== RUN   TestVHSCommandConstruction/Type_command_with_text
+=== RUN   TestVHSCommandConstruction/Sleep_command_with_duration
+=== RUN   TestVHSCommandConstruction/Screenshot_command_with_path
+=== RUN   TestVHSCommandConstruction/Command_with_no_args
+--- PASS: TestVHSCommandConstruction (0.00s)
+    --- PASS: TestVHSCommandConstruction/Type_command_with_text (0.00s)
+    --- PASS: TestVHSCommandConstruction/Sleep_command_with_duration (0.00s)
+    --- PASS: TestVHSCommandConstruction/Screenshot_command_with_path (0.00s)
+    --- PASS: TestVHSCommandConstruction/Command_with_no_args (0.00s)
+=== RUN   TestStepIRConstruction
+=== RUN   TestStepIRConstruction/Given_step
+=== RUN   TestStepIRConstruction/When_step
+=== RUN   TestStepIRConstruction/Then_step
+=== RUN   TestStepIRConstruction/Untranslatable_step
+--- PASS: TestStepIRConstruction (0.00s)
+    --- PASS: TestStepIRConstruction/Given_step (0.00s)
+    --- PASS: TestStepIRConstruction/When_step (0.00s)
+    --- PASS: TestStepIRConstruction/Then_step (0.00s)
+    --- PASS: TestStepIRConstruction/Untranslatable_step (0.00s)
+=== RUN   TestStepIRWithCommands
+--- PASS: TestStepIRWithCommands (0.00s)
+=== RUN   TestScenarioIRConstruction
+--- PASS: TestScenarioIRConstruction (0.00s)
+=== RUN   TestScenarioIRSourceTypes
+=== RUN   TestScenarioIRSourceTypes/Business_source
+=== RUN   TestScenarioIRSourceTypes/VHS-only_source
+--- PASS: TestScenarioIRSourceTypes (0.00s)
+    --- PASS: TestScenarioIRSourceTypes/Business_source (0.00s)
+    --- PASS: TestScenarioIRSourceTypes/VHS-only_source (0.00s)
+=== RUN   TestGeneratorConfigConstruction
+--- PASS: TestGeneratorConfigConstruction (0.00s)
+=== RUN   TestAnalysisResultConstruction
+--- PASS: TestAnalysisResultConstruction (0.00s)
+=== RUN   TestAnalysisResultWithUntranslatableSteps
+--- PASS: TestAnalysisResultWithUntranslatableSteps (0.00s)
+=== RUN   TestParamConstraintConstruction
+--- PASS: TestParamConstraintConstruction (0.00s)
+=== RUN   TestStepPatternConstruction
+--- PASS: TestStepPatternConstruction (0.00s)
+=== RUN   TestZeroValues
+=== RUN   TestZeroValues/zero_VHSCommand
+=== RUN   TestZeroValues/zero_StepIR
+=== RUN   TestZeroValues/zero_ScenarioIR
+=== RUN   TestZeroValues/zero_GeneratorConfig
+=== RUN   TestZeroValues/zero_AnalysisResult
+=== RUN   TestZeroValues/zero_ParamConstraint
+=== RUN   TestZeroValues/zero_StepPattern
+--- PASS: TestZeroValues (0.00s)
+    --- PASS: TestZeroValues/zero_VHSCommand (0.00s)
+    --- PASS: TestZeroValues/zero_StepIR (0.00s)
+    --- PASS: TestZeroValues/zero_ScenarioIR (0.00s)
+    --- PASS: TestZeroValues/zero_GeneratorConfig (0.00s)
+    --- PASS: TestZeroValues/zero_AnalysisResult (0.00s)
+    --- PASS: TestZeroValues/zero_ParamConstraint (0.00s)
+    --- PASS: TestZeroValues/zero_StepPattern (0.00s)
+=== RUN   TestEmptySlices
+=== RUN   TestEmptySlices/ScenarioIR_with_empty_slices
+=== RUN   TestEmptySlices/AnalysisResult_with_empty_slices
+--- PASS: TestEmptySlices (0.00s)
+    --- PASS: TestEmptySlices/ScenarioIR_with_empty_slices (0.00s)
+    --- PASS: TestEmptySlices/AnalysisResult_with_empty_slices (0.00s)
+=== RUN   TestAnalyser_BusinessScenarioAllTranslatable
+--- PASS: TestAnalyser_BusinessScenarioAllTranslatable (0.00s)
+=== RUN   TestAnalyser_BusinessScenarioFormBypass
+--- PASS: TestAnalyser_BusinessScenarioFormBypass (0.00s)
+=== RUN   TestAnalyser_VHSOnlyUntranslatableStep
+--- PASS: TestAnalyser_VHSOnlyUntranslatableStep (0.00s)
+=== RUN   TestAnalyser_GivenThenStepsDontAffectTranslatability
+--- PASS: TestAnalyser_GivenThenStepsDontAffectTranslatability (0.00s)
+=== RUN   TestAnalyser_SourceFieldPropagated
+--- PASS: TestAnalyser_SourceFieldPropagated (0.00s)
+=== RUN   TestAnalyser_ScenarioNameAndFeaturePropagated
+--- PASS: TestAnalyser_ScenarioNameAndFeaturePropagated (0.00s)
+=== RUN   TestAnalyser_MultipleUntranslatableWhenSteps
+--- PASS: TestAnalyser_MultipleUntranslatableWhenSteps (0.00s)
+=== RUN   TestAnalyser_EmptyDemoStepsIsTranslatable
+--- PASS: TestAnalyser_EmptyDemoStepsIsTranslatable (0.00s)
+PASS
+ok  	github.com/baphled/kariya/internal/vhsgen	0.005s
+--- ALL VHSGEN TESTS ---
+=== RUN   TestGenerateTapeContainsExpectedDirectives
+=== RUN   TestGenerateTapeContainsExpectedDirectives/Source_directive
+=== RUN   TestGenerateTapeContainsExpectedDirectives/GIF_output
+=== RUN   TestGenerateTapeContainsExpectedDirectives/ASCII_output
+=== RUN   TestGenerateTapeContainsExpectedDirectives/Hide_block
+=== RUN   TestGenerateTapeContainsExpectedDirectives/Show_block
+=== RUN   TestGenerateTapeContainsExpectedDirectives/Ctrl+C_ending
+=== RUN   TestGenerateTapeContainsExpectedDirectives/Enter_command
+=== RUN   TestGenerateTapeContainsExpectedDirectives/Type_command
+=== RUN   TestGenerateTapeContainsExpectedDirectives/Sleep_between_steps
+=== RUN   TestGenerateTapeContainsExpectedDirectives/Feature_comment
+=== RUN   TestGenerateTapeContainsExpectedDirectives/Scenario_comment
+--- PASS: TestGenerateTapeContainsExpectedDirectives (0.00s)
+    --- PASS: TestGenerateTapeContainsExpectedDirectives/Source_directive (0.00s)
+    --- PASS: TestGenerateTapeContainsExpectedDirectives/GIF_output (0.00s)
+    --- PASS: TestGenerateTapeContainsExpectedDirectives/ASCII_output (0.00s)
+    --- PASS: TestGenerateTapeContainsExpectedDirectives/Hide_block (0.00s)
+    --- PASS: TestGenerateTapeContainsExpectedDirectives/Show_block (0.00s)
+    --- PASS: TestGenerateTapeContainsExpectedDirectives/Ctrl+C_ending (0.00s)
+    --- PASS: TestGenerateTapeContainsExpectedDirectives/Enter_command (0.00s)
+    --- PASS: TestGenerateTapeContainsExpectedDirectives/Type_command (0.00s)
+    --- PASS: TestGenerateTapeContainsExpectedDirectives/Sleep_between_steps (0.00s)
+    --- PASS: TestGenerateTapeContainsExpectedDirectives/Feature_comment (0.00s)
+    --- PASS: TestGenerateTapeContainsExpectedDirectives/Scenario_comment (0.00s)
+=== RUN   TestGenerateTapeDualOutputDirectives
+--- PASS: TestGenerateTapeDualOutputDirectives (0.00s)
+=== RUN   TestGenerateTapeUntranslatableStepProducesTODO
+--- PASS: TestGenerateTapeUntranslatableStepProducesTODO (0.00s)
+=== RUN   TestGenerateTapeNoCleanupCommands
+--- PASS: TestGenerateTapeNoCleanupCommands (0.00s)
+=== RUN   TestGenerateTapeRejectsForbiddenInSteps
+--- PASS: TestGenerateTapeRejectsForbiddenInSteps (0.00s)
+=== RUN   TestGenerateTapeDefaultConfig
+--- PASS: TestGenerateTapeDefaultConfig (0.00s)
+=== RUN   TestGenerateTapeSleepBetweenStepsOnly
+--- PASS: TestGenerateTapeSleepBetweenStepsOnly (0.00s)
+=== RUN   TestGenerateTapeSetupStepsNoCommands
+--- PASS: TestGenerateTapeSetupStepsNoCommands (0.00s)
+=== RUN   TestGenerateTapeRenderCommandVariants
+=== RUN   TestGenerateTapeRenderCommandVariants/Down_key
+=== RUN   TestGenerateTapeRenderCommandVariants/Up_key
+=== RUN   TestGenerateTapeRenderCommandVariants/Enter_key
+=== RUN   TestGenerateTapeRenderCommandVariants/Escape_key
+=== RUN   TestGenerateTapeRenderCommandVariants/Tab_key
+=== RUN   TestGenerateTapeRenderCommandVariants/Type_char
+=== RUN   TestGenerateTapeRenderCommandVariants/Type_with_speed
+=== RUN   TestGenerateTapeRenderCommandVariants/Ctrl+E
+=== RUN   TestGenerateTapeRenderCommandVariants/Ctrl+S
+--- PASS: TestGenerateTapeRenderCommandVariants (0.00s)
+    --- PASS: TestGenerateTapeRenderCommandVariants/Down_key (0.00s)
+    --- PASS: TestGenerateTapeRenderCommandVariants/Up_key (0.00s)
+    --- PASS: TestGenerateTapeRenderCommandVariants/Enter_key (0.00s)
+    --- PASS: TestGenerateTapeRenderCommandVariants/Escape_key (0.00s)
+    --- PASS: TestGenerateTapeRenderCommandVariants/Tab_key (0.00s)
+    --- PASS: TestGenerateTapeRenderCommandVariants/Type_char (0.00s)
+    --- PASS: TestGenerateTapeRenderCommandVariants/Type_with_speed (0.00s)
+    --- PASS: TestGenerateTapeRenderCommandVariants/Ctrl+E (0.00s)
+    --- PASS: TestGenerateTapeRenderCommandVariants/Ctrl+S (0.00s)
+=== RUN   TestSlugify
+=== RUN   TestSlugify/simple_spaces
+=== RUN   TestSlugify/already_slug
+=== RUN   TestSlugify/special_chars
+=== RUN   TestSlugify/multiple_spaces
+=== RUN   TestSlugify/leading_trailing_spaces
+=== RUN   TestSlugify/empty_string
+=== RUN   TestSlugify/underscores_to_hyphens
+=== RUN   TestSlugify/mixed_separators
+=== RUN   TestSlugify/consecutive_special
+=== RUN   TestSlugify/only_special_chars
+=== RUN   TestSlugify/numbers
+--- PASS: TestSlugify (0.00s)
+    --- PASS: TestSlugify/simple_spaces (0.00s)
+    --- PASS: TestSlugify/already_slug (0.00s)
+    --- PASS: TestSlugify/special_chars (0.00s)
+    --- PASS: TestSlugify/multiple_spaces (0.00s)
+    --- PASS: TestSlugify/leading_trailing_spaces (0.00s)
+    --- PASS: TestSlugify/empty_string (0.00s)
+    --- PASS: TestSlugify/underscores_to_hyphens (0.00s)
+    --- PASS: TestSlugify/mixed_separators (0.00s)
+    --- PASS: TestSlugify/consecutive_special (0.00s)
+    --- PASS: TestSlugify/only_special_chars (0.00s)
+    --- PASS: TestSlugify/numbers (0.00s)
+=== RUN   TestWriteTapeCreatesFile
+--- PASS: TestWriteTapeCreatesFile (0.00s)
+=== RUN   TestWriteTapeCreatesDirectories
+--- PASS: TestWriteTapeCreatesDirectories (0.00s)
+=== RUN   TestMenuAllSevenIntents
+=== RUN   TestMenuAllSevenIntents/capture_event_is_first_(0_downs)
+=== RUN   TestMenuAllSevenIntents/browse_timeline_is_second_(1_down)
+=== RUN   TestMenuAllSevenIntents/manage_skills_is_third_(2_downs)
+=== RUN   TestMenuAllSevenIntents/generate_cv_is_fourth_(3_downs)
+=== RUN   TestMenuAllSevenIntents/configure_system_is_fifth_(4_downs)
+=== RUN   TestMenuAllSevenIntents/burst_management_is_sixth_(5_downs)
+=== RUN   TestMenuAllSevenIntents/fact_management_is_seventh_(6_downs)
+--- PASS: TestMenuAllSevenIntents (0.00s)
+    --- PASS: TestMenuAllSevenIntents/capture_event_is_first_(0_downs) (0.00s)
+    --- PASS: TestMenuAllSevenIntents/browse_timeline_is_second_(1_down) (0.00s)
+    --- PASS: TestMenuAllSevenIntents/manage_skills_is_third_(2_downs) (0.00s)
+    --- PASS: TestMenuAllSevenIntents/generate_cv_is_fourth_(3_downs) (0.00s)
+    --- PASS: TestMenuAllSevenIntents/configure_system_is_fifth_(4_downs) (0.00s)
+    --- PASS: TestMenuAllSevenIntents/burst_management_is_sixth_(5_downs) (0.00s)
+    --- PASS: TestMenuAllSevenIntents/fact_management_is_seventh_(6_downs) (0.00s)
+=== RUN   TestMenuCaptureEventEnterOnly
+--- PASS: TestMenuCaptureEventEnterOnly (0.00s)
+=== RUN   TestMenuManageSkillsTwoDowns
+--- PASS: TestMenuManageSkillsTwoDowns (0.00s)
+=== RUN   TestMenuFactManagementSixDowns
+--- PASS: TestMenuFactManagementSixDowns (0.00s)
+=== RUN   TestMenuUnknownIntentReturnsNilCommands
+--- PASS: TestMenuUnknownIntentReturnsNilCommands (0.00s)
+=== RUN   TestUntranslatableFormBypass
+=== RUN   TestUntranslatableFormBypass/I_submit_the_event
+=== RUN   TestUntranslatableFormBypass/I_submit_the_skill_form
+=== RUN   TestUntranslatableFormBypass/I_confirm_filter
+=== RUN   TestUntranslatableFormBypass/I_confirm_sort
+=== RUN   TestUntranslatableFormBypass/I_accept_the_suggested_burst
+=== RUN   TestUntranslatableFormBypass/I_accept_all_inferred_skills
+=== RUN   TestUntranslatableFormBypass/I_save_the_burst_edit
+=== RUN   TestUntranslatableFormBypass/I_save_metadata_changes
+=== RUN   TestUntranslatableFormBypass/I_confirm_the_review
+--- PASS: TestUntranslatableFormBypass (0.00s)
+    --- PASS: TestUntranslatableFormBypass/I_submit_the_event (0.00s)
+    --- PASS: TestUntranslatableFormBypass/I_submit_the_skill_form (0.00s)
+    --- PASS: TestUntranslatableFormBypass/I_confirm_filter (0.00s)
+    --- PASS: TestUntranslatableFormBypass/I_confirm_sort (0.00s)
+    --- PASS: TestUntranslatableFormBypass/I_accept_the_suggested_burst (0.00s)
+    --- PASS: TestUntranslatableFormBypass/I_accept_all_inferred_skills (0.00s)
+    --- PASS: TestUntranslatableFormBypass/I_save_the_burst_edit (0.00s)
+    --- PASS: TestUntranslatableFormBypass/I_save_metadata_changes (0.00s)
+    --- PASS: TestUntranslatableFormBypass/I_confirm_the_review (0.00s)
+=== RUN   TestUntranslatableUnknownStep
+--- PASS: TestUntranslatableUnknownStep (0.00s)
+=== RUN   TestListTranslatablePatternsNotEmpty
+--- PASS: TestListTranslatablePatternsNotEmpty (0.00s)
+=== RUN   TestListTranslatablePatternsMenuEnum
+--- PASS: TestListTranslatablePatternsMenuEnum (0.00s)
+=== RUN   TestListTranslatablePatternsCategories
+--- PASS: TestListTranslatablePatternsCategories (0.00s)
+=== RUN   TestListTranslatablePatternsExcludesFormBypass
+--- PASS: TestListTranslatablePatternsExcludesFormBypass (0.00s)
+=== RUN   TestTranslateNavigationPrimitives
+=== RUN   TestTranslateNavigationPrimitives/I_press_enter
+=== RUN   TestTranslateNavigationPrimitives/I_press_enter_to_view_event_details
+=== RUN   TestTranslateNavigationPrimitives/I_press_escape
+=== RUN   TestTranslateNavigationPrimitives/I_close_the_modal
+=== RUN   TestTranslateNavigationPrimitives/I_cancel
+=== RUN   TestTranslateNavigationPrimitives/I_navigate_down
+=== RUN   TestTranslateNavigationPrimitives/I_press_"j"_to_navigate_down
+=== RUN   TestTranslateNavigationPrimitives/I_navigate_up
+=== RUN   TestTranslateNavigationPrimitives/I_press_"k"_to_navigate_up
+=== RUN   TestTranslateNavigationPrimitives/I_press_tab
+--- PASS: TestTranslateNavigationPrimitives (0.00s)
+    --- PASS: TestTranslateNavigationPrimitives/I_press_enter (0.00s)
+    --- PASS: TestTranslateNavigationPrimitives/I_press_enter_to_view_event_details (0.00s)
+    --- PASS: TestTranslateNavigationPrimitives/I_press_escape (0.00s)
+    --- PASS: TestTranslateNavigationPrimitives/I_close_the_modal (0.00s)
+    --- PASS: TestTranslateNavigationPrimitives/I_cancel (0.00s)
+    --- PASS: TestTranslateNavigationPrimitives/I_navigate_down (0.00s)
+    --- PASS: TestTranslateNavigationPrimitives/I_press_"j"_to_navigate_down (0.00s)
+    --- PASS: TestTranslateNavigationPrimitives/I_navigate_up (0.00s)
+    --- PASS: TestTranslateNavigationPrimitives/I_press_"k"_to_navigate_up (0.00s)
+    --- PASS: TestTranslateNavigationPrimitives/I_press_tab (0.00s)
+=== RUN   TestTranslateKeyDiscrepancies
+=== RUN   TestTranslateKeyDiscrepancies/press_s_to_view_events_sends_CtrlE
+=== RUN   TestTranslateKeyDiscrepancies/press_m_to_open_metadata_sends_e
+--- PASS: TestTranslateKeyDiscrepancies (0.00s)
+    --- PASS: TestTranslateKeyDiscrepancies/press_s_to_view_events_sends_CtrlE (0.00s)
+    --- PASS: TestTranslateKeyDiscrepancies/press_m_to_open_metadata_sends_e (0.00s)
+=== RUN   TestTranslateTextInput
+--- PASS: TestTranslateTextInput (0.00s)
+=== RUN   TestTranslateSetupSteps
+=== RUN   TestTranslateSetupSteps/the_database_is_empty
+=== RUN   TestTranslateSetupSteps/I_am_on_the_main_menu
+=== RUN   TestTranslateSetupSteps/I_have_3_skills_in_my_profile
+=== RUN   TestTranslateSetupSteps/I_have_a_skill_"Python"
+=== RUN   TestTranslateSetupSteps/I_have_a_skill_"Go"_with_category_"backend"
+=== RUN   TestTranslateSetupSteps/I_have_an_event_"Built_API"_at_company_"Acme"
+=== RUN   TestTranslateSetupSteps/I_have_2_events_that_use_skill_"Go"
+--- PASS: TestTranslateSetupSteps (0.00s)
+    --- PASS: TestTranslateSetupSteps/the_database_is_empty (0.00s)
+    --- PASS: TestTranslateSetupSteps/I_am_on_the_main_menu (0.00s)
+    --- PASS: TestTranslateSetupSteps/I_have_3_skills_in_my_profile (0.00s)
+    --- PASS: TestTranslateSetupSteps/I_have_a_skill_"Python" (0.00s)
+    --- PASS: TestTranslateSetupSteps/I_have_a_skill_"Go"_with_category_"backend" (0.00s)
+    --- PASS: TestTranslateSetupSteps/I_have_an_event_"Built_API"_at_company_"Acme" (0.00s)
+    --- PASS: TestTranslateSetupSteps/I_have_2_events_that_use_skill_"Go" (0.00s)
+=== RUN   TestRenderTape
+--- PASS: TestRenderTape (0.00s)
+=== RUN   TestRenderTapeMinimalData
+--- PASS: TestRenderTapeMinimalData (0.00s)
+=== RUN   TestRenderTapeWithSpecialCharacters
+--- PASS: TestRenderTapeWithSpecialCharacters (0.00s)
+=== RUN   TestSourceTypeConstants
+=== RUN   TestSourceTypeConstants/SourceBusiness_constant
+=== RUN   TestSourceTypeConstants/SourceVHSOnly_constant
+--- PASS: TestSourceTypeConstants (0.00s)
+    --- PASS: TestSourceTypeConstants/SourceBusiness_constant (0.00s)
+    --- PASS: TestSourceTypeConstants/SourceVHSOnly_constant (0.00s)
+=== RUN   TestVHSCommandTypeConstants
+=== RUN   TestVHSCommandTypeConstants/Type_command
+=== RUN   TestVHSCommandTypeConstants/Down_command
+=== RUN   TestVHSCommandTypeConstants/Up_command
+=== RUN   TestVHSCommandTypeConstants/Enter_command
+=== RUN   TestVHSCommandTypeConstants/Escape_command
+=== RUN   TestVHSCommandTypeConstants/Tab_command
+=== RUN   TestVHSCommandTypeConstants/Sleep_command
+=== RUN   TestVHSCommandTypeConstants/Hide_command
+=== RUN   TestVHSCommandTypeConstants/Show_command
+=== RUN   TestVHSCommandTypeConstants/Screenshot_command
+=== RUN   TestVHSCommandTypeConstants/Source_command
+=== RUN   TestVHSCommandTypeConstants/Output_command
+=== RUN   TestVHSCommandTypeConstants/CtrlC_command
+--- PASS: TestVHSCommandTypeConstants (0.00s)
+    --- PASS: TestVHSCommandTypeConstants/Type_command (0.00s)
+    --- PASS: TestVHSCommandTypeConstants/Down_command (0.00s)
+    --- PASS: TestVHSCommandTypeConstants/Up_command (0.00s)
+    --- PASS: TestVHSCommandTypeConstants/Enter_command (0.00s)
+    --- PASS: TestVHSCommandTypeConstants/Escape_command (0.00s)
+    --- PASS: TestVHSCommandTypeConstants/Tab_command (0.00s)
+    --- PASS: TestVHSCommandTypeConstants/Sleep_command (0.00s)
+    --- PASS: TestVHSCommandTypeConstants/Hide_command (0.00s)
+    --- PASS: TestVHSCommandTypeConstants/Show_command (0.00s)
+    --- PASS: TestVHSCommandTypeConstants/Screenshot_command (0.00s)
+    --- PASS: TestVHSCommandTypeConstants/Source_command (0.00s)
+    --- PASS: TestVHSCommandTypeConstants/Output_command (0.00s)
+    --- PASS: TestVHSCommandTypeConstants/CtrlC_command (0.00s)
+=== RUN   TestVHSCommandConstruction
+=== RUN   TestVHSCommandConstruction/Type_command_with_text
+=== RUN   TestVHSCommandConstruction/Sleep_command_with_duration
+=== RUN   TestVHSCommandConstruction/Screenshot_command_with_path
+=== RUN   TestVHSCommandConstruction/Command_with_no_args
+--- PASS: TestVHSCommandConstruction (0.00s)
+    --- PASS: TestVHSCommandConstruction/Type_command_with_text (0.00s)
+    --- PASS: TestVHSCommandConstruction/Sleep_command_with_duration (0.00s)
+    --- PASS: TestVHSCommandConstruction/Screenshot_command_with_path (0.00s)
+    --- PASS: TestVHSCommandConstruction/Command_with_no_args (0.00s)
+=== RUN   TestStepIRConstruction
+=== RUN   TestStepIRConstruction/Given_step
+=== RUN   TestStepIRConstruction/When_step
+=== RUN   TestStepIRConstruction/Then_step
+=== RUN   TestStepIRConstruction/Untranslatable_step
+--- PASS: TestStepIRConstruction (0.00s)
+    --- PASS: TestStepIRConstruction/Given_step (0.00s)
+    --- PASS: TestStepIRConstruction/When_step (0.00s)
+    --- PASS: TestStepIRConstruction/Then_step (0.00s)
+    --- PASS: TestStepIRConstruction/Untranslatable_step (0.00s)
+=== RUN   TestStepIRWithCommands
+--- PASS: TestStepIRWithCommands (0.00s)
+=== RUN   TestScenarioIRConstruction
+--- PASS: TestScenarioIRConstruction (0.00s)
+=== RUN   TestScenarioIRSourceTypes
+=== RUN   TestScenarioIRSourceTypes/Business_source
+=== RUN   TestScenarioIRSourceTypes/VHS-only_source
+--- PASS: TestScenarioIRSourceTypes (0.00s)
+    --- PASS: TestScenarioIRSourceTypes/Business_source (0.00s)
+    --- PASS: TestScenarioIRSourceTypes/VHS-only_source (0.00s)
+=== RUN   TestGeneratorConfigConstruction
+--- PASS: TestGeneratorConfigConstruction (0.00s)
+=== RUN   TestAnalysisResultConstruction
+--- PASS: TestAnalysisResultConstruction (0.00s)
+=== RUN   TestAnalysisResultWithUntranslatableSteps
+--- PASS: TestAnalysisResultWithUntranslatableSteps (0.00s)
+=== RUN   TestParamConstraintConstruction
+--- PASS: TestParamConstraintConstruction (0.00s)
+=== RUN   TestStepPatternConstruction
+--- PASS: TestStepPatternConstruction (0.00s)
+=== RUN   TestZeroValues
+=== RUN   TestZeroValues/zero_VHSCommand
+=== RUN   TestZeroValues/zero_StepIR
+=== RUN   TestZeroValues/zero_ScenarioIR
+=== RUN   TestZeroValues/zero_GeneratorConfig
+=== RUN   TestZeroValues/zero_AnalysisResult
+=== RUN   TestZeroValues/zero_ParamConstraint
+=== RUN   TestZeroValues/zero_StepPattern
+--- PASS: TestZeroValues (0.00s)
+    --- PASS: TestZeroValues/zero_VHSCommand (0.00s)
+    --- PASS: TestZeroValues/zero_StepIR (0.00s)
+    --- PASS: TestZeroValues/zero_ScenarioIR (0.00s)
+    --- PASS: TestZeroValues/zero_GeneratorConfig (0.00s)
+    --- PASS: TestZeroValues/zero_AnalysisResult (0.00s)
+    --- PASS: TestZeroValues/zero_ParamConstraint (0.00s)
+    --- PASS: TestZeroValues/zero_StepPattern (0.00s)
+=== RUN   TestEmptySlices
+=== RUN   TestEmptySlices/ScenarioIR_with_empty_slices
+=== RUN   TestEmptySlices/AnalysisResult_with_empty_slices
+--- PASS: TestEmptySlices (0.00s)
+    --- PASS: TestEmptySlices/ScenarioIR_with_empty_slices (0.00s)
+    --- PASS: TestEmptySlices/AnalysisResult_with_empty_slices (0.00s)
+=== RUN   TestAnalyser_BusinessScenarioAllTranslatable
+--- PASS: TestAnalyser_BusinessScenarioAllTranslatable (0.00s)
+=== RUN   TestAnalyser_BusinessScenarioFormBypass
+--- PASS: TestAnalyser_BusinessScenarioFormBypass (0.00s)
+=== RUN   TestAnalyser_VHSOnlyUntranslatableStep
+--- PASS: TestAnalyser_VHSOnlyUntranslatableStep (0.00s)
+=== RUN   TestAnalyser_GivenThenStepsDontAffectTranslatability
+--- PASS: TestAnalyser_GivenThenStepsDontAffectTranslatability (0.00s)
+=== RUN   TestAnalyser_SourceFieldPropagated
+--- PASS: TestAnalyser_SourceFieldPropagated (0.00s)
+=== RUN   TestAnalyser_ScenarioNameAndFeaturePropagated
+--- PASS: TestAnalyser_ScenarioNameAndFeaturePropagated (0.00s)
+=== RUN   TestAnalyser_MultipleUntranslatableWhenSteps
+--- PASS: TestAnalyser_MultipleUntranslatableWhenSteps (0.00s)
+=== RUN   TestAnalyser_EmptyDemoStepsIsTranslatable
+--- PASS: TestAnalyser_EmptyDemoStepsIsTranslatable (0.00s)
+PASS
+ok  	github.com/baphled/kariya/internal/vhsgen	0.007s

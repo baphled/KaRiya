@@ -1,0 +1,18 @@
+=== RUN   TestAnalyser_BusinessScenarioAllTranslatable
+--- PASS: TestAnalyser_BusinessScenarioAllTranslatable (0.00s)
+=== RUN   TestAnalyser_BusinessScenarioFormBypass
+--- PASS: TestAnalyser_BusinessScenarioFormBypass (0.00s)
+=== RUN   TestAnalyser_VHSOnlyUntranslatableStep
+--- PASS: TestAnalyser_VHSOnlyUntranslatableStep (0.00s)
+=== RUN   TestAnalyser_GivenThenStepsDontAffectTranslatability
+--- PASS: TestAnalyser_GivenThenStepsDontAffectTranslatability (0.00s)
+=== RUN   TestAnalyser_SourceFieldPropagated
+--- PASS: TestAnalyser_SourceFieldPropagated (0.00s)
+=== RUN   TestAnalyser_ScenarioNameAndFeaturePropagated
+--- PASS: TestAnalyser_ScenarioNameAndFeaturePropagated (0.00s)
+=== RUN   TestAnalyser_MultipleUntranslatableWhenSteps
+--- PASS: TestAnalyser_MultipleUntranslatableWhenSteps (0.00s)
+=== RUN   TestAnalyser_EmptyDemoStepsIsTranslatable
+--- PASS: TestAnalyser_EmptyDemoStepsIsTranslatable (0.00s)
+PASS
+ok  	github.com/baphled/kariya/internal/vhsgen	(cached)
