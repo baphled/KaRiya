@@ -12,6 +12,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/domain/career"
+	repo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	"github.com/baphled/kariya/internal/service/career/skillinference"
 	tea "github.com/charmbracelet/bubbletea"
@@ -225,10 +226,44 @@ func (i *Intent) performSubmit() tea.Cmd {
 			}
 		}
 
+		var inferredFacts []*career.Fact
+		var inferredBursts []*career.Burst
+
+		allEvents, listErr := careerService.ListEvents(ctx, repo.EventListFilters{Limit: -1})
+		if listErr == nil && len(allEvents) >= 2 {
+			var allEventIDs []string
+			for _, e := range allEvents {
+				allEventIDs = append(allEventIDs, e.ID)
+			}
+
+			suggestions, suggestErr := careerService.SuggestBursts(ctx, allEventIDs)
+			if suggestErr == nil && len(suggestions) > 0 {
+				savedBursts, saveErr := careerService.SaveBurstSuggestions(ctx, suggestions)
+				if saveErr == nil && len(savedBursts) > 0 {
+					inferredBursts = savedBursts
+					var allFacts []career.Fact
+					for _, burst := range savedBursts {
+						facts, extractErr := careerService.ExtractFactsFromBurst(ctx, burst)
+						if extractErr == nil {
+							allFacts = append(allFacts, facts...)
+						}
+					}
+					inferredFacts = factsToPointers(allFacts)
+				}
+			}
+		}
+
+		if len(inferredFacts) == 0 {
+			eventFacts, extractErr := careerService.ExtractFactsFromEvent(ctx, event)
+			if extractErr == nil {
+				inferredFacts = factsToPointers(eventFacts)
+			}
+		}
+
 		return SubmitCompleteMsg{
 			InferredSkills: inferredSkills,
-			InferredFacts:  nil,
-			InferredBursts: nil,
+			InferredFacts:  inferredFacts,
+			InferredBursts: inferredBursts,
 		}
 	}
 }

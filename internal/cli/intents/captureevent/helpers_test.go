@@ -1,11 +1,15 @@
 package captureevent
 
 import (
+	"context"
 	"errors"
+	"time"
 
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/terminal"
 	"github.com/baphled/kariya/internal/domain/career"
+	memoryrepo "github.com/baphled/kariya/internal/repository/career/memory"
+	careerservice "github.com/baphled/kariya/internal/service/career"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -281,6 +285,179 @@ var _ = Describe("Helper Methods", func() {
 				Expect(ok).To(BeTrue())
 				Expect(errMsg.Code).To(Equal("SERVICE_ERROR"))
 				Expect(errMsg.Message).To(ContainSubstring("Career service"))
+			})
+		})
+
+		Context("burst detection and fact extraction", func() {
+			var (
+				svc       *careerservice.Service
+				eventRepo *memoryrepo.EventRepository
+				burstRepo *memoryrepo.BurstRepository
+			)
+
+			BeforeEach(func() {
+				repos := memoryrepo.NewRepositories()
+				eventRepo = repos.Event.(*memoryrepo.EventRepository)
+				burstRepo = repos.Burst.(*memoryrepo.BurstRepository)
+
+				svc = careerservice.NewService(eventRepo)
+				svc.SetBurstRepository(burstRepo)
+				svc.SetSkillRepository(repos.Skill)
+
+				intent.context.CareerService = svc
+			})
+
+			Context("when ≥2 events exist", func() {
+				BeforeEach(func() {
+					ctx := context.Background()
+					existing1 := fixtures.EventWith("existing-1", "Led migration of monolith to microservices architecture", "", "")
+					existing1.Date = time.Now().Add(-24 * time.Hour)
+					existing2 := fixtures.EventWith("existing-2", "Led redesign of microservices deployment pipeline", "", "")
+					existing2.Date = time.Now().Add(-48 * time.Hour)
+					Expect(eventRepo.Create(ctx, existing1)).To(Succeed())
+					Expect(eventRepo.Create(ctx, existing2)).To(Succeed())
+				})
+
+				It("should return SubmitCompleteMsg with inferred bursts", func() {
+					event := fixtures.EventWith("", "Valid event text for testing submission", "", "")
+					intent.reviewState = &ReviewInferredEventState{
+						Event:          event,
+						AcceptedFacts:  make([]*career.Fact, 0),
+						AcceptedBursts: make([]*career.Burst, 0),
+					}
+
+					cmd := intent.performSubmit()
+					Expect(cmd).NotTo(BeNil())
+
+					msg := cmd()
+					completeMsg, ok := msg.(SubmitCompleteMsg)
+					Expect(ok).To(BeTrue(), "expected SubmitCompleteMsg, got %T", msg)
+					Expect(completeMsg.InferredBursts).NotTo(BeNil())
+				})
+
+				It("should return SubmitCompleteMsg with inferred facts from bursts", func() {
+					event := fixtures.EventWith("", "Valid event text for testing submission", "", "")
+					intent.reviewState = &ReviewInferredEventState{
+						Event:          event,
+						AcceptedFacts:  make([]*career.Fact, 0),
+						AcceptedBursts: make([]*career.Burst, 0),
+					}
+
+					cmd := intent.performSubmit()
+					msg := cmd()
+					completeMsg, ok := msg.(SubmitCompleteMsg)
+					Expect(ok).To(BeTrue(), "expected SubmitCompleteMsg, got %T", msg)
+					Expect(completeMsg.InferredFacts).NotTo(BeNil())
+				})
+
+				It("should not break submission when burst detection errors occur", func() {
+					event := fixtures.EventWith("", "Valid event text for testing submission", "", "")
+					intent.reviewState = &ReviewInferredEventState{
+						Event:          event,
+						AcceptedFacts:  make([]*career.Fact, 0),
+						AcceptedBursts: make([]*career.Burst, 0),
+					}
+
+					cmd := intent.performSubmit()
+					msg := cmd()
+					_, ok := msg.(SubmitCompleteMsg)
+					Expect(ok).To(BeTrue(), "expected SubmitCompleteMsg even with errors, got %T", msg)
+				})
+			})
+
+			Context("when <2 events exist", func() {
+				It("should fallback to ExtractFactsFromEvent", func() {
+					event := fixtures.EventWith("", "Valid event text for testing submission", "", "")
+					intent.reviewState = &ReviewInferredEventState{
+						Event:          event,
+						AcceptedFacts:  make([]*career.Fact, 0),
+						AcceptedBursts: make([]*career.Burst, 0),
+					}
+
+					cmd := intent.performSubmit()
+					msg := cmd()
+					completeMsg, ok := msg.(SubmitCompleteMsg)
+					Expect(ok).To(BeTrue(), "expected SubmitCompleteMsg, got %T", msg)
+					Expect(completeMsg.InferredFacts).NotTo(BeNil())
+					Expect(completeMsg.InferredBursts).To(BeEmpty())
+				})
+
+				It("should return empty bursts slice", func() {
+					event := fixtures.EventWith("", "Valid event text for testing submission", "", "")
+					intent.reviewState = &ReviewInferredEventState{
+						Event:          event,
+						AcceptedFacts:  make([]*career.Fact, 0),
+						AcceptedBursts: make([]*career.Burst, 0),
+					}
+
+					cmd := intent.performSubmit()
+					msg := cmd()
+					completeMsg, ok := msg.(SubmitCompleteMsg)
+					Expect(ok).To(BeTrue())
+					Expect(completeMsg.InferredBursts).To(BeEmpty())
+				})
+			})
+
+			Context("when burst suggestions return empty", func() {
+				BeforeEach(func() {
+					ctx := context.Background()
+					existing1 := fixtures.EventWith("unrelated-1", "Organised team building event at the local park", "", "")
+					existing1.Date = time.Now().Add(-365 * 24 * time.Hour)
+					existing2 := fixtures.EventWith("unrelated-2", "Attended annual company conference in London", "", "")
+					existing2.Date = time.Now().Add(-730 * 24 * time.Hour)
+					Expect(eventRepo.Create(ctx, existing1)).To(Succeed())
+					Expect(eventRepo.Create(ctx, existing2)).To(Succeed())
+				})
+
+				It("should fallback to ExtractFactsFromEvent", func() {
+					event := fixtures.EventWith("", "Valid event text for testing submission", "", "")
+					intent.reviewState = &ReviewInferredEventState{
+						Event:          event,
+						AcceptedFacts:  make([]*career.Fact, 0),
+						AcceptedBursts: make([]*career.Burst, 0),
+					}
+
+					cmd := intent.performSubmit()
+					msg := cmd()
+					completeMsg, ok := msg.(SubmitCompleteMsg)
+					Expect(ok).To(BeTrue(), "expected SubmitCompleteMsg, got %T", msg)
+					Expect(completeMsg.InferredFacts).NotTo(BeNil())
+				})
+			})
+
+			Context("when ListEvents fails", func() {
+				It("should fallback to ExtractFactsFromEvent without breaking", func() {
+					svcWithoutBurst := careerservice.NewService(eventRepo)
+					intent.context.CareerService = svcWithoutBurst
+
+					event := fixtures.EventWith("", "Valid event text for testing submission", "", "")
+					intent.reviewState = &ReviewInferredEventState{
+						Event:          event,
+						AcceptedFacts:  make([]*career.Fact, 0),
+						AcceptedBursts: make([]*career.Burst, 0),
+					}
+
+					cmd := intent.performSubmit()
+					msg := cmd()
+					completeMsg, ok := msg.(SubmitCompleteMsg)
+					Expect(ok).To(BeTrue(), "expected SubmitCompleteMsg, got %T", msg)
+					Expect(completeMsg.InferredFacts).NotTo(BeNil())
+				})
+			})
+
+			It("should preserve existing skill inference behaviour", func() {
+				event := fixtures.EventWith("", "Valid event text for testing submission", "", "")
+				intent.reviewState = &ReviewInferredEventState{
+					Event:          event,
+					AcceptedFacts:  make([]*career.Fact, 0),
+					AcceptedBursts: make([]*career.Burst, 0),
+				}
+
+				cmd := intent.performSubmit()
+				msg := cmd()
+				completeMsg, ok := msg.(SubmitCompleteMsg)
+				Expect(ok).To(BeTrue())
+				Expect(completeMsg.InferredSkills).To(BeNil())
 			})
 		})
 	})
