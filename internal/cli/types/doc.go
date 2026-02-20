@@ -19,4 +19,4 @@
 //	import "github.com/baphled/kariya/internal/cli/types"
 //
 //	func ProcessCapture(input types.CaptureInput) types.CaptureResult
-package types
+package types //nolint:revive // types is a shared package name used across the CLI layer
