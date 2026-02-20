@@ -4,10 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"os"
+	"path/filepath"
 	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"github.com/baphled/kariya/internal/vhsgen"
 )
 
 var _ = Describe("vhsgen CLI", func() {
@@ -164,6 +167,16 @@ var _ = Describe("vhsgen CLI", func() {
 				Expect(errOut.String()).To(ContainSubstring("Error parsing features dir"))
 			})
 		})
+
+		Context("with unknown flag", func() {
+			It("returns exit code 1 with error message", func() {
+				var out, errOut bytes.Buffer
+				code := run([]string{"list", "--unknown-flag-xyz"}, &out, &errOut)
+
+				Expect(code).To(Equal(1))
+				Expect(errOut.String()).To(ContainSubstring("Error parsing flags"))
+			})
+		})
 	})
 
 	Describe("generate subcommand", func() {
@@ -196,6 +209,21 @@ var _ = Describe("vhsgen CLI", func() {
 
 				Expect(code).To(Equal(1))
 				Expect(errOut.String()).To(ContainSubstring("--all"))
+			})
+		})
+
+		Context("with non-existent features directory", func() {
+			It("returns exit code 1 when features dir does not exist", func() {
+				var out, errOut bytes.Buffer
+				code := run([]string{
+					"generate",
+					"--all",
+					"--features", "/nonexistent/features/",
+					"--scenarios-dir", "/nonexistent/scenarios/",
+					"--output", tmpDir,
+				}, &out, &errOut)
+
+				Expect(code).To(Equal(1))
 			})
 		})
 
@@ -367,6 +395,371 @@ var _ = Describe("vhsgen CLI", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(*opts.outputDir).To(Equal("/tmp"))
 			Expect(*opts.generateAll).To(BeTrue())
+		})
+
+		It("returns error for unknown flag", func() {
+			var errOut bytes.Buffer
+			_, err := parseGenerateFlags([]string{"--unknown-flag-xyz"}, &errOut)
+			Expect(err).To(HaveOccurred())
+		})
+	})
+
+	Describe("generateTapes", func() {
+		var tmpDir string
+
+		BeforeEach(func() {
+			var err error
+			tmpDir, err = os.MkdirTemp("", "vhsgen-gentapes-*")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			os.RemoveAll(tmpDir)
+		})
+
+		Context("verbose mode with untranslatable scenario", func() {
+			It("prints skip message and increments warnings", func() {
+				var out, errOut bytes.Buffer
+
+				scenario := vhsgen.ScenarioIR{
+					Name:         "Untranslatable",
+					Feature:      "Test Feature",
+					Source:       vhsgen.SourceBusiness,
+					Translatable: false,
+					DemoSteps: []vhsgen.StepIR{
+						{Text: "some step", StepType: "When", Translatable: false, UntranslatableReason: "no match"},
+					},
+				}
+
+				result := vhsgen.AnalysisResult{
+					ScenarioName: "Untranslatable",
+					Feature:      "Test Feature",
+					Source:       vhsgen.SourceBusiness,
+					Translatable: false,
+				}
+
+				filtered := []scenarioWithResult{{scenario: scenario, result: result}}
+				cfg := generateConfig{
+					outputDir:    tmpDir,
+					configSource: "demos/vhs/config.tape",
+					verbose:      true,
+					out:          &out,
+					errOut:       &errOut,
+				}
+
+				stats := generateTapes(filtered, cfg)
+				Expect(stats.warnings).To(Equal(1))
+				Expect(out.String()).To(ContainSubstring("Skipping"))
+			})
+		})
+
+		Context("writeScenarioTape error propagation", func() {
+			It("prints error and continues when tape write fails", func() {
+				var out, errOut bytes.Buffer
+
+				scenario := vhsgen.ScenarioIR{
+					Name:         "Tape Error",
+					Feature:      "Error Feature",
+					Source:       vhsgen.SourceBusiness,
+					Translatable: true,
+					DemoSteps: []vhsgen.StepIR{
+						{
+							Text:         "do something",
+							StepType:     "When",
+							Translatable: true,
+							Commands:     []vhsgen.VHSCommand{{Type: vhsgen.Enter}},
+						},
+					},
+				}
+
+				result := vhsgen.AnalysisResult{
+					ScenarioName: "Tape Error",
+					Feature:      "Error Feature",
+					Source:       vhsgen.SourceBusiness,
+					Translatable: true,
+				}
+
+				blockingFile := filepath.Join(tmpDir, "error-feature")
+				err := os.WriteFile(blockingFile, []byte("block"), 0o600)
+				Expect(err).NotTo(HaveOccurred())
+
+				filtered := []scenarioWithResult{{scenario: scenario, result: result}}
+				cfg := generateConfig{
+					outputDir:    tmpDir,
+					configSource: "demos/vhs/config.tape",
+					verbose:      false,
+					out:          &out,
+					errOut:       &errOut,
+				}
+
+				stats := generateTapes(filtered, cfg)
+				Expect(stats.total).To(Equal(0))
+				Expect(errOut.String()).To(ContainSubstring("Error generating tape"))
+			})
+		})
+	})
+
+	Describe("writeScenarioTape", func() {
+		var tmpDir string
+
+		BeforeEach(func() {
+			var err error
+			tmpDir, err = os.MkdirTemp("", "vhsgen-writetape-*")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			os.RemoveAll(tmpDir)
+		})
+
+		Context("VHSOnly source routing", func() {
+			It("writes tape to scenarios/{feature-slug}/ subdirectory", func() {
+				scenario := vhsgen.ScenarioIR{
+					Name:         "VHS Only Test",
+					Feature:      "Vhs Feature",
+					Source:       vhsgen.SourceVHSOnly,
+					Translatable: true,
+					DemoSteps: []vhsgen.StepIR{
+						{
+							Text:         "I select the menu item",
+							StepType:     "When",
+							Translatable: true,
+							Commands:     []vhsgen.VHSCommand{{Type: vhsgen.Enter}},
+						},
+					},
+				}
+
+				outPath, err := writeScenarioTape(scenario, tmpDir, "demos/vhs/config.tape")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(outPath).To(ContainSubstring(filepath.Join("scenarios", "vhs-feature")))
+				Expect(outPath).To(HaveSuffix(".tape"))
+
+				_, statErr := os.Stat(outPath)
+				Expect(statErr).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("MkdirAll failure", func() {
+			It("returns error when output dir cannot be created", func() {
+				scenario := vhsgen.ScenarioIR{
+					Name:         "MkdirAll Fail",
+					Feature:      "Dir Fail",
+					Source:       vhsgen.SourceBusiness,
+					Translatable: true,
+					DemoSteps: []vhsgen.StepIR{
+						{
+							Text:         "do something",
+							StepType:     "When",
+							Translatable: true,
+							Commands:     []vhsgen.VHSCommand{{Type: vhsgen.Enter}},
+						},
+					},
+				}
+
+				_, err := writeScenarioTape(scenario, "/proc/cannot-create-here", "demos/vhs/config.tape")
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("creating output directory"))
+			})
+		})
+
+		Context("WriteFile failure", func() {
+			It("returns error when tape file cannot be written to read-only dir", func() {
+				readOnlyDir := filepath.Join(tmpDir, "dir-fail")
+				err := os.MkdirAll(readOnlyDir, 0o755)
+				Expect(err).NotTo(HaveOccurred())
+
+				scenario := vhsgen.ScenarioIR{
+					Name:         "Write Fail",
+					Feature:      "Dir Fail",
+					Source:       vhsgen.SourceBusiness,
+					Translatable: true,
+					DemoSteps: []vhsgen.StepIR{
+						{
+							Text:         "do something",
+							StepType:     "When",
+							Translatable: true,
+							Commands:     []vhsgen.VHSCommand{{Type: vhsgen.Enter}},
+						},
+					},
+				}
+
+				err = os.Chmod(readOnlyDir, 0o000)
+				Expect(err).NotTo(HaveOccurred())
+				defer os.Chmod(readOnlyDir, 0o755) //nolint:errcheck
+
+				_, err = writeScenarioTape(scenario, tmpDir, "demos/vhs/config.tape")
+				Expect(err).To(HaveOccurred())
+			})
+		})
+	})
+
+	Describe("filterResults", func() {
+		Context("scenario not present in analysis results", func() {
+			It("skips scenarios missing from the results map", func() {
+				scenarios := []vhsgen.ScenarioIR{
+					{Name: "Present Scenario", Feature: "Feature A", Source: vhsgen.SourceBusiness},
+					{Name: "Missing Scenario", Feature: "Feature A", Source: vhsgen.SourceBusiness},
+				}
+
+				results := []vhsgen.AnalysisResult{
+					{ScenarioName: "Present Scenario", Feature: "Feature A", Source: vhsgen.SourceBusiness, Translatable: true},
+				}
+
+				filtered := filterResults(results, scenarios, true, "", "")
+				Expect(filtered).To(HaveLen(1))
+				Expect(filtered[0].scenario.Name).To(Equal("Present Scenario"))
+			})
+		})
+	})
+
+	Describe("runListCount", func() {
+		Context("with empty results", func() {
+			It("outputs zero counts when no scenarios exist", func() {
+				var out bytes.Buffer
+				code := runListCount([]vhsgen.AnalysisResult{}, &out)
+				Expect(code).To(Equal(0))
+				Expect(out.String()).To(MatchRegexp(`Business: 0/0 translatable \| VHS-only: 0/0 translatable`))
+			})
+		})
+
+		Context("with translatable business and vhs-only scenarios", func() {
+			It("counts translatable scenarios correctly for both sources", func() {
+				results := []vhsgen.AnalysisResult{
+					{ScenarioName: "Scenario A", Feature: "Feature A", Source: vhsgen.SourceBusiness, Translatable: true},
+					{ScenarioName: "Scenario B", Feature: "Feature A", Source: vhsgen.SourceBusiness, Translatable: false},
+					{ScenarioName: "Scenario C", Feature: "Feature B", Source: vhsgen.SourceVHSOnly, Translatable: true},
+				}
+				var out bytes.Buffer
+				code := runListCount(results, &out)
+				Expect(code).To(Equal(0))
+				Expect(out.String()).To(ContainSubstring("Business: 1/2 translatable"))
+				Expect(out.String()).To(ContainSubstring("VHS-only: 1/1 translatable"))
+			})
+		})
+	})
+
+	Describe("runList ParseFeatureDir error", func() {
+		It("returns exit code 1 when features dir has a malformed feature file", func() {
+			dir := GinkgoT().TempDir()
+			err := os.WriteFile(filepath.Join(dir, "bad.feature"), []byte("this is: not: valid: gherkin:\n  garbage yaml"), 0o600)
+			Expect(err).NotTo(HaveOccurred())
+
+			var out, errOut bytes.Buffer
+			code := run([]string{"list", "--features", dir, "--scenarios-dir", "/nonexistent/scenarios/"}, &out, &errOut)
+
+			Expect(code).To(Equal(1))
+			Expect(errOut.String()).To(ContainSubstring("Error parsing features dir"))
+		})
+	})
+
+	Describe("parseAllScenarios ParseFeatureDir errors", func() {
+		It("returns error when business features dir has a malformed feature file", func() {
+			dir := GinkgoT().TempDir()
+			err := os.WriteFile(filepath.Join(dir, "bad.feature"), []byte("not valid gherkin {{{{"), 0o600)
+			Expect(err).NotTo(HaveOccurred())
+
+			var errOut bytes.Buffer
+			_, err = parseAllScenarios(dir, "/nonexistent/scenarios/", &errOut)
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("returns error when vhs-only dir has a malformed feature file", func() {
+			featuresDir := GinkgoT().TempDir()
+			scenariosDir := GinkgoT().TempDir()
+			err := os.WriteFile(filepath.Join(scenariosDir, "bad.feature"), []byte("not valid gherkin {{{{"), 0o600)
+			Expect(err).NotTo(HaveOccurred())
+
+			var errOut bytes.Buffer
+			_, err = parseAllScenarios(featuresDir, scenariosDir, &errOut)
+			Expect(err).To(HaveOccurred())
+		})
+	})
+
+	Describe("generateTapes business source counting", func() {
+		var tmpDir string
+
+		BeforeEach(func() {
+			var err error
+			tmpDir, err = os.MkdirTemp("", "vhsgen-business-*")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			os.RemoveAll(tmpDir)
+		})
+
+		It("increments fromBusiness counter for translatable business scenario", func() {
+			var out, errOut bytes.Buffer
+
+			scenario := vhsgen.ScenarioIR{
+				Name:         "Business Translatable",
+				Feature:      "Business Feature",
+				Source:       vhsgen.SourceBusiness,
+				Translatable: true,
+				DemoSteps: []vhsgen.StepIR{
+					{
+						Text:         "I navigate to the menu",
+						StepType:     "When",
+						Translatable: true,
+						Commands:     []vhsgen.VHSCommand{{Type: vhsgen.Enter}},
+					},
+				},
+			}
+
+			result := vhsgen.AnalysisResult{
+				ScenarioName: "Business Translatable",
+				Feature:      "Business Feature",
+				Source:       vhsgen.SourceBusiness,
+				Translatable: true,
+			}
+
+			filtered := []scenarioWithResult{{scenario: scenario, result: result}}
+			cfg := generateConfig{
+				outputDir:    tmpDir,
+				configSource: "demos/vhs/config.tape",
+				verbose:      false,
+				out:          &out,
+				errOut:       &errOut,
+			}
+
+			stats := generateTapes(filtered, cfg)
+			Expect(stats.fromBusiness).To(Equal(1))
+			Expect(stats.total).To(Equal(1))
+		})
+	})
+
+	Describe("writeScenarioTape GenerateTape error", func() {
+		var tmpDir string
+
+		BeforeEach(func() {
+			var err error
+			tmpDir, err = os.MkdirTemp("", "vhsgen-gentape-err-*")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			os.RemoveAll(tmpDir)
+		})
+
+		It("returns error when GenerateTape fails due to forbidden pattern", func() {
+			scenario := vhsgen.ScenarioIR{
+				Name:         "Forbidden",
+				Feature:      "Dangerous",
+				Source:       vhsgen.SourceBusiness,
+				Translatable: true,
+				DemoSteps: []vhsgen.StepIR{
+					{
+						Text:         "dangerous step",
+						StepType:     "When",
+						Translatable: true,
+						Commands:     []vhsgen.VHSCommand{{Type: vhsgen.Type, Args: []string{"rm -rf /tmp"}}},
+					},
+				},
+			}
+
+			_, err := writeScenarioTape(scenario, tmpDir, "demos/vhs/config.tape")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("forbidden pattern"))
 		})
 	})
 })

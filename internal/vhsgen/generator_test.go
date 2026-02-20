@@ -460,4 +460,50 @@ var _ = Describe("WriteTape", func() {
 			Expect(err).To(HaveOccurred())
 		})
 	})
+
+	Describe("GenerateTape error propagation", func() {
+		It("returns error when scenario contains a forbidden pattern", func() {
+			scenario := vhsgen.ScenarioIR{
+				Name:    "Forbidden",
+				Feature: "Dangerous",
+				DemoSteps: []vhsgen.StepIR{
+					{
+						Text:         "clean up",
+						StepType:     "When",
+						Translatable: true,
+						Commands:     []vhsgen.VHSCommand{{Type: vhsgen.Type, Args: []string{"rm -rf /data"}}},
+					},
+				},
+			}
+
+			err := vhsgen.WriteTape(scenario, vhsgen.GeneratorConfig{OutputDir: GinkgoT().TempDir()})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("forbidden pattern"))
+		})
+	})
+
+	Describe("WriteFile error", func() {
+		It("returns error when output file cannot be written to read-only dir", func() {
+			tmpDir := GinkgoT().TempDir()
+			featureDir := filepath.Join(tmpDir, "write-fail")
+			err := os.MkdirAll(featureDir, 0o755)
+			Expect(err).NotTo(HaveOccurred())
+
+			scenario := vhsgen.ScenarioIR{
+				Name:    "Write Fail",
+				Feature: "Write Fail",
+				DemoSteps: []vhsgen.StepIR{
+					{Text: "action", StepType: "When", Translatable: true, Commands: []vhsgen.VHSCommand{{Type: vhsgen.Enter}}},
+				},
+			}
+
+			err = os.Chmod(featureDir, 0o000)
+			Expect(err).NotTo(HaveOccurred())
+			defer os.Chmod(featureDir, 0o755) //nolint:errcheck
+
+			err = vhsgen.WriteTape(scenario, vhsgen.GeneratorConfig{OutputDir: tmpDir})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("writing tape file"))
+		})
+	})
 })

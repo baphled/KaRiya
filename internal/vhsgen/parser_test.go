@@ -405,4 +405,79 @@ var _ = Describe("ParseFeatureDir", func() {
 			Expect(results).To(HaveLen(2))
 		})
 	})
+
+	Describe("error paths", func() {
+		It("returns error when a .feature file has invalid gherkin syntax", func() {
+			dir := GinkgoT().TempDir()
+			err := os.WriteFile(filepath.Join(dir, "bad.feature"), []byte("not valid gherkin {{{{"), 0o600)
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = vhsgen.ParseFeatureDir(dir, vhsgen.SourceBusiness)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("walking directory"))
+		})
+	})
+
+	Describe("Scenario Outline with Background", func() {
+		It("applies substituteExampleValues to background steps", func() {
+			dir := GinkgoT().TempDir()
+			content := `Feature: Outline With Background
+
+  Background:
+    Given I have <count> items
+
+  Scenario Outline: Use outline with background
+    When I add <item>
+    Then I see <result>
+
+    Examples:
+      | count | item | result |
+      | 3     | pen  | 4      |
+`
+			err := os.WriteFile(filepath.Join(dir, "bg_outline.feature"), []byte(content), 0o600)
+			Expect(err).NotTo(HaveOccurred())
+
+			results, err := vhsgen.ParseFeatureDir(dir, vhsgen.SourceBusiness)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(results).To(HaveLen(1))
+
+			ir := results[0]
+			Expect(ir.SetupSteps).To(HaveLen(1))
+			Expect(ir.SetupSteps[0].Text).To(ContainSubstring("3"))
+			Expect(ir.SetupSteps[0].Text).NotTo(ContainSubstring("<count>"))
+		})
+	})
+
+	Describe("Scenario Outline with no valid Examples", func() {
+		It("produces an IR with unsubstituted placeholders in demo steps when Examples have no table body", func() {
+			dir := GinkgoT().TempDir()
+			content := `Feature: Empty Examples
+
+  Scenario Outline: No examples
+    Given I have something
+    When I do <action>
+    Then I see <result>
+
+    Examples:
+      | action | result |
+`
+			err := os.WriteFile(filepath.Join(dir, "empty_examples.feature"), []byte(content), 0o600)
+			Expect(err).NotTo(HaveOccurred())
+
+			results, err := vhsgen.ParseFeatureDir(dir, vhsgen.SourceBusiness)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(results).To(HaveLen(1))
+
+			ir := results[0]
+			Expect(ir.DemoSteps).NotTo(BeEmpty())
+
+			foundPlaceholder := false
+			for _, step := range ir.DemoSteps {
+				if strings.Contains(step.Text, "<") {
+					foundPlaceholder = true
+				}
+			}
+			Expect(foundPlaceholder).To(BeTrue(), "expected unsubstituted placeholder when no example rows")
+		})
+	})
 })
