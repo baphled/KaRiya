@@ -284,4 +284,49 @@ var _ = Describe("Helper Methods", func() {
 			})
 		})
 	})
+
+	Describe("factsToPointers", func() {
+		It("should return empty slice for nil input", func() {
+			result := factsToPointers(nil)
+			Expect(result).NotTo(BeNil())
+			Expect(result).To(HaveLen(0))
+		})
+
+		It("should return empty slice for empty input", func() {
+			result := factsToPointers([]career.Fact{})
+			Expect(result).NotTo(BeNil())
+			Expect(result).To(HaveLen(0))
+		})
+
+		It("should convert facts to pointers", func() {
+			fact1 := fixtures.Fact("fact-1", "event-1")
+			fact2 := fixtures.Fact("fact-2", "event-2")
+			facts := []career.Fact{*fact1, *fact2}
+			result := factsToPointers(facts)
+			Expect(result).To(HaveLen(2))
+			Expect(result[0]).NotTo(BeNil())
+			Expect(result[0].ID).To(Equal("fact-1"))
+			Expect(result[1]).NotTo(BeNil())
+			Expect(result[1].ID).To(Equal("fact-2"))
+		})
+
+		It("should preserve fact data in pointers", func() {
+			fact := fixtures.FactWithCategories(
+				"test-id",
+				"test text",
+				"event-123",
+				[]string{"leadership"},
+				[]string{"hiring_manager"},
+			)
+			facts := []career.Fact{*fact}
+			result := factsToPointers(facts)
+			Expect(result).To(HaveLen(1))
+			Expect(result[0].ID).To(Equal("test-id"))
+			Expect(result[0].Text).To(Equal("test text"))
+			Expect(result[0].CompetencyCategories).To(Equal([]string{"leadership"}))
+			Expect(result[0].RoleFit).To(Equal(career.RoleFitStaff))
+			Expect(result[0].AudienceRelevance).To(Equal([]string{"hiring_manager"}))
+			Expect(result[0].SourceEventID).To(Equal("event-123"))
+		})
+	})
 })

@@ -514,3 +514,25 @@ func extractSkillsFromReviewData(reviewData map[string]interface{}) []*career.Sk
 
 	return nil
 }
+
+// factsToPointers converts a slice of career.Fact values to a slice of pointers.
+//
+// Expected:
+//   - facts may be nil or empty.
+//
+// Returns:
+//   - A slice of pointers to each fact in the input.
+//   - An empty slice (not nil) if facts is nil or empty.
+//
+// Side effects: None.
+func factsToPointers(facts []career.Fact) []*career.Fact {
+	if len(facts) == 0 {
+		return []*career.Fact{}
+	}
+
+	result := make([]*career.Fact, len(facts))
+	for i := range facts {
+		result[i] = &facts[i]
+	}
+	return result
+}
