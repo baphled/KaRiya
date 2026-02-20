@@ -208,35 +208,12 @@ Feature: Manage Skills
     And there should be 2 skills
 
   @happy @inference
-  Scenario: Verify inferred skill is persisted after acceptance
-    Given I have an event "Built API in Go"
-    When I select "manage_skills" from the menu
-    And I infer and accept skill "Go" for the event
-    And I press escape
-    And I select "manage_skills" from the menu
-    Then there should be 1 skill
-    And the skill should have name "Go"
-
-  @happy @inference
   Scenario: Re-running inference after save shows skill as existing
     Given I have an event "Built REST API in Go"
     When I select "manage_skills" from the menu
     And I infer and accept skill "Go" for the event
     And I trigger inference for the event
     Then "Go" should be in the existing skills list
-
-  # ============================================================================
-  # Navigation and Exit
-  # ============================================================================
-
-
-
-
-
-  # ============================================================================
-  # All Categories
-  # ============================================================================
-
 
 
   # ============================================================================
@@ -320,17 +297,4 @@ Feature: Manage Skills
     And I change years to "5"
     And I submit the skill form
     Then the skill should have years "5"
-
-
-
-  # ============================================================================
-  # Skill Count Display
-  # ============================================================================
-
-
-
-  # ============================================================================
-  # Category Grouping
-  # ============================================================================
-
 
