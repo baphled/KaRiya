@@ -90,11 +90,32 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 
 	switch msg := msg.(type) {
 	case SubmitCompleteMsg:
+		i.submitModal = feedback.NewSuccessModal("Event saved!")
+		return tea.Batch(i.submitModal.Init(), i.performInference())
+
+	case InferenceCompleteMsg:
 		i.reviewState.InferredSkills = msg.InferredSkills
 		i.reviewState.InferredBursts = msg.InferredBursts
 		i.reviewState.InferredFacts = msg.InferredFacts
-		i.submitModal = feedback.NewSuccessModal("Event saved!")
-		return i.submitModal.Init()
+		if screen, ok := i.activeScreen.(*captureScreens.EventReviewScreen); ok {
+			screen.SetSuggestedSkills(msg.InferredSkills)
+			screen.SetSuggestedBursts(msg.InferredBursts)
+			screen.SetSuggestedFacts(msg.InferredFacts)
+		}
+		return nil
+
+	case PostSavePersistenceCompleteMsg:
+		i.result = &intents.IntentResult[*Result]{
+			Status: intents.Completed,
+			Data: &Result{
+				Event:  msg.Event,
+				Bursts: msg.Bursts,
+				Facts:  msg.Facts,
+				Skills: msg.Skills,
+			},
+		}
+		i.active = false
+		return nil
 
 	case SubmitErrorMsg:
 		i.submitModal = feedback.NewErrorModal("Save Failed", msg.Message)
