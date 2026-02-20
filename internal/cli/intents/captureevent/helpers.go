@@ -14,6 +14,7 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 	repo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
+	burstfact "github.com/baphled/kariya/internal/service/career/burstfact"
 	"github.com/baphled/kariya/internal/service/career/skillinference"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -344,6 +345,7 @@ func (i *Intent) performInference() tea.Cmd {
 
 		var inferredFacts []*career.Fact
 		var inferredBursts []*career.Burst
+		var inferredBurstSuggestions []burstfact.BurstSuggestion
 
 		if careerService != nil {
 			allEvents, listErr := careerService.ListEvents(ctx, repo.EventListFilters{Limit: -1})
@@ -358,6 +360,7 @@ func (i *Intent) performInference() tea.Cmd {
 					savedBursts, saveErr := careerService.SaveBurstSuggestions(ctx, suggestions)
 					if saveErr == nil && len(savedBursts) > 0 {
 						inferredBursts = savedBursts
+						inferredBurstSuggestions = suggestions
 						var allFacts []career.Fact
 						for _, burst := range savedBursts {
 							facts, extractErr := careerService.ExtractFactsFromBurst(ctx, burst)
@@ -379,9 +382,10 @@ func (i *Intent) performInference() tea.Cmd {
 		}
 
 		return InferenceCompleteMsg{
-			InferredSkills: inferredSkills,
-			InferredFacts:  inferredFacts,
-			InferredBursts: inferredBursts,
+			InferredSkills:           inferredSkills,
+			InferredFacts:            inferredFacts,
+			InferredBursts:           inferredBursts,
+			InferredBurstSuggestions: inferredBurstSuggestions,
 		}
 	}
 }

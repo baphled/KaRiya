@@ -96,6 +96,7 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 	case InferenceCompleteMsg:
 		i.reviewState.InferredSkills = msg.InferredSkills
 		i.reviewState.InferredBursts = msg.InferredBursts
+		i.reviewState.InferredBurstSuggestions = msg.InferredBurstSuggestions
 		i.reviewState.InferredFacts = msg.InferredFacts
 		if screen, ok := i.activeScreen.(*captureScreens.EventReviewScreen); ok {
 			screen.SetSuggestedSkills(msg.InferredSkills)

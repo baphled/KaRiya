@@ -15,8 +15,11 @@ type SubmitCompleteMsg struct{}
 // promptly without waiting for potentially slow LLM calls.
 type InferenceCompleteMsg struct {
 	InferredBursts []*career.Burst
-	InferredFacts  []*career.Fact
-	InferredSkills []skillinference.SkillSuggestion
+	// InferredBurstSuggestions carries the raw suggestions from the inference
+	// service, preserving ConfidenceScore which career.Burst does not hold.
+	InferredBurstSuggestions []burstfact.BurstSuggestion
+	InferredFacts            []*career.Fact
+	InferredSkills           []skillinference.SkillSuggestion
 }
 
 // SubmitErrorMsg is sent when event persistence fails.

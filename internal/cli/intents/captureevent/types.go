@@ -9,6 +9,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/domain/career"
+	burstfact "github.com/baphled/kariya/internal/service/career/burstfact"
 	"github.com/baphled/kariya/internal/service/career/skillinference"
 )
 
@@ -73,6 +74,10 @@ type ReviewInferredEventState struct {
 
 	// InferredBursts are the activity bursts suggested by enrichment.
 	InferredBursts []*career.Burst
+
+	// InferredBurstSuggestions are the raw burst suggestions from the inference
+	// service, preserving fields (e.g. ConfidenceScore) that career.Burst does not carry.
+	InferredBurstSuggestions []burstfact.BurstSuggestion
 
 	// InferredFacts are the career facts suggested by enrichment.
 	InferredFacts []*career.Fact

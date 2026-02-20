@@ -84,6 +84,34 @@ var _ = Describe("Burst SuggestionReviewModal in CaptureEvent", func() {
 				Expect(suggestion.EventIDs).To(Equal([]string{"evt-1", "evt-2"}))
 			})
 		})
+
+		Context("with InferredBurstSuggestions populated", func() {
+			BeforeEach(func() {
+				repos := memoryrepo.NewRepositories()
+				svc := careerservice.NewService(repos.Event)
+				intent.context.CareerService = svc
+				intent.reviewState.EditingMode = EditingModeNone
+				intent.reviewState.InferredBurstSuggestions = []burstfact.BurstSuggestion{
+					{
+						Name:            "API Work",
+						Description:     "REST API development",
+						EventIDs:        []string{"evt-1", "evt-2"},
+						ConfidenceScore: 0.87,
+					},
+				}
+			})
+
+			It("preserves ConfidenceScore in the modal suggestions", func() {
+				result := &screens.NavigateResult{ResultData: "suggest_bursts"}
+				intent.HandleNavigate(result)
+
+				Expect(intent.reviewState.burstModal).NotTo(BeNil())
+				suggestion := intent.reviewState.burstModal.GetCurrentSuggestion()
+				Expect(suggestion).NotTo(BeNil())
+				Expect(suggestion.ConfidenceScore).To(BeNumerically(">", 0))
+				Expect(suggestion.ConfidenceScore).To(Equal(0.87))
+			})
+		})
 	})
 
 	Describe("updateEditingModal with EditingModeBursts using SuggestionReviewModal", func() {

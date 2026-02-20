@@ -71,12 +71,16 @@ func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 			}
 			i.reviewState.EditingMode = EditingModeBursts
 			var suggestions []burstfact.BurstSuggestion
-			for _, b := range i.reviewState.InferredBursts {
-				suggestions = append(suggestions, burstfact.BurstSuggestion{
-					Name:        b.Name,
-					Description: b.Description,
-					EventIDs:    b.EventIDs,
-				})
+			if len(i.reviewState.InferredBurstSuggestions) > 0 {
+				suggestions = i.reviewState.InferredBurstSuggestions
+			} else {
+				for _, b := range i.reviewState.InferredBursts {
+					suggestions = append(suggestions, burstfact.BurstSuggestion{
+						Name:        b.Name,
+						Description: b.Description,
+						EventIDs:    b.EventIDs,
+					})
+				}
 			}
 			i.reviewState.burstModal = modals.NewSuggestionReviewModal(suggestions, i.Theme())
 			dims := i.terminalDimensions()
