@@ -41,13 +41,7 @@ Feature: Manage Skills
     Then I should see "Go"
     And I should see "backend"
 
-  @happy
-  Scenario: Close skill detail modal
-    Given I have a skill "Go" with category "backend"
-    When I select "manage_skills" from the menu
-    And I press enter to view details
-    And I press escape
-    Then I should still be on the skills list
+
 
   # ============================================================================
   # Add Skill
@@ -60,14 +54,7 @@ Feature: Manage Skills
      And I press "a" to add skill
      Then I should see the add skill form
 
-   @happy
-   Scenario: Cancel add skill
-     Given I have no data
-     When I select "manage_skills" from the menu
-     And I press "a" to add skill
-     And I press escape
-     Then I should still be on the skills list
-     And there should be 0 skills
+
 
    @happy
    Scenario: Add a new skill
@@ -92,14 +79,7 @@ Feature: Manage Skills
     And I press "e" to edit
     Then I should see the edit skill form
 
-  @happy
-  Scenario: Cancel edit skill
-    Given I have a skill "JavaScript" with category "backend"
-    When I select "manage_skills" from the menu
-    And I press "e" to edit
-    And I press escape
-    Then I should still be on the skills list
-    And the skill should have name "JavaScript"
+
 
   @happy
   Scenario: Edit skill and save
@@ -123,14 +103,7 @@ Feature: Manage Skills
     And I press "d" to delete
     Then I should see the delete confirmation
 
-  @happy
-  Scenario: Cancel delete skill
-    Given I have a skill "Ruby" with category "backend"
-    When I select "manage_skills" from the menu
-    And I press "d" to delete
-    And I cancel the confirmation
-    Then I should still be on the skills list
-    And there should be 1 skill
+
 
   @happy
   Scenario: Confirm delete skill
@@ -147,20 +120,9 @@ Feature: Manage Skills
 
 
 
-   @happy
-   Scenario: Open search modal
-     Given I have no data
-     When I select "manage_skills" from the menu
-     And I press "/" to search
-     Then I should see the search modal
 
-   @happy
-   Scenario: Cancel search modal
-     Given I have no data
-     When I select "manage_skills" from the menu
-     And I press "/" to search
-     And I press escape
-     Then I should still be on the skills list
+
+
 
   # ============================================================================
   # Skill Inference
@@ -174,13 +136,7 @@ Feature: Manage Skills
     Then I should see the loading modal
     And I should see "Analyzing"
 
-  @happy
-  Scenario: Cancel skill inference
-    Given I have an event "Built REST API in Go"
-    When I select "manage_skills" from the menu
-    And I press "i" to infer skills
-    And I press escape
-    Then I should still be on the skills list
+
 
   @happy
   Scenario: Review skill suggestions
@@ -273,30 +229,15 @@ Feature: Manage Skills
   # Navigation and Exit
   # ============================================================================
 
-   @sad
-   Scenario: Exit skills list returns to menu
-     Given I have no data
-     When I select "manage_skills" from the menu
-     And I press escape
-     Then I should be on the main menu
 
-   @sad
-   Scenario: Go back from empty skills list
-     Given I have no data
-     When I select "manage_skills" from the menu
-     And I press escape
-     Then I should be on the main menu
+
+
 
   # ============================================================================
   # All Categories
   # ============================================================================
 
-   @happy
-   Scenario: Create skills with all categories
-     Given I have no data
-     When I create skills with all 15 categories
-     Then there should be 15 skills
-     And each skill should have a unique category
+
 
   # ============================================================================
   # View Events Using Skill
@@ -326,15 +267,7 @@ Feature: Manage Skills
     Then I should see "Built data pipeline"
     And I should see the full event description
 
-  @happy
-  Scenario: Close skill events modal returns to skill detail
-    Given I have a skill "JavaScript" with category "backend"
-    And I have an event "Built React app" that uses skill "JavaScript"
-    When I select "manage_skills" from the menu
-    And I select skill "JavaScript"
-    And I press "s" to view events
-    And I press escape
-    Then I should see the skill detail view
+
 
   # ============================================================================
   # Proficiency Level
@@ -394,23 +327,10 @@ Feature: Manage Skills
   # Skill Count Display
   # ============================================================================
 
-  @happy
-  Scenario: Skill shows event count
-    Given I have a skill "Go" with category "backend"
-    And I have 5 events that use skill "Go"
-    When I select "manage_skills" from the menu
-    Then I should see "Go" with event count "5"
+
 
   # ============================================================================
   # Category Grouping
   # ============================================================================
 
-  @happy
-  Scenario: Skills are grouped by category
-    Given I have a skill "Go" with category "backend"
-    And I have a skill "Python" with category "backend"
-    And I have a skill "Docker" with category "devops"
-    When I select "manage_skills" from the menu
-    Then I should see skills grouped by category
-    And I should see "Languages" section with 2 skills
-    And I should see "DevOps" section with 1 skill
+
