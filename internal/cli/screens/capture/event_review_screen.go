@@ -55,6 +55,12 @@ type EventReviewScreen struct {
 	// acceptedSkills are skills the user has accepted.
 	acceptedSkills []skillinference.SkillSuggestion
 
+	// acceptedFacts are facts the user has accepted.
+	acceptedFacts []*career.Fact
+
+	// acceptedBursts are bursts the user has accepted.
+	acceptedBursts []*career.Burst
+
 	// breadcrumbs for the view header.
 	breadcrumbs []string
 }
@@ -109,6 +115,34 @@ func NewEventReviewScreen(
 //   - Updates the acceptedSkills field.
 func (s *EventReviewScreen) SetAcceptedSkills(skills []skillinference.SkillSuggestion) {
 	s.acceptedSkills = skills
+}
+
+// SetAcceptedFacts updates the accepted facts list.
+//
+// Parameters:
+//   - facts: The updated list of accepted facts.
+//
+// Expected:
+//   - facts can be nil or an empty slice.
+//
+// Side effects:
+//   - Updates the acceptedFacts field.
+func (s *EventReviewScreen) SetAcceptedFacts(facts []*career.Fact) {
+	s.acceptedFacts = facts
+}
+
+// SetAcceptedBursts updates the accepted bursts list.
+//
+// Parameters:
+//   - bursts: The updated list of accepted bursts.
+//
+// Expected:
+//   - bursts can be nil or an empty slice.
+//
+// Side effects:
+//   - Updates the acceptedBursts field.
+func (s *EventReviewScreen) SetAcceptedBursts(bursts []*career.Burst) {
+	s.acceptedBursts = bursts
 }
 
 // GetSuggestedSkills returns the list of inferred skill suggestions.
@@ -166,8 +200,8 @@ func (s *EventReviewScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) 
 			return nil, &screens.SubmitResult{
 				FormData: map[string]interface{}{
 					"event":  s.event,
-					"bursts": s.bursts,
-					"facts":  s.facts,
+					"bursts": s.acceptedBursts,
+					"facts":  s.acceptedFacts,
 					"skills": s.acceptedSkills,
 				},
 			}

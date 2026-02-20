@@ -274,6 +274,92 @@ var _ = Describe("EventReviewScreen", func() {
 		})
 	})
 
+	Describe("Accepted Facts", func() {
+		Describe("SetAcceptedFacts", func() {
+			It("should set accepted facts", func() {
+				acceptedFacts := []*career.Fact{testFacts[0]}
+				screen.SetAcceptedFacts(acceptedFacts)
+				view := screen.View()
+				Expect(view).NotTo(BeEmpty())
+			})
+
+			It("should handle nil accepted facts", func() {
+				screen.SetAcceptedFacts(nil)
+				view := screen.View()
+				Expect(view).NotTo(BeEmpty())
+			})
+
+			It("should handle empty accepted facts", func() {
+				screen.SetAcceptedFacts([]*career.Fact{})
+				view := screen.View()
+				Expect(view).NotTo(BeEmpty())
+			})
+		})
+
+		Describe("Fact Submission", func() {
+			It("should include accepted facts in SubmitResult", func() {
+				acceptedFacts := []*career.Fact{testFacts[0]}
+				screen.SetAcceptedFacts(acceptedFacts)
+				_, result := screen.Update(tea.KeyMsg{Type: tea.KeyEnter})
+				submitResult := result.(*screens.SubmitResult)
+				data := submitResult.Data().(map[string]interface{})
+				Expect(data["facts"]).To(HaveLen(1))
+				Expect(data["facts"].([]*career.Fact)[0].Text).To(Equal("Reduced login time by 50%"))
+			})
+
+			It("should include empty facts when no facts accepted", func() {
+				screen.SetAcceptedFacts([]*career.Fact{})
+				_, result := screen.Update(tea.KeyMsg{Type: tea.KeyEnter})
+				submitResult := result.(*screens.SubmitResult)
+				data := submitResult.Data().(map[string]interface{})
+				Expect(data["facts"]).To(BeEmpty())
+			})
+		})
+	})
+
+	Describe("Accepted Bursts", func() {
+		Describe("SetAcceptedBursts", func() {
+			It("should set accepted bursts", func() {
+				acceptedBursts := []*career.Burst{testBursts[0]}
+				screen.SetAcceptedBursts(acceptedBursts)
+				view := screen.View()
+				Expect(view).NotTo(BeEmpty())
+			})
+
+			It("should handle nil accepted bursts", func() {
+				screen.SetAcceptedBursts(nil)
+				view := screen.View()
+				Expect(view).NotTo(BeEmpty())
+			})
+
+			It("should handle empty accepted bursts", func() {
+				screen.SetAcceptedBursts([]*career.Burst{})
+				view := screen.View()
+				Expect(view).NotTo(BeEmpty())
+			})
+		})
+
+		Describe("Burst Submission", func() {
+			It("should include accepted bursts in SubmitResult", func() {
+				acceptedBursts := []*career.Burst{testBursts[0]}
+				screen.SetAcceptedBursts(acceptedBursts)
+				_, result := screen.Update(tea.KeyMsg{Type: tea.KeyEnter})
+				submitResult := result.(*screens.SubmitResult)
+				data := submitResult.Data().(map[string]interface{})
+				Expect(data["bursts"]).To(HaveLen(1))
+				Expect(data["bursts"].([]*career.Burst)[0].Name).To(Equal("OAuth2 Integration"))
+			})
+
+			It("should include empty bursts when no bursts accepted", func() {
+				screen.SetAcceptedBursts([]*career.Burst{})
+				_, result := screen.Update(tea.KeyMsg{Type: tea.KeyEnter})
+				submitResult := result.(*screens.SubmitResult)
+				data := submitResult.Data().(map[string]interface{})
+				Expect(data["bursts"]).To(BeEmpty())
+			})
+		})
+	})
+
 	Describe("Skill Integration", func() {
 		var testSkills []skillinference.SkillSuggestion
 
