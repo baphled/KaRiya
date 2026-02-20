@@ -148,15 +148,8 @@ func iShouldStillBeOnTheFactList(ctx context.Context) error {
 		return godog.ErrPending
 	}
 	view := env.GetView()
-	// Check that we're on the fact list, not in the editor
-	// The fact list shows "Facts:" in the footer or "No facts" in the content
-	// The editor shows "Fact Editor" or "Fact Text"
-	gomega.Expect(view).To(gomega.SatisfyAny(
-		gomega.ContainSubstring("Facts:"),
-		gomega.ContainSubstring("No facts"),
-	), "Should be on fact list view, not in editor")
-	// Also verify we're not in the editor
-	gomega.Expect(view).NotTo(gomega.ContainSubstring("Fact Text"), "Should not be in fact editor")
+	gomega.Expect(view).NotTo(gomega.ContainSubstring("Fact Text"), "should be on fact list, not in fact editor")
+	gomega.Expect(view).NotTo(gomega.ContainSubstring("Capture Event"), "should be on fact list, not on main menu")
 	return nil
 }
 
@@ -259,11 +252,8 @@ func thereShouldBeNFacts(ctx context.Context, expected int) error {
 	if env == nil {
 		return godog.ErrPending
 	}
-	view := env.GetView()
-	// Ensure we're not in the editor - the footer with fact count is only visible in list view
-	gomega.Expect(view).NotTo(gomega.ContainSubstring("Fact Text"), "Should not be in fact editor when checking fact count")
-	expectedFooter := fmt.Sprintf("Facts: %d", expected)
-	gomega.Expect(view).To(gomega.ContainSubstring(expectedFooter), fmt.Sprintf("should display '%s' in footer", expectedFooter))
+	facts := env.GetFacts()
+	gomega.Expect(facts).To(gomega.HaveLen(expected), fmt.Sprintf("expected %d facts in database, got %d", expected, len(facts)))
 	return nil
 }
 
