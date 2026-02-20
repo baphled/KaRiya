@@ -2,6 +2,7 @@ package vhsgen
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -16,28 +17,32 @@ import (
 // Returns: Slice of ScenarioIR for all scenarios found; empty slice and nil error for empty directories.
 // Side effects: Reads files from disk.
 func ParseFeatureDir(dir string, source SourceType) ([]ScenarioIR, error) {
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return []ScenarioIR{}, nil
-		}
-		return nil, fmt.Errorf("reading directory %s: %w", dir, err)
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		return []ScenarioIR{}, nil
 	}
 
 	var results []ScenarioIR
 
-	for _, entry := range entries {
-		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".feature") {
-			continue
+	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
 		}
 
-		path := filepath.Join(dir, entry.Name())
-		scenarios, err := parseFeatureFile(path, source)
-		if err != nil {
-			return nil, fmt.Errorf("parsing %s: %w", path, err)
+		if d.IsDir() || !strings.HasSuffix(d.Name(), ".feature") {
+			return nil
+		}
+
+		scenarios, parseErr := parseFeatureFile(path, source)
+		if parseErr != nil {
+			return fmt.Errorf("parsing %s: %w", path, parseErr)
 		}
 
 		results = append(results, scenarios...)
+
+		return nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("walking directory %s: %w", dir, err)
 	}
 
 	if results == nil {
