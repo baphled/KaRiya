@@ -174,9 +174,7 @@ var _ = Describe("ParseFeatureDir", func() {
 
 		BeforeEach(func() {
 			dir = featuresDir()
-			if dir == "" {
-				Skip("features directory not found")
-			}
+			Expect(dir).NotTo(BeEmpty(), "features directory must exist")
 		})
 
 		It("classifies SetupSteps as Given and DemoSteps as When or Then", func() {
@@ -328,9 +326,7 @@ var _ = Describe("ParseFeatureDir", func() {
 
 		BeforeEach(func() {
 			dir = featuresDir()
-			if dir == "" {
-				Skip("features directory not found")
-			}
+			Expect(dir).NotTo(BeEmpty(), "features directory must exist")
 		})
 
 		It("finds both translatable and untranslatable steps across all features", func() {
@@ -360,9 +356,7 @@ var _ = Describe("ParseFeatureDir", func() {
 
 		BeforeEach(func() {
 			dir = featuresDir()
-			if dir == "" {
-				Skip("features directory not found")
-			}
+			Expect(dir).NotTo(BeEmpty(), "features directory must exist")
 		})
 
 		It("parses scenario tags from the real features", func() {
