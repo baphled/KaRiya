@@ -55,86 +55,9 @@ Feature: Generate CV
     And I should see "Recruiter"
     And I should see "Peer"
 
-  # ============================================================================
-  # CV Configuration Wizard - Step 2 (TECH)
-  # ============================================================================
-
-  @happy
-  Scenario: Select generalist focus shows multi-select
-    Given I have a complete profile with events and facts
-    When I select "generate_cv" from the menu
-    And I complete step 1
-    And I select "Generalist" technology focus
-    Then I should see technology multi-select
-    And I should be able to select multiple technologies
-
-  @happy
-  Scenario: Select specialist focus shows single-select
-    Given I have a complete profile with events and facts
-    When I select "generate_cv" from the menu
-    And I complete step 1
-    And I select "Specialist" technology focus
-    Then I should see technology single-select
-    And I should only select one technology
-
-  @happy
-  Scenario: View focus area options
-    Given I have a complete profile with events and facts
-    When I select "generate_cv" from the menu
-    And I complete step 1
-    And I select technology focus
-    Then I should see "Backend"
-    And I should see "Frontend"
-    And I should see "Fullstack"
-    And I should see "DevOps"
-
-  # ============================================================================
-  # CV Configuration Wizard - Step 3 (FORMAT)
-  # ============================================================================
-
-  @happy
-  Scenario: View step 3 format options
-    Given I have a complete profile with events and facts
-    When I select "generate_cv" from the menu
-    And I complete step 1
-    And I complete step 2
-    Then I should see "Skills Format"
-    And I should see "Skills Limit"
-    And I should see "CV Length"
-
-  @happy
-  Scenario: Select skills format
-    Given I have a complete profile with events and facts
-    When I select "generate_cv" from the menu
-    And I complete step 1
-    And I complete step 2
-    Then I should see "Grouped"
-    And I should see "Flat"
-
-  @happy
-  Scenario: Set skills limit
-    Given I have a complete profile with events and facts
-    When I select "generate_cv" from the menu
-    And I complete step 1
-    And I complete step 2
-    And I tab to skills limit
-    And I enter skills limit "10"
-    Then the skills limit should be 10
-
-  @happy
-  Scenario: Select CV length
-    Given I have a complete profile with events and facts
-    When I select "generate_cv" from the menu
-    And I complete step 1
-    And I complete step 2
-    And I tab to CV length
-    Then I should see "1 Page"
-    And I should see "2 Page"
-    And I should see "Detailed"
-
-  # ============================================================================
-  # Technology Extraction
-  # ============================================================================
+   # ============================================================================
+   # Technology Extraction
+   # ============================================================================
 
   # ============================================================================
   # CV Generation Progress

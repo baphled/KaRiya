@@ -96,8 +96,6 @@ func RegisterSkillsSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^the skill should have name "([^"]*)"$`, theSkillShouldHaveName)
 	sc.Step(`^the skill should have level "([^"]*)"$`, theSkillShouldHaveLevel)
 	sc.Step(`^the skill should have years "([^"]*)"$`, theSkillShouldHaveYears)
-	sc.Step(`^I create skills with all 15 categories$`, iCreateSkillsWithAll15Categories)
-	sc.Step(`^each skill should have a unique category$`, eachSkillShouldHaveUniqueCategory)
 }
 
 // Data setup functions
@@ -626,43 +624,6 @@ func theSkillShouldHaveYears(ctx context.Context, expected string) error {
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.ContainSubstring(expected), "Should see skill with years %s in view", expected)
-	return nil
-}
-
-func iCreateSkillsWithAll15Categories(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	categories := []string{
-		"Languages", "Backend", "Frontend", "DevOps", "Database",
-		"Cloud", "Mobile", "Testing", "Security", "Architecture",
-		"Data", "ML", "Monitoring", "Tooling", "Practices",
-	}
-	for _, cat := range categories {
-		skill := &career.Skill{
-			Name:     "Skill_" + cat,
-			Category: cat,
-		}
-		env.AddSkill(skill)
-	}
-	return ctx, nil
-}
-
-func eachSkillShouldHaveUniqueCategory(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
-	}
-	view := env.GetView()
-	// Check that the view shows skills grouped by category (each category appears once as a header)
-	gomega.Expect(view).To(gomega.SatisfyAny(
-		gomega.ContainSubstring("Languages"),
-		gomega.ContainSubstring("Backend"),
-		gomega.ContainSubstring("Frontend"),
-		gomega.ContainSubstring("DevOps"),
-		gomega.ContainSubstring("Database"),
-	), "Should see skills grouped by unique categories in view")
 	return nil
 }
 

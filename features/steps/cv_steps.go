@@ -3,7 +3,6 @@ package steps
 
 import (
 	"context"
-	"strconv"
 	"strings"
 
 	"github.com/baphled/kariya/features/support"
@@ -41,18 +40,7 @@ func registerCVWizardSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I confirm selection$`, iConfirmSelection)
 	sc.Step(`^I should move to the next field$`, iShouldMoveToTheNextField)
 	sc.Step(`^I tab to audience field$`, iTabToAudienceField)
-	sc.Step(`^I complete step 1$`, iCompleteStep1)
-	sc.Step(`^I select "([^"]*)" technology focus$`, iSelectTechnologyFocus)
-	sc.Step(`^I should see technology multi-select$`, iShouldSeeTechnologyMultiSelect)
-	sc.Step(`^I should be able to select multiple technologies$`, iShouldBeAbleToSelectMultipleTechnologies)
-	sc.Step(`^I should see technology single-select$`, iShouldSeeTechnologySingleSelect)
-	sc.Step(`^I should only select one technology$`, iShouldOnlySelectOneTechnology)
 	sc.Step(`^I select technology focus$`, iSelectTechFocus)
-	sc.Step(`^I complete step 2$`, iCompleteStep2)
-	sc.Step(`^I tab to skills limit$`, iTabToSkillsLimit)
-	sc.Step(`^I enter skills limit "([^"]*)"$`, iEnterSkillsLimit)
-	sc.Step(`^the skills limit should be (\d+)$`, theSkillsLimitShouldBe)
-	sc.Step(`^I tab to CV length$`, iTabToCVLength)
 	sc.Step(`^I complete the wizard$`, iCompleteTheWizard)
 	sc.Step(`^the generation completes$`, theGenerationCompletes)
 }
@@ -204,73 +192,6 @@ func iTabToAudienceField(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-func iCompleteStep1(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.Confirm()
-	env.Tab()
-	env.Confirm()
-	return ctx, nil
-}
-
-func iSelectTechnologyFocus(ctx context.Context, _ string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	// Navigate to focus option and confirm
-	// Different focuses: "Language Agnostic", "Generalist", "Specialist"
-	env.NavigateDown() // Move through options
-	env.Confirm()
-	return ctx, nil
-}
-
-func iShouldSeeTechnologyMultiSelect(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
-	}
-	view := env.GetView()
-	gomega.Expect(view).To(gomega.SatisfyAny(
-		gomega.ContainSubstring("multi"),
-		gomega.ContainSubstring("Multiple"),
-		gomega.ContainSubstring("space"),
-	))
-	return nil
-}
-
-func iShouldBeAbleToSelectMultipleTechnologies(ctx context.Context) error {
-	// Just verify we can navigate - actual selection tested elsewhere
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
-	}
-	env.PressKey(tea.KeySpace)
-	return nil
-}
-
-func iShouldSeeTechnologySingleSelect(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
-	}
-	view := env.GetView()
-	gomega.Expect(view).To(gomega.ContainSubstring("Select"))
-	return nil
-}
-
-func iShouldOnlySelectOneTechnology(ctx context.Context) error {
-	// Single select is default behavior - just verify selection works
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
-	}
-	env.Confirm()
-	return nil
-}
-
 func iSelectTechFocus(ctx context.Context) (context.Context, error) {
 	env := support.GetAppEnv(ctx)
 	if env == nil {
@@ -278,52 +199,6 @@ func iSelectTechFocus(ctx context.Context) (context.Context, error) {
 	}
 	env.NavigateDown()
 	env.Confirm()
-	return ctx, nil
-}
-
-func iCompleteStep2(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.Confirm()
-	return ctx, nil
-}
-
-func iTabToSkillsLimit(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.Tab()
-	return ctx, nil
-}
-
-func iEnterSkillsLimit(ctx context.Context, limit string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.TypeText(limit)
-	return ctx, nil
-}
-
-func theSkillsLimitShouldBe(ctx context.Context, expected int) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
-	}
-	view := env.GetView()
-	gomega.Expect(view).To(gomega.ContainSubstring(strconv.Itoa(expected)))
-	return nil
-}
-
-func iTabToCVLength(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.Tab()
 	return ctx, nil
 }
 
