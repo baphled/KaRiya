@@ -127,28 +127,31 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 	case DismissModalMsg:
 		if i.submitModal != nil {
 			i.submitModal = nil
-			i.postSaveReview = true
-			i.currentState = StateReview
+			if i.postSaveReview {
+				i.currentState = StateReview
 
-			breadcrumbs := []string{"Main Menu", "Capture Event", "Review Enrichment"}
-			i.activeScreen = captureScreens.NewEventReviewScreen(
-				breadcrumbs,
-				i.reviewState.Event,
-				i.reviewState.InferredBursts,
-				i.reviewState.InferredFacts,
-				i.reviewState.InferredSkills,
-			)
+				breadcrumbs := []string{"Main Menu", "Capture Event", "Review Enrichment"}
+				i.activeScreen = captureScreens.NewEventReviewScreen(
+					breadcrumbs,
+					i.reviewState.Event,
+					i.reviewState.InferredBursts,
+					i.reviewState.InferredFacts,
+					i.reviewState.InferredSkills,
+				)
 
-			termInfo := i.GetTerminalInfo()
-			width, height := 120, 40
-			if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
-				width = termInfo.Width
-				height = termInfo.Height
+				termInfo := i.GetTerminalInfo()
+				width, height := 120, 40
+				if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
+					width = termInfo.Width
+					height = termInfo.Height
+				}
+
+				i.activeScreen.SetTerminalInfo(width, height)
+				i.activeScreen.SetTheme(i.Theme())
+				i.activeScreen.SetLogo(i.GetLogo(), i.GetLogoSpacing())
+			} else {
+				i.currentState = StateForm
 			}
-
-			i.activeScreen.SetTerminalInfo(width, height)
-			i.activeScreen.SetTheme(i.Theme())
-			i.activeScreen.SetLogo(i.GetLogo(), i.GetLogoSpacing())
 		}
 		return nil
 

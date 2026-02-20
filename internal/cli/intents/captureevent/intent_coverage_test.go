@@ -117,8 +117,9 @@ var _ = Describe("Intent — additional coverage", func() {
 	})
 
 	Describe("Update — DismissModalMsg with active submitModal", func() {
-		It("transitions to review state and clears the modal", func() {
+		It("transitions to review state and clears the modal after a successful save", func() {
 			intent.submitModal = feedback.NewSuccessModal("Event saved!")
+			intent.postSaveReview = true
 			event := fixtures.EventWith("evt-1", "Test event text for the modal", "", "")
 			intent.reviewState = &ReviewInferredEventState{
 				Event:          event,
@@ -133,8 +134,18 @@ var _ = Describe("Intent — additional coverage", func() {
 			Expect(intent.postSaveReview).To(BeTrue())
 		})
 
-		It("sets up active screen for review", func() {
+		It("returns to form state when dismissing an error modal", func() {
+			intent.submitModal = feedback.NewErrorModal("Save Failed", "something went wrong")
+			intent.postSaveReview = false
+
+			intent.Update(DismissModalMsg{})
+			Expect(intent.submitModal).To(BeNil())
+			Expect(intent.currentState).To(Equal(StateForm))
+		})
+
+		It("sets up active screen for review after a successful save", func() {
 			intent.submitModal = feedback.NewSuccessModal("Event saved!")
+			intent.postSaveReview = true
 			event := fixtures.EventWith("evt-1", "Test event text for the modal", "", "")
 			intent.reviewState = &ReviewInferredEventState{
 				Event: event,
@@ -148,6 +159,7 @@ var _ = Describe("Intent — additional coverage", func() {
 			info := &terminal.Info{Width: 120, Height: 40, IsValid: true}
 			intent.UpdateTerminalInfo(info)
 			intent.submitModal = feedback.NewSuccessModal("Event saved!")
+			intent.postSaveReview = true
 			event := fixtures.EventWith("evt-1", "Test event text for the modal", "", "")
 			intent.reviewState = &ReviewInferredEventState{
 				Event: event,
