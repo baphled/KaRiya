@@ -32,7 +32,7 @@ var _ = Describe("Skill Inference E2E", func() {
 		testEvent.ID = ""
 		env.SubmitEvent(testEvent)
 
-		env.AssertViewContains("Inferred Skills")
+		env.AssertViewContains("Skills")
 		env.AssertViewContains("Go")
 		env.AssertViewContains("PostgreSQL")
 	})

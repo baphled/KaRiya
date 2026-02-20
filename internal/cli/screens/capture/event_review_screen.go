@@ -12,6 +12,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/uikit/widgets"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/service/career/skillinference"
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -26,6 +27,7 @@ import (
 // - Confirm and proceed to submission (Enter)
 // - Navigate to edit screens (e=metadata, b=bursts, f=facts)
 // - Cancel and return to form (Esc)
+// - Scroll through content (↑/↓ or j/k)
 //
 // Keyboard Shortcuts:
 // - Enter: Confirm and proceed to submission
@@ -33,6 +35,10 @@ import (
 // - b: Edit bursts
 // - f: Edit facts
 // - Esc: Cancel and return to form
+// - ↑/k: Scroll up
+// - ↓/j: Scroll down
+// - PgUp: Half page up
+// - PgDn: Half page down
 //
 // Related:
 // - internal/cli/intents/captureevent/types.go (ReviewInferredEventState)
@@ -63,6 +69,9 @@ type EventReviewScreen struct {
 
 	// breadcrumbs for the view header.
 	breadcrumbs []string
+
+	// viewport for scrollable content.
+	viewport viewport.Model
 }
 
 // NewEventReviewScreen creates a new EventReviewScreen.
@@ -93,6 +102,7 @@ func NewEventReviewScreen(
 	facts []*career.Fact,
 	skills []skillinference.SkillSuggestion,
 ) *EventReviewScreen {
+	vp := viewport.New(120, 30)
 	return &EventReviewScreen{
 		Screen:      base.NewBaseScreen(),
 		event:       event,
@@ -100,6 +110,7 @@ func NewEventReviewScreen(
 		facts:       facts,
 		skills:      skills,
 		breadcrumbs: breadcrumbs,
+		viewport:    vp,
 	}
 }
 
@@ -204,6 +215,7 @@ func (s *EventReviewScreen) SetSuggestedFacts(facts []*career.Fact) {
 // - Enter -> returns SubmitResult with event, bursts, facts
 // - e/b/f -> returns NavigateResult with edit action
 // - Esc -> returns CancelResult
+// - ↑/↓/j/k/pgup/pgdn -> scrolls viewport (no ScreenResult returned)
 // - WindowSizeMsg -> updates dimensions.
 //
 // Expected:
@@ -219,6 +231,15 @@ func (s *EventReviewScreen) SetSuggestedFacts(facts []*career.Fact) {
 //   - May return CancelResult on Escape.
 func (s *EventReviewScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	if cmd := s.HandleWindowSizeMsg(msg); cmd != nil {
+		if sizeMsg, ok := msg.(tea.WindowSizeMsg); ok {
+			const reservedLines = 11
+			height := sizeMsg.Height - reservedLines
+			if height < 1 {
+				height = 1
+			}
+			s.viewport.Width = sizeMsg.Width
+			s.viewport.Height = height
+		}
 		return cmd, nil
 	}
 
@@ -237,6 +258,22 @@ func (s *EventReviewScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) 
 		case tea.KeyEsc:
 			return nil, &screens.CancelResult{}
 
+		case tea.KeyUp:
+			s.viewport.ScrollUp(1)
+			return nil, nil
+
+		case tea.KeyDown:
+			s.viewport.ScrollDown(1)
+			return nil, nil
+
+		case tea.KeyPgUp:
+			s.viewport.HalfPageUp()
+			return nil, nil
+
+		case tea.KeyPgDown:
+			s.viewport.HalfPageDown()
+			return nil, nil
+
 		case tea.KeyRunes:
 			return s.handleRuneKey(keyMsg)
 		}
@@ -245,7 +282,7 @@ func (s *EventReviewScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) 
 	return nil, nil
 }
 
-// handleRuneKey dispatches single-character key presses to edit actions.
+// handleRuneKey dispatches single-character key presses to edit actions or scroll.
 func (s *EventReviewScreen) handleRuneKey(keyMsg tea.KeyMsg) (tea.Cmd, screens.ScreenResult) {
 	switch keyMsg.String() {
 	case "e":
@@ -267,6 +304,14 @@ func (s *EventReviewScreen) handleRuneKey(keyMsg tea.KeyMsg) (tea.Cmd, screens.S
 		return nil, &screens.NavigateResult{
 			ResultData: "suggest_skills",
 		}
+
+	case "k":
+		s.viewport.ScrollUp(1)
+		return nil, nil
+
+	case "j":
+		s.viewport.ScrollDown(1)
+		return nil, nil
 	}
 
 	return nil, nil
@@ -281,9 +326,10 @@ func (s *EventReviewScreen) handleRuneKey(keyMsg tea.KeyMsg) (tea.Cmd, screens.S
 //   - None.
 func (s *EventReviewScreen) View() string {
 	content := s.renderContent()
+	s.viewport.SetContent(content)
 	footer := s.renderFooter()
 
-	return s.CreateView(s.breadcrumbs, content, footer)
+	return s.CreateView(s.breadcrumbs, s.viewport.View(), footer)
 }
 
 // renderContent renders the event details with bursts and facts
@@ -293,21 +339,16 @@ func (s *EventReviewScreen) renderContent() string {
 
 	var parts []string
 
-	// Title.
-	parts = append(parts, primitives.Title("Review Enrichment Results", th).
-		MarginBottom(1).
-		Render())
-
 	// Event details section.
 	parts = append(parts, s.renderEventDetails(th))
 
-	// Inferred bursts section.
+	// Bursts section.
 	parts = append(parts, s.renderBursts(th))
 
-	// Inferred facts section.
+	// Facts section.
 	parts = append(parts, s.renderFacts(th))
 
-	// Inferred skills section.
+	// Skills section.
 	parts = append(parts, s.renderSkills(th))
 
 	return primitives.JoinVertical(primitives.AlignLeft, parts...)
@@ -331,11 +372,11 @@ func (s *EventReviewScreen) renderEventDetails(th theme.Theme) string {
 	return dv.Render()
 }
 
-// renderBursts renders the inferred bursts list using UIKit primitives.
+// renderBursts renders the bursts list with accepted/pending status indicators.
 func (s *EventReviewScreen) renderBursts(th theme.Theme) string {
 	var b strings.Builder
 
-	b.WriteString(primitives.Subtitle("Inferred Bursts", th).
+	b.WriteString(primitives.Subtitle("Bursts", th).
 		MarginTop(1).
 		Render())
 	b.WriteString("\n")
@@ -347,7 +388,10 @@ func (s *EventReviewScreen) renderBursts(th theme.Theme) string {
 	}
 
 	for i, burst := range s.bursts {
-		b.WriteString(primitives.Body(fmt.Sprintf("  %d. %s", i+1, burst.Name), th).Render())
+		accepted := s.isBurstAccepted(burst)
+		indicator := s.renderIndicator(accepted, th)
+		label := primitives.Body(fmt.Sprintf("  %d. %s", i+1, burst.Name), th).Render()
+		b.WriteString(primitives.JoinHorizontal(primitives.AlignLeft, indicator, " ", label))
 		b.WriteString("\n")
 		if burst.Description != "" {
 			b.WriteString(primitives.Muted("     "+burst.Description, th).Render())
@@ -358,11 +402,11 @@ func (s *EventReviewScreen) renderBursts(th theme.Theme) string {
 	return b.String()
 }
 
-// renderFacts renders the inferred facts list using UIKit primitives.
+// renderFacts renders the facts list with accepted/pending status indicators.
 func (s *EventReviewScreen) renderFacts(th theme.Theme) string {
 	var b strings.Builder
 
-	b.WriteString(primitives.Subtitle("Inferred Facts", th).
+	b.WriteString(primitives.Subtitle("Facts", th).
 		MarginTop(1).
 		Render())
 	b.WriteString("\n")
@@ -374,18 +418,21 @@ func (s *EventReviewScreen) renderFacts(th theme.Theme) string {
 	}
 
 	for i, fact := range s.facts {
-		b.WriteString(primitives.Body(fmt.Sprintf("  %d. %s", i+1, fact.Text), th).Render())
+		accepted := s.isFactAccepted(fact)
+		indicator := s.renderIndicator(accepted, th)
+		label := primitives.Body(fmt.Sprintf("  %d. %s", i+1, fact.Text), th).Render()
+		b.WriteString(primitives.JoinHorizontal(primitives.AlignLeft, indicator, " ", label))
 		b.WriteString("\n")
 	}
 
 	return b.String()
 }
 
-// renderSkills renders the inferred skills list using UIKit primitives.
+// renderSkills renders the skills list with accepted/pending status indicators.
 func (s *EventReviewScreen) renderSkills(th theme.Theme) string {
 	var b strings.Builder
 
-	b.WriteString(primitives.Subtitle("Inferred Skills", th).
+	b.WriteString(primitives.Subtitle("Skills", th).
 		MarginTop(1).
 		Render())
 	b.WriteString("\n")
@@ -397,12 +444,53 @@ func (s *EventReviewScreen) renderSkills(th theme.Theme) string {
 	}
 
 	for i, skill := range s.skills {
+		accepted := s.isSkillAccepted(skill)
+		indicator := s.renderIndicator(accepted, th)
 		confidence := fmt.Sprintf("%.0f%%", skill.Confidence*100)
-		b.WriteString(primitives.Body(fmt.Sprintf("  %d. %s (%s) %s", i+1, skill.Name, skill.Category, confidence), th).Render())
+		label := primitives.Body(fmt.Sprintf("  %d. %s (%s) %s", i+1, skill.Name, skill.Category, confidence), th).Render()
+		b.WriteString(primitives.JoinHorizontal(primitives.AlignLeft, indicator, " ", label))
 		b.WriteString("\n")
 	}
 
 	return b.String()
+}
+
+// isBurstAccepted returns true if the burst's ID appears in acceptedBursts.
+func (s *EventReviewScreen) isBurstAccepted(burst *career.Burst) bool {
+	for _, ab := range s.acceptedBursts {
+		if ab.ID == burst.ID {
+			return true
+		}
+	}
+	return false
+}
+
+// isFactAccepted returns true if the fact's ID appears in acceptedFacts.
+func (s *EventReviewScreen) isFactAccepted(fact *career.Fact) bool {
+	for _, af := range s.acceptedFacts {
+		if af.ID == fact.ID {
+			return true
+		}
+	}
+	return false
+}
+
+// isSkillAccepted returns true if the skill's Name appears in acceptedSkills.
+func (s *EventReviewScreen) isSkillAccepted(skill skillinference.SkillSuggestion) bool {
+	for _, as := range s.acceptedSkills {
+		if as.Name == skill.Name {
+			return true
+		}
+	}
+	return false
+}
+
+// renderIndicator returns a themed indicator string: ● for accepted, ○ for pending.
+func (s *EventReviewScreen) renderIndicator(accepted bool, th theme.Theme) string {
+	if accepted {
+		return primitives.SuccessText("●", th).Render()
+	}
+	return primitives.Muted("○", th).Render()
 }
 
 // renderFooter renders footer with action shortcuts using UIKit badge primitives.
@@ -424,6 +512,7 @@ func (s *EventReviewScreen) renderFooter() string {
 	}
 
 	badges = append(badges,
+		primitives.HelpKeyBadge("↑↓", "Scroll", th),
 		primitives.BackBadge(th),
 		primitives.QuitBadge(th),
 	)

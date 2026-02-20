@@ -107,16 +107,16 @@ var _ = Describe("EventReviewScreen", func() {
 			Expect(view).To(ContainSubstring("Reduced login time"))
 		})
 
-		It("should display title using UIKit primitives", func() {
+		It("should not display a standalone title", func() {
 			view := screen.View()
-			Expect(view).To(ContainSubstring("Review Enrichment Results"))
+			Expect(view).NotTo(ContainSubstring("Review Enrichment Results"))
 		})
 
 		It("should display section headers using UIKit primitives", func() {
 			view := screen.View()
 			Expect(view).To(ContainSubstring("Event Details"))
-			Expect(view).To(ContainSubstring("Inferred Bursts"))
-			Expect(view).To(ContainSubstring("Inferred Facts"))
+			Expect(view).To(ContainSubstring("Bursts"))
+			Expect(view).To(ContainSubstring("Facts"))
 		})
 
 		Context("with nil event", func() {
@@ -386,7 +386,7 @@ var _ = Describe("EventReviewScreen", func() {
 			It("should set suggested skills", func() {
 				screen.SetSuggestedSkills(testSkills)
 				view := screen.View()
-				Expect(view).To(ContainSubstring("Inferred Skills"))
+				Expect(view).To(ContainSubstring("Skills"))
 				Expect(view).To(ContainSubstring("Go"))
 			})
 
@@ -486,6 +486,42 @@ var _ = Describe("EventReviewScreen", func() {
 				data := submitResult.Data().(map[string]interface{})
 				Expect(data["skills"]).To(BeEmpty())
 			})
+		})
+	})
+
+	Describe("Status Indicators", func() {
+		It("shows ○ for pending bursts", func() {
+			view := screen.View()
+			Expect(view).To(ContainSubstring("○"))
+		})
+
+		It("shows ● for accepted bursts", func() {
+			screen.SetAcceptedBursts(testBursts)
+			view := screen.View()
+			Expect(view).To(ContainSubstring("●"))
+		})
+
+		It("shows ○ for pending facts", func() {
+			view := screen.View()
+			Expect(view).To(ContainSubstring("○"))
+		})
+
+		It("shows ● for accepted facts", func() {
+			screen.SetAcceptedFacts(testFacts)
+			view := screen.View()
+			Expect(view).To(ContainSubstring("●"))
+		})
+	})
+
+	Describe("Scrolling", func() {
+		It("handles down scroll key without returning a result", func() {
+			_, result := screen.Update(tea.KeyMsg{Type: tea.KeyDown})
+			Expect(result).To(BeNil())
+		})
+
+		It("handles up scroll key without returning a result", func() {
+			_, result := screen.Update(tea.KeyMsg{Type: tea.KeyUp})
+			Expect(result).To(BeNil())
 		})
 	})
 })
