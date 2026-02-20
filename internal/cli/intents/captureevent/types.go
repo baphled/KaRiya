@@ -107,6 +107,9 @@ type ReviewInferredEventState struct {
 	// factModal is the form model for editing fact suggestions.
 	factModal *FactEditorModelNew
 
+	// factSuggestionModal is the modal for reviewing fact suggestions.
+	factSuggestionModal *modals.SuggestionReviewModal
+
 	// skillModal is the modal for editing skill suggestions.
 	skillModal *modals.SuggestionReviewModal
 
@@ -184,4 +187,32 @@ func (i *Intent) SetStateForTesting(state State) {
 //   - None.
 func (i *Intent) GetReviewState() *ReviewInferredEventState {
 	return i.reviewState
+}
+
+// GetFactModal returns the fact editor modal for test assertions.
+//
+// Returns:
+//   - A fully initialized FactEditorModelNew ready for use, or nil.
+//
+// Side effects:
+//   - None.
+func (r *ReviewInferredEventState) GetFactModal() *FactEditorModelNew {
+	if r == nil {
+		return nil
+	}
+	return r.factModal
+}
+
+// GetFactSuggestionModal returns the fact suggestion review modal for test assertions.
+//
+// Returns:
+//   - A fully initialized SuggestionReviewModal ready for use, or nil.
+//
+// Side effects:
+//   - None.
+func (r *ReviewInferredEventState) GetFactSuggestionModal() *modals.SuggestionReviewModal {
+	if r == nil {
+		return nil
+	}
+	return r.factSuggestionModal
 }

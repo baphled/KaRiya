@@ -338,6 +338,7 @@ func (i *Intent) updateEditingModal(msg tea.Msg) tea.Cmd {
 			i.reviewState.metadataModal = nil
 			i.reviewState.burstModal = nil
 			i.reviewState.factModal = nil
+			i.reviewState.factSuggestionModal = nil
 			i.reviewState.EditingMode = EditingModeNone
 			return nil
 		}
