@@ -211,6 +211,7 @@ func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
 				InferredFacts:  make([]*career.Fact, 0),
 				AcceptedBursts: make([]*career.Burst, 0),
 				AcceptedFacts:  make([]*career.Fact, 0),
+				AcceptedSkills: make([]*career.Skill, 0),
 				RejectedItems:  make(map[string]string),
 			}
 
