@@ -1,516 +1,469 @@
-package vhsgen
+package vhsgen_test
 
 import (
-	"testing"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+
+	"github.com/baphled/kariya/internal/vhsgen"
 )
 
-func TestSourceTypeConstants(t *testing.T) {
-	tests := []struct {
-		name     string
-		got      SourceType
-		expected SourceType
-	}{
-		{"SourceBusiness constant", SourceBusiness, "business"},
-		{"SourceVHSOnly constant", SourceVHSOnly, "vhs-only"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if tt.got != tt.expected {
-				t.Errorf("got %q, want %q", tt.got, tt.expected)
-			}
+var _ = Describe("Types", func() {
+	Describe("SourceType constants", func() {
+		It("defines SourceBusiness as 'business'", func() {
+			Expect(vhsgen.SourceBusiness).To(Equal(vhsgen.SourceType("business")))
 		})
-	}
-}
 
-func TestVHSCommandTypeConstants(t *testing.T) {
-	tests := []struct {
-		name     string
-		got      VHSCommandType
-		expected VHSCommandType
-	}{
-		{"Type command", Type, "Type"},
-		{"Down command", Down, "Down"},
-		{"Up command", Up, "Up"},
-		{"Enter command", Enter, "Enter"},
-		{"Escape command", Escape, "Escape"},
-		{"Tab command", Tab, "Tab"},
-		{"Sleep command", Sleep, "Sleep"},
-		{"Hide command", Hide, "Hide"},
-		{"Show command", Show, "Show"},
-		{"Screenshot command", Screenshot, "Screenshot"},
-		{"Source command", Source, "Source"},
-		{"Output command", Output, "Output"},
-		{"CtrlC command", CtrlC, "Ctrl+C"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if tt.got != tt.expected {
-				t.Errorf("got %q, want %q", tt.got, tt.expected)
-			}
+		It("defines SourceVHSOnly as 'vhs-only'", func() {
+			Expect(vhsgen.SourceVHSOnly).To(Equal(vhsgen.SourceType("vhs-only")))
 		})
-	}
-}
+	})
 
-func TestVHSCommandConstruction(t *testing.T) {
-	tests := []struct {
-		name     string
-		cmd      VHSCommand
-		wantType VHSCommandType
-		wantArgs []string
-	}{
-		{
-			name:     "Type command with text",
-			cmd:      VHSCommand{Type: Type, Args: []string{"hello"}},
-			wantType: Type,
-			wantArgs: []string{"hello"},
-		},
-		{
-			name:     "Sleep command with duration",
-			cmd:      VHSCommand{Type: Sleep, Args: []string{"500ms"}},
-			wantType: Sleep,
-			wantArgs: []string{"500ms"},
-		},
-		{
-			name:     "Screenshot command with path",
-			cmd:      VHSCommand{Type: Screenshot, Args: []string{"output.png"}},
-			wantType: Screenshot,
-			wantArgs: []string{"output.png"},
-		},
-		{
-			name:     "Command with no args",
-			cmd:      VHSCommand{Type: Enter},
-			wantType: Enter,
-			wantArgs: nil,
-		},
-	}
+	Describe("VHSCommandType constants", func() {
+		It("defines Type command", func() {
+			Expect(vhsgen.Type).To(Equal(vhsgen.VHSCommandType("Type")))
+		})
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if tt.cmd.Type != tt.wantType {
-				t.Errorf("Type: got %q, want %q", tt.cmd.Type, tt.wantType)
-			}
-			if len(tt.cmd.Args) != len(tt.wantArgs) {
-				t.Errorf("Args length: got %d, want %d", len(tt.cmd.Args), len(tt.wantArgs))
-			}
-			for i, arg := range tt.cmd.Args {
-				if arg != tt.wantArgs[i] {
-					t.Errorf("Args[%d]: got %q, want %q", i, arg, tt.wantArgs[i])
+		It("defines Down command", func() {
+			Expect(vhsgen.Down).To(Equal(vhsgen.VHSCommandType("Down")))
+		})
+
+		It("defines Up command", func() {
+			Expect(vhsgen.Up).To(Equal(vhsgen.VHSCommandType("Up")))
+		})
+
+		It("defines Enter command", func() {
+			Expect(vhsgen.Enter).To(Equal(vhsgen.VHSCommandType("Enter")))
+		})
+
+		It("defines Escape command", func() {
+			Expect(vhsgen.Escape).To(Equal(vhsgen.VHSCommandType("Escape")))
+		})
+
+		It("defines Tab command", func() {
+			Expect(vhsgen.Tab).To(Equal(vhsgen.VHSCommandType("Tab")))
+		})
+
+		It("defines Sleep command", func() {
+			Expect(vhsgen.Sleep).To(Equal(vhsgen.VHSCommandType("Sleep")))
+		})
+
+		It("defines Hide command", func() {
+			Expect(vhsgen.Hide).To(Equal(vhsgen.VHSCommandType("Hide")))
+		})
+
+		It("defines Show command", func() {
+			Expect(vhsgen.Show).To(Equal(vhsgen.VHSCommandType("Show")))
+		})
+
+		It("defines Screenshot command", func() {
+			Expect(vhsgen.Screenshot).To(Equal(vhsgen.VHSCommandType("Screenshot")))
+		})
+
+		It("defines Source command", func() {
+			Expect(vhsgen.Source).To(Equal(vhsgen.VHSCommandType("Source")))
+		})
+
+		It("defines Output command", func() {
+			Expect(vhsgen.Output).To(Equal(vhsgen.VHSCommandType("Output")))
+		})
+
+		It("defines CtrlC command", func() {
+			Expect(vhsgen.CtrlC).To(Equal(vhsgen.VHSCommandType("Ctrl+C")))
+		})
+	})
+
+	Describe("VHSCommand construction", func() {
+		Context("when constructed with Type and text args", func() {
+			It("stores the correct type and args", func() {
+				cmd := vhsgen.VHSCommand{Type: vhsgen.Type, Args: []string{"hello"}}
+				Expect(cmd.Type).To(Equal(vhsgen.Type))
+				Expect(cmd.Args).To(Equal([]string{"hello"}))
+			})
+		})
+
+		Context("when constructed with Sleep and duration", func() {
+			It("stores the correct type and args", func() {
+				cmd := vhsgen.VHSCommand{Type: vhsgen.Sleep, Args: []string{"500ms"}}
+				Expect(cmd.Type).To(Equal(vhsgen.Sleep))
+				Expect(cmd.Args).To(Equal([]string{"500ms"}))
+			})
+		})
+
+		Context("when constructed with Screenshot and path", func() {
+			It("stores the correct type and args", func() {
+				cmd := vhsgen.VHSCommand{Type: vhsgen.Screenshot, Args: []string{"output.png"}}
+				Expect(cmd.Type).To(Equal(vhsgen.Screenshot))
+				Expect(cmd.Args).To(Equal([]string{"output.png"}))
+			})
+		})
+
+		Context("when constructed with no args", func() {
+			It("has nil args", func() {
+				cmd := vhsgen.VHSCommand{Type: vhsgen.Enter}
+				Expect(cmd.Type).To(Equal(vhsgen.Enter))
+				Expect(cmd.Args).To(BeNil())
+			})
+		})
+	})
+
+	Describe("StepIR construction", func() {
+		Context("Given step", func() {
+			It("stores text and step type", func() {
+				step := vhsgen.StepIR{
+					Text:         "a user is logged in",
+					StepType:     "Given",
+					Translatable: true,
 				}
+				Expect(step.Text).To(Equal("a user is logged in"))
+				Expect(step.StepType).To(Equal("Given"))
+			})
+		})
+
+		Context("When step", func() {
+			It("stores text and step type", func() {
+				step := vhsgen.StepIR{
+					Text:         "the user clicks the button",
+					StepType:     "When",
+					Translatable: true,
+				}
+				Expect(step.Text).To(Equal("the user clicks the button"))
+				Expect(step.StepType).To(Equal("When"))
+			})
+		})
+
+		Context("Then step", func() {
+			It("stores text and step type", func() {
+				step := vhsgen.StepIR{
+					Text:         "the page should display success",
+					StepType:     "Then",
+					Translatable: true,
+				}
+				Expect(step.Text).To(Equal("the page should display success"))
+				Expect(step.StepType).To(Equal("Then"))
+			})
+		})
+
+		Context("untranslatable step", func() {
+			It("stores the untranslatable reason", func() {
+				step := vhsgen.StepIR{
+					Text:                 "some complex step",
+					StepType:             "When",
+					Translatable:         false,
+					UntranslatableReason: "no matching pattern",
+				}
+				Expect(step.Text).To(Equal("some complex step"))
+				Expect(step.StepType).To(Equal("When"))
+			})
+		})
+	})
+
+	Describe("StepIR with commands", func() {
+		It("stores multiple commands with correct types", func() {
+			step := vhsgen.StepIR{
+				Text:     "the user types their name",
+				StepType: "When",
+				Commands: []vhsgen.VHSCommand{
+					{Type: vhsgen.Type, Args: []string{"John Doe"}},
+					{Type: vhsgen.Tab},
+				},
+				Translatable: true,
+			}
+			Expect(step.Commands).To(HaveLen(2))
+			Expect(step.Commands[0].Type).To(Equal(vhsgen.Type))
+			Expect(step.Commands[1].Type).To(Equal(vhsgen.Tab))
+		})
+	})
+
+	Describe("ScenarioIR construction", func() {
+		var scenario vhsgen.ScenarioIR
+
+		BeforeEach(func() {
+			scenario = vhsgen.ScenarioIR{
+				Name:    "User login",
+				Feature: "Authentication",
+				Tags:    []string{"@critical", "@smoke"},
+				Source:  vhsgen.SourceBusiness,
+				SetupSteps: []vhsgen.StepIR{
+					{Text: "setup step", StepType: "Given", Translatable: true},
+				},
+				DemoSteps: []vhsgen.StepIR{
+					{Text: "demo step", StepType: "When", Translatable: true},
+				},
+				Translatable: true,
 			}
 		})
-	}
-}
 
-func TestStepIRConstruction(t *testing.T) {
-	tests := []struct {
-		name     string
-		step     StepIR
-		wantText string
-		wantType string
-	}{
-		{
-			name: "Given step",
-			step: StepIR{
-				Text:         "a user is logged in",
-				StepType:     "Given",
+		It("stores the name", func() {
+			Expect(scenario.Name).To(Equal("User login"))
+		})
+
+		It("stores the feature", func() {
+			Expect(scenario.Feature).To(Equal("Authentication"))
+		})
+
+		It("stores the source", func() {
+			Expect(scenario.Source).To(Equal(vhsgen.SourceBusiness))
+		})
+
+		It("stores 2 tags", func() {
+			Expect(scenario.Tags).To(HaveLen(2))
+		})
+
+		It("stores 1 setup step", func() {
+			Expect(scenario.SetupSteps).To(HaveLen(1))
+		})
+
+		It("stores 1 demo step", func() {
+			Expect(scenario.DemoSteps).To(HaveLen(1))
+		})
+	})
+
+	Describe("ScenarioIR source types", func() {
+		It("accepts SourceBusiness", func() {
+			scenario := vhsgen.ScenarioIR{Name: "Test scenario", Source: vhsgen.SourceBusiness}
+			Expect(scenario.Source).To(Equal(vhsgen.SourceBusiness))
+		})
+
+		It("accepts SourceVHSOnly", func() {
+			scenario := vhsgen.ScenarioIR{Name: "Test scenario", Source: vhsgen.SourceVHSOnly}
+			Expect(scenario.Source).To(Equal(vhsgen.SourceVHSOnly))
+		})
+	})
+
+	Describe("GeneratorConfig construction", func() {
+		var config vhsgen.GeneratorConfig
+
+		BeforeEach(func() {
+			config = vhsgen.GeneratorConfig{
+				OutputDir:        "/tmp/output",
+				TemplatePath:     "/path/to/template.tape",
+				ConfigSourcePath: "demos/vhs/config.tape",
+				SleepDuration:    "500ms",
+				ScenariosDir:     "features/",
+			}
+		})
+
+		It("stores OutputDir", func() {
+			Expect(config.OutputDir).To(Equal("/tmp/output"))
+		})
+
+		It("stores TemplatePath", func() {
+			Expect(config.TemplatePath).To(Equal("/path/to/template.tape"))
+		})
+
+		It("stores ConfigSourcePath", func() {
+			Expect(config.ConfigSourcePath).To(Equal("demos/vhs/config.tape"))
+		})
+
+		It("stores SleepDuration", func() {
+			Expect(config.SleepDuration).To(Equal("500ms"))
+		})
+
+		It("stores ScenariosDir", func() {
+			Expect(config.ScenariosDir).To(Equal("features/"))
+		})
+	})
+
+	Describe("AnalysisResult construction", func() {
+		var result vhsgen.AnalysisResult
+
+		BeforeEach(func() {
+			result = vhsgen.AnalysisResult{
+				ScenarioName: "Login flow",
+				Feature:      "Authentication",
 				Translatable: true,
-			},
-			wantText: "a user is logged in",
-			wantType: "Given",
-		},
-		{
-			name: "When step",
-			step: StepIR{
-				Text:         "the user clicks the button",
-				StepType:     "When",
-				Translatable: true,
-			},
-			wantText: "the user clicks the button",
-			wantType: "When",
-		},
-		{
-			name: "Then step",
-			step: StepIR{
-				Text:         "the page should display success",
-				StepType:     "Then",
-				Translatable: true,
-			},
-			wantText: "the page should display success",
-			wantType: "Then",
-		},
-		{
-			name: "Untranslatable step",
-			step: StepIR{
-				Text:                 "some complex step",
+				Source:       vhsgen.SourceBusiness,
+				Warnings:     []string{"slow step detected"},
+				Errors:       []string{},
+			}
+		})
+
+		It("stores ScenarioName", func() {
+			Expect(result.ScenarioName).To(Equal("Login flow"))
+		})
+
+		It("stores Feature", func() {
+			Expect(result.Feature).To(Equal("Authentication"))
+		})
+
+		It("is translatable", func() {
+			Expect(result.Translatable).To(BeTrue())
+		})
+
+		It("stores Source", func() {
+			Expect(result.Source).To(Equal(vhsgen.SourceBusiness))
+		})
+
+		It("has 1 warning", func() {
+			Expect(result.Warnings).To(HaveLen(1))
+		})
+
+		It("has 0 errors", func() {
+			Expect(result.Errors).To(BeEmpty())
+		})
+	})
+
+	Describe("AnalysisResult with untranslatable steps", func() {
+		var result vhsgen.AnalysisResult
+
+		BeforeEach(func() {
+			untranslatableStep := vhsgen.StepIR{
+				Text:                 "complex step",
 				StepType:             "When",
 				Translatable:         false,
-				UntranslatableReason: "no matching pattern",
-			},
-			wantText: "some complex step",
-			wantType: "When",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if tt.step.Text != tt.wantText {
-				t.Errorf("Text: got %q, want %q", tt.step.Text, tt.wantText)
+				UntranslatableReason: "no pattern match",
 			}
-			if tt.step.StepType != tt.wantType {
-				t.Errorf("StepType: got %q, want %q", tt.step.StepType, tt.wantType)
+			result = vhsgen.AnalysisResult{
+				ScenarioName:        "Complex scenario",
+				Feature:             "Advanced",
+				Translatable:        false,
+				UntranslatableSteps: []vhsgen.StepIR{untranslatableStep},
+				Source:              vhsgen.SourceVHSOnly,
+				Errors:              []string{"cannot translate scenario"},
 			}
 		})
-	}
-}
 
-func TestStepIRWithCommands(t *testing.T) {
-	step := StepIR{
-		Text:     "the user types their name",
-		StepType: "When",
-		Commands: []VHSCommand{
-			{Type: Type, Args: []string{"John Doe"}},
-			{Type: Tab},
-		},
-		Translatable: true,
-	}
+		It("is not translatable", func() {
+			Expect(result.Translatable).To(BeFalse())
+		})
 
-	if len(step.Commands) != 2 {
-		t.Errorf("Commands length: got %d, want 2", len(step.Commands))
-	}
+		It("has 1 untranslatable step", func() {
+			Expect(result.UntranslatableSteps).To(HaveLen(1))
+		})
 
-	if step.Commands[0].Type != Type {
-		t.Errorf("First command type: got %q, want %q", step.Commands[0].Type, Type)
-	}
+		It("preserves the step text", func() {
+			Expect(result.UntranslatableSteps[0].Text).To(Equal("complex step"))
+		})
+	})
 
-	if step.Commands[1].Type != Tab {
-		t.Errorf("Second command type: got %q, want %q", step.Commands[1].Type, Tab)
-	}
-}
+	Describe("ParamConstraint construction", func() {
+		var constraint vhsgen.ParamConstraint
 
-func TestScenarioIRConstruction(t *testing.T) {
-	scenario := ScenarioIR{
-		Name:    "User login",
-		Feature: "Authentication",
-		Tags:    []string{"@critical", "@smoke"},
-		Source:  SourceBusiness,
-		SetupSteps: []StepIR{
-			{Text: "setup step", StepType: "Given", Translatable: true},
-		},
-		DemoSteps: []StepIR{
-			{Text: "demo step", StepType: "When", Translatable: true},
-		},
-		Translatable: true,
-	}
-
-	if scenario.Name != "User login" {
-		t.Errorf("Name: got %q, want %q", scenario.Name, "User login")
-	}
-
-	if scenario.Feature != "Authentication" {
-		t.Errorf("Feature: got %q, want %q", scenario.Feature, "Authentication")
-	}
-
-	if scenario.Source != SourceBusiness {
-		t.Errorf("Source: got %q, want %q", scenario.Source, SourceBusiness)
-	}
-
-	if len(scenario.Tags) != 2 {
-		t.Errorf("Tags length: got %d, want 2", len(scenario.Tags))
-	}
-
-	if len(scenario.SetupSteps) != 1 {
-		t.Errorf("SetupSteps length: got %d, want 1", len(scenario.SetupSteps))
-	}
-
-	if len(scenario.DemoSteps) != 1 {
-		t.Errorf("DemoSteps length: got %d, want 1", len(scenario.DemoSteps))
-	}
-}
-
-func TestScenarioIRSourceTypes(t *testing.T) {
-	tests := []struct {
-		name   string
-		source SourceType
-	}{
-		{"Business source", SourceBusiness},
-		{"VHS-only source", SourceVHSOnly},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			scenario := ScenarioIR{
-				Name:   "Test scenario",
-				Source: tt.source,
-			}
-
-			if scenario.Source != tt.source {
-				t.Errorf("Source: got %q, want %q", scenario.Source, tt.source)
+		BeforeEach(func() {
+			constraint = vhsgen.ParamConstraint{
+				Type:   "enum",
+				Values: []string{"value1", "value2", "value3"},
 			}
 		})
-	}
-}
 
-func TestGeneratorConfigConstruction(t *testing.T) {
-	config := GeneratorConfig{
-		OutputDir:        "/tmp/output",
-		TemplatePath:     "/path/to/template.tape",
-		ConfigSourcePath: "demos/vhs/config.tape",
-		SleepDuration:    "500ms",
-		ScenariosDir:     "features/",
-	}
+		It("stores the type", func() {
+			Expect(constraint.Type).To(Equal("enum"))
+		})
 
-	if config.OutputDir != "/tmp/output" {
-		t.Errorf("OutputDir: got %q, want %q", config.OutputDir, "/tmp/output")
-	}
+		It("stores 3 values", func() {
+			Expect(constraint.Values).To(HaveLen(3))
+		})
 
-	if config.TemplatePath != "/path/to/template.tape" {
-		t.Errorf("TemplatePath: got %q, want %q", config.TemplatePath, "/path/to/template.tape")
-	}
-
-	if config.ConfigSourcePath != "demos/vhs/config.tape" {
-		t.Errorf("ConfigSourcePath: got %q, want %q", config.ConfigSourcePath, "demos/vhs/config.tape")
-	}
-
-	if config.SleepDuration != "500ms" {
-		t.Errorf("SleepDuration: got %q, want %q", config.SleepDuration, "500ms")
-	}
-
-	if config.ScenariosDir != "features/" {
-		t.Errorf("ScenariosDir: got %q, want %q", config.ScenariosDir, "features/")
-	}
-}
-
-func TestAnalysisResultConstruction(t *testing.T) {
-	result := AnalysisResult{
-		ScenarioName: "Login flow",
-		Feature:      "Authentication",
-		Translatable: true,
-		Source:       SourceBusiness,
-		Warnings:     []string{"slow step detected"},
-		Errors:       []string{},
-	}
-
-	if result.ScenarioName != "Login flow" {
-		t.Errorf("ScenarioName: got %q, want %q", result.ScenarioName, "Login flow")
-	}
-
-	if result.Feature != "Authentication" {
-		t.Errorf("Feature: got %q, want %q", result.Feature, "Authentication")
-	}
-
-	if !result.Translatable {
-		t.Errorf("Translatable: got false, want true")
-	}
-
-	if result.Source != SourceBusiness {
-		t.Errorf("Source: got %q, want %q", result.Source, SourceBusiness)
-	}
-
-	if len(result.Warnings) != 1 {
-		t.Errorf("Warnings length: got %d, want 1", len(result.Warnings))
-	}
-
-	if len(result.Errors) != 0 {
-		t.Errorf("Errors length: got %d, want 0", len(result.Errors))
-	}
-}
-
-func TestAnalysisResultWithUntranslatableSteps(t *testing.T) {
-	untranslatableStep := StepIR{
-		Text:                 "complex step",
-		StepType:             "When",
-		Translatable:         false,
-		UntranslatableReason: "no pattern match",
-	}
-
-	result := AnalysisResult{
-		ScenarioName:        "Complex scenario",
-		Feature:             "Advanced",
-		Translatable:        false,
-		UntranslatableSteps: []StepIR{untranslatableStep},
-		Source:              SourceVHSOnly,
-		Errors:              []string{"cannot translate scenario"},
-	}
-
-	if result.Translatable {
-		t.Errorf("Translatable: got true, want false")
-	}
-
-	if len(result.UntranslatableSteps) != 1 {
-		t.Errorf("UntranslatableSteps length: got %d, want 1", len(result.UntranslatableSteps))
-	}
-
-	if result.UntranslatableSteps[0].Text != "complex step" {
-		t.Errorf("Step text: got %q, want %q", result.UntranslatableSteps[0].Text, "complex step")
-	}
-}
-
-func TestParamConstraintConstruction(t *testing.T) {
-	constraint := ParamConstraint{
-		Type:   "enum",
-		Values: []string{"value1", "value2", "value3"},
-	}
-
-	if constraint.Type != "enum" {
-		t.Errorf("Type: got %q, want %q", constraint.Type, "enum")
-	}
-
-	if len(constraint.Values) != 3 {
-		t.Errorf("Values length: got %d, want 3", len(constraint.Values))
-	}
-
-	if constraint.Values[0] != "value1" {
-		t.Errorf("Values[0]: got %q, want %q", constraint.Values[0], "value1")
-	}
-}
-
-func TestStepPatternConstruction(t *testing.T) {
-	pattern := StepPattern{
-		Pattern:  `the user types "([^"]+)"`,
-		Type:     "When",
-		Category: "input",
-		Params: map[string]ParamConstraint{
-			"text": {
-				Type:   "string",
-				Values: nil,
-			},
-		},
-		Example: `the user types "hello"`,
-	}
-
-	if pattern.Pattern != `the user types "([^"]+)"` {
-		t.Errorf("Pattern: got %q, want %q", pattern.Pattern, `the user types "([^"]+)"`)
-	}
-
-	if pattern.Type != "When" {
-		t.Errorf("Type: got %q, want %q", pattern.Type, "When")
-	}
-
-	if pattern.Category != "input" {
-		t.Errorf("Category: got %q, want %q", pattern.Category, "input")
-	}
-
-	if len(pattern.Params) != 1 {
-		t.Errorf("Params length: got %d, want 1", len(pattern.Params))
-	}
-
-	if pattern.Example != `the user types "hello"` {
-		t.Errorf("Example: got %q, want %q", pattern.Example, `the user types "hello"`)
-	}
-}
-
-func testZeroVHSCommand(t *testing.T) {
-	var cmd VHSCommand
-	if cmd.Type != "" {
-		t.Errorf("zero VHSCommand.Type should be empty string, got %q", cmd.Type)
-	}
-	if cmd.Args != nil {
-		t.Errorf("zero VHSCommand.Args should be nil, got %v", cmd.Args)
-	}
-}
-
-func testZeroStepIR(t *testing.T) {
-	var step StepIR
-	if step.Text != "" {
-		t.Errorf("zero StepIR.Text should be empty string, got %q", step.Text)
-	}
-	if step.Translatable {
-		t.Errorf("zero StepIR.Translatable should be false, got true")
-	}
-}
-
-func testZeroScenarioIR(t *testing.T) {
-	var scenario ScenarioIR
-	if scenario.Name != "" {
-		t.Errorf("zero ScenarioIR.Name should be empty string, got %q", scenario.Name)
-	}
-	if scenario.Source != "" {
-		t.Errorf("zero ScenarioIR.Source should be empty string, got %q", scenario.Source)
-	}
-}
-
-func testZeroGeneratorConfig(t *testing.T) {
-	var config GeneratorConfig
-	if config.OutputDir != "" {
-		t.Errorf("zero GeneratorConfig.OutputDir should be empty string, got %q", config.OutputDir)
-	}
-}
-
-func testZeroAnalysisResult(t *testing.T) {
-	var result AnalysisResult
-	if result.ScenarioName != "" {
-		t.Errorf("zero AnalysisResult.ScenarioName should be empty string, got %q", result.ScenarioName)
-	}
-	if result.Translatable {
-		t.Errorf("zero AnalysisResult.Translatable should be false, got true")
-	}
-}
-
-func testZeroParamConstraint(t *testing.T) {
-	var constraint ParamConstraint
-	if constraint.Type != "" {
-		t.Errorf("zero ParamConstraint.Type should be empty string, got %q", constraint.Type)
-	}
-}
-
-func testZeroStepPattern(t *testing.T) {
-	var pattern StepPattern
-	if pattern.Pattern != "" {
-		t.Errorf("zero StepPattern.Pattern should be empty string, got %q", pattern.Pattern)
-	}
-	if pattern.Params != nil {
-		t.Errorf("zero StepPattern.Params should be nil, got %v", pattern.Params)
-	}
-}
-
-func TestZeroValues(t *testing.T) {
-	t.Run("zero VHSCommand", testZeroVHSCommand)
-	t.Run("zero StepIR", testZeroStepIR)
-	t.Run("zero ScenarioIR", testZeroScenarioIR)
-	t.Run("zero GeneratorConfig", testZeroGeneratorConfig)
-	t.Run("zero AnalysisResult", testZeroAnalysisResult)
-	t.Run("zero ParamConstraint", testZeroParamConstraint)
-	t.Run("zero StepPattern", testZeroStepPattern)
-}
-
-func TestEmptySlices(t *testing.T) {
-	t.Run("ScenarioIR with empty slices", func(t *testing.T) {
-		scenario := ScenarioIR{
-			Name:       "Empty scenario",
-			Tags:       []string{},
-			SetupSteps: []StepIR{},
-			DemoSteps:  []StepIR{},
-		}
-
-		if len(scenario.Tags) != 0 {
-			t.Errorf("Tags length: got %d, want 0", len(scenario.Tags))
-		}
-		if len(scenario.SetupSteps) != 0 {
-			t.Errorf("SetupSteps length: got %d, want 0", len(scenario.SetupSteps))
-		}
-		if len(scenario.DemoSteps) != 0 {
-			t.Errorf("DemoSteps length: got %d, want 0", len(scenario.DemoSteps))
-		}
+		It("stores the first value correctly", func() {
+			Expect(constraint.Values[0]).To(Equal("value1"))
+		})
 	})
 
-	t.Run("AnalysisResult with empty slices", func(t *testing.T) {
-		result := AnalysisResult{
-			ScenarioName:        "Empty result",
-			UntranslatableSteps: []StepIR{},
-			Warnings:            []string{},
-			Errors:              []string{},
-		}
+	Describe("StepPattern construction", func() {
+		var pattern vhsgen.StepPattern
 
-		if len(result.UntranslatableSteps) != 0 {
-			t.Errorf("UntranslatableSteps length: got %d, want 0", len(result.UntranslatableSteps))
-		}
-		if len(result.Warnings) != 0 {
-			t.Errorf("Warnings length: got %d, want 0", len(result.Warnings))
-		}
-		if len(result.Errors) != 0 {
-			t.Errorf("Errors length: got %d, want 0", len(result.Errors))
-		}
+		BeforeEach(func() {
+			pattern = vhsgen.StepPattern{
+				Pattern:  `the user types "([^"]+)"`,
+				Type:     "When",
+				Category: "input",
+				Params: map[string]vhsgen.ParamConstraint{
+					"text": {Type: "string", Values: nil},
+				},
+				Example: `the user types "hello"`,
+			}
+		})
+
+		It("stores Pattern", func() {
+			Expect(pattern.Pattern).To(Equal(`the user types "([^"]+)"`))
+		})
+
+		It("stores Type", func() {
+			Expect(pattern.Type).To(Equal("When"))
+		})
+
+		It("stores Category", func() {
+			Expect(pattern.Category).To(Equal("input"))
+		})
+
+		It("stores 1 param", func() {
+			Expect(pattern.Params).To(HaveLen(1))
+		})
+
+		It("stores Example", func() {
+			Expect(pattern.Example).To(Equal(`the user types "hello"`))
+		})
 	})
-}
+
+	Describe("Zero values", func() {
+		It("VHSCommand zero value has empty type and nil args", func() {
+			var cmd vhsgen.VHSCommand
+			Expect(string(cmd.Type)).To(BeEmpty())
+			Expect(cmd.Args).To(BeNil())
+		})
+
+		It("StepIR zero value has empty text and false translatable", func() {
+			var step vhsgen.StepIR
+			Expect(step.Text).To(BeEmpty())
+			Expect(step.Translatable).To(BeFalse())
+		})
+
+		It("ScenarioIR zero value has empty name and empty source", func() {
+			var scenario vhsgen.ScenarioIR
+			Expect(scenario.Name).To(BeEmpty())
+			Expect(string(scenario.Source)).To(BeEmpty())
+		})
+
+		It("GeneratorConfig zero value has empty OutputDir", func() {
+			var config vhsgen.GeneratorConfig
+			Expect(config.OutputDir).To(BeEmpty())
+		})
+
+		It("AnalysisResult zero value has empty ScenarioName and false translatable", func() {
+			var result vhsgen.AnalysisResult
+			Expect(result.ScenarioName).To(BeEmpty())
+			Expect(result.Translatable).To(BeFalse())
+		})
+
+		It("ParamConstraint zero value has empty type", func() {
+			var constraint vhsgen.ParamConstraint
+			Expect(constraint.Type).To(BeEmpty())
+		})
+
+		It("StepPattern zero value has empty pattern and nil params", func() {
+			var pattern vhsgen.StepPattern
+			Expect(pattern.Pattern).To(BeEmpty())
+			Expect(pattern.Params).To(BeNil())
+		})
+	})
+
+	Describe("Empty slices", func() {
+		Context("ScenarioIR with empty slices", func() {
+			It("has zero tags, setup steps, and demo steps", func() {
+				scenario := vhsgen.ScenarioIR{
+					Name:       "Empty scenario",
+					Tags:       []string{},
+					SetupSteps: []vhsgen.StepIR{},
+					DemoSteps:  []vhsgen.StepIR{},
+				}
+				Expect(scenario.Tags).To(BeEmpty())
+				Expect(scenario.SetupSteps).To(BeEmpty())
+				Expect(scenario.DemoSteps).To(BeEmpty())
+			})
+		})
+
+		Context("AnalysisResult with empty slices", func() {
+			It("has zero untranslatable steps, warnings, and errors", func() {
+				result := vhsgen.AnalysisResult{
+					ScenarioName:        "Empty result",
+					UntranslatableSteps: []vhsgen.StepIR{},
+					Warnings:            []string{},
+					Errors:              []string{},
+				}
+				Expect(result.UntranslatableSteps).To(BeEmpty())
+				Expect(result.Warnings).To(BeEmpty())
+				Expect(result.Errors).To(BeEmpty())
+			})
+		})
+	})
+})

@@ -1,113 +1,163 @@
-package vhsgen
+package vhsgen_test
 
 import (
-	"strings"
-	"testing"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+
+	"github.com/baphled/kariya/internal/vhsgen"
 )
 
-func TestRenderTape(t *testing.T) {
-	data := TapeData{
-		FeatureName:      "User Registration",
-		ScenarioName:     "Successful registration",
-		GIFPath:          "demos/vhs/features/user-registration/happy-path.gif",
-		ASCIIPath:        "demos/vhs/features/user-registration/happy-path.ascii",
-		ConfigSourcePath: "demos/vhs/config.tape",
-		SetupCommands: `Type "mkdir -p /tmp/demo"
+var _ = Describe("RenderTape", func() {
+	Describe("rendering a full tape", func() {
+		var (
+			data   vhsgen.TapeData
+			result string
+		)
+
+		BeforeEach(func() {
+			data = vhsgen.TapeData{
+				FeatureName:      "User Registration",
+				ScenarioName:     "Successful registration",
+				GIFPath:          "demos/vhs/features/user-registration/happy-path.gif",
+				ASCIIPath:        "demos/vhs/features/user-registration/happy-path.ascii",
+				ConfigSourcePath: "demos/vhs/config.tape",
+				SetupCommands: `Type "mkdir -p /tmp/demo"
 Enter
 Sleep 300ms`,
-		DemoCommands: `Type "./kariya --config /tmp/demo/config.yaml"
+				DemoCommands: `Type "./kariya --config /tmp/demo/config.yaml"
 Enter
 Sleep 2s`,
-	}
+			}
 
-	result, err := RenderTape(data)
-	if err != nil {
-		t.Fatalf("RenderTape failed: %v", err)
-	}
+			var err error
+			result, err = vhsgen.RenderTape(data)
+			Expect(err).NotTo(HaveOccurred())
+		})
 
-	// Verify the result contains expected content
-	tests := []struct {
-		name     string
-		expected string
-	}{
-		{"Feature comment", "# Feature: User Registration"},
-		{"Scenario comment", "# Scenario: Successful registration"},
-		{"Source directive", "Source demos/vhs/config.tape"},
-		{"GIF output", "Output demos/vhs/features/user-registration/happy-path.gif"},
-		{"ASCII output", "Output demos/vhs/features/user-registration/happy-path.ascii"},
-		{"Hide block", "Hide"},
-		{"Show block", "Show"},
-		{"Setup commands", "mkdir -p /tmp/demo"},
-		{"Demo commands", "./kariya --config /tmp/demo/config.yaml"},
-		{"Exit command", "Ctrl+C"},
-	}
+		It("contains the feature comment", func() {
+			Expect(result).To(ContainSubstring("# Feature: User Registration"))
+		})
 
-	for _, tt := range tests {
-		if !strings.Contains(result, tt.expected) {
-			t.Errorf("Expected %q in rendered output, but not found", tt.expected)
+		It("contains the scenario comment", func() {
+			Expect(result).To(ContainSubstring("# Scenario: Successful registration"))
+		})
+
+		It("contains the Source directive", func() {
+			Expect(result).To(ContainSubstring("Source demos/vhs/config.tape"))
+		})
+
+		It("contains the GIF output directive", func() {
+			Expect(result).To(ContainSubstring("Output demos/vhs/features/user-registration/happy-path.gif"))
+		})
+
+		It("contains the ASCII output directive", func() {
+			Expect(result).To(ContainSubstring("Output demos/vhs/features/user-registration/happy-path.ascii"))
+		})
+
+		It("contains a Hide block", func() {
+			Expect(result).To(ContainSubstring("Hide"))
+		})
+
+		It("contains a Show block", func() {
+			Expect(result).To(ContainSubstring("Show"))
+		})
+
+		It("contains setup commands", func() {
+			Expect(result).To(ContainSubstring("mkdir -p /tmp/demo"))
+		})
+
+		It("contains demo commands", func() {
+			Expect(result).To(ContainSubstring("./kariya --config /tmp/demo/config.yaml"))
+		})
+
+		It("contains an exit command", func() {
+			Expect(result).To(ContainSubstring("Ctrl+C"))
+		})
+
+		It("does not contain forbidden cleanup commands", func() {
+			Expect(result).NotTo(ContainSubstring("rm -rf"))
+			Expect(result).NotTo(ContainSubstring("DELETE"))
+			Expect(result).NotTo(ContainSubstring("DROP"))
+		})
+
+		It("contains exactly 1 GIF Output directive", func() {
+			Expect(countSubstring(result, "Output demos/vhs/features/user-registration/happy-path.gif")).To(Equal(1))
+		})
+
+		It("contains exactly 1 ASCII Output directive", func() {
+			Expect(countSubstring(result, "Output demos/vhs/features/user-registration/happy-path.ascii")).To(Equal(1))
+		})
+	})
+
+	Describe("rendering with minimal data", func() {
+		var result string
+
+		BeforeEach(func() {
+			data := vhsgen.TapeData{
+				FeatureName:      "Minimal",
+				ScenarioName:     "Test",
+				GIFPath:          "out.gif",
+				ASCIIPath:        "out.ascii",
+				ConfigSourcePath: "config.tape",
+				SetupCommands:    "",
+				DemoCommands:     "",
+			}
+
+			var err error
+			result, err = vhsgen.RenderTape(data)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("contains the feature name", func() {
+			Expect(result).To(ContainSubstring("# Feature: Minimal"))
+		})
+
+		It("contains the scenario name", func() {
+			Expect(result).To(ContainSubstring("# Scenario: Test"))
+		})
+	})
+
+	Describe("rendering with special characters", func() {
+		It("renders without error and produces non-empty output", func() {
+			data := vhsgen.TapeData{
+				FeatureName:      "Feature with \"quotes\" and 'apostrophes'",
+				ScenarioName:     "Scenario with special chars: <>&",
+				GIFPath:          "path/with spaces/output.gif",
+				ASCIIPath:        "path/with spaces/output.ascii",
+				ConfigSourcePath: "config.tape",
+				SetupCommands:    `Type "echo 'hello world'"`,
+				DemoCommands:     `Type "curl http://example.com?foo=bar&baz=qux"`,
+			}
+
+			result, err := vhsgen.RenderTape(data)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result).NotTo(BeEmpty())
+		})
+	})
+})
+
+func countSubstring(s, substr string) int {
+	count := 0
+	idx := 0
+	for {
+		i := findSubstring(s[idx:], substr)
+		if i < 0 {
+			break
 		}
+		count++
+		idx += i + len(substr)
 	}
-
-	// Verify no cleanup commands are present
-	forbiddenCommands := []string{"rm -rf", "DELETE", "DROP"}
-	for _, cmd := range forbiddenCommands {
-		if strings.Contains(result, cmd) {
-			t.Errorf("Rendered output contains forbidden command: %q", cmd)
-		}
-	}
-
-	// Verify both Output directives are present
-	gifCount := strings.Count(result, "Output demos/vhs/features/user-registration/happy-path.gif")
-	asciiCount := strings.Count(result, "Output demos/vhs/features/user-registration/happy-path.ascii")
-	if gifCount != 1 {
-		t.Errorf("Expected 1 GIF Output directive, found %d", gifCount)
-	}
-	if asciiCount != 1 {
-		t.Errorf("Expected 1 ASCII Output directive, found %d", asciiCount)
-	}
+	return count
 }
 
-func TestRenderTapeMinimalData(t *testing.T) {
-	data := TapeData{
-		FeatureName:      "Minimal",
-		ScenarioName:     "Test",
-		GIFPath:          "out.gif",
-		ASCIIPath:        "out.ascii",
-		ConfigSourcePath: "config.tape",
-		SetupCommands:    "",
-		DemoCommands:     "",
+func findSubstring(s, substr string) int {
+	if substr == "" {
+		return 0
 	}
-
-	result, err := RenderTape(data)
-	if err != nil {
-		t.Fatalf("RenderTape with minimal data failed: %v", err)
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return i
+		}
 	}
-
-	if !strings.Contains(result, "# Feature: Minimal") {
-		t.Error("Expected feature name in output")
-	}
-	if !strings.Contains(result, "# Scenario: Test") {
-		t.Error("Expected scenario name in output")
-	}
-}
-
-func TestRenderTapeWithSpecialCharacters(t *testing.T) {
-	data := TapeData{
-		FeatureName:      "Feature with \"quotes\" and 'apostrophes'",
-		ScenarioName:     "Scenario with special chars: <>&",
-		GIFPath:          "path/with spaces/output.gif",
-		ASCIIPath:        "path/with spaces/output.ascii",
-		ConfigSourcePath: "config.tape",
-		SetupCommands:    `Type "echo 'hello world'"`,
-		DemoCommands:     `Type "curl http://example.com?foo=bar&baz=qux"`,
-	}
-
-	result, err := RenderTape(data)
-	if err != nil {
-		t.Fatalf("RenderTape with special characters failed: %v", err)
-	}
-
-	if result == "" {
-		t.Error("Expected non-empty result")
-	}
+	return -1
 }
