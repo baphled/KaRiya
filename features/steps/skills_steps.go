@@ -15,6 +15,7 @@ import (
 	skillsmanagement "github.com/baphled/kariya/internal/cli/intents/skillsmanagement"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/service/career/skillinference"
+	"github.com/baphled/kariya/internal/testutil/e2e"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
@@ -30,6 +31,48 @@ var pendingSkill pendingSkillForm
 
 func resetPendingSkill() {
 	pendingSkill = pendingSkillForm{}
+}
+
+func updateExistingSkill(env *e2e.TestEnv) error {
+	skills := env.GetSkills()
+	if len(skills) == 0 {
+		return errors.New("no existing skills to edit")
+	}
+	skill := skills[0]
+	if pendingSkill.name != "" {
+		skill.Name = pendingSkill.name
+	}
+	if pendingSkill.category != "" {
+		skill.Category = pendingSkill.category
+	}
+	if pendingSkill.level != "" {
+		skill.Level = pendingSkill.level
+	}
+	if pendingSkill.years != "" {
+		years, err := strconv.Atoi(pendingSkill.years)
+		if err != nil {
+			return fmt.Errorf("invalid years value: %w", err)
+		}
+		skill.YearsUsed = &years
+	}
+	_ = env.SubmitSkillUpdate(skill)
+	return nil
+}
+
+func createNewSkill() (*career.Skill, error) {
+	skill := &career.Skill{
+		Name:     pendingSkill.name,
+		Category: pendingSkill.category,
+		Level:    pendingSkill.level,
+	}
+	if pendingSkill.years != "" {
+		years, err := strconv.Atoi(pendingSkill.years)
+		if err != nil {
+			return nil, fmt.Errorf("invalid years value: %w", err)
+		}
+		skill.YearsUsed = &years
+	}
+	return skill, nil
 }
 
 // RegisterSkillsSteps registers skills management step definitions with Godog.
@@ -508,40 +551,13 @@ func iSubmitTheSkillForm(ctx context.Context) (context.Context, error) {
 	}
 
 	if pendingSkill.isEdit {
-		skills := env.GetSkills()
-		if len(skills) == 0 {
-			return ctx, fmt.Errorf("no existing skills to edit")
+		if err := updateExistingSkill(env); err != nil {
+			return ctx, err
 		}
-		skill := skills[0]
-		if pendingSkill.name != "" {
-			skill.Name = pendingSkill.name
-		}
-		if pendingSkill.category != "" {
-			skill.Category = pendingSkill.category
-		}
-		if pendingSkill.level != "" {
-			skill.Level = pendingSkill.level
-		}
-		if pendingSkill.years != "" {
-			years, err := strconv.Atoi(pendingSkill.years)
-			if err != nil {
-				return ctx, fmt.Errorf("invalid years value: %w", err)
-			}
-			skill.YearsUsed = &years
-		}
-		env.SubmitSkillUpdate(skill)
 	} else {
-		skill := &career.Skill{
-			Name:     pendingSkill.name,
-			Category: pendingSkill.category,
-			Level:    pendingSkill.level,
-		}
-		if pendingSkill.years != "" {
-			years, err := strconv.Atoi(pendingSkill.years)
-			if err != nil {
-				return ctx, fmt.Errorf("invalid years value: %w", err)
-			}
-			skill.YearsUsed = &years
+		skill, err := createNewSkill()
+		if err != nil {
+			return ctx, err
 		}
 		env.SubmitSkill(skill)
 	}
