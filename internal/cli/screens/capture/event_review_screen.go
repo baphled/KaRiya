@@ -14,6 +14,7 @@ import (
 	"github.com/baphled/kariya/internal/service/career/skillinference"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // EventReviewScreen displays captured event details with inferred bursts and facts.
@@ -73,6 +74,11 @@ type EventReviewScreen struct {
 	// viewport for scrollable content.
 	viewport viewport.Model
 }
+
+// maxContentWidth is the maximum width for scrollable content within the viewport.
+// Capping the content width and centring it within the viewport ensures spatial
+// consistency with other screens (e.g. FormScreen).
+const maxContentWidth = 80
 
 // NewEventReviewScreen creates a new EventReviewScreen.
 //
@@ -230,16 +236,15 @@ func (s *EventReviewScreen) SetSuggestedFacts(facts []*career.Fact) {
 //   - May return NavigateResult on e/b/f keys.
 //   - May return CancelResult on Escape.
 func (s *EventReviewScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
-	if cmd := s.HandleWindowSizeMsg(msg); cmd != nil {
-		if sizeMsg, ok := msg.(tea.WindowSizeMsg); ok {
-			const reservedLines = 11
-			height := sizeMsg.Height - reservedLines
-			if height < 1 {
-				height = 1
-			}
-			s.viewport.Width = sizeMsg.Width
-			s.viewport.Height = height
+	cmd := s.HandleWindowSizeMsg(msg)
+	if sizeMsg, ok := msg.(tea.WindowSizeMsg); ok {
+		const reservedLines = 11
+		height := sizeMsg.Height - reservedLines
+		if height < 1 {
+			height = 1
 		}
+		s.viewport.Width = sizeMsg.Width
+		s.viewport.Height = height
 		return cmd, nil
 	}
 
@@ -326,10 +331,27 @@ func (s *EventReviewScreen) handleRuneKey(keyMsg tea.KeyMsg) (tea.Cmd, screens.S
 //   - None.
 func (s *EventReviewScreen) View() string {
 	content := s.renderContent()
-	s.viewport.SetContent(content)
+	s.viewport.SetContent(s.centreContent(content))
 	footer := s.renderFooter()
 
 	return s.CreateView(s.breadcrumbs, s.viewport.View(), footer)
+}
+
+// centreContent constrains content to maxContentWidth (or viewport width when
+// narrower) and horizontally centres it within the full viewport width.
+func (s *EventReviewScreen) centreContent(content string) string {
+	contentWidth := maxContentWidth
+	if s.viewport.Width > 0 && s.viewport.Width < contentWidth {
+		contentWidth = s.viewport.Width
+	}
+	constrained := lipgloss.NewStyle().
+		Width(contentWidth).
+		MaxWidth(contentWidth).
+		Render(content)
+	if s.viewport.Width <= 0 {
+		return constrained
+	}
+	return lipgloss.PlaceHorizontal(s.viewport.Width, lipgloss.Center, constrained)
 }
 
 // renderContent renders the event details with bursts and facts

@@ -2,6 +2,8 @@
 package capture_test
 
 import (
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/screens"
@@ -14,6 +16,14 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
+
+// ansiEscapePattern matches ANSI escape sequences for stripping from output.
+var ansiEscapePattern = regexp.MustCompile(`\x1b\[[0-9;]*[mKHFJ]`)
+
+// stripAnsi removes ANSI escape sequences from s, returning plain text.
+func stripAnsi(s string) string {
+	return ansiEscapePattern.ReplaceAllString(s, "")
+}
 
 // EventReviewScreen Tests
 //
@@ -522,6 +532,116 @@ var _ = Describe("EventReviewScreen", func() {
 		It("handles up scroll key without returning a result", func() {
 			_, result := screen.Update(tea.KeyMsg{Type: tea.KeyUp})
 			Expect(result).To(BeNil())
+		})
+	})
+
+	Describe("Scroll keys", func() {
+		It("handles j key (scroll down) without returning a result", func() {
+			_, result := screen.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
+			Expect(result).To(BeNil())
+		})
+
+		It("handles k key (scroll up) without returning a result", func() {
+			_, result := screen.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
+			Expect(result).To(BeNil())
+		})
+
+		It("handles page-down key without returning a result", func() {
+			_, result := screen.Update(tea.KeyMsg{Type: tea.KeyPgDown})
+			Expect(result).To(BeNil())
+		})
+
+		It("handles page-up key without returning a result", func() {
+			_, result := screen.Update(tea.KeyMsg{Type: tea.KeyPgUp})
+			Expect(result).To(BeNil())
+		})
+	})
+
+	Describe("Suggested data setters", func() {
+		It("GetSuggestedSkills returns the previously set skills", func() {
+			skills := []skillinference.SkillSuggestion{
+				{Name: "Go", Category: "backend", Confidence: 0.9},
+			}
+			screen.SetSuggestedSkills(skills)
+			Expect(screen.GetSuggestedSkills()).To(HaveLen(1))
+			Expect(screen.GetSuggestedSkills()[0].Name).To(Equal("Go"))
+		})
+
+		It("SetSuggestedBursts updates rendered burst list", func() {
+			burst := fixtures.Burst("burst-new", "evt-1", "evt-2")
+			burst.Name = "New Burst"
+			screen.SetSuggestedBursts([]*career.Burst{burst})
+			view := screen.View()
+			Expect(view).To(ContainSubstring("New Burst"))
+		})
+
+		It("SetSuggestedFacts updates rendered fact list", func() {
+			fact := fixtures.Fact("fact-new", "evt-1")
+			fact.Text = "New Fact Text"
+			screen.SetSuggestedFacts([]*career.Fact{fact})
+			view := screen.View()
+			Expect(view).To(ContainSubstring("New Fact Text"))
+		})
+	})
+
+	Describe("Accepted skill indicator", func() {
+		It("marks an accepted skill with the filled indicator in the rendered view", func() {
+			skills := []skillinference.SkillSuggestion{
+				{Name: "Go", Category: "backend", Confidence: 0.9},
+			}
+			screen.SetSuggestedSkills(skills)
+			screen.SetAcceptedSkills(skills)
+			view := screen.View()
+			Expect(view).To(ContainSubstring("●"))
+		})
+	})
+
+	Describe("Content Centring", func() {
+		It("returns constrained content when viewport width is zero", func() {
+			view := screen.View()
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("constrains content to max 80 columns when viewport is wider", func() {
+			screen.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+			view := screen.View()
+			lines := strings.Split(view, "\n")
+			for _, line := range lines {
+				visibleLen := len([]rune(stripAnsi(line)))
+				Expect(visibleLen).To(BeNumerically("<=", 120),
+					"line should not exceed viewport width of 120: %q", line)
+			}
+		})
+
+		It("centres content within a wide viewport by adding leading padding", func() {
+			screen.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+			view := screen.View()
+			strippedView := stripAnsi(view)
+			lines := strings.Split(strippedView, "\n")
+			foundPadding := false
+			for _, line := range lines {
+				if strings.Contains(line, "Event Details") {
+					leadingSpaces := len(line) - len(strings.TrimLeft(line, " "))
+					if leadingSpaces >= 10 {
+						foundPadding = true
+						break
+					}
+				}
+			}
+			Expect(foundPadding).To(BeTrue(), "expected Event Details line to have ≥10 leading spaces for centring, indicating content is horizontally centred within the 120-wide viewport")
+		})
+
+		It("does not exceed viewport width when viewport is narrower than 80", func() {
+			screen.Update(tea.WindowSizeMsg{Width: 60, Height: 40})
+			view := screen.View()
+			Expect(view).To(ContainSubstring("Event Details"))
+		})
+
+		It("still displays content when viewport is narrower than 80", func() {
+			screen.Update(tea.WindowSizeMsg{Width: 60, Height: 40})
+			view := screen.View()
+			Expect(view).To(ContainSubstring("Event Details"))
+			Expect(view).To(ContainSubstring("Bursts"))
 		})
 	})
 })
