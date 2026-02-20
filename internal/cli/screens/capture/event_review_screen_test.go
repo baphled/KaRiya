@@ -219,16 +219,16 @@ var _ = Describe("EventReviewScreen", func() {
 			Expect(navResult.Data()).To(Equal("edit_metadata"))
 		})
 
-		It("should return NavigateResult for 'b' (edit bursts)", func() {
+		It("should return NavigateResult for 'b' (suggest bursts)", func() {
 			_, result := screen.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'b'}})
 			navResult := result.(*screens.NavigateResult)
-			Expect(navResult.Data()).To(Equal("edit_bursts"))
+			Expect(navResult.Data()).To(Equal("suggest_bursts"))
 		})
 
-		It("should return NavigateResult for 'f' (edit facts)", func() {
+		It("should return NavigateResult for 'f' (suggest facts)", func() {
 			_, result := screen.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
 			navResult := result.(*screens.NavigateResult)
-			Expect(navResult.Data()).To(Equal("edit_facts"))
+			Expect(navResult.Data()).To(Equal("suggest_facts"))
 		})
 	})
 
@@ -360,12 +360,12 @@ var _ = Describe("EventReviewScreen", func() {
 		})
 
 		Describe("Skill Navigation", func() {
-			It("should return NavigateResult for 's' (edit skills)", func() {
+			It("should return NavigateResult for 's' (suggest skills)", func() {
 				screen.SetSuggestedSkills(testSkills)
 				_, result := screen.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
 				Expect(result.Type()).To(Equal(screens.ResultNavigate))
 				navResult := result.(*screens.NavigateResult)
-				Expect(navResult.Data()).To(Equal("edit_skills"))
+				Expect(navResult.Data()).To(Equal("suggest_skills"))
 			})
 
 			It("should not show skills badge when no skills", func() {

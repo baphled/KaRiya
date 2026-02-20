@@ -29,8 +29,8 @@ func (i *Intent) handleScreenResult(result screens.ScreenResult) tea.Cmd {
 // HandleNavigate processes navigation results from screens.
 //
 // Expected:
-//   - result.Data() is either a string action ("edit_metadata", "edit_bursts",
-//     "edit_facts") or a CaptureStrategy value.
+//   - result.Data() is either a string action ("edit_metadata", "suggest_bursts",
+//     "suggest_facts") or a CaptureStrategy value.
 //
 // Returns:
 //   - A tea.Cmd to initialise the appropriate modal or screen.
@@ -63,7 +63,7 @@ func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 			)
 			return i.reviewState.metadataModal.Init()
 
-		case "edit_bursts":
+		case "suggest_bursts":
 			if i.context.CareerService == nil {
 				return i.setFailedCmd("NO_SERVICE", "Career service not available for burst editing", nil)
 			}
@@ -82,7 +82,7 @@ func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 			)
 			return i.reviewState.burstModal.Init()
 
-		case "edit_facts":
+		case "suggest_facts":
 			if i.context.CareerService == nil {
 				return i.setFailedCmd("NO_SERVICE", "Career service not available for fact editing", nil)
 			}
@@ -100,7 +100,7 @@ func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 			)
 			return i.reviewState.factModal.Init()
 
-		case "edit_skills":
+		case "suggest_skills":
 			i.reviewState.EditingMode = EditingModeSkills
 			i.reviewState.skillModal = modals.NewSkillSuggestionModal(
 				i.reviewState.InferredSkills,

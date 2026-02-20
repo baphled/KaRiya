@@ -37,7 +37,7 @@ var _ = Describe("Skill Inference in CaptureEvent", func() {
 		})
 
 		It("initialises the skill modal with inferred skills", func() {
-			result := &screens.NavigateResult{ResultData: "edit_skills"}
+			result := &screens.NavigateResult{ResultData: "suggest_skills"}
 			intent.HandleNavigate(result)
 
 			Expect(intent.reviewState.EditingMode).To(Equal(EditingModeSkills))
@@ -50,7 +50,7 @@ var _ = Describe("Skill Inference in CaptureEvent", func() {
 			})
 
 			It("opens the modal with an empty list", func() {
-				result := &screens.NavigateResult{ResultData: "edit_skills"}
+				result := &screens.NavigateResult{ResultData: "suggest_skills"}
 				intent.HandleNavigate(result)
 
 				Expect(intent.reviewState.EditingMode).To(Equal(EditingModeSkills))

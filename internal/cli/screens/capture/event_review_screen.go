@@ -193,17 +193,17 @@ func (s *EventReviewScreen) handleRuneKey(keyMsg tea.KeyMsg) (tea.Cmd, screens.S
 
 	case "b":
 		return nil, &screens.NavigateResult{
-			ResultData: "edit_bursts",
+			ResultData: "suggest_bursts",
 		}
 
 	case "f":
 		return nil, &screens.NavigateResult{
-			ResultData: "edit_facts",
+			ResultData: "suggest_facts",
 		}
 
 	case "s":
 		return nil, &screens.NavigateResult{
-			ResultData: "edit_skills",
+			ResultData: "suggest_skills",
 		}
 	}
 
