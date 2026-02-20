@@ -58,6 +58,8 @@ func RegisterCaptureSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^the event should have (\d+) categories$`, theEventShouldHaveNCategories)
 	sc.Step(`^I have an event "([^"]*)" at company "([^"]*)"$`, iHaveAnEventAtCompany)
 	sc.Step(`^I accept the suggested burst$`, iAcceptTheSuggestedBurst)
+	sc.Step(`^I reject the suggested burst$`, iRejectTheSuggestedBurst)
+	sc.Step(`^the accepted burst should have at least (\d+) event IDs$`, theAcceptedBurstShouldHaveAtLeastNEventIDs)
 	sc.Step(`^I accept all inferred skills$`, iAcceptAllInferredSkills)
 	sc.Step(`^I reject all suggestions$`, iRejectAllSuggestions)
 	sc.Step(`^I edit the suggested burst$`, iEditTheSuggestedBurst)
@@ -477,6 +479,26 @@ func iAcceptTheSuggestedBurst(ctx context.Context) (context.Context, error) {
 
 	env.Confirm()
 	return ctx, nil
+}
+
+func iRejectTheSuggestedBurst(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.Confirm()
+	return ctx, nil
+}
+
+func theAcceptedBurstShouldHaveAtLeastNEventIDs(ctx context.Context, minCount int) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	bursts := env.GetBursts()
+	gomega.Expect(bursts).NotTo(gomega.BeEmpty())
+	gomega.Expect(len(bursts[0].EventIDs)).To(gomega.BeNumerically(">=", minCount))
+	return nil
 }
 
 func createSuggestedBurstFromEvents(env *e2e.TestEnv) error {

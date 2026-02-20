@@ -100,7 +100,7 @@ Feature: Capture Career Events
   # Burst Inference Review
   # ============================================================================
 
-  @sad @wip
+  @sad
   Scenario: User can reject an inferred burst and it is not saved
     Given I have an event "Deployed Kubernetes cluster" at company "CloudCo"
     And I have an event "Set up CI/CD pipeline" at company "CloudCo"
@@ -116,7 +116,7 @@ Feature: Capture Career Events
     Then I should be on the main menu
     And there should be 0 bursts
 
-  @happy @enrichment @wip
+  @happy @enrichment
   Scenario: Accepted burst is persisted with correct event IDs
     Given I have an event "Migrated legacy APIs to GraphQL" at company "DataSystems"
     And I have an event "Introduced schema stitching layer" at company "DataSystems"
@@ -133,7 +133,7 @@ Feature: Capture Career Events
     And there should be 1 burst
     And the accepted burst should have at least 2 event IDs
 
-  @sad @wip
+  @sad
   Scenario: Rejecting all bursts results in no bursts saved
     Given I have an event "Integrated Stripe payments" at company "FinTechCo"
     And I have an event "Added subscription billing logic" at company "FinTechCo"
