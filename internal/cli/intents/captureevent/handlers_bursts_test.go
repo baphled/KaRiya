@@ -3,8 +3,12 @@ package captureevent
 import (
 	"context"
 
+	"github.com/baphled/kariya/internal/cli/intents"
+	"github.com/baphled/kariya/internal/cli/screens"
 	captureScreens "github.com/baphled/kariya/internal/cli/screens/capture"
 	"github.com/baphled/kariya/internal/domain/career"
+	memoryrepo "github.com/baphled/kariya/internal/repository/career/memory"
+	careerservice "github.com/baphled/kariya/internal/service/career"
 	burstfact "github.com/baphled/kariya/internal/service/career/burstfact"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
@@ -179,6 +183,110 @@ var _ = Describe("Burst Acceptance in CaptureEvent", func() {
 			Expect(intent.reviewState.AcceptedBursts).To(HaveLen(2))
 			Expect(intent.reviewState.AcceptedBursts[0].Name).To(Equal("Existing Burst"))
 			Expect(intent.reviewState.AcceptedBursts[1].Name).To(Equal("New Burst"))
+		})
+	})
+
+	Describe("burst persistence in postSaveReview", func() {
+		var (
+			svc       *careerservice.Service
+			burstRepo *memoryrepo.BurstRepository
+		)
+
+		BeforeEach(func() {
+			repos := memoryrepo.NewRepositories()
+			burstRepo = repos.Burst.(*memoryrepo.BurstRepository)
+
+			svc = careerservice.NewService(repos.Event)
+			svc.SetBurstRepository(burstRepo)
+			svc.SetSkillRepository(repos.Skill)
+			svc.SetFactRepository(repos.Fact)
+
+			intent.context.CareerService = svc
+		})
+
+		Context("with accepted bursts that exist in the repository", func() {
+			It("calls ConfirmBurst to mark them as confirmed", func() {
+				event := fixtures.EventWith("evt-saved-1", "Reviewed event with bursts", "", "")
+				burst := fixtures.Burst("burst-to-confirm", "evt-saved-1", "evt-other-1")
+
+				ctx := context.Background()
+				Expect(burstRepo.Create(ctx, burst)).To(Succeed())
+				Expect(burst.Confirmed).To(BeFalse())
+
+				intent.currentState = StateReview
+				intent.postSaveReview = true
+				intent.reviewState = &ReviewInferredEventState{
+					Event: event,
+				}
+
+				reviewData := map[string]interface{}{
+					"event":  event,
+					"bursts": []*career.Burst{burst},
+					"facts":  []*career.Fact{},
+				}
+				intent.HandleSubmit(&screens.SubmitResult{FormData: reviewData})
+
+				Expect(intent.result).NotTo(BeNil())
+				Expect(intent.result.Status).To(Equal(intents.Completed))
+
+				confirmed, err := burstRepo.GetByID(ctx, "burst-to-confirm")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(confirmed.Confirmed).To(BeTrue())
+				Expect(confirmed.ConfirmedAt).NotTo(BeNil())
+			})
+
+			It("preserves EventIDs through ConfirmBurst", func() {
+				event := fixtures.EventWith("evt-saved-2", "Reviewed event", "", "")
+				burst := fixtures.Burst("burst-preserve-ids", "evt-saved-2", "evt-other-2")
+
+				ctx := context.Background()
+				Expect(burstRepo.Create(ctx, burst)).To(Succeed())
+
+				intent.currentState = StateReview
+				intent.postSaveReview = true
+				intent.reviewState = &ReviewInferredEventState{
+					Event: event,
+				}
+
+				reviewData := map[string]interface{}{
+					"event":  event,
+					"bursts": []*career.Burst{burst},
+					"facts":  []*career.Fact{},
+				}
+				intent.HandleSubmit(&screens.SubmitResult{FormData: reviewData})
+
+				Expect(intent.result).NotTo(BeNil())
+				Expect(intent.result.Status).To(Equal(intents.Completed))
+
+				confirmed, err := burstRepo.GetByID(ctx, "burst-preserve-ids")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(confirmed.EventIDs).To(Equal([]string{"evt-saved-2", "evt-other-2"}))
+			})
+		})
+
+		Context("when CareerService is nil", func() {
+			It("completes without confirming bursts", func() {
+				event := fixtures.EventWith("evt-saved-3", "Reviewed event", "", "")
+				burst := fixtures.Burst("burst-no-svc", "evt-saved-3", "evt-other-3")
+
+				intent.context.CareerService = nil
+				intent.currentState = StateReview
+				intent.postSaveReview = true
+				intent.reviewState = &ReviewInferredEventState{
+					Event: event,
+				}
+
+				reviewData := map[string]interface{}{
+					"event":  event,
+					"bursts": []*career.Burst{burst},
+					"facts":  []*career.Fact{},
+				}
+				intent.HandleSubmit(&screens.SubmitResult{FormData: reviewData})
+
+				Expect(intent.result).NotTo(BeNil())
+				Expect(intent.result.Status).To(Equal(intents.Completed))
+				Expect(burst.Confirmed).To(BeFalse())
+			})
 		})
 	})
 })

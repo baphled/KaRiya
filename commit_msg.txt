@@ -1,12 +1,23 @@
-fix: refresh event detail modal after accepting inferred skills
+feat(intents): wire fact suggestion modal and burst acceptance handling
 
-When a user accepts skills from the skill suggestion modal in BrowseTimeline,
-the event detail modal now refreshes to display the newly linked skills.
+Integrate Tasks 6, 7, and 8 to complete the enrichment pipeline wiring:
 
-Changes:
-- Add refreshEventDetailModal() method to reload event skills and update the modal
-- Update updateSkillSuggestionModal() to call refreshEventDetailModal() alongside
-  refreshSkillsModal() when skills are accepted
-- Event detail modal now shows updated skill count after skill inference
+Task 6 - Fact suggestion modal:
+- Smart routing for suggest_facts action: creates modal when facts exist
+- EditingModeFacts handling in updateEditingModal for accept/reject flow
+- New handlers_facts_test.go with comprehensive test coverage
+- Updated handlers_test.go with integration tests
 
-This ensures the detail view reflects the latest state after skill operations.
+Task 7 - Burst acceptance handling:
+- EditingModeBursts handling in updateEditingModal
+- GetConfirmed and SetAcceptedBursts integration
+- New handlers_bursts_test.go with burst acceptance tests
+
+Task 8 - performSubmit burst detection:
+- ListEvents, SuggestBursts, SaveBurstSuggestions helpers
+- ExtractFactsFromBurst with fallback to ExtractFactsFromEvent
+- SubmitCompleteMsg populated with real InferredFacts/InferredBursts
+- New helpers_test.go tests for all burst detection paths
+
+All three tasks wire the complete enrichment pipeline from event capture
+through fact/burst suggestion and user acceptance.

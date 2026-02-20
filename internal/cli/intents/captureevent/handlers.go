@@ -252,6 +252,31 @@ func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
 					}
 				}
 
+				// Persist accepted facts that were reviewed after initial save.
+				if len(facts) > 0 && i.context.CareerService != nil {
+					ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+					defer cancel()
+					for _, fact := range facts {
+						if fact.ID == "" {
+							fact.SourceEventID = event.ID
+							if err := i.context.CareerService.SaveFact(ctx, fact); err != nil {
+								return i.setFailedCmd("FACT_SAVE_ERROR", fmt.Sprintf("Failed to save fact: %v", err), err)
+							}
+						}
+					}
+				}
+
+				// Confirm accepted bursts that were reviewed after initial save.
+				if len(bursts) > 0 && i.context.CareerService != nil {
+					ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+					defer cancel()
+					for _, burst := range bursts {
+						if err := i.context.CareerService.ConfirmBurst(ctx, burst); err != nil {
+							return i.setFailedCmd("BURST_CONFIRM_ERROR", fmt.Sprintf("Failed to confirm burst: %v", err), err)
+						}
+					}
+				}
+
 				i.result = &intents.IntentResult[*Result]{
 					Status: intents.Completed,
 					Data: &Result{
