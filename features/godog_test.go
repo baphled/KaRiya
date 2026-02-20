@@ -64,7 +64,4 @@ func InitializeScenario(sc *godog.ScenarioContext) {
 	steps.RegisterBurstsSteps(sc)
 	steps.RegisterFactsSteps(sc)
 	steps.RegisterCVSteps(sc)
-	steps.RegisterConfigureSteps(sc)
-	steps.RegisterNavigationSteps(sc)
-	steps.RegisterCLISteps(sc)
 }
