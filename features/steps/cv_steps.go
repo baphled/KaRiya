@@ -218,7 +218,7 @@ func iTabToAudienceField(ctx context.Context) (context.Context, error) {
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	env.TabWithFormProcessing()
+	env.Tab()
 	return ctx, nil
 }
 
@@ -241,9 +241,9 @@ func iCompleteStep1(ctx context.Context) (context.Context, error) {
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	env.PressEnterWithFormProcessing()
-	env.TabWithFormProcessing()
-	env.PressEnterWithFormProcessing()
+	env.Confirm()
+	env.Tab()
+	env.Confirm()
 	return ctx, nil
 }
 
@@ -255,7 +255,7 @@ func iSelectTechnologyFocus(ctx context.Context, _ string) (context.Context, err
 	// Navigate to focus option and confirm
 	// Different focuses: "Language Agnostic", "Generalist", "Specialist"
 	env.NavigateDown() // Move through options
-	env.PressEnterWithFormProcessing()
+	env.Confirm()
 	return ctx, nil
 }
 
@@ -335,7 +335,7 @@ func iSelectTechFocus(ctx context.Context) (context.Context, error) {
 		return ctx, godog.ErrPending
 	}
 	env.NavigateDown()
-	env.PressEnterWithFormProcessing()
+	env.Confirm()
 	return ctx, nil
 }
 
@@ -358,7 +358,7 @@ func iCompleteStep2(ctx context.Context) (context.Context, error) {
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	env.PressEnterWithFormProcessing()
+	env.Confirm()
 	return ctx, nil
 }
 
@@ -367,7 +367,7 @@ func iTabToSkillsLimit(ctx context.Context) (context.Context, error) {
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	env.TabWithFormProcessing()
+	env.Tab()
 	return ctx, nil
 }
 
@@ -395,7 +395,7 @@ func iTabToCVLength(ctx context.Context) (context.Context, error) {
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	env.TabWithFormProcessing()
+	env.Tab()
 	return ctx, nil
 }
 
@@ -707,7 +707,7 @@ func iTabToLocation(ctx context.Context) (context.Context, error) {
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	env.TabWithFormProcessing()
+	env.Tab()
 	return ctx, nil
 }
 
