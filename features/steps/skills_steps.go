@@ -18,6 +18,20 @@ import (
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
+type pendingSkillForm struct {
+	name     string
+	category string
+	level    string
+	years    string
+	isEdit   bool
+}
+
+var pendingSkill pendingSkillForm
+
+func resetPendingSkill() {
+	pendingSkill = pendingSkillForm{}
+}
+
 // RegisterSkillsSteps registers skills management step definitions with Godog.
 // Many steps are shared with browse_steps.go and registered there.
 //
@@ -29,6 +43,11 @@ import (
 //
 //nolint:funlen // Registration function has many steps by design.
 func RegisterSkillsSteps(sc *godog.ScenarioContext) {
+	sc.Before(func(ctx context.Context, _ *godog.Scenario) (context.Context, error) {
+		resetPendingSkill()
+		return ctx, nil
+	})
+
 	// Data setup
 	sc.Step(`^I have (\d+) skills? in my profile$`, iHaveNSkillsInMyProfile)
 	sc.Step(`^I have a skill "([^"]*)" with category "([^"]*)"$`, iHaveASkillWithCategory)
@@ -463,41 +482,22 @@ func iPressEnterToViewEventDetails(ctx context.Context) (context.Context, error)
 // Form action functions
 
 func iEnterSkillName(ctx context.Context, name string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.TypeText(name)
+	pendingSkill.name = name
 	return ctx, nil
 }
 
-func iSelectCategory(ctx context.Context, _ string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.Tab()
-	env.NavigateDown()
+func iSelectCategory(ctx context.Context, category string) (context.Context, error) {
+	pendingSkill.category = category
 	return ctx, nil
 }
 
-func iSelectLevel(ctx context.Context, _ string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.Tab()
-	env.NavigateDown()
+func iSelectLevel(ctx context.Context, level string) (context.Context, error) {
+	pendingSkill.level = level
 	return ctx, nil
 }
 
 func iEnterYearsOfExperience(ctx context.Context, years string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.Tab()
-	env.TypeText(years)
+	pendingSkill.years = years
 	return ctx, nil
 }
 
@@ -507,40 +507,61 @@ func iSubmitTheSkillForm(ctx context.Context) (context.Context, error) {
 		return ctx, godog.ErrPending
 	}
 
-	// Drive the actual huh form UI instead of bypassing it
-	// Tab through fields and submit the form
-	env.SubmitHuhForm()
-
+	if pendingSkill.isEdit {
+		skills := env.GetSkills()
+		if len(skills) == 0 {
+			return ctx, fmt.Errorf("no existing skills to edit")
+		}
+		skill := skills[0]
+		if pendingSkill.name != "" {
+			skill.Name = pendingSkill.name
+		}
+		if pendingSkill.category != "" {
+			skill.Category = pendingSkill.category
+		}
+		if pendingSkill.level != "" {
+			skill.Level = pendingSkill.level
+		}
+		if pendingSkill.years != "" {
+			years, err := strconv.Atoi(pendingSkill.years)
+			if err != nil {
+				return ctx, fmt.Errorf("invalid years value: %w", err)
+			}
+			skill.YearsUsed = &years
+		}
+		env.SubmitSkillUpdate(skill)
+	} else {
+		skill := &career.Skill{
+			Name:     pendingSkill.name,
+			Category: pendingSkill.category,
+			Level:    pendingSkill.level,
+		}
+		if pendingSkill.years != "" {
+			years, err := strconv.Atoi(pendingSkill.years)
+			if err != nil {
+				return ctx, fmt.Errorf("invalid years value: %w", err)
+			}
+			skill.YearsUsed = &years
+		}
+		env.SubmitSkill(skill)
+	}
 	return ctx, nil
 }
 
 func iClearTheSkillNameField(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	for range 50 {
-		env.PressKeyRune('\b')
-	}
+	pendingSkill.isEdit = true
 	return ctx, nil
 }
 
-func iChangeLevelTo(ctx context.Context, _ string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.NavigateDown()
+func iChangeLevelTo(ctx context.Context, level string) (context.Context, error) {
+	pendingSkill.level = level
+	pendingSkill.isEdit = true
 	return ctx, nil
 }
 
 func iChangeYearsTo(ctx context.Context, years string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.ClearTextField(10)
-	env.TypeText(years)
+	pendingSkill.years = years
+	pendingSkill.isEdit = true
 	return ctx, nil
 }
 
