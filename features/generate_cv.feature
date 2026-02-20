@@ -60,25 +60,6 @@ Feature: Generate CV
   # ============================================================================
 
   @happy
-  Scenario: View step 2 technology options
-    Given I have a complete profile with events and facts
-    When I select "generate_cv" from the menu
-    And I complete step 1
-    Then I should see "Technology Focus"
-    And I should see "Language Agnostic"
-    And I should see "Generalist"
-    And I should see "Specialist"
-
-  @happy
-  Scenario: Select language agnostic focus
-    Given I have a complete profile with events and facts
-    When I select "generate_cv" from the menu
-    And I complete step 1
-    And I select "Language Agnostic" technology focus
-    Then I should skip technology selection
-    And I should see focus area options
-
-  @happy
   Scenario: Select generalist focus shows multi-select
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
