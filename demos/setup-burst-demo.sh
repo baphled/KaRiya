@@ -69,9 +69,10 @@ scoring:
       max_bullets_per_company: 5
 EOF
 
-# Initialise DB schema manually (matches goose migration 001 + 002)
+# Initialise DB schema manually (matches all 6 goose migrations)
 DB_PATH="$FAKE_HOME/.kariya/events.db"
 sqlite3 "$DB_PATH" <<'SQLEOF'
+-- Migration 001: career_events table + indexes
 CREATE TABLE IF NOT EXISTS career_events (
     id TEXT PRIMARY KEY,
     text TEXT NOT NULL,
@@ -82,6 +83,42 @@ CREATE TABLE IF NOT EXISTS career_events (
     created_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL
 );
+CREATE INDEX IF NOT EXISTS idx_career_events_date ON career_events(date);
+CREATE INDEX IF NOT EXISTS idx_career_events_company ON career_events(company);
+
+-- Migration 002: categories column
+ALTER TABLE career_events ADD COLUMN categories TEXT;
+
+-- Migration 003: bursts table
+CREATE TABLE IF NOT EXISTS bursts (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT,
+    event_ids TEXT NOT NULL,
+    confirmed INTEGER NOT NULL DEFAULT 0,
+    confirmed_at DATETIME,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_bursts_confirmed ON bursts(confirmed);
+
+-- Migration 004: facts table
+CREATE TABLE IF NOT EXISTS facts (
+    id TEXT PRIMARY KEY,
+    text TEXT NOT NULL,
+    competencies TEXT NOT NULL,
+    role_fit TEXT NOT NULL,
+    audience_relevance TEXT NOT NULL,
+    strength_signal TEXT,
+    source_event_id TEXT,
+    source_burst_id TEXT,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_facts_source_event_id ON facts(source_event_id);
+CREATE INDEX IF NOT EXISTS idx_facts_source_burst_id ON facts(source_burst_id);
+
+-- Migration 005: skills table
 CREATE TABLE IF NOT EXISTS skills (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL UNIQUE,
@@ -92,6 +129,10 @@ CREATE TABLE IF NOT EXISTS skills (
     created_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL
 );
+CREATE INDEX IF NOT EXISTS idx_skills_category ON skills(category);
+CREATE INDEX IF NOT EXISTS idx_skills_name ON skills(name);
+
+-- Migration 006: event_skills junction table
 CREATE TABLE IF NOT EXISTS event_skills (
     event_id TEXT NOT NULL,
     skill_id TEXT NOT NULL,
@@ -99,12 +140,29 @@ CREATE TABLE IF NOT EXISTS event_skills (
     FOREIGN KEY (event_id) REFERENCES career_events(id) ON DELETE CASCADE,
     FOREIGN KEY (skill_id) REFERENCES skills(id) ON DELETE CASCADE
 );
+CREATE INDEX IF NOT EXISTS idx_event_skills_event ON event_skills(event_id);
+CREATE INDEX IF NOT EXISTS idx_event_skills_skill ON event_skills(skill_id);
 
--- Seed two events so SuggestBursts has enough data (requires ≥2 events)
-INSERT INTO career_events (id, text, date, created_at, updated_at) VALUES
-  ('evt_01', 'Built microservices in Go, reducing deployment time by 30%', '2024-01-15 10:00:00', '2024-01-15 10:00:00', '2024-01-15 10:00:00'),
-  ('evt_02', 'Deployed production services with Docker and Kubernetes', '2024-02-10 10:00:00', '2024-02-10 10:00:00', '2024-02-10 10:00:00');
+-- goose version table so app startup skips re-running migrations
+CREATE TABLE IF NOT EXISTS goose_db_version (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    version_id INTEGER NOT NULL,
+    is_applied INTEGER NOT NULL,
+    tstamp TIMESTAMP DEFAULT (datetime('now'))
+);
+INSERT INTO goose_db_version (version_id, is_applied) VALUES (0, 1);
+INSERT INTO goose_db_version (version_id, is_applied) VALUES (1, 1);
+INSERT INTO goose_db_version (version_id, is_applied) VALUES (2, 1);
+INSERT INTO goose_db_version (version_id, is_applied) VALUES (3, 1);
+INSERT INTO goose_db_version (version_id, is_applied) VALUES (4, 1);
+INSERT INTO goose_db_version (version_id, is_applied) VALUES (5, 1);
+INSERT INTO goose_db_version (version_id, is_applied) VALUES (6, 1);
+
+-- Seed two events with company='TechCo' so SuggestBursts can group them
+INSERT INTO career_events (id, text, date, company, created_at, updated_at) VALUES
+  ('evt_01', 'Built microservices in Go, reducing deployment time by 30%', '2024-01-15 10:00:00', 'TechCo', '2024-01-15 10:00:00', '2024-01-15 10:00:00'),
+  ('evt_02', 'Deployed production services with Docker and Kubernetes', '2024-02-10 10:00:00', 'TechCo', '2024-02-10 10:00:00', '2024-02-10 10:00:00');
 SQLEOF
 
 echo "Burst demo environment setup complete at $FAKE_HOME"
-echo "Seeded 2 events for burst inference"
+echo "Seeded 2 events for burst inference (company: TechCo)"
