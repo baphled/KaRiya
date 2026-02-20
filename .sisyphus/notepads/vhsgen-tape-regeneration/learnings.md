@@ -108,3 +108,39 @@ GATE DECISION: **PROCEED**
 - App frames start at frame 2 (after 3s sleep showing TUI)
 - Box-drawing chars (█ ╗ ─) are valid UTF-8, not ANSI escape sequences
 - No ANSI color codes in .ascii output — pure text layout preserved
+
+## [2026-02-20] Task 15: validator.go — Text Comparison + Regression Reporting
+
+### Files Created
+- `internal/vhsgen/validator.go` — ValidationStatus/Result types, ValidateScenario, ValidateAll
+- `internal/vhsgen/validator_test.go` — 37 Ginkgo/Gomega BDD specs
+
+### Key Implementation Decisions
+
+1. **Placeholder GIF pattern** — `SaveBaseline` requires a GIF path; validator creates an empty placeholder in `{goldenDir}/.placeholders/` when saving a NEW baseline. This avoids modifying the `golden.go` API.
+
+2. **ANSI stripping regex** — `\x1b\[[0-9;]*[mGKHFJK]` (with J and K added per task spec)
+
+3. **Normalisation** — ANSI strip → trim trailing spaces/tabs per line → join with `\n`. Line endings normalised implicitly.
+
+4. **ValidateAll scenario derivation** — strips `outputDir` prefix via `filepath.Rel`, strips `.ascii` suffix, replaces separators with `-`, then slugifies. Falls back to full path if Rel fails.
+
+5. **Diff implementation** — LCS-based (O(n²)) with unified diff output. Hunks split when >6 consecutive unchanged lines separate changed regions (2×diffContextLines). No external dependencies.
+
+6. **Error handling** — ValidateAll never returns top-level error for individual file failures; stores error as FAIL result with Diff=error.Error(). Only directory scan errors propagate.
+
+### Coverage Achievements
+- Overall package: 97.9% (up from 97.0%)
+- validator.go per-file: 98.7%
+- All 341 specs passing (was 304 before)
+
+### Test Coverage Tricks
+- `os.Chmod(file, 0o000)` to simulate unreadable golden baseline
+- `os.Chmod(dir, 0o555)` to block placeholder GIF creation
+- Content without trailing newline (`"shared line\nextra one"`) to exercise `for ci < n` loop in `computeLineDiffs`
+- `os.Chmod(asciiPath, 0o000)` after initial ValidateAll run to trigger ValidateScenario error path in ValidateAll loop
+
+### Gotchas
+- `strings.Split("content\n", "\n")` always produces a trailing `""` which acts as a common LCS anchor, preventing `for ci < n` from running in most test cases. Use content WITHOUT trailing newlines for that path.
+- `filepath.Rel` on Linux never errors for absolute paths — removed the error check dead code.
+- The original `writeDiffHunks` had dead code (`end-i > diffContextLines` where diffContextLines=3 always gives 3>3=false). Rewrote to use `consecutiveContext > 2*diffContextLines` to properly split hunks.

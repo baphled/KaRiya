@@ -1,0 +1,340 @@
+>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+────────────────────────────────────────────────────────────────────────────────
+>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+────────────────────────────────────────────────────────────────────────────────
+
+
+                                         ██╗  ██╗ █████╗ ██████╗ ██╗██╗   ██╗ █████╗
+                                         ██║ ██╔╝██╔══██╗██╔══██╗██║╚██╗ ██╔╝██╔══██╗
+                                         █████╔╝ ███████║██████╔╝██║ ╚████╔╝ ███████║
+                                         ██╔═██╗ ██╔══██║██╔══██╗██║  ╚██╔╝  ██╔══██║
+                                         ██║  ██╗██║  ██║██║  ██║██║   ██║   ██║  ██║
+                                         ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝   ╚═╝   ╚═╝  ╚═╝
+
+                                                Career Event Management System
+                                                            v1.0.0
+
+
+                        Action                     Description
+                        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                        ▶ Capture Event          Record a new career event
+                          Browse Timeline          View your career events
+                          Manage Skills            Manage your skills
+                          Generate CV              Create a new CV
+                          Configure System         Manage settings
+                          Manage Bursts            Organize career bursts
+                          Manage Facts             Review extracted facts
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                        ↑/k Up  ↓/j Down  Enter Select  ? Help  q Quit
+────────────────────────────────────────────────────────────────────────────────
+
+
+                                         ██╗  ██╗ █████╗ ██████╗ ██╗██╗   ██╗ █████╗
+                                         ██║ ██╔╝██╔══██╗██╔══██╗██║╚██╗ ██╔╝██╔══██╗
+                                         █████╔╝ ███████║██████╔╝██║ ╚████╔╝ ███████║
+                                         ██╔═██╗ ██╔══██║██╔══██╗██║  ╚██╔╝  ██╔══██║
+                                         ██║  ██╗██║  ██║██║  ██║██║   ██║   ██║  ██║
+                                         ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝   ╚═╝   ╚═╝  ╚═╝
+
+                                                Career Event Management System
+                                                            v1.0.0
+
+
+                        Action                     Description
+                        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                          Capture Event            Record a new career event
+                        ▶ Browse Timeline        View your career events
+                          Manage Skills            Manage your skills
+                          Generate CV              Create a new CV
+                          Configure System         Manage settings
+                          Manage Bursts            Organize career bursts
+                          Manage Facts             Review extracted facts
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                        ↑/k Up  ↓/j Down  Enter Select  ? Help  q Quit
+────────────────────────────────────────────────────────────────────────────────
+
+
+                                         ██╗  ██╗ █████╗ ██████╗ ██╗██╗   ██╗ █████╗
+                                         ██║ ██╔╝██╔══██╗██╔══██╗██║╚██╗ ██╔╝██╔══██╗
+                                         █████╔╝ ███████║██████╔╝██║ ╚████╔╝ ███████║
+                                         ██╔═██╗ ██╔══██║██╔══██╗██║  ╚██╔╝  ██╔══██║
+                                         ██║  ██╗██║  ██║██║  ██║██║   ██║   ██║  ██║
+                                         ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝   ╚═╝   ╚═╝  ╚═╝
+
+                                                Career Event Management System
+                                                            v1.0.0
+
+
+                        Action                     Description
+                        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                          Capture Event            Record a new career event
+                          Browse Timeline          View your career events
+                        ▶ Manage Skills          Manage your skills
+                          Generate CV              Create a new CV
+                          Configure System         Manage settings
+                          Manage Bursts            Organize career bursts
+                          Manage Facts             Review extracted facts
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                        ↑/k Up  ↓/j Down  Enter Select  ? Help  q Quit
+────────────────────────────────────────────────────────────────────────────────
+
+
+                                         ██╗  ██╗ █████╗ ██████╗ ██╗██╗   ██╗ █████╗
+                                         ██║ ██╔╝██╔══██╗██╔══██╗██║╚██╗ ██╔╝██╔══██╗
+                                         █████╔╝ ███████║██████╔╝██║ ╚████╔╝ ███████║
+                                         ██╔═██╗ ██╔══██║██╔══██╗██║  ╚██╔╝  ██╔══██║
+                                         ██║  ██╗██║  ██║██║  ██║██║   ██║   ██║  ██║
+                                         ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝   ╚═╝   ╚═╝  ╚═╝
+
+                                                Career Event Management System
+                                                            v1.0.0
+
+                                                            Skills
+
+
+
+
+
+
+
+
+
+
+                                     No skills found. Press 'a' to add your first skill.
+
+                                     Skills: 0
+
+
+
+
+
+
+
+
+
+
+
+             ────────────────────────────────────────────────────────────────────────────────────────────────────
+                      ↑↓/jk  Navigate   Enter  Select   i  Infer Skills   /  Search   Esc  Back   q  Quit
+────────────────────────────────────────────────────────────────────────────────
+
+
+                                         ██╗  ██╗ █████╗ ██████╗ ██╗██╗   ██╗ █████╗
+                                         ██║ ██╔╝██╔══██╗██╔══██╗██║╚██╗ ██╔╝██╔══██╗
+                                         █████╔╝ ███████║██████╔╝██║ ╚████╔╝ ███████║
+                                         ██╔═██╗ ██╔══██║██╔══██╗██║  ╚██╔╝  ██╔══██║
+                                         ██║  ██╗██║  ██║██║  ██║██║   ██║   ██║  ██║
+                                         ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝   ╚═╝   ╚═╝  ╚═╝
+
+                                                Career Event Management System
+                                                            v1.0.0
+
+                                                            Skills
+
+
+
+
+
+
+
+
+
+
+                                     No skills found. Press 'a' to add your first skill.
+
+                                     Skills: 0
+
+
+
+
+
+
+
+
+
+
+
+             ────────────────────────────────────────────────────────────────────────────────────────────────────
+                      ↑↓/jk  Navigate   Enter  Select   i  Infer Skills   /  Search   Esc  Back   q  Quit
+────────────────────────────────────────────────────────────────────────────────
+> ./kariya --db /tmp/kariya-spike.db
+2026/02/20 14:25:18 goose: no migrations to run. current version: 6
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+────────────────────────────────────────────────────────────────────────────────
