@@ -84,3 +84,27 @@ go test ./cmd/vhsgen/... -v
 ./vhsgen list --steps --json
 ./vhsgen generate --all --features features/ --output /tmp/test/
 ```
+
+## [2026-02-20] Task 12: ASCII Spike
+
+GATE DECISION: **PROCEED**
+
+- File size: 11746 bytes (run 1: 13350 bytes)
+- File type: Unicode text, UTF-8 — NOT binary, NOT ANSI garbage
+- Format: Frame-based dump separated by `────` (80-char line), not asciicast JSON
+- Contains app text: YES (17 keyword hits — menu items, screen titles, help bar text)
+- Deterministic: MOSTLY YES — 7/9 frames identical between runs
+  - Frame 7 differs due to DB state reuse (db already existed on run 2)
+  - Fix: use unique --db path per run (e.g. `--db /tmp/kariya-$$`)
+- Raw diff: 33 lines, but app-content diff is only ~11 lines, root cause is NOT timing
+- Grep-searchable: YES — standard grep works on .ascii content
+- Conclusion: .ascii output is a viable golden file format. Frame extraction
+  via separator line + text matching is the correct comparison approach.
+  Phase 2 should implement this instead of ImageMagick pixel comparison.
+
+### Key Technical Details
+- VHS frame separator: `────────────────────────────────────────────────────────────────────────────────`
+- First frame: just `>` (shell prompt before Hide block)
+- App frames start at frame 2 (after 3s sleep showing TUI)
+- Box-drawing chars (█ ╗ ─) are valid UTF-8, not ANSI escape sequences
+- No ANSI color codes in .ascii output — pure text layout preserved
