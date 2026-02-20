@@ -38,6 +38,13 @@ var _ = Describe("Messages", func() {
 		})
 	})
 
+	Describe("InferenceCompleteMsg", func() {
+		It("should be constructible as a zero-value struct", func() {
+			msg := ce.InferenceCompleteMsg{}
+			Expect(msg).To(Equal(ce.InferenceCompleteMsg{}))
+		})
+	})
+
 	Describe("DismissModalMsg", func() {
 		It("should be constructible as a zero-value struct", func() {
 			msg := ce.DismissModalMsg{}
@@ -51,8 +58,8 @@ var _ = Describe("Messages", func() {
 			msgs = append(msgs, ce.SubmitCompleteMsg{})
 			msgs = append(msgs, ce.SubmitErrorMsg{})
 			msgs = append(msgs, ce.DismissModalMsg{})
+			msgs = append(msgs, ce.InferenceCompleteMsg{})
 
-			// Each type should match only its own type assertion.
 			_, isComplete := msgs[0].(ce.SubmitCompleteMsg)
 			_, isError := msgs[0].(ce.SubmitErrorMsg)
 			Expect(isComplete).To(BeTrue())
@@ -62,6 +69,11 @@ var _ = Describe("Messages", func() {
 			_, isError2 := msgs[1].(ce.SubmitErrorMsg)
 			Expect(isComplete2).To(BeFalse())
 			Expect(isError2).To(BeTrue())
+
+			_, isInference := msgs[3].(ce.InferenceCompleteMsg)
+			_, isSubmit := msgs[3].(ce.SubmitCompleteMsg)
+			Expect(isInference).To(BeTrue())
+			Expect(isSubmit).To(BeFalse())
 		})
 	})
 })

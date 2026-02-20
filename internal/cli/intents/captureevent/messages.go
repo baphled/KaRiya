@@ -7,7 +7,13 @@ import (
 )
 
 // SubmitCompleteMsg is sent when event persistence succeeds.
-type SubmitCompleteMsg struct {
+// Inference results arrive separately via InferenceCompleteMsg.
+type SubmitCompleteMsg struct{}
+
+// InferenceCompleteMsg is sent when background LLM inference completes.
+// This is decoupled from the save path so that event persistence returns
+// promptly without waiting for potentially slow LLM calls.
+type InferenceCompleteMsg struct {
 	InferredBursts []*career.Burst
 	InferredFacts  []*career.Fact
 	InferredSkills []skillinference.SkillSuggestion
@@ -49,6 +55,23 @@ type ConfirmBurstMsg struct {
 // RejectBurstSuggestionMsg is sent when user rejects a burst suggestion.
 type RejectBurstSuggestionMsg struct {
 	Suggestion burstfact.BurstSuggestion
+}
+
+// PostSavePersistenceCompleteMsg is sent when post-save review persistence
+// (skills, facts, bursts) completes successfully. This replaces the inline
+// persistence in HandleSubmit so that the UI thread is not blocked.
+type PostSavePersistenceCompleteMsg struct {
+	Event  *career.Event
+	Bursts []*career.Burst
+	Facts  []*career.Fact
+	Skills []*career.Skill
+}
+
+// PostSavePersistenceErrorMsg is sent when post-save review persistence fails.
+type PostSavePersistenceErrorMsg struct {
+	Code    string
+	Message string
+	Cause   error
 }
 
 // BurstProcessingCompleteMsg is sent when burst suggestion workflow is done.
