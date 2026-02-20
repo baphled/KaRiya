@@ -23,13 +23,13 @@ Output demos/vhs/features/YOUR-FEATURE/edge-cases.mp4
 
 # Setup (hidden)
 Hide
-Type `rm -rf /tmp/kariya-demo && mkdir -p /tmp/kariya-demo`
+Type `mkdir -p /tmp/kariya-demo`
 Enter
 Sleep 300ms
 Type `cp demos/vhs/minimal-config.yaml /tmp/kariya-demo/config.yaml`
 Enter
 Sleep 300ms
-Type "cd /home/baphled/Projects/KoRiya"
+Type "cd /home/baphled/Projects/KaRiya"
 Enter
 Sleep 300ms
 Show

@@ -9,13 +9,13 @@ Source demos/vhs/config.tape
 
 # Setup environment (hidden)
 Hide
-Type `rm -rf /tmp/kariya-golden && mkdir -p /tmp/kariya-golden`
+Type `mkdir -p /tmp/kariya-golden`
 Enter
 Sleep 300ms
 Type `cp demos/vhs/minimal-config.yaml /tmp/kariya-golden/config.yaml`
 Enter
 Sleep 300ms
-Type "cd /home/baphled/Projects/KoRiya"
+Type "cd /home/baphled/Projects/KaRiya"
 Enter
 Sleep 300ms
 # Import events silently

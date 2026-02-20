@@ -34,7 +34,7 @@ clean-coverage:
 # Build the application
 build:
 	@echo "Building KaRiya..."
-	@go build -o kariya ./cmd/cli
+	@go build -o ./bin/kariya ./cmd/cli
 
 # Format code
 fmt:
