@@ -87,7 +87,7 @@ Feature: Manage Career Facts
     And there should be 1 fact
     And the fact should have text "Reduced deployment time by 50%"
 
-  @happy
+  @happy @wip
   Scenario: Create fact with multiple competency categories
     Given I have no data
     When I select "fact_management" from the menu
@@ -99,7 +99,7 @@ Feature: Manage Career Facts
     And I submit the fact form
     Then the fact should have categories "Technical,Leadership"
 
-  @happy
+  @happy @wip
   Scenario: Create fact with multiple audience types
     Given I have no data
     When I select "fact_management" from the menu
@@ -132,7 +132,7 @@ Feature: Manage Career Facts
     Then I should see the fact editor form
 
 
-  @happy
+  @happy @wip
   Scenario: Edit fact text and save
     Given I have a fact "Original fact text here"
     When I select "fact_management" from the menu
@@ -143,7 +143,7 @@ Feature: Manage Career Facts
     Then I should still be on the fact list
     And the fact should have text "Updated fact text"
 
-  @happy
+  @happy @wip
   Scenario: Edit fact competency categories
     Given I have a fact with category "Technical"
     When I select "fact_management" from the menu

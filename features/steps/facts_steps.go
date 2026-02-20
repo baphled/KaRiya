@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 
@@ -361,8 +362,11 @@ func theFactShouldHaveCategories(ctx context.Context, categories string) error {
 	if env == nil {
 		return godog.ErrPending
 	}
-	view := env.GetView()
-	gomega.Expect(view).To(gomega.ContainSubstring(categories), fmt.Sprintf("should display category '%s' in view", categories))
+	facts := env.GetFacts()
+	gomega.Expect(facts).NotTo(gomega.BeEmpty(), "expected at least one fact in database")
+	fact := facts[len(facts)-1]
+	expected := strings.Split(categories, ",")
+	gomega.Expect(fact.CompetencyCategories).To(gomega.ConsistOf(expected), fmt.Sprintf("fact should have categories %v", expected))
 	return nil
 }
 
