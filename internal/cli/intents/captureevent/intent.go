@@ -253,6 +253,12 @@ func (i *Intent) View() string {
 			return behaviors.RenderModalOverlay(modal, baseView)
 		}
 
+		if i.reviewState.EditingMode == EditingModeFacts && i.reviewState.factSuggestionModal != nil {
+			rendered := i.reviewState.factSuggestionModal.View()
+			modal := &behaviors.StaticViewModel{Content: rendered}
+			return behaviors.RenderModalOverlay(modal, baseView)
+		}
+
 		modalContent := i.getEditingModalContent()
 		if modalContent != nil {
 			return i.renderModalOverlay(baseView, modalContent)
