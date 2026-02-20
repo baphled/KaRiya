@@ -60,6 +60,19 @@ var _ = Describe("Skill Inference in CaptureEvent", func() {
 				Expect(intent.reviewState.EditingMode).To(Equal(EditingModeSkills))
 				Expect(intent.reviewState.skillModal).NotTo(BeNil())
 			})
+
+			It("auto-closes the modal on the first update when no suggestions exist", func() {
+				result := &screens.NavigateResult{ResultData: "suggest_skills"}
+				intent.HandleNavigate(result)
+
+				Expect(intent.reviewState.EditingMode).To(Equal(EditingModeSkills))
+				Expect(intent.reviewState.skillModal).NotTo(BeNil())
+
+				intent.updateEditingModal(tea.KeyMsg{Type: tea.KeyDown})
+
+				Expect(intent.reviewState.skillModal).To(BeNil())
+				Expect(intent.reviewState.EditingMode).To(Equal(EditingModeNone))
+			})
 		})
 	})
 
@@ -197,28 +210,28 @@ var _ = Describe("Skill Inference in CaptureEvent", func() {
 			}
 		})
 
-		It("stores inferred skills from SubmitCompleteMsg in review state", func() {
+		It("stores inferred skills from InferenceCompleteMsg in review state", func() {
 			expectedSkills := []skillinference.SkillSuggestion{
 				{Name: "Go", Category: "backend", Confidence: 0.95},
 			}
-			intent.Update(SubmitCompleteMsg{InferredSkills: expectedSkills})
+			intent.Update(InferenceCompleteMsg{InferredSkills: expectedSkills})
 
 			Expect(intent.reviewState.InferredSkills).To(Equal(expectedSkills))
 		})
 
-		It("handles empty inferred skills in SubmitCompleteMsg", func() {
-			intent.Update(SubmitCompleteMsg{})
+		It("handles empty inferred skills in InferenceCompleteMsg", func() {
+			intent.Update(InferenceCompleteMsg{})
 
 			Expect(intent.reviewState.InferredSkills).To(BeNil())
 		})
 
-		It("stores multiple inferred skills from SubmitCompleteMsg", func() {
+		It("stores multiple inferred skills from InferenceCompleteMsg", func() {
 			multipleSkills := []skillinference.SkillSuggestion{
 				{Name: "Go", Category: "backend", Confidence: 0.95},
 				{Name: "Docker", Category: "devops", Confidence: 0.88},
 				{Name: "PostgreSQL", Category: "database", Confidence: 0.72},
 			}
-			intent.Update(SubmitCompleteMsg{InferredSkills: multipleSkills})
+			intent.Update(InferenceCompleteMsg{InferredSkills: multipleSkills})
 
 			Expect(intent.reviewState.InferredSkills).To(HaveLen(3))
 			Expect(intent.reviewState.InferredSkills[0].Name).To(Equal("Go"))
@@ -307,7 +320,7 @@ var _ = Describe("Skill Inference in CaptureEvent", func() {
 				{Name: "Go", Category: "backend", Confidence: 0.95},
 				{Name: "Docker", Category: "devops", Confidence: 0.88},
 			}
-			intent.Update(SubmitCompleteMsg{InferredSkills: inferredSkills})
+			intent.Update(InferenceCompleteMsg{InferredSkills: inferredSkills})
 
 			Expect(intent.reviewState.InferredSkills).To(HaveLen(2))
 
@@ -344,7 +357,10 @@ var _ = Describe("Skill Inference in CaptureEvent", func() {
 					fixtures.SkillWith("s-2", "Docker", "devops", "intermediate"),
 				},
 			}
-			intent.HandleSubmit(&screens.SubmitResult{FormData: reviewData})
+			cmd := intent.HandleSubmit(&screens.SubmitResult{FormData: reviewData})
+			Expect(cmd).NotTo(BeNil())
+			msg := cmd()
+			intent.Update(msg)
 
 			Expect(intent.result).NotTo(BeNil())
 			Expect(intent.result.Data.Skills).To(HaveLen(2))
@@ -396,7 +412,9 @@ var _ = Describe("Skill Inference in CaptureEvent", func() {
 				},
 			}
 			cmd := intent.HandleSubmit(&screens.SubmitResult{FormData: reviewData})
-			Expect(cmd).To(BeNil())
+			Expect(cmd).NotTo(BeNil())
+			msg := cmd()
+			intent.Update(msg)
 
 			Expect(intent.result).NotTo(BeNil())
 			Expect(intent.result.Data.Skills).To(HaveLen(2))
@@ -428,7 +446,9 @@ var _ = Describe("Skill Inference in CaptureEvent", func() {
 				"skills": []skillinference.SkillSuggestion{},
 			}
 			cmd := intent.HandleSubmit(&screens.SubmitResult{FormData: reviewData})
-			Expect(cmd).To(BeNil())
+			Expect(cmd).NotTo(BeNil())
+			msg := cmd()
+			intent.Update(msg)
 
 			Expect(intent.result).NotTo(BeNil())
 			Expect(intent.result.Data.Skills).To(BeEmpty())
@@ -467,7 +487,9 @@ var _ = Describe("Skill Inference in CaptureEvent", func() {
 			Expect(ok).To(BeTrue())
 
 			cmd := intent.HandleSubmit(submitResult)
-			Expect(cmd).To(BeNil())
+			Expect(cmd).NotTo(BeNil())
+			msg := cmd()
+			intent.Update(msg)
 
 			Expect(intent.result).NotTo(BeNil())
 			Expect(intent.result.Data.Skills).To(HaveLen(1))

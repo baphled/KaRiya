@@ -64,11 +64,12 @@ var _ = Describe("Handlers", func() {
 				Expect(intent.Result().Status).To(Equal(intents.Failed))
 			})
 
-			It("should return nil for suggest_facts when no inferred facts exist", func() {
+			It("should open modal for suggest_facts even when no inferred facts exist", func() {
 				result := &screens.NavigateResult{ResultData: "suggest_facts"}
-				cmd := intent.HandleNavigate(result)
-				Expect(cmd).To(BeNil())
+				intent.HandleNavigate(result)
 				Expect(intent.IsActive()).To(BeTrue())
+				Expect(intent.GetReviewState().EditingMode).To(Equal(ce.EditingModeFacts))
+				Expect(intent.GetReviewState().GetFactSuggestionModal()).NotTo(BeNil())
 			})
 
 			It("should fail on unknown action", func() {

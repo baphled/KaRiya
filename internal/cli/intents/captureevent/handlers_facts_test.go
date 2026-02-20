@@ -69,13 +69,12 @@ var _ = Describe("Fact Suggestion in CaptureEvent", func() {
 				intent.reviewState.InferredFacts = []*career.Fact{}
 			})
 
-			It("returns early without creating a modal", func() {
+			It("opens modal with empty fact list", func() {
 				result := &screens.NavigateResult{ResultData: "suggest_facts"}
-				cmd := intent.HandleNavigate(result)
+				intent.HandleNavigate(result)
 
-				Expect(cmd).To(BeNil())
-				Expect(intent.reviewState.factSuggestionModal).To(BeNil())
-				Expect(intent.reviewState.EditingMode).To(Equal(EditingModeNone))
+				Expect(intent.reviewState.factSuggestionModal).NotTo(BeNil())
+				Expect(intent.reviewState.EditingMode).To(Equal(EditingModeFacts))
 			})
 
 			It("keeps intent active", func() {
@@ -91,12 +90,12 @@ var _ = Describe("Fact Suggestion in CaptureEvent", func() {
 				intent.reviewState.InferredFacts = nil
 			})
 
-			It("returns early without creating a modal", func() {
+			It("opens modal with empty fact list", func() {
 				result := &screens.NavigateResult{ResultData: "suggest_facts"}
-				cmd := intent.HandleNavigate(result)
+				intent.HandleNavigate(result)
 
-				Expect(cmd).To(BeNil())
-				Expect(intent.reviewState.factSuggestionModal).To(BeNil())
+				Expect(intent.reviewState.factSuggestionModal).NotTo(BeNil())
+				Expect(intent.reviewState.EditingMode).To(Equal(EditingModeFacts))
 			})
 		})
 	})
@@ -181,6 +180,30 @@ var _ = Describe("Fact Suggestion in CaptureEvent", func() {
 		})
 	})
 
+	Describe("fact modal auto-close with no suggestions", func() {
+		BeforeEach(func() {
+			intent.currentState = StateReview
+			intent.reviewState = &ReviewInferredEventState{
+				Event:         fixtures.EventWith("evt-1", "Led API design", "", ""),
+				AcceptedFacts: []*career.Fact{},
+				EditingMode:   EditingModeFacts,
+			}
+
+			intent.reviewState.factSuggestionModal = modals.NewFactSuggestionModal([]career.Fact{}, nil)
+
+			breadcrumbs := []string{"Test"}
+			screen := captureScreens.NewEventReviewScreen(breadcrumbs, intent.reviewState.Event, nil, nil, nil)
+			intent.activeScreen = screen
+		})
+
+		It("auto-closes the modal on the first update when no suggestions exist", func() {
+			intent.updateEditingModal(tea.KeyMsg{Type: tea.KeyDown})
+
+			Expect(intent.reviewState.factSuggestionModal).To(BeNil())
+			Expect(intent.reviewState.EditingMode).To(Equal(EditingModeNone))
+		})
+	})
+
 	Describe("fact persistence in postSaveReview", func() {
 		var (
 			svc      *careerservice.Service
@@ -221,7 +244,10 @@ var _ = Describe("Fact Suggestion in CaptureEvent", func() {
 					"bursts": []*career.Burst{},
 					"facts":  []*career.Fact{fact},
 				}
-				intent.HandleSubmit(&screens.SubmitResult{FormData: reviewData})
+				cmd := intent.HandleSubmit(&screens.SubmitResult{FormData: reviewData})
+				Expect(cmd).NotTo(BeNil())
+				msg := cmd()
+				intent.Update(msg)
 
 				Expect(intent.result).NotTo(BeNil())
 				Expect(intent.result.Status).To(Equal(intents.Completed))
@@ -255,7 +281,10 @@ var _ = Describe("Fact Suggestion in CaptureEvent", func() {
 					"bursts": []*career.Burst{},
 					"facts":  []*career.Fact{existingFact},
 				}
-				intent.HandleSubmit(&screens.SubmitResult{FormData: reviewData})
+				cmd := intent.HandleSubmit(&screens.SubmitResult{FormData: reviewData})
+				Expect(cmd).NotTo(BeNil())
+				msg := cmd()
+				intent.Update(msg)
 
 				Expect(intent.result).NotTo(BeNil())
 				Expect(intent.result.Status).To(Equal(intents.Completed))
@@ -285,7 +314,10 @@ var _ = Describe("Fact Suggestion in CaptureEvent", func() {
 					"bursts": []*career.Burst{},
 					"facts":  []*career.Fact{fact},
 				}
-				intent.HandleSubmit(&screens.SubmitResult{FormData: reviewData})
+				cmd := intent.HandleSubmit(&screens.SubmitResult{FormData: reviewData})
+				Expect(cmd).NotTo(BeNil())
+				msg := cmd()
+				intent.Update(msg)
 
 				Expect(intent.result).NotTo(BeNil())
 				Expect(intent.result.Status).To(Equal(intents.Completed))

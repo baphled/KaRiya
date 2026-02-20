@@ -224,7 +224,10 @@ var _ = Describe("Burst Acceptance in CaptureEvent", func() {
 					"bursts": []*career.Burst{burst},
 					"facts":  []*career.Fact{},
 				}
-				intent.HandleSubmit(&screens.SubmitResult{FormData: reviewData})
+				cmd := intent.HandleSubmit(&screens.SubmitResult{FormData: reviewData})
+				Expect(cmd).NotTo(BeNil())
+				msg := cmd()
+				intent.Update(msg)
 
 				Expect(intent.result).NotTo(BeNil())
 				Expect(intent.result.Status).To(Equal(intents.Completed))
@@ -253,7 +256,10 @@ var _ = Describe("Burst Acceptance in CaptureEvent", func() {
 					"bursts": []*career.Burst{burst},
 					"facts":  []*career.Fact{},
 				}
-				intent.HandleSubmit(&screens.SubmitResult{FormData: reviewData})
+				cmd := intent.HandleSubmit(&screens.SubmitResult{FormData: reviewData})
+				Expect(cmd).NotTo(BeNil())
+				msg := cmd()
+				intent.Update(msg)
 
 				Expect(intent.result).NotTo(BeNil())
 				Expect(intent.result.Status).To(Equal(intents.Completed))
@@ -281,7 +287,10 @@ var _ = Describe("Burst Acceptance in CaptureEvent", func() {
 					"bursts": []*career.Burst{burst},
 					"facts":  []*career.Fact{},
 				}
-				intent.HandleSubmit(&screens.SubmitResult{FormData: reviewData})
+				cmd := intent.HandleSubmit(&screens.SubmitResult{FormData: reviewData})
+				Expect(cmd).NotTo(BeNil())
+				msg := cmd()
+				intent.Update(msg)
 
 				Expect(intent.result).NotTo(BeNil())
 				Expect(intent.result.Status).To(Equal(intents.Completed))

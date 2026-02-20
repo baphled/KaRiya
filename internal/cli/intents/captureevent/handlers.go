@@ -83,10 +83,6 @@ func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 			return i.reviewState.burstModal.Init()
 
 		case "suggest_facts":
-			if len(i.reviewState.InferredFacts) == 0 {
-				return nil
-			}
-
 			i.reviewState.EditingMode = EditingModeFacts
 
 			facts := make([]career.Fact, len(i.reviewState.InferredFacts))
@@ -235,60 +231,7 @@ func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
 			i.reviewState.AcceptedSkills = convertedSkills
 
 			if i.postSaveReview {
-				// Persist accepted skills that were edited after initial save.
-				if len(convertedSkills) > 0 && i.context.CareerService != nil {
-					ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-					defer cancel()
-					skillRepo := i.context.CareerService.GetSkillRepository()
-					eventRepo := i.context.CareerService.GetEventRepository()
-					for _, skill := range convertedSkills {
-						if skill.ID == "" {
-							if err := skillRepo.Create(ctx, skill); err != nil {
-								return i.setFailedCmd("SKILL_SAVE_ERROR", fmt.Sprintf("Failed to save skill: %v", err), err)
-							}
-						}
-						if err := eventRepo.LinkSkill(ctx, event.ID, skill.ID); err != nil {
-							return i.setFailedCmd("SKILL_LINK_ERROR", fmt.Sprintf("Failed to link skill: %v", err), err)
-						}
-					}
-				}
-
-				// Persist accepted facts that were reviewed after initial save.
-				if len(facts) > 0 && i.context.CareerService != nil {
-					ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-					defer cancel()
-					for _, fact := range facts {
-						if fact.ID == "" {
-							fact.SourceEventID = event.ID
-							if err := i.context.CareerService.SaveFact(ctx, fact); err != nil {
-								return i.setFailedCmd("FACT_SAVE_ERROR", fmt.Sprintf("Failed to save fact: %v", err), err)
-							}
-						}
-					}
-				}
-
-				// Confirm accepted bursts that were reviewed after initial save.
-				if len(bursts) > 0 && i.context.CareerService != nil {
-					ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-					defer cancel()
-					for _, burst := range bursts {
-						if err := i.context.CareerService.ConfirmBurst(ctx, burst); err != nil {
-							return i.setFailedCmd("BURST_CONFIRM_ERROR", fmt.Sprintf("Failed to confirm burst: %v", err), err)
-						}
-					}
-				}
-
-				i.result = &intents.IntentResult[*Result]{
-					Status: intents.Completed,
-					Data: &Result{
-						Event:  event,
-						Bursts: bursts,
-						Facts:  facts,
-						Skills: convertedSkills,
-					},
-				}
-				i.active = false
-				return nil
+				return i.performPostSavePersistence(event, facts, convertedSkills, bursts)
 			}
 
 			return i.showSubmitModal()
@@ -429,6 +372,12 @@ func (i *Intent) updateEditingModal(msg tea.Msg) tea.Cmd {
 
 	case EditingModeFacts:
 		if i.reviewState.factSuggestionModal != nil {
+			if !i.reviewState.factSuggestionModal.HasSuggestions() {
+				i.reviewState.factSuggestionModal = nil
+				i.reviewState.EditingMode = EditingModeNone
+				return nil
+			}
+
 			model, cmd := i.reviewState.factSuggestionModal.Update(msg)
 			if typed, ok := model.(*modals.SuggestionReviewModal); ok {
 				i.reviewState.factSuggestionModal = typed
@@ -470,6 +419,12 @@ func (i *Intent) updateEditingModal(msg tea.Msg) tea.Cmd {
 
 	case EditingModeSkills:
 		if i.reviewState.skillModal != nil {
+			if !i.reviewState.skillModal.HasSuggestions() {
+				i.reviewState.skillModal = nil
+				i.reviewState.EditingMode = EditingModeNone
+				return nil
+			}
+
 			model, cmd := i.reviewState.skillModal.Update(msg)
 			if typed, ok := model.(*modals.SuggestionReviewModal); ok {
 				i.reviewState.skillModal = typed
