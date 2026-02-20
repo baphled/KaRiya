@@ -329,7 +329,7 @@ func iSubmitTheFactForm(ctx context.Context) (context.Context, error) {
 	// Navigate through all form fields and submit with Ctrl+S
 	// Fact form has: Text, CompetencyCategories, RoleFit, AudienceRelevance
 	for range 4 {
-		env.Tab()
+		env.TabWithFormProcessing()
 	}
 	env.PressKey(tea.KeyCtrlS)
 

@@ -185,12 +185,12 @@ func iSubmitTheForm(ctx context.Context) (context.Context, error) {
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	env.Confirm()
-	env.Confirm()
-	env.Confirm()
-	env.Confirm()
-	env.Confirm()
-	env.Confirm()
+	env.PressEnterWithFormProcessing()
+	env.PressEnterWithFormProcessing()
+	env.PressEnterWithFormProcessing()
+	env.PressEnterWithFormProcessing()
+	env.PressEnterWithFormProcessing()
+	env.PressEnterWithFormProcessing()
 	env.PressKey(tea.KeyCtrlS)
 	return ctx, nil
 }

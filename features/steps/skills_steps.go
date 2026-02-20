@@ -478,7 +478,7 @@ func iSelectCategory(ctx context.Context, _ string) (context.Context, error) {
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	env.Tab()
+	env.TabWithFormProcessing()
 	env.NavigateDown()
 	return ctx, nil
 }
@@ -488,7 +488,7 @@ func iSelectLevel(ctx context.Context, _ string) (context.Context, error) {
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	env.Tab()
+	env.TabWithFormProcessing()
 	env.NavigateDown()
 	return ctx, nil
 }
@@ -498,7 +498,7 @@ func iEnterYearsOfExperience(ctx context.Context, years string) (context.Context
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	env.Tab()
+	env.TabWithFormProcessing()
 	env.TypeText(years)
 	return ctx, nil
 }
