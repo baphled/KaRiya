@@ -247,6 +247,12 @@ func (i *Intent) View() string {
 	}
 
 	if i.reviewState != nil && i.reviewState.EditingMode != EditingModeNone {
+		if i.reviewState.EditingMode == EditingModeBursts && i.reviewState.burstModal != nil {
+			rendered := i.reviewState.burstModal.View()
+			modal := &behaviors.StaticViewModel{Content: rendered}
+			return behaviors.RenderModalOverlay(modal, baseView)
+		}
+
 		if i.reviewState.EditingMode == EditingModeSkills && i.reviewState.skillModal != nil {
 			rendered := i.reviewState.skillModal.View()
 			modal := &behaviors.StaticViewModel{Content: rendered}

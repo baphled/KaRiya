@@ -597,7 +597,15 @@ var _ = Describe("EventReviewScreen", func() {
 	})
 
 	Describe("Content Centring", func() {
-		It("returns constrained content when viewport width is zero", func() {
+		It("returns constrained content when viewport width is forced to zero", func() {
+			screen.Update(tea.WindowSizeMsg{Width: 0, Height: 40})
+			view := screen.View()
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("clamps viewport height to 1 when window is shorter than reserved lines", func() {
+			_, result := screen.Update(tea.WindowSizeMsg{Width: 80, Height: 5})
+			Expect(result).To(BeNil())
 			view := screen.View()
 			Expect(view).NotTo(BeEmpty())
 		})

@@ -85,6 +85,18 @@ var _ = Describe("Helper Methods", func() {
 		})
 	})
 
+	Describe("showValidationErrorModal", func() {
+		It("creates an error modal on submitModal", func() {
+			intent.showValidationErrorModal("event text is required")
+			Expect(intent.submitModal).NotTo(BeNil())
+		})
+
+		It("returns nil command from the modal's Init (error modals do not auto-start)", func() {
+			cmd := intent.showValidationErrorModal("event text is required")
+			Expect(cmd).To(BeNil())
+		})
+	})
+
 	Describe("showSubmitModal", func() {
 		BeforeEach(func() {
 			intent.reviewState = &ReviewInferredEventState{
@@ -140,6 +152,24 @@ var _ = Describe("Helper Methods", func() {
 		})
 	})
 
+	Describe("getMetadataModalContent", func() {
+		It("returns modal content when metadataModal is already set", func() {
+			repos := memoryrepo.NewRepositories()
+			svc := careerservice.NewService(repos.Event)
+			svc.SetSkillRepository(repos.Skill)
+
+			event := fixtures.EventWith("", "test event", "", "")
+			modal := NewReviewEnrichmentModel(context.Background(), event, svc, nil, nil)
+			intent.reviewState = &ReviewInferredEventState{
+				Event:         event,
+				EditingMode:   EditingModeMetadata,
+				metadataModal: modal,
+			}
+			content := intent.getMetadataModalContent()
+			Expect(content).NotTo(BeNil())
+		})
+	})
+
 	Describe("getEditingModalContent", func() {
 		It("should return nil when reviewState is nil", func() {
 			intent.reviewState = nil
@@ -159,7 +189,7 @@ var _ = Describe("Helper Methods", func() {
 					Event:       fixtures.EventWith("", "test", "", ""),
 					EditingMode: EditingModeMetadata,
 				}
-				// MetadataEditorModelNew immediately calls CareerService.GetSkillRepository(),
+				// ReviewEnrichmentModel immediately calls CareerService.GetSkillRepository(),
 				// which panics with a nil service. Verifies the dispatch reaches metadata.
 				Expect(func() {
 					intent.getEditingModalContent()
@@ -181,7 +211,6 @@ var _ = Describe("Helper Methods", func() {
 			It("should return nil", func() {
 				intent.reviewState = &ReviewInferredEventState{
 					EditingMode: EditingModeFacts,
-					factModal:   nil,
 				}
 				Expect(intent.getEditingModalContent()).To(BeNil())
 			})
@@ -232,24 +261,6 @@ var _ = Describe("Helper Methods", func() {
 		It("should return non-empty badge footer", func() {
 			footer := renderFormModalFooter()
 			Expect(footer).NotTo(BeEmpty())
-		})
-	})
-
-	Describe("renderBurstModalFooter", func() {
-		It("should return editing footer when editing is true", func() {
-			footer := renderBurstModalFooter(true)
-			Expect(footer).NotTo(BeEmpty())
-		})
-
-		It("should return navigation footer when editing is false", func() {
-			footer := renderBurstModalFooter(false)
-			Expect(footer).NotTo(BeEmpty())
-		})
-
-		It("should produce different output for editing vs navigation", func() {
-			editFooter := renderBurstModalFooter(true)
-			navFooter := renderBurstModalFooter(false)
-			Expect(editFooter).NotTo(Equal(navFooter))
 		})
 	})
 

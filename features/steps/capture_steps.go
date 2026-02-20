@@ -65,7 +65,7 @@ func RegisterCaptureSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I save the burst edit$`, iSaveTheBurstEdit)
 	sc.Step(`^there should be (\d+) bursts? with name "([^"]*)"$`, thereShouldBeNBurstsWithName)
 	sc.Step(`^there should be skills including "([^"]*)"$`, thereShouldBeSkillsIncluding)
-	sc.Step(`^I open the metadata editor$`, iOpenTheMetadataEditor)
+	sc.Step(`^I open the metadata editor$`, iOpenTheReviewEnrichment)
 	sc.Step(`^I change event company to "([^"]*)"$`, iChangeEventCompanyTo)
 	sc.Step(`^I save metadata changes$`, iSaveMetadataChanges)
 	sc.Step(`^I should see "([^"]*)" key badge for (?:editing )?(bursts|facts)$`, iShouldSeeKeyBadgeFor)
@@ -83,7 +83,7 @@ func RegisterCaptureSteps(sc *godog.ScenarioContext) {
 	// Additional editor navigation
 	sc.Step(`^I press 'b' to open bursts editor$`, iPressBToOpenBurstsEditor)
 	sc.Step(`^I press 'f' to open facts editor$`, iPressFToOpenFactsEditor)
-	sc.Step(`^I press 'm' to open metadata editor$`, iPressMToOpenMetadataEditor)
+	sc.Step(`^I press 'm' to open metadata editor$`, iPressMToOpenReviewEnrichment)
 	sc.Step(`^I should see the bursts modal$`, iShouldSeeTheBurstsModal)
 	sc.Step(`^I should see the facts modal$`, iShouldSeeTheFactsModal)
 	sc.Step(`^I should see the metadata modal$`, iShouldSeeTheMetadataModal)
@@ -641,7 +641,7 @@ func thereShouldBeSkillsIncluding(ctx context.Context, skillName string) error {
 	return nil
 }
 
-func iOpenTheMetadataEditor(ctx context.Context) (context.Context, error) {
+func iOpenTheReviewEnrichment(ctx context.Context) (context.Context, error) {
 	env := support.GetAppEnv(ctx)
 	if env == nil {
 		return ctx, godog.ErrPending
@@ -825,8 +825,8 @@ func iPressFToOpenFactsEditor(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-// iPressMToOpenMetadataEditor opens the metadata editor.
-func iPressMToOpenMetadataEditor(ctx context.Context) (context.Context, error) {
+// iPressMToOpenReviewEnrichment opens the review enrichment modal.
+func iPressMToOpenReviewEnrichment(ctx context.Context) (context.Context, error) {
 	env := support.GetAppEnv(ctx)
 	if env == nil {
 		return ctx, godog.ErrPending

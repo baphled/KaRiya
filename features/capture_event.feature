@@ -96,6 +96,59 @@ Feature: Capture Career Events
     And I confirm the review
     Then there should be 1 burst with name "Infrastructure Automation Initiative"
 
+  # ============================================================================
+  # Burst Inference Review
+  # ============================================================================
+
+  @sad @wip
+  Scenario: User can reject an inferred burst and it is not saved
+    Given I have an event "Deployed Kubernetes cluster" at company "CloudCo"
+    And I have an event "Set up CI/CD pipeline" at company "CloudCo"
+    When I select "capture_event" from the menu
+    And I select quick capture strategy
+    And I enter event description "Implemented auto-scaling policies"
+    And I set event company to "CloudCo"
+    And I submit the event
+    And I dismiss the success modal
+    Then I should be on the enrichment review screen
+    When I reject the suggested burst
+    And I confirm the review
+    Then I should be on the main menu
+    And there should be 0 bursts
+
+  @happy @enrichment @wip
+  Scenario: Accepted burst is persisted with correct event IDs
+    Given I have an event "Migrated legacy APIs to GraphQL" at company "DataSystems"
+    And I have an event "Introduced schema stitching layer" at company "DataSystems"
+    When I select "capture_event" from the menu
+    And I select quick capture strategy
+    And I enter event description "Added subscription support for real-time updates"
+    And I set event company to "DataSystems"
+    And I submit the event
+    And I dismiss the success modal
+    Then I should be on the enrichment review screen
+    When I accept the suggested burst
+    And I confirm the review
+    Then I should be on the main menu
+    And there should be 1 burst
+    And the accepted burst should have at least 2 event IDs
+
+  @sad @wip
+  Scenario: Rejecting all bursts results in no bursts saved
+    Given I have an event "Integrated Stripe payments" at company "FinTechCo"
+    And I have an event "Added subscription billing logic" at company "FinTechCo"
+    When I select "capture_event" from the menu
+    And I select quick capture strategy
+    And I enter event description "Implemented dunning management for failed payments"
+    And I set event company to "FinTechCo"
+    And I submit the event
+    And I dismiss the success modal
+    Then I should be on the enrichment review screen
+    When I reject the suggested burst
+    And I confirm the review
+    Then I should be on the main menu
+    And there should be 0 bursts
+
   @happy @enrichment
   Scenario: Edit event metadata during review
     When I select "capture_event" from the menu

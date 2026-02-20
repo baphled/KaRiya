@@ -49,11 +49,11 @@ var _ = Describe("Fact Suggestion in CaptureEvent", func() {
 				Expect(intent.reviewState.factSuggestionModal).NotTo(BeNil())
 			})
 
-			It("does not create the old fact editor modal", func() {
+			It("does not set editing mode to anything other than facts", func() {
 				result := &screens.NavigateResult{ResultData: "suggest_facts"}
 				intent.HandleNavigate(result)
 
-				Expect(intent.reviewState.factModal).To(BeNil())
+				Expect(intent.reviewState.EditingMode).To(Equal(EditingModeFacts))
 			})
 
 			It("sets terminal dimensions on the modal", func() {

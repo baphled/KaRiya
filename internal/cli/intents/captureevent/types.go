@@ -99,13 +99,10 @@ type ReviewInferredEventState struct {
 	RejectedItems map[string]string
 
 	// metadataModal is the form model for editing event metadata fields.
-	metadataModal *MetadataEditorModelNew
+	metadataModal *ReviewEnrichmentModel
 
-	// burstModal is the form model for editing burst suggestions.
-	burstModal *BurstSuggestionModelNew
-
-	// factModal is the form model for editing fact suggestions.
-	factModal *FactEditorModelNew
+	// burstModal is the modal for reviewing burst suggestions.
+	burstModal *modals.SuggestionReviewModal
 
 	// factSuggestionModal is the modal for reviewing fact suggestions.
 	factSuggestionModal *modals.SuggestionReviewModal
@@ -187,20 +184,6 @@ func (i *Intent) SetStateForTesting(state State) {
 //   - None.
 func (i *Intent) GetReviewState() *ReviewInferredEventState {
 	return i.reviewState
-}
-
-// GetFactModal returns the fact editor modal for test assertions.
-//
-// Returns:
-//   - A fully initialized FactEditorModelNew ready for use, or nil.
-//
-// Side effects:
-//   - None.
-func (r *ReviewInferredEventState) GetFactModal() *FactEditorModelNew {
-	if r == nil {
-		return nil
-	}
-	return r.factModal
 }
 
 // GetFactSuggestionModal returns the fact suggestion review modal for test assertions.

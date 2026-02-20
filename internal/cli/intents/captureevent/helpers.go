@@ -21,12 +21,12 @@ import (
 // terminalDimensions returns the current terminal dimensions for modal sizing.
 // Falls back to nil if terminal info is unavailable, letting the model
 // apply its own defaults.
-func (i *Intent) terminalDimensions() *MetadataEditorDimensions {
+func (i *Intent) terminalDimensions() *ReviewEnrichmentDimensions {
 	info := i.GetTerminalInfo()
 	if info == nil {
 		return nil
 	}
-	return &MetadataEditorDimensions{
+	return &ReviewEnrichmentDimensions{
 		TerminalWidth:  info.Width,
 		TerminalHeight: info.Height,
 	}
@@ -481,7 +481,7 @@ type modalContentData struct {
 //   - Lazily creates the metadataModal if it is nil.
 func (i *Intent) getMetadataModalContent() *modalContentData {
 	if i.reviewState.metadataModal == nil {
-		i.reviewState.metadataModal = NewMetadataEditorModelNew(
+		i.reviewState.metadataModal = NewReviewEnrichmentModel(
 			context.Background(),
 			i.reviewState.Event,
 			i.context.CareerService,
@@ -492,41 +492,6 @@ func (i *Intent) getMetadataModalContent() *modalContentData {
 	return &modalContentData{
 		title:   i.reviewState.metadataModal.GetTitle(),
 		content: i.reviewState.metadataModal.GetContent(),
-		footer:  renderFormModalFooter(),
-	}
-}
-
-// getBurstModalContent returns the rendered modal parts for burst editing.
-//
-// Returns:
-//   - A modalContentData with title, content, and footer from the burst modal.
-//   - nil if the burstModal has not been created.
-func (i *Intent) getBurstModalContent() *modalContentData {
-	if i.reviewState.burstModal == nil {
-		return nil
-	}
-	// Detect editing state from the model's footer text.
-	// The deprecated models package does not export an IsEditing() method.
-	editing := strings.Contains(i.reviewState.burstModal.GetFooter(), "Save")
-	return &modalContentData{
-		title:   i.reviewState.burstModal.GetTitle(),
-		content: i.reviewState.burstModal.GetContent(),
-		footer:  renderBurstModalFooter(editing),
-	}
-}
-
-// getFactModalContent returns the rendered modal parts for fact editing.
-//
-// Returns:
-//   - A modalContentData with title, content, and footer from the fact modal.
-//   - nil if the factModal has not been created.
-func (i *Intent) getFactModalContent() *modalContentData {
-	if i.reviewState.factModal == nil {
-		return nil
-	}
-	return &modalContentData{
-		title:   i.reviewState.factModal.GetTitle(),
-		content: i.reviewState.factModal.GetContent(),
 		footer:  renderFormModalFooter(),
 	}
 }
@@ -543,10 +508,6 @@ func (i *Intent) getEditingModalContent() *modalContentData {
 	switch i.reviewState.EditingMode {
 	case EditingModeMetadata:
 		return i.getMetadataModalContent()
-	case EditingModeBursts:
-		return i.getBurstModalContent()
-	case EditingModeFacts:
-		return i.getFactModalContent()
 	default:
 		return nil
 	}
@@ -605,28 +566,6 @@ func renderFormModalFooter() string {
 	)
 }
 
-// renderBurstModalFooter returns a UIKit badge-styled footer for the burst modal.
-//
-// The burst modal has two modes: editing (form fields) and navigating (suggestion list).
-// Each mode shows different key bindings.
-func renderBurstModalFooter(editing bool) string {
-	th := themes.NewDefaultTheme()
-	if editing {
-		return primitives.RenderHelpFooter(th,
-			primitives.NextFieldBadge(th),
-			primitives.ConfirmBadge(th),
-			primitives.CancelBadge(th),
-		)
-	}
-	return primitives.RenderHelpFooter(th,
-		primitives.NavigateBadge(th),
-		primitives.HelpKeyBadge("y", "Confirm", th),
-		primitives.HelpKeyBadge("n", "Reject", th),
-		primitives.EditBadge(th),
-		primitives.BackBadge(th),
-	)
-}
-
 // extractSkillsFromReviewData converts the "skills" field from review data
 // into []*career.Skill, supporting both []skillinference.SkillSuggestion
 // and []*career.Skill input types.
@@ -665,6 +604,16 @@ func extractSkillsFromReviewData(reviewData map[string]interface{}) []*career.Sk
 		return result
 	}
 
+	return nil
+}
+
+// findInferredBurst returns the inferred burst whose Name matches name, or nil if not found.
+func findInferredBurst(inferred []*career.Burst, name string) *career.Burst {
+	for _, b := range inferred {
+		if b.Name == name {
+			return b
+		}
+	}
 	return nil
 }
 

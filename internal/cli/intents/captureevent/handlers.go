@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/google/uuid"
+
 	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/intents"
@@ -15,7 +18,6 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 	burstfact "github.com/baphled/kariya/internal/service/career/burstfact"
 	"github.com/baphled/kariya/internal/service/career/skillinference"
-	tea "github.com/charmbracelet/bubbletea"
 )
 
 // handleScreenResult dispatches a screen result to the appropriate handler method.
@@ -54,7 +56,7 @@ func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 				return i.setFailedCmd("NO_SERVICE", "Career service not available for metadata editing", nil)
 			}
 			i.reviewState.EditingMode = EditingModeMetadata
-			i.reviewState.metadataModal = NewMetadataEditorModelNew(
+			i.reviewState.metadataModal = NewReviewEnrichmentModel(
 				context.Background(),
 				i.reviewState.Event,
 				i.context.CareerService,
@@ -73,13 +75,14 @@ func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 				suggestions = append(suggestions, burstfact.BurstSuggestion{
 					Name:        b.Name,
 					Description: b.Description,
+					EventIDs:    b.EventIDs,
 				})
 			}
-			i.reviewState.burstModal = NewBurstSuggestionModelNew(
-				context.Background(),
-				i.context.CareerService,
-				suggestions,
-			)
+			i.reviewState.burstModal = modals.NewSuggestionReviewModal(suggestions, i.Theme())
+			dims := i.terminalDimensions()
+			if dims != nil {
+				i.reviewState.burstModal.SetDimensions(dims.TerminalWidth, dims.TerminalHeight)
+			}
 			return i.reviewState.burstModal.Init()
 
 		case "suggest_facts":
@@ -312,7 +315,6 @@ func (i *Intent) updateEditingModal(msg tea.Msg) tea.Cmd {
 		if keyMsg.Type == tea.KeyEsc {
 			i.reviewState.metadataModal = nil
 			i.reviewState.burstModal = nil
-			i.reviewState.factModal = nil
 			i.reviewState.factSuggestionModal = nil
 			i.reviewState.EditingMode = EditingModeNone
 			return nil
@@ -323,7 +325,7 @@ func (i *Intent) updateEditingModal(msg tea.Msg) tea.Cmd {
 	case EditingModeMetadata:
 		if i.reviewState.metadataModal != nil {
 			modal, cmd := i.reviewState.metadataModal.Update(msg)
-			if typed, ok := modal.(*MetadataEditorModelNew); ok {
+			if typed, ok := modal.(*ReviewEnrichmentModel); ok {
 				i.reviewState.metadataModal = typed
 			}
 
@@ -340,26 +342,38 @@ func (i *Intent) updateEditingModal(msg tea.Msg) tea.Cmd {
 
 	case EditingModeBursts:
 		if i.reviewState.burstModal != nil {
-			modal, cmd := i.reviewState.burstModal.Update(msg)
-			if typed, ok := modal.(*BurstSuggestionModelNew); ok {
+			if !i.reviewState.burstModal.HasSuggestions() {
+				i.reviewState.burstModal = nil
+				i.reviewState.EditingMode = EditingModeNone
+				return nil
+			}
+
+			model, cmd := i.reviewState.burstModal.Update(msg)
+			if typed, ok := model.(*modals.SuggestionReviewModal); ok {
 				i.reviewState.burstModal = typed
 			}
 
-			if i.reviewState.burstModal.IsDone() {
-				confirmed := i.reviewState.burstModal.GetConfirmed()
-				if len(confirmed) > 0 {
-					for _, s := range confirmed {
+			if !i.reviewState.burstModal.IsVisible() {
+				accepted := i.reviewState.burstModal.GetAcceptedSuggestions()
+				if len(accepted) > 0 {
+					for _, s := range accepted {
 						name := s.Name
 						if name == "" {
 							name = fmt.Sprintf("Burst of %d events", len(s.EventIDs))
 						}
-						i.reviewState.AcceptedBursts = append(i.reviewState.AcceptedBursts, &career.Burst{
-							Name:        name,
-							Description: s.Description,
-							EventIDs:    s.EventIDs,
-						})
+						if original := findInferredBurst(i.reviewState.InferredBursts, name); original != nil {
+							i.reviewState.AcceptedBursts = append(i.reviewState.AcceptedBursts, original)
+						} else {
+							i.reviewState.AcceptedBursts = append(i.reviewState.AcceptedBursts, &career.Burst{
+								ID:          uuid.New().String(),
+								Name:        name,
+								Description: s.Description,
+								EventIDs:    s.EventIDs,
+								CreatedAt:   time.Now(),
+								UpdatedAt:   time.Now(),
+							})
+						}
 					}
-
 					if screen, ok := i.activeScreen.(*captureScreens.EventReviewScreen); ok {
 						screen.SetAcceptedBursts(i.reviewState.AcceptedBursts)
 					}
@@ -396,22 +410,6 @@ func (i *Intent) updateEditingModal(msg tea.Msg) tea.Cmd {
 					}
 				}
 				i.reviewState.factSuggestionModal = nil
-				i.reviewState.EditingMode = EditingModeNone
-			}
-			return cmd
-		}
-
-		if i.reviewState.factModal != nil {
-			modal, cmd := i.reviewState.factModal.Update(msg)
-			if typed, ok := modal.(*FactEditorModelNew); ok {
-				i.reviewState.factModal = typed
-			}
-
-			if i.reviewState.factModal.IsSubmitted() {
-				i.reviewState.factModal = nil
-				i.reviewState.EditingMode = EditingModeNone
-			} else if i.reviewState.factModal.IsCancelled() {
-				i.reviewState.factModal = nil
 				i.reviewState.EditingMode = EditingModeNone
 			}
 			return cmd
