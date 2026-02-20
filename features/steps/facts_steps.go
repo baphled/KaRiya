@@ -65,12 +65,8 @@ func RegisterFactsSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I press "([^"]*)" to toggle help$`, iPressToToggleHelp)
 
 	// Additional fact management steps
-	sc.Step(`^I add a new fact "([^"]*)"$`, iAddANewFact)
-	sc.Step(`^I change fact text to "([^"]*)"$`, iChangeFactTextTo)
-	sc.Step(`^I edit the first fact$`, iEditTheFirstFact)
 	sc.Step(`^I open the facts editor$`, iOpenTheFactsEditor)
 	sc.Step(`^I reject all suggested facts$`, iRejectAllSuggestedFacts)
-	sc.Step(`^I save the fact edit$`, iSaveTheFactEdit)
 	sc.Step(`^there should be a fact with text "([^"]*)"$`, thereShouldBeAFactWithText)
 	sc.Step(`^I should be on audience field$`, iShouldBeOnAudienceField)
 }
@@ -513,42 +509,6 @@ func iPressToToggleHelp(ctx context.Context, key string) (context.Context, error
 	return ctx, nil
 }
 
-// iAddANewFact creates a new fact with given text by driving the UI.
-func iAddANewFact(ctx context.Context, text string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	// Type the fact text into the form
-	env.TypeText(text)
-	// Confirm the form submission
-	env.Confirm()
-	return ctx, nil
-}
-
-// pendingFactTextKey is the context key for storing pending fact text changes.
-type pendingFactTextKey struct{}
-
-// iChangeFactTextTo stores the desired fact text for the next save operation.
-func iChangeFactTextTo(ctx context.Context, newText string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	_ = env
-	return context.WithValue(ctx, pendingFactTextKey{}, newText), nil
-}
-
-// iEditTheFirstFact opens the editor for the first fact.
-func iEditTheFirstFact(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.PressKeyRune('e')
-	return ctx, nil
-}
-
 // iOpenTheFactsEditor opens the facts editor.
 func iOpenTheFactsEditor(ctx context.Context) (context.Context, error) {
 	env := support.GetAppEnv(ctx)
@@ -566,28 +526,6 @@ func iRejectAllSuggestedFacts(ctx context.Context) (context.Context, error) {
 		return ctx, godog.ErrPending
 	}
 	env.PressKeyRune('r')
-	return ctx, nil
-}
-
-// iSaveTheFactEdit saves the current fact edit by persisting the pending text
-// change directly to the repository. This bypasses the huh form UI submission
-// path, matching the established pattern used by iSubmitTheFactForm.
-func iSaveTheFactEdit(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-
-	newText, ok := ctx.Value(pendingFactTextKey{}).(string)
-	if !ok || newText == "" {
-		return ctx, errors.New("no pending fact text to save")
-	}
-
-	// Enter the new text in the form and submit through UI
-	// The form should already be open in edit mode
-	env.TypeText(newText)
-	env.PressKey(tea.KeyCtrlS)
-
 	return ctx, nil
 }
 
