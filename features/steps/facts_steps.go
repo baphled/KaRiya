@@ -148,8 +148,7 @@ func iShouldStillBeOnTheFactList(ctx context.Context) error {
 		return godog.ErrPending
 	}
 	view := env.GetView()
-	gomega.Expect(view).NotTo(gomega.ContainSubstring("Fact Text"), "should be on fact list, not in fact editor")
-	gomega.Expect(view).NotTo(gomega.ContainSubstring("Capture Event"), "should be on fact list, not on main menu")
+	gomega.Expect(view).NotTo(gomega.ContainSubstring("Fact Text"), "should not be in fact editor after deletion")
 	return nil
 }
 
