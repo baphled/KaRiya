@@ -550,6 +550,8 @@ func iSubmitTheSkillForm(ctx context.Context) (context.Context, error) {
 		return ctx, godog.ErrPending
 	}
 
+	env.PressKey(tea.KeyEscape)
+
 	if pendingSkill.isEdit {
 		if err := updateExistingSkill(env); err != nil {
 			return ctx, err
