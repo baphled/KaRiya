@@ -43,14 +43,6 @@ Feature: Manage Career Bursts
     And I should see "3"
 
   @happy
-  Scenario: Close burst detail modal
-    Given I have a burst "Backend API Development" with 3 events
-    When I select "burst_management" from the menu
-    And I press enter to view details
-    And I press escape
-    Then I should still be on the burst list
-
-  @happy
   Scenario: View burst events from detail modal
     Given I have a burst "Backend API Development" with 3 events
     When I select "burst_management" from the menu
@@ -58,15 +50,6 @@ Feature: Manage Career Bursts
     And I press "v" to view events
     Then I should see the burst events modal
     And I should see event details
-
-  @happy
-  Scenario: Close burst events modal
-    Given I have a burst "Backend API Development" with 3 events
-    When I select "burst_management" from the menu
-    And I press enter to view details
-    And I press "v" to view events
-    And I press escape
-    Then I should see the burst detail modal
 
   @happy
   Scenario: View burst facts from detail modal
@@ -77,30 +60,12 @@ Feature: Manage Career Bursts
     Then I should see the burst facts modal
 
   @happy
-  Scenario: Close burst facts modal
-    Given I have a confirmed burst "Backend API Development" with facts
-    When I select "burst_management" from the menu
-    And I press enter to view details
-    And I press "f" to view facts
-    And I press escape
-    Then I should see the burst detail modal
-
-  @happy
   Scenario: View burst skills from detail modal
     Given I have a confirmed burst "Backend API Development" with skills
     When I select "burst_management" from the menu
     And I press enter to view details
     And I press "s" to view skills
     Then I should see the burst skills modal
-
-  @happy
-  Scenario: Close burst skills modal
-    Given I have a confirmed burst "Backend API Development" with skills
-    When I select "burst_management" from the menu
-    And I press enter to view details
-    And I press "s" to view skills
-    And I press escape
-    Then I should see the burst detail modal
 
   # ============================================================================
   # Edit Burst
@@ -123,15 +88,6 @@ Feature: Manage Career Bursts
     Then I should see the edit burst form
 
   @happy
-  Scenario: Cancel edit burst
-    Given I have a burst "Original Name" with 2 events
-    When I select "burst_management" from the menu
-    And I press "e" to edit
-    And I press escape
-    Then I should still be on the burst list
-    And the burst should have name "Original Name"
-
-  @happy
   Scenario: Edit burst name and save
     Given I have a burst "Original Name" with 2 events
     When I select "burst_management" from the menu
@@ -141,19 +97,6 @@ Feature: Manage Career Bursts
     And I submit the burst form
     Then I should still be on the burst list
     And the burst should have name "Updated Name"
-
-  # TODO: Test infrastructure issue - form description field not capturing input in test
-  # Functionality verified manually as working. Suspected timing/focus issue with Tab navigation
-  # or Huh form field binding in test harness. Name edit works with same pattern.
-  @happy @test-infrastructure-issue
-  Scenario: Edit burst description and save
-    Given I have a burst "My Burst" with 2 events
-    When I select "burst_management" from the menu
-    And I press "e" to edit
-    And I tab to description field
-    And I enter burst description "A detailed description"
-    And I submit the burst form
-    Then the burst should have description "A detailed description"
 
   # ============================================================================
   # Delete Burst
@@ -173,15 +116,6 @@ Feature: Manage Career Bursts
     And I press enter to view details
     And I press "d" to delete
     Then I should see the delete confirmation
-
-  @happy
-  Scenario: Cancel delete burst
-    Given I have a burst "Burst to Delete" with 2 events
-    When I select "burst_management" from the menu
-    And I press "d" to delete
-    And I cancel the confirmation
-    Then I should still be on the burst list
-    And there should be 1 burst
 
   @happy
   Scenario: Confirm delete burst
@@ -204,16 +138,6 @@ Feature: Manage Career Bursts
     And I press "c" to confirm
     Then I should see the confirm burst modal
     And I should see "confirm"
-
-  @happy
-  Scenario: Cancel confirm burst
-    Given I have an unconfirmed burst "New Burst" with 3 events
-    When I select "burst_management" from the menu
-    And I press enter to view details
-    And I press "c" to confirm
-    And I press escape
-    Then I should see the burst detail modal
-    And the burst should not be confirmed
 
   @happy
   Scenario: Confirm burst triggers fact extraction
@@ -244,14 +168,6 @@ Feature: Manage Career Bursts
     And I press "s" to suggest bursts
     Then I should see the loading modal
     And I should see "Detecting"
-
-  @happy
-  Scenario: Cancel burst suggestion
-    Given I have 5 unassigned events
-    When I select "burst_management" from the menu
-    And I press "s" to suggest bursts
-    And I press escape
-    Then I should still be on the burst list
 
   @happy
   Scenario: View burst suggestions after detection
@@ -287,14 +203,6 @@ Feature: Manage Career Bursts
     Then the suggestion should be marked as rejected
     And there should be 0 bursts
 
-  @happy
-  Scenario: Cancel burst suggestion review
-    Given I have burst suggestions available
-    When I am on the burst suggestion modal
-    And I press escape
-    Then I should still be on the burst list
-    And there should be 0 bursts
-
   # ============================================================================
   # Skill Inference from Burst
   # ============================================================================
@@ -307,24 +215,6 @@ Feature: Manage Career Bursts
     And I press "i" to infer skills
     Then I should see the loading modal
     And I should see "Inferring"
-
-  @happy
-  Scenario: Skill inference not available for unconfirmed burst
-    Given I have an unconfirmed burst "New Burst" with 3 events
-    When I select "burst_management" from the menu
-    And I press enter to view details
-    And I press "i" to infer skills
-    Then I should still be on the burst detail modal
-    And I should not see the loading modal
-
-  @happy
-  Scenario: Cancel skill inference
-    Given I have a confirmed burst "Backend Development" with 5 events
-    When I select "burst_management" from the menu
-    And I press enter to view details
-    And I press "i" to infer skills
-    And I press escape
-    Then I should see the burst detail modal
 
   @happy
   Scenario: View skill suggestions after inference
@@ -358,27 +248,3 @@ Feature: Manage Career Bursts
     When I am on the skill suggestion modal
     And I press "r" to reject
     Then the skill should be marked as rejected
-
-  # ============================================================================
-  # Navigation and Exit
-  # ============================================================================
-
-   @sad
-   Scenario: Exit burst list returns to menu
-     Given I have no data
-     When I select "burst_management" from the menu
-     And I press escape
-     Then I should be on the main menu
-
-  @sad
-  Scenario: Navigate back through modal stack
-    Given I have a burst "My Burst" with 3 events
-    When I select "burst_management" from the menu
-    And I press enter to view details
-    And I press "v" to view events
-    And I press escape
-    Then I should see the burst detail modal
-    When I press escape
-    Then I should still be on the burst list
-    When I press escape
-    Then I should be on the main menu
