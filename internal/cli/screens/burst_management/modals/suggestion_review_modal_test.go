@@ -351,6 +351,16 @@ var _ = Describe("SuggestionReviewModal", func() {
 			accepted := modal.GetAcceptedSuggestions()
 			Expect(accepted).To(HaveLen(3))
 		})
+
+		It("should adjust index when accepting last item in list", func() {
+			// Navigate to last (Frontend Updates, sorted third).
+			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
+			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
+			Expect(modal.GetCurrentSuggestion().Name).To(Equal("Frontend Updates"))
+
+			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+			Expect(modal.GetCurrentSuggestion().Name).To(Equal("Backend Development"))
+		})
 	})
 
 	Describe("Reject", func() {
@@ -629,23 +639,34 @@ var _ = Describe("SuggestionReviewModal", func() {
 	Describe("Edge Cases", func() {
 		It("should handle update when modal is not visible", func() {
 			modal = modals.NewSuggestionReviewModal(suggestions, theme)
-			// Hide the modal first (it's visible by default).
 			modal.Hide()
 			Expect(modal.IsVisible()).To(BeFalse())
 
-			// Should not panic and should not process.
 			_, cmd := modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
 			Expect(cmd).To(BeNil())
-
-			// Should not have accepted anything.
 			Expect(modal.GetAcceptedSuggestions()).To(BeEmpty())
 		})
 
 		It("should handle init correctly", func() {
 			modal = modals.NewSuggestionReviewModal(suggestions, theme)
 			cmd := modal.Init()
-			// Should return nil or valid command.
 			_ = cmd
+		})
+
+		It("should render empty suggestion list view", func() {
+			modal = modals.NewSuggestionReviewModal([]burstfact.BurstSuggestion{}, theme)
+			modal.Show()
+			view := modal.View()
+			Expect(view).To(ContainSubstring("No suggestions available"))
+		})
+
+		It("should ignore unknown rune keys", func() {
+			modal = modals.NewSuggestionReviewModal(suggestions, theme)
+			modal.Show()
+
+			_, cmd := modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
+			Expect(cmd).To(BeNil())
+			Expect(modal.GetSuggestionsCount()).To(Equal(3))
 		})
 
 		It("should handle window size message", func() {
