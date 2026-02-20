@@ -66,6 +66,7 @@ func RegisterFactsSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I press "([^"]*)" to toggle help$`, iPressToToggleHelp)
 
 	// Additional fact management steps
+	sc.Step(`^I accept all suggested facts$`, iAcceptAllSuggestedFacts)
 	sc.Step(`^I open the facts editor$`, iOpenTheFactsEditor)
 	sc.Step(`^I reject all suggested facts$`, iRejectAllSuggestedFacts)
 	sc.Step(`^there should be a fact with text "([^"]*)"$`, thereShouldBeAFactWithText)
@@ -499,6 +500,16 @@ func iPressToToggleHelp(ctx context.Context, key string) (context.Context, error
 		return ctx, godog.ErrPending
 	}
 	env.PressKeyRune(rune(key[0]))
+	return ctx, nil
+}
+
+// iAcceptAllSuggestedFacts accepts all suggested facts by pressing 'a' key.
+func iAcceptAllSuggestedFacts(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.PressKeyRune('a')
 	return ctx, nil
 }
 
