@@ -170,6 +170,34 @@ func (s *EventReviewScreen) SetSuggestedSkills(skills []skillinference.SkillSugg
 	s.skills = skills
 }
 
+// SetSuggestedBursts updates the inferred burst suggestions.
+//
+// Parameters:
+//   - bursts: The new list of burst suggestions.
+//
+// Expected:
+//   - bursts can be nil or an empty slice.
+//
+// Side effects:
+//   - Updates the bursts field.
+func (s *EventReviewScreen) SetSuggestedBursts(bursts []*career.Burst) {
+	s.bursts = bursts
+}
+
+// SetSuggestedFacts updates the inferred fact suggestions.
+//
+// Parameters:
+//   - facts: The new list of fact suggestions.
+//
+// Expected:
+//   - facts can be nil or an empty slice.
+//
+// Side effects:
+//   - Updates the facts field.
+func (s *EventReviewScreen) SetSuggestedFacts(facts []*career.Fact) {
+	s.facts = facts
+}
+
 // Update implements the Screen interface.
 //
 // Handles:
