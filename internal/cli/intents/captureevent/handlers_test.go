@@ -64,11 +64,11 @@ var _ = Describe("Handlers", func() {
 				Expect(intent.Result().Status).To(Equal(intents.Failed))
 			})
 
-			It("should fail gracefully for suggest_facts when CareerService is nil", func() {
+			It("should return nil for suggest_facts when no inferred facts exist", func() {
 				result := &screens.NavigateResult{ResultData: "suggest_facts"}
-				intent.HandleNavigate(result)
-				Expect(intent.IsActive()).To(BeFalse())
-				Expect(intent.Result().Status).To(Equal(intents.Failed))
+				cmd := intent.HandleNavigate(result)
+				Expect(cmd).To(BeNil())
+				Expect(intent.IsActive()).To(BeTrue())
 			})
 
 			It("should fail on unknown action", func() {

@@ -83,22 +83,28 @@ func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 			return i.reviewState.burstModal.Init()
 
 		case "suggest_facts":
-			if i.context.CareerService == nil {
-				return i.setFailedCmd("NO_SERVICE", "Career service not available for fact editing", nil)
+			if len(i.reviewState.InferredFacts) == 0 {
+				return nil
 			}
+
 			i.reviewState.EditingMode = EditingModeFacts
-			var fact *career.Fact
-			if len(i.reviewState.InferredFacts) > 0 {
-				fact = i.reviewState.InferredFacts[0]
-			} else {
-				fact = &career.Fact{Text: ""}
+
+			facts := make([]career.Fact, len(i.reviewState.InferredFacts))
+			for idx, f := range i.reviewState.InferredFacts {
+				facts[idx] = *f
 			}
-			i.reviewState.factModal = NewFactEditorModelNew(
-				context.Background(),
-				fact,
-				i.context.CareerService,
+
+			i.reviewState.factSuggestionModal = modals.NewFactSuggestionModal(
+				facts,
+				i.Theme(),
 			)
-			return i.reviewState.factModal.Init()
+
+			dims := i.terminalDimensions()
+			if dims != nil {
+				i.reviewState.factSuggestionModal.SetDimensions(dims.TerminalWidth, dims.TerminalHeight)
+			}
+
+			return i.reviewState.factSuggestionModal.Init()
 
 		case "suggest_skills":
 			i.reviewState.EditingMode = EditingModeSkills
@@ -369,10 +375,57 @@ func (i *Intent) updateEditingModal(msg tea.Msg) tea.Cmd {
 			if typed, ok := modal.(*BurstSuggestionModelNew); ok {
 				i.reviewState.burstModal = typed
 			}
+
+			if i.reviewState.burstModal.IsDone() {
+				confirmed := i.reviewState.burstModal.GetConfirmed()
+				if len(confirmed) > 0 {
+					for _, s := range confirmed {
+						name := s.Name
+						if name == "" {
+							name = fmt.Sprintf("Burst of %d events", len(s.EventIDs))
+						}
+						i.reviewState.AcceptedBursts = append(i.reviewState.AcceptedBursts, &career.Burst{
+							Name:        name,
+							Description: s.Description,
+							EventIDs:    s.EventIDs,
+						})
+					}
+
+					if screen, ok := i.activeScreen.(*captureScreens.EventReviewScreen); ok {
+						screen.SetAcceptedBursts(i.reviewState.AcceptedBursts)
+					}
+				}
+				i.reviewState.burstModal = nil
+				i.reviewState.EditingMode = EditingModeNone
+			}
 			return cmd
 		}
 
 	case EditingModeFacts:
+		if i.reviewState.factSuggestionModal != nil {
+			model, cmd := i.reviewState.factSuggestionModal.Update(msg)
+			if typed, ok := model.(*modals.SuggestionReviewModal); ok {
+				i.reviewState.factSuggestionModal = typed
+			}
+
+			if !i.reviewState.factSuggestionModal.IsVisible() {
+				accepted := i.reviewState.factSuggestionModal.GetAcceptedFacts()
+				if len(accepted) > 0 {
+					i.reviewState.AcceptedFacts = append(
+						i.reviewState.AcceptedFacts,
+						factsToPointers(accepted)...,
+					)
+
+					if screen, ok := i.activeScreen.(*captureScreens.EventReviewScreen); ok {
+						screen.SetAcceptedFacts(i.reviewState.AcceptedFacts)
+					}
+				}
+				i.reviewState.factSuggestionModal = nil
+				i.reviewState.EditingMode = EditingModeNone
+			}
+			return cmd
+		}
+
 		if i.reviewState.factModal != nil {
 			modal, cmd := i.reviewState.factModal.Update(msg)
 			if typed, ok := modal.(*FactEditorModelNew); ok {
