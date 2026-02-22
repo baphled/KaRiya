@@ -2,6 +2,7 @@ package captureevent
 
 import (
 	"context"
+
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/burst_management/modals"
