@@ -373,7 +373,7 @@ func (r *SkillRepository) GetEventCountsForSkills(ctx context.Context) (map[stri
 func (r *SkillRepository) GetLastUsedForSkills(ctx context.Context) (map[string]time.Time, error) {
 	type result struct {
 		SkillID  string
-		LastUsed time.Time
+		LastUsed string
 	}
 	var results []result
 	err := r.db.WithContext(ctx).
@@ -386,9 +386,29 @@ func (r *SkillRepository) GetLastUsedForSkills(ctx context.Context) (map[string]
 		return nil, err
 	}
 
+	dateFormats := []string{
+		time.RFC3339,
+		"2006-01-02T15:04:05Z",
+		"2006-01-02 15:04:05",
+		"2006-01-02",
+	}
 	lastUsed := make(map[string]time.Time, len(results))
-	for _, r := range results {
-		lastUsed[r.SkillID] = r.LastUsed
+	for _, row := range results {
+		if row.LastUsed == "" {
+			continue
+		}
+		var parsed time.Time
+		var parseErr error
+		for _, layout := range dateFormats {
+			parsed, parseErr = time.Parse(layout, row.LastUsed)
+			if parseErr == nil {
+				break
+			}
+		}
+		if parseErr != nil {
+			return nil, fmt.Errorf("parsing last_used date for skill %s: %w", row.SkillID, parseErr)
+		}
+		lastUsed[row.SkillID] = parsed
 	}
 	return lastUsed, nil
 }
