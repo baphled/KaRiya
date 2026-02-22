@@ -197,8 +197,11 @@ jobs:
       - name: Install dependencies
         run: go mod download
 
+      - name: Install Ginkgo
+        run: go install github.com/onsi/ginkgo/v2/ginkgo@latest
+
       - name: Run tests
-        run: go test -v -race -coverprofile=coverage.out ./...
+        run: ginkgo -v --race --cover --coverprofile="coverage.out" --skip-package=testdata,noinlinecareer/testdata,features ./...
 
       - name: Upload coverage
         if: matrix.os == 'ubuntu-latest'

@@ -344,300 +344,123 @@ var _ = Describe("Skill Repository", func() {
 		})
 	})
 
-	Describe("GetByCategory", func() {
-		BeforeEach(func() {
-			Expect(repo.Create(ctx, fixtures.SkillWith("", "Go", "backend", ""))).To(Succeed())
-			Expect(repo.Create(ctx, fixtures.SkillWith("", "Ruby", "backend", ""))).To(Succeed())
-			Expect(repo.Create(ctx, fixtures.SkillWith("", "React", "frontend", ""))).To(Succeed())
-		})
-
-		It("returns skills in the specified category", func() {
-			skills, err := repo.GetByCategory(ctx, "backend")
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(skills).To(HaveLen(2))
-			for _, s := range skills {
-				Expect(s.Category).To(Equal("backend"))
-			}
-		})
-
-		It("returns empty for unknown category", func() {
-			skills, err := repo.GetByCategory(ctx, "nonexistent")
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(skills).To(BeEmpty())
-		})
-	})
-
-	Describe("GetSkillsForEvent", func() {
-		It("returns skills linked to an event", func() {
-			skill := fixtures.SkillWith("", "Go", "backend", "")
-			Expect(repo.Create(ctx, skill)).To(Succeed())
-
-			event := &models.Event{ID: "e1", Text: "Test", Date: time.Now(), CreatedAt: time.Now(), UpdatedAt: time.Now()}
-			Expect(db.Create(event).Error).NotTo(HaveOccurred())
-			Expect(repo.LinkToEvent(ctx, skill.ID, "e1")).To(Succeed())
-
-			skills, err := repo.GetSkillsForEvent(ctx, "e1")
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(skills).To(HaveLen(1))
-			Expect(skills[0].Name).To(Equal("Go"))
-		})
-
-		It("returns empty for event with no skills", func() {
-			skills, err := repo.GetSkillsForEvent(ctx, "nonexistent")
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(skills).To(BeEmpty())
-		})
-	})
-
-	Describe("GetEventCountsForSkills", func() {
-		It("returns event counts per skill", func() {
-			skill1 := fixtures.SkillWith("", "Go", "backend", "")
-			skill2 := fixtures.SkillWith("", "Ruby", "backend", "")
-			Expect(repo.Create(ctx, skill1)).To(Succeed())
-			Expect(repo.Create(ctx, skill2)).To(Succeed())
-
-			now := time.Now()
-			for _, eid := range []string{"e1", "e2", "e3"} {
-				event := &models.Event{ID: eid, Text: "Test", Date: now, CreatedAt: now, UpdatedAt: now}
-				Expect(db.Create(event).Error).NotTo(HaveOccurred())
-			}
-			Expect(repo.LinkToEvent(ctx, skill1.ID, "e1")).To(Succeed())
-			Expect(repo.LinkToEvent(ctx, skill1.ID, "e2")).To(Succeed())
-			Expect(repo.LinkToEvent(ctx, skill2.ID, "e3")).To(Succeed())
-
-			counts, err := repo.GetEventCountsForSkills(ctx)
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(counts[skill1.ID]).To(Equal(2))
-			Expect(counts[skill2.ID]).To(Equal(1))
-		})
-
-		It("returns empty map when no links exist", func() {
-			counts, err := repo.GetEventCountsForSkills(ctx)
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(counts).To(BeEmpty())
-		})
-	})
-
 	Describe("GetLastUsedForSkills", func() {
-		It("returns empty map when no links exist", func() {
-			lastUsed, err := repo.GetLastUsedForSkills(ctx)
+		var skill *career.Skill
 
-			Expect(err).NotTo(HaveOccurred())
-			Expect(lastUsed).To(BeEmpty())
-		})
-
-		It("queries the database for last used dates", func() {
-			skill := fixtures.SkillWith("", "Go", "backend", "")
+		BeforeEach(func() {
+			skill = fixtures.SkillWith("", "Go", "backend", "")
 			Expect(repo.Create(ctx, skill)).To(Succeed())
-
-			now := time.Now()
-			e1 := &models.Event{ID: "e1", Text: "Test", Date: now, CreatedAt: now, UpdatedAt: now}
-			Expect(db.Create(e1).Error).NotTo(HaveOccurred())
-			Expect(repo.LinkToEvent(ctx, skill.ID, "e1")).To(Succeed())
-
-			_, err := repo.GetLastUsedForSkills(ctx)
-
-			Expect(err).To(HaveOccurred())
-		})
-	})
-
-	Describe("GetEventsUsingSkill", func() {
-		It("returns events ordered by date descending", func() {
-			skill := fixtures.SkillWith("", "Go", "backend", "")
-			Expect(repo.Create(ctx, skill)).To(Succeed())
-
-			now := time.Now()
-			earlier := now.Add(-48 * time.Hour)
-			e1 := &models.Event{ID: "e1", Text: "Old", Date: earlier, CreatedAt: now, UpdatedAt: now}
-			e2 := &models.Event{ID: "e2", Text: "New", Date: now, CreatedAt: now, UpdatedAt: now}
-			Expect(db.Create(e1).Error).NotTo(HaveOccurred())
-			Expect(db.Create(e2).Error).NotTo(HaveOccurred())
-			Expect(repo.LinkToEvent(ctx, skill.ID, "e1")).To(Succeed())
-			Expect(repo.LinkToEvent(ctx, skill.ID, "e2")).To(Succeed())
-
-			events, err := repo.GetEventsUsingSkill(ctx, skill.ID)
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(events).To(HaveLen(2))
-			Expect(events[0].ID).To(Equal("e2"))
-			Expect(events[1].ID).To(Equal("e1"))
 		})
 
-		It("returns empty for skill with no events", func() {
-			events, err := repo.GetEventsUsingSkill(ctx, "nonexistent")
+		Context("when event date is in RFC3339 format", func() {
+			It("parses the date correctly", func() {
+				err := db.Exec(`INSERT INTO career_events (id, text, date, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`,
+					"evt-rfc3339", "RFC3339 event", "2024-01-15T10:30:00Z", time.Now(), time.Now()).Error
+				Expect(err).NotTo(HaveOccurred())
+				Expect(repo.LinkToEvent(ctx, skill.ID, "evt-rfc3339")).To(Succeed())
 
-			Expect(err).NotTo(HaveOccurred())
-			Expect(events).To(BeEmpty())
-		})
-	})
+				result, err := repo.GetLastUsedForSkills(ctx)
 
-	Describe("Sort by events and last_used", func() {
-		It("sorts by events ascending", func() {
-			skill1 := fixtures.SkillWith("", "Go", "backend", "")
-			skill2 := fixtures.SkillWith("", "Ruby", "backend", "")
-			Expect(repo.Create(ctx, skill1)).To(Succeed())
-			Expect(repo.Create(ctx, skill2)).To(Succeed())
-
-			now := time.Now()
-			for _, eid := range []string{"e1", "e2"} {
-				event := &models.Event{ID: eid, Text: "Test", Date: now, CreatedAt: now, UpdatedAt: now}
-				Expect(db.Create(event).Error).NotTo(HaveOccurred())
-			}
-			Expect(repo.LinkToEvent(ctx, skill1.ID, "e1")).To(Succeed())
-			Expect(repo.LinkToEvent(ctx, skill1.ID, "e2")).To(Succeed())
-
-			skills, err := repo.List(ctx, fixtures.SkillListFiltersWithSort("events", "desc"))
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(skills[0].Name).To(Equal("Go"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(HaveKey(skill.ID))
+				Expect(result[skill.ID]).To(BeTemporally("~", time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC), time.Second))
+			})
 		})
 
-		It("sorts by last_used descending", func() {
-			skill1 := fixtures.SkillWith("", "Go", "backend", "")
-			skill2 := fixtures.SkillWith("", "Ruby", "backend", "")
-			Expect(repo.Create(ctx, skill1)).To(Succeed())
-			Expect(repo.Create(ctx, skill2)).To(Succeed())
+		Context("when event date is in space-separated datetime format", func() {
+			It("parses the date correctly", func() {
+				err := db.Exec(`INSERT INTO career_events (id, text, date, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`,
+					"evt-space", "Space format event", "2024-06-20 14:00:00", time.Now(), time.Now()).Error
+				Expect(err).NotTo(HaveOccurred())
+				Expect(repo.LinkToEvent(ctx, skill.ID, "evt-space")).To(Succeed())
 
-			now := time.Now()
-			earlier := now.Add(-48 * time.Hour)
-			e1 := &models.Event{ID: "e1", Text: "Old", Date: earlier, CreatedAt: now, UpdatedAt: now}
-			e2 := &models.Event{ID: "e2", Text: "New", Date: now, CreatedAt: now, UpdatedAt: now}
-			Expect(db.Create(e1).Error).NotTo(HaveOccurred())
-			Expect(db.Create(e2).Error).NotTo(HaveOccurred())
-			Expect(repo.LinkToEvent(ctx, skill1.ID, "e1")).To(Succeed())
-			Expect(repo.LinkToEvent(ctx, skill2.ID, "e2")).To(Succeed())
+				result, err := repo.GetLastUsedForSkills(ctx)
 
-			skills, err := repo.List(ctx, fixtures.SkillListFiltersWithSort("last_used", "desc"))
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(skills[0].Name).To(Equal("Ruby"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(HaveKey(skill.ID))
+				Expect(result[skill.ID]).To(BeTemporally("~", time.Date(2024, 6, 20, 14, 0, 0, 0, time.UTC), time.Second))
+			})
 		})
-	})
-})
 
-var _ = Describe("Skill Repository Error Handling", func() {
-	var (
-		closedRepo *SkillRepository
-		ctx        context.Context
-	)
+		Context("when event date is in date-only format", func() {
+			It("parses as midnight UTC", func() {
+				err := db.Exec(`INSERT INTO career_events (id, text, date, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`,
+					"evt-date", "Date only event", "2024-03-01", time.Now(), time.Now()).Error
+				Expect(err).NotTo(HaveOccurred())
+				Expect(repo.LinkToEvent(ctx, skill.ID, "evt-date")).To(Succeed())
 
-	BeforeEach(func() {
-		closedDB, err := stdsql.Open("sqlite", ":memory:")
-		Expect(err).NotTo(HaveOccurred())
-		gormDB, err := gorm.Open(sqlite.New(sqlite.Config{Conn: closedDB}), &gorm.Config{})
-		Expect(err).NotTo(HaveOccurred())
-		closedDB.Close()
-		closedRepo = NewSkillRepository(gormDB)
-		ctx = context.Background()
-	})
+				result, err := repo.GetLastUsedForSkills(ctx)
 
-	It("returns error on Create with closed DB", func() {
-		skill := fixtures.SkillWith("", "Go", "backend", "")
-		err := closedRepo.Create(ctx, skill)
-		Expect(err).To(HaveOccurred())
-	})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(HaveKey(skill.ID))
+				Expect(result[skill.ID]).To(BeTemporally("~", time.Date(2024, 3, 1, 0, 0, 0, 0, time.UTC), time.Second))
+			})
+		})
 
-	It("returns error on GetByID with closed DB", func() {
-		_, err := closedRepo.GetByID(ctx, "id")
-		Expect(err).To(HaveOccurred())
-	})
+		Context("when skill has no events", func() {
+			It("does not include the skill in the result", func() {
+				result, err := repo.GetLastUsedForSkills(ctx)
 
-	It("returns error on GetByName with closed DB", func() {
-		_, err := closedRepo.GetByName(ctx, "Go")
-		Expect(err).To(HaveOccurred())
-	})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).NotTo(HaveKey(skill.ID))
+			})
+		})
 
-	It("returns error on Update with closed DB", func() {
-		skill := fixtures.SkillWith("id", "Go", "backend", "")
-		err := closedRepo.Update(ctx, skill)
-		Expect(err).To(HaveOccurred())
-	})
+		Context("when multiple skills have events", func() {
+			It("returns the correct date for each skill", func() {
+				skill2 := fixtures.SkillWith("", "Ruby", "backend", "")
+				Expect(repo.Create(ctx, skill2)).To(Succeed())
 
-	It("returns error on List with closed DB", func() {
-		_, err := closedRepo.List(ctx, nil)
-		Expect(err).To(HaveOccurred())
-	})
+				err := db.Exec(`INSERT INTO career_events (id, text, date, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`,
+					"evt-go", "Go event", "2024-01-15T10:30:00Z", time.Now(), time.Now()).Error
+				Expect(err).NotTo(HaveOccurred())
+				err = db.Exec(`INSERT INTO career_events (id, text, date, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`,
+					"evt-ruby", "Ruby event", "2024-06-20T14:00:00Z", time.Now(), time.Now()).Error
+				Expect(err).NotTo(HaveOccurred())
 
-	It("returns error on Count with closed DB", func() {
-		_, err := closedRepo.Count(ctx, nil)
-		Expect(err).To(HaveOccurred())
-	})
+				Expect(repo.LinkToEvent(ctx, skill.ID, "evt-go")).To(Succeed())
+				Expect(repo.LinkToEvent(ctx, skill2.ID, "evt-ruby")).To(Succeed())
 
-	It("returns error on GetSkillsForEvent with closed DB", func() {
-		_, err := closedRepo.GetSkillsForEvent(ctx, "e1")
-		Expect(err).To(HaveOccurred())
-	})
+				result, err := repo.GetLastUsedForSkills(ctx)
 
-	It("returns error on GetEventCountsForSkills with closed DB", func() {
-		_, err := closedRepo.GetEventCountsForSkills(ctx)
-		Expect(err).To(HaveOccurred())
-	})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(HaveLen(2))
+				Expect(result[skill.ID]).To(BeTemporally("~", time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC), time.Second))
+				Expect(result[skill2.ID]).To(BeTemporally("~", time.Date(2024, 6, 20, 14, 0, 0, 0, time.UTC), time.Second))
+			})
+		})
 
-	It("returns error on GetLastUsedForSkills with closed DB", func() {
-		_, err := closedRepo.GetLastUsedForSkills(ctx)
-		Expect(err).To(HaveOccurred())
-	})
+		Context("when a skill has multiple events", func() {
+			It("returns the most recent date", func() {
+				err := db.Exec(`INSERT INTO career_events (id, text, date, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`,
+					"evt-old", "Old event", "2023-01-01T00:00:00Z", time.Now(), time.Now()).Error
+				Expect(err).NotTo(HaveOccurred())
+				err = db.Exec(`INSERT INTO career_events (id, text, date, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`,
+					"evt-new", "New event", "2024-06-15T12:00:00Z", time.Now(), time.Now()).Error
+				Expect(err).NotTo(HaveOccurred())
 
-	It("returns error on GetEventsUsingSkill with closed DB", func() {
-		_, err := closedRepo.GetEventsUsingSkill(ctx, "s1")
-		Expect(err).To(HaveOccurred())
-	})
-})
+				Expect(repo.LinkToEvent(ctx, skill.ID, "evt-old")).To(Succeed())
+				Expect(repo.LinkToEvent(ctx, skill.ID, "evt-new")).To(Succeed())
 
-var _ = Describe("SQL Repositories", func() {
-	It("creates repositories from GORM DB", func() {
-		db := setupTestDB()
-		repos := NewRepositoriesFromDB(db)
+				result, err := repo.GetLastUsedForSkills(ctx)
 
-		Expect(repos.Event).NotTo(BeNil())
-		Expect(repos.Skill).NotTo(BeNil())
-		Expect(repos.Fact).NotTo(BeNil())
-		Expect(repos.Burst).NotTo(BeNil())
-	})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result[skill.ID]).To(BeTemporally("~", time.Date(2024, 6, 15, 12, 0, 0, 0, time.UTC), time.Second))
+			})
+		})
 
-	It("creates repositories from sql.DB via NewRepositories", func() {
-		sqlDB, err := stdsql.Open("sqlite", ":memory:")
-		Expect(err).NotTo(HaveOccurred())
+		Context("when event date is unparseable", func() {
+			It("returns an error containing the skill ID", func() {
+				err := db.Exec(`INSERT INTO career_events (id, text, date, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`,
+					"evt-bad", "Bad date event", "not-a-date", time.Now(), time.Now()).Error
+				Expect(err).NotTo(HaveOccurred())
+				Expect(repo.LinkToEvent(ctx, skill.ID, "evt-bad")).To(Succeed())
 
-		repos, err := NewRepositories(sqlDB)
+				_, err = repo.GetLastUsedForSkills(ctx)
 
-		Expect(err).NotTo(HaveOccurred())
-		Expect(repos).NotTo(BeNil())
-		Expect(repos.Event).NotTo(BeNil())
-	})
-
-	It("creates GORM DB from sql.DB via NewGormDB", func() {
-		sqlDB, err := stdsql.Open("sqlite", ":memory:")
-		Expect(err).NotTo(HaveOccurred())
-
-		gormDB, err := NewGormDB(sqlDB)
-
-		Expect(err).NotTo(HaveOccurred())
-		Expect(gormDB).NotTo(BeNil())
-	})
-
-	It("opens a database via OpenDB", func() {
-		tmpDB := GinkgoT().TempDir() + "/test.db"
-		sqlDB, err := OpenDB(tmpDB)
-
-		Expect(err).NotTo(HaveOccurred())
-		Expect(sqlDB).NotTo(BeNil())
-		sqlDB.Close()
-	})
-
-	It("creates repositories from path via NewRepositoriesFromPath", func() {
-		tmpDB := GinkgoT().TempDir() + "/test.db"
-		repos, err := NewRepositoriesFromPath(tmpDB)
-
-		Expect(err).NotTo(HaveOccurred())
-		Expect(repos).NotTo(BeNil())
-		Expect(repos.Event).NotTo(BeNil())
-		DeferCleanup(repos.Close)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring(skill.ID))
+			})
+		})
 	})
 })

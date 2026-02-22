@@ -17,6 +17,18 @@ import (
 // Compile-time interface check.
 var _ career_repo.SkillRepository = (*SkillRepository)(nil)
 
+// sqliteDateFormats lists the timestamp formats that SQLite may return for
+// date columns, ordered from most specific to least specific. The pure-Go
+// SQLite driver (modernc.org/sqlite) returns aggregated date values as raw
+// strings, so we must parse them manually.
+var sqliteDateFormats = []string{
+	time.RFC3339Nano,
+	time.RFC3339,
+	"2006-01-02 15:04:05.999999999",
+	"2006-01-02 15:04:05",
+	"2006-01-02",
+}
+
 // SkillRepository implements career.SkillRepository using GORM.
 type SkillRepository struct {
 	db *gorm.DB
@@ -373,7 +385,7 @@ func (r *SkillRepository) GetEventCountsForSkills(ctx context.Context) (map[stri
 func (r *SkillRepository) GetLastUsedForSkills(ctx context.Context) (map[string]time.Time, error) {
 	type result struct {
 		SkillID  string
-		LastUsed time.Time
+		LastUsed string
 	}
 	var results []result
 	err := r.db.WithContext(ctx).
@@ -387,8 +399,22 @@ func (r *SkillRepository) GetLastUsedForSkills(ctx context.Context) (map[string]
 	}
 
 	lastUsed := make(map[string]time.Time, len(results))
-	for _, r := range results {
-		lastUsed[r.SkillID] = r.LastUsed
+	for _, row := range results {
+		if row.LastUsed == "" {
+			continue
+		}
+		var parsed time.Time
+		var parseErr error
+		for _, layout := range sqliteDateFormats {
+			parsed, parseErr = time.ParseInLocation(layout, row.LastUsed, time.UTC)
+			if parseErr == nil {
+				break
+			}
+		}
+		if parseErr != nil {
+			return nil, fmt.Errorf("parsing last_used date for skill %s (value %q): %w", row.SkillID, row.LastUsed, parseErr)
+		}
+		lastUsed[row.SkillID] = parsed
 	}
 	return lastUsed, nil
 }
