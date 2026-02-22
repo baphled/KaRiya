@@ -23,9 +23,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-const (
-	version = "0.1.0"
-)
+var version = "dev"
 
 func main() {
 	os.Exit(run(os.Args[1:], os.Stdout, os.Stderr))
@@ -209,7 +207,7 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 	}
 
 	// Initialize application model with bootstrap results
-	model := app.NewModel(cliSvc, svc, bootstrapResult)
+	model := app.NewModel(cliSvc, svc, bootstrapResult, app.WithVersion(version))
 
 	if mode != "" {
 		model.SetInitialCaptureMode(mode)
