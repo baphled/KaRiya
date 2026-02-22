@@ -3,10 +3,6 @@ package captureevent
 import (
 	"context"
 	"fmt"
-	"time"
-
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/google/uuid"
 
 	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/forms"
@@ -18,6 +14,7 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 	burstfact "github.com/baphled/kariya/internal/service/career/burstfact"
 	"github.com/baphled/kariya/internal/service/career/skillinference"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 // handleScreenResult dispatches a screen result to the appropriate handler method.
@@ -360,18 +357,11 @@ func (i *Intent) updateEditingModal(msg tea.Msg) tea.Cmd {
 						if name == "" {
 							name = fmt.Sprintf("Burst of %d events", len(s.EventIDs))
 						}
-						if original := findInferredBurst(i.reviewState.InferredBursts, name); original != nil {
-							i.reviewState.AcceptedBursts = append(i.reviewState.AcceptedBursts, original)
-						} else {
-							i.reviewState.AcceptedBursts = append(i.reviewState.AcceptedBursts, &career.Burst{
-								ID:          uuid.New().String(),
-								Name:        name,
-								Description: s.Description,
-								EventIDs:    s.EventIDs,
-								CreatedAt:   time.Now(),
-								UpdatedAt:   time.Now(),
-							})
+						original := findInferredBurst(i.reviewState.InferredBursts, name)
+						if original == nil {
+							continue
 						}
+						i.reviewState.AcceptedBursts = append(i.reviewState.AcceptedBursts, original)
 					}
 					if screen, ok := i.activeScreen.(*captureScreens.EventReviewScreen); ok {
 						screen.SetAcceptedBursts(i.reviewState.AcceptedBursts)

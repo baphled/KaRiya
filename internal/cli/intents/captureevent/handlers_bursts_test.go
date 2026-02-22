@@ -2,15 +2,17 @@ package captureevent
 
 import (
 	"context"
-
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/screens"
+	"github.com/baphled/kariya/internal/cli/screens/burst_management/modals"
+	captureScreens "github.com/baphled/kariya/internal/cli/screens/capture"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/domain/career"
 	memoryrepo "github.com/baphled/kariya/internal/repository/career/memory"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	burstfact "github.com/baphled/kariya/internal/service/career/burstfact"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
+	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -233,6 +235,36 @@ var _ = Describe("HandleNavigate suggest_bursts always uses InferredBursts", fun
 			suggestion := intent.reviewState.burstModal.GetCurrentSuggestion()
 			Expect(suggestion).NotTo(BeNil())
 			Expect(suggestion.Name).To(Equal("Persisted Burst"))
+		})
+	})
+
+	Context("when the accepted suggestion has no matching InferredBurst", func() {
+		BeforeEach(func() {
+			intent.currentState = StateReview
+			intent.reviewState = &ReviewInferredEventState{
+				Event: fixtures.EventWith("evt-1", "Built services in Go", "", ""),
+				InferredBursts: func() []*career.Burst {
+					b := fixtures.Burst("", "evt-1")
+					b.Name = "Alpha"
+					b.Description = "Persisted burst"
+					return []*career.Burst{b}
+				}(),
+				AcceptedBursts: make([]*career.Burst, 0),
+				EditingMode:    EditingModeBursts,
+			}
+			suggestions := []burstfact.BurstSuggestion{
+				{Name: "Beta", Description: "no match in InferredBursts", EventIDs: []string{"evt-1"}, ConfidenceScore: 0.8},
+			}
+			intent.reviewState.burstModal = modals.NewSuggestionReviewModal(suggestions, nil)
+
+			screen := captureScreens.NewEventReviewScreen([]string{"Test"}, intent.reviewState.Event, nil, nil, nil)
+			intent.activeScreen = screen
+		})
+
+		It("skips the suggestion and does not append to AcceptedBursts", func() {
+			intent.updateEditingModal(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+
+			Expect(intent.reviewState.AcceptedBursts).To(BeEmpty())
 		})
 	})
 })

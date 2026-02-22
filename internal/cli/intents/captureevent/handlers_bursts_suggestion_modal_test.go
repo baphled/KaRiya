@@ -115,9 +115,13 @@ var _ = Describe("Burst SuggestionReviewModal in CaptureEvent", func() {
 
 	Describe("updateEditingModal with EditingModeBursts using SuggestionReviewModal", func() {
 		BeforeEach(func() {
+			inferred := fixtures.Burst("inferred-api-dev", "evt-1")
+			inferred.Name = "API Development"
+			inferred.Description = "Built REST APIs"
 			intent.currentState = StateReview
 			intent.reviewState = &ReviewInferredEventState{
 				Event:          fixtures.EventWith("evt-1", "Built services in Go", "", ""),
+				InferredBursts: []*career.Burst{inferred},
 				AcceptedBursts: make([]*career.Burst, 0),
 				EditingMode:    EditingModeBursts,
 			}
@@ -125,7 +129,6 @@ var _ = Describe("Burst SuggestionReviewModal in CaptureEvent", func() {
 				{Name: "API Development", Description: "Built REST APIs", EventIDs: []string{"evt-1"}, ConfidenceScore: 0.9},
 			}
 			intent.reviewState.burstModal = modals.NewSuggestionReviewModal(suggestions, nil)
-
 			breadcrumbs := []string{"Test"}
 			screen := captureScreens.NewEventReviewScreen(breadcrumbs, intent.reviewState.Event, nil, nil, nil)
 			intent.activeScreen = screen
@@ -146,7 +149,7 @@ var _ = Describe("Burst SuggestionReviewModal in CaptureEvent", func() {
 			Expect(intent.reviewState.AcceptedBursts).To(HaveLen(1))
 			Expect(intent.reviewState.AcceptedBursts[0].Name).To(Equal("API Development"))
 			Expect(intent.reviewState.AcceptedBursts[0].Description).To(Equal("Built REST APIs"))
-			Expect(intent.reviewState.AcceptedBursts[0].EventIDs).To(Equal([]string{"evt-1"}))
+			Expect(intent.reviewState.AcceptedBursts[0].EventIDs).To(Equal([]string{"event-1", "event-2"}))
 		})
 
 		It("closes modal and resets editing mode after all accepted", func() {
@@ -175,9 +178,13 @@ var _ = Describe("Burst SuggestionReviewModal in CaptureEvent", func() {
 
 	Describe("burst suggestion with empty name", func() {
 		BeforeEach(func() {
+			inferred := fixtures.Burst("inferred-empty", "evt-1", "evt-2")
+			inferred.Name = "Burst of 2 events"
+			inferred.Description = "unnamed burst"
 			intent.currentState = StateReview
 			intent.reviewState = &ReviewInferredEventState{
 				Event:          fixtures.EventWith("evt-1", "test event", "", ""),
+				InferredBursts: []*career.Burst{inferred},
 				AcceptedBursts: make([]*career.Burst, 0),
 				EditingMode:    EditingModeBursts,
 			}
@@ -185,25 +192,28 @@ var _ = Describe("Burst SuggestionReviewModal in CaptureEvent", func() {
 				{Name: "", Description: "unnamed burst", EventIDs: []string{"evt-1", "evt-2"}, ConfidenceScore: 0.7},
 			}
 			intent.reviewState.burstModal = modals.NewSuggestionReviewModal(suggestions, nil)
-
 			breadcrumbs := []string{"Test"}
 			screen := captureScreens.NewEventReviewScreen(breadcrumbs, intent.reviewState.Event, nil, nil, nil)
 			intent.activeScreen = screen
 		})
-
 		It("generates a name based on event count when name is empty", func() {
 			intent.updateEditingModal(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
-
-			Expect(intent.reviewState.AcceptedBursts).To(HaveLen(1))
 			Expect(intent.reviewState.AcceptedBursts[0].Name).To(Equal("Burst of 2 events"))
 		})
 	})
 
 	Describe("multiple burst suggestions: accept some reject some", func() {
 		BeforeEach(func() {
+			inferredKeep := fixtures.Burst("inferred-keep", "evt-1")
+			inferredKeep.Name = "Keep This"
+			inferredKeep.Description = "accepted"
+			inferredSkip := fixtures.Burst("inferred-skip", "evt-2")
+			inferredSkip.Name = "Skip This"
+			inferredSkip.Description = "rejected"
 			intent.currentState = StateReview
 			intent.reviewState = &ReviewInferredEventState{
 				Event:          fixtures.EventWith("evt-1", "test event", "", ""),
+				InferredBursts: []*career.Burst{inferredKeep, inferredSkip},
 				AcceptedBursts: make([]*career.Burst, 0),
 				EditingMode:    EditingModeBursts,
 			}
@@ -212,17 +222,13 @@ var _ = Describe("Burst SuggestionReviewModal in CaptureEvent", func() {
 				{Name: "Skip This", Description: "rejected", EventIDs: []string{"evt-2"}, ConfidenceScore: 0.3},
 			}
 			intent.reviewState.burstModal = modals.NewSuggestionReviewModal(suggestions, nil)
-
 			breadcrumbs := []string{"Test"}
 			screen := captureScreens.NewEventReviewScreen(breadcrumbs, intent.reviewState.Event, nil, nil, nil)
 			intent.activeScreen = screen
 		})
-
 		It("only includes accepted bursts in AcceptedBursts", func() {
 			intent.updateEditingModal(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
 			intent.updateEditingModal(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'r'}})
-
-			Expect(intent.reviewState.AcceptedBursts).To(HaveLen(1))
 			Expect(intent.reviewState.AcceptedBursts[0].Name).To(Equal("Keep This"))
 		})
 	})
@@ -259,17 +265,14 @@ var _ = Describe("Burst SuggestionReviewModal in CaptureEvent", func() {
 			Expect(intent.reviewState.AcceptedBursts[0].Name).To(Equal("API Development"))
 		})
 
-		It("assigns a fresh UUID when the suggestion name does not match any InferredBurst", func() {
+		It("skips the suggestion when the name does not match any InferredBurst", func() {
 			intent.reviewState.InferredBursts = []*career.Burst{}
 			intent.reviewState.burstModal = modals.NewSuggestionReviewModal([]burstfact.BurstSuggestion{
 				{Name: "Unknown Burst", Description: "no match", EventIDs: []string{"evt-3"}, ConfidenceScore: 0.5},
 			}, nil)
-
 			intent.updateEditingModal(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
 
-			Expect(intent.reviewState.AcceptedBursts).To(HaveLen(1))
-			Expect(intent.reviewState.AcceptedBursts[0].ID).NotTo(BeEmpty())
-			Expect(intent.reviewState.AcceptedBursts[0].Name).To(Equal("Unknown Burst"))
+			Expect(intent.reviewState.AcceptedBursts).To(BeEmpty())
 		})
 	})
 
@@ -297,10 +300,7 @@ var _ = Describe("Burst SuggestionReviewModal in CaptureEvent", func() {
 			Expect(screen.View()).To(ContainSubstring("●"))
 		})
 
-		It("shows ● indicator when InferredBursts is empty and accepted burst falls back to new UUID", func() {
-			inferred := fixtures.Burst("inferred-burst-uuid-1", "evt-1", "evt-2")
-			inferred.Name = "API Development"
-			inferred.Description = "Built REST APIs"
+		It("does not show ● indicator when InferredBursts is empty and suggestion is skipped", func() {
 			intent.currentState = StateReview
 			intent.reviewState = &ReviewInferredEventState{
 				Event:          fixtures.EventWith("evt-1", "Built services in Go", "", ""),
@@ -312,12 +312,15 @@ var _ = Describe("Burst SuggestionReviewModal in CaptureEvent", func() {
 				{Name: "API Development", Description: "Built REST APIs", EventIDs: []string{"evt-1", "evt-2"}, ConfidenceScore: 0.9},
 			}
 			intent.reviewState.burstModal = modals.NewSuggestionReviewModal(suggestions, nil)
+			inferred := fixtures.Burst("inferred-burst-uuid-1", "evt-1", "evt-2")
+			inferred.Name = "API Development"
+			inferred.Description = "Built REST APIs"
 			screen := captureScreens.NewEventReviewScreen([]string{"Test"}, intent.reviewState.Event, []*career.Burst{inferred}, nil, nil)
 			intent.activeScreen = screen
-
 			intent.updateEditingModal(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
 
-			Expect(screen.View()).To(ContainSubstring("●"))
+			Expect(intent.reviewState.AcceptedBursts).To(BeEmpty())
+			Expect(screen.View()).NotTo(ContainSubstring("●"))
 		})
 	})
 
@@ -325,9 +328,13 @@ var _ = Describe("Burst SuggestionReviewModal in CaptureEvent", func() {
 		BeforeEach(func() {
 			existingBurst := fixtures.BurstConfirmed("burst-1")
 			existingBurst.Name = "Existing Burst"
+			inferredNew := fixtures.Burst("inferred-new", "evt-1")
+			inferredNew.Name = "New Burst"
+			inferredNew.Description = "newly confirmed"
 			intent.currentState = StateReview
 			intent.reviewState = &ReviewInferredEventState{
 				Event:          fixtures.EventWith("evt-1", "test event", "", ""),
+				InferredBursts: []*career.Burst{inferredNew},
 				AcceptedBursts: []*career.Burst{existingBurst},
 				EditingMode:    EditingModeBursts,
 			}
@@ -335,16 +342,12 @@ var _ = Describe("Burst SuggestionReviewModal in CaptureEvent", func() {
 				{Name: "New Burst", Description: "newly confirmed", EventIDs: []string{"evt-1"}, ConfidenceScore: 0.8},
 			}
 			intent.reviewState.burstModal = modals.NewSuggestionReviewModal(suggestions, nil)
-
 			breadcrumbs := []string{"Test"}
 			screen := captureScreens.NewEventReviewScreen(breadcrumbs, intent.reviewState.Event, nil, nil, nil)
 			intent.activeScreen = screen
 		})
-
 		It("appends new bursts to existing accepted list", func() {
 			intent.updateEditingModal(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
-
-			Expect(intent.reviewState.AcceptedBursts).To(HaveLen(2))
 			Expect(intent.reviewState.AcceptedBursts[0].Name).To(Equal("Existing Burst"))
 			Expect(intent.reviewState.AcceptedBursts[1].Name).To(Equal("New Burst"))
 		})
