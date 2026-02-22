@@ -19,8 +19,6 @@ import (
 	"github.com/onsi/gomega"
 )
 
-type contextKey string
-
 const (
 	editedBurstNameKey    contextKey = "editedBurstName"
 	editedEventCompanyKey contextKey = "editedEventCompany"
