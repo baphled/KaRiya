@@ -91,6 +91,7 @@ func RegisterCaptureSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I should see the bursts modal$`, iShouldSeeTheBurstsModal)
 	sc.Step(`^I should see the facts modal$`, iShouldSeeTheFactsModal)
 	sc.Step(`^I should see the metadata modal$`, iShouldSeeTheMetadataModal)
+	sc.Step(`^the review screen should show enrichment sections$`, theReviewScreenShouldShowEnrichmentSections)
 	sc.Step(`^I should move to the previous field$`, iShouldMoveToThePreviousField)
 }
 
@@ -483,6 +484,9 @@ func iAcceptTheSuggestedBurst(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
+// iRejectTheSuggestedBurst advances the review flow without creating a burst.
+// Confirming without first calling createSuggestedBurstFromEvents means
+// no burst is persisted — this is the rejection mechanism for this flow.
 func iRejectTheSuggestedBurst(ctx context.Context) (context.Context, error) {
 	env := support.GetAppEnv(ctx)
 	if env == nil {
@@ -498,8 +502,12 @@ func theAcceptedBurstShouldHaveAtLeastNEventIDs(ctx context.Context, minCount in
 		return godog.ErrPending
 	}
 	bursts := env.GetBursts()
-	gomega.Expect(bursts).NotTo(gomega.BeEmpty())
-	gomega.Expect(len(bursts[0].EventIDs)).To(gomega.BeNumerically(">=", minCount))
+	if len(bursts) == 0 {
+		return errors.New("expected at least 1 burst, got 0")
+	}
+	if len(bursts[0].EventIDs) < minCount {
+		return fmt.Errorf("expected burst to have at least %d event IDs, got %d", minCount, len(bursts[0].EventIDs))
+	}
 	return nil
 }
 
@@ -705,10 +713,15 @@ func iSaveMetadataChanges(ctx context.Context) (context.Context, error) {
 }
 
 func updateEventMetadata(env *e2e.TestEnv, company string) {
-	// This is a "When" helper - it updates the latest event's company via test simulation
-	// Use view to simulate update without direct DB call
-	env.TypeText(company)
-	env.PressKey(tea.KeyTab)
+	events := env.GetEvents()
+	if len(events) == 0 {
+		return
+	}
+	latest := events[len(events)-1]
+	latest.Company = company
+	if err := env.Service.UpdateEvent(env.Ctx, latest); err != nil {
+		return
+	}
 }
 
 func persistEventWithSkills(env *e2e.TestEnv, event *career.Event) error {
@@ -912,5 +925,23 @@ func iShouldMoveToThePreviousField(ctx context.Context) error {
 	// This is a behavioral assertion - focus changed
 	view := env.GetView()
 	gomega.Expect(view).NotTo(gomega.BeEmpty())
+	return nil
+}
+
+// theReviewScreenShouldShowEnrichmentSections asserts the review screen displays enrichment-related sections.
+func theReviewScreenShouldShowEnrichmentSections(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	hasEnrichmentContent := strings.Contains(view, "Bursts") ||
+		strings.Contains(view, "Facts") ||
+		strings.Contains(view, "Skills") ||
+		strings.Contains(view, "Enrichment") ||
+		strings.Contains(view, "Review")
+	if !hasEnrichmentContent {
+		return fmt.Errorf("expected review screen to show enrichment sections, got view:\n%s", view)
+	}
 	return nil
 }

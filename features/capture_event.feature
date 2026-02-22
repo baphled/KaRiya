@@ -162,6 +162,17 @@ Feature: Capture Career Events
     And I confirm the review
     Then the event should have company "Updated Company"
 
+
+  @happy @inference
+  Scenario: Review screen shows enrichment sections after inference completes
+    When I select "capture_event" from the menu
+    And I select quick capture strategy
+    And I enter event description "Optimised database query performance for the payments pipeline"
+    And I submit the event
+    And I dismiss the success modal
+    Then I should be on the enrichment review screen
+    And the review screen should show enrichment sections
+
   @sad @enrichment
   Scenario: Reject all suggestions and submit raw event
     When I select "capture_event" from the menu

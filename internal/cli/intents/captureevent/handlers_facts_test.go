@@ -161,6 +161,26 @@ var _ = Describe("Fact Suggestion in CaptureEvent", func() {
 			})
 		})
 
+		Context("when some facts are accepted and some rejected", func() {
+			BeforeEach(func() {
+				facts := []career.Fact{
+					*fixtures.FactWith("f1", "Led cross-team API design"),
+					*fixtures.FactWith("f2", "Improved system reliability"),
+				}
+				intent.reviewState.factSuggestionModal = modals.NewFactSuggestionModal(facts, nil)
+			})
+
+			It("stores only the accepted facts", func() {
+				intent.updateEditingModal(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+				intent.updateEditingModal(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'r'}})
+
+				Expect(intent.reviewState.AcceptedFacts).To(HaveLen(1))
+				Expect(intent.reviewState.AcceptedFacts[0].Text).To(Equal("Led cross-team API design"))
+				Expect(intent.reviewState.factSuggestionModal).To(BeNil())
+				Expect(intent.reviewState.EditingMode).To(Equal(EditingModeNone))
+			})
+		})
+
 		Context("when all facts are rejected", func() {
 			It("clears modal without adding facts", func() {
 				intent.updateEditingModal(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'r'}})
