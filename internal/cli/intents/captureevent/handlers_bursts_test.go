@@ -183,3 +183,56 @@ var _ = Describe("burst persistence in postSaveReview", func() {
 		})
 	})
 })
+
+var _ = Describe("HandleNavigate suggest_bursts always uses InferredBursts", func() {
+	var intent *Intent
+
+	BeforeEach(func() {
+		ctx := &IntentContext{CaptureStrategy: "quick"}
+		var err error
+		intent, err = NewIntent(ctx)
+		Expect(err).NotTo(HaveOccurred())
+		intent.Init()
+
+		repos := memoryrepo.NewRepositories()
+		svc := careerservice.NewService(repos.Event)
+		intent.context.CareerService = svc
+	})
+
+	Context("when both InferredBursts and InferredBurstSuggestions are set", func() {
+		BeforeEach(func() {
+			intent.currentState = StateReview
+			intent.reviewState = &ReviewInferredEventState{
+				Event: fixtures.EventWith("evt-1", "Built services in Go", "", ""),
+				InferredBursts: func() []*career.Burst {
+					b := fixtures.Burst("", "evt-1")
+					b.Name = "Persisted Burst"
+					b.Description = "This is persisted"
+					return []*career.Burst{b}
+				}(),
+				InferredBurstSuggestions: []burstfact.BurstSuggestion{
+					{Name: "Raw Suggestion 1", Description: "Not persisted", EventIDs: []string{"evt-1"}, ConfidenceScore: 0.9},
+					{Name: "Raw Suggestion 2", Description: "Also not persisted", EventIDs: []string{"evt-1"}, ConfidenceScore: 0.8},
+				},
+				AcceptedBursts: make([]*career.Burst, 0),
+			}
+		})
+
+		It("builds modal from InferredBursts, not InferredBurstSuggestions", func() {
+			result := &screens.NavigateResult{ResultData: "suggest_bursts"}
+			intent.HandleNavigate(result)
+
+			Expect(intent.reviewState.burstModal).NotTo(BeNil())
+			Expect(intent.reviewState.burstModal.GetSuggestionsCount()).To(Equal(1))
+		})
+
+		It("uses persisted burst names from InferredBursts", func() {
+			result := &screens.NavigateResult{ResultData: "suggest_bursts"}
+			intent.HandleNavigate(result)
+
+			suggestion := intent.reviewState.burstModal.GetCurrentSuggestion()
+			Expect(suggestion).NotTo(BeNil())
+			Expect(suggestion.Name).To(Equal("Persisted Burst"))
+		})
+	})
+})

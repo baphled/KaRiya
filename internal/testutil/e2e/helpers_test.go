@@ -1,6 +1,8 @@
 package e2e_test
 
 import (
+	"github.com/baphled/kariya/internal/cli/intents/captureevent"
+	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/testutil/e2e"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -204,6 +206,33 @@ var _ = Describe("E2E Test Helpers", func() {
 					Expect(profile.TargetRole).NotTo(BeEmpty())
 				}
 			})
+		})
+	})
+
+	Describe("processCmdResult PostSavePersistenceCompleteMsg", func() {
+		var env *e2e.TestEnv
+
+		BeforeEach(func() {
+			env = e2e.SetupWithMemory(GinkgoT())
+		})
+
+		AfterEach(func() {
+			env.Cleanup()
+		})
+
+		It("completes the capture event intent when received", func() {
+			env.SelectIntentByName("capture_event")
+
+			event := e2e.CreateMinimalEvent("evt-post-save")
+			env.SendMessage(captureevent.PostSavePersistenceCompleteMsg{
+				Event:  event,
+				Bursts: []*career.Burst{},
+				Facts:  []*career.Fact{},
+				Skills: []*career.Skill{},
+			})
+
+			view := env.GetView()
+			Expect(view).To(ContainSubstring("Capture Event"))
 		})
 	})
 })
