@@ -13,4 +13,8 @@ var (
 	// ErrBurstRepositoryNotConfigured indicates that the burst repository is not set up.
 	// This is expected when burst storage features are disabled or initialization failed.
 	ErrBurstRepositoryNotConfigured = errors.New("burst repository not configured")
+
+	// ErrSkillRepositoryNotConfigured indicates that the skill repository is not set up.
+	// This is expected when skill storage features are disabled or initialisation failed.
+	ErrSkillRepositoryNotConfigured = errors.New("skill repository not configured")
 )

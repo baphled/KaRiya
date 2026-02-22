@@ -66,6 +66,7 @@ func RegisterFactsSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I press "([^"]*)" to toggle help$`, iPressToToggleHelp)
 
 	// Additional fact management steps
+	sc.Step(`^I accept all suggested facts$`, iAcceptAllSuggestedFacts)
 	sc.Step(`^I open the facts editor$`, iOpenTheFactsEditor)
 	sc.Step(`^I reject all suggested facts$`, iRejectAllSuggestedFacts)
 	sc.Step(`^there should be a fact with text "([^"]*)"$`, thereShouldBeAFactWithText)
@@ -499,6 +500,40 @@ func iPressToToggleHelp(ctx context.Context, key string) (context.Context, error
 		return ctx, godog.ErrPending
 	}
 	env.PressKeyRune(rune(key[0]))
+	return ctx, nil
+}
+
+// iAcceptAllSuggestedFacts accepts all suggested facts.
+// Follows the BDD pattern (matching iAcceptTheSuggestedBurst): presses 'a' for
+// UI state management, then persists facts directly via the repository.
+func iAcceptAllSuggestedFacts(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+
+	env.PressKeyRune('a')
+
+	events := env.GetEvents()
+	if len(events) == 0 {
+		return ctx, nil
+	}
+
+	latestEvent := events[len(events)-1]
+	facts, err := env.Service.ExtractFactsFromEvent(env.Ctx, latestEvent)
+	if err != nil {
+		return ctx, fmt.Errorf("extracting facts from event: %w", err)
+	}
+
+	factRepo := env.Service.GetFactRepository()
+	for i := range facts {
+		facts[i].ID = ""
+		facts[i].SourceEventID = latestEvent.ID
+		if saveErr := factRepo.Create(env.Ctx, &facts[i]); saveErr != nil {
+			return ctx, fmt.Errorf("saving accepted fact: %w", saveErr)
+		}
+	}
+
 	return ctx, nil
 }
 

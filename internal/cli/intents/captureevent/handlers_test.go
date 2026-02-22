@@ -57,18 +57,19 @@ var _ = Describe("Handlers", func() {
 				Expect(intent.Result().Status).To(Equal(intents.Failed))
 			})
 
-			It("should fail gracefully for edit_bursts when CareerService is nil", func() {
-				result := &screens.NavigateResult{ResultData: "edit_bursts"}
+			It("should fail gracefully for suggest_bursts when CareerService is nil", func() {
+				result := &screens.NavigateResult{ResultData: "suggest_bursts"}
 				intent.HandleNavigate(result)
 				Expect(intent.IsActive()).To(BeFalse())
 				Expect(intent.Result().Status).To(Equal(intents.Failed))
 			})
 
-			It("should fail gracefully for edit_facts when CareerService is nil", func() {
-				result := &screens.NavigateResult{ResultData: "edit_facts"}
+			It("should open modal for suggest_facts even when no inferred facts exist", func() {
+				result := &screens.NavigateResult{ResultData: "suggest_facts"}
 				intent.HandleNavigate(result)
-				Expect(intent.IsActive()).To(BeFalse())
-				Expect(intent.Result().Status).To(Equal(intents.Failed))
+				Expect(intent.IsActive()).To(BeTrue())
+				Expect(intent.GetReviewState().EditingMode).To(Equal(ce.EditingModeFacts))
+				Expect(intent.GetReviewState().GetFactSuggestionModal()).NotTo(BeNil())
 			})
 
 			It("should fail on unknown action", func() {

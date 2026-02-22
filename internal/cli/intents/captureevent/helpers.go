@@ -12,7 +12,9 @@ import (
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/domain/career"
+	repo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
+	burstfact "github.com/baphled/kariya/internal/service/career/burstfact"
 	"github.com/baphled/kariya/internal/service/career/skillinference"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -20,12 +22,12 @@ import (
 // terminalDimensions returns the current terminal dimensions for modal sizing.
 // Falls back to nil if terminal info is unavailable, letting the model
 // apply its own defaults.
-func (i *Intent) terminalDimensions() *MetadataEditorDimensions {
+func (i *Intent) terminalDimensions() *ReviewEnrichmentDimensions {
 	info := i.GetTerminalInfo()
 	if info == nil {
 		return nil
 	}
-	return &MetadataEditorDimensions{
+	return &ReviewEnrichmentDimensions{
 		TerminalWidth:  info.Width,
 		TerminalHeight: info.Height,
 	}
@@ -115,14 +117,13 @@ func (i *Intent) showSubmitModal() tea.Cmd {
 //   - Calls CareerService.CaptureEvent to persist the event.
 //   - Calls CareerService.SaveFact for each accepted fact without an ID.
 //   - Sets a default date for quick-strategy events with a zero date.
-//   - Persists accepted skills using the skill repository.
+//   - Persists accepted skills via careerService.SaveSkill and careerService.LinkSkillToEvent.
 func (i *Intent) performSubmit() tea.Cmd {
 	event := i.reviewState.Event
 	acceptedFacts := i.reviewState.AcceptedFacts
 	acceptedSkills := i.reviewState.AcceptedSkills
 	strategy := i.strategy
 	careerService := i.context.CareerService
-	skillService := i.context.SkillInferenceService
 
 	return func() tea.Msg {
 		if event == nil {
@@ -191,31 +192,137 @@ func (i *Intent) performSubmit() tea.Cmd {
 			}
 		}
 
-		// Persist accepted skills using the skill repository.
-		if len(acceptedSkills) > 0 && careerService != nil {
-			skillRepo := careerService.GetSkillRepository()
-			eventRepo := careerService.GetEventRepository()
-			for _, skill := range acceptedSkills {
-				if skill.ID == "" {
-					// New skill - create it
-					if err := skillRepo.Create(ctx, skill); err != nil {
-						return SubmitErrorMsg{
-							Code:    "SKILL_SAVE_ERROR",
-							Message: fmt.Sprintf("Failed to save skill %s: %v", skill.Name, err),
-							Cause:   err,
-						}
-					}
+		var skillErrors []string
+		for _, skill := range acceptedSkills {
+			if err := careerService.SaveSkill(ctx, skill); err != nil {
+				skillErrors = append(skillErrors, err.Error())
+				continue
+			}
+			if err := careerService.LinkSkillToEvent(ctx, event.ID, skill.ID); err != nil {
+				skillErrors = append(skillErrors, err.Error())
+			}
+		}
+		if len(skillErrors) > 0 {
+			return SubmitErrorMsg{
+				Code:    "SKILL_SAVE_ERROR",
+				Message: fmt.Sprintf("Event saved but %d skill(s) failed: %s", len(skillErrors), strings.Join(skillErrors, "; ")),
+				Cause:   fmt.Errorf("skill save failures: %s", strings.Join(skillErrors, "; ")),
+			}
+		}
+
+		return SubmitCompleteMsg{}
+	}
+}
+
+// performPostSavePersistence persists skills, facts, and confirms bursts after
+// the initial event save during post-save review.
+//
+// Expected:
+//   - event is non-nil and has a valid ID.
+//   - facts, skills, bursts may be empty or nil.
+//
+// Returns:
+//   - A tea.Cmd that runs asynchronously and produces a
+//     PostSavePersistenceCompleteMsg on success or a SubmitErrorMsg on failure.
+//
+// Side effects:
+//   - Saves skills via careerService.SaveSkill and links them via careerService.LinkSkillToEvent.
+//   - Saves facts via careerService.SaveFact (sets SourceEventID if empty).
+//   - Confirms bursts via careerService.ConfirmBurst.
+func (i *Intent) performPostSavePersistence(
+	event *career.Event,
+	facts []*career.Fact,
+	skills []*career.Skill,
+	bursts []*career.Burst,
+) tea.Cmd {
+	careerService := i.context.CareerService
+
+	return func() tea.Msg {
+		if careerService == nil {
+			return PostSavePersistenceCompleteMsg{
+				Event:  event,
+				Bursts: bursts,
+				Facts:  facts,
+				Skills: skills,
+			}
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		for _, skill := range skills {
+			if err := careerService.SaveSkill(ctx, skill); err != nil {
+				return SubmitErrorMsg{
+					Code:    "SKILL_SAVE_ERROR",
+					Message: fmt.Sprintf("Failed to save skill: %v", err),
+					Cause:   err,
 				}
-				// Link skill to event using event repository
-				if err := eventRepo.LinkSkill(ctx, event.ID, skill.ID); err != nil {
+			}
+			if err := careerService.LinkSkillToEvent(ctx, event.ID, skill.ID); err != nil {
+				return SubmitErrorMsg{
+					Code:    "SKILL_LINK_ERROR",
+					Message: fmt.Sprintf("Failed to link skill: %v", err),
+					Cause:   err,
+				}
+			}
+		}
+
+		for _, fact := range facts {
+			if fact.ID == "" {
+				fact.SourceEventID = event.ID
+				if err := careerService.SaveFact(ctx, fact); err != nil {
 					return SubmitErrorMsg{
-						Code:    "SKILL_LINK_ERROR",
-						Message: fmt.Sprintf("Failed to link skill %s to event: %v", skill.Name, err),
+						Code:    "FACT_SAVE_ERROR",
+						Message: fmt.Sprintf("Failed to save fact: %v", err),
 						Cause:   err,
 					}
 				}
 			}
 		}
+
+		for _, burst := range bursts {
+			if err := careerService.ConfirmBurst(ctx, burst); err != nil {
+				return SubmitErrorMsg{
+					Code:    "BURST_CONFIRM_ERROR",
+					Message: fmt.Sprintf("Failed to confirm burst: %v", err),
+					Cause:   err,
+				}
+			}
+		}
+
+		return PostSavePersistenceCompleteMsg{
+			Event:  event,
+			Bursts: bursts,
+			Facts:  facts,
+			Skills: skills,
+		}
+	}
+}
+
+// performInference runs LLM inference calls (skill inference, burst suggestion,
+// fact extraction) in a background tea.Cmd with its own timeout. This is
+// decoupled from performSubmit so that event persistence completes promptly
+// without waiting for potentially slow LLM calls.
+//
+// Expected:
+//   - i.reviewState.Event is non-nil (event was already saved).
+//   - i.context.CareerService may be nil (inference is skipped).
+//
+// Returns:
+//   - A tea.Cmd that runs asynchronously and produces an InferenceCompleteMsg.
+//
+// Side effects:
+//   - Calls SkillInferenceService.InferSkillsFromEvents.
+//   - Calls CareerService.SuggestBursts and ExtractFactsFromBurst/Event.
+//   - May persist burst suggestions via SaveBurstSuggestions.
+func (i *Intent) performInference() tea.Cmd {
+	event := i.reviewState.Event
+	careerService := i.context.CareerService
+	skillService := i.context.SkillInferenceService
+
+	return func() tea.Msg {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
 
 		var inferredSkills []skillinference.SkillSuggestion
 		if skillService != nil {
@@ -225,10 +332,49 @@ func (i *Intent) performSubmit() tea.Cmd {
 			}
 		}
 
-		return SubmitCompleteMsg{
-			InferredSkills: inferredSkills,
-			InferredFacts:  nil,
-			InferredBursts: nil,
+		var inferredFacts []*career.Fact
+		var inferredBursts []*career.Burst
+		var inferredBurstSuggestions []burstfact.BurstSuggestion
+
+		if careerService != nil {
+			allEvents, listErr := careerService.ListEvents(ctx, repo.EventListFilters{Limit: -1})
+			if listErr == nil && len(allEvents) >= 2 {
+				var allEventIDs []string
+				for _, e := range allEvents {
+					allEventIDs = append(allEventIDs, e.ID)
+				}
+
+				suggestions, suggestErr := careerService.SuggestBursts(ctx, allEventIDs)
+				if suggestErr == nil && len(suggestions) > 0 {
+					savedBursts, saveErr := careerService.SaveBurstSuggestions(ctx, suggestions)
+					if saveErr == nil && len(savedBursts) > 0 {
+						inferredBursts = savedBursts
+						inferredBurstSuggestions = suggestions
+						var allFacts []career.Fact
+						for _, burst := range savedBursts {
+							facts, extractErr := careerService.ExtractFactsFromBurst(ctx, burst)
+							if extractErr == nil {
+								allFacts = append(allFacts, facts...)
+							}
+						}
+						inferredFacts = factsToPointers(allFacts)
+					}
+				}
+			}
+
+			if len(inferredFacts) == 0 {
+				eventFacts, extractErr := careerService.ExtractFactsFromEvent(ctx, event)
+				if extractErr == nil {
+					inferredFacts = factsToPointers(eventFacts)
+				}
+			}
+		}
+
+		return InferenceCompleteMsg{
+			InferredSkills:           inferredSkills,
+			InferredFacts:            inferredFacts,
+			InferredBursts:           inferredBursts,
+			InferredBurstSuggestions: inferredBurstSuggestions,
 		}
 	}
 }
@@ -328,7 +474,7 @@ type modalContentData struct {
 //   - Lazily creates the metadataModal if it is nil.
 func (i *Intent) getMetadataModalContent() *modalContentData {
 	if i.reviewState.metadataModal == nil {
-		i.reviewState.metadataModal = NewMetadataEditorModelNew(
+		i.reviewState.metadataModal = NewReviewEnrichmentModel(
 			context.Background(),
 			i.reviewState.Event,
 			i.context.CareerService,
@@ -339,41 +485,6 @@ func (i *Intent) getMetadataModalContent() *modalContentData {
 	return &modalContentData{
 		title:   i.reviewState.metadataModal.GetTitle(),
 		content: i.reviewState.metadataModal.GetContent(),
-		footer:  renderFormModalFooter(),
-	}
-}
-
-// getBurstModalContent returns the rendered modal parts for burst editing.
-//
-// Returns:
-//   - A modalContentData with title, content, and footer from the burst modal.
-//   - nil if the burstModal has not been created.
-func (i *Intent) getBurstModalContent() *modalContentData {
-	if i.reviewState.burstModal == nil {
-		return nil
-	}
-	// Detect editing state from the model's footer text.
-	// The deprecated models package does not export an IsEditing() method.
-	editing := strings.Contains(i.reviewState.burstModal.GetFooter(), "Save")
-	return &modalContentData{
-		title:   i.reviewState.burstModal.GetTitle(),
-		content: i.reviewState.burstModal.GetContent(),
-		footer:  renderBurstModalFooter(editing),
-	}
-}
-
-// getFactModalContent returns the rendered modal parts for fact editing.
-//
-// Returns:
-//   - A modalContentData with title, content, and footer from the fact modal.
-//   - nil if the factModal has not been created.
-func (i *Intent) getFactModalContent() *modalContentData {
-	if i.reviewState.factModal == nil {
-		return nil
-	}
-	return &modalContentData{
-		title:   i.reviewState.factModal.GetTitle(),
-		content: i.reviewState.factModal.GetContent(),
 		footer:  renderFormModalFooter(),
 	}
 }
@@ -390,10 +501,6 @@ func (i *Intent) getEditingModalContent() *modalContentData {
 	switch i.reviewState.EditingMode {
 	case EditingModeMetadata:
 		return i.getMetadataModalContent()
-	case EditingModeBursts:
-		return i.getBurstModalContent()
-	case EditingModeFacts:
-		return i.getFactModalContent()
 	default:
 		return nil
 	}
@@ -452,28 +559,6 @@ func renderFormModalFooter() string {
 	)
 }
 
-// renderBurstModalFooter returns a UIKit badge-styled footer for the burst modal.
-//
-// The burst modal has two modes: editing (form fields) and navigating (suggestion list).
-// Each mode shows different key bindings.
-func renderBurstModalFooter(editing bool) string {
-	th := themes.NewDefaultTheme()
-	if editing {
-		return primitives.RenderHelpFooter(th,
-			primitives.NextFieldBadge(th),
-			primitives.ConfirmBadge(th),
-			primitives.CancelBadge(th),
-		)
-	}
-	return primitives.RenderHelpFooter(th,
-		primitives.NavigateBadge(th),
-		primitives.HelpKeyBadge("y", "Confirm", th),
-		primitives.HelpKeyBadge("n", "Reject", th),
-		primitives.EditBadge(th),
-		primitives.BackBadge(th),
-	)
-}
-
 // extractSkillsFromReviewData converts the "skills" field from review data
 // into []*career.Skill, supporting both []skillinference.SkillSuggestion
 // and []*career.Skill input types.
@@ -513,4 +598,36 @@ func extractSkillsFromReviewData(reviewData map[string]interface{}) []*career.Sk
 	}
 
 	return nil
+}
+
+// findInferredBurst returns the inferred burst whose Name matches name, or nil if not found.
+func findInferredBurst(inferred []*career.Burst, name string) *career.Burst {
+	for _, b := range inferred {
+		if b.Name == name {
+			return b
+		}
+	}
+	return nil
+}
+
+// factsToPointers converts a slice of career.Fact values to a slice of pointers.
+//
+// Expected:
+//   - facts may be nil or empty.
+//
+// Returns:
+//   - A slice of pointers to each fact in the input.
+//   - An empty slice (not nil) if facts is nil or empty.
+//
+// Side effects: None.
+func factsToPointers(facts []career.Fact) []*career.Fact {
+	if len(facts) == 0 {
+		return []*career.Fact{}
+	}
+
+	result := make([]*career.Fact, len(facts))
+	for i := range facts {
+		result[i] = &facts[i]
+	}
+	return result
 }

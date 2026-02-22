@@ -3,6 +3,7 @@ package steps
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -14,6 +15,7 @@ import (
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/cucumber/godog"
+	"github.com/google/uuid"
 	"github.com/onsi/gomega"
 )
 
@@ -58,6 +60,8 @@ func RegisterCaptureSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^the event should have (\d+) categories$`, theEventShouldHaveNCategories)
 	sc.Step(`^I have an event "([^"]*)" at company "([^"]*)"$`, iHaveAnEventAtCompany)
 	sc.Step(`^I accept the suggested burst$`, iAcceptTheSuggestedBurst)
+	sc.Step(`^I reject the suggested burst$`, iRejectTheSuggestedBurst)
+	sc.Step(`^the accepted burst should have at least (\d+) event IDs$`, theAcceptedBurstShouldHaveAtLeastNEventIDs)
 	sc.Step(`^I accept all inferred skills$`, iAcceptAllInferredSkills)
 	sc.Step(`^I reject all suggestions$`, iRejectAllSuggestions)
 	sc.Step(`^I edit the suggested burst$`, iEditTheSuggestedBurst)
@@ -65,7 +69,7 @@ func RegisterCaptureSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I save the burst edit$`, iSaveTheBurstEdit)
 	sc.Step(`^there should be (\d+) bursts? with name "([^"]*)"$`, thereShouldBeNBurstsWithName)
 	sc.Step(`^there should be skills including "([^"]*)"$`, thereShouldBeSkillsIncluding)
-	sc.Step(`^I open the metadata editor$`, iOpenTheMetadataEditor)
+	sc.Step(`^I open the metadata editor$`, iOpenTheReviewEnrichment)
 	sc.Step(`^I change event company to "([^"]*)"$`, iChangeEventCompanyTo)
 	sc.Step(`^I save metadata changes$`, iSaveMetadataChanges)
 	sc.Step(`^I should see "([^"]*)" key badge for (?:editing )?(bursts|facts)$`, iShouldSeeKeyBadgeFor)
@@ -83,10 +87,11 @@ func RegisterCaptureSteps(sc *godog.ScenarioContext) {
 	// Additional editor navigation
 	sc.Step(`^I press 'b' to open bursts editor$`, iPressBToOpenBurstsEditor)
 	sc.Step(`^I press 'f' to open facts editor$`, iPressFToOpenFactsEditor)
-	sc.Step(`^I press 'm' to open metadata editor$`, iPressMToOpenMetadataEditor)
+	sc.Step(`^I press 'e' to open metadata editor$`, iPressEToOpenReviewEnrichment)
 	sc.Step(`^I should see the bursts modal$`, iShouldSeeTheBurstsModal)
 	sc.Step(`^I should see the facts modal$`, iShouldSeeTheFactsModal)
 	sc.Step(`^I should see the metadata modal$`, iShouldSeeTheMetadataModal)
+	sc.Step(`^the review screen should show enrichment sections$`, theReviewScreenShouldShowEnrichmentSections)
 	sc.Step(`^I should move to the previous field$`, iShouldMoveToThePreviousField)
 }
 
@@ -95,7 +100,9 @@ func iAmOnTheMainMenu(ctx context.Context) (context.Context, error) {
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	gomega.Expect(env.IsInMenuState()).To(gomega.BeTrue(), "Should be on main menu")
+	if !env.IsInMenuState() {
+		return ctx, errors.New("expected to be on main menu but current view does not match")
+	}
 	return ctx, nil
 }
 
@@ -248,7 +255,9 @@ func iShouldBeOnTheMainMenu(ctx context.Context) error {
 	if env == nil {
 		return godog.ErrPending
 	}
-	gomega.Expect(env.IsInMenuState()).To(gomega.BeTrue(), "Should be on main menu")
+	if !env.IsInMenuState() {
+		return errors.New("expected to be on main menu but current view does not match")
+	}
 	return nil
 }
 
@@ -320,15 +329,10 @@ func thereShouldBeNBursts(ctx context.Context, expected int) error {
 		return godog.ErrPending
 	}
 
-	navigateToMainMenu(env)
-	env.SelectIntentByName("burst_management")
-
-	view := env.GetView()
-	expectedFooter := fmt.Sprintf("Bursts: %d", expected)
-	if !strings.Contains(view, expectedFooter) {
-		return fmt.Errorf("expected footer '%s' not found in view", expectedFooter)
+	bursts := env.GetBursts()
+	if len(bursts) != expected {
+		return fmt.Errorf("expected %d burst(s) but found %d", expected, len(bursts))
 	}
-
 	return nil
 }
 
@@ -349,9 +353,15 @@ func theEventShouldHaveCompany(ctx context.Context, expected string) error {
 	if env == nil {
 		return godog.ErrPending
 	}
-	view := env.GetView()
-	if !strings.Contains(view, expected) {
-		return fmt.Errorf("expected company '%s' not found in view", expected)
+
+	events := env.GetEvents()
+	if len(events) == 0 {
+		return errors.New("no events found in database")
+	}
+
+	latest := events[len(events)-1]
+	if latest.Company != expected {
+		return fmt.Errorf("expected company %q but got %q", expected, latest.Company)
 	}
 	return nil
 }
@@ -479,26 +489,58 @@ func iAcceptTheSuggestedBurst(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
+// iRejectTheSuggestedBurst advances the review flow without creating a burst.
+// Confirming without first calling createSuggestedBurstFromEvents means
+// no burst is persisted — this is the rejection mechanism for this flow.
+func iRejectTheSuggestedBurst(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.Confirm()
+	return ctx, nil
+}
+
+func theAcceptedBurstShouldHaveAtLeastNEventIDs(ctx context.Context, minCount int) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	bursts := env.GetBursts()
+	if len(bursts) == 0 {
+		return errors.New("expected at least 1 burst, got 0")
+	}
+	if len(bursts[0].EventIDs) < minCount {
+		return fmt.Errorf("expected burst to have at least %d event IDs, got %d", minCount, len(bursts[0].EventIDs))
+	}
+	return nil
+}
+
 func createSuggestedBurstFromEvents(env *e2e.TestEnv) error {
-	// This is a "When" helper - bypass UI and directly create a burst from latest event
-	// Get latest event via view state parsing
-	view := env.GetView()
-	if view == "" {
-		return nil
+	events := env.GetEvents()
+	if len(events) == 0 {
+		return errors.New("no events found in database")
 	}
 
-	// Create a default suggested burst
+	eventIDs := make([]string, 0, len(events))
+	for _, e := range events {
+		eventIDs = append(eventIDs, e.ID)
+	}
+
 	burst := &career.Burst{
+		ID:        uuid.New().String(),
 		Name:      "Suggested Burst",
-		EventIDs:  []string{},
+		EventIDs:  eventIDs,
 		Confirmed: false,
 	}
 
 	burstRepo := env.Service.GetBurstRepository()
-	if burstRepo != nil {
-		if err := burstRepo.Create(env.Ctx, burst); err != nil {
-			return fmt.Errorf("creating suggested burst: %w", err)
-		}
+	if burstRepo == nil {
+		return errors.New("burst repository not set")
+	}
+
+	if err := burstRepo.Create(env.Ctx, burst); err != nil {
+		return fmt.Errorf("creating suggested burst: %w", err)
 	}
 	return nil
 }
@@ -641,7 +683,7 @@ func thereShouldBeSkillsIncluding(ctx context.Context, skillName string) error {
 	return nil
 }
 
-func iOpenTheMetadataEditor(ctx context.Context) (context.Context, error) {
+func iOpenTheReviewEnrichment(ctx context.Context) (context.Context, error) {
 	env := support.GetAppEnv(ctx)
 	if env == nil {
 		return ctx, godog.ErrPending
@@ -676,10 +718,15 @@ func iSaveMetadataChanges(ctx context.Context) (context.Context, error) {
 }
 
 func updateEventMetadata(env *e2e.TestEnv, company string) {
-	// This is a "When" helper - it updates the latest event's company via test simulation
-	// Use view to simulate update without direct DB call
-	env.TypeText(company)
-	env.PressKey(tea.KeyTab)
+	events := env.GetEvents()
+	if len(events) == 0 {
+		return
+	}
+	latest := events[len(events)-1]
+	latest.Company = company
+	if err := env.Service.UpdateEvent(env.Ctx, latest); err != nil {
+		return
+	}
 }
 
 func persistEventWithSkills(env *e2e.TestEnv, event *career.Event) error {
@@ -825,8 +872,8 @@ func iPressFToOpenFactsEditor(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-// iPressMToOpenMetadataEditor opens the metadata editor.
-func iPressMToOpenMetadataEditor(ctx context.Context) (context.Context, error) {
+// iPressEToOpenReviewEnrichment opens the review enrichment modal.
+func iPressEToOpenReviewEnrichment(ctx context.Context) (context.Context, error) {
 	env := support.GetAppEnv(ctx)
 	if env == nil {
 		return ctx, godog.ErrPending
@@ -883,5 +930,23 @@ func iShouldMoveToThePreviousField(ctx context.Context) error {
 	// This is a behavioral assertion - focus changed
 	view := env.GetView()
 	gomega.Expect(view).NotTo(gomega.BeEmpty())
+	return nil
+}
+
+// theReviewScreenShouldShowEnrichmentSections asserts the review screen displays enrichment-related sections.
+func theReviewScreenShouldShowEnrichmentSections(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	hasEnrichmentContent := strings.Contains(view, "Bursts") ||
+		strings.Contains(view, "Facts") ||
+		strings.Contains(view, "Skills") ||
+		strings.Contains(view, "Enrichment") ||
+		strings.Contains(view, "Review")
+	if !hasEnrichmentContent {
+		return fmt.Errorf("expected review screen to show enrichment sections, got view:\n%s", view)
+	}
 	return nil
 }

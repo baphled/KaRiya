@@ -17,9 +17,9 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("MetadataEditorModelNew", func() {
+var _ = Describe("ReviewEnrichmentModel", func() {
 	var (
-		model      *captureevent.MetadataEditorModelNew
+		model      *captureevent.ReviewEnrichmentModel
 		event      *career.Event
 		service    *careerservice.Service
 		cliService *cliservice.CLIEventService
@@ -40,11 +40,11 @@ var _ = Describe("MetadataEditorModelNew", func() {
 		event.Tags = []string{"backend", "go"}
 		event.Categories = []string{"development"}
 
-		model = captureevent.NewMetadataEditorModelNew(ctx, event, service, cliService, nil)
+		model = captureevent.NewReviewEnrichmentModel(ctx, event, service, cliService, nil)
 		model.Init()
 	})
 
-	Describe("NewMetadataEditorModelNew", func() {
+	Describe("NewReviewEnrichmentModel", func() {
 		It("should create a new model with correct initial values", func() {
 			Expect(model).NotTo(BeNil())
 			Expect(model.GetEvent()).To(Equal(event))
@@ -78,7 +78,7 @@ var _ = Describe("MetadataEditorModelNew", func() {
 			It("should update dimensions", func() {
 				msg := tea.WindowSizeMsg{Width: 120, Height: 40}
 				updatedModel, _ := model.Update(msg)
-				typedModel := updatedModel.(*captureevent.MetadataEditorModelNew)
+				typedModel := updatedModel.(*captureevent.ReviewEnrichmentModel)
 				// Width and height should be updated (checked via View behavior)
 				Expect(typedModel).NotTo(BeNil())
 			})

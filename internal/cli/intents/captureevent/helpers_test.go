@@ -1,11 +1,15 @@
 package captureevent
 
 import (
+	"context"
 	"errors"
+	"time"
 
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/terminal"
 	"github.com/baphled/kariya/internal/domain/career"
+	memoryrepo "github.com/baphled/kariya/internal/repository/career/memory"
+	careerservice "github.com/baphled/kariya/internal/service/career"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -81,6 +85,18 @@ var _ = Describe("Helper Methods", func() {
 		})
 	})
 
+	Describe("showValidationErrorModal", func() {
+		It("creates an error modal on submitModal", func() {
+			intent.showValidationErrorModal("event text is required")
+			Expect(intent.submitModal).NotTo(BeNil())
+		})
+
+		It("returns nil command from the modal's Init (error modals do not auto-start)", func() {
+			cmd := intent.showValidationErrorModal("event text is required")
+			Expect(cmd).To(BeNil())
+		})
+	})
+
 	Describe("showSubmitModal", func() {
 		BeforeEach(func() {
 			intent.reviewState = &ReviewInferredEventState{
@@ -136,6 +152,24 @@ var _ = Describe("Helper Methods", func() {
 		})
 	})
 
+	Describe("getMetadataModalContent", func() {
+		It("returns modal content when metadataModal is already set", func() {
+			repos := memoryrepo.NewRepositories()
+			svc := careerservice.NewService(repos.Event)
+			svc.SetSkillRepository(repos.Skill)
+
+			event := fixtures.EventWith("", "test event", "", "")
+			modal := NewReviewEnrichmentModel(context.Background(), event, svc, nil, nil)
+			intent.reviewState = &ReviewInferredEventState{
+				Event:         event,
+				EditingMode:   EditingModeMetadata,
+				metadataModal: modal,
+			}
+			content := intent.getMetadataModalContent()
+			Expect(content).NotTo(BeNil())
+		})
+	})
+
 	Describe("getEditingModalContent", func() {
 		It("should return nil when reviewState is nil", func() {
 			intent.reviewState = nil
@@ -155,7 +189,7 @@ var _ = Describe("Helper Methods", func() {
 					Event:       fixtures.EventWith("", "test", "", ""),
 					EditingMode: EditingModeMetadata,
 				}
-				// MetadataEditorModelNew immediately calls CareerService.GetSkillRepository(),
+				// ReviewEnrichmentModel immediately calls CareerService.GetSkillRepository(),
 				// which panics with a nil service. Verifies the dispatch reaches metadata.
 				Expect(func() {
 					intent.getEditingModalContent()
@@ -177,7 +211,6 @@ var _ = Describe("Helper Methods", func() {
 			It("should return nil", func() {
 				intent.reviewState = &ReviewInferredEventState{
 					EditingMode: EditingModeFacts,
-					factModal:   nil,
 				}
 				Expect(intent.getEditingModalContent()).To(BeNil())
 			})
@@ -231,24 +264,6 @@ var _ = Describe("Helper Methods", func() {
 		})
 	})
 
-	Describe("renderBurstModalFooter", func() {
-		It("should return editing footer when editing is true", func() {
-			footer := renderBurstModalFooter(true)
-			Expect(footer).NotTo(BeEmpty())
-		})
-
-		It("should return navigation footer when editing is false", func() {
-			footer := renderBurstModalFooter(false)
-			Expect(footer).NotTo(BeEmpty())
-		})
-
-		It("should produce different output for editing vs navigation", func() {
-			editFooter := renderBurstModalFooter(true)
-			navFooter := renderBurstModalFooter(false)
-			Expect(editFooter).NotTo(Equal(navFooter))
-		})
-	})
-
 	Describe("performSubmit", func() {
 		Context("when event is nil", func() {
 			It("should return SubmitErrorMsg", func() {
@@ -282,6 +297,283 @@ var _ = Describe("Helper Methods", func() {
 				Expect(errMsg.Code).To(Equal("SERVICE_ERROR"))
 				Expect(errMsg.Message).To(ContainSubstring("Career service"))
 			})
+		})
+
+		Context("with a valid event and career service", func() {
+			var (
+				svc       *careerservice.Service
+				eventRepo *memoryrepo.EventRepository
+				burstRepo *memoryrepo.BurstRepository
+			)
+
+			BeforeEach(func() {
+				repos := memoryrepo.NewRepositories()
+				eventRepo = repos.Event.(*memoryrepo.EventRepository)
+				burstRepo = repos.Burst.(*memoryrepo.BurstRepository)
+
+				svc = careerservice.NewService(eventRepo)
+				svc.SetBurstRepository(burstRepo)
+				svc.SetSkillRepository(repos.Skill)
+
+				intent.context.CareerService = svc
+			})
+
+			It("should return SubmitCompleteMsg without inference data", func() {
+				event := fixtures.EventWith("", "Valid event text for testing submission", "", "")
+				intent.reviewState = &ReviewInferredEventState{
+					Event:          event,
+					AcceptedFacts:  make([]*career.Fact, 0),
+					AcceptedBursts: make([]*career.Burst, 0),
+				}
+
+				cmd := intent.performSubmit()
+				Expect(cmd).NotTo(BeNil())
+
+				msg := cmd()
+				_, ok := msg.(SubmitCompleteMsg)
+				Expect(ok).To(BeTrue(), "expected SubmitCompleteMsg, got %T", msg)
+			})
+		})
+	})
+
+	Describe("performInference", func() {
+		Context("burst detection and fact extraction", func() {
+			var (
+				svc       *careerservice.Service
+				eventRepo *memoryrepo.EventRepository
+				burstRepo *memoryrepo.BurstRepository
+			)
+
+			BeforeEach(func() {
+				repos := memoryrepo.NewRepositories()
+				eventRepo = repos.Event.(*memoryrepo.EventRepository)
+				burstRepo = repos.Burst.(*memoryrepo.BurstRepository)
+
+				svc = careerservice.NewService(eventRepo)
+				svc.SetBurstRepository(burstRepo)
+				svc.SetSkillRepository(repos.Skill)
+
+				intent.context.CareerService = svc
+			})
+
+			Context("when ≥2 events exist", func() {
+				BeforeEach(func() {
+					ctx := context.Background()
+					existing1 := fixtures.EventWith("existing-1", "Led migration of monolith to microservices architecture", "", "")
+					existing1.Date = time.Now().Add(-24 * time.Hour)
+					existing2 := fixtures.EventWith("existing-2", "Led redesign of microservices deployment pipeline", "", "")
+					existing2.Date = time.Now().Add(-48 * time.Hour)
+					Expect(eventRepo.Create(ctx, existing1)).To(Succeed())
+					Expect(eventRepo.Create(ctx, existing2)).To(Succeed())
+				})
+
+				It("should return InferenceCompleteMsg with inferred bursts", func() {
+					event := fixtures.EventWith("", "Valid event text for testing submission", "", "")
+					intent.reviewState = &ReviewInferredEventState{
+						Event:          event,
+						AcceptedFacts:  make([]*career.Fact, 0),
+						AcceptedBursts: make([]*career.Burst, 0),
+					}
+
+					cmd := intent.performInference()
+					Expect(cmd).NotTo(BeNil())
+
+					msg := cmd()
+					completeMsg, ok := msg.(InferenceCompleteMsg)
+					Expect(ok).To(BeTrue(), "expected InferenceCompleteMsg, got %T", msg)
+					Expect(completeMsg.InferredBursts).NotTo(BeNil())
+				})
+
+				It("should return InferenceCompleteMsg with inferred facts from bursts", func() {
+					event := fixtures.EventWith("", "Valid event text for testing submission", "", "")
+					intent.reviewState = &ReviewInferredEventState{
+						Event:          event,
+						AcceptedFacts:  make([]*career.Fact, 0),
+						AcceptedBursts: make([]*career.Burst, 0),
+					}
+
+					cmd := intent.performInference()
+					msg := cmd()
+					completeMsg, ok := msg.(InferenceCompleteMsg)
+					Expect(ok).To(BeTrue(), "expected InferenceCompleteMsg, got %T", msg)
+					Expect(completeMsg.InferredFacts).NotTo(BeNil())
+				})
+
+				It("should not break when burst detection errors occur", func() {
+					event := fixtures.EventWith("", "Valid event text for testing submission", "", "")
+					intent.reviewState = &ReviewInferredEventState{
+						Event:          event,
+						AcceptedFacts:  make([]*career.Fact, 0),
+						AcceptedBursts: make([]*career.Burst, 0),
+					}
+
+					cmd := intent.performInference()
+					msg := cmd()
+					_, ok := msg.(InferenceCompleteMsg)
+					Expect(ok).To(BeTrue(), "expected InferenceCompleteMsg even with errors, got %T", msg)
+				})
+			})
+
+			Context("when <2 events exist", func() {
+				It("should fallback to ExtractFactsFromEvent", func() {
+					event := fixtures.EventWith("", "Valid event text for testing submission", "", "")
+					Expect(eventRepo.Create(context.Background(), event)).To(Succeed())
+					intent.reviewState = &ReviewInferredEventState{
+						Event:          event,
+						AcceptedFacts:  make([]*career.Fact, 0),
+						AcceptedBursts: make([]*career.Burst, 0),
+					}
+
+					cmd := intent.performInference()
+					msg := cmd()
+					completeMsg, ok := msg.(InferenceCompleteMsg)
+					Expect(ok).To(BeTrue(), "expected InferenceCompleteMsg, got %T", msg)
+					Expect(completeMsg.InferredFacts).NotTo(BeNil())
+					Expect(completeMsg.InferredBursts).To(BeEmpty())
+				})
+
+				It("should return empty bursts slice", func() {
+					event := fixtures.EventWith("", "Valid event text for testing submission", "", "")
+					Expect(eventRepo.Create(context.Background(), event)).To(Succeed())
+					intent.reviewState = &ReviewInferredEventState{
+						Event:          event,
+						AcceptedFacts:  make([]*career.Fact, 0),
+						AcceptedBursts: make([]*career.Burst, 0),
+					}
+
+					cmd := intent.performInference()
+					msg := cmd()
+					completeMsg, ok := msg.(InferenceCompleteMsg)
+					Expect(ok).To(BeTrue())
+					Expect(completeMsg.InferredBursts).To(BeEmpty())
+				})
+			})
+
+			Context("when burst suggestions return empty", func() {
+				BeforeEach(func() {
+					ctx := context.Background()
+					existing1 := fixtures.EventWith("unrelated-1", "Organised team building event at the local park", "", "")
+					existing1.Date = time.Now().Add(-365 * 24 * time.Hour)
+					existing2 := fixtures.EventWith("unrelated-2", "Attended annual company conference in London", "", "")
+					existing2.Date = time.Now().Add(-730 * 24 * time.Hour)
+					Expect(eventRepo.Create(ctx, existing1)).To(Succeed())
+					Expect(eventRepo.Create(ctx, existing2)).To(Succeed())
+				})
+
+				It("should fallback to ExtractFactsFromEvent", func() {
+					event := fixtures.EventWith("", "Valid event text for testing submission", "", "")
+					Expect(eventRepo.Create(context.Background(), event)).To(Succeed())
+					intent.reviewState = &ReviewInferredEventState{
+						Event:          event,
+						AcceptedFacts:  make([]*career.Fact, 0),
+						AcceptedBursts: make([]*career.Burst, 0),
+					}
+
+					cmd := intent.performInference()
+					msg := cmd()
+					completeMsg, ok := msg.(InferenceCompleteMsg)
+					Expect(ok).To(BeTrue(), "expected InferenceCompleteMsg, got %T", msg)
+					Expect(completeMsg.InferredFacts).NotTo(BeNil())
+				})
+			})
+
+			Context("when ListEvents fails", func() {
+				It("should fallback to ExtractFactsFromEvent without breaking", func() {
+					svcWithoutBurst := careerservice.NewService(eventRepo)
+					intent.context.CareerService = svcWithoutBurst
+
+					event := fixtures.EventWith("", "Valid event text for testing submission", "", "")
+					Expect(eventRepo.Create(context.Background(), event)).To(Succeed())
+					intent.reviewState = &ReviewInferredEventState{
+						Event:          event,
+						AcceptedFacts:  make([]*career.Fact, 0),
+						AcceptedBursts: make([]*career.Burst, 0),
+					}
+
+					cmd := intent.performInference()
+					msg := cmd()
+					completeMsg, ok := msg.(InferenceCompleteMsg)
+					Expect(ok).To(BeTrue(), "expected InferenceCompleteMsg, got %T", msg)
+					Expect(completeMsg.InferredFacts).NotTo(BeNil())
+				})
+			})
+
+			It("should preserve existing skill inference behaviour", func() {
+				event := fixtures.EventWith("", "Valid event text for testing submission", "", "")
+				intent.reviewState = &ReviewInferredEventState{
+					Event:          event,
+					AcceptedFacts:  make([]*career.Fact, 0),
+					AcceptedBursts: make([]*career.Burst, 0),
+				}
+
+				cmd := intent.performInference()
+				msg := cmd()
+				completeMsg, ok := msg.(InferenceCompleteMsg)
+				Expect(ok).To(BeTrue())
+				Expect(completeMsg.InferredSkills).To(BeNil())
+			})
+		})
+
+		Context("when CareerService is nil", func() {
+			It("should return InferenceCompleteMsg with empty results", func() {
+				intent.context.CareerService = nil
+				intent.reviewState = &ReviewInferredEventState{
+					Event: fixtures.EventWith("", "Valid event text for testing", "", ""),
+				}
+
+				cmd := intent.performInference()
+				msg := cmd()
+				completeMsg, ok := msg.(InferenceCompleteMsg)
+				Expect(ok).To(BeTrue())
+				Expect(completeMsg.InferredSkills).To(BeNil())
+				Expect(completeMsg.InferredFacts).To(BeNil())
+				Expect(completeMsg.InferredBursts).To(BeNil())
+			})
+		})
+	})
+
+	Describe("factsToPointers", func() {
+		It("should return empty slice for nil input", func() {
+			result := factsToPointers(nil)
+			Expect(result).NotTo(BeNil())
+			Expect(result).To(BeEmpty())
+		})
+
+		It("should return empty slice for empty input", func() {
+			result := factsToPointers([]career.Fact{})
+			Expect(result).NotTo(BeNil())
+			Expect(result).To(BeEmpty())
+		})
+
+		It("should convert facts to pointers", func() {
+			fact1 := fixtures.Fact("fact-1", "event-1")
+			fact2 := fixtures.Fact("fact-2", "event-2")
+			facts := []career.Fact{*fact1, *fact2}
+			result := factsToPointers(facts)
+			Expect(result).To(HaveLen(2))
+			Expect(result[0]).NotTo(BeNil())
+			Expect(result[0].ID).To(Equal("fact-1"))
+			Expect(result[1]).NotTo(BeNil())
+			Expect(result[1].ID).To(Equal("fact-2"))
+		})
+
+		It("should preserve fact data in pointers", func() {
+			fact := fixtures.FactWithCategories(
+				"test-id",
+				"test text",
+				"event-123",
+				[]string{"leadership"},
+				[]string{"hiring_manager"},
+			)
+			facts := []career.Fact{*fact}
+			result := factsToPointers(facts)
+			Expect(result).To(HaveLen(1))
+			Expect(result[0].ID).To(Equal("test-id"))
+			Expect(result[0].Text).To(Equal("test text"))
+			Expect(result[0].CompetencyCategories).To(Equal([]string{"leadership"}))
+			Expect(result[0].RoleFit).To(Equal(career.RoleFitStaff))
+			Expect(result[0].AudienceRelevance).To(Equal([]string{"hiring_manager"}))
+			Expect(result[0].SourceEventID).To(Equal("event-123"))
 		})
 	})
 })

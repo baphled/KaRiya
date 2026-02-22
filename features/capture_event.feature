@@ -96,6 +96,59 @@ Feature: Capture Career Events
     And I confirm the review
     Then there should be 1 burst with name "Infrastructure Automation Initiative"
 
+  # ============================================================================
+  # Burst Inference Review
+  # ============================================================================
+
+  @sad
+  Scenario: User can reject an inferred burst and it is not saved
+    Given I have an event "Deployed Kubernetes cluster" at company "CloudCo"
+    And I have an event "Set up CI/CD pipeline" at company "CloudCo"
+    When I select "capture_event" from the menu
+    And I select quick capture strategy
+    And I enter event description "Implemented auto-scaling policies"
+    And I set event company to "CloudCo"
+    And I submit the event
+    And I dismiss the success modal
+    Then I should be on the enrichment review screen
+    When I reject the suggested burst
+    And I confirm the review
+    Then I should be on the main menu
+    And there should be 0 bursts
+
+  @happy @enrichment
+  Scenario: Accepted burst is persisted with correct event IDs
+    Given I have an event "Migrated legacy APIs to GraphQL" at company "DataSystems"
+    And I have an event "Introduced schema stitching layer" at company "DataSystems"
+    When I select "capture_event" from the menu
+    And I select quick capture strategy
+    And I enter event description "Added subscription support for real-time updates"
+    And I set event company to "DataSystems"
+    And I submit the event
+    And I dismiss the success modal
+    Then I should be on the enrichment review screen
+    When I accept the suggested burst
+    And I confirm the review
+    Then I should be on the main menu
+    And there should be 1 burst
+    And the accepted burst should have at least 2 event IDs
+
+  @sad
+  Scenario: Rejecting all bursts results in no bursts saved
+    Given I have an event "Integrated Stripe payments" at company "FinTechCo"
+    And I have an event "Added subscription billing logic" at company "FinTechCo"
+    When I select "capture_event" from the menu
+    And I select quick capture strategy
+    And I enter event description "Implemented dunning management for failed payments"
+    And I set event company to "FinTechCo"
+    And I submit the event
+    And I dismiss the success modal
+    Then I should be on the enrichment review screen
+    When I reject the suggested burst
+    And I confirm the review
+    Then I should be on the main menu
+    And there should be 0 bursts
+
   @happy @enrichment
   Scenario: Edit event metadata during review
     When I select "capture_event" from the menu
@@ -108,6 +161,17 @@ Feature: Capture Career Events
     And I save metadata changes
     And I confirm the review
     Then the event should have company "Updated Company"
+
+
+  @happy @inference
+  Scenario: Review screen shows enrichment sections after inference completes
+    When I select "capture_event" from the menu
+    And I select quick capture strategy
+    And I enter event description "Optimised database query performance for the payments pipeline"
+    And I submit the event
+    And I dismiss the success modal
+    Then I should be on the enrichment review screen
+    And the review screen should show enrichment sections
 
   @sad @enrichment
   Scenario: Reject all suggestions and submit raw event
@@ -160,7 +224,19 @@ Feature: Capture Career Events
   # Fact Editing Scenarios (Review State)
   # ============================================================================
 
-  @wip @happy @enrichment
+  @happy @enrichment
+  Scenario: Accept inferred fact during review
+    When I select "capture_event" from the menu
+    And I select quick capture strategy
+    And I enter event description "Reduced API latency by 40% through caching optimization"
+    And I submit the event
+    And I dismiss the success modal
+    When I open the facts editor
+    And I accept all suggested facts
+    And I confirm the review
+    Then there should be a fact with text "Reduced API latency by 40% through caching optimization"
+
+  @happy @enrichment
   Scenario: Reject inferred fact during review
     When I select "capture_event" from the menu
     And I select quick capture strategy
@@ -171,6 +247,27 @@ Feature: Capture Career Events
     And I reject all suggested facts
     And I confirm the review
     Then there should be 0 facts
+
+  # ============================================================================
+  # Review Navigation Scenarios
+  # ============================================================================
+
+  @happy @enrichment
+  Scenario: Navigate through review sections
+    When I select "capture_event" from the menu
+    And I select quick capture strategy
+    And I enter event description "Built microservices architecture"
+    And I submit the event
+    And I dismiss the success modal
+    Then I should be on the enrichment review screen
+    When I press 'e' to open metadata editor
+    Then I should see the metadata modal
+    When I close the modal
+    And I press 'b' to open bursts editor
+    Then I should see the bursts modal
+    When I close the modal
+    And I press 'f' to open facts editor
+    Then I should see the facts modal
   # ============================================================================
   # Skills Selection (Manual Capture)
   # ============================================================================

@@ -39,6 +39,7 @@ func NewIntent(ctx *IntentContext) (*Intent, error) {
 		reviewState: &ReviewInferredEventState{
 			AcceptedBursts: make([]*career.Burst, 0),
 			AcceptedFacts:  make([]*career.Fact, 0),
+			AcceptedSkills: make([]*career.Skill, 0),
 			RejectedItems:  make(map[string]string),
 		},
 	}, nil
@@ -90,44 +91,70 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 
 	switch msg := msg.(type) {
 	case SubmitCompleteMsg:
+		i.submitModal = feedback.NewSuccessModal("Event saved!")
+		return tea.Batch(i.submitModal.Init(), i.performInference())
+
+	case InferenceCompleteMsg:
 		i.reviewState.InferredSkills = msg.InferredSkills
 		i.reviewState.InferredBursts = msg.InferredBursts
+		i.reviewState.InferredBurstSuggestions = msg.InferredBurstSuggestions
 		i.reviewState.InferredFacts = msg.InferredFacts
-		i.submitModal = feedback.NewSuccessModal("Event saved!")
-		return i.submitModal.Init()
+		if screen, ok := i.activeScreen.(*captureScreens.EventReviewScreen); ok {
+			screen.SetSuggestedSkills(msg.InferredSkills)
+			screen.SetSuggestedBursts(msg.InferredBursts)
+			screen.SetSuggestedFacts(msg.InferredFacts)
+		}
+		return nil
+
+	case PostSavePersistenceCompleteMsg:
+		i.result = &intents.IntentResult[*Result]{
+			Status: intents.Completed,
+			Data: &Result{
+				Event:  msg.Event,
+				Bursts: msg.Bursts,
+				Facts:  msg.Facts,
+				Skills: msg.Skills,
+			},
+		}
+		i.active = false
+		return nil
 
 	case SubmitErrorMsg:
 		i.submitModal = feedback.NewErrorModal("Save Failed", msg.Message)
-		return nil
+		return i.submitModal.Init()
 
 	case feedback.ModalAutoDismissMsg:
 		return func() tea.Msg { return DismissModalMsg{} }
 
 	case DismissModalMsg:
 		if i.submitModal != nil {
+			wasSuccess := i.submitModal.Type == feedback.ModalSuccess
 			i.submitModal = nil
-			i.postSaveReview = true
-			i.currentState = StateReview
+			if wasSuccess {
+				i.currentState = StateReview
 
-			breadcrumbs := []string{"Main Menu", "Capture Event", "Review Enrichment"}
-			i.activeScreen = captureScreens.NewEventReviewScreen(
-				breadcrumbs,
-				i.reviewState.Event,
-				i.reviewState.InferredBursts,
-				i.reviewState.InferredFacts,
-				i.reviewState.InferredSkills,
-			)
+				breadcrumbs := []string{"Main Menu", "Capture Event", "Review Enrichment"}
+				i.activeScreen = captureScreens.NewEventReviewScreen(
+					breadcrumbs,
+					i.reviewState.Event,
+					i.reviewState.InferredBursts,
+					i.reviewState.InferredFacts,
+					i.reviewState.InferredSkills,
+				)
 
-			termInfo := i.GetTerminalInfo()
-			width, height := 120, 40
-			if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
-				width = termInfo.Width
-				height = termInfo.Height
+				termInfo := i.GetTerminalInfo()
+				width, height := 120, 40
+				if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
+					width = termInfo.Width
+					height = termInfo.Height
+				}
+
+				i.activeScreen.SetTerminalInfo(width, height)
+				i.activeScreen.SetTheme(i.Theme())
+				i.activeScreen.SetLogo(i.GetLogo(), i.GetLogoSpacing())
+			} else {
+				i.currentState = StateForm
 			}
-
-			i.activeScreen.SetTerminalInfo(width, height)
-			i.activeScreen.SetTheme(i.Theme())
-			i.activeScreen.SetLogo(i.GetLogo(), i.GetLogoSpacing())
 		}
 		return nil
 
@@ -226,8 +253,20 @@ func (i *Intent) View() string {
 	}
 
 	if i.reviewState != nil && i.reviewState.EditingMode != EditingModeNone {
+		if i.reviewState.EditingMode == EditingModeBursts && i.reviewState.burstModal != nil {
+			rendered := i.reviewState.burstModal.View()
+			modal := &behaviors.StaticViewModel{Content: rendered}
+			return behaviors.RenderModalOverlay(modal, baseView)
+		}
+
 		if i.reviewState.EditingMode == EditingModeSkills && i.reviewState.skillModal != nil {
 			rendered := i.reviewState.skillModal.View()
+			modal := &behaviors.StaticViewModel{Content: rendered}
+			return behaviors.RenderModalOverlay(modal, baseView)
+		}
+
+		if i.reviewState.EditingMode == EditingModeFacts && i.reviewState.factSuggestionModal != nil {
+			rendered := i.reviewState.factSuggestionModal.View()
 			modal := &behaviors.StaticViewModel{Content: rendered}
 			return behaviors.RenderModalOverlay(modal, baseView)
 		}

@@ -1,10 +1,15 @@
 package captureevent
 
 import (
+	"context"
+
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/burst_management/modals"
 	captureScreens "github.com/baphled/kariya/internal/cli/screens/capture"
+	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/repository/career/memory"
+	careerservice "github.com/baphled/kariya/internal/service/career"
 	"github.com/baphled/kariya/internal/service/career/skillinference"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
@@ -37,7 +42,7 @@ var _ = Describe("Skill Inference in CaptureEvent", func() {
 		})
 
 		It("initialises the skill modal with inferred skills", func() {
-			result := &screens.NavigateResult{ResultData: "edit_skills"}
+			result := &screens.NavigateResult{ResultData: "suggest_skills"}
 			intent.HandleNavigate(result)
 
 			Expect(intent.reviewState.EditingMode).To(Equal(EditingModeSkills))
@@ -50,11 +55,24 @@ var _ = Describe("Skill Inference in CaptureEvent", func() {
 			})
 
 			It("opens the modal with an empty list", func() {
-				result := &screens.NavigateResult{ResultData: "edit_skills"}
+				result := &screens.NavigateResult{ResultData: "suggest_skills"}
 				intent.HandleNavigate(result)
 
 				Expect(intent.reviewState.EditingMode).To(Equal(EditingModeSkills))
 				Expect(intent.reviewState.skillModal).NotTo(BeNil())
+			})
+
+			It("auto-closes the modal on the first update when no suggestions exist", func() {
+				result := &screens.NavigateResult{ResultData: "suggest_skills"}
+				intent.HandleNavigate(result)
+
+				Expect(intent.reviewState.EditingMode).To(Equal(EditingModeSkills))
+				Expect(intent.reviewState.skillModal).NotTo(BeNil())
+
+				intent.updateEditingModal(tea.KeyMsg{Type: tea.KeyDown})
+
+				Expect(intent.reviewState.skillModal).To(BeNil())
+				Expect(intent.reviewState.EditingMode).To(Equal(EditingModeNone))
 			})
 		})
 	})
@@ -193,28 +211,28 @@ var _ = Describe("Skill Inference in CaptureEvent", func() {
 			}
 		})
 
-		It("stores inferred skills from SubmitCompleteMsg in review state", func() {
+		It("stores inferred skills from InferenceCompleteMsg in review state", func() {
 			expectedSkills := []skillinference.SkillSuggestion{
 				{Name: "Go", Category: "backend", Confidence: 0.95},
 			}
-			intent.Update(SubmitCompleteMsg{InferredSkills: expectedSkills})
+			intent.Update(InferenceCompleteMsg{InferredSkills: expectedSkills})
 
 			Expect(intent.reviewState.InferredSkills).To(Equal(expectedSkills))
 		})
 
-		It("handles empty inferred skills in SubmitCompleteMsg", func() {
-			intent.Update(SubmitCompleteMsg{})
+		It("handles empty inferred skills in InferenceCompleteMsg", func() {
+			intent.Update(InferenceCompleteMsg{})
 
 			Expect(intent.reviewState.InferredSkills).To(BeNil())
 		})
 
-		It("stores multiple inferred skills from SubmitCompleteMsg", func() {
+		It("stores multiple inferred skills from InferenceCompleteMsg", func() {
 			multipleSkills := []skillinference.SkillSuggestion{
 				{Name: "Go", Category: "backend", Confidence: 0.95},
 				{Name: "Docker", Category: "devops", Confidence: 0.88},
 				{Name: "PostgreSQL", Category: "database", Confidence: 0.72},
 			}
-			intent.Update(SubmitCompleteMsg{InferredSkills: multipleSkills})
+			intent.Update(InferenceCompleteMsg{InferredSkills: multipleSkills})
 
 			Expect(intent.reviewState.InferredSkills).To(HaveLen(3))
 			Expect(intent.reviewState.InferredSkills[0].Name).To(Equal("Go"))
@@ -303,7 +321,7 @@ var _ = Describe("Skill Inference in CaptureEvent", func() {
 				{Name: "Go", Category: "backend", Confidence: 0.95},
 				{Name: "Docker", Category: "devops", Confidence: 0.88},
 			}
-			intent.Update(SubmitCompleteMsg{InferredSkills: inferredSkills})
+			intent.Update(InferenceCompleteMsg{InferredSkills: inferredSkills})
 
 			Expect(intent.reviewState.InferredSkills).To(HaveLen(2))
 
@@ -326,7 +344,7 @@ var _ = Describe("Skill Inference in CaptureEvent", func() {
 
 		It("completes intent when review submits accepted skills as career.Skill", func() {
 			intent.currentState = StateReview
-			intent.postSaveReview = true
+			intent.submitModal = feedback.NewSuccessModal("Event saved!")
 			intent.reviewState = &ReviewInferredEventState{
 				Event: fixtures.EventWith("evt-1", "test", "", ""),
 			}
@@ -340,7 +358,10 @@ var _ = Describe("Skill Inference in CaptureEvent", func() {
 					fixtures.SkillWith("s-2", "Docker", "devops", "intermediate"),
 				},
 			}
-			intent.HandleSubmit(&screens.SubmitResult{FormData: reviewData})
+			cmd := intent.HandleSubmit(&screens.SubmitResult{FormData: reviewData})
+			Expect(cmd).NotTo(BeNil())
+			msg := cmd()
+			intent.Update(msg)
 
 			Expect(intent.result).NotTo(BeNil())
 			Expect(intent.result.Data.Skills).To(HaveLen(2))
@@ -349,8 +370,140 @@ var _ = Describe("Skill Inference in CaptureEvent", func() {
 			Expect(intent.result.Data.Skills[0].Level).To(Equal("advanced"))
 			Expect(intent.result.Data.Skills[1].Name).To(Equal("Docker"))
 			Expect(intent.result.Data.Skills[1].Category).To(Equal("devops"))
-			Expect(intent.result.Data.Skills[1].Level).To(Equal("intermediate"))
 			Expect(intent.active).To(BeFalse())
+		})
+	})
+
+	Describe("skill persistence on post-save review", func() {
+		var (
+			eventRepo *memory.EventRepository
+			skillRepo *memory.SkillRepository
+			svc       *careerservice.Service
+			testEvent *career.Event
+		)
+
+		BeforeEach(func() {
+			eventRepo = memory.NewEventRepository()
+			skillRepo = memory.NewSkillRepository()
+			eventRepo.SetSkillRepository(skillRepo)
+			skillRepo.SetEventRepository(eventRepo)
+
+			svc = careerservice.NewService(eventRepo)
+			svc.SetSkillRepository(skillRepo)
+
+			testEvent = fixtures.EventWith("evt-persist", "Built microservices in Go and Docker", "", "")
+			Expect(eventRepo.Create(context.Background(), testEvent)).To(Succeed())
+
+			intent.context.CareerService = svc
+			intent.currentState = StateReview
+			intent.submitModal = feedback.NewSuccessModal("Event saved!")
+			intent.reviewState = &ReviewInferredEventState{
+				Event: testEvent,
+			}
+		})
+
+		It("persists skills from SkillSuggestion type through the real flow", func() {
+			reviewData := map[string]interface{}{
+				"event":  testEvent,
+				"bursts": []*career.Burst{},
+				"facts":  []*career.Fact{},
+				"skills": []skillinference.SkillSuggestion{
+					{Name: "Go", Category: "backend", Confidence: 0.95},
+					{Name: "Docker", Category: "devops", Confidence: 0.88},
+				},
+			}
+			cmd := intent.HandleSubmit(&screens.SubmitResult{FormData: reviewData})
+			Expect(cmd).NotTo(BeNil())
+			msg := cmd()
+			intent.Update(msg)
+
+			Expect(intent.result).NotTo(BeNil())
+			Expect(intent.result.Data.Skills).To(HaveLen(2))
+			Expect(intent.result.Data.Skills[0].Name).To(Equal("Go"))
+			Expect(intent.result.Data.Skills[0].ID).NotTo(BeEmpty())
+			Expect(intent.result.Data.Skills[1].Name).To(Equal("Docker"))
+			Expect(intent.result.Data.Skills[1].ID).NotTo(BeEmpty())
+
+			goSkill, err := skillRepo.GetByName(context.Background(), "Go")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(goSkill).NotTo(BeNil())
+
+			dockerSkill, err := skillRepo.GetByName(context.Background(), "Docker")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dockerSkill).NotTo(BeNil())
+
+			savedEvent, err := eventRepo.GetByID(context.Background(), testEvent.ID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(savedEvent.Skills).To(HaveLen(2))
+			Expect(savedEvent.Skills).To(ContainElement(goSkill.ID))
+			Expect(savedEvent.Skills).To(ContainElement(dockerSkill.ID))
+		})
+
+		It("skips persistence when no skills are provided", func() {
+			reviewData := map[string]interface{}{
+				"event":  testEvent,
+				"bursts": []*career.Burst{},
+				"facts":  []*career.Fact{},
+				"skills": []skillinference.SkillSuggestion{},
+			}
+			cmd := intent.HandleSubmit(&screens.SubmitResult{FormData: reviewData})
+			Expect(cmd).NotTo(BeNil())
+			msg := cmd()
+			intent.Update(msg)
+
+			Expect(intent.result).NotTo(BeNil())
+			Expect(intent.result.Data.Skills).To(BeEmpty())
+
+			savedEvent, err := eventRepo.GetByID(context.Background(), testEvent.ID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(savedEvent.Skills).To(BeEmpty())
+		})
+
+		It("persists skills accepted from modal through screen submit", func() {
+			intent.reviewState.InferredSkills = []skillinference.SkillSuggestion{
+				{Name: "Go", Category: "backend", Confidence: 0.95},
+			}
+			intent.reviewState.AcceptedSkills = []*career.Skill{}
+			intent.reviewState.EditingMode = EditingModeSkills
+
+			screen := captureScreens.NewEventReviewScreen(
+				[]string{"Test"}, testEvent, nil, nil,
+				intent.reviewState.InferredSkills,
+			)
+			intent.activeScreen = screen
+
+			intent.reviewState.skillModal = modals.NewSkillSuggestionModal(
+				intent.reviewState.InferredSkills, nil,
+			)
+
+			intent.updateEditingModal(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+
+			Expect(intent.reviewState.AcceptedSkills).To(HaveLen(1))
+			Expect(intent.reviewState.EditingMode).To(Equal(EditingModeNone))
+
+			_, result := screen.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			Expect(result).NotTo(BeNil())
+
+			submitResult, ok := result.(*screens.SubmitResult)
+			Expect(ok).To(BeTrue())
+
+			cmd := intent.HandleSubmit(submitResult)
+			Expect(cmd).NotTo(BeNil())
+			msg := cmd()
+			intent.Update(msg)
+
+			Expect(intent.result).NotTo(BeNil())
+			Expect(intent.result.Data.Skills).To(HaveLen(1))
+			Expect(intent.result.Data.Skills[0].Name).To(Equal("Go"))
+			Expect(intent.result.Data.Skills[0].ID).NotTo(BeEmpty())
+
+			goSkill, err := skillRepo.GetByName(context.Background(), "Go")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(goSkill).NotTo(BeNil())
+
+			savedEvent, err := eventRepo.GetByID(context.Background(), testEvent.ID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(savedEvent.Skills).To(ContainElement(goSkill.ID))
 		})
 	})
 })

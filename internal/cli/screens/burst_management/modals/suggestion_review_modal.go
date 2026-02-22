@@ -11,6 +11,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/uikit/containers"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	themes2 "github.com/baphled/kariya/internal/cli/uikit/theme"
+	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/service/career/burstfact"
 	"github.com/baphled/kariya/internal/service/career/skillinference"
 	tea "github.com/charmbracelet/bubbletea"
@@ -57,16 +58,19 @@ const (
 type SuggestionReviewModal struct {
 	burstTable *behaviors.TableBehavior[burstfact.BurstSuggestion]
 	skillTable *behaviors.TableBehavior[skillinference.SkillSuggestion]
+	factTable  *behaviors.TableBehavior[career.Fact]
 
 	suggestionType string
 
 	// Type-specific suggestion slices
 	burstSuggestions []burstfact.BurstSuggestion
 	skillSuggestions []skillinference.SkillSuggestion
+	factSuggestions  []career.Fact
 
 	// Type-specific accepted lists
 	acceptedBursts []burstfact.BurstSuggestion
 	acceptedSkills []skillinference.SkillSuggestion
+	acceptedFacts  []career.Fact
 
 	// Shared state
 	theme   themes.Theme
@@ -199,6 +203,67 @@ func NewSkillSuggestionModal(suggestions []skillinference.SkillSuggestion, theme
 	return m
 }
 
+// NewFactSuggestionModal creates a new fact suggestion review modal.
+//
+// Expected:
+//   - facts must be valid.
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A fully initialized SuggestionReviewModal ready for use.
+//
+// Side effects:
+//   - None.
+func NewFactSuggestionModal(facts []career.Fact, theme themes.Theme) *SuggestionReviewModal {
+	if theme == nil {
+		theme = themes.NewDefaultTheme()
+	}
+
+	sortedFacts := make([]career.Fact, len(facts))
+	copy(sortedFacts, facts)
+
+	columns := []behaviors.ColumnDef{
+		{Title: "Text", Width: 35},
+		{Title: "Categories", Width: 20},
+		{Title: "RoleFit", Width: 12},
+		{Title: "Strength", Width: 15},
+	}
+
+	formatter := func(f career.Fact, _ int) []string {
+		text := f.Text
+		if len(text) > 32 {
+			text = text[:32] + "..."
+		}
+		categories := strings.Join(f.CompetencyCategories, ", ")
+		return []string{
+			text,
+			categories,
+			string(f.RoleFit),
+			f.StrengthSignal,
+		}
+	}
+
+	table := behaviors.NewTableBehavior(theme, columns, formatter).
+		EmptyMessage("No facts detected").
+		PaginationPrefix("Facts").
+		PageSize(10)
+
+	table.SetItems(sortedFacts)
+
+	m := &SuggestionReviewModal{
+		suggestionType:  "fact",
+		factTable:       table,
+		factSuggestions: sortedFacts,
+		acceptedFacts:   []career.Fact{},
+		theme:           theme,
+		visible:         true,
+		width:           80,
+		height:          24,
+	}
+
+	return m
+}
+
 // getTheme returns the theme or default if nil.
 func (m *SuggestionReviewModal) getTheme() themes.Theme {
 	if m.theme != nil {
@@ -214,6 +279,8 @@ func (m *SuggestionReviewModal) buildContent() string {
 		return m.buildBurstContent()
 	case "skill":
 		return m.buildSkillContent()
+	case "fact":
+		return m.buildFactContent()
 	default:
 		return "Unknown suggestion type"
 	}
@@ -303,6 +370,43 @@ func (m *SuggestionReviewModal) renderUsageContexts(content *strings.Builder, co
 	}
 }
 
+// buildFactContent renders fact suggestions with competency details.
+func (m *SuggestionReviewModal) buildFactContent() string {
+	if len(m.factSuggestions) == 0 {
+		return "No facts detected"
+	}
+
+	var content strings.Builder
+
+	content.WriteString(m.factTable.Render())
+	content.WriteString("\n\n")
+
+	if selected := m.factTable.GetSelectedItem(); selected != nil {
+		m.renderSelectedFactDetail(&content, selected)
+	}
+
+	return content.String()
+}
+
+// renderSelectedFactDetail writes the selected fact text, role fit badge, and strength signal.
+func (m *SuggestionReviewModal) renderSelectedFactDetail(content *strings.Builder, selected *career.Fact) {
+	theme := m.getTheme()
+
+	content.WriteString(primitives.NewText("Selected:", theme).Bold().Render())
+	content.WriteString(" " + selected.Text + "\n")
+
+	roleFitBadge := primitives.NewBadge(string(selected.RoleFit), theme).
+		Variant(primitives.BadgeTag).
+		Render()
+	content.WriteString("Role Fit: " + roleFitBadge + "\n")
+
+	content.WriteString("Strength: " + selected.StrengthSignal + "\n")
+
+	if len(selected.CompetencyCategories) > 0 {
+		content.WriteString("Categories: " + strings.Join(selected.CompetencyCategories, ", ") + "\n")
+	}
+}
+
 // buildFooter builds the footer with help badges.
 func (m *SuggestionReviewModal) buildFooter() string {
 	theme := m.getTheme()
@@ -357,6 +461,8 @@ func (m *SuggestionReviewModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.burstTable.Dimensions(m.width-12, m.height-16)
 		case "skill":
 			m.skillTable.Dimensions(m.width-12, m.height-16)
+		case "fact":
+			m.factTable.Dimensions(m.width-12, m.height-16)
 		}
 		return m, nil
 
@@ -444,6 +550,8 @@ func (m *SuggestionReviewModal) handleNavigation(direction string) {
 		m.burstTable.HandleNavigation(direction)
 	case "skill":
 		m.skillTable.HandleNavigation(direction)
+	case "fact":
+		m.factTable.HandleNavigation(direction)
 	}
 }
 
@@ -462,6 +570,12 @@ func (m *SuggestionReviewModal) handleAccept() {
 			m.acceptedSkills = append(m.acceptedSkills, *selected)
 			m.removeCurrentSuggestion()
 		}
+	case "fact":
+		selected := m.factTable.GetSelectedItem()
+		if selected != nil {
+			m.acceptedFacts = append(m.acceptedFacts, *selected)
+			m.removeCurrentSuggestion()
+		}
 	}
 }
 
@@ -472,6 +586,8 @@ func (m *SuggestionReviewModal) removeCurrentSuggestion() {
 		m.removeBurstSuggestionAtIndex(m.burstTable.GetSelectedIndex())
 	case "skill":
 		m.removeSkillSuggestionAtIndex(m.skillTable.GetSelectedIndex())
+	case "fact":
+		m.removeFactSuggestionAtIndex(m.factTable.GetSelectedIndex())
 	}
 }
 
@@ -509,6 +625,23 @@ func (m *SuggestionReviewModal) removeSkillSuggestionAtIndex(idx int) {
 	}
 }
 
+// removeFactSuggestionAtIndex removes a fact suggestion at the given index and updates selection.
+func (m *SuggestionReviewModal) removeFactSuggestionAtIndex(idx int) {
+	if idx < 0 || idx >= len(m.factSuggestions) {
+		return
+	}
+
+	m.factSuggestions = append(m.factSuggestions[:idx], m.factSuggestions[idx+1:]...)
+	m.factTable.SetItems(m.factSuggestions)
+
+	if idx >= len(m.factSuggestions) && len(m.factSuggestions) > 0 {
+		idx = len(m.factSuggestions) - 1
+	}
+	if len(m.factSuggestions) > 0 {
+		m.factTable.SetSelectedIndex(idx)
+	}
+}
+
 // View renders the modal.
 //
 // Returns:
@@ -529,6 +662,8 @@ func (m *SuggestionReviewModal) View() string {
 		titleText = "Review Burst Suggestions"
 	case "skill":
 		titleText = "Review Skill Suggestions"
+	case "fact":
+		titleText = "Review Fact Suggestions"
 	default:
 		titleText = "Review Suggestions"
 	}
@@ -617,6 +752,8 @@ func (m *SuggestionReviewModal) SetDimensions(width, height int) {
 		m.burstTable.Dimensions(contentWidth, height-16)
 	case "skill":
 		m.skillTable.Dimensions(contentWidth, height-16)
+	case "fact":
+		m.factTable.Dimensions(contentWidth, height-16)
 	}
 }
 
@@ -661,6 +798,28 @@ func (m *SuggestionReviewModal) GetAcceptedSkills() []skillinference.SkillSugges
 	return m.acceptedSkills
 }
 
+// GetAcceptedFacts returns all accepted fact suggestions.
+//
+// Returns:
+//   - A []career.Fact value.
+//
+// Side effects:
+//   - None.
+func (m *SuggestionReviewModal) GetAcceptedFacts() []career.Fact {
+	return m.acceptedFacts
+}
+
+// GetCurrentFact returns the currently selected fact suggestion.
+//
+// Returns:
+//   - A *career.Fact or nil if no fact is selected.
+//
+// Side effects:
+//   - None.
+func (m *SuggestionReviewModal) GetCurrentFact() *career.Fact {
+	return m.factTable.GetSelectedItem()
+}
+
 // GetCurrentSuggestion returns the currently selected burst suggestion.
 //
 // Returns:
@@ -696,6 +855,8 @@ func (m *SuggestionReviewModal) HasSuggestions() bool {
 		return len(m.burstSuggestions) > 0
 	case "skill":
 		return len(m.skillSuggestions) > 0
+	case "fact":
+		return len(m.factSuggestions) > 0
 	default:
 		return false
 	}
@@ -714,6 +875,8 @@ func (m *SuggestionReviewModal) GetSuggestionsCount() int {
 		return len(m.burstSuggestions)
 	case "skill":
 		return len(m.skillSuggestions)
+	case "fact":
+		return len(m.factSuggestions)
 	default:
 		return 0
 	}

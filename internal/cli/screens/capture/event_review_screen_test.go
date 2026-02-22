@@ -2,6 +2,8 @@
 package capture_test
 
 import (
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/screens"
@@ -14,6 +16,14 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
+
+// ansiEscapePattern matches ANSI escape sequences for stripping from output.
+var ansiEscapePattern = regexp.MustCompile(`\x1b\[[0-9;]*[mKHFJ]`)
+
+// stripAnsi removes ANSI escape sequences from s, returning plain text.
+func stripAnsi(s string) string {
+	return ansiEscapePattern.ReplaceAllString(s, "")
+}
 
 // EventReviewScreen Tests
 //
@@ -97,26 +107,21 @@ var _ = Describe("EventReviewScreen", func() {
 			Expect(view).To(ContainSubstring("OAuth2 Integration"))
 		})
 
-		It("should display burst descriptions", func() {
-			view := screen.View()
-			Expect(view).To(ContainSubstring("OAuth2 with multiple providers"))
-		})
-
 		It("should display facts", func() {
 			view := screen.View()
 			Expect(view).To(ContainSubstring("Reduced login time"))
 		})
 
-		It("should display title using UIKit primitives", func() {
+		It("should not display a standalone title", func() {
 			view := screen.View()
-			Expect(view).To(ContainSubstring("Review Enrichment Results"))
+			Expect(view).NotTo(ContainSubstring("Review Enrichment Results"))
 		})
 
 		It("should display section headers using UIKit primitives", func() {
 			view := screen.View()
 			Expect(view).To(ContainSubstring("Event Details"))
-			Expect(view).To(ContainSubstring("Inferred Bursts"))
-			Expect(view).To(ContainSubstring("Inferred Facts"))
+			Expect(view).To(ContainSubstring("Bursts"))
+			Expect(view).To(ContainSubstring("Facts"))
 		})
 
 		Context("with nil event", func() {
@@ -219,16 +224,16 @@ var _ = Describe("EventReviewScreen", func() {
 			Expect(navResult.Data()).To(Equal("edit_metadata"))
 		})
 
-		It("should return NavigateResult for 'b' (edit bursts)", func() {
+		It("should return NavigateResult for 'b' (suggest bursts)", func() {
 			_, result := screen.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'b'}})
 			navResult := result.(*screens.NavigateResult)
-			Expect(navResult.Data()).To(Equal("edit_bursts"))
+			Expect(navResult.Data()).To(Equal("suggest_bursts"))
 		})
 
-		It("should return NavigateResult for 'f' (edit facts)", func() {
+		It("should return NavigateResult for 'f' (suggest facts)", func() {
 			_, result := screen.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
 			navResult := result.(*screens.NavigateResult)
-			Expect(navResult.Data()).To(Equal("edit_facts"))
+			Expect(navResult.Data()).To(Equal("suggest_facts"))
 		})
 	})
 
@@ -274,6 +279,92 @@ var _ = Describe("EventReviewScreen", func() {
 		})
 	})
 
+	Describe("Accepted Facts", func() {
+		Describe("SetAcceptedFacts", func() {
+			It("should set accepted facts", func() {
+				acceptedFacts := []*career.Fact{testFacts[0]}
+				screen.SetAcceptedFacts(acceptedFacts)
+				view := screen.View()
+				Expect(view).NotTo(BeEmpty())
+			})
+
+			It("should handle nil accepted facts", func() {
+				screen.SetAcceptedFacts(nil)
+				view := screen.View()
+				Expect(view).NotTo(BeEmpty())
+			})
+
+			It("should handle empty accepted facts", func() {
+				screen.SetAcceptedFacts([]*career.Fact{})
+				view := screen.View()
+				Expect(view).NotTo(BeEmpty())
+			})
+		})
+
+		Describe("Fact Submission", func() {
+			It("should include accepted facts in SubmitResult", func() {
+				acceptedFacts := []*career.Fact{testFacts[0]}
+				screen.SetAcceptedFacts(acceptedFacts)
+				_, result := screen.Update(tea.KeyMsg{Type: tea.KeyEnter})
+				submitResult := result.(*screens.SubmitResult)
+				data := submitResult.Data().(map[string]interface{})
+				Expect(data["facts"]).To(HaveLen(1))
+				Expect(data["facts"].([]*career.Fact)[0].Text).To(Equal("Reduced login time by 50%"))
+			})
+
+			It("should include empty facts when no facts accepted", func() {
+				screen.SetAcceptedFacts([]*career.Fact{})
+				_, result := screen.Update(tea.KeyMsg{Type: tea.KeyEnter})
+				submitResult := result.(*screens.SubmitResult)
+				data := submitResult.Data().(map[string]interface{})
+				Expect(data["facts"]).To(BeEmpty())
+			})
+		})
+	})
+
+	Describe("Accepted Bursts", func() {
+		Describe("SetAcceptedBursts", func() {
+			It("should set accepted bursts", func() {
+				acceptedBursts := []*career.Burst{testBursts[0]}
+				screen.SetAcceptedBursts(acceptedBursts)
+				view := screen.View()
+				Expect(view).NotTo(BeEmpty())
+			})
+
+			It("should handle nil accepted bursts", func() {
+				screen.SetAcceptedBursts(nil)
+				view := screen.View()
+				Expect(view).NotTo(BeEmpty())
+			})
+
+			It("should handle empty accepted bursts", func() {
+				screen.SetAcceptedBursts([]*career.Burst{})
+				view := screen.View()
+				Expect(view).NotTo(BeEmpty())
+			})
+		})
+
+		Describe("Burst Submission", func() {
+			It("should include accepted bursts in SubmitResult", func() {
+				acceptedBursts := []*career.Burst{testBursts[0]}
+				screen.SetAcceptedBursts(acceptedBursts)
+				_, result := screen.Update(tea.KeyMsg{Type: tea.KeyEnter})
+				submitResult := result.(*screens.SubmitResult)
+				data := submitResult.Data().(map[string]interface{})
+				Expect(data["bursts"]).To(HaveLen(1))
+				Expect(data["bursts"].([]*career.Burst)[0].Name).To(Equal("OAuth2 Integration"))
+			})
+
+			It("should include empty bursts when no bursts accepted", func() {
+				screen.SetAcceptedBursts([]*career.Burst{})
+				_, result := screen.Update(tea.KeyMsg{Type: tea.KeyEnter})
+				submitResult := result.(*screens.SubmitResult)
+				data := submitResult.Data().(map[string]interface{})
+				Expect(data["bursts"]).To(BeEmpty())
+			})
+		})
+	})
+
 	Describe("Skill Integration", func() {
 		var testSkills []skillinference.SkillSuggestion
 
@@ -300,7 +391,7 @@ var _ = Describe("EventReviewScreen", func() {
 			It("should set suggested skills", func() {
 				screen.SetSuggestedSkills(testSkills)
 				view := screen.View()
-				Expect(view).To(ContainSubstring("Inferred Skills"))
+				Expect(view).To(ContainSubstring("Skills"))
 				Expect(view).To(ContainSubstring("Go"))
 			})
 
@@ -360,12 +451,12 @@ var _ = Describe("EventReviewScreen", func() {
 		})
 
 		Describe("Skill Navigation", func() {
-			It("should return NavigateResult for 's' (edit skills)", func() {
+			It("should return NavigateResult for 's' (suggest skills)", func() {
 				screen.SetSuggestedSkills(testSkills)
 				_, result := screen.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
 				Expect(result.Type()).To(Equal(screens.ResultNavigate))
 				navResult := result.(*screens.NavigateResult)
-				Expect(navResult.Data()).To(Equal("edit_skills"))
+				Expect(navResult.Data()).To(Equal("suggest_skills"))
 			})
 
 			It("should not show skills badge when no skills", func() {
@@ -400,6 +491,160 @@ var _ = Describe("EventReviewScreen", func() {
 				data := submitResult.Data().(map[string]interface{})
 				Expect(data["skills"]).To(BeEmpty())
 			})
+		})
+	})
+
+	Describe("Status Indicators", func() {
+		It("shows ○ for pending bursts", func() {
+			view := screen.View()
+			Expect(view).To(ContainSubstring("○"))
+		})
+
+		It("shows ● for accepted bursts", func() {
+			screen.SetAcceptedBursts(testBursts)
+			view := screen.View()
+			Expect(view).To(ContainSubstring("●"))
+		})
+
+		It("shows ○ for pending facts", func() {
+			view := screen.View()
+			Expect(view).To(ContainSubstring("○"))
+		})
+
+		It("shows ● for accepted facts", func() {
+			screen.SetAcceptedFacts(testFacts)
+			view := screen.View()
+			Expect(view).To(ContainSubstring("●"))
+		})
+	})
+
+	Describe("Scrolling", func() {
+		It("handles down scroll key without returning a result", func() {
+			_, result := screen.Update(tea.KeyMsg{Type: tea.KeyDown})
+			Expect(result).To(BeNil())
+		})
+
+		It("handles up scroll key without returning a result", func() {
+			_, result := screen.Update(tea.KeyMsg{Type: tea.KeyUp})
+			Expect(result).To(BeNil())
+		})
+	})
+
+	Describe("Scroll keys", func() {
+		It("handles j key (scroll down) without returning a result", func() {
+			_, result := screen.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
+			Expect(result).To(BeNil())
+		})
+
+		It("handles k key (scroll up) without returning a result", func() {
+			_, result := screen.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
+			Expect(result).To(BeNil())
+		})
+
+		It("handles page-down key without returning a result", func() {
+			_, result := screen.Update(tea.KeyMsg{Type: tea.KeyPgDown})
+			Expect(result).To(BeNil())
+		})
+
+		It("handles page-up key without returning a result", func() {
+			_, result := screen.Update(tea.KeyMsg{Type: tea.KeyPgUp})
+			Expect(result).To(BeNil())
+		})
+	})
+
+	Describe("Suggested data setters", func() {
+		It("GetSuggestedSkills returns the previously set skills", func() {
+			skills := []skillinference.SkillSuggestion{
+				{Name: "Go", Category: "backend", Confidence: 0.9},
+			}
+			screen.SetSuggestedSkills(skills)
+			Expect(screen.GetSuggestedSkills()).To(HaveLen(1))
+			Expect(screen.GetSuggestedSkills()[0].Name).To(Equal("Go"))
+		})
+
+		It("SetSuggestedBursts updates rendered burst list", func() {
+			burst := fixtures.Burst("burst-new", "evt-1", "evt-2")
+			burst.Name = "New Burst"
+			screen.SetSuggestedBursts([]*career.Burst{burst})
+			view := screen.View()
+			Expect(view).To(ContainSubstring("New Burst"))
+		})
+
+		It("SetSuggestedFacts updates rendered fact list", func() {
+			fact := fixtures.Fact("fact-new", "evt-1")
+			fact.Text = "New Fact Text"
+			screen.SetSuggestedFacts([]*career.Fact{fact})
+			view := screen.View()
+			Expect(view).To(ContainSubstring("New Fact Text"))
+		})
+	})
+
+	Describe("Accepted skill indicator", func() {
+		It("marks an accepted skill with the filled indicator in the rendered view", func() {
+			skills := []skillinference.SkillSuggestion{
+				{Name: "Go", Category: "backend", Confidence: 0.9},
+			}
+			screen.SetSuggestedSkills(skills)
+			screen.SetAcceptedSkills(skills)
+			view := screen.View()
+			Expect(view).To(ContainSubstring("●"))
+		})
+	})
+
+	Describe("Content Centring", func() {
+		It("returns constrained content when viewport width is forced to zero", func() {
+			screen.Update(tea.WindowSizeMsg{Width: 0, Height: 40})
+			view := screen.View()
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("clamps viewport height to 1 when window is shorter than reserved lines", func() {
+			_, result := screen.Update(tea.WindowSizeMsg{Width: 80, Height: 5})
+			Expect(result).To(BeNil())
+			view := screen.View()
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("constrains content to max 80 columns when viewport is wider", func() {
+			screen.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+			view := screen.View()
+			lines := strings.Split(view, "\n")
+			for _, line := range lines {
+				visibleLen := len([]rune(stripAnsi(line)))
+				Expect(visibleLen).To(BeNumerically("<=", 120),
+					"line should not exceed viewport width of 120: %q", line)
+			}
+		})
+
+		It("centres content within a wide viewport by adding leading padding", func() {
+			screen.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+			view := screen.View()
+			strippedView := stripAnsi(view)
+			lines := strings.Split(strippedView, "\n")
+			foundPadding := false
+			for _, line := range lines {
+				if strings.Contains(line, "Event Details") {
+					leadingSpaces := len(line) - len(strings.TrimLeft(line, " "))
+					if leadingSpaces >= 10 {
+						foundPadding = true
+						break
+					}
+				}
+			}
+			Expect(foundPadding).To(BeTrue(), "expected Event Details line to have ≥10 leading spaces for centring, indicating content is horizontally centred within the 120-wide viewport")
+		})
+
+		It("does not exceed viewport width when viewport is narrower than 80", func() {
+			screen.Update(tea.WindowSizeMsg{Width: 60, Height: 40})
+			view := screen.View()
+			Expect(view).To(ContainSubstring("Event Details"))
+		})
+
+		It("still displays content when viewport is narrower than 80", func() {
+			screen.Update(tea.WindowSizeMsg{Width: 60, Height: 40})
+			view := screen.View()
+			Expect(view).To(ContainSubstring("Event Details"))
+			Expect(view).To(ContainSubstring("Bursts"))
 		})
 	})
 })

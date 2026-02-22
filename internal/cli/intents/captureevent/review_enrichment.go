@@ -16,14 +16,15 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// MetadataEditorModelNew represents the metadata editor form state using huh.
-// This model uses the huh library for form handling, providing:
+// ReviewEnrichmentModel represents the review enrichment form state using huh.
+// It allows users to edit event metadata during the event-review flow,
+// providing:
 // - Automatic focus management (no more manual tab handling)
 // - Built-in validation with custom validators
 // - Catppuccin theming
 // - Consistent keyboard navigation
 // - MultiSelect for tags and categories.
-type MetadataEditorModelNew struct {
+type ReviewEnrichmentModel struct {
 	forms.EditorFields
 	event            *career.Event
 	originalEvent    *career.Event
@@ -37,14 +38,14 @@ type MetadataEditorModelNew struct {
 	submitted        bool
 }
 
-// MetadataEditorDimensions holds terminal dimensions for the metadata editor.
+// ReviewEnrichmentDimensions holds terminal dimensions for the review enrichment modal.
 // Pass these from the intent so the form sizes correctly inside the overlay.
-type MetadataEditorDimensions struct {
+type ReviewEnrichmentDimensions struct {
 	TerminalWidth  int
 	TerminalHeight int
 }
 
-// NewMetadataEditorModelNew creates a new metadata editor model using huh forms.
+// NewReviewEnrichmentModel creates a new review enrichment model using huh forms.
 //
 // dims may be nil, in which case defaults (80x40) are used.
 //
@@ -56,14 +57,14 @@ type MetadataEditorDimensions struct {
 //   - dims may be nil, in which case defaults are used.
 //
 // Returns:
-//   - A fully initialized MetadataEditorModelNew ready for use.
+//   - A fully initialized ReviewEnrichmentModel ready for use.
 //
 // Side effects:
 //   - May query skill repository to load available skills.
-func NewMetadataEditorModelNew(
+func NewReviewEnrichmentModel(
 	ctx context.Context, event *career.Event, service *careerservice.Service,
-	cliSvc *cliservice.CLIEventService, dims *MetadataEditorDimensions,
-) *MetadataEditorModelNew {
+	cliSvc *cliservice.CLIEventService, dims *ReviewEnrichmentDimensions,
+) *ReviewEnrichmentModel {
 	// Apply defaults for nil dimensions.
 	termWidth := 80
 	termHeight := 40
@@ -126,7 +127,7 @@ func NewMetadataEditorModelNew(
 		},
 	)
 
-	return &MetadataEditorModelNew{
+	return &ReviewEnrichmentModel{
 		EditorFields: forms.EditorFields{
 			Form:   form,
 			Width:  termWidth,
@@ -152,7 +153,7 @@ func NewMetadataEditorModelNew(
 //
 // Side effects:
 //   - None.
-func (m *MetadataEditorModelNew) Init() tea.Cmd {
+func (m *ReviewEnrichmentModel) Init() tea.Cmd {
 	return m.Form.Init()
 }
 
@@ -167,12 +168,12 @@ func (m *MetadataEditorModelNew) Init() tea.Cmd {
 //
 // Side effects:
 //   - May update internal state based on message type.
-func (m *MetadataEditorModelNew) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *ReviewEnrichmentModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return forms.EditorUpdate(&m.EditorFields, m, msg, m.handleFormCompletion, func() tea.Msg { return QuitMsg{} })
 }
 
 // handleFormCompletion processes the completed form and saves the metadata.
-func (m *MetadataEditorModelNew) handleFormCompletion() (tea.Model, tea.Cmd) {
+func (m *ReviewEnrichmentModel) handleFormCompletion() (tea.Model, tea.Cmd) {
 	// Check if user confirmed via the submit button
 	// If they selected "Cancel" on the confirm, treat as cancelled
 	if !m.formData.SubmitConfirmed {
@@ -216,7 +217,7 @@ func (m *MetadataEditorModelNew) handleFormCompletion() (tea.Model, tea.Cmd) {
 //
 // Side effects:
 //   - None.
-func (m *MetadataEditorModelNew) ExtractInput() capture.MetadataInput {
+func (m *ReviewEnrichmentModel) ExtractInput() capture.MetadataInput {
 	return capture.MetadataInput{
 		Date:       m.formData.Date,
 		Company:    m.formData.Company,
@@ -234,7 +235,7 @@ func (m *MetadataEditorModelNew) ExtractInput() capture.MetadataInput {
 //
 // Side effects:
 //   - None.
-func (m *MetadataEditorModelNew) GetEvent() *career.Event {
+func (m *ReviewEnrichmentModel) GetEvent() *career.Event {
 	return m.event
 }
 
@@ -245,7 +246,7 @@ func (m *MetadataEditorModelNew) GetEvent() *career.Event {
 //
 // Side effects:
 //   - None.
-func (m *MetadataEditorModelNew) IsSubmitted() bool {
+func (m *ReviewEnrichmentModel) IsSubmitted() bool {
 	return m.submitted
 }
 
@@ -256,7 +257,7 @@ func (m *MetadataEditorModelNew) IsSubmitted() bool {
 //
 // Side effects:
 //   - None.
-func (m *MetadataEditorModelNew) IsCancelled() bool {
+func (m *ReviewEnrichmentModel) IsCancelled() bool {
 	return m.Cancelled
 }
 
@@ -264,7 +265,7 @@ func (m *MetadataEditorModelNew) IsCancelled() bool {
 //
 // Side effects:
 //   - None.
-func (m *MetadataEditorModelNew) Revert() {
+func (m *ReviewEnrichmentModel) Revert() {
 	*m.event = *m.originalEvent
 	// Update form data
 	m.formData = forms.GetMetadataFormData(m.originalEvent)
@@ -277,7 +278,7 @@ func (m *MetadataEditorModelNew) Revert() {
 //
 // Side effects:
 //   - None.
-func (m *MetadataEditorModelNew) GetError() error {
+func (m *ReviewEnrichmentModel) GetError() error {
 	return m.Err
 }
 
@@ -288,7 +289,7 @@ func (m *MetadataEditorModelNew) GetError() error {
 //
 // Side effects:
 //   - None.
-func (m *MetadataEditorModelNew) GetTitle() string {
+func (m *ReviewEnrichmentModel) GetTitle() string {
 	return "Edit Event Metadata"
 }
 
@@ -299,7 +300,7 @@ func (m *MetadataEditorModelNew) GetTitle() string {
 //
 // Side effects:
 //   - None.
-func (m *MetadataEditorModelNew) GetContent() string {
+func (m *ReviewEnrichmentModel) GetContent() string {
 	formView := m.Form.View()
 
 	// Add error if present
@@ -325,7 +326,7 @@ func (m *MetadataEditorModelNew) GetContent() string {
 //
 // Side effects:
 //   - None.
-func (m *MetadataEditorModelNew) GetFooter() string {
+func (m *ReviewEnrichmentModel) GetFooter() string {
 	return "Enter: Confirm | Esc: Cancel | Tab: Next Field | Shift+Tab: Previous"
 }
 
@@ -336,6 +337,6 @@ func (m *MetadataEditorModelNew) GetFooter() string {
 //
 // Side effects:
 //   - None.
-func (m *MetadataEditorModelNew) View() string {
-	return forms.RenderEditorView(&m.EditorFields, "Edit Event Metadata", "metadata_editor")
+func (m *ReviewEnrichmentModel) View() string {
+	return forms.RenderEditorView(&m.EditorFields, "Edit Event Metadata", "review_enrichment")
 }

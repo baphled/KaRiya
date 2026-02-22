@@ -9,6 +9,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/domain/career"
+	burstfact "github.com/baphled/kariya/internal/service/career/burstfact"
 	"github.com/baphled/kariya/internal/service/career/skillinference"
 )
 
@@ -57,10 +58,6 @@ type Intent struct {
 
 	// submitModal is the loading/success/error modal shown during async submission.
 	submitModal *feedback.Modal
-
-	// postSaveReview is true when reviewing enriched data after a successful save,
-	// as opposed to the pre-save review.
-	postSaveReview bool
 }
 
 // ReviewInferredEventState holds all data for the review sub-flow where the user
@@ -73,6 +70,10 @@ type ReviewInferredEventState struct {
 
 	// InferredBursts are the activity bursts suggested by enrichment.
 	InferredBursts []*career.Burst
+
+	// InferredBurstSuggestions are the raw burst suggestions from the inference
+	// service, preserving fields (e.g. ConfidenceScore) that career.Burst does not carry.
+	InferredBurstSuggestions []burstfact.BurstSuggestion
 
 	// InferredFacts are the career facts suggested by enrichment.
 	InferredFacts []*career.Fact
@@ -99,13 +100,13 @@ type ReviewInferredEventState struct {
 	RejectedItems map[string]string
 
 	// metadataModal is the form model for editing event metadata fields.
-	metadataModal *MetadataEditorModelNew
+	metadataModal *ReviewEnrichmentModel
 
-	// burstModal is the form model for editing burst suggestions.
-	burstModal *BurstSuggestionModelNew
+	// burstModal is the modal for reviewing burst suggestions.
+	burstModal *modals.SuggestionReviewModal
 
-	// factModal is the form model for editing fact suggestions.
-	factModal *FactEditorModelNew
+	// factSuggestionModal is the modal for reviewing fact suggestions.
+	factSuggestionModal *modals.SuggestionReviewModal
 
 	// skillModal is the modal for editing skill suggestions.
 	skillModal *modals.SuggestionReviewModal
@@ -184,4 +185,18 @@ func (i *Intent) SetStateForTesting(state State) {
 //   - None.
 func (i *Intent) GetReviewState() *ReviewInferredEventState {
 	return i.reviewState
+}
+
+// GetFactSuggestionModal returns the fact suggestion review modal for test assertions.
+//
+// Returns:
+//   - A fully initialized SuggestionReviewModal ready for use, or nil.
+//
+// Side effects:
+//   - None.
+func (r *ReviewInferredEventState) GetFactSuggestionModal() *modals.SuggestionReviewModal {
+	if r == nil {
+		return nil
+	}
+	return r.factSuggestionModal
 }
