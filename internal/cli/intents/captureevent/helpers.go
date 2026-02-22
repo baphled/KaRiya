@@ -117,7 +117,7 @@ func (i *Intent) showSubmitModal() tea.Cmd {
 //   - Calls CareerService.CaptureEvent to persist the event.
 //   - Calls CareerService.SaveFact for each accepted fact without an ID.
 //   - Sets a default date for quick-strategy events with a zero date.
-//   - Persists accepted skills using the skill repository.
+//   - Persists accepted skills via careerService.SaveSkill and careerService.LinkSkillToEvent.
 func (i *Intent) performSubmit() tea.Cmd {
 	event := i.reviewState.Event
 	acceptedFacts := i.reviewState.AcceptedFacts
@@ -192,27 +192,21 @@ func (i *Intent) performSubmit() tea.Cmd {
 			}
 		}
 
-		// Persist accepted skills using the skill repository.
-		if len(acceptedSkills) > 0 && careerService != nil {
-			skillRepo := careerService.GetSkillRepository()
-			eventRepo := careerService.GetEventRepository()
-			for _, skill := range acceptedSkills {
-				if skill.ID == "" {
-					if err := skillRepo.Create(ctx, skill); err != nil {
-						return SubmitErrorMsg{
-							Code:    "SKILL_SAVE_ERROR",
-							Message: fmt.Sprintf("Failed to save skill %s: %v", skill.Name, err),
-							Cause:   err,
-						}
-					}
-				}
-				if err := eventRepo.LinkSkill(ctx, event.ID, skill.ID); err != nil {
-					return SubmitErrorMsg{
-						Code:    "SKILL_LINK_ERROR",
-						Message: fmt.Sprintf("Failed to link skill %s to event: %v", skill.Name, err),
-						Cause:   err,
-					}
-				}
+		var skillErrors []string
+		for _, skill := range acceptedSkills {
+			if err := careerService.SaveSkill(ctx, skill); err != nil {
+				skillErrors = append(skillErrors, err.Error())
+				continue
+			}
+			if err := careerService.LinkSkillToEvent(ctx, event.ID, skill.ID); err != nil {
+				skillErrors = append(skillErrors, err.Error())
+			}
+		}
+		if len(skillErrors) > 0 {
+			return SubmitErrorMsg{
+				Code:    "SKILL_SAVE_ERROR",
+				Message: fmt.Sprintf("Event saved but %d skill(s) failed: %s", len(skillErrors), strings.Join(skillErrors, "; ")),
+				Cause:   fmt.Errorf("skill save failures: %s", strings.Join(skillErrors, "; ")),
 			}
 		}
 
@@ -232,7 +226,7 @@ func (i *Intent) performSubmit() tea.Cmd {
 //     PostSavePersistenceCompleteMsg on success or a SubmitErrorMsg on failure.
 //
 // Side effects:
-//   - Creates skills via skillRepo.Create and links them via eventRepo.LinkSkill.
+//   - Saves skills via careerService.SaveSkill and links them via careerService.LinkSkillToEvent.
 //   - Saves facts via careerService.SaveFact (sets SourceEventID if empty).
 //   - Confirms bursts via careerService.ConfirmBurst.
 func (i *Intent) performPostSavePersistence(
@@ -256,20 +250,15 @@ func (i *Intent) performPostSavePersistence(
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
-		skillRepo := careerService.GetSkillRepository()
-		eventRepo := careerService.GetEventRepository()
-
 		for _, skill := range skills {
-			if skill.ID == "" {
-				if err := skillRepo.Create(ctx, skill); err != nil {
-					return SubmitErrorMsg{
-						Code:    "SKILL_SAVE_ERROR",
-						Message: fmt.Sprintf("Failed to save skill: %v", err),
-						Cause:   err,
-					}
+			if err := careerService.SaveSkill(ctx, skill); err != nil {
+				return SubmitErrorMsg{
+					Code:    "SKILL_SAVE_ERROR",
+					Message: fmt.Sprintf("Failed to save skill: %v", err),
+					Cause:   err,
 				}
 			}
-			if err := eventRepo.LinkSkill(ctx, event.ID, skill.ID); err != nil {
+			if err := careerService.LinkSkillToEvent(ctx, event.ID, skill.ID); err != nil {
 				return SubmitErrorMsg{
 					Code:    "SKILL_LINK_ERROR",
 					Message: fmt.Sprintf("Failed to link skill: %v", err),

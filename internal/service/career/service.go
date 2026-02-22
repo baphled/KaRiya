@@ -874,6 +874,98 @@ func (s *Service) DeleteFact(ctx context.Context, factID string) error {
 	return nil
 }
 
+// SaveSkill persists a new skill if it does not yet have an ID.
+//
+// Expected:
+//   - skill is non-nil.
+//
+// Returns:
+//   - An error value.
+//
+// Side effects:
+//   - Creates a new skill record via the skill repository.
+func (s *Service) SaveSkill(ctx context.Context, skill *domain.Skill) error {
+	if s.skillRepo == nil {
+		return ErrSkillRepositoryNotConfigured
+	}
+
+	if skill == nil {
+		return errors.New("skill cannot be nil")
+	}
+
+	if skill.ID != "" {
+		return nil
+	}
+
+	skill.ID = uuid.New().String()
+
+	now := time.Now()
+	if skill.CreatedAt.IsZero() {
+		skill.CreatedAt = now
+	}
+	skill.UpdatedAt = now
+
+	if err := s.skillRepo.Create(ctx, skill); err != nil {
+		s.logger.
+			WithFields(map[string]string{
+				"skill_name": skill.Name,
+				"error":      err.Error(),
+			}).
+			Error("Failed to create skill")
+		return fmt.Errorf("failed to create skill: %w", err)
+	}
+
+	s.logger.
+		WithFields(map[string]string{
+			"skill_id":   skill.ID,
+			"skill_name": skill.Name,
+		}).
+		Info("Skill created successfully")
+
+	return nil
+}
+
+// LinkSkillToEvent creates an association between a skill and an event.
+//
+// Expected:
+//   - eventID is a non-empty string.
+//   - skillID is a non-empty string.
+//
+// Returns:
+//   - An error value.
+//
+// Side effects:
+//   - Creates an event-skill association via the event repository.
+func (s *Service) LinkSkillToEvent(ctx context.Context, eventID, skillID string) error {
+	if eventID == "" {
+		return errors.New("event ID cannot be empty")
+	}
+
+	if skillID == "" {
+		return errors.New("skill ID cannot be empty")
+	}
+
+	if err := s.repo.LinkSkill(ctx, eventID, skillID); err != nil {
+		s.logger.
+			WithFields(map[string]string{
+				"event_id": eventID,
+				"skill_id": skillID,
+				"error":    err.Error(),
+			}).
+			Error("Failed to link skill to event")
+		return fmt.Errorf("failed to link skill to event: %w", err)
+	}
+
+	s.logger.
+		WithFields(map[string]string{
+			"event_id": eventID,
+			"skill_id": skillID,
+		}).
+		Info("Skill linked to event successfully")
+
+	return nil
+}
+
 // GetBurstRepository returns the burst repository.
 //
 // Returns:
