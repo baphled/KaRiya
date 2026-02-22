@@ -39,6 +39,7 @@ func NewIntent(ctx *IntentContext) (*Intent, error) {
 		reviewState: &ReviewInferredEventState{
 			AcceptedBursts: make([]*career.Burst, 0),
 			AcceptedFacts:  make([]*career.Fact, 0),
+			AcceptedSkills: make([]*career.Skill, 0),
 			RejectedItems:  make(map[string]string),
 		},
 	}, nil

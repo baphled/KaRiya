@@ -239,6 +239,7 @@ func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
 			i.reviewState.AcceptedFacts = facts
 			i.reviewState.AcceptedSkills = convertedSkills
 
+			i.currentState = StateSubmit
 			return i.performPostSavePersistence(event, facts, convertedSkills, bursts)
 		}
 		return i.setFailedCmd("INVALID_REVIEW_DATA", fmt.Sprintf("Invalid review data type: %T", data), nil)
