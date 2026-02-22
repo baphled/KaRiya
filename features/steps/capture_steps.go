@@ -19,6 +19,8 @@ import (
 	"github.com/onsi/gomega"
 )
 
+type contextKey string
+
 const (
 	editedBurstNameKey    contextKey = "editedBurstName"
 	editedEventCompanyKey contextKey = "editedEventCompany"
@@ -100,7 +102,9 @@ func iAmOnTheMainMenu(ctx context.Context) (context.Context, error) {
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	gomega.Expect(env.IsInMenuState()).To(gomega.BeTrue(), "Should be on main menu")
+	if !env.IsInMenuState() {
+		return ctx, errors.New("expected to be on main menu but current view does not match")
+	}
 	return ctx, nil
 }
 
@@ -253,7 +257,9 @@ func iShouldBeOnTheMainMenu(ctx context.Context) error {
 	if env == nil {
 		return godog.ErrPending
 	}
-	gomega.Expect(env.IsInMenuState()).To(gomega.BeTrue(), "Should be on main menu")
+	if !env.IsInMenuState() {
+		return errors.New("expected to be on main menu but current view does not match")
+	}
 	return nil
 }
 
@@ -325,15 +331,10 @@ func thereShouldBeNBursts(ctx context.Context, expected int) error {
 		return godog.ErrPending
 	}
 
-	navigateToMainMenu(env)
-	env.SelectIntentByName("burst_management")
-
-	view := env.GetView()
-	expectedFooter := fmt.Sprintf("Bursts: %d", expected)
-	if !strings.Contains(view, expectedFooter) {
-		return fmt.Errorf("expected footer '%s' not found in view", expectedFooter)
+	bursts := env.GetBursts()
+	if len(bursts) != expected {
+		return fmt.Errorf("expected %d burst(s) but found %d", expected, len(bursts))
 	}
-
 	return nil
 }
 
@@ -354,9 +355,15 @@ func theEventShouldHaveCompany(ctx context.Context, expected string) error {
 	if env == nil {
 		return godog.ErrPending
 	}
-	view := env.GetView()
-	if !strings.Contains(view, expected) {
-		return fmt.Errorf("expected company '%s' not found in view", expected)
+
+	events := env.GetEvents()
+	if len(events) == 0 {
+		return errors.New("no events found in database")
+	}
+
+	latest := events[len(events)-1]
+	if latest.Company != expected {
+		return fmt.Errorf("expected company %q but got %q", expected, latest.Company)
 	}
 	return nil
 }
