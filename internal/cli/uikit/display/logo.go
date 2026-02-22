@@ -19,7 +19,7 @@ import (
 //	logo := display.NewLogo(true, 80).
 //	    WithTheme(theme).
 //	    WithTagline("Career Event Management System").
-//	    WithVersion("v1.2.0")
+//	    WithVersion("v1.0.0")
 //	rendered := logo.View()
 type Logo struct {
 	animated     bool

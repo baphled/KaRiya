@@ -44,7 +44,9 @@ func WithIntentRegistrar(registrar IntentRegistrar) ModelOption {
 // WithVersion sets the application version string for display in the logo.
 //
 // Expected:
-//   - v must be a non-empty version string (e.g. "v1.0.1").
+//   - v may be empty; callers typically skip invoking WithVersion when no
+//     version override is desired. Non-empty values (e.g. "v1.0.1") will be
+//     used as the application version string.
 //
 // Returns:
 //   - A ModelOption value.

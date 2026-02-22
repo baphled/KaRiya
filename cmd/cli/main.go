@@ -207,7 +207,11 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 	}
 
 	// Initialize application model with bootstrap results
-	model := app.NewModel(cliSvc, svc, bootstrapResult, app.WithVersion(version))
+	displayVersion := version
+	if !strings.HasPrefix(version, "v") {
+		displayVersion = "v" + version
+	}
+	model := app.NewModel(cliSvc, svc, bootstrapResult, app.WithVersion(displayVersion))
 
 	if mode != "" {
 		model.SetInitialCaptureMode(mode)
