@@ -3,6 +3,7 @@ package steps
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -505,7 +506,7 @@ func theAcceptedBurstShouldHaveAtLeastNEventIDs(ctx context.Context, minCount in
 func createSuggestedBurstFromEvents(env *e2e.TestEnv) error {
 	events := env.GetEvents()
 	if len(events) == 0 {
-		return fmt.Errorf("no events found in database")
+		return errors.New("no events found in database")
 	}
 
 	eventIDs := make([]string, 0, len(events))
@@ -522,7 +523,7 @@ func createSuggestedBurstFromEvents(env *e2e.TestEnv) error {
 
 	burstRepo := env.Service.GetBurstRepository()
 	if burstRepo == nil {
-		return fmt.Errorf("burst repository not set")
+		return errors.New("burst repository not set")
 	}
 
 	if err := burstRepo.Create(env.Ctx, burst); err != nil {

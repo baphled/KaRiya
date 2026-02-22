@@ -398,7 +398,7 @@ func (s *EventReviewScreen) renderEventDetails(th theme.Theme) string {
 func (s *EventReviewScreen) renderBursts(th theme.Theme) string {
 	var b strings.Builder
 
-	b.WriteString(primitives.Subtitle("Bursts", th).
+	b.WriteString(primitives.Subtitle("Bursts", th).MarginBottom(1).
 		MarginTop(1).
 		Render())
 	b.WriteString("\n")

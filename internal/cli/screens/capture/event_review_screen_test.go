@@ -107,7 +107,6 @@ var _ = Describe("EventReviewScreen", func() {
 			Expect(view).To(ContainSubstring("OAuth2 Integration"))
 		})
 
-
 		It("should display facts", func() {
 			view := screen.View()
 			Expect(view).To(ContainSubstring("Reduced login time"))
