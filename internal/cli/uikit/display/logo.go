@@ -76,7 +76,7 @@ func NewLogo(animated bool, width int) *Logo {
 		width:        width,
 		tagline:      "Career Event Management System",
 		showTagline:  true,
-		version:      "v1.0.0",
+		version:      "dev",
 		showVersion:  true,
 	}
 }

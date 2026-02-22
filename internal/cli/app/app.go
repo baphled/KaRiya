@@ -22,6 +22,7 @@ type ModelOption func(*modelOptions)
 
 type modelOptions struct {
 	registrar IntentRegistrar
+	version   string
 }
 
 // WithIntentRegistrar sets a custom intent registrar (useful for testing).
@@ -37,6 +38,24 @@ type modelOptions struct {
 func WithIntentRegistrar(registrar IntentRegistrar) ModelOption {
 	return func(o *modelOptions) {
 		o.registrar = registrar
+	}
+}
+
+// WithVersion sets the application version string for display in the logo.
+//
+// Expected:
+//   - v may be empty; callers typically skip invoking WithVersion when no
+//     version override is desired. Non-empty values (e.g. "v1.0.1") will be
+//     used as the application version string.
+//
+// Returns:
+//   - A ModelOption value.
+//
+// Side effects:
+//   - None.
+func WithVersion(v string) ModelOption {
+	return func(o *modelOptions) {
+		o.version = v
 	}
 }
 
@@ -113,6 +132,9 @@ func NewModel(
 
 	// Share logo with intent router so all intents can use it.
 	router.SetLogo(logo)
+	if options.version != "" {
+		logo.WithVersion(options.version)
+	}
 
 	return &Model{
 		cliService:        cliService,
