@@ -18,6 +18,7 @@ import (
 	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
+	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	"gopkg.in/yaml.v3"
 )
 
@@ -65,8 +66,10 @@ func (s *SystemClipboard) IsUnsupported() bool {
 
 // ExportService handles exporting CVs to various formats.
 type ExportService struct {
-	logger    *logger.Logger
-	clipboard ClipboardWriter
+	logger        *logger.Logger
+	clipboard     ClipboardWriter
+	profileConfig *config.ProfileConfig
+	skillRepo     careerrepo.SkillRepository
 }
 
 // ExportFormat defines the export format type.
@@ -121,6 +124,27 @@ func NewExportServiceWithClipboard(log *logger.Logger, clipboardWriter Clipboard
 	return &ExportService{
 		logger:    log,
 		clipboard: clipboardWriter,
+	}
+}
+
+// NewExportServiceWithDeps creates a new export service with profile config and skill repository.
+//
+// Expected:
+//   - log must be a valid logger.
+//   - profileConfig may be nil (uses empty defaults).
+//   - skillRepo may be nil (skills section will be empty).
+//
+// Returns:
+//   - A fully initialized ExportService ready for use.
+//
+// Side effects:
+//   - None.
+func NewExportServiceWithDeps(log *logger.Logger, profileConfig *config.ProfileConfig, skillRepo careerrepo.SkillRepository) *ExportService {
+	return &ExportService{
+		logger:        log,
+		clipboard:     &SystemClipboard{},
+		profileConfig: profileConfig,
+		skillRepo:     skillRepo,
 	}
 }
 
@@ -270,6 +294,177 @@ func (es *ExportService) ExportToYAML(ctx context.Context, cv *career.CVView, se
 	}
 
 	return string(data), nil
+}
+
+// ExportToQuikCVYAML exports a CV to QuikCV-compatible YAML format.
+//
+// Expected:
+//   - cv must be a valid CVView.
+//   - sections contains the CV sections.
+//
+// Returns:
+//   - A YAML string in QuikCV format and nil on success.
+//   - Empty string and error if cv is nil or marshalling fails.
+//
+// Side effects:
+//   - Queries skillRepo if available to populate skills section.
+func (es *ExportService) ExportToQuikCVYAML(ctx context.Context, cv *career.CVView, sections []*career.CVSection) (string, error) {
+	if cv == nil {
+		return "", errors.New("CV view is nil")
+	}
+
+	var firstName, lastName, email, location, phone, linkedIn, gitHub, portfolio, summary string
+
+	if es.profileConfig != nil {
+		firstName = es.profileConfig.FirstName
+		lastName = es.profileConfig.LastName
+		email = es.profileConfig.Email
+		location = es.profileConfig.Country
+		phone = es.profileConfig.Phone
+		linkedIn = es.profileConfig.LinkedIn
+		gitHub = es.profileConfig.GitHub
+		portfolio = es.profileConfig.Portfolio
+	}
+
+	summary = es.getSummaryForQuikCV(sections)
+
+	links := es.buildQuikCVLinks(linkedIn, gitHub, portfolio)
+
+	jobs := es.buildQuikCVJobs(sections)
+
+	projects := es.buildQuikCVProjects(sections)
+
+	skills := es.buildQuikCVSkills(ctx)
+
+	output := map[string]interface{}{
+		"first_name": firstName,
+		"last_name":  lastName,
+		"email":      email,
+		"location":   location,
+		"phone":      phone,
+		"links":      links,
+		"summary":    summary,
+		"highlights": []interface{}{},
+		"jobs":       jobs,
+		"projects":   projects,
+		"skills":     skills,
+	}
+
+	data, err := yaml.Marshal(output)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal QuikCV YAML: %w", err)
+	}
+
+	return string(data), nil
+}
+
+func (es *ExportService) getSummaryForQuikCV(sections []*career.CVSection) string {
+	for _, section := range sections {
+		if section.SectionType == "summary" && section.Summary != "" {
+			return section.Summary
+		}
+	}
+	return ""
+}
+
+func (es *ExportService) buildQuikCVLinks(linkedIn, gitHub, portfolio string) []map[string]string {
+	var links []map[string]string
+
+	if linkedIn != "" {
+		links = append(links, map[string]string{
+			"url":   linkedIn,
+			"label": "LinkedIn",
+		})
+	}
+
+	if gitHub != "" {
+		links = append(links, map[string]string{
+			"url":   gitHub,
+			"label": "GitHub",
+		})
+	}
+
+	if portfolio != "" {
+		links = append(links, map[string]string{
+			"url":   portfolio,
+			"label": "Portfolio",
+		})
+	}
+
+	return links
+}
+
+func (es *ExportService) buildQuikCVJobs(sections []*career.CVSection) []map[string]interface{} {
+	var jobs []map[string]interface{}
+
+	for _, section := range sections {
+		if section.SectionType != "experience" {
+			continue
+		}
+
+		for _, group := range section.Content {
+			var bullets []string
+			for _, bullet := range group.Bullets {
+				bullets = append(bullets, bullet.Text)
+			}
+
+			job := map[string]interface{}{
+				"company":    group.Header,
+				"position":   "Position",
+				"start_date": group.StartDate,
+				"end_date":   group.EndDate,
+				"bullets":    bullets,
+			}
+			jobs = append(jobs, job)
+		}
+	}
+
+	return jobs
+}
+
+func (es *ExportService) buildQuikCVProjects(sections []*career.CVSection) []map[string]interface{} {
+	var projects []map[string]interface{}
+
+	for _, section := range sections {
+		if section.SectionType != "projects" {
+			continue
+		}
+
+		for _, group := range section.Content {
+			var bullets []string
+			for _, bullet := range group.Bullets {
+				bullets = append(bullets, bullet.Text)
+			}
+
+			project := map[string]interface{}{
+				"name":    group.Header,
+				"bullets": bullets,
+			}
+			projects = append(projects, project)
+		}
+	}
+
+	return projects
+}
+
+func (es *ExportService) buildQuikCVSkills(ctx context.Context) map[string][]string {
+	skills := make(map[string][]string)
+
+	if es.skillRepo == nil {
+		return skills
+	}
+
+	allSkills, err := es.skillRepo.List(ctx, nil)
+	if err != nil {
+		return skills
+	}
+
+	for _, skill := range allSkills {
+		category := skill.Category
+		skills[category] = append(skills[category], skill.Name)
+	}
+
+	return skills
 }
 
 // SaveToFile saves exported CV content to a file.

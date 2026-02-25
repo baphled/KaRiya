@@ -12,6 +12,8 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
+	mockrepo "github.com/baphled/kariya/internal/testutil/mocks/repository"
+	"github.com/golang/mock/gomock"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 )
@@ -649,6 +651,286 @@ var _ = ginkgo.Describe("ExportService", func() {
 			gomega.Expect(profile.Systems).To(gomega.BeEmpty())
 			gomega.Expect(profile.CoreStrengths).To(gomega.BeEmpty())
 			gomega.Expect(profile.ValuePropositions).To(gomega.BeEmpty())
+		})
+	})
+})
+
+var _ = ginkgo.Describe("ExportService QuikCV Export", func() {
+	var (
+		service       *ExportService
+		log           *logger.Logger
+		ctx           context.Context
+		mockSkillRepo *mockrepo.MockSkillRepository
+		ctrl          *gomock.Controller
+	)
+
+	ginkgo.BeforeEach(func() {
+		log = logger.New(io.Discard, logger.InfoLevel)
+		ctrl = gomock.NewController(ginkgo.GinkgoT())
+		mockSkillRepo = mockrepo.NewMockSkillRepository(ctrl)
+		ctx = context.Background()
+	})
+
+	ginkgo.AfterEach(func() {
+		ctrl.Finish()
+	})
+
+	ginkgo.Describe("NewExportServiceWithDeps", func() {
+		ginkgo.It("creates service with profileConfig and skillRepo set", func() {
+			profileCfg := &config.ProfileConfig{
+				FirstName: "Yomi",
+				LastName:  "Colledge",
+			}
+
+			service = NewExportServiceWithDeps(log, profileCfg, mockSkillRepo)
+
+			gomega.Expect(service).NotTo(gomega.BeNil())
+			gomega.Expect(service.profileConfig).To(gomega.Equal(profileCfg))
+			gomega.Expect(service.skillRepo).To(gomega.Equal(mockSkillRepo))
+			gomega.Expect(service.logger).To(gomega.Equal(log))
+		})
+
+		ginkgo.It("works with nil profileConfig", func() {
+			service = NewExportServiceWithDeps(log, nil, mockSkillRepo)
+
+			gomega.Expect(service).NotTo(gomega.BeNil())
+			gomega.Expect(service.profileConfig).To(gomega.BeNil())
+			gomega.Expect(service.skillRepo).To(gomega.Equal(mockSkillRepo))
+		})
+
+		ginkgo.It("works with nil skillRepo", func() {
+			profileCfg := &config.ProfileConfig{FirstName: "Test"}
+
+			service = NewExportServiceWithDeps(log, profileCfg, nil)
+
+			gomega.Expect(service).NotTo(gomega.BeNil())
+			gomega.Expect(service.profileConfig).To(gomega.Equal(profileCfg))
+			gomega.Expect(service.skillRepo).To(gomega.BeNil())
+		})
+	})
+
+	ginkgo.Describe("ExportToQuikCVYAML", func() {
+		var (
+			cv       *career.CVView
+			sections []*career.CVSection
+		)
+
+		ginkgo.BeforeEach(func() {
+			cv = fixtures.CVViewWith("cv-1", "Senior Engineer CV", "staff", "hiring_manager")
+			cv.SourceEventCount = 5
+			cv.SourceFactCount = 3
+
+			bullet := fixtures.CVBulletWith("bullet-1", "section-1", "Led migration to microservices architecture")
+			bullet.Confidence = 0.95
+
+			expSection := fixtures.CVSectionWith("section-1", "cv-1", "experience", "Experience", 1)
+			expSection.Content = []*career.SectionContentGroup{
+				fixtures.ContentGroupFull("Acme Corp", "2020-01", "2023-12", []*career.CVBullet{bullet}),
+			}
+
+			projSection := fixtures.CVSectionWith("section-2", "cv-1", "projects", "Projects", 2)
+			projSection.Content = []*career.SectionContentGroup{
+				fixtures.ContentGroupWithBullets("Open Source Project", []*career.CVBullet{
+					fixtures.CVBulletWith("bullet-2", "section-2", "Built X using Y"),
+				}),
+			}
+
+			sections = []*career.CVSection{expSection, projSection}
+		})
+
+		ginkgo.It("returns valid YAML string (no error)", func() {
+			profileCfg := &config.ProfileConfig{
+				FirstName: "Yomi",
+				LastName:  "Colledge",
+				Email:     "yomi@boodah.net",
+				Country:   "Remote (UK)",
+				Phone:     "+44 7894 987 855",
+				LinkedIn:  "https://www.linkedin.com/in/yomicolledge",
+				GitHub:    "https://github.com/baphled",
+				Portfolio: "http://boodah.net",
+			}
+
+			mockSkillRepo.EXPECT().List(gomock.Any(), gomock.Nil()).Return([]*career.Skill{
+				{ID: "s1", Name: "Go", Category: "backend"},
+				{ID: "s2", Name: "Ruby", Category: "backend"},
+				{ID: "s3", Name: "React", Category: "frontend"},
+			}, nil)
+
+			service = NewExportServiceWithDeps(log, profileCfg, mockSkillRepo)
+
+			yamlOutput, err := service.ExportToQuikCVYAML(ctx, cv, sections)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(yamlOutput).NotTo(gomega.BeEmpty())
+		})
+
+		ginkgo.It("contains first_name, last_name, email from profileConfig/cv", func() {
+			profileCfg := &config.ProfileConfig{
+				FirstName: "Jane",
+				LastName:  "Doe",
+				Email:     "jane@example.com",
+				Country:   "London, UK",
+			}
+
+			mockSkillRepo.EXPECT().List(gomock.Any(), gomock.Nil()).Return([]*career.Skill{}, nil)
+
+			service = NewExportServiceWithDeps(log, profileCfg, mockSkillRepo)
+
+			yamlOutput, err := service.ExportToQuikCVYAML(ctx, cv, sections)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(yamlOutput).To(gomega.ContainSubstring("first_name: Jane"))
+			gomega.Expect(yamlOutput).To(gomega.ContainSubstring("last_name: Doe"))
+			gomega.Expect(yamlOutput).To(gomega.ContainSubstring("email: jane@example.com"))
+			gomega.Expect(yamlOutput).To(gomega.ContainSubstring("location: London, UK"))
+		})
+
+		ginkgo.It("contains links section with LinkedIn entry when LinkedIn is set", func() {
+			profileCfg := &config.ProfileConfig{
+				FirstName: "Test",
+				LastName:  "User",
+				LinkedIn:  "https://www.linkedin.com/in/testuser",
+				GitHub:    "https://github.com/testuser",
+			}
+
+			mockSkillRepo.EXPECT().List(gomock.Any(), gomock.Nil()).Return([]*career.Skill{}, nil)
+
+			service = NewExportServiceWithDeps(log, profileCfg, mockSkillRepo)
+
+			yamlOutput, err := service.ExportToQuikCVYAML(ctx, cv, sections)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(yamlOutput).To(gomega.ContainSubstring("links:"))
+			gomega.Expect(yamlOutput).To(gomega.ContainSubstring("url: https://www.linkedin.com/in/testuser"))
+			gomega.Expect(yamlOutput).To(gomega.ContainSubstring("label: LinkedIn"))
+			gomega.Expect(yamlOutput).To(gomega.ContainSubstring("url: https://github.com/testuser"))
+			gomega.Expect(yamlOutput).To(gomega.ContainSubstring("label: GitHub"))
+		})
+
+		ginkgo.It("contains skills section grouped by category", func() {
+			profileCfg := &config.ProfileConfig{
+				FirstName: "Test",
+				LastName:  "User",
+			}
+
+			mockSkillRepo.EXPECT().List(gomock.Any(), gomock.Nil()).Return([]*career.Skill{
+				{ID: "s1", Name: "Go", Category: "backend"},
+				{ID: "s2", Name: "Ruby", Category: "backend"},
+				{ID: "s3", Name: "React", Category: "frontend"},
+				{ID: "s4", Name: "TypeScript", Category: "frontend"},
+			}, nil)
+
+			service = NewExportServiceWithDeps(log, profileCfg, mockSkillRepo)
+
+			yamlOutput, err := service.ExportToQuikCVYAML(ctx, cv, sections)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(yamlOutput).To(gomega.ContainSubstring("skills:"))
+			gomega.Expect(yamlOutput).To(gomega.ContainSubstring("backend:"))
+			gomega.Expect(yamlOutput).To(gomega.ContainSubstring("- Go"))
+			gomega.Expect(yamlOutput).To(gomega.ContainSubstring("- Ruby"))
+			gomega.Expect(yamlOutput).To(gomega.ContainSubstring("frontend:"))
+			gomega.Expect(yamlOutput).To(gomega.ContainSubstring("- React"))
+			gomega.Expect(yamlOutput).To(gomega.ContainSubstring("- TypeScript"))
+		})
+
+		ginkgo.It("returns error for nil CV", func() {
+			profileCfg := &config.ProfileConfig{FirstName: "Test"}
+			service = NewExportServiceWithDeps(log, profileCfg, mockSkillRepo)
+
+			yamlOutput, err := service.ExportToQuikCVYAML(ctx, nil, sections)
+			gomega.Expect(err).To(gomega.HaveOccurred())
+			gomega.Expect(err.Error()).To(gomega.ContainSubstring("CV view is nil"))
+			gomega.Expect(yamlOutput).To(gomega.BeEmpty())
+		})
+
+		ginkgo.It("contains jobs section with company/dates/bullets", func() {
+			profileCfg := &config.ProfileConfig{FirstName: "Test", LastName: "User"}
+
+			mockSkillRepo.EXPECT().List(gomock.Any(), gomock.Nil()).Return([]*career.Skill{}, nil)
+
+			service = NewExportServiceWithDeps(log, profileCfg, mockSkillRepo)
+
+			yamlOutput, err := service.ExportToQuikCVYAML(ctx, cv, sections)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(yamlOutput).To(gomega.ContainSubstring("jobs:"))
+			gomega.Expect(yamlOutput).To(gomega.ContainSubstring("company: Acme Corp"))
+			gomega.Expect(yamlOutput).To(gomega.ContainSubstring("start_date: 2020-01"))
+			gomega.Expect(yamlOutput).To(gomega.ContainSubstring("end_date: 2023-12"))
+			gomega.Expect(yamlOutput).To(gomega.ContainSubstring("bullets:"))
+			gomega.Expect(yamlOutput).To(gomega.ContainSubstring("- Led migration to microservices architecture"))
+		})
+
+		ginkgo.It("contains projects section", func() {
+			profileCfg := &config.ProfileConfig{FirstName: "Test", LastName: "User"}
+
+			mockSkillRepo.EXPECT().List(gomock.Any(), gomock.Nil()).Return([]*career.Skill{}, nil)
+
+			service = NewExportServiceWithDeps(log, profileCfg, mockSkillRepo)
+
+			yamlOutput, err := service.ExportToQuikCVYAML(ctx, cv, sections)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(yamlOutput).To(gomega.ContainSubstring("projects:"))
+			gomega.Expect(yamlOutput).To(gomega.ContainSubstring("name: Open Source Project"))
+			gomega.Expect(yamlOutput).To(gomega.ContainSubstring("- Built X using Y"))
+		})
+
+		ginkgo.It("matches golden file output structure", func() {
+			profileCfg := &config.ProfileConfig{
+				FirstName: "Yomi",
+				LastName:  "Colledge",
+				Email:     "yomi@boodah.net",
+				Country:   "Remote (UK)",
+				Phone:     "+44 7894 987 855",
+				LinkedIn:  "https://www.linkedin.com/in/yomicolledge",
+				GitHub:    "https://github.com/baphled",
+				Portfolio: "http://boodah.net",
+			}
+
+			mockSkillRepo.EXPECT().List(gomock.Any(), gomock.Nil()).Return([]*career.Skill{
+				{ID: "s1", Name: "Go", Category: "backend"},
+				{ID: "s2", Name: "Ruby", Category: "backend"},
+				{ID: "s3", Name: "React", Category: "frontend"},
+			}, nil)
+
+			service = NewExportServiceWithDeps(log, profileCfg, mockSkillRepo)
+
+			yamlOutput, err := service.ExportToQuikCVYAML(ctx, cv, sections)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+			goldenFile := filepath.Join("testdata", "quikcv_export_golden.yaml")
+			goldenContent, err := os.ReadFile(goldenFile)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred(), "golden file should exist")
+
+			gomega.Expect(strings.TrimSpace(yamlOutput)).To(gomega.Equal(strings.TrimSpace(string(goldenContent))))
+		})
+
+		ginkgo.It("handles nil profileConfig gracefully", func() {
+			mockSkillRepo.EXPECT().List(gomock.Any(), gomock.Nil()).Return([]*career.Skill{}, nil)
+
+			service = NewExportServiceWithDeps(log, nil, mockSkillRepo)
+
+			yamlOutput, err := service.ExportToQuikCVYAML(ctx, cv, sections)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(yamlOutput).To(gomega.ContainSubstring("first_name: \"\""))
+		})
+
+		ginkgo.It("handles nil skillRepo gracefully", func() {
+			profileCfg := &config.ProfileConfig{FirstName: "Test", LastName: "User"}
+
+			service = NewExportServiceWithDeps(log, profileCfg, nil)
+
+			yamlOutput, err := service.ExportToQuikCVYAML(ctx, cv, sections)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(yamlOutput).To(gomega.ContainSubstring("skills: {}"))
+		})
+
+		ginkgo.It("handles skillRepo error gracefully", func() {
+			profileCfg := &config.ProfileConfig{FirstName: "Test", LastName: "User"}
+
+			mockSkillRepo.EXPECT().List(gomock.Any(), gomock.Nil()).Return(nil, errors.New("db error"))
+
+			service = NewExportServiceWithDeps(log, profileCfg, mockSkillRepo)
+
+			yamlOutput, err := service.ExportToQuikCVYAML(ctx, cv, sections)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(yamlOutput).To(gomega.ContainSubstring("skills: {}"))
 		})
 	})
 })
