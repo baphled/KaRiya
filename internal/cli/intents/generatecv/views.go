@@ -2,9 +2,7 @@ package generatecv
 
 import (
 	"github.com/baphled/kariya/internal/cli/intents"
-	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/containers"
-	"github.com/charmbracelet/lipgloss"
 )
 
 func (i *Intent) wizardView() string {
@@ -47,17 +45,6 @@ func (i *Intent) wizardView() string {
 	}
 
 	return baseView
-}
-
-func (i *Intent) getTheme() themes.Theme {
-	if themeVal := i.Theme(); themeVal != nil {
-		return themeVal
-	}
-	return themes.NewDefaultTheme()
-}
-
-func (i *Intent) getCardStyle() lipgloss.Style {
-	return i.getTheme().Styles().CardBase
 }
 
 func (i *Intent) getWizardBreadcrumbs() []string {
@@ -162,13 +149,3 @@ func (i *Intent) renderPreviewScreenWithModalOverlay(width, height int) string {
 	return baseView
 }
 
-func exportFormatDisplayName(format ExportFormat) string {
-	switch format {
-	case ExportFormatMarkdown:
-		return "Markdown"
-	case ExportFormatYAML:
-		return "YAML"
-	default:
-		return "Text"
-	}
-}
