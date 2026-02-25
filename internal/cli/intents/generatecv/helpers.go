@@ -173,6 +173,10 @@ func (i *Intent) handleKeyDelegation(keyMsg tea.KeyMsg) tea.Cmd {
 		return cmd
 	}
 
+	if i.state == StateExportComplete {
+		return i.handleExportCompleteKeypress(keyMsg.String())
+	}
+
 	return nil
 }
 
@@ -295,10 +299,7 @@ func (i *Intent) exportCVAsync() tea.Cmd {
 			content, err = i.context.ExportService.ExportToMarkdown(ctx, i.generatedCV, sections, bulletsMap)
 			exportFormat = cv.ExportFormatMarkdown
 		case ExportFormatYAML:
-			content, err = i.context.ExportService.ExportToYAML(ctx, i.generatedCV, sections, bulletsMap)
-			exportFormat = cv.ExportFormatYAML
-		case ExportFormatQuikCV:
-			content, err = i.context.ExportService.ExportToQuikCVYAML(ctx, i.generatedCV, sections)
+			content, err = i.context.ExportService.ExportToYAML(ctx, i.generatedCV, sections, i.context.ProfileConfig)
 			exportFormat = cv.ExportFormatYAML
 		default:
 			return ExportCompleteMsg{Path: "", Error: errors.New("unknown export format")}
@@ -333,6 +334,7 @@ func (i *Intent) showExportModal() tea.Cmd {
 	termInfo := i.GetTerminalInfo()
 	i.exportModal = cvmodals.NewExportModal(termInfo.Width, termInfo.Height)
 	i.exportModal.Show()
+	i.state = StateExporting
 	return i.exportModal.Init()
 }
 

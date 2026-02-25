@@ -41,11 +41,7 @@ type CVExporter interface {
 	) (string, error)
 	ExportToYAML(
 		ctx context.Context, cvView *career.CVView,
-		sections []*career.CVSection, bullets map[string][]*career.CVBullet,
-	) (string, error)
-	ExportToQuikCVYAML(
-		ctx context.Context, cvView *career.CVView,
-		sections []*career.CVSection,
+		sections []*career.CVSection, profileCfg *config.ProfileConfig,
 	) (string, error)
 	SaveToFile(
 		ctx context.Context, cvName string, format cv.ExportFormat, content string,

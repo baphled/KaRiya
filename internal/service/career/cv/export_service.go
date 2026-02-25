@@ -84,6 +84,44 @@ const (
 	ExportFormatYAML ExportFormat = "yaml"
 )
 
+// yamlLink preserves field order: label, url.
+type yamlLink struct {
+	Label string `yaml:"label"`
+	URL   string `yaml:"url"`
+}
+
+// yamlJob preserves field order: company, position, start_date, end_date, description.
+type yamlJob struct {
+	Company     string `yaml:"company"`
+	Position    string `yaml:"position"`
+	StartDate   string `yaml:"start_date"`
+	EndDate     string `yaml:"end_date"`
+	Description string `yaml:"description"`
+}
+
+// yamlProject preserves field order: name, description, url, key_achievements.
+type yamlProject struct {
+	Name            string   `yaml:"name"`
+	Description     string   `yaml:"description"`
+	URL             string   `yaml:"url"`
+	KeyAchievements []string `yaml:"key_achievements"`
+}
+
+// yamlCV is the top-level output struct preserving exact field order.
+type yamlCV struct {
+	FirstName  string              `yaml:"first_name"`
+	LastName   string              `yaml:"last_name"`
+	Email      string              `yaml:"email"`
+	Location   string              `yaml:"location"`
+	Phone      string              `yaml:"phone"`
+	Links      []yamlLink          `yaml:"links"`
+	Summary    string              `yaml:"summary"`
+	Highlights string              `yaml:"highlights"`
+	Jobs       []yamlJob           `yaml:"jobs"`
+	Projects   []yamlProject       `yaml:"projects"`
+	Skills     map[string][]string `yaml:"skills"`
+}
+
 // ExportResult contains the result of an export operation.
 type ExportResult struct {
 	Format   ExportFormat
@@ -267,98 +305,76 @@ func (es *ExportService) ExportToMarkdown(ctx context.Context, cv *career.CVView
 	return buf.String(), nil
 }
 
-// ExportToYAML exports a CV to YAML format.
-func (es *ExportService) ExportToYAML(ctx context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet) (string, error) {
-	if cv == nil {
-		return "", errors.New("CV view is nil")
-	}
-
-	// Build a structured output
-	output := map[string]interface{}{
-		"name":               cv.Name,
-		"target_role":        cv.TargetRole,
-		"target_audience":    cv.TargetAudience,
-		"generated_at":       cv.GeneratedAt,
-		"source_event_count": cv.SourceEventCount,
-		"source_fact_count":  cv.SourceFactCount,
-		"sections":           []map[string]interface{}{},
-	}
-
-	// Add sections (sections already have the correct structure with Content groups)
-	output["sections"] = sections
-
-	// Marshal to YAML
-	data, err := yaml.Marshal(output)
-	if err != nil {
-		return "", fmt.Errorf("failed to marshal CV to YAML: %w", err)
-	}
-
-	return string(data), nil
-}
-
-// ExportToQuikCVYAML exports a CV to QuikCV-compatible YAML format.
+// ExportToYAML exports a CV to YAML format (flat structure for external tools).
 //
 // Expected:
 //   - cv must be a valid CVView.
 //   - sections contains the CV sections.
+//   - profileCfg is optional; if non-nil, uses the provided profile; otherwise uses es.profileConfig.
 //
 // Returns:
-//   - A YAML string in QuikCV format and nil on success.
+//   - A YAML string in flat format and nil on success.
 //   - Empty string and error if cv is nil or marshalling fails.
 //
 // Side effects:
 //   - Queries skillRepo if available to populate skills section.
-func (es *ExportService) ExportToQuikCVYAML(ctx context.Context, cv *career.CVView, sections []*career.CVSection) (string, error) {
+func (es *ExportService) ExportToYAML(ctx context.Context, cv *career.CVView, sections []*career.CVSection, profileCfg *config.ProfileConfig) (string, error) {
 	if cv == nil {
 		return "", errors.New("CV view is nil")
 	}
 
 	var firstName, lastName, email, location, phone, linkedIn, gitHub, portfolio, summary string
 
-	if es.profileConfig != nil {
-		firstName = es.profileConfig.FirstName
-		lastName = es.profileConfig.LastName
-		email = es.profileConfig.Email
-		location = es.profileConfig.Country
-		phone = es.profileConfig.Phone
-		linkedIn = es.profileConfig.LinkedIn
-		gitHub = es.profileConfig.GitHub
-		portfolio = es.profileConfig.Portfolio
+	effectiveProfile := profileCfg
+	if effectiveProfile == nil {
+		effectiveProfile = es.profileConfig
 	}
 
-	summary = es.getSummaryForQuikCV(sections)
-
-	links := es.buildQuikCVLinks(linkedIn, gitHub, portfolio)
-
-	jobs := es.buildQuikCVJobs(sections)
-
-	projects := es.buildQuikCVProjects(sections)
-
-	skills := es.buildQuikCVSkills(ctx)
-
-	output := map[string]interface{}{
-		"first_name": firstName,
-		"last_name":  lastName,
-		"email":      email,
-		"location":   location,
-		"phone":      phone,
-		"links":      links,
-		"summary":    summary,
-		"highlights": []interface{}{},
-		"jobs":       jobs,
-		"projects":   projects,
-		"skills":     skills,
+	if effectiveProfile != nil {
+		firstName = effectiveProfile.FirstName
+		lastName = effectiveProfile.LastName
+		email = effectiveProfile.Email
+		location = effectiveProfile.Country
+		phone = effectiveProfile.Phone
+		linkedIn = effectiveProfile.LinkedIn
+		gitHub = effectiveProfile.GitHub
+		portfolio = effectiveProfile.Portfolio
 	}
 
-	data, err := yaml.Marshal(output)
-	if err != nil {
-		return "", fmt.Errorf("failed to marshal QuikCV YAML: %w", err)
+	summary = es.getSummaryFromSectionsYAML(sections)
+
+	links := es.buildYAMLLinks(linkedIn, gitHub, portfolio)
+
+	jobs := es.buildYAMLJobs(sections, effectiveProfile)
+
+	projects := es.buildYAMLProjects(sections)
+
+	skills := es.buildYAMLSkills(ctx)
+
+	output := yamlCV{
+		FirstName:  firstName,
+		LastName:   lastName,
+		Email:      email,
+		Location:   location,
+		Phone:      phone,
+		Links:      links,
+		Summary:    summary,
+		Highlights: generateHighlights(sections, effectiveProfile),
+		Jobs:       jobs,
+		Projects:   projects,
+		Skills:     skills,
 	}
 
-	return string(data), nil
+	var buf bytes.Buffer
+	enc := yaml.NewEncoder(&buf)
+	enc.SetIndent(2)
+	if err := enc.Encode(output); err != nil {
+		return "", fmt.Errorf("failed to marshal YAML: %w", err)
+	}
+	return buf.String(), nil
 }
 
-func (es *ExportService) getSummaryForQuikCV(sections []*career.CVSection) string {
+func (es *ExportService) getSummaryFromSectionsYAML(sections []*career.CVSection) string {
 	for _, section := range sections {
 		if section.SectionType == "summary" && section.Summary != "" {
 			return section.Summary
@@ -367,35 +383,26 @@ func (es *ExportService) getSummaryForQuikCV(sections []*career.CVSection) strin
 	return ""
 }
 
-func (es *ExportService) buildQuikCVLinks(linkedIn, gitHub, portfolio string) []map[string]string {
-	var links []map[string]string
+func (es *ExportService) buildYAMLLinks(linkedIn, gitHub, portfolio string) []yamlLink {
+	var links []yamlLink
 
 	if linkedIn != "" {
-		links = append(links, map[string]string{
-			"url":   linkedIn,
-			"label": "LinkedIn",
-		})
+		links = append(links, yamlLink{Label: "LinkedIn", URL: linkedIn})
 	}
 
 	if gitHub != "" {
-		links = append(links, map[string]string{
-			"url":   gitHub,
-			"label": "GitHub",
-		})
+		links = append(links, yamlLink{Label: "GitHub", URL: gitHub})
 	}
 
 	if portfolio != "" {
-		links = append(links, map[string]string{
-			"url":   portfolio,
-			"label": "Portfolio",
-		})
+		links = append(links, yamlLink{Label: "Portfolio", URL: portfolio})
 	}
 
 	return links
 }
 
-func (es *ExportService) buildQuikCVJobs(sections []*career.CVSection) []map[string]interface{} {
-	var jobs []map[string]interface{}
+func (es *ExportService) buildYAMLJobs(sections []*career.CVSection, effectiveProfile *config.ProfileConfig) []yamlJob {
+	var jobs []yamlJob
 
 	for _, section := range sections {
 		if section.SectionType != "experience" {
@@ -403,27 +410,26 @@ func (es *ExportService) buildQuikCVJobs(sections []*career.CVSection) []map[str
 		}
 
 		for _, group := range section.Content {
-			var bullets []string
-			for _, bullet := range group.Bullets {
-				bullets = append(bullets, bullet.Text)
+			position := ""
+			if effectiveProfile != nil {
+				position = effectiveProfile.Title
 			}
 
-			job := map[string]interface{}{
-				"company":    group.Header,
-				"position":   "Position",
-				"start_date": group.StartDate,
-				"end_date":   group.EndDate,
-				"bullets":    bullets,
-			}
-			jobs = append(jobs, job)
+			jobs = append(jobs, yamlJob{
+				Company:     group.Header,
+				Position:    position,
+				StartDate:   group.StartDate,
+				EndDate:     group.EndDate,
+				Description: formatBulletsAsDescription(group.Bullets),
+			})
 		}
 	}
 
 	return jobs
 }
 
-func (es *ExportService) buildQuikCVProjects(sections []*career.CVSection) []map[string]interface{} {
-	var projects []map[string]interface{}
+func (es *ExportService) buildYAMLProjects(sections []*career.CVSection) []yamlProject {
+	var projects []yamlProject
 
 	for _, section := range sections {
 		if section.SectionType != "projects" {
@@ -431,23 +437,98 @@ func (es *ExportService) buildQuikCVProjects(sections []*career.CVSection) []map
 		}
 
 		for _, group := range section.Content {
-			var bullets []string
+			var keyAchievements []string
 			for _, bullet := range group.Bullets {
-				bullets = append(bullets, bullet.Text)
+				keyAchievements = append(keyAchievements, bullet.Text)
 			}
 
-			project := map[string]interface{}{
-				"name":    group.Header,
-				"bullets": bullets,
-			}
-			projects = append(projects, project)
+			projects = append(projects, yamlProject{
+				Name:            group.Header,
+				Description:     formatBulletsAsDescription(group.Bullets),
+				URL:             "",
+				KeyAchievements: keyAchievements,
+			})
 		}
 	}
 
 	return projects
 }
 
-func (es *ExportService) buildQuikCVSkills(ctx context.Context) map[string][]string {
+func formatBulletsAsDescription(bullets []*career.CVBullet) string {
+	var sb strings.Builder
+	for _, bullet := range bullets {
+		sb.WriteString("- " + bullet.Text + "\n")
+	}
+	return sb.String()
+}
+
+const maxHighlightBullets = 8
+
+func generateHighlights(sections []*career.CVSection, profile *config.ProfileConfig) string {
+	if profile != nil && len(profile.WhatIBring) > 0 {
+		var sb strings.Builder
+		for _, item := range profile.WhatIBring {
+			sb.WriteString("- " + item + "\n")
+		}
+		return sb.String()
+	}
+
+	bullets := extractExperienceBullets(sections)
+	if len(bullets) > 0 {
+		sortBulletsByConfidenceAndRoleScore(bullets)
+		if len(bullets) > maxHighlightBullets {
+			bullets = bullets[:maxHighlightBullets]
+		}
+		var sb strings.Builder
+		for _, bullet := range bullets {
+			sb.WriteString("- " + bullet.Text + "\n")
+		}
+		return sb.String()
+	}
+
+	if profile != nil && len(profile.CoreStrengths) > 0 {
+		var sb strings.Builder
+		for _, strength := range profile.CoreStrengths {
+			sb.WriteString("- " + strength + "\n")
+		}
+		return sb.String()
+	}
+
+	return ""
+}
+
+func extractExperienceBullets(sections []*career.CVSection) []*career.CVBullet {
+	var bullets []*career.CVBullet
+	for _, section := range sections {
+		if section.SectionType != "experience" {
+			continue
+		}
+		for _, group := range section.Content {
+			bullets = append(bullets, group.Bullets...)
+		}
+	}
+	return bullets
+}
+
+func sortBulletsByConfidenceAndRoleScore(bullets []*career.CVBullet) {
+	slices.SortFunc(bullets, func(a, b *career.CVBullet) int {
+		if a.Confidence > b.Confidence {
+			return -1
+		}
+		if a.Confidence < b.Confidence {
+			return 1
+		}
+		if a.RoleScore > b.RoleScore {
+			return -1
+		}
+		if a.RoleScore < b.RoleScore {
+			return 1
+		}
+		return 0
+	})
+}
+
+func (es *ExportService) buildYAMLSkills(ctx context.Context) map[string][]string {
 	skills := make(map[string][]string)
 
 	if es.skillRepo == nil {
@@ -587,9 +668,9 @@ func (es *ExportService) ExportWithProfile(ctx context.Context, cv *career.CVVie
 		return "", errors.New("CV view is nil")
 	}
 
-	// YAML always uses standard structure (it's data, not presentation)
+	// YAML uses flat structure for external tools
 	if format == ExportFormatYAML {
-		return es.ExportToYAML(ctx, cv, sections, bullets)
+		return es.ExportToYAML(ctx, cv, sections, profileCfg)
 	}
 
 	// Route to structure-specific renderer

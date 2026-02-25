@@ -19,6 +19,15 @@ const (
 
 	// StatePreview - User previews full CV content via CVPreviewScreen.
 	StatePreview State = "preview"
+
+	// StateExporting - User selects export format and location via export modal.
+	StateExporting State = "exporting"
+
+	// StateExportSelectLocation - User selects export location.
+	StateExportSelectLocation State = "export_select_location"
+
+	// StateExportComplete - Export is complete.
+	StateExportComplete State = "export_complete"
 )
 
 // ExportFormat defines the export format type.
@@ -34,9 +43,6 @@ const (
 
 	// ExportFormatYAML exports CV as YAML.
 	ExportFormatYAML ExportFormat = "yaml"
-
-	// ExportFormatQuikCV exports CV as QuikCV-compatible YAML.
-	ExportFormatQuikCV ExportFormat = "quikcv"
 )
 
 // ExportOption defines where to save the CV.

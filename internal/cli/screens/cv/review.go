@@ -18,6 +18,7 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 	cvservice "github.com/baphled/kariya/internal/service/career/cv"
 )
+
 // CVReviewState represents the internal state constant for this screen.
 const CVReviewState = "review"
 
@@ -29,7 +30,7 @@ type ReviewScreen struct {
 
 	cv            *career.CVView
 	profileConfig *config.ProfileConfig
-	summary       *GenerationSummary
+	summary       *GenerationSummaryScreen
 	viewport      viewport.Model
 	ready         bool
 	width         int
@@ -77,7 +78,7 @@ func NewCVReviewScreenWithProfile(cv *career.CVView, profileConfig *config.Profi
 //
 // Side effects:
 //   - None.
-func NewCVReviewScreenWithSummary(cv *career.CVView, profileConfig *config.ProfileConfig, summary *GenerationSummary) *ReviewScreen {
+func NewCVReviewScreenWithSummary(cv *career.CVView, profileConfig *config.ProfileConfig, summary *GenerationSummaryScreen) *ReviewScreen {
 	return &ReviewScreen{
 		Screen:        base.NewBaseScreen(),
 		cv:            cv,

@@ -8,11 +8,11 @@ import (
 	"github.com/baphled/kariya/internal/cli/types"
 )
 
-var _ = Describe("GenerationSummary", func() {
+var _ = Describe("GenerationSummaryScreen", func() {
 	It("can be created with the expected fields", func() {
 		prof := &types.CVProfile{ID: "p1", Name: "Profile 1", TargetRole: "senior_ic", TargetAudience: "hiring_manager"}
 
-		gs := cv.GenerationSummary{
+		gs := cv.GenerationSummaryScreen{
 			SelectedProfile:  prof,
 			SelectedAudience: "Hiring Manager",
 			TechnologyFocus:  "Backend",

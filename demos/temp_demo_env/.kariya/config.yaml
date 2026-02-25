@@ -1,0 +1,73 @@
+system:
+  data_dir: "/home/baphled/Projects/KaRiya/task-56-reviewscreen-quikcv-export/demos/temp_demo_env/.kariya"
+  log_level: info
+  auto_backup: true
+  backup_count: 5
+profile:
+  name: Yomi Colledge
+  first_name: Yomi
+  last_name: Colledge
+  email: yomi@boodah.net
+  phone: ""
+  linkedin: ""
+  country: ""
+  default_role: ""
+  default_audience: ""
+  title: "Staff Software Engineer"
+  location: Remote
+  github: baphled
+  portfolio: http://boodah.net
+  core_strengths:
+    - Technical Leadership
+    - System Architecture
+    - Go Development
+  languages:
+    - Go
+    - TypeScript
+    - Ruby
+  frontend: []
+  systems:
+    - PostgreSQL
+    - Redis
+  what_i_bring:
+    - Deep expertise in TUI development
+    - Strong mentoring skills
+cv:
+  default_format: markdown
+  max_bullets: 50
+  audience_bullets:
+    recruiter: 4
+    hiring_manager: 6
+    peer: 8
+    default: 5
+export:
+  default_destination: file
+  auto_open: false
+display:
+  theme: dark
+  animations: true
+scoring:
+  weights:
+    role_score: 0.25
+    audience_score: 0.2
+    metric_score: 0.2
+    impact_score: 0.2
+    confidence: 0.15
+  thresholds:
+    fact_default_confidence: 0.85
+    event_default_confidence: 0.8
+    high_confidence: 0.8
+    high_impact_confidence: 0.85
+  role_settings:
+    em:
+      min_confidence: 0.75
+      max_bullets_per_company: 4
+    principal:
+      min_confidence: 0.8
+      max_bullets_per_company: 4
+    senior_ic:
+      min_confidence: 0.75
+      max_bullets_per_company: 5
+    staff:
+      min_confidence: 0.75
+      max_bullets_per_company: 5

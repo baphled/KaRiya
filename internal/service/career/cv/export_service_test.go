@@ -3,6 +3,7 @@ package cv
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -146,7 +147,7 @@ var _ = Describe("ExportService", func() {
 	})
 
 	Describe("ExportToYAML", func() {
-		It("should export CV to YAML format", func() {
+		It("should export CV to flat YAML format", func() {
 			cv := fixtures.CVViewWith("cv-1", "Senior Software Engineer CV", "Staff Engineer", "hiring_manager")
 
 			bullet := fixtures.CVBulletWithSources("bullet-1", "section-1", "Led team of 5 engineers to deliver critical feature", []string{"event-1"}, []string{"fact-1"})
@@ -159,23 +160,20 @@ var _ = Describe("ExportService", func() {
 			}
 
 			sections := []*career.CVSection{section}
-			bullets := map[string][]*career.CVBullet{
-				"section-1": {bullet},
-			}
 
-			yaml, err := service.ExportToYAML(ctx, cv, sections, bullets)
+			yaml, err := service.ExportToYAML(ctx, cv, sections, nil)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(yaml).NotTo(BeEmpty())
-			Expect(yaml).To(ContainSubstring("name: Senior Software Engineer CV"))
-			Expect(yaml).To(ContainSubstring("target_role: Staff Engineer"))
-			// Check for the bullet text (YAML format uses "text:" field)
-			Expect(yaml).To(ContainSubstring("text: Led team of 5 engineers to deliver critical feature"))
-			// Check for content group structure
-			Expect(yaml).To(ContainSubstring("header: Acme Corp"))
+			// YAML now uses flat format with first_name, last_name, etc.
+			Expect(yaml).To(ContainSubstring("first_name:"))
+			Expect(yaml).To(ContainSubstring("last_name:"))
+			Expect(yaml).To(ContainSubstring("jobs:"))
+			Expect(yaml).To(ContainSubstring("company: Acme Corp"))
+			Expect(yaml).To(ContainSubstring("- Led team of 5 engineers to deliver critical feature"))
 		})
 
 		It("should return error for nil CV", func() {
-			yaml, err := service.ExportToYAML(ctx, nil, []*career.CVSection{}, map[string][]*career.CVBullet{})
+			yaml, err := service.ExportToYAML(ctx, nil, []*career.CVSection{}, nil)
 			Expect(err).To(HaveOccurred())
 			Expect(yaml).To(BeEmpty())
 		})
@@ -453,16 +451,17 @@ var _ = Describe("ExportService", func() {
 			})
 		})
 
-		Describe("YAML export always uses standard structure", func() {
-			It("should use standard structure for YAML even when narrative requested", func() {
+		Describe("YAML export uses flat format", func() {
+			It("should use flat format for YAML even when other structure requested", func() {
 				content, err := service.Export(ctx, cv, sections, bullets, CVStructureNarrative, ExportFormatYAML)
 				Expect(err).NotTo(HaveOccurred())
-				// YAML is data format, should contain raw data
-				Expect(content).To(ContainSubstring("name: Senior Software Engineer CV"))
-				Expect(content).To(ContainSubstring("target_role: senior_ic"))
-				// Should include all bullets (no filtering)
-				Expect(content).To(ContainSubstring("Led migration to microservices"))
-				Expect(content).To(ContainSubstring("Implemented CI/CD pipeline"))
+				// YAML uses flat structure for external tools
+				Expect(content).To(ContainSubstring("first_name:"))
+				Expect(content).To(ContainSubstring("jobs:"))
+				Expect(content).To(ContainSubstring("skills:"))
+				// Should NOT contain internal CVView format
+				Expect(content).NotTo(ContainSubstring("name: Senior Software Engineer CV"))
+				Expect(content).NotTo(ContainSubstring("target_role:"))
 			})
 		})
 
@@ -573,16 +572,24 @@ var _ = Describe("ExportService", func() {
 			Expect(content).NotTo(ContainSubstring("boodah"))
 		})
 
-		It("should use standard structure regardless of profile for YAML format", func() {
+		It("should use flat format with profile data for YAML format", func() {
 			profileCfg := &config.ProfileConfig{
-				Name: "Should Not Appear",
+				FirstName: "YAMLTest",
+				LastName:  "User",
+				Email:     "test@yaml.com",
 			}
 
 			content, err := service.ExportWithProfile(ctx, cv, sections, bullets, CVStructureNarrative, ExportFormatYAML, profileCfg)
 			Expect(err).NotTo(HaveOccurred())
-			// YAML uses standard format, not narrative profile
-			Expect(content).NotTo(ContainSubstring("Should Not Appear"))
-			Expect(content).To(ContainSubstring("name: Test CV"))
+			// YAML uses flat format with profile data
+			Expect(content).To(ContainSubstring("first_name: YAMLTest"))
+			Expect(content).To(ContainSubstring("last_name: User"))
+			Expect(content).To(ContainSubstring("email: test@yaml.com"))
+			Expect(content).To(ContainSubstring("jobs:"))
+			Expect(content).To(ContainSubstring("skills:"))
+			// Should NOT contain internal CVView format fields
+			Expect(content).NotTo(ContainSubstring("name: Test CV"))
+			Expect(content).NotTo(ContainSubstring("target_role:"))
 		})
 	})
 
@@ -655,7 +662,7 @@ var _ = Describe("ExportService", func() {
 	})
 })
 
-var _ = Describe("ExportService QuikCV Export", func() {
+var _ = Describe("ExportService YAML Export", func() {
 	var (
 		service       *ExportService
 		log           *logger.Logger
@@ -709,7 +716,7 @@ var _ = Describe("ExportService QuikCV Export", func() {
 		})
 	})
 
-	Describe("ExportToQuikCVYAML", func() {
+	Describe("ExportToYAML with flat format", func() {
 		var (
 			cv       *career.CVView
 			sections []*career.CVSection
@@ -751,14 +758,14 @@ var _ = Describe("ExportService QuikCV Export", func() {
 			}
 
 			mockSkillRepo.EXPECT().List(gomock.Any(), gomock.Nil()).Return([]*career.Skill{
-				{ID: "s1", Name: "Go", Category: "backend"},
-				{ID: "s2", Name: "Ruby", Category: "backend"},
-				{ID: "s3", Name: "React", Category: "frontend"},
+				fixtures.SkillWith("s1", "Go", "backend", ""),
+				fixtures.SkillWith("s2", "Ruby", "backend", ""),
+				fixtures.SkillWith("s3", "React", "frontend", ""),
 			}, nil)
 
 			service = NewExportServiceWithDeps(log, profileCfg, mockSkillRepo)
 
-			yamlOutput, err := service.ExportToQuikCVYAML(ctx, cv, sections)
+			yamlOutput, err := service.ExportToYAML(ctx, cv, sections, nil)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(yamlOutput).NotTo(BeEmpty())
 		})
@@ -775,7 +782,7 @@ var _ = Describe("ExportService QuikCV Export", func() {
 
 			service = NewExportServiceWithDeps(log, profileCfg, mockSkillRepo)
 
-			yamlOutput, err := service.ExportToQuikCVYAML(ctx, cv, sections)
+			yamlOutput, err := service.ExportToYAML(ctx, cv, sections, nil)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(yamlOutput).To(ContainSubstring("first_name: Jane"))
 			Expect(yamlOutput).To(ContainSubstring("last_name: Doe"))
@@ -795,7 +802,7 @@ var _ = Describe("ExportService QuikCV Export", func() {
 
 			service = NewExportServiceWithDeps(log, profileCfg, mockSkillRepo)
 
-			yamlOutput, err := service.ExportToQuikCVYAML(ctx, cv, sections)
+			yamlOutput, err := service.ExportToYAML(ctx, cv, sections, nil)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(yamlOutput).To(ContainSubstring("links:"))
 			Expect(yamlOutput).To(ContainSubstring("url: https://www.linkedin.com/in/testuser"))
@@ -811,15 +818,15 @@ var _ = Describe("ExportService QuikCV Export", func() {
 			}
 
 			mockSkillRepo.EXPECT().List(gomock.Any(), gomock.Nil()).Return([]*career.Skill{
-				{ID: "s1", Name: "Go", Category: "backend"},
-				{ID: "s2", Name: "Ruby", Category: "backend"},
-				{ID: "s3", Name: "React", Category: "frontend"},
-				{ID: "s4", Name: "TypeScript", Category: "frontend"},
+				fixtures.SkillWith("s1", "Go", "backend", ""),
+				fixtures.SkillWith("s2", "Ruby", "backend", ""),
+				fixtures.SkillWith("s3", "React", "frontend", ""),
+				fixtures.SkillWith("s4", "TypeScript", "frontend", ""),
 			}, nil)
 
 			service = NewExportServiceWithDeps(log, profileCfg, mockSkillRepo)
 
-			yamlOutput, err := service.ExportToQuikCVYAML(ctx, cv, sections)
+			yamlOutput, err := service.ExportToYAML(ctx, cv, sections, nil)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(yamlOutput).To(ContainSubstring("skills:"))
 			Expect(yamlOutput).To(ContainSubstring("backend:"))
@@ -834,26 +841,26 @@ var _ = Describe("ExportService QuikCV Export", func() {
 			profileCfg := &config.ProfileConfig{FirstName: "Test"}
 			service = NewExportServiceWithDeps(log, profileCfg, mockSkillRepo)
 
-			yamlOutput, err := service.ExportToQuikCVYAML(ctx, nil, sections)
+			yamlOutput, err := service.ExportToYAML(ctx, nil, sections, nil)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("CV view is nil"))
 			Expect(yamlOutput).To(BeEmpty())
 		})
 
-		It("contains jobs section with company/dates/bullets", func() {
+		It("contains jobs section with company/dates/description", func() {
 			profileCfg := &config.ProfileConfig{FirstName: "Test", LastName: "User"}
 
 			mockSkillRepo.EXPECT().List(gomock.Any(), gomock.Nil()).Return([]*career.Skill{}, nil)
 
 			service = NewExportServiceWithDeps(log, profileCfg, mockSkillRepo)
 
-			yamlOutput, err := service.ExportToQuikCVYAML(ctx, cv, sections)
+			yamlOutput, err := service.ExportToYAML(ctx, cv, sections, nil)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(yamlOutput).To(ContainSubstring("jobs:"))
 			Expect(yamlOutput).To(ContainSubstring("company: Acme Corp"))
 			Expect(yamlOutput).To(ContainSubstring("start_date: 2020-01"))
 			Expect(yamlOutput).To(ContainSubstring("end_date: 2023-12"))
-			Expect(yamlOutput).To(ContainSubstring("bullets:"))
+			Expect(yamlOutput).To(ContainSubstring("description: |"))
 			Expect(yamlOutput).To(ContainSubstring("- Led migration to microservices architecture"))
 		})
 
@@ -864,11 +871,11 @@ var _ = Describe("ExportService QuikCV Export", func() {
 
 			service = NewExportServiceWithDeps(log, profileCfg, mockSkillRepo)
 
-			yamlOutput, err := service.ExportToQuikCVYAML(ctx, cv, sections)
+			yamlOutput, err := service.ExportToYAML(ctx, cv, sections, nil)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(yamlOutput).To(ContainSubstring("projects:"))
 			Expect(yamlOutput).To(ContainSubstring("name: Open Source Project"))
-			Expect(yamlOutput).To(ContainSubstring("- Built X using Y"))
+			Expect(yamlOutput).To(ContainSubstring("key_achievements:"))
 		})
 
 		It("matches golden file output structure", func() {
@@ -884,17 +891,17 @@ var _ = Describe("ExportService QuikCV Export", func() {
 			}
 
 			mockSkillRepo.EXPECT().List(gomock.Any(), gomock.Nil()).Return([]*career.Skill{
-				{ID: "s1", Name: "Go", Category: "backend"},
-				{ID: "s2", Name: "Ruby", Category: "backend"},
-				{ID: "s3", Name: "React", Category: "frontend"},
+				fixtures.SkillWith("s1", "Go", "backend", ""),
+				fixtures.SkillWith("s2", "Ruby", "backend", ""),
+				fixtures.SkillWith("s3", "React", "frontend", ""),
 			}, nil)
 
 			service = NewExportServiceWithDeps(log, profileCfg, mockSkillRepo)
 
-			yamlOutput, err := service.ExportToQuikCVYAML(ctx, cv, sections)
+			yamlOutput, err := service.ExportToYAML(ctx, cv, sections, nil)
 			Expect(err).NotTo(HaveOccurred())
 
-			goldenFile := filepath.Join("testdata", "quikcv_export_golden.yaml")
+			goldenFile := filepath.Join("testdata", "yaml_export_golden.yaml")
 			goldenContent, err := os.ReadFile(goldenFile)
 			Expect(err).NotTo(HaveOccurred(), "golden file should exist")
 
@@ -906,7 +913,7 @@ var _ = Describe("ExportService QuikCV Export", func() {
 
 			service = NewExportServiceWithDeps(log, nil, mockSkillRepo)
 
-			yamlOutput, err := service.ExportToQuikCVYAML(ctx, cv, sections)
+			yamlOutput, err := service.ExportToYAML(ctx, cv, sections, nil)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(yamlOutput).To(ContainSubstring("first_name: \"\""))
 		})
@@ -916,7 +923,7 @@ var _ = Describe("ExportService QuikCV Export", func() {
 
 			service = NewExportServiceWithDeps(log, profileCfg, nil)
 
-			yamlOutput, err := service.ExportToQuikCVYAML(ctx, cv, sections)
+			yamlOutput, err := service.ExportToYAML(ctx, cv, sections, nil)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(yamlOutput).To(ContainSubstring("skills: {}"))
 		})
@@ -928,9 +935,222 @@ var _ = Describe("ExportService QuikCV Export", func() {
 
 			service = NewExportServiceWithDeps(log, profileCfg, mockSkillRepo)
 
-			yamlOutput, err := service.ExportToQuikCVYAML(ctx, cv, sections)
+			yamlOutput, err := service.ExportToYAML(ctx, cv, sections, nil)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(yamlOutput).To(ContainSubstring("skills: {}"))
+		})
+	})
+
+	Describe("Dynamic highlights generation", func() {
+		var (
+			cv       *career.CVView
+			sections []*career.CVSection
+		)
+
+		BeforeEach(func() {
+			cv = fixtures.CVViewWith("cv-1", "Test CV", "senior_ic", "hiring_manager")
+			cv.SourceEventCount = 5
+			cv.SourceFactCount = 3
+		})
+
+		Context("when WhatIBring is populated", func() {
+			It("uses WhatIBring items as highlights", func() {
+				profileCfg := &config.ProfileConfig{
+					FirstName:  "Test",
+					LastName:   "User",
+					WhatIBring: []string{"15+ years Ruby", "GDS experience"},
+				}
+
+				mockSkillRepo.EXPECT().List(gomock.Any(), gomock.Nil()).Return([]*career.Skill{}, nil)
+
+				service = NewExportServiceWithDeps(log, profileCfg, mockSkillRepo)
+
+				expSection := fixtures.CVSectionWith("section-1", "cv-1", "experience", "Experience", 1)
+				bullet := fixtures.CVBulletWithScores("bullet-1", "section-1", "Some experience bullet", 0.9, 0.95, 0.8, 0.7)
+				expSection.Content = []*career.SectionContentGroup{
+					fixtures.ContentGroupWithBullets("Acme Corp", []*career.CVBullet{bullet}),
+				}
+				sections = []*career.CVSection{expSection}
+
+				yamlOutput, err := service.ExportToYAML(ctx, cv, sections, profileCfg)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(yamlOutput).To(ContainSubstring("- 15+ years Ruby"))
+				Expect(yamlOutput).To(ContainSubstring("- GDS experience"))
+			})
+		})
+
+		Context("when WhatIBring is empty but experience bullets exist", func() {
+			It("uses top-scored experience bullets as highlights", func() {
+				profileCfg := &config.ProfileConfig{
+					FirstName:     "Test",
+					LastName:      "User",
+					WhatIBring:    []string{},
+					CoreStrengths: []string{"Fallback strength"},
+				}
+
+				mockSkillRepo.EXPECT().List(gomock.Any(), gomock.Nil()).Return([]*career.Skill{}, nil)
+
+				service = NewExportServiceWithDeps(log, profileCfg, mockSkillRepo)
+
+				highConfBullet := fixtures.CVBulletWithScores("bullet-1", "section-1", "High confidence achievement", 0.9, 0.95, 0.8, 0.7)
+				medConfBullet := fixtures.CVBulletWithScores("bullet-2", "section-1", "Medium confidence work", 0.7, 0.75, 0.6, 0.5)
+				lowConfBullet := fixtures.CVBulletWithScores("bullet-3", "section-1", "Low confidence task", 0.5, 0.55, 0.4, 0.3)
+
+				expSection := fixtures.CVSectionWith("section-1", "cv-1", "experience", "Experience", 1)
+				expSection.Content = []*career.SectionContentGroup{
+					fixtures.ContentGroupWithBullets("Acme Corp", []*career.CVBullet{lowConfBullet, highConfBullet, medConfBullet}),
+				}
+				sections = []*career.CVSection{expSection}
+
+				yamlOutput, err := service.ExportToYAML(ctx, cv, sections, profileCfg)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(yamlOutput).To(ContainSubstring("- High confidence achievement"))
+				Expect(yamlOutput).To(ContainSubstring("- Medium confidence work"))
+				Expect(yamlOutput).To(ContainSubstring("- Low confidence task"))
+				Expect(yamlOutput).NotTo(ContainSubstring("Fallback strength"))
+			})
+
+			It("sorts bullets by confidence descending with RoleScore as tiebreaker", func() {
+				profileCfg := &config.ProfileConfig{
+					FirstName:  "Test",
+					LastName:   "User",
+					WhatIBring: []string{},
+				}
+
+				mockSkillRepo.EXPECT().List(gomock.Any(), gomock.Nil()).Return([]*career.Skill{}, nil)
+
+				service = NewExportServiceWithDeps(log, profileCfg, mockSkillRepo)
+
+				bullet1 := fixtures.CVBulletWithScores("bullet-1", "section-1", "Bullet A (conf=0.9, role=0.8)", 0.9, 0.90, 0.80, 0.7)
+				bullet2 := fixtures.CVBulletWithScores("bullet-2", "section-1", "Bullet B (conf=0.9, role=0.9)", 0.8, 0.90, 0.90, 0.6)
+				bullet3 := fixtures.CVBulletWithScores("bullet-3", "section-1", "Bullet C (conf=0.8)", 0.7, 0.80, 0.70, 0.5)
+
+				expSection := fixtures.CVSectionWith("section-1", "cv-1", "experience", "Experience", 1)
+				expSection.Content = []*career.SectionContentGroup{
+					fixtures.ContentGroupWithBullets("Acme Corp", []*career.CVBullet{bullet3, bullet1, bullet2}),
+				}
+				sections = []*career.CVSection{expSection}
+
+				yamlOutput, err := service.ExportToYAML(ctx, cv, sections, profileCfg)
+				Expect(err).NotTo(HaveOccurred())
+
+				highlightsIdx := strings.Index(yamlOutput, "highlights:")
+				Expect(highlightsIdx).To(BeNumerically(">", 0))
+
+				highlightsSection := yamlOutput[highlightsIdx:]
+				idxB := strings.Index(highlightsSection, "Bullet B")
+				idxA := strings.Index(highlightsSection, "Bullet A")
+				idxC := strings.Index(highlightsSection, "Bullet C")
+
+				Expect(idxB).To(BeNumerically("<", idxA), "Bullet B should come before Bullet A")
+				Expect(idxA).To(BeNumerically("<", idxC), "Bullet A should come before Bullet C")
+			})
+
+			It("limits highlights to maxHighlightBullets", func() {
+				profileCfg := &config.ProfileConfig{
+					FirstName:  "Test",
+					LastName:   "User",
+					WhatIBring: []string{},
+				}
+
+				mockSkillRepo.EXPECT().List(gomock.Any(), gomock.Nil()).Return([]*career.Skill{}, nil)
+
+				service = NewExportServiceWithDeps(log, profileCfg, mockSkillRepo)
+
+				var bullets []*career.CVBullet
+				for i := range 12 {
+					bullet := fixtures.CVBulletWithScores(
+						fmt.Sprintf("bullet-%d", i),
+						"section-1",
+						fmt.Sprintf("Bullet number %d", i),
+						0.9,
+						0.9-float64(i)*0.05,
+						0.8,
+						0.7,
+					)
+					bullets = append(bullets, bullet)
+				}
+
+				expSection := fixtures.CVSectionWith("section-1", "cv-1", "experience", "Experience", 1)
+				expSection.Content = []*career.SectionContentGroup{
+					fixtures.ContentGroupWithBullets("Acme Corp", bullets),
+				}
+				sections = []*career.CVSection{expSection}
+
+				yamlOutput, err := service.ExportToYAML(ctx, cv, sections, profileCfg)
+				Expect(err).NotTo(HaveOccurred())
+				highlightsIdx := strings.Index(yamlOutput, "highlights:")
+				Expect(highlightsIdx).To(BeNumerically(">", 0))
+				jobsIdx := strings.Index(yamlOutput, "jobs:")
+				Expect(jobsIdx).To(BeNumerically(">", highlightsIdx))
+				highlightsSection := yamlOutput[highlightsIdx:jobsIdx]
+
+				for i := range 8 {
+					Expect(highlightsSection).To(ContainSubstring(fmt.Sprintf("Bullet number %d", i)), "should include top 8 bullets in highlights")
+				}
+				for i := 8; i < 12; i++ {
+					Expect(highlightsSection).NotTo(ContainSubstring(fmt.Sprintf("Bullet number %d", i)), "should NOT include bullets beyond limit in highlights")
+				}
+			})
+		})
+
+		Context("when WhatIBring is empty and no experience bullets exist", func() {
+			It("falls back to CoreStrengths", func() {
+				profileCfg := &config.ProfileConfig{
+					FirstName:     "Test",
+					LastName:      "User",
+					WhatIBring:    []string{},
+					CoreStrengths: []string{"Backend development", "System architecture"},
+				}
+
+				mockSkillRepo.EXPECT().List(gomock.Any(), gomock.Nil()).Return([]*career.Skill{}, nil)
+
+				service = NewExportServiceWithDeps(log, profileCfg, mockSkillRepo)
+
+				projSection := fixtures.CVSectionWith("section-1", "cv-1", "projects", "Projects", 1)
+				projSection.Content = []*career.SectionContentGroup{}
+				sections = []*career.CVSection{projSection}
+
+				yamlOutput, err := service.ExportToYAML(ctx, cv, sections, profileCfg)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(yamlOutput).To(ContainSubstring("- Backend development"))
+				Expect(yamlOutput).To(ContainSubstring("- System architecture"))
+			})
+		})
+
+		Context("when all sources are empty", func() {
+			It("returns empty highlights", func() {
+				profileCfg := &config.ProfileConfig{
+					FirstName:     "Test",
+					LastName:      "User",
+					WhatIBring:    []string{},
+					CoreStrengths: []string{},
+				}
+
+				mockSkillRepo.EXPECT().List(gomock.Any(), gomock.Nil()).Return([]*career.Skill{}, nil)
+
+				service = NewExportServiceWithDeps(log, profileCfg, mockSkillRepo)
+
+				projSection := fixtures.CVSectionWith("section-1", "cv-1", "projects", "Projects", 1)
+				projSection.Content = []*career.SectionContentGroup{}
+				sections = []*career.CVSection{projSection}
+
+				yamlOutput, err := service.ExportToYAML(ctx, cv, sections, profileCfg)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(yamlOutput).To(ContainSubstring("highlights: \"\""))
+			})
+
+			It("returns empty highlights when profile is nil", func() {
+				service = NewExportServiceWithDeps(log, nil, nil)
+
+				projSection := fixtures.CVSectionWith("section-1", "cv-1", "projects", "Projects", 1)
+				projSection.Content = []*career.SectionContentGroup{}
+				sections = []*career.CVSection{projSection}
+
+				yamlOutput, err := service.ExportToYAML(ctx, cv, sections, nil)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(yamlOutput).To(ContainSubstring("highlights: \"\""))
+			})
 		})
 	})
 })

@@ -12,14 +12,15 @@ import (
 	"github.com/baphled/kariya/internal/cli/types"
 	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 var _ = Describe("ReviewScreen", func() {
 	var (
-		sampleCV         *career.CVView
-		sampleProfile    *config.ProfileConfig
-		sampleSummary    *cv.GenerationSummary
-		sampleCVProfile  *types.CVProfile
+		sampleCV        *career.CVView
+		sampleProfile   *config.ProfileConfig
+		sampleSummary   *cv.GenerationSummaryScreen
+		sampleCVProfile *types.CVProfile
 	)
 
 	BeforeEach(func() {
@@ -31,59 +32,34 @@ var _ = Describe("ReviewScreen", func() {
 			Description:    "Test CV profile for backend engineering",
 		}
 
-		sampleCV = &career.CVView{
-			ID:               "test-cv-123",
-			Name:             "John Doe CV",
-			TargetRole:       "Senior Software Engineer",
-			TargetAudience:   "Hiring Manager",
-			EventFilters:     map[string]interface{}{"company": "TechCorp"},
-			GeneratedAt:      time.Now(),
-			SourceEventCount: 8,
-			SourceFactCount:  12,
-			Sections: []*career.CVSection{
-				{
-					ID:          "section-1",
-					Title:       "Professional Experience",
-					SectionType: "experience",
-				Content: []*career.SectionContentGroup{
-					{
-						Header:  "Senior Developer at TechCorp",
-						Bullets: []*career.CVBullet{
-							{Text: "Led development of microservices architecture"},
-							{Text: "Improved system performance by 40%"},
-						},
-					},
-					},
-				},
-				{
-					ID:          "section-2",
-					Title:       "Technical Skills",
-					SectionType: "skills",
-				Content: []*career.SectionContentGroup{
-					{
-						Header:  "Programming Languages",
-						Bullets: []*career.CVBullet{
-							{Text: "Go, Python, JavaScript"},
-							{Text: "SQL, NoSQL databases"},
-						},
-					},
-					},
-				},
-				{
-					ID:          "section-3",
-					Title:       "Summary",
-					SectionType: "summary",
-				Content: []*career.SectionContentGroup{
-					{
-						Header:  "Professional Summary",
-						Bullets: []*career.CVBullet{
-							{Text: "Experienced software engineer with 8+ years"},
-						},
-					},
-					},
-				},
-			},
-		}
+		bullet1_1 := fixtures.CVBulletWith("b1-1", "section-1", "Led development of microservices architecture")
+		bullet1_2 := fixtures.CVBulletWith("b1-2", "section-1", "Improved system performance by 40%")
+		group1 := fixtures.ContentGroupWithBullets("Senior Developer at TechCorp", []*career.CVBullet{bullet1_1, bullet1_2})
+		section1 := fixtures.CVSectionWithContent("section-1", "test-cv-123", []*career.SectionContentGroup{group1})
+		section1.Title = "Professional Experience"
+		section1.SectionType = "experience"
+
+		bullet2_1 := fixtures.CVBulletWith("b2-1", "section-2", "Go, Python, JavaScript")
+		bullet2_2 := fixtures.CVBulletWith("b2-2", "section-2", "SQL, NoSQL databases")
+		group2 := fixtures.ContentGroupWithBullets("Programming Languages", []*career.CVBullet{bullet2_1, bullet2_2})
+		section2 := fixtures.CVSectionWithContent("section-2", "test-cv-123", []*career.SectionContentGroup{group2})
+		section2.Title = "Technical Skills"
+		section2.SectionType = "skills"
+
+		bullet3_1 := fixtures.CVBulletWith("b3-1", "section-3", "Experienced software engineer with 8+ years")
+		group3 := fixtures.ContentGroupWithBullets("Professional Summary", []*career.CVBullet{bullet3_1})
+		section3 := fixtures.CVSectionWithContent("section-3", "test-cv-123", []*career.SectionContentGroup{group3})
+		section3.Title = "Summary"
+		section3.SectionType = "summary"
+
+		sampleCV = fixtures.CVViewWithSections("test-cv-123", []*career.CVSection{section1, section2, section3})
+		sampleCV.Name = "John Doe CV"
+		sampleCV.TargetRole = "Senior Software Engineer"
+		sampleCV.TargetAudience = "Hiring Manager"
+		sampleCV.EventFilters = map[string]interface{}{"company": "TechCorp"}
+		sampleCV.GeneratedAt = time.Now()
+		sampleCV.SourceEventCount = 8
+		sampleCV.SourceFactCount = 12
 
 		sampleProfile = &config.ProfileConfig{
 			Name:            "John Doe",
@@ -98,7 +74,7 @@ var _ = Describe("ReviewScreen", func() {
 			Languages:       []string{"English", "Spanish"},
 		}
 
-		sampleSummary = &cv.GenerationSummary{
+		sampleSummary = &cv.GenerationSummaryScreen{
 			SelectedProfile:  sampleCVProfile,
 			SelectedAudience: "Hiring Manager",
 			TechnologyFocus:  "Backend Development",
@@ -167,8 +143,8 @@ var _ = Describe("ReviewScreen", func() {
 
 				// Check technology focus
 				Expect(view).To(ContainSubstring("Technology Focus"))
-				Expect(view).To(ContainSubstring("Backend Development"))      // TechnologyFocus
-				Expect(view).To(ContainSubstring("Go, Docker, Kubernetes"))   // Technologies joined
+				Expect(view).To(ContainSubstring("Backend Development"))        // TechnologyFocus
+				Expect(view).To(ContainSubstring("Go, Docker, Kubernetes"))     // Technologies joined
 				Expect(view).To(ContainSubstring("Microservices Architecture")) // FocusArea
 
 				// Check format options
@@ -187,13 +163,13 @@ var _ = Describe("ReviewScreen", func() {
 
 				// Check statistics
 				Expect(view).To(ContainSubstring("📊 Statistics"))
-				Expect(view).To(ContainSubstring("3 sections"))     // SectionCount
-				Expect(view).To(ContainSubstring("5 bullet points")) // TotalBullets
+				Expect(view).To(ContainSubstring("3 sections"))         // SectionCount
+				Expect(view).To(ContainSubstring("5 bullet points"))    // TotalBullets
 				Expect(view).To(ContainSubstring("8 events, 12 facts")) // SourceEventCount, SourceFactCount
 			})
 
 			It("handles empty or default values gracefully", func() {
-				emptySummary := &cv.GenerationSummary{
+				emptySummary := &cv.GenerationSummaryScreen{
 					SelectedProfile:  nil, // nil profile
 					SelectedAudience: "",  // empty audience
 					TechnologyFocus:  "",  // empty focus
@@ -245,7 +221,7 @@ var _ = Describe("ReviewScreen", func() {
 				screen.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 				view := screen.View()
 
-				Expect(view).To(ContainSubstring("John Doe"))          // Name from profile
+				Expect(view).To(ContainSubstring("John Doe"))             // Name from profile
 				Expect(view).To(ContainSubstring("john.doe@example.com")) // Email from profile
 				Expect(view).To(ContainSubstring("San Francisco, CA"))    // Location from profile
 			})
@@ -256,7 +232,7 @@ var _ = Describe("ReviewScreen", func() {
 				view := screen.View()
 
 				// CV details
-				Expect(view).To(ContainSubstring("John Doe CV"))          // CV name
+				Expect(view).To(ContainSubstring("John Doe CV"))              // CV name
 				Expect(view).To(ContainSubstring("Senior Software Engineer")) // Target role
 				Expect(view).To(ContainSubstring("Hiring Manager"))           // Target audience
 

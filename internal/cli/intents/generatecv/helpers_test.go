@@ -509,7 +509,7 @@ var _ = Describe("Helpers", func() {
 			It("should delegate updates to export modal", func() {
 				intent.HandleNavigate(&screens.NavigateResult{ResultData: "export"})
 
-				Expect(intent.GetState()).To(Equal(generatecv.StateReview))
+				Expect(intent.GetState()).To(Equal(generatecv.StateExporting))
 			})
 		})
 
@@ -548,8 +548,8 @@ var _ = Describe("Helpers", func() {
 			})
 		})
 
-		Context("in review state after export", func() {
-			It("should handle enter key to navigate to preview then complete", func() {
+		Context("in export complete state", func() {
+			It("should handle enter key to complete", func() {
 				intent.Init()
 				intent.Update(generatecv.WizardCompleteMsg{ProfileID: "p1", Audience: "hiring_manager"})
 				intent.Update(generatecv.TechnologiesExtractedMsg{})
@@ -557,11 +557,6 @@ var _ = Describe("Helpers", func() {
 				intent.HandleNavigate(&screens.NavigateResult{ResultData: "export"})
 				intent.Update(generatecv.ExportCompleteMsg{Path: "/tmp/cv.md", Error: nil})
 
-				// After export, state is review. Enter navigates to preview.
-				intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
-				Expect(intent.GetState()).To(Equal(generatecv.StatePreview))
-
-				// Enter on preview completes the workflow
 				intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
 				result := intent.Result()
