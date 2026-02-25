@@ -83,6 +83,8 @@ type SystemConfig struct {
 
 // ProfileConfig contains user profile configuration.
 type ProfileConfig struct {
+	// Name is kept for backward compatibility. Prefer FirstName/LastName.
+	// Will be removed once all callers are updated to use FirstName and LastName.
 	Name            string `yaml:"name"`
 	Email           string `yaml:"email"`
 	DefaultRole     string `yaml:"default_role"`
@@ -98,6 +100,13 @@ type ProfileConfig struct {
 	Frontend      []string `yaml:"frontend"`
 	Systems       []string `yaml:"systems"`
 	WhatIBring    []string `yaml:"what_i_bring"`
+	// New profile fields
+	FirstName string `yaml:"first_name,omitempty"`
+	LastName  string `yaml:"last_name,omitempty"`
+	Prefix    string `yaml:"prefix,omitempty"`
+	Phone     string `yaml:"phone,omitempty"`
+	LinkedIn  string `yaml:"linkedin,omitempty"`
+	Country   string `yaml:"country,omitempty"`
 }
 
 // CVConfig contains CV generation configuration.
@@ -506,4 +515,83 @@ func SaveConfigToPath(cfg *Config, path string) error {
 	}
 
 	return nil
+}
+
+// MigrateProfileConfig migrates legacy Name field to FirstName/LastName/Prefix.
+//
+// It detects if FirstName and LastName are empty but Name is populated,
+// then parses the Name field to extract prefix, first name, and last name.
+//
+// Returns true if migration was performed, false otherwise (including when
+// Name is empty or FirstName is already set).
+//
+// Supported name formats:
+//   - "John Doe" -> Prefix="", FirstName="John", LastName="Doe"
+//   - "Dr. Jane Smith" -> Prefix="Dr.", FirstName="Jane", LastName="Smith"
+//   - "John Paul Jones" -> Prefix="", FirstName="John", LastName="Paul Jones"
+//   - "Madonna" -> Prefix="", FirstName="Madonna", LastName=""
+//   - "Mary-Jane Watson-Parker" -> Prefix="", FirstName="Mary-Jane", LastName="Watson-Parker"
+//
+// Supported prefixes: Dr., Prof., Mr., Mrs., Ms.
+func MigrateProfileConfig(cfg *Config) bool {
+	// Migration is needed only when Name is populated but FirstName is empty
+	if cfg.Profile.Name == "" || cfg.Profile.FirstName != "" {
+		return false
+	}
+
+	name := cfg.Profile.Name
+
+	// Define prefixes to detect
+	prefixes := []string{"Dr.", "Prof.", "Mr.", "Mrs.", "Ms."}
+
+	var prefix string
+	var remaining string
+
+	// Check for prefix
+	for _, p := range prefixes {
+		if len(name) > len(p) && name[:len(p)] == p && name[len(p)] == ' ' {
+			prefix = p
+			remaining = name[len(p):]
+			break
+		}
+	}
+
+	if prefix == "" {
+		remaining = name
+	}
+
+	// Trim leading space from remaining
+	remaining = trimLeadingSpace(remaining)
+
+	// Split on first space to get first name and last name
+	spaceIndex := -1
+	for i, ch := range remaining {
+		if ch == ' ' {
+			spaceIndex = i
+			break
+		}
+	}
+
+	if spaceIndex == -1 {
+		// Single name (e.g., "Madonna")
+		cfg.Profile.FirstName = remaining
+		cfg.Profile.LastName = ""
+	} else {
+		cfg.Profile.FirstName = remaining[:spaceIndex]
+		cfg.Profile.LastName = trimLeadingSpace(remaining[spaceIndex:])
+	}
+
+	cfg.Profile.Prefix = prefix
+
+	return true
+}
+
+// trimLeadingSpace removes leading spaces from a string.
+func trimLeadingSpace(s string) string {
+	for i, ch := range s {
+		if ch != ' ' && ch != '\t' {
+			return s[i:]
+		}
+	}
+	return ""
 }
