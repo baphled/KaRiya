@@ -1,6 +1,8 @@
 package cv
 
 import (
+	"strings"
+
 	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
 )
@@ -79,7 +81,7 @@ func NarrativeProfileFromConfig(cfg *config.ProfileConfig) *NarrativeProfileData
 	}
 
 	return &NarrativeProfileData{
-		Name:              cfg.Name,
+		Name:              buildName(cfg.FirstName, cfg.LastName, cfg.Name),
 		Role:              cfg.Title,
 		Location:          cfg.Location,
 		Email:             cfg.Email,
@@ -91,6 +93,23 @@ func NarrativeProfileFromConfig(cfg *config.ProfileConfig) *NarrativeProfileData
 		Systems:           cfg.Systems,
 		ValuePropositions: cfg.WhatIBring,
 	}
+}
+
+// buildName constructs a full name from FirstName/LastName or falls back to Name.
+// If FirstName is set, it returns FirstName + " " + LastName (trimmed).
+// If FirstName is empty but Name is set, it returns Name.
+// If both are empty, it returns empty string.
+func buildName(firstName, lastName, legacyName string) string {
+	if firstName != "" {
+		if lastName != "" {
+			return strings.TrimSpace(firstName + " " + lastName)
+		}
+		return firstName
+	}
+	if legacyName != "" {
+		return legacyName
+	}
+	return ""
 }
 
 // filterBulletsByConfidence filters bullets to only include those with confidence >= threshold.
