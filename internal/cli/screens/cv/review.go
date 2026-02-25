@@ -29,6 +29,7 @@ type ReviewScreen struct {
 
 	cv            *career.CVView
 	profileConfig *config.ProfileConfig
+	summary       *GenerationSummary
 	viewport      viewport.Model
 	ready         bool
 	width         int
@@ -61,10 +62,27 @@ func NewCVReviewScreen(cv *career.CVView) *ReviewScreen {
 // Side effects:
 //   - None.
 func NewCVReviewScreenWithProfile(cv *career.CVView, profileConfig *config.ProfileConfig) *ReviewScreen {
+	return NewCVReviewScreenWithSummary(cv, profileConfig, nil)
+}
+
+// NewCVReviewScreenWithSummary creates a new CV review screen with generation summary.
+//
+// Expected:
+//   - cvview must be valid.
+//   - profileConfig may be nil.
+//   - summary may be nil.
+//
+// Returns:
+//   - A fully initialized ReviewScreen ready for use.
+//
+// Side effects:
+//   - None.
+func NewCVReviewScreenWithSummary(cv *career.CVView, profileConfig *config.ProfileConfig, summary *GenerationSummary) *ReviewScreen {
 	return &ReviewScreen{
 		Screen:        base.NewBaseScreen(),
 		cv:            cv,
 		profileConfig: profileConfig,
+		summary:       summary,
 		width:         80,
 		height:        24,
 		ready:         false,
@@ -162,7 +180,11 @@ func (s *ReviewScreen) View() string {
 	footerStyle := lipgloss.NewStyle().
 		Foreground(theme.SecondaryColor())
 
-	b.WriteString(titleStyle.Render("📋 CV Review"))
+	title := "📋 CV Review"
+	if s.summary != nil {
+		title = "📋 CV Configuration Review"
+	}
+	b.WriteString(titleStyle.Render(title))
 	b.WriteString("\n")
 	b.WriteString(strings.Repeat("═", minInt(60, s.width-4)))
 	b.WriteString("\n\n")
@@ -202,12 +224,102 @@ func (s *ReviewScreen) View() string {
 
 // renderContent renders the scrollable content.
 func (s *ReviewScreen) renderContent() string {
+	if s.summary != nil {
+		return s.renderSummaryContent()
+	}
 	var b strings.Builder
 
 	b.WriteString(s.renderPersonalDetails())
 	b.WriteString(s.renderCVDetails())
 	b.WriteString(s.renderStatistics())
 	b.WriteString(s.renderSectionsList())
+
+	return b.String()
+}
+
+func (s *ReviewScreen) renderSummaryContent() string {
+	var b strings.Builder
+	b.WriteString(s.renderSelectionsSummary())
+	b.WriteString(s.renderSummaryDivider())
+	b.WriteString(s.renderGeneratedSummary())
+	b.WriteString(s.renderSummaryDivider())
+	return b.String()
+}
+
+func (s *ReviewScreen) renderSummaryDivider() string {
+	return strings.Repeat("─", 60) + "\n\n"
+}
+
+func (s *ReviewScreen) renderSelectionsSummary() string {
+	theme := s.getTheme()
+	sectionTitleStyle := lipgloss.NewStyle().Bold(true).Foreground(theme.AccentColor())
+	labelStyle := lipgloss.NewStyle().Foreground(theme.SecondaryColor())
+	valueStyle := lipgloss.NewStyle().Foreground(theme.ForegroundColor())
+
+	profileName := ""
+	if s.summary.SelectedProfile != nil {
+		profileName = s.summary.SelectedProfile.Name
+	}
+
+	technologies := strings.Join(s.summary.Technologies, ", ")
+	if technologies == "" {
+		technologies = "-"
+	}
+
+	skillsText := s.summary.SkillsFormat
+	if s.summary.SkillsLimit > 0 {
+		skillsText = fmt.Sprintf("%s (%d max)", skillsText, s.summary.SkillsLimit)
+	}
+	if skillsText == "" {
+		skillsText = "-"
+	}
+
+	cvLength := s.summary.CVLength
+	if cvLength == "" {
+		cvLength = "-"
+	}
+
+	var b strings.Builder
+	b.WriteString(sectionTitleStyle.Render("YOUR SELECTIONS"))
+	b.WriteString("\n\n")
+
+	b.WriteString(valueStyle.Render("  Profile Settings"))
+	b.WriteString("\n")
+	b.WriteString(fmt.Sprintf("    %s %s\n", labelStyle.Render("Profile:"), valueStyle.Render(profileName)))
+	b.WriteString(fmt.Sprintf("    %s %s\n\n", labelStyle.Render("Audience:"), valueStyle.Render(s.summary.SelectedAudience)))
+
+	b.WriteString(valueStyle.Render("  Technology Focus"))
+	b.WriteString("\n")
+	b.WriteString(fmt.Sprintf("    %s %s\n", labelStyle.Render("Focus:"), valueStyle.Render(s.summary.TechnologyFocus)))
+	b.WriteString(fmt.Sprintf("    %s %s\n", labelStyle.Render("Technologies:"), valueStyle.Render(technologies)))
+	b.WriteString(fmt.Sprintf("    %s %s\n\n", labelStyle.Render("Area:"), valueStyle.Render(s.summary.FocusArea)))
+
+	b.WriteString(valueStyle.Render("  Format Options"))
+	b.WriteString("\n")
+	b.WriteString(fmt.Sprintf("    %s %s\n", labelStyle.Render("CV Length:"), valueStyle.Render(cvLength)))
+	b.WriteString(fmt.Sprintf("    %s %s\n\n", labelStyle.Render("Skills:"), valueStyle.Render(skillsText)))
+
+	return b.String()
+}
+
+func (s *ReviewScreen) renderGeneratedSummary() string {
+	theme := s.getTheme()
+	sectionTitleStyle := lipgloss.NewStyle().Bold(true).Foreground(theme.AccentColor())
+	labelStyle := lipgloss.NewStyle().Foreground(theme.SecondaryColor())
+	valueStyle := lipgloss.NewStyle().Foreground(theme.ForegroundColor())
+
+	sectionsText := fmt.Sprintf("%d sections", s.summary.SectionCount)
+	bulletsText := fmt.Sprintf("%d bullet points", s.summary.TotalBullets)
+	sourcesText := fmt.Sprintf("%d events, %d facts", s.summary.SourceEventCount, s.summary.SourceFactCount)
+
+	var b strings.Builder
+	b.WriteString(sectionTitleStyle.Render("GENERATED OUTPUT"))
+	b.WriteString("\n\n")
+	b.WriteString(valueStyle.Render("  📊 Statistics"))
+	b.WriteString("\n")
+	b.WriteString(fmt.Sprintf("    %s %s\n", labelStyle.Render("Sections:"), valueStyle.Render(sectionsText)))
+	b.WriteString(fmt.Sprintf("    %s %s\n", labelStyle.Render("Content:"), valueStyle.Render(bulletsText)))
+	b.WriteString(fmt.Sprintf("    %s %s\n\n", labelStyle.Render("Sources:"), valueStyle.Render(sourcesText)))
 
 	return b.String()
 }
