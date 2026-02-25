@@ -34,6 +34,9 @@ const (
 
 	// ExportFormatYAML exports CV as YAML.
 	ExportFormatYAML ExportFormat = "yaml"
+
+	// ExportFormatQuikCV exports CV as QuikCV-compatible YAML.
+	ExportFormatQuikCV ExportFormat = "quikcv"
 )
 
 // ExportOption defines where to save the CV.

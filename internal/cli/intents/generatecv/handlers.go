@@ -190,8 +190,29 @@ func (i *Intent) handleCVGenerated(msg CVGenerationCompleteMsg) tea.Cmd {
 
 // transitionToReviewScreen creates and activates the review screen.
 func (i *Intent) transitionToReviewScreen() {
-	i.reviewScreen = cv.NewCVReviewScreenWithProfile(i.generatedCV, i.context.ProfileConfig)
+	summary := i.buildGenerationSummary()
+	i.reviewScreen = cv.NewCVReviewScreenWithSummary(i.generatedCV, i.context.ProfileConfig, summary)
 	i.activeScreen = i.reviewScreen
+}
+
+// buildGenerationSummary constructs a GenerationSummary from intent state.
+func (i *Intent) buildGenerationSummary() *cv.GenerationSummary {
+	summary := &cv.GenerationSummary{
+		SelectedAudience: i.selectedAudience,
+		TechnologyFocus:  string(i.selectedTechnologyFocus),
+		Technologies:     i.selectedTechnologies,
+		FocusArea:        string(i.selectedFocusArea),
+		SkillsFormat:     i.selectedSkillsFormat,
+		SkillsLimit:      i.selectedSkillsLimit,
+		CVLength:         i.selectedCVLength,
+	}
+	if i.selectedProfile != nil {
+		summary.SelectedProfile = i.selectedProfile
+	}
+	if i.generatedCV != nil {
+		summary.SectionCount = len(i.generatedCV.Sections)
+	}
+	return summary
 }
 
 // transitionToPreviewScreen creates and activates the preview screen.
@@ -215,6 +236,8 @@ func (i *Intent) handleExportComplete(exportData *cvmodals.ExportData) tea.Cmd {
 		i.selectedExportFormat = ExportFormatMarkdown
 	case "yaml":
 		i.selectedExportFormat = ExportFormatYAML
+	case "quikcv":
+		i.selectedExportFormat = ExportFormatQuikCV
 	}
 
 	switch exportData.Location {

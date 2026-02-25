@@ -297,6 +297,9 @@ func (i *Intent) exportCVAsync() tea.Cmd {
 		case ExportFormatYAML:
 			content, err = i.context.ExportService.ExportToYAML(ctx, i.generatedCV, sections, bulletsMap)
 			exportFormat = cv.ExportFormatYAML
+		case ExportFormatQuikCV:
+			content, err = i.context.ExportService.ExportToQuikCVYAML(ctx, i.generatedCV, sections)
+			exportFormat = cv.ExportFormatYAML
 		default:
 			return ExportCompleteMsg{Path: "", Error: errors.New("unknown export format")}
 		}

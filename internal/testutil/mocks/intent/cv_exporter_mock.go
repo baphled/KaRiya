@@ -95,6 +95,21 @@ func (mr *MockCVExporterMockRecorder) ExportToYAML(arg0, arg1, arg2, arg3 interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExportToYAML", reflect.TypeOf((*MockCVExporter)(nil).ExportToYAML), arg0, arg1, arg2, arg3)
 }
 
+// ExportToQuikCVYAML mocks base method.
+func (m *MockCVExporter) ExportToQuikCVYAML(arg0 context.Context, arg1 *career.CVView, arg2 []*career.CVSection) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ExportToQuikCVYAML", arg0, arg1, arg2)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ExportToQuikCVYAML indicates an expected call of ExportToQuikCVYAML.
+func (mr *MockCVExporterMockRecorder) ExportToQuikCVYAML(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExportToQuikCVYAML", reflect.TypeOf((*MockCVExporter)(nil).ExportToQuikCVYAML), arg0, arg1, arg2)
+}
+
 // SaveToFile mocks base method.
 func (m *MockCVExporter) SaveToFile(arg0 context.Context, arg1 string, arg2 cv.ExportFormat, arg3 string) (string, error) {
 	m.ctrl.T.Helper()
