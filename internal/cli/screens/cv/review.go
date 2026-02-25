@@ -13,11 +13,11 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/base"
 	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
 	cvservice "github.com/baphled/kariya/internal/service/career/cv"
 )
-
 // CVReviewState represents the internal state constant for this screen.
 const CVReviewState = "review"
 
@@ -443,16 +443,19 @@ func (s *ReviewScreen) countSectionBullets(section *career.CVSection) int {
 
 // renderFooter renders the help footer with scroll indicator.
 func (s *ReviewScreen) renderFooter() string {
-	theme := s.getTheme()
-	footerStyle := lipgloss.NewStyle().
-		Foreground(theme.SecondaryColor())
-
-	scrollInfo := ""
-	if s.ready {
-		scrollInfo = fmt.Sprintf(" (%d%%)", int(s.viewport.ScrollPercent()*100))
+	th := s.getTheme()
+	badges := []*primitives.Badge{
+		primitives.HelpKeyBadge("↑↓/jk", "Scroll", th),
+		primitives.HelpKeyBadge("Enter/p", "Preview", th),
+		primitives.HelpKeyBadge("x", "Export", th),
+		primitives.HelpKeyBadge("e", "Edit", th),
+		primitives.HelpKeyBadge("Esc", "Back", th),
 	}
-
-	return footerStyle.Render(fmt.Sprintf("↑↓/jk: scroll%s  enter/p: preview  x: export  e: edit  esc: back", scrollInfo))
+	if s.ready {
+		pct := int(s.viewport.ScrollPercent() * 100)
+		badges = append([]*primitives.Badge{primitives.HelpKeyBadge(fmt.Sprintf("%d%%", pct), "", th)}, badges...)
+	}
+	return primitives.RenderHelpFooter(th, badges...)
 }
 
 // GetCV returns the CV data.
