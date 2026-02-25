@@ -1,10 +1,7 @@
 package generatecv
 
 import (
-	"time"
-
 	"github.com/baphled/kariya/internal/cli/behaviors"
-	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/cv"
 	cvmodals "github.com/baphled/kariya/internal/cli/screens/cv/modals"
@@ -227,7 +224,7 @@ func (i *Intent) handleExportComplete(exportData *cvmodals.ExportData) tea.Cmd {
 		i.selectedExportOption = ExportOptionClipboard
 	}
 
-	i.state = StateExporting
+
 	return i.exportCVAsync()
 }
 
@@ -242,41 +239,11 @@ func (i *Intent) handleExportCompleteMsg(msg ExportCompleteMsg) {
 	}
 	if msg.Error != nil {
 		i.exportError = msg.Error
-		i.state = StateExportComplete
+		i.state = StateReview
+		i.transitionToReviewScreen()
 		return
 	}
 	i.exportedPath = msg.Path
-	i.state = StateExportComplete
-}
-
-// handleExportCompleteKeypress handles key events in export complete state.
-func (i *Intent) handleExportCompleteKeypress(keyStr string) tea.Cmd {
-	switch keyStr {
-	case "enter":
-		now := time.Now()
-		i.result = &intents.IntentResult[*Result]{
-			Status: intents.Completed,
-			Data: &Result{
-				GeneratedCV:     i.generatedCV,
-				SelectedProfile: i.selectedProfile,
-				AcceptedFields:  make(map[string]bool),
-				ExportPath:      i.exportedPath,
-				CVExportFormat:  string(i.selectedExportFormat),
-				ExportedAt:      &now,
-			},
-			Metadata: map[string]interface{}{
-				"profile":         i.selectedProfile.ID,
-				"audience":        i.selectedAudience,
-				"export_format":   string(i.selectedExportFormat),
-				"export_location": i.exportedPath,
-			},
-		}
-		i.active = false
-		return nil
-	case "esc":
-		i.state = StateExportSelectLocation
-		i.exportError = nil
-		return nil
-	}
-	return nil
+	i.state = StateReview
+	i.transitionToReviewScreen()
 }

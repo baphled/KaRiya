@@ -1,14 +1,9 @@
 package generatecv
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/containers"
-	"github.com/baphled/kariya/internal/cli/uikit/primitives"
-	"github.com/baphled/kariya/internal/cli/uikit/theme"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -31,10 +26,6 @@ func (i *Intent) wizardView() string {
 			return i.renderPreviewScreenWithModalOverlay(width, height)
 		}
 		content = "Loading preview..."
-	case StateExporting:
-		content = "Exporting CV..."
-	case StateExportComplete:
-		content = i.viewExportComplete()
 	default:
 		content = ""
 	}
@@ -83,8 +74,6 @@ func (i *Intent) getWizardBreadcrumbs() []string {
 		crumbs = append(crumbs, "Review")
 	case StatePreview:
 		crumbs = append(crumbs, "Preview")
-	case StateExporting:
-		crumbs = append(crumbs, "Exporting")
 	}
 
 	return crumbs
@@ -171,34 +160,6 @@ func (i *Intent) renderPreviewScreenWithModalOverlay(width, height int) string {
 	}
 
 	return baseView
-}
-
-func (i *Intent) viewExportComplete() string {
-	th := theme.Default()
-	var content strings.Builder
-
-	if i.exportError != nil {
-		errorHeader := primitives.ErrorText("Export Failed", th).Bold().Render()
-		content.WriteString("\n" + errorHeader + "\n\n")
-		content.WriteString(fmt.Sprintf("Error: %v\n\n", i.exportError))
-		content.WriteString("Try a different location or format.\n")
-	} else {
-		successHeader := primitives.SuccessText("Export Complete!", th).Bold().Render()
-		content.WriteString("\n" + successHeader + "\n\n")
-
-		formatName := exportFormatDisplayName(i.selectedExportFormat)
-		content.WriteString(fmt.Sprintf("Format: %s\n", formatName))
-
-		if i.selectedExportOption == ExportOptionSaveToFile {
-			content.WriteString(fmt.Sprintf("Location: %s\n\n", i.exportedPath))
-			content.WriteString("You can now share this file!\n")
-		} else {
-			content.WriteString("Location: Clipboard\n\n")
-			content.WriteString("You can now paste the CV anywhere!\n")
-		}
-	}
-
-	return i.getCardStyle().Render(content.String())
 }
 
 func exportFormatDisplayName(format ExportFormat) string {

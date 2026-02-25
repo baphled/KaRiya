@@ -256,7 +256,7 @@ var _ = Describe("Handlers", func() {
 			It("should handle export navigation", func() {
 				intent.HandleNavigate(&screens.NavigateResult{ResultData: "export"})
 
-				Expect(intent.GetState()).To(Equal(generatecv.StateExporting))
+				Expect(intent.GetState()).To(Equal(generatecv.StateReview))
 			})
 
 			It("should handle edit navigation", func() {
@@ -384,7 +384,7 @@ var _ = Describe("Handlers", func() {
 			})
 		})
 
-		Context("in StateExporting", func() {
+		Context("in StateReview with export modal", func() {
 			It("should render export modal over review screen", func() {
 				intent.Init()
 				intent.Update(generatecv.WizardCompleteMsg{ProfileID: "p1", Audience: "hiring_manager"})
@@ -396,114 +396,6 @@ var _ = Describe("Handlers", func() {
 
 				Expect(view).NotTo(BeEmpty())
 			})
-		})
-
-		Context("in StateExportComplete", func() {
-			It("should render export complete view with file path", func() {
-				intent.Init()
-				intent.Update(generatecv.WizardCompleteMsg{ProfileID: "p1", Audience: "hiring_manager"})
-				intent.Update(generatecv.TechnologiesExtractedMsg{})
-				intent.Update(generatecv.CVGenerationCompleteMsg{CV: fixtures.CVView("cv-1")})
-				intent.HandleNavigate(&screens.NavigateResult{ResultData: "export"})
-				intent.Update(generatecv.ExportCompleteMsg{Path: "/tmp/cv.md", Error: nil})
-
-				view := intent.View()
-
-				Expect(view).NotTo(BeEmpty())
-				Expect(view).To(ContainSubstring("Export Complete"))
-			})
-
-			It("should render export complete view with error", func() {
-				intent.Init()
-				intent.Update(generatecv.WizardCompleteMsg{ProfileID: "p1", Audience: "hiring_manager"})
-				intent.Update(generatecv.TechnologiesExtractedMsg{})
-				intent.Update(generatecv.CVGenerationCompleteMsg{CV: fixtures.CVView("cv-1")})
-				intent.HandleNavigate(&screens.NavigateResult{ResultData: "export"})
-				intent.Update(generatecv.ExportCompleteMsg{Path: "", Error: errors.New("export failed")})
-
-				view := intent.View()
-
-				Expect(view).NotTo(BeEmpty())
-			})
-
-			It("should render export complete view for clipboard", func() {
-				intent.Init()
-				intent.Update(generatecv.WizardCompleteMsg{ProfileID: "p1", Audience: "hiring_manager"})
-				intent.Update(generatecv.TechnologiesExtractedMsg{})
-				intent.Update(generatecv.CVGenerationCompleteMsg{CV: fixtures.CVView("cv-1")})
-				intent.HandleNavigate(&screens.NavigateResult{ResultData: "export"})
-				intent.SetSelectedExportOptionForTest(generatecv.ExportOptionClipboard)
-				intent.Update(generatecv.ExportCompleteMsg{Path: "", Error: nil})
-
-				view := intent.View()
-
-				Expect(view).NotTo(BeEmpty())
-			})
-		})
-	})
-
-	Describe("handleExportCompleteKeypress", func() {
-		BeforeEach(func() {
-			intent.Init()
-			intent.Update(generatecv.WizardCompleteMsg{ProfileID: "p1", Audience: "hiring_manager"})
-			intent.Update(generatecv.TechnologiesExtractedMsg{})
-			intent.Update(generatecv.CVGenerationCompleteMsg{CV: fixtures.CVView("cv-1")})
-			intent.HandleNavigate(&screens.NavigateResult{ResultData: "export"})
-			intent.Update(generatecv.ExportCompleteMsg{Path: "/tmp/cv.md", Error: nil})
-		})
-
-		It("should complete intent on enter key", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
-
-			result := intent.Result()
-			Expect(result).NotTo(BeNil())
-			Expect(result.Status).To(Equal(intents.Completed))
-		})
-
-		It("should return to export selection on esc key", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
-
-			Expect(intent.GetState()).To(Equal(generatecv.StateExportSelectLocation))
-		})
-
-		It("should not change state on other keys", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
-
-			Expect(intent.GetState()).To(Equal(generatecv.StateExportComplete))
-		})
-	})
-
-	Describe("Export Format Display", func() {
-		BeforeEach(func() {
-			intent.Init()
-			intent.Update(generatecv.WizardCompleteMsg{ProfileID: "p1", Audience: "hiring_manager"})
-			intent.Update(generatecv.TechnologiesExtractedMsg{})
-			intent.Update(generatecv.CVGenerationCompleteMsg{CV: fixtures.CVView("cv-1")})
-			intent.HandleNavigate(&screens.NavigateResult{ResultData: "export"})
-		})
-
-		It("should display Markdown format correctly", func() {
-			intent.SetSelectedExportFormatForTest(generatecv.ExportFormatMarkdown)
-			intent.Update(generatecv.ExportCompleteMsg{Path: "/tmp/cv.md", Error: nil})
-
-			view := intent.View()
-			Expect(view).To(ContainSubstring("Markdown"))
-		})
-
-		It("should display YAML format correctly", func() {
-			intent.SetSelectedExportFormatForTest(generatecv.ExportFormatYAML)
-			intent.Update(generatecv.ExportCompleteMsg{Path: "/tmp/cv.yaml", Error: nil})
-
-			view := intent.View()
-			Expect(view).To(ContainSubstring("YAML"))
-		})
-
-		It("should display Text format as default", func() {
-			intent.SetSelectedExportFormatForTest(generatecv.ExportFormatText)
-			intent.Update(generatecv.ExportCompleteMsg{Path: "/tmp/cv.txt", Error: nil})
-
-			view := intent.View()
-			Expect(view).To(ContainSubstring("Text"))
 		})
 	})
 

@@ -173,10 +173,6 @@ func (i *Intent) handleKeyDelegation(keyMsg tea.KeyMsg) tea.Cmd {
 		return cmd
 	}
 
-	if i.state == StateExportComplete {
-		return i.handleExportCompleteKeypress(keyMsg.String())
-	}
-
 	return nil
 }
 
@@ -334,7 +330,6 @@ func (i *Intent) showExportModal() tea.Cmd {
 	termInfo := i.GetTerminalInfo()
 	i.exportModal = cvmodals.NewExportModal(termInfo.Width, termInfo.Height)
 	i.exportModal.Show()
-	i.state = StateExporting
 	return i.exportModal.Init()
 }
 
