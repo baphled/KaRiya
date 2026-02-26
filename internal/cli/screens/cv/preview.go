@@ -358,21 +358,35 @@ func (s *CVPreviewScreen) renderPersonalDetails(width int) string {
 	return b.String()
 }
 
-// wordWrap wraps text to the specified width, breaking at word boundaries.
+// wordWrap wraps text to the specified width, preserving existing line breaks.
+// It splits on \n first, wraps each line independently, then rejoins with \n.
 func wordWrap(text string, width int) string {
 	if width <= 0 {
 		return text
 	}
 
+	lines := strings.Split(text, "\n")
+	var wrappedLines []string
+	for _, line := range lines {
+		if line == "" {
+			wrappedLines = append(wrappedLines, "")
+			continue
+		}
+		wrappedLines = append(wrappedLines, wrapLine(line, width))
+	}
+	return strings.Join(wrappedLines, "\n")
+}
+
+// wrapLine wraps a single line of text at word boundaries.
+func wrapLine(line string, width int) string {
 	var result strings.Builder
 	var currentLine strings.Builder
 	currentLen := 0
 
-	words := strings.Fields(text)
+	words := strings.Fields(line)
 	for i, word := range words {
 		wordLen := len(word)
 
-		// If adding this word exceeds width, start a new line
 		if currentLen > 0 && currentLen+1+wordLen > width {
 			result.WriteString(currentLine.String())
 			result.WriteString("\n")
@@ -380,7 +394,6 @@ func wordWrap(text string, width int) string {
 			currentLen = 0
 		}
 
-		// Add space before word (except at start of line)
 		if currentLen > 0 {
 			currentLine.WriteString(" ")
 			currentLen++
@@ -389,7 +402,6 @@ func wordWrap(text string, width int) string {
 		currentLine.WriteString(word)
 		currentLen += wordLen
 
-		// Handle very long words that exceed width
 		if wordLen > width && i < len(words)-1 {
 			result.WriteString(currentLine.String())
 			result.WriteString("\n")
@@ -398,7 +410,6 @@ func wordWrap(text string, width int) string {
 		}
 	}
 
-	// Write remaining content
 	if currentLine.Len() > 0 {
 		result.WriteString(currentLine.String())
 	}

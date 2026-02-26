@@ -271,6 +271,19 @@ var _ = Describe("CVPreviewScreen", func() {
 			Expect(view).To(ContainSubstring("Experienced software engineer"))
 		})
 
+		It("should preserve newlines in summary content", func() {
+			headingAndProseSummary := "**GDS-Aligned Developer**\nFull-stack engineer with deep backend expertise."
+			summarySection := fixtures.CVSectionWithSummary("section-multiline", "cv-1", headingAndProseSummary)
+			summarySection.Title = "Professional Summary"
+			multilineCV := fixtures.CVViewWith("cv-multiline", "Multiline CV", "developer", "hiring_manager")
+			multilineCV.Sections = []*career.CVSection{summarySection}
+			multilineScreen := cv.NewCVPreviewScreen(multilineCV)
+			multilineScreen.Update(tea.WindowSizeMsg{Width: 80, Height: 40})
+			view := multilineScreen.View()
+			Expect(view).To(ContainSubstring("**GDS-Aligned Developer**"))
+			Expect(view).To(ContainSubstring("Full-stack engineer with deep backend expertise."))
+		})
+
 		It("should display help text with scrolling options", func() {
 			view := screen.View()
 			Expect(view).To(ContainSubstring("scroll"))
