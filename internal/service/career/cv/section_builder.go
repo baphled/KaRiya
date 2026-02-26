@@ -416,7 +416,7 @@ type summaryTemplateData struct {
 	Years int
 }
 
-// buildSummarySection creates a professional summary from ALL bullets with optional heading.
+// buildSummarySection creates a professional summary from top 3 bullets with optional heading.
 // If summaryCfg is provided with a non-empty SummaryHeading, the heading is rendered as a
 // Go text/template with {{.Title}} and {{.Years}} variables, followed by the prose.
 //
@@ -426,22 +426,27 @@ func (sb *DefaultSectionBuilder) buildSummarySection(bullets []*career.CVBullet,
 		return nil
 	}
 
-	// Build prose from ALL bullets (not just top 3)
+	// Build prose from top 3 bullets
 	var summaryParts []string
 	for _, bullet := range bullets {
+		if len(summaryParts) >= 3 {
+			break
+		}
 		text := strings.TrimSpace(bullet.Text)
 		// Strip leading bullet markers
 		text = strings.TrimPrefix(text, "- ")
 		text = strings.TrimPrefix(text, "* ")
+		// Strip trailing punctuation before joining
+		text = strings.TrimRight(text, ".!?")
+		text = strings.TrimSpace(text)
 		if text != "" {
 			summaryParts = append(summaryParts, text)
 		}
 	}
 
-	prose := strings.Join(summaryParts, ". ")
-	// Ensure prose ends with a period if not empty
-	if prose != "" && !strings.HasSuffix(prose, ".") {
-		prose += "."
+	var prose string
+	if len(summaryParts) > 0 {
+		prose = strings.Join(summaryParts, ", ") + "."
 	}
 
 	// Render heading template if provided

@@ -601,7 +601,7 @@ var _ = Describe("buildSummarySection with SummaryConfig", func() {
 		builder = NewSectionBuilder(nil, log)
 	})
 
-	It("should render prose from ALL bullets (not just top 3)", func() {
+	It("should render prose from top 3 bullets only", func() {
 		bullets := []*career.CVBullet{
 			fixtures.CVBulletWith("b1", "", "First achievement"),
 			fixtures.CVBulletWith("b2", "", "Second achievement"),
@@ -617,12 +617,15 @@ var _ = Describe("buildSummarySection with SummaryConfig", func() {
 		section := builder.buildSummarySection(bullets, 0, nil, 10)
 
 		Expect(section).NotTo(BeNil())
-		// Should contain all 5 bullets joined as prose
+		// Should contain only top 3 bullets joined with comma
 		Expect(section.Summary).To(ContainSubstring("First achievement"))
 		Expect(section.Summary).To(ContainSubstring("Second achievement"))
 		Expect(section.Summary).To(ContainSubstring("Third achievement"))
-		Expect(section.Summary).To(ContainSubstring("Fourth achievement"))
-		Expect(section.Summary).To(ContainSubstring("Fifth achievement"))
+		// Should NOT contain 4th and 5th bullets
+		Expect(section.Summary).NotTo(ContainSubstring("Fourth achievement"))
+		Expect(section.Summary).NotTo(ContainSubstring("Fifth achievement"))
+		// Should use comma separation and end with period
+		Expect(section.Summary).To(Equal("First achievement, Second achievement, Third achievement."))
 	})
 
 	It("should render heading template with Title and Years", func() {
