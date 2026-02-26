@@ -48,7 +48,7 @@ var _ = Describe("Summary Format Integration", func() {
 	})
 
 	Describe("BuildSections summary format", func() {
-		It("produces prose with exactly 4 bullet-sentences joined by '. '", func() {
+		It("produces prose with exactly 2 bullet-sentences joined by '. '", func() {
 			sections, err := sectionBuilder.BuildSections(ctx, realisticBullets, events, []*career.Fact{}, "senior_ic", nil, nil)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -65,14 +65,12 @@ var _ = Describe("Summary Format Integration", func() {
 			summaryText := summarySection.Summary
 			Expect(summaryText).To(ContainSubstring("Migrated QuikCV backend from Ruby on Rails"))
 			Expect(summaryText).To(ContainSubstring("Founded n-vyro.io IoT platform"))
-			Expect(summaryText).To(ContainSubstring("Adopted Jest early for QuikCV testing"))
-			Expect(summaryText).To(ContainSubstring("Built AI-powered customer service dashboards"))
-			Expect(summaryText).NotTo(ContainSubstring("Led infrastructure reliability initiative"), "5th bullet should not appear")
+			Expect(summaryText).NotTo(ContainSubstring("Adopted Jest early"), "3rd bullet should not appear")
 
 			Expect(summaryText).To(ContainSubstring(". "), "sentences should be separated by '. '")
 
 			dotSpaceSeparatorCount := strings.Count(summaryText, ". ")
-			Expect(dotSpaceSeparatorCount).To(Equal(3), "expect exactly 3 '. ' separators for 4 sentences")
+			Expect(dotSpaceSeparatorCount).To(Equal(1), "expect exactly 1 '. ' separator for 2 sentences")
 
 			Expect(summaryText).To(HaveSuffix("."), "prose should end with a period")
 		})
@@ -119,8 +117,8 @@ var _ = Describe("Summary Format Integration", func() {
 			summaryContent := extractYAMLSummary(yamlOutput)
 			Expect(summaryContent).To(ContainSubstring("Migrated QuikCV backend from Ruby on Rails"))
 			Expect(summaryContent).To(ContainSubstring("Founded n-vyro.io IoT platform"))
-			Expect(summaryContent).To(ContainSubstring("Adopted Jest early for QuikCV testing"))
-			Expect(summaryContent).To(ContainSubstring("Built AI-powered customer service dashboards"))
+			Expect(summaryContent).NotTo(ContainSubstring("Adopted Jest early for QuikCV testing"))
+			Expect(summaryContent).NotTo(ContainSubstring("Built AI-powered customer service dashboards"))
 			Expect(summaryContent).NotTo(ContainSubstring("Led infrastructure reliability initiative"))
 
 			Expect(summaryContent).To(ContainSubstring(". "), "YAML summary should contain '. ' sentence separators")
@@ -158,8 +156,8 @@ var _ = Describe("Summary Format Integration", func() {
 			Expect(view).To(ContainSubstring("Summary"))
 			Expect(view).To(ContainSubstring("Migrated QuikCV backend"))
 			Expect(view).To(ContainSubstring("Founded n-vyro.io"))
-			Expect(view).To(ContainSubstring("Adopted Jest early"))
-			Expect(view).To(ContainSubstring("Built AI-powered customer service dashboards"))
+			Expect(view).NotTo(ContainSubstring("Adopted Jest early"))
+			Expect(view).NotTo(ContainSubstring("Built AI-powered customer service dashboards"))
 			Expect(view).NotTo(ContainSubstring("Led infrastructure reliability"))
 		})
 	})
@@ -198,12 +196,12 @@ var _ = Describe("Summary Format Integration", func() {
 				summarySection = view[summaryStart:]
 			}
 
-			// Summary section should contain top 4 bullets
+			// Summary section should contain top 2 bullets
 			Expect(summarySection).To(ContainSubstring("Migrated QuikCV backend"))
 			Expect(summarySection).To(ContainSubstring("Founded n-vyro.io"))
-			Expect(summarySection).To(ContainSubstring("Adopted Jest early"))
-			Expect(summarySection).To(ContainSubstring("Built AI-powered customer service dashboards"))
-			// 5th bullet should NOT appear in summary section
+			Expect(summarySection).NotTo(ContainSubstring("Adopted Jest early"))
+			Expect(summarySection).NotTo(ContainSubstring("Built AI-powered customer service dashboards"))
+			// 3rd+ bullets should NOT appear in summary section
 			Expect(summarySection).NotTo(ContainSubstring("Led infrastructure reliability"))
 		})
 	})

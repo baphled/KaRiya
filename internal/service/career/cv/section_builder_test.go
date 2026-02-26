@@ -601,30 +601,25 @@ var _ = Describe("buildSummarySection with SummaryConfig", func() {
 		builder = NewSectionBuilder(nil, log)
 	})
 
-	It("should render prose from top 4 bullets only", func() {
+	It("should render prose from top 2 bullets only", func() {
 		bullets := []*career.CVBullet{
 			fixtures.CVBulletWith("b1", "", "First achievement"),
 			fixtures.CVBulletWith("b2", "", "Second achievement"),
 			fixtures.CVBulletWith("b3", "", "Third achievement"),
-			fixtures.CVBulletWith("b4", "", "Fourth achievement"),
-			fixtures.CVBulletWith("b5", "", "Fifth achievement"),
 		}
 		for i, b := range bullets {
 			b.SourceEventIDs = []string{"e1"}
-			b.Rank = float64(5-i) / 5.0
+			b.Rank = float64(3-i) / 3.0
 		}
 
 		section := builder.buildSummarySection(bullets, 0, nil, 10)
 
 		Expect(section).NotTo(BeNil())
-		// Should contain only top 4 bullets joined with space
+		// Should contain only top 2 bullets joined with space
 		Expect(section.Summary).To(ContainSubstring("First achievement"))
 		Expect(section.Summary).To(ContainSubstring("Second achievement"))
-		Expect(section.Summary).To(ContainSubstring("Third achievement"))
-		Expect(section.Summary).To(ContainSubstring("Fourth achievement"))
-		// Should NOT contain 5th bullet
-		// Should use period separation and end with period
-		Expect(section.Summary).To(Equal("First achievement. Second achievement. Third achievement. Fourth achievement."))
+		// Should NOT contain 3rd bullet
+		Expect(section.Summary).To(Equal("First achievement. Second achievement."))
 	})
 
 	It("should render heading template with Title and Years", func() {
@@ -808,30 +803,27 @@ var _ = Describe("buildSummarySection wall-of-text regression", func() {
 		builder = NewSectionBuilder(nil, log)
 	})
 
-	It("produces short prose from long multi-sentence bullets (top 4)", func() {
+	It("produces short prose from long multi-sentence bullets (top 2)", func() {
 		bullets := []*career.CVBullet{
 			fixtures.CVBulletWith("b1", "", "Migrated QuikCV backend from Ruby on Rails to Node.js, reducing server costs by 70% and improving response times by 40% through async processing and connection pooling optimisations across the entire platform infrastructure. This was a major undertaking that took six months."),
 			fixtures.CVBulletWith("b2", "", "Founded n-vyro.io IoT platform, delivering production-ready firmware in C/C++ and backend services in Go and Node.js for real-time device control. The platform served thousands of connected devices across multiple regions."),
 			fixtures.CVBulletWith("b3", "", "Adopted Jest early for QuikCV testing, establishing a test-first culture that reduced regression bugs by 60% across the engineering team. This approach was later adopted company-wide as the standard testing methodology."),
-			fixtures.CVBulletWith("b4", "", "Built AI-powered customer service dashboards at Digital Genius integrating ML APIs for intelligent response routing and ticket classification. The system processed millions of customer interactions daily."),
 		}
 		for i, b := range bullets {
 			b.SourceEventIDs = []string{"e1"}
-			b.Rank = float64(4-i) / 4.0
+			b.Rank = float64(3-i) / 3.0
 		}
 
 		section := builder.buildSummarySection(bullets, 0, nil, 10)
 
 		Expect(section).NotTo(BeNil())
-		Expect(len(section.Summary)).To(BeNumerically("<", 700), "summary must be under 700 chars with 4 bullets, got: "+section.Summary)
+		Expect(len(section.Summary)).To(BeNumerically("<", 400), "summary must be under 400 chars with 2 bullets, got: "+section.Summary)
 		Expect(section.Summary).To(ContainSubstring("Migrated QuikCV backend"))
 		Expect(section.Summary).To(ContainSubstring("Founded n-vyro.io"))
-		Expect(section.Summary).To(ContainSubstring("Adopted Jest early"))
-		Expect(section.Summary).To(ContainSubstring("Built AI-powered customer service dashboards"))
 		Expect(section.Summary).NotTo(ContainSubstring("This was a major undertaking"))
 		Expect(section.Summary).NotTo(ContainSubstring("The platform served"))
-		Expect(section.Summary).NotTo(ContainSubstring("This approach was later"))
-		Expect(section.Summary).NotTo(ContainSubstring("The system processed"))
+		Expect(section.Summary).NotTo(ContainSubstring("Adopted Jest early"))
+		Expect(section.Summary).NotTo(ContainSubstring("Built AI-powered customer service dashboards"))
 	})
 
 	It("produces short prose from single long bullet without sentence boundary", func() {
@@ -841,7 +833,7 @@ var _ = Describe("buildSummarySection wall-of-text regression", func() {
 		section := builder.buildSummarySection([]*career.CVBullet{bullet}, 0, nil, 5)
 
 		Expect(section).NotTo(BeNil())
-		Expect(len(section.Summary)).To(BeNumerically("<", 350), "single bullet summary must be under 350 chars with maxChars=300")
+		Expect(len(section.Summary)).To(BeNumerically("<", 250), "single bullet summary must be under 250 chars with maxChars=150")
 		Expect(section.Summary).To(HaveSuffix("."))
 	})
 })

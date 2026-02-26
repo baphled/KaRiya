@@ -468,14 +468,14 @@ func (sb *DefaultSectionBuilder) buildSummarySection(bullets []*career.CVBullet,
 	// Build prose from top bullets — each bullet's first sentence joined as flowing paragraph
 	var summaryParts []string
 	for _, bullet := range bullets {
-		if len(summaryParts) >= 4 {
+		if len(summaryParts) >= 2 {
 			break
 		}
 		text := strings.TrimSpace(bullet.Text)
 		text = strings.TrimPrefix(text, "- ")
 		text = strings.TrimPrefix(text, "* ")
 
-		sentence := firstSentence(text, 300)
+		sentence := firstSentence(text, 150)
 		if sentence != "" {
 			summaryParts = append(summaryParts, sentence)
 		}
