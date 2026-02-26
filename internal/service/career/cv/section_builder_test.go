@@ -624,8 +624,8 @@ var _ = Describe("buildSummarySection with SummaryConfig", func() {
 		// Should NOT contain 4th and 5th bullets
 		Expect(section.Summary).NotTo(ContainSubstring("Fourth achievement"))
 		Expect(section.Summary).NotTo(ContainSubstring("Fifth achievement"))
-		// Should use comma separation and end with period
-		Expect(section.Summary).To(Equal("First achievement, Second achievement, Third achievement."))
+		// Should use period separation and end with period
+		Expect(section.Summary).To(Equal("First achievement. Second achievement. Third achievement."))
 	})
 
 	It("should render heading template with Title and Years", func() {

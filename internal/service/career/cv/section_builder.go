@@ -446,7 +446,7 @@ func (sb *DefaultSectionBuilder) buildSummarySection(bullets []*career.CVBullet,
 
 	var prose string
 	if len(summaryParts) > 0 {
-		prose = strings.Join(summaryParts, ", ") + "."
+		prose = strings.Join(summaryParts, ". ") + "."
 	}
 
 	// Render heading template if provided
