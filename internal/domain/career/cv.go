@@ -417,6 +417,10 @@ type CVConfig struct {
 	SummaryHeading string `yaml:"summary_heading,omitempty" json:"summary_heading,omitempty"`
 	// ProfileTitle is the profile's display title (e.g. "Senior Ruby on Rails Developer").
 	ProfileTitle string `yaml:"profile_title,omitempty" json:"profile_title,omitempty"`
+	// WhatIBring contains value propositions from the profile config.
+	WhatIBring []string `yaml:"what_i_bring,omitempty" json:"what_i_bring,omitempty"`
+	// CoreStrengths contains core strengths from the profile config.
+	CoreStrengths []string `yaml:"core_strengths,omitempty" json:"core_strengths,omitempty"`
 
 	CreatedAt time.Time `yaml:"created_at" json:"created_at"`
 	UpdatedAt time.Time `yaml:"updated_at" json:"updated_at"`

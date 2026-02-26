@@ -739,6 +739,112 @@ var _ = Describe("buildSummarySection with SummaryConfig", func() {
 		Expect(section.Summary).NotTo(HaveSuffix(".."))
 		Expect(section.Summary).To(Equal("Achievement with period."))
 	})
+
+	It("should build prose from WhatIBring when provided", func() {
+		bullet := fixtures.CVBulletWith("b1", "", "Fallback bullet text")
+		bullet.SourceEventIDs = []string{"e1"}
+
+		summaryCfg := &SummaryConfig{
+			WhatIBring: []string{
+				"Deep expertise in TUI development with Bubble Tea",
+				"Strong mentoring skills and technical leadership",
+				"Proven track record of delivering production systems",
+			},
+		}
+
+		section := builder.buildSummarySection([]*career.CVBullet{bullet}, 0, summaryCfg, 10)
+
+		Expect(section).NotTo(BeNil())
+		// Should use WhatIBring prose, not bullet text
+		Expect(section.Summary).To(ContainSubstring("Deep expertise in TUI development"))
+		Expect(section.Summary).To(ContainSubstring("Strong mentoring skills"))
+		Expect(section.Summary).To(ContainSubstring("Proven track record"))
+		Expect(section.Summary).NotTo(ContainSubstring("Fallback bullet text"))
+		// Each item should end with period
+		Expect(section.Summary).To(ContainSubstring("Bubble Tea."))
+		Expect(section.Summary).To(ContainSubstring("leadership."))
+		Expect(section.Summary).To(ContainSubstring("systems."))
+	})
+
+	It("should build prose from CoreStrengths when WhatIBring is empty", func() {
+		bullet := fixtures.CVBulletWith("b1", "", "Fallback bullet text")
+		bullet.SourceEventIDs = []string{"e1"}
+
+		summaryCfg := &SummaryConfig{
+			CoreStrengths: []string{"Technical Leadership", "System Architecture", "Go Development"},
+		}
+
+		section := builder.buildSummarySection([]*career.CVBullet{bullet}, 0, summaryCfg, 10)
+
+		Expect(section).NotTo(BeNil())
+		// Should build prose from CoreStrengths
+		Expect(section.Summary).To(ContainSubstring("Expertise in"))
+		Expect(section.Summary).To(ContainSubstring("Technical Leadership"))
+		Expect(section.Summary).To(ContainSubstring("System Architecture"))
+		Expect(section.Summary).To(ContainSubstring("Go Development"))
+		Expect(section.Summary).NotTo(ContainSubstring("Fallback bullet text"))
+	})
+
+	It("should use WhatIBring when both WhatIBring and CoreStrengths provided", func() {
+		bullet := fixtures.CVBulletWith("b1", "", "Fallback bullet text")
+		bullet.SourceEventIDs = []string{"e1"}
+
+		summaryCfg := &SummaryConfig{
+			WhatIBring:    []string{"Primary value proposition"},
+			CoreStrengths: []string{"Strength One", "Strength Two"},
+		}
+
+		section := builder.buildSummarySection([]*career.CVBullet{bullet}, 0, summaryCfg, 10)
+
+		Expect(section).NotTo(BeNil())
+		// Should use WhatIBring as primary prose
+		Expect(section.Summary).To(ContainSubstring("Primary value proposition"))
+		// CoreStrengths should not appear (WhatIBring takes precedence)
+		Expect(section.Summary).NotTo(ContainSubstring("Strength One"))
+	})
+
+	It("should fall back to bullets when both WhatIBring and CoreStrengths are empty", func() {
+		bullets := []*career.CVBullet{
+			fixtures.CVBulletWith("b1", "", "First bullet"),
+			fixtures.CVBulletWith("b2", "", "Second bullet"),
+		}
+		for _, b := range bullets {
+			b.SourceEventIDs = []string{"e1"}
+		}
+
+		summaryCfg := &SummaryConfig{
+			WhatIBring:    []string{},
+			CoreStrengths: []string{},
+		}
+
+		section := builder.buildSummarySection(bullets, 0, summaryCfg, 10)
+
+		Expect(section).NotTo(BeNil())
+		// Should fall back to bullet text
+		Expect(section.Summary).To(ContainSubstring("First bullet"))
+		Expect(section.Summary).To(ContainSubstring("Second bullet"))
+	})
+
+	It("should combine WhatIBring with heading template", func() {
+		bullet := fixtures.CVBulletWith("b1", "", "Fallback bullet text")
+		bullet.SourceEventIDs = []string{"e1"}
+
+		summaryCfg := &SummaryConfig{
+			SummaryHeading: "**{{.Title}} | {{.Years}}+ Years**",
+			ProfileTitle:   "Staff Software Engineer",
+			WhatIBring:     []string{"Deep expertise in Go development"},
+		}
+
+		section := builder.buildSummarySection([]*career.CVBullet{bullet}, 0, summaryCfg, 20)
+
+		Expect(section).NotTo(BeNil())
+		// Should have heading
+		Expect(section.Summary).To(HavePrefix("**Staff Software Engineer | 20+ Years**"))
+		// Should have newline separator
+		Expect(section.Summary).To(ContainSubstring("\n"))
+		// Should have WhatIBring prose
+		Expect(section.Summary).To(ContainSubstring("Deep expertise in Go development"))
+	})
 })
 
 var _ = Describe("firstSentence", func() {

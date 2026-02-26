@@ -207,6 +207,32 @@ func (i *Intent) generateCVAsync() tea.Cmd {
 			LengthFormat:         string(cv.MapUILengthToFormat(i.selectedCVLength)),
 			SkillsFormat:         i.selectedSkillsFormat,
 			SkillsLimit:          i.selectedSkillsLimit,
+
+			// Wire ProfileConfig fields for summary section
+			SummaryHeading: func() string {
+				if i.context.ProfileConfig != nil {
+					return i.context.ProfileConfig.SummaryHeading
+				}
+				return ""
+			}(),
+			ProfileTitle: func() string {
+				if i.context.ProfileConfig != nil {
+					return i.context.ProfileConfig.Title
+				}
+				return ""
+			}(),
+			WhatIBring: func() []string {
+				if i.context.ProfileConfig != nil {
+					return i.context.ProfileConfig.WhatIBring
+				}
+				return nil
+			}(),
+			CoreStrengths: func() []string {
+				if i.context.ProfileConfig != nil {
+					return i.context.ProfileConfig.CoreStrengths
+				}
+				return nil
+			}(),
 		}
 
 		cvView, err := i.context.CVGenerationService.GenerateCVFromConfig(ctx, config)

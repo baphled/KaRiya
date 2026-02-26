@@ -196,6 +196,8 @@ func (svc *DefaultCVGenerationService) GenerateCVFromConfig(ctx context.Context,
 	summaryCfg := &SummaryConfig{
 		SummaryHeading: config.SummaryHeading,
 		ProfileTitle:   config.ProfileTitle,
+		WhatIBring:     config.WhatIBring,
+		CoreStrengths:  config.CoreStrengths,
 	}
 	sections, err := svc.sectionBuilder.BuildSections(ctx, cvBullets, events, facts, config.TargetRole, skillsConfig, summaryCfg)
 	if err != nil {
