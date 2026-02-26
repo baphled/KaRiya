@@ -179,11 +179,14 @@ func (r *DefaultIntentRegistrar) registerGenerateCV(ctx context.Context, router 
 
 		var profileCfg *config.ProfileConfig
 		var scoringCfg *config.ScoringConfig
-		if appCfg, err := config.LoadConfig(); err == nil {
-			config.MigrateProfileConfig(appCfg)
-			profileCfg = &appCfg.Profile
-			scoringCfg = &appCfg.Scoring
+		appCfg, err := config.LoadConfig()
+		if err != nil {
+			r.config.Log.Error("Failed to load config, using defaults: %v", err)
+			appCfg = config.DefaultConfig()
 		}
+		config.MigrateProfileConfig(appCfg)
+		profileCfg = &appCfg.Profile
+		scoringCfg = &appCfg.Scoring
 
 		cvCtx := &generatecv.IntentContext{
 			Events:                events,
