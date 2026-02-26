@@ -316,6 +316,38 @@ var _ = Describe("ExportService", func() {
 			})
 		})
 
+		Describe("ensureURL", func() {
+			It("returns empty string for empty input", func() {
+				result := ensureURL("", "https://example.com/")
+				Expect(result).To(Equal(""))
+			})
+
+			It("returns input unchanged when already http URL", func() {
+				result := ensureURL("http://example.com/user", "https://github.com/")
+				Expect(result).To(Equal("http://example.com/user"))
+			})
+
+			It("returns input unchanged when already https URL", func() {
+				result := ensureURL("https://github.com/baphled", "https://github.com/")
+				Expect(result).To(Equal("https://github.com/baphled"))
+			})
+
+			It("prepends prefix to bare username", func() {
+				result := ensureURL("baphled", "https://github.com/")
+				Expect(result).To(Equal("https://github.com/baphled"))
+			})
+
+			It("prepends LinkedIn prefix to bare username", func() {
+				result := ensureURL("yomicolledge", "https://www.linkedin.com/in/")
+				Expect(result).To(Equal("https://www.linkedin.com/in/yomicolledge"))
+			})
+
+			It("handles username with hyphens", func() {
+				result := ensureURL("john-doe", "https://github.com/")
+				Expect(result).To(Equal("https://github.com/john-doe"))
+			})
+		})
+
 		Describe("CopyToClipboard", func() {
 			var mockClipboard *MockClipboard
 
@@ -811,6 +843,75 @@ var _ = Describe("ExportService YAML Export", func() {
 			Expect(yamlOutput).To(ContainSubstring("label: GitHub"))
 		})
 
+		It("expands bare GitHub username to full URL", func() {
+			profileCfg := &config.ProfileConfig{
+				FirstName: "Test",
+				LastName:  "User",
+				GitHub:    "baphled",
+			}
+
+			mockSkillRepo.EXPECT().List(gomock.Any(), gomock.Nil()).Return([]*career.Skill{}, nil)
+
+			service = NewExportServiceWithDeps(log, profileCfg, mockSkillRepo)
+
+			yamlOutput, err := service.ExportToYAML(ctx, cv, sections, nil)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(yamlOutput).To(ContainSubstring("url: https://github.com/baphled"))
+			Expect(yamlOutput).To(ContainSubstring("label: GitHub"))
+		})
+
+		It("expands bare LinkedIn username to full URL", func() {
+			profileCfg := &config.ProfileConfig{
+				FirstName: "Test",
+				LastName:  "User",
+				LinkedIn:  "yomicolledge",
+			}
+
+			mockSkillRepo.EXPECT().List(gomock.Any(), gomock.Nil()).Return([]*career.Skill{}, nil)
+
+			service = NewExportServiceWithDeps(log, profileCfg, mockSkillRepo)
+
+			yamlOutput, err := service.ExportToYAML(ctx, cv, sections, nil)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(yamlOutput).To(ContainSubstring("url: https://www.linkedin.com/in/yomicolledge"))
+			Expect(yamlOutput).To(ContainSubstring("label: LinkedIn"))
+		})
+
+		It("leaves portfolio URL unchanged (already full URL)", func() {
+			profileCfg := &config.ProfileConfig{
+				FirstName: "Test",
+				LastName:  "User",
+				Portfolio: "http://boodah.net",
+			}
+
+			mockSkillRepo.EXPECT().List(gomock.Any(), gomock.Nil()).Return([]*career.Skill{}, nil)
+
+			service = NewExportServiceWithDeps(log, profileCfg, mockSkillRepo)
+
+			yamlOutput, err := service.ExportToYAML(ctx, cv, sections, nil)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(yamlOutput).To(ContainSubstring("url: http://boodah.net"))
+			Expect(yamlOutput).To(ContainSubstring("label: Portfolio"))
+		})
+
+		It("omits empty links from output", func() {
+			profileCfg := &config.ProfileConfig{
+				FirstName: "Test",
+				LastName:  "User",
+				GitHub:    "",
+				LinkedIn:  "",
+				Portfolio: "",
+			}
+
+			mockSkillRepo.EXPECT().List(gomock.Any(), gomock.Nil()).Return([]*career.Skill{}, nil)
+
+			service = NewExportServiceWithDeps(log, profileCfg, mockSkillRepo)
+
+			yamlOutput, err := service.ExportToYAML(ctx, cv, sections, nil)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(yamlOutput).To(ContainSubstring("links: []"))
+		})
+
 		It("contains skills section grouped by category", func() {
 			profileCfg := &config.ProfileConfig{
 				FirstName: "Test",
@@ -835,6 +936,77 @@ var _ = Describe("ExportService YAML Export", func() {
 			Expect(yamlOutput).To(ContainSubstring("frontend:"))
 			Expect(yamlOutput).To(ContainSubstring("- React"))
 			Expect(yamlOutput).To(ContainSubstring("- TypeScript"))
+		})
+
+		Context("when ProfileConfig.SkillsLimit is set", func() {
+			It("respects SkillsLimit of 3, limiting each category to at most 3 entries", func() {
+				profileCfg := &config.ProfileConfig{
+					FirstName:   "Test",
+					LastName:    "User",
+					SkillsLimit: 3,
+				}
+
+				mockSkillRepo.EXPECT().List(gomock.Any(), gomock.Nil()).Return([]*career.Skill{
+					fixtures.SkillWith("s1", "Go", "backend", ""),
+					fixtures.SkillWith("s2", "Ruby", "backend", ""),
+					fixtures.SkillWith("s3", "Python", "backend", ""),
+					fixtures.SkillWith("s4", "Java", "backend", ""),
+					fixtures.SkillWith("s5", "Rust", "backend", ""),
+					fixtures.SkillWith("s6", "C++", "backend", ""),
+					fixtures.SkillWith("s7", "React", "frontend", ""),
+					fixtures.SkillWith("s8", "Vue", "frontend", ""),
+					fixtures.SkillWith("s9", "Angular", "frontend", ""),
+					fixtures.SkillWith("s10", "Svelte", "frontend", ""),
+				}, nil)
+
+				service = NewExportServiceWithDeps(log, profileCfg, mockSkillRepo)
+
+				yamlOutput, err := service.ExportToYAML(ctx, cv, sections, profileCfg)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(yamlOutput).To(ContainSubstring("- Go"))
+				Expect(yamlOutput).To(ContainSubstring("- Ruby"))
+				Expect(yamlOutput).To(ContainSubstring("- Python"))
+				Expect(yamlOutput).NotTo(ContainSubstring("- Java"))
+				Expect(yamlOutput).NotTo(ContainSubstring("- Rust"))
+				Expect(yamlOutput).NotTo(ContainSubstring("- C++"))
+
+				Expect(yamlOutput).To(ContainSubstring("- React"))
+				Expect(yamlOutput).To(ContainSubstring("- Vue"))
+				Expect(yamlOutput).To(ContainSubstring("- Angular"))
+				Expect(yamlOutput).NotTo(ContainSubstring("- Svelte"))
+			})
+
+			It("uses default limit of 5 when SkillsLimit is 0 (unset)", func() {
+				profileCfg := &config.ProfileConfig{
+					FirstName:   "Test",
+					LastName:    "User",
+					SkillsLimit: 0,
+				}
+
+				mockSkillRepo.EXPECT().List(gomock.Any(), gomock.Nil()).Return([]*career.Skill{
+					fixtures.SkillWith("s1", "Go", "backend", ""),
+					fixtures.SkillWith("s2", "Ruby", "backend", ""),
+					fixtures.SkillWith("s3", "Python", "backend", ""),
+					fixtures.SkillWith("s4", "Java", "backend", ""),
+					fixtures.SkillWith("s5", "Rust", "backend", ""),
+					fixtures.SkillWith("s6", "C++", "backend", ""),
+					fixtures.SkillWith("s7", "Kotlin", "backend", ""),
+				}, nil)
+
+				service = NewExportServiceWithDeps(log, profileCfg, mockSkillRepo)
+
+				yamlOutput, err := service.ExportToYAML(ctx, cv, sections, profileCfg)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(yamlOutput).To(ContainSubstring("- Go"))
+				Expect(yamlOutput).To(ContainSubstring("- Ruby"))
+				Expect(yamlOutput).To(ContainSubstring("- Python"))
+				Expect(yamlOutput).To(ContainSubstring("- Java"))
+				Expect(yamlOutput).To(ContainSubstring("- Rust"))
+				Expect(yamlOutput).NotTo(ContainSubstring("- C++"))
+				Expect(yamlOutput).NotTo(ContainSubstring("- Kotlin"))
+			})
 		})
 
 		It("returns error for nil CV", func() {
@@ -878,6 +1050,21 @@ var _ = Describe("ExportService YAML Export", func() {
 			Expect(yamlOutput).To(ContainSubstring("key_achievements:"))
 		})
 
+		It("populates summary field from summary-type section", func() {
+			profileCfg := &config.ProfileConfig{FirstName: "Test", LastName: "User"}
+
+			mockSkillRepo.EXPECT().List(gomock.Any(), gomock.Nil()).Return([]*career.Skill{}, nil)
+
+			summarySection := fixtures.CVSectionWithSummary("section-summary", "cv-1", "Experienced engineer with 10+ years in backend development.")
+			sectionsWithSummary := append([]*career.CVSection{summarySection}, sections...)
+
+			service = NewExportServiceWithDeps(log, profileCfg, mockSkillRepo)
+
+			yamlOutput, err := service.ExportToYAML(ctx, cv, sectionsWithSummary, nil)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(yamlOutput).To(ContainSubstring("summary: Experienced engineer with 10+ years in backend development."))
+		})
+
 		It("matches golden file output structure", func() {
 			profileCfg := &config.ProfileConfig{
 				FirstName: "Yomi",
@@ -896,9 +1083,12 @@ var _ = Describe("ExportService YAML Export", func() {
 				fixtures.SkillWith("s3", "React", "frontend", ""),
 			}, nil)
 
+			summarySection := fixtures.CVSectionWithSummary("section-summary", "cv-1", "**GDS-Aligned Ruby on Rails Developer | 15+ Years Production Experience**\nFull-stack engineer with deep backend expertise in Go, Ruby, and Node.js with a track record of scaling MVPs to production.")
+			goldenSections := append([]*career.CVSection{summarySection}, sections...)
+
 			service = NewExportServiceWithDeps(log, profileCfg, mockSkillRepo)
 
-			yamlOutput, err := service.ExportToYAML(ctx, cv, sections, nil)
+			yamlOutput, err := service.ExportToYAML(ctx, cv, goldenSections, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			goldenFile := filepath.Join("testdata", "yaml_export_golden.yaml")
@@ -1085,10 +1275,10 @@ var _ = Describe("ExportService YAML Export", func() {
 				Expect(jobsIdx).To(BeNumerically(">", highlightsIdx))
 				highlightsSection := yamlOutput[highlightsIdx:jobsIdx]
 
-				for i := range 8 {
-					Expect(highlightsSection).To(ContainSubstring(fmt.Sprintf("Bullet number %d", i)), "should include top 8 bullets in highlights")
+				for i := range 5 {
+					Expect(highlightsSection).To(ContainSubstring(fmt.Sprintf("Bullet number %d", i)), "should include top 5 bullets in highlights")
 				}
-				for i := 8; i < 12; i++ {
+				for i := 5; i < 12; i++ {
 					Expect(highlightsSection).NotTo(ContainSubstring(fmt.Sprintf("Bullet number %d", i)), "should NOT include bullets beyond limit in highlights")
 				}
 			})

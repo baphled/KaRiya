@@ -334,7 +334,10 @@ func (es *ExportService) ExportToYAML(ctx context.Context, cv *career.CVView, se
 		firstName = effectiveProfile.FirstName
 		lastName = effectiveProfile.LastName
 		email = effectiveProfile.Email
-		location = effectiveProfile.Country
+		location = effectiveProfile.Location
+		if location == "" {
+			location = effectiveProfile.Country
+		}
 		phone = effectiveProfile.Phone
 		linkedIn = effectiveProfile.LinkedIn
 		gitHub = effectiveProfile.GitHub
@@ -349,7 +352,11 @@ func (es *ExportService) ExportToYAML(ctx context.Context, cv *career.CVView, se
 
 	projects := es.buildYAMLProjects(sections)
 
-	skills := es.buildYAMLSkills(ctx)
+	skillsLimit := 0
+	if effectiveProfile != nil {
+		skillsLimit = effectiveProfile.SkillsLimit
+	}
+	skills := es.buildYAMLSkills(ctx, skillsLimit)
 
 	output := yamlCV{
 		FirstName:  firstName,
@@ -383,15 +390,30 @@ func (es *ExportService) getSummaryFromSectionsYAML(sections []*career.CVSection
 	return ""
 }
 
+const (
+	githubURLPrefix   = "https://github.com/"
+	linkedInURLPrefix = "https://www.linkedin.com/in/"
+)
+
+func ensureURL(value, prefix string) string {
+	if value == "" {
+		return ""
+	}
+	if strings.HasPrefix(value, "http://") || strings.HasPrefix(value, "https://") {
+		return value
+	}
+	return prefix + value
+}
+
 func (es *ExportService) buildYAMLLinks(linkedIn, gitHub, portfolio string) []yamlLink {
 	var links []yamlLink
 
 	if linkedIn != "" {
-		links = append(links, yamlLink{Label: "LinkedIn", URL: linkedIn})
+		links = append(links, yamlLink{Label: "LinkedIn", URL: ensureURL(linkedIn, linkedInURLPrefix)})
 	}
 
 	if gitHub != "" {
-		links = append(links, yamlLink{Label: "GitHub", URL: gitHub})
+		links = append(links, yamlLink{Label: "GitHub", URL: ensureURL(gitHub, githubURLPrefix)})
 	}
 
 	if portfolio != "" {
@@ -462,7 +484,7 @@ func formatBulletsAsDescription(bullets []*career.CVBullet) string {
 	return sb.String()
 }
 
-const maxHighlightBullets = 8
+const maxHighlightBullets = 5
 
 func generateHighlights(sections []*career.CVSection, profile *config.ProfileConfig) string {
 	if profile != nil && len(profile.WhatIBring) > 0 {
@@ -528,8 +550,12 @@ func sortBulletsByConfidenceAndRoleScore(bullets []*career.CVBullet) {
 	})
 }
 
-func (es *ExportService) buildYAMLSkills(ctx context.Context) map[string][]string {
+func (es *ExportService) buildYAMLSkills(ctx context.Context, limit int) map[string][]string {
 	skills := make(map[string][]string)
+
+	if limit <= 0 {
+		limit = 5
+	}
 
 	if es.skillRepo == nil {
 		return skills
@@ -542,7 +568,9 @@ func (es *ExportService) buildYAMLSkills(ctx context.Context) map[string][]strin
 
 	for _, skill := range allSkills {
 		category := skill.Category
-		skills[category] = append(skills[category], skill.Name)
+		if len(skills[category]) < limit {
+			skills[category] = append(skills[category], skill.Name)
+		}
 	}
 
 	return skills
