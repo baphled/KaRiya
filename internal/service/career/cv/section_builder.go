@@ -3,6 +3,7 @@ package cv
 import (
 	"bytes"
 	"context"
+	"fmt"
 	stdlog "log"
 	"sort"
 	"strings"
@@ -503,6 +504,9 @@ func (sb *DefaultSectionBuilder) buildSummarySection(bullets []*career.CVBullet,
 				heading = buf.String()
 			}
 		}
+	} else if summaryCfg != nil && summaryCfg.ProfileTitle != "" && years > 0 {
+		// Auto-generate heading from ProfileTitle and computed years
+		heading = fmt.Sprintf("**%s | %d+ Years Experience**", summaryCfg.ProfileTitle, years)
 	}
 
 	// Combine heading and prose

@@ -650,7 +650,7 @@ var _ = Describe("buildSummarySection with SummaryConfig", func() {
 
 		summaryCfg := &SummaryConfig{
 			SummaryHeading: "",
-			ProfileTitle:   "Ignored Title",
+			ProfileTitle:   "",
 		}
 
 		section := builder.buildSummarySection([]*career.CVBullet{bullet}, 0, summaryCfg, 10)
@@ -659,6 +659,23 @@ var _ = Describe("buildSummarySection with SummaryConfig", func() {
 		// Should NOT have a newline at the start (no heading)
 		Expect(section.Summary).NotTo(HavePrefix("\n"))
 		Expect(section.Summary).To(Equal("Some achievement."))
+	})
+
+	It("should auto-generate heading from ProfileTitle when SummaryHeading is empty", func() {
+		bullet := fixtures.CVBulletWith("b1", "", "Built production systems serving millions of users")
+		bullet.SourceEventIDs = []string{"e1"}
+
+		summaryCfg := &SummaryConfig{
+			SummaryHeading: "", // empty — no template
+			ProfileTitle:   "Staff Software Engineer",
+		}
+
+		section := builder.buildSummarySection([]*career.CVBullet{bullet}, 0, summaryCfg, 20)
+
+		Expect(section).NotTo(BeNil())
+		Expect(section.Summary).To(HavePrefix("**Staff Software Engineer | 20+ Years Experience**"))
+		Expect(section.Summary).To(ContainSubstring("\n"))
+		Expect(section.Summary).To(ContainSubstring("Built production systems"))
 	})
 
 	It("should gracefully handle invalid template syntax", func() {
