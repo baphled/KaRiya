@@ -399,6 +399,19 @@ func (s *ReviewScreen) countTotalBullets() int {
 	return total
 }
 
+func (s *ReviewScreen) scoreBullet(bullet *career.CVBullet) float64 {
+	if s.cv.TargetAudience != "" && !strings.EqualFold(s.cv.TargetAudience, "master") {
+		audienceRelevance := 0.0
+		if bullet.AudienceRelevance != nil {
+			if relevance, ok := bullet.AudienceRelevance[s.cv.TargetAudience]; ok {
+				audienceRelevance = relevance
+			}
+		}
+		return audienceRelevance * bullet.Confidence
+	}
+	return bullet.Confidence
+}
+
 func (s *ReviewScreen) renderHighlights() string {
 	theme := s.getTheme()
 	sectionTitleStyle := lipgloss.NewStyle().Bold(true).Foreground(theme.AccentColor())
@@ -414,20 +427,7 @@ func (s *ReviewScreen) renderHighlights() string {
 	for _, section := range s.cv.Sections {
 		for _, group := range section.Content {
 			for _, bullet := range group.Bullets {
-				var score float64
-				// If target audience is set and not "master", use audience-aware scoring
-				if s.cv.TargetAudience != "" && strings.ToLower(s.cv.TargetAudience) != "master" {
-					audienceRelevance := 0.0
-					if bullet.AudienceRelevance != nil {
-						if relevance, ok := bullet.AudienceRelevance[s.cv.TargetAudience]; ok {
-							audienceRelevance = relevance
-						}
-					}
-					score = audienceRelevance * bullet.Confidence
-				} else {
-					// Fall back to confidence-based ordering
-					score = bullet.Confidence
-				}
+				score := s.scoreBullet(bullet)
 				allBullets = append(allBullets, scoredBullet{bullet: bullet, score: score})
 			}
 		}
@@ -454,7 +454,7 @@ func (s *ReviewScreen) renderHighlights() string {
 	b.WriteString(strings.Repeat("─", 60))
 	b.WriteString("\n")
 
-	for i := 0; i < topCount; i++ {
+	for i := range topCount {
 		bullet := allBullets[i].bullet
 		text := bullet.Text
 		if text == "" {

@@ -107,6 +107,11 @@ Feature: Generate CV
     And I press "e" to edit
     Then I should see the CV wizard modal
 
+  @happy
+  Scenario: Review screen shows highlights
+    Given I have generated a CV
+    When I am on the CV review screen
+    Then I should see highlights
   # ============================================================================
   # CV Preview Screen
   # ============================================================================
@@ -141,6 +146,11 @@ Feature: Generate CV
     And I press "e" to edit
     Then I should see the CV wizard modal
 
+  @happy
+  Scenario: Preview screen shows key highlights
+    Given I have generated a CV
+    When I navigate to the CV preview screen
+    Then I should see key highlights
   # ============================================================================
   # Export Options Modal
   # ============================================================================
