@@ -88,22 +88,32 @@ func (eb *Bullet) ToCVBullet() *career.CVBullet {
 	if eb.EnhancedText != "" {
 		text = eb.EnhancedText
 	}
+
+	var audienceRelevance map[string]float64
+	if len(eb.AudienceRelevance) > 0 {
+		audienceRelevance = make(map[string]float64, len(eb.AudienceRelevance))
+		for _, audience := range eb.AudienceRelevance {
+			audienceRelevance[audience] = 1.0
+		}
+	}
+
 	return &career.CVBullet{
-		ID:              eb.ID,
-		Text:            text,
-		EnhancedText:    eb.EnhancedText,
-		SourceEventIDs:  eb.SourceEventIDs,
-		SourceFactIDs:   eb.SourceFactIDs,
-		Rank:            eb.Rank,
-		InclusionReason: eb.InclusionReason,
-		Confidence:      eb.Confidence,
-		Category:        eb.Category,
-		RoleScore:       eb.RoleScore,
-		AudienceScore:   eb.AudienceScore,
-		MetricScore:     eb.MetricScore,
-		ImpactScore:     eb.ImpactScore,
-		ImpactLevel:     eb.ImpactLevel,
-		KeywordMatches:  eb.KeywordMatches,
+		ID:                eb.ID,
+		Text:              text,
+		EnhancedText:      eb.EnhancedText,
+		SourceEventIDs:    eb.SourceEventIDs,
+		SourceFactIDs:     eb.SourceFactIDs,
+		Rank:              eb.Rank,
+		InclusionReason:   eb.InclusionReason,
+		Confidence:        eb.Confidence,
+		Category:          eb.Category,
+		RoleScore:         eb.RoleScore,
+		AudienceScore:     eb.AudienceScore,
+		MetricScore:       eb.MetricScore,
+		ImpactScore:       eb.ImpactScore,
+		ImpactLevel:       eb.ImpactLevel,
+		KeywordMatches:    eb.KeywordMatches,
+		AudienceRelevance: audienceRelevance,
 	}
 }
 
