@@ -410,6 +410,38 @@ func (sb *DefaultSectionBuilder) buildGroupedSkills(skills []skillInfo, limitPer
 	return groups
 }
 
+// firstSentence extracts the first sentence from text, capped at maxChars.
+// It splits on ". " to find the first sentence boundary. If the first sentence
+// exceeds maxChars, it truncates at the last word boundary before maxChars.
+// The result always ends with a period.
+func firstSentence(text string, maxChars int) string {
+	if text == "" {
+		return ""
+	}
+
+	sentence := text
+	if idx := strings.Index(text, ". "); idx >= 0 {
+		sentence = text[:idx]
+	}
+
+	sentence = strings.TrimRight(sentence, ".!? ")
+
+	if len(sentence) > maxChars {
+		truncated := sentence[:maxChars]
+		if lastSpace := strings.LastIndex(truncated, " "); lastSpace > 0 {
+			truncated = truncated[:lastSpace]
+		}
+		sentence = truncated
+	}
+
+	sentence = strings.TrimRight(sentence, ".!?, ")
+	if sentence == "" {
+		return ""
+	}
+
+	return sentence + "."
+}
+
 // summaryTemplateData holds data for rendering the summary heading template.
 type summaryTemplateData struct {
 	Title string
@@ -426,22 +458,18 @@ func (sb *DefaultSectionBuilder) buildSummarySection(bullets []*career.CVBullet,
 		return nil
 	}
 
-	// Build prose from top 3 bullets
 	var summaryParts []string
 	for _, bullet := range bullets {
 		if len(summaryParts) >= 3 {
 			break
 		}
 		text := strings.TrimSpace(bullet.Text)
-		// Strip leading bullet markers
 		text = strings.TrimPrefix(text, "- ")
 		text = strings.TrimPrefix(text, "* ")
-		// Strip trailing punctuation before joining
-		text = strings.TrimRight(text, ".!?")
-		text = strings.TrimSpace(text)
-		if text != "" {
-			// Ensure each sentence ends with period
-			summaryParts = append(summaryParts, text+".")
+
+		sentence := firstSentence(text, 150)
+		if sentence != "" {
+			summaryParts = append(summaryParts, sentence)
 		}
 	}
 

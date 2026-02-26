@@ -740,3 +740,88 @@ var _ = Describe("buildSummarySection with SummaryConfig", func() {
 		Expect(section.Summary).To(Equal("Achievement with period."))
 	})
 })
+
+var _ = Describe("firstSentence", func() {
+	It("extracts first sentence from multi-sentence text", func() {
+		text := "Migrated backend to Node.js. This reduced costs by 70% and improved response times."
+		Expect(firstSentence(text, 150)).To(Equal("Migrated backend to Node.js."))
+	})
+
+	It("returns full text when no sentence boundary exists and under maxChars", func() {
+		text := "Short achievement without period boundary"
+		Expect(firstSentence(text, 150)).To(Equal("Short achievement without period boundary."))
+	})
+
+	It("truncates at word boundary when first sentence exceeds maxChars", func() {
+		text := "Migrated QuikCV backend from Ruby on Rails to Node.js reducing server costs by 70% and improving response times by 40% through async processing and connection pooling optimisations across the entire platform infrastructure"
+		result := firstSentence(text, 150)
+		Expect(len(result)).To(BeNumerically("<=", 151))
+		Expect(result).To(HaveSuffix("."))
+		Expect(result).To(HavePrefix("Migrated QuikCV backend"))
+	})
+
+	It("returns empty string for empty input", func() {
+		Expect(firstSentence("", 150)).To(Equal(""))
+	})
+
+	It("handles text that is exactly at maxChars", func() {
+		text := "Exactly at limit"
+		Expect(firstSentence(text, 200)).To(Equal("Exactly at limit."))
+	})
+
+	It("handles text with trailing punctuation", func() {
+		text := "Achievement with period."
+		Expect(firstSentence(text, 150)).To(Equal("Achievement with period."))
+	})
+
+	It("extracts first sentence even when it has trailing punctuation", func() {
+		text := "First sentence here. Second sentence follows."
+		Expect(firstSentence(text, 150)).To(Equal("First sentence here."))
+	})
+})
+
+var _ = Describe("buildSummarySection wall-of-text regression", func() {
+	var (
+		builder *DefaultSectionBuilder
+		log     *logger.Logger
+	)
+
+	BeforeEach(func() {
+		log = logger.DefaultLogger()
+		builder = NewSectionBuilder(nil, log)
+	})
+
+	It("produces short prose from long multi-sentence bullets", func() {
+		bullets := []*career.CVBullet{
+			fixtures.CVBulletWith("b1", "", "Migrated QuikCV backend from Ruby on Rails to Node.js, reducing server costs by 70% and improving response times by 40% through async processing and connection pooling optimisations across the entire platform infrastructure. This was a major undertaking that took six months."),
+			fixtures.CVBulletWith("b2", "", "Founded n-vyro.io IoT platform, delivering production-ready firmware in C/C++ and backend services in Go and Node.js for real-time device control. The platform served thousands of connected devices across multiple regions."),
+			fixtures.CVBulletWith("b3", "", "Adopted Jest early for QuikCV testing, establishing a test-first culture that reduced regression bugs by 60% across the engineering team. This approach was later adopted company-wide as the standard testing methodology."),
+		}
+		for i, b := range bullets {
+			b.SourceEventIDs = []string{"e1"}
+			b.Rank = float64(3-i) / 3.0
+		}
+
+		section := builder.buildSummarySection(bullets, 0, nil, 10)
+
+		Expect(section).NotTo(BeNil())
+		Expect(len(section.Summary)).To(BeNumerically("<", 500), "summary must be under 500 chars, got: "+section.Summary)
+		Expect(section.Summary).To(ContainSubstring("Migrated QuikCV backend"))
+		Expect(section.Summary).To(ContainSubstring("Founded n-vyro.io"))
+		Expect(section.Summary).To(ContainSubstring("Adopted Jest early"))
+		Expect(section.Summary).NotTo(ContainSubstring("This was a major undertaking"))
+		Expect(section.Summary).NotTo(ContainSubstring("The platform served"))
+		Expect(section.Summary).NotTo(ContainSubstring("This approach was later"))
+	})
+
+	It("produces short prose from single long bullet without sentence boundary", func() {
+		bullet := fixtures.CVBulletWith("b1", "", "Migrated QuikCV backend from Ruby on Rails to Node.js reducing server costs by 70% and improving response times by 40% through async processing and connection pooling optimisations across the entire platform infrastructure which was a significant engineering effort")
+		bullet.SourceEventIDs = []string{"e1"}
+
+		section := builder.buildSummarySection([]*career.CVBullet{bullet}, 0, nil, 5)
+
+		Expect(section).NotTo(BeNil())
+		Expect(len(section.Summary)).To(BeNumerically("<=", 151), "single bullet summary must be under 151 chars")
+		Expect(section.Summary).To(HaveSuffix("."))
+	})
+})
