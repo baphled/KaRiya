@@ -3,6 +3,7 @@ package cv
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -233,6 +234,7 @@ func (s *ReviewScreen) renderContent() string {
 	b.WriteString(s.renderPersonalDetails())
 	b.WriteString(s.renderCVDetails())
 	b.WriteString(s.renderStatistics())
+	b.WriteString(s.renderHighlights())
 	b.WriteString(s.renderSectionsList())
 
 	return b.String()
@@ -395,6 +397,74 @@ func (s *ReviewScreen) countTotalBullets() int {
 		}
 	}
 	return total
+}
+
+func (s *ReviewScreen) renderHighlights() string {
+	theme := s.getTheme()
+	sectionTitleStyle := lipgloss.NewStyle().Bold(true).Foreground(theme.AccentColor())
+	valueStyle := lipgloss.NewStyle().Foreground(theme.ForegroundColor())
+
+	// Collect all bullets from all sections
+	type scoredBullet struct {
+		bullet *career.CVBullet
+		score  float64
+	}
+
+	var allBullets []scoredBullet
+	for _, section := range s.cv.Sections {
+		for _, group := range section.Content {
+			for _, bullet := range group.Bullets {
+				var score float64
+				// If target audience is set and not "master", use audience-aware scoring
+				if s.cv.TargetAudience != "" && strings.ToLower(s.cv.TargetAudience) != "master" {
+					audienceRelevance := 0.0
+					if bullet.AudienceRelevance != nil {
+						if relevance, ok := bullet.AudienceRelevance[s.cv.TargetAudience]; ok {
+							audienceRelevance = relevance
+						}
+					}
+					score = audienceRelevance * bullet.Confidence
+				} else {
+					// Fall back to confidence-based ordering
+					score = bullet.Confidence
+				}
+				allBullets = append(allBullets, scoredBullet{bullet: bullet, score: score})
+			}
+		}
+	}
+
+	// Sort by score descending
+	sort.Slice(allBullets, func(i, j int) bool {
+		return allBullets[i].score > allBullets[j].score
+	})
+
+	// Take top 5
+	topCount := 5
+	if len(allBullets) < topCount {
+		topCount = len(allBullets)
+	}
+
+	if topCount == 0 {
+		return ""
+	}
+
+	var b strings.Builder
+	b.WriteString(sectionTitleStyle.Render("✨ Top Highlights"))
+	b.WriteString("\n")
+	b.WriteString(strings.Repeat("─", 60))
+	b.WriteString("\n")
+
+	for i := 0; i < topCount; i++ {
+		bullet := allBullets[i].bullet
+		text := bullet.Text
+		if text == "" {
+			text = bullet.EnhancedText
+		}
+		b.WriteString(fmt.Sprintf("  • %s\n", valueStyle.Render(text)))
+	}
+	b.WriteString("\n")
+
+	return b.String()
 }
 
 func (s *ReviewScreen) renderSectionsList() string {

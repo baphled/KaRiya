@@ -175,14 +175,26 @@ var _ = Describe("CV Structure Export", func() {
 			b6 := fixtures.CVBulletWith("b6", "exp-1", "Improved API response time by 60%")
 			b6.Confidence = 0.80
 
-			b7 := fixtures.CVBulletWith("b7", "exp-1", "Lower priority achievement")
-			b7.Confidence = 0.65
+			b7 := fixtures.CVBulletWith("b7", "exp-1", "Optimized database query performance")
+			b7.Confidence = 0.78
 
-			b8 := fixtures.CVBulletWith("b8", "exp-1", "Another lower priority item")
-			b8.Confidence = 0.60
+			b8 := fixtures.CVBulletWith("b8", "exp-1", "Implemented comprehensive monitoring system")
+			b8.Confidence = 0.76
+
+			b9 := fixtures.CVBulletWith("b9", "exp-1", "Established security best practices")
+			b9.Confidence = 0.74
+
+			b10 := fixtures.CVBulletWith("b10", "exp-1", "Automated deployment pipeline")
+			b10.Confidence = 0.72
+
+			b11 := fixtures.CVBulletWith("b11", "exp-1", "Lower priority achievement")
+			b11.Confidence = 0.65
+
+			b12 := fixtures.CVBulletWith("b12", "exp-1", "Another lower priority item")
+			b12.Confidence = 0.60
 
 			bullets = map[string][]*career.CVBullet{
-				"exp-1": {b1, b2, b3, b4, b5, b6, b7, b8},
+				"exp-1": {b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12},
 			}
 		})
 
@@ -211,17 +223,23 @@ var _ = Describe("CV Structure Export", func() {
 				Expect(content).To(ContainSubstring("SELECTED HIGHLIGHTS"))
 			})
 
-			It("should limit highlights to top 5 by confidence", func() {
+			It("should limit highlights to top 10 by confidence", func() {
 				content, err := service.Export(ctx, cvView, sections, bullets, cv.CVStructureHighlights, cv.ExportFormatText)
 				Expect(err).NotTo(HaveOccurred())
-				// Should include top 5 confidence bullets
+				// Should include top 10 confidence bullets
 				Expect(content).To(ContainSubstring("distributed caching"))  // 0.95
 				Expect(content).To(ContainSubstring("team of 8"))            // 0.90
 				Expect(content).To(ContainSubstring("infrastructure costs")) // 0.88
 				Expect(content).To(ContainSubstring("event-driven"))         // 0.85
 				Expect(content).To(ContainSubstring("Mentored"))             // 0.82
-				// Should NOT include lower confidence bullets
+				Expect(content).To(ContainSubstring("API response time"))    // 0.80
+				Expect(content).To(ContainSubstring("database query"))       // 0.78
+				Expect(content).To(ContainSubstring("monitoring system"))    // 0.76
+				Expect(content).To(ContainSubstring("security best"))        // 0.74
+				Expect(content).To(ContainSubstring("deployment pipeline"))  // 0.72
+				// Should NOT include lower confidence bullets (ranked 11+)
 				Expect(content).NotTo(ContainSubstring("Lower priority achievement"))
+				Expect(content).NotTo(ContainSubstring("Another lower priority item"))
 			})
 
 			It("should include Technologies section", func() {
