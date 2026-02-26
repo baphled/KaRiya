@@ -440,13 +440,15 @@ func (sb *DefaultSectionBuilder) buildSummarySection(bullets []*career.CVBullet,
 		text = strings.TrimRight(text, ".!?")
 		text = strings.TrimSpace(text)
 		if text != "" {
-			summaryParts = append(summaryParts, text)
+			// Ensure each sentence ends with period
+			summaryParts = append(summaryParts, text+".")
 		}
 	}
 
 	var prose string
 	if len(summaryParts) > 0 {
-		prose = strings.Join(summaryParts, ". ") + "."
+		// Join sentences with space only (each already ends with ".")
+		prose = strings.Join(summaryParts, " ")
 	}
 
 	// Render heading template if provided
