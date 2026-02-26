@@ -464,72 +464,25 @@ func (sb *DefaultSectionBuilder) buildSummarySection(bullets []*career.CVBullet,
 
 	var prose string
 
-	// Build prose from WhatIBring and CoreStrengths if available
-	if summaryCfg != nil && (len(summaryCfg.WhatIBring) > 0 || len(summaryCfg.CoreStrengths) > 0) {
-		var parts []string
-
-		// Primary prose from WhatIBring
-		if len(summaryCfg.WhatIBring) > 0 {
-			for _, item := range summaryCfg.WhatIBring {
-				item = strings.TrimSpace(item)
-				if item == "" {
-					continue
-				}
-				// Ensure each item ends with period
-				item = strings.TrimRight(item, ".!? ")
-				parts = append(parts, item+".")
-			}
+	// Build prose from top bullets — each bullet's first sentence joined as flowing paragraph
+	var summaryParts []string
+	for _, bullet := range bullets {
+		if len(summaryParts) >= 4 {
+			break
 		}
+		text := strings.TrimSpace(bullet.Text)
+		text = strings.TrimPrefix(text, "- ")
+		text = strings.TrimPrefix(text, "* ")
 
-		// If WhatIBring is empty, build from CoreStrengths
-		if len(parts) == 0 && len(summaryCfg.CoreStrengths) > 0 {
-			strengths := make([]string, 0, len(summaryCfg.CoreStrengths))
-			for _, s := range summaryCfg.CoreStrengths {
-				s = strings.TrimSpace(s)
-				if s != "" {
-					strengths = append(strengths, s)
-				}
-			}
-			if len(strengths) > 0 {
-				if len(strengths) == 1 {
-					parts = append(parts, "Expertise in "+strengths[0]+".")
-				} else if len(strengths) == 2 {
-					parts = append(parts, "Expertise in "+strengths[0]+" and "+strengths[1]+".")
-				} else {
-					last := strengths[len(strengths)-1]
-					rest := strings.Join(strengths[:len(strengths)-1], ", ")
-					parts = append(parts, "Expertise in "+rest+", and "+last+".")
-				}
-			}
-		}
-
-		// Join all parts with space (each already ends with ".")
-		if len(parts) > 0 {
-			prose = strings.Join(parts, " ")
+		sentence := firstSentence(text, 300)
+		if sentence != "" {
+			summaryParts = append(summaryParts, sentence)
 		}
 	}
 
-	// Fallback to top 3 bullets if no profile config prose available
-	if prose == "" {
-		var summaryParts []string
-		for _, bullet := range bullets {
-			if len(summaryParts) >= 3 {
-				break
-			}
-			text := strings.TrimSpace(bullet.Text)
-			text = strings.TrimPrefix(text, "- ")
-			text = strings.TrimPrefix(text, "* ")
-
-			sentence := firstSentence(text, 150)
-			if sentence != "" {
-				summaryParts = append(summaryParts, sentence)
-			}
-		}
-
-		if len(summaryParts) > 0 {
-			// Join sentences with space only (each already ends with ".")
-			prose = strings.Join(summaryParts, " ")
-		}
+	if len(summaryParts) > 0 {
+		// Join sentences with space only (each already ends with ".")
+		prose = strings.Join(summaryParts, " ")
 	}
 
 	// Render heading template if provided

@@ -601,7 +601,7 @@ var _ = Describe("buildSummarySection with SummaryConfig", func() {
 		builder = NewSectionBuilder(nil, log)
 	})
 
-	It("should render prose from top 3 bullets only", func() {
+	It("should render prose from top 4 bullets only", func() {
 		bullets := []*career.CVBullet{
 			fixtures.CVBulletWith("b1", "", "First achievement"),
 			fixtures.CVBulletWith("b2", "", "Second achievement"),
@@ -617,15 +617,14 @@ var _ = Describe("buildSummarySection with SummaryConfig", func() {
 		section := builder.buildSummarySection(bullets, 0, nil, 10)
 
 		Expect(section).NotTo(BeNil())
-		// Should contain only top 3 bullets joined with comma
+		// Should contain only top 4 bullets joined with space
 		Expect(section.Summary).To(ContainSubstring("First achievement"))
 		Expect(section.Summary).To(ContainSubstring("Second achievement"))
 		Expect(section.Summary).To(ContainSubstring("Third achievement"))
-		// Should NOT contain 4th and 5th bullets
-		Expect(section.Summary).NotTo(ContainSubstring("Fourth achievement"))
-		Expect(section.Summary).NotTo(ContainSubstring("Fifth achievement"))
+		Expect(section.Summary).To(ContainSubstring("Fourth achievement"))
+		// Should NOT contain 5th bullet
 		// Should use period separation and end with period
-		Expect(section.Summary).To(Equal("First achievement. Second achievement. Third achievement."))
+		Expect(section.Summary).To(Equal("First achievement. Second achievement. Third achievement. Fourth achievement."))
 	})
 
 	It("should render heading template with Title and Years", func() {
@@ -740,111 +739,6 @@ var _ = Describe("buildSummarySection with SummaryConfig", func() {
 		Expect(section.Summary).To(Equal("Achievement with period."))
 	})
 
-	It("should build prose from WhatIBring when provided", func() {
-		bullet := fixtures.CVBulletWith("b1", "", "Fallback bullet text")
-		bullet.SourceEventIDs = []string{"e1"}
-
-		summaryCfg := &SummaryConfig{
-			WhatIBring: []string{
-				"Deep expertise in TUI development with Bubble Tea",
-				"Strong mentoring skills and technical leadership",
-				"Proven track record of delivering production systems",
-			},
-		}
-
-		section := builder.buildSummarySection([]*career.CVBullet{bullet}, 0, summaryCfg, 10)
-
-		Expect(section).NotTo(BeNil())
-		// Should use WhatIBring prose, not bullet text
-		Expect(section.Summary).To(ContainSubstring("Deep expertise in TUI development"))
-		Expect(section.Summary).To(ContainSubstring("Strong mentoring skills"))
-		Expect(section.Summary).To(ContainSubstring("Proven track record"))
-		Expect(section.Summary).NotTo(ContainSubstring("Fallback bullet text"))
-		// Each item should end with period
-		Expect(section.Summary).To(ContainSubstring("Bubble Tea."))
-		Expect(section.Summary).To(ContainSubstring("leadership."))
-		Expect(section.Summary).To(ContainSubstring("systems."))
-	})
-
-	It("should build prose from CoreStrengths when WhatIBring is empty", func() {
-		bullet := fixtures.CVBulletWith("b1", "", "Fallback bullet text")
-		bullet.SourceEventIDs = []string{"e1"}
-
-		summaryCfg := &SummaryConfig{
-			CoreStrengths: []string{"Technical Leadership", "System Architecture", "Go Development"},
-		}
-
-		section := builder.buildSummarySection([]*career.CVBullet{bullet}, 0, summaryCfg, 10)
-
-		Expect(section).NotTo(BeNil())
-		// Should build prose from CoreStrengths
-		Expect(section.Summary).To(ContainSubstring("Expertise in"))
-		Expect(section.Summary).To(ContainSubstring("Technical Leadership"))
-		Expect(section.Summary).To(ContainSubstring("System Architecture"))
-		Expect(section.Summary).To(ContainSubstring("Go Development"))
-		Expect(section.Summary).NotTo(ContainSubstring("Fallback bullet text"))
-	})
-
-	It("should use WhatIBring when both WhatIBring and CoreStrengths provided", func() {
-		bullet := fixtures.CVBulletWith("b1", "", "Fallback bullet text")
-		bullet.SourceEventIDs = []string{"e1"}
-
-		summaryCfg := &SummaryConfig{
-			WhatIBring:    []string{"Primary value proposition"},
-			CoreStrengths: []string{"Strength One", "Strength Two"},
-		}
-
-		section := builder.buildSummarySection([]*career.CVBullet{bullet}, 0, summaryCfg, 10)
-
-		Expect(section).NotTo(BeNil())
-		// Should use WhatIBring as primary prose
-		Expect(section.Summary).To(ContainSubstring("Primary value proposition"))
-		// CoreStrengths should not appear (WhatIBring takes precedence)
-		Expect(section.Summary).NotTo(ContainSubstring("Strength One"))
-	})
-
-	It("should fall back to bullets when both WhatIBring and CoreStrengths are empty", func() {
-		bullets := []*career.CVBullet{
-			fixtures.CVBulletWith("b1", "", "First bullet"),
-			fixtures.CVBulletWith("b2", "", "Second bullet"),
-		}
-		for _, b := range bullets {
-			b.SourceEventIDs = []string{"e1"}
-		}
-
-		summaryCfg := &SummaryConfig{
-			WhatIBring:    []string{},
-			CoreStrengths: []string{},
-		}
-
-		section := builder.buildSummarySection(bullets, 0, summaryCfg, 10)
-
-		Expect(section).NotTo(BeNil())
-		// Should fall back to bullet text
-		Expect(section.Summary).To(ContainSubstring("First bullet"))
-		Expect(section.Summary).To(ContainSubstring("Second bullet"))
-	})
-
-	It("should combine WhatIBring with heading template", func() {
-		bullet := fixtures.CVBulletWith("b1", "", "Fallback bullet text")
-		bullet.SourceEventIDs = []string{"e1"}
-
-		summaryCfg := &SummaryConfig{
-			SummaryHeading: "**{{.Title}} | {{.Years}}+ Years**",
-			ProfileTitle:   "Staff Software Engineer",
-			WhatIBring:     []string{"Deep expertise in Go development"},
-		}
-
-		section := builder.buildSummarySection([]*career.CVBullet{bullet}, 0, summaryCfg, 20)
-
-		Expect(section).NotTo(BeNil())
-		// Should have heading
-		Expect(section.Summary).To(HavePrefix("**Staff Software Engineer | 20+ Years**"))
-		// Should have newline separator
-		Expect(section.Summary).To(ContainSubstring("\n"))
-		// Should have WhatIBring prose
-		Expect(section.Summary).To(ContainSubstring("Deep expertise in Go development"))
-	})
 })
 
 var _ = Describe("firstSentence", func() {
@@ -897,27 +791,30 @@ var _ = Describe("buildSummarySection wall-of-text regression", func() {
 		builder = NewSectionBuilder(nil, log)
 	})
 
-	It("produces short prose from long multi-sentence bullets", func() {
+	It("produces short prose from long multi-sentence bullets (top 4)", func() {
 		bullets := []*career.CVBullet{
 			fixtures.CVBulletWith("b1", "", "Migrated QuikCV backend from Ruby on Rails to Node.js, reducing server costs by 70% and improving response times by 40% through async processing and connection pooling optimisations across the entire platform infrastructure. This was a major undertaking that took six months."),
 			fixtures.CVBulletWith("b2", "", "Founded n-vyro.io IoT platform, delivering production-ready firmware in C/C++ and backend services in Go and Node.js for real-time device control. The platform served thousands of connected devices across multiple regions."),
 			fixtures.CVBulletWith("b3", "", "Adopted Jest early for QuikCV testing, establishing a test-first culture that reduced regression bugs by 60% across the engineering team. This approach was later adopted company-wide as the standard testing methodology."),
+			fixtures.CVBulletWith("b4", "", "Built AI-powered customer service dashboards at Digital Genius integrating ML APIs for intelligent response routing and ticket classification. The system processed millions of customer interactions daily."),
 		}
 		for i, b := range bullets {
 			b.SourceEventIDs = []string{"e1"}
-			b.Rank = float64(3-i) / 3.0
+			b.Rank = float64(4-i) / 4.0
 		}
 
 		section := builder.buildSummarySection(bullets, 0, nil, 10)
 
 		Expect(section).NotTo(BeNil())
-		Expect(len(section.Summary)).To(BeNumerically("<", 500), "summary must be under 500 chars, got: "+section.Summary)
+		Expect(len(section.Summary)).To(BeNumerically("<", 700), "summary must be under 700 chars with 4 bullets, got: "+section.Summary)
 		Expect(section.Summary).To(ContainSubstring("Migrated QuikCV backend"))
 		Expect(section.Summary).To(ContainSubstring("Founded n-vyro.io"))
 		Expect(section.Summary).To(ContainSubstring("Adopted Jest early"))
+		Expect(section.Summary).To(ContainSubstring("Built AI-powered customer service dashboards"))
 		Expect(section.Summary).NotTo(ContainSubstring("This was a major undertaking"))
 		Expect(section.Summary).NotTo(ContainSubstring("The platform served"))
 		Expect(section.Summary).NotTo(ContainSubstring("This approach was later"))
+		Expect(section.Summary).NotTo(ContainSubstring("The system processed"))
 	})
 
 	It("produces short prose from single long bullet without sentence boundary", func() {
@@ -927,7 +824,7 @@ var _ = Describe("buildSummarySection wall-of-text regression", func() {
 		section := builder.buildSummarySection([]*career.CVBullet{bullet}, 0, nil, 5)
 
 		Expect(section).NotTo(BeNil())
-		Expect(len(section.Summary)).To(BeNumerically("<=", 151), "single bullet summary must be under 151 chars")
+		Expect(len(section.Summary)).To(BeNumerically("<", 350), "single bullet summary must be under 350 chars with maxChars=300")
 		Expect(section.Summary).To(HaveSuffix("."))
 	})
 })
