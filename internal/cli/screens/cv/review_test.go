@@ -100,7 +100,7 @@ var _ = Describe("ReviewScreen", func() {
 				Expect(screen.GetCV()).To(Equal(sampleCV))
 				// We can verify the summary is set by checking the View() output contains summary-specific content
 				view := screen.View()
-				Expect(view).To(ContainSubstring("YOUR SELECTIONS"))
+				Expect(view).To(ContainSubstring("🎯 Generation Settings"))
 			})
 
 			It("works with nil summary", func() {
@@ -111,7 +111,7 @@ var _ = Describe("ReviewScreen", func() {
 				Expect(screen.GetCV()).To(Equal(sampleCV))
 				// Without summary, should not show summary-specific content
 				view := screen.View()
-				Expect(view).NotTo(ContainSubstring("YOUR SELECTIONS"))
+				Expect(view).NotTo(ContainSubstring("🎯 Generation Settings"))
 			})
 
 			It("works with nil profile config", func() {
@@ -121,54 +121,61 @@ var _ = Describe("ReviewScreen", func() {
 				Expect(screen).NotTo(BeNil())
 				Expect(screen.GetCV()).To(Equal(sampleCV))
 				view := screen.View()
-				Expect(view).To(ContainSubstring("YOUR SELECTIONS"))
+				Expect(view).To(ContainSubstring("🎯 Generation Settings"))
 			})
 		})
 	})
 
 	Describe("View() rendering", func() {
 		Context("when summary is non-nil", func() {
-			It("contains YOUR SELECTIONS section with profile/audience/tech/format fields", func() {
+			It("contains Generation Settings section with profile/audience/tech/format fields", func() {
 				screen := cv.NewCVReviewScreenWithSummary(sampleCV, sampleProfile, sampleSummary)
 				screen.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 				screen.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 				view := screen.View()
 
-				Expect(view).To(ContainSubstring("YOUR SELECTIONS"))
+				Expect(view).To(ContainSubstring("🎯 Generation Settings"))
 
-				// Check profile settings
-				Expect(view).To(ContainSubstring("Profile Settings"))
-				Expect(view).To(ContainSubstring("Senior Backend Engineer")) // Profile name
-				Expect(view).To(ContainSubstring("Hiring Manager"))          // Selected audience
-
-				// Check technology focus
-				Expect(view).To(ContainSubstring("Technology Focus"))
+				Expect(view).To(ContainSubstring("Senior Backend Engineer"))    // Profile name
+				Expect(view).To(ContainSubstring("Hiring Manager"))             // Selected audience
 				Expect(view).To(ContainSubstring("Backend Development"))        // TechnologyFocus
 				Expect(view).To(ContainSubstring("Go, Docker, Kubernetes"))     // Technologies joined
 				Expect(view).To(ContainSubstring("Microservices Architecture")) // FocusArea
-
-				// Check format options
-				Expect(view).To(ContainSubstring("Format Options"))
-				Expect(view).To(ContainSubstring("comprehensive"))    // CVLength
-				Expect(view).To(ContainSubstring("grouped (15 max)")) // SkillsFormat with limit
+				Expect(view).To(ContainSubstring("comprehensive"))              // CVLength
+				Expect(view).To(ContainSubstring("grouped (15 max)"))           // SkillsFormat with limit
 			})
 
-			It("contains GENERATED OUTPUT section with section count, bullet count, and sources", func() {
+			It("contains Statistics section from the generated CV", func() {
 				screen := cv.NewCVReviewScreenWithSummary(sampleCV, sampleProfile, sampleSummary)
 				screen.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 				screen.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 				view := screen.View()
 
-				Expect(view).To(ContainSubstring("GENERATED OUTPUT"))
-
-				// Check statistics
 				Expect(view).To(ContainSubstring("📊 Statistics"))
-				Expect(view).To(ContainSubstring("3 sections"))         // SectionCount
-				Expect(view).To(ContainSubstring("5 bullet points"))    // TotalBullets
-				Expect(view).To(ContainSubstring("8 events, 12 facts")) // SourceEventCount, SourceFactCount
+				Expect(view).To(ContainSubstring("Source Events:"))
+				Expect(view).To(ContainSubstring("Source Facts:"))
+				Expect(view).To(ContainSubstring("Sections:"))
+				Expect(view).To(ContainSubstring("Total Bullets:"))
 			})
 
-			It("handles empty or default values gracefully", func() {
+			It("displays the CV summary section when present", func() {
+				summarySection := fixtures.CVSectionWithSummary("section-summary", "test-cv-123", "**Senior Engineer** with expertise in Go and distributed systems.")
+				cvWithSummary := fixtures.CVViewWithSections("test-cv-123", []*career.CVSection{summarySection})
+				cvWithSummary.Name = "Test CV"
+				cvWithSummary.TargetRole = "Engineer"
+				cvWithSummary.TargetAudience = "Hiring Manager"
+
+				screen := cv.NewCVReviewScreenWithSummary(cvWithSummary, sampleProfile, sampleSummary)
+				screen.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+				view := screen.View()
+
+				Expect(view).To(ContainSubstring("📝 Summary"))
+				Expect(view).To(ContainSubstring("Senior Engineer"))
+				Expect(view).To(ContainSubstring("distributed"))
+				Expect(view).To(ContainSubstring("systems"))
+			})
+
+			It("handles empty or default values gracefully by omitting them", func() {
 				emptySummary := &cv.GenerationSummaryScreen{
 					SelectedProfile:  nil, // nil profile
 					SelectedAudience: "",  // empty audience
@@ -188,14 +195,19 @@ var _ = Describe("ReviewScreen", func() {
 				screen.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 				view := screen.View()
 
-				Expect(view).To(ContainSubstring("YOUR SELECTIONS"))
-				Expect(view).To(ContainSubstring("GENERATED OUTPUT"))
+				// The Generation Settings section should still appear
+				Expect(view).To(ContainSubstring("🎯 Generation Settings"))
 
-				// Should show dashes for empty values
-				Expect(view).To(ContainSubstring("Profile: ")) // Should handle nil profile gracefully
-				Expect(view).To(ContainSubstring("Technologies: -"))
-				Expect(view).To(ContainSubstring("Skills: -"))
-				Expect(view).To(ContainSubstring("CV Length: -"))
+				// Empty values should be omitted, not shown as dashes
+				Expect(view).NotTo(ContainSubstring("Profile:"))
+				Expect(view).NotTo(ContainSubstring("Technologies:"))
+				Expect(view).NotTo(ContainSubstring("Skills Format:"))
+				Expect(view).NotTo(ContainSubstring("CV Length:"))
+
+				// Should still show Personal Details, CV Details, and Statistics
+				Expect(view).To(ContainSubstring("👤 Personal Details"))
+				Expect(view).To(ContainSubstring("📄 CV Details"))
+				Expect(view).To(ContainSubstring("📊 Statistics"))
 			})
 		})
 

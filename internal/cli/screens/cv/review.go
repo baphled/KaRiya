@@ -240,87 +240,87 @@ func (s *ReviewScreen) renderContent() string {
 
 func (s *ReviewScreen) renderSummaryContent() string {
 	var b strings.Builder
-	b.WriteString(s.renderSelectionsSummary())
-	b.WriteString(s.renderSummaryDivider())
-	b.WriteString(s.renderGeneratedSummary())
-	b.WriteString(s.renderSummaryDivider())
+
+	b.WriteString(s.renderPersonalDetails())
+	b.WriteString(s.renderCVDetails())
+	b.WriteString(s.renderSummarySection())
+	b.WriteString(s.renderGenerationSettings())
+	b.WriteString(s.renderStatistics())
+
 	return b.String()
 }
 
-func (s *ReviewScreen) renderSummaryDivider() string {
-	return strings.Repeat("─", 60) + "\n\n"
+func (s *ReviewScreen) renderSummarySection() string {
+	summaryText := s.getSummaryText()
+	if summaryText == "" {
+		return ""
+	}
+
+	theme := s.getTheme()
+	sectionTitleStyle := lipgloss.NewStyle().Bold(true).Foreground(theme.AccentColor())
+
+	var b strings.Builder
+	b.WriteString(sectionTitleStyle.Render("📝 Summary"))
+	b.WriteString("\n")
+	b.WriteString(strings.Repeat("─", 60))
+	b.WriteString("\n")
+
+	for _, line := range strings.Split(summaryText, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			b.WriteString("\n")
+			continue
+		}
+		wrapped := wordWrap(line, 56)
+		for _, wl := range strings.Split(wrapped, "\n") {
+			b.WriteString("  " + wl + "\n")
+		}
+	}
+	b.WriteString("\n")
+
+	return b.String()
 }
 
-func (s *ReviewScreen) renderSelectionsSummary() string {
+func (s *ReviewScreen) renderGenerationSettings() string {
 	theme := s.getTheme()
 	sectionTitleStyle := lipgloss.NewStyle().Bold(true).Foreground(theme.AccentColor())
 	labelStyle := lipgloss.NewStyle().Foreground(theme.SecondaryColor())
 	valueStyle := lipgloss.NewStyle().Foreground(theme.ForegroundColor())
 
-	profileName := ""
+	var b strings.Builder
+	b.WriteString(sectionTitleStyle.Render("🎯 Generation Settings"))
+	b.WriteString("\n")
+	b.WriteString(strings.Repeat("─", 60))
+	b.WriteString("\n")
+
 	if s.summary.SelectedProfile != nil {
-		profileName = s.summary.SelectedProfile.Name
+		profileName := s.summary.SelectedProfile.Name
+		b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Profile:"), valueStyle.Render(profileName)))
 	}
-
-	technologies := strings.Join(s.summary.Technologies, ", ")
-	if technologies == "" {
-		technologies = "-"
+	if s.summary.SelectedAudience != "" {
+		b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Audience:"), valueStyle.Render(s.summary.SelectedAudience)))
 	}
-
-	skillsText := s.summary.SkillsFormat
-	if s.summary.SkillsLimit > 0 {
-		skillsText = fmt.Sprintf("%s (%d max)", skillsText, s.summary.SkillsLimit)
+	if s.summary.TechnologyFocus != "" {
+		b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Tech Focus:"), valueStyle.Render(s.summary.TechnologyFocus)))
 	}
-	if skillsText == "" {
-		skillsText = "-"
+	if len(s.summary.Technologies) > 0 {
+		techText := strings.Join(s.summary.Technologies, ", ")
+		b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Technologies:"), valueStyle.Render(techText)))
 	}
-
-	cvLength := s.summary.CVLength
-	if cvLength == "" {
-		cvLength = "-"
+	if s.summary.FocusArea != "" {
+		b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Focus Area:"), valueStyle.Render(s.summary.FocusArea)))
 	}
-
-	var b strings.Builder
-	b.WriteString(sectionTitleStyle.Render("YOUR SELECTIONS"))
-	b.WriteString("\n\n")
-
-	b.WriteString(valueStyle.Render("  Profile Settings"))
+	if s.summary.SkillsFormat != "" {
+		skillsText := s.summary.SkillsFormat
+		if s.summary.SkillsLimit > 0 {
+			skillsText = fmt.Sprintf("%s (%d max)", skillsText, s.summary.SkillsLimit)
+		}
+		b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Skills Format:"), valueStyle.Render(skillsText)))
+	}
+	if s.summary.CVLength != "" {
+		b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("CV Length:"), valueStyle.Render(s.summary.CVLength)))
+	}
 	b.WriteString("\n")
-	b.WriteString(fmt.Sprintf("    %s %s\n", labelStyle.Render("Profile:"), valueStyle.Render(profileName)))
-	b.WriteString(fmt.Sprintf("    %s %s\n\n", labelStyle.Render("Audience:"), valueStyle.Render(s.summary.SelectedAudience)))
-
-	b.WriteString(valueStyle.Render("  Technology Focus"))
-	b.WriteString("\n")
-	b.WriteString(fmt.Sprintf("    %s %s\n", labelStyle.Render("Focus:"), valueStyle.Render(s.summary.TechnologyFocus)))
-	b.WriteString(fmt.Sprintf("    %s %s\n", labelStyle.Render("Technologies:"), valueStyle.Render(technologies)))
-	b.WriteString(fmt.Sprintf("    %s %s\n\n", labelStyle.Render("Area:"), valueStyle.Render(s.summary.FocusArea)))
-
-	b.WriteString(valueStyle.Render("  Format Options"))
-	b.WriteString("\n")
-	b.WriteString(fmt.Sprintf("    %s %s\n", labelStyle.Render("CV Length:"), valueStyle.Render(cvLength)))
-	b.WriteString(fmt.Sprintf("    %s %s\n\n", labelStyle.Render("Skills:"), valueStyle.Render(skillsText)))
-
-	return b.String()
-}
-
-func (s *ReviewScreen) renderGeneratedSummary() string {
-	theme := s.getTheme()
-	sectionTitleStyle := lipgloss.NewStyle().Bold(true).Foreground(theme.AccentColor())
-	labelStyle := lipgloss.NewStyle().Foreground(theme.SecondaryColor())
-	valueStyle := lipgloss.NewStyle().Foreground(theme.ForegroundColor())
-
-	sectionsText := fmt.Sprintf("%d sections", s.summary.SectionCount)
-	bulletsText := fmt.Sprintf("%d bullet points", s.summary.TotalBullets)
-	sourcesText := fmt.Sprintf("%d events, %d facts", s.summary.SourceEventCount, s.summary.SourceFactCount)
-
-	var b strings.Builder
-	b.WriteString(sectionTitleStyle.Render("GENERATED OUTPUT"))
-	b.WriteString("\n\n")
-	b.WriteString(valueStyle.Render("  📊 Statistics"))
-	b.WriteString("\n")
-	b.WriteString(fmt.Sprintf("    %s %s\n", labelStyle.Render("Sections:"), valueStyle.Render(sectionsText)))
-	b.WriteString(fmt.Sprintf("    %s %s\n", labelStyle.Render("Content:"), valueStyle.Render(bulletsText)))
-	b.WriteString(fmt.Sprintf("    %s %s\n\n", labelStyle.Render("Sources:"), valueStyle.Render(sourcesText)))
 
 	return b.String()
 }
@@ -478,4 +478,17 @@ func (s *ReviewScreen) getTheme() themes.Theme {
 		}
 	}
 	return themes.NewDefaultTheme()
+}
+
+// getSummaryText extracts the summary text from the CV sections.
+func (s *ReviewScreen) getSummaryText() string {
+	if s.cv == nil {
+		return ""
+	}
+	for _, section := range s.cv.Sections {
+		if section.SectionType == "summary" && section.Summary != "" {
+			return section.Summary
+		}
+	}
+	return ""
 }
