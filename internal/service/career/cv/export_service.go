@@ -22,6 +22,17 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// audienceSummaryPrefixes maps audience identifiers to summary prefix text.
+// When generating highlights for a specific audience, these prefixes replace the
+// default profile summary to frame the candidate appropriately.
+// Empty string or "master" uses the profile summary as-is (no prefix override).
+var audienceSummaryPrefixes = map[string]string{
+	"technical-peer":      "Technically deep engineer with",
+	"hiring-manager":      "Results-driven engineer delivering",
+	"recruiter":           "Versatile software engineer with",
+	"engineering-manager": "Collaborative engineer who",
+}
+
 // ClipboardWriter defines the interface for clipboard operations.
 type ClipboardWriter interface {
 	WriteAll(text string) error
@@ -872,6 +883,82 @@ func (es *ExportService) exportHighlightsWithProfile(ctx context.Context, cv *ca
 	}
 }
 
+// ExportHighlightsForAudience exports a highlights-format CV tailored to a specific audience.
+// It uses GetTopBulletsForAudience instead of getTopBulletsByConfidence and generates
+// an audience-specific summary prefix. The existing exportHighlightsWithProfile remains
+// unchanged for backward compatibility.
+//
+// Expected:
+//   - view must be a valid CVView with populated sections.
+//   - profile must be a valid ProfileConfig (nil uses defaults).
+//   - audience identifies the target audience for bullet scoring and summary prefix.
+//
+// Returns:
+//   - A string containing the formatted highlights CV in plain text.
+//
+// Side effects:
+//   - None.
+func ExportHighlightsForAudience(view career.CVView, profile config.ProfileConfig, audience string) string {
+	var buf bytes.Buffer
+	narrative := NarrativeProfileFromConfig(&profile)
+
+	buf.WriteString(strings.ToUpper(view.Name) + "\n")
+	buf.WriteString(strings.Repeat("=", len(view.Name)) + "\n")
+	buf.WriteString(fmt.Sprintf("%s | %s | %s\n\n", narrative.Role, narrative.Location, narrative.Email))
+
+	summaryPrefix, hasPrefix := audienceSummaryPrefixes[audience]
+	if hasPrefix {
+		buf.WriteString(summaryPrefix + "\n\n")
+	} else {
+		summary := getSummaryFromSections(view.Sections)
+		if summary != "" {
+			buf.WriteString(summary + "\n\n")
+		}
+	}
+
+	buf.WriteString(strings.Repeat("-", 60) + "\n\n")
+
+	buf.WriteString("KEY CAPABILITIES\n")
+	buf.WriteString(strings.Repeat("-", 16) + "\n\n")
+	if len(narrative.CoreStrengths) > 0 {
+		maxStrengths := 6
+		if len(narrative.CoreStrengths) < maxStrengths {
+			maxStrengths = len(narrative.CoreStrengths)
+		}
+		for i := range maxStrengths {
+			buf.WriteString(fmt.Sprintf("  * %s\n", narrative.CoreStrengths[i]))
+		}
+	} else {
+		buf.WriteString("  * Technical leadership and architecture\n")
+		buf.WriteString("  * System design and optimization\n")
+		buf.WriteString("  * Cross-functional collaboration\n")
+	}
+	buf.WriteString("\n")
+
+	buf.WriteString("SELECTED HIGHLIGHTS\n")
+	buf.WriteString(strings.Repeat("-", 19) + "\n\n")
+
+	topBullets := GetTopBulletsForAudience(view, audience, 5)
+	for _, bullet := range topBullets {
+		buf.WriteString(fmt.Sprintf("  * %s\n", bullet.Text))
+	}
+	buf.WriteString("\n")
+
+	if len(narrative.Languages) > 0 || len(narrative.Systems) > 0 {
+		buf.WriteString("TECHNOLOGIES\n")
+		buf.WriteString(strings.Repeat("-", 12) + "\n\n")
+		if len(narrative.Languages) > 0 {
+			buf.WriteString(fmt.Sprintf("Languages: %s\n", strings.Join(narrative.Languages, ", ")))
+		}
+		if len(narrative.Systems) > 0 {
+			buf.WriteString(fmt.Sprintf("Systems: %s\n", strings.Join(narrative.Systems, ", ")))
+		}
+		buf.WriteString("\n")
+	}
+
+	return buf.String()
+}
+
 // exportHighlightsText exports highlights CV to plain text format.
 func (es *ExportService) exportHighlightsText(ctx context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet, profileCfg *config.ProfileConfig) (string, error) {
 	var buf bytes.Buffer
@@ -1017,6 +1104,61 @@ func (es *ExportService) getTopBulletsByConfidence(bullets map[string][]*career.
 		return allBullets[:n]
 	}
 	return allBullets
+}
+
+// GetTopBulletsForAudience returns the top N bullets scored by audience relevance.
+// Each bullet is scored as confidence * audienceRelevance[audience] when audience
+// data exists. Falls back to confidence-only when AudienceRelevance is nil, empty,
+// or the audience key is missing.
+//
+// Expected:
+//   - view must contain sections with content groups containing bullets.
+//   - audience identifies which audience relevance score to use.
+//   - limit must be a positive integer.
+//
+// Returns:
+//   - A slice of CVBullet pointers sorted by combined score descending, limited to limit.
+//
+// Side effects:
+//   - None.
+func GetTopBulletsForAudience(view career.CVView, audience string, limit int) []*career.CVBullet {
+	var allBullets []*career.CVBullet
+	for _, section := range view.Sections {
+		for _, group := range section.Content {
+			allBullets = append(allBullets, group.Bullets...)
+		}
+	}
+
+	slices.SortFunc(allBullets, func(a, b *career.CVBullet) int {
+		scoreA := audienceScore(a, audience)
+		scoreB := audienceScore(b, audience)
+		if scoreA > scoreB {
+			return -1
+		}
+		if scoreA < scoreB {
+			return 1
+		}
+		return 0
+	})
+
+	if len(allBullets) > limit {
+		return allBullets[:limit]
+	}
+	return allBullets
+}
+
+// audienceScore computes the combined score for a bullet given an audience.
+// Returns confidence * audienceRelevance[audience] when audience data exists,
+// or confidence alone as fallback.
+func audienceScore(bullet *career.CVBullet, audience string) float64 {
+	if len(bullet.AudienceRelevance) == 0 {
+		return bullet.Confidence
+	}
+	relevance, ok := bullet.AudienceRelevance[audience]
+	if !ok {
+		return bullet.Confidence
+	}
+	return bullet.Confidence * relevance
 }
 
 // exportNarrativeWithProfile exports using the narrative CV structure with optional profile config.

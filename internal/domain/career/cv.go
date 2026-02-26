@@ -230,14 +230,15 @@ type CVBullet struct {
 	Confidence      float64  `json:"confidence"`
 
 	// Enhanced fields from BulletGenerator (Task 44)
-	EnhancedText   string                       `json:"enhanced_text,omitempty"`
-	Category       constants.CompetencyCategory `json:"category,omitempty"`
-	RoleScore      float64                      `json:"role_score,omitempty"`
-	AudienceScore  float64                      `json:"audience_score,omitempty"`
-	MetricScore    float64                      `json:"metric_score,omitempty"`
-	ImpactScore    float64                      `json:"impact_score,omitempty"`
-	ImpactLevel    string                       `json:"impact_level,omitempty"`
-	KeywordMatches []string                     `json:"keyword_matches,omitempty"`
+	EnhancedText      string                       `json:"enhanced_text,omitempty"`
+	Category          constants.CompetencyCategory `json:"category,omitempty"`
+	RoleScore         float64                      `json:"role_score,omitempty"`
+	AudienceScore     float64                      `json:"audience_score,omitempty"`
+	MetricScore       float64                      `json:"metric_score,omitempty"`
+	ImpactScore       float64                      `json:"impact_score,omitempty"`
+	ImpactLevel       string                       `json:"impact_level,omitempty"`
+	KeywordMatches    []string                     `json:"keyword_matches,omitempty"`
+	AudienceRelevance map[string]float64           `json:"audience_relevance,omitempty" yaml:"audience_relevance,omitempty"`
 }
 
 // Validate checks if the CVBullet meets all defined criteria.
