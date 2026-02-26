@@ -502,6 +502,41 @@ display:
 			Expect(loaded.Profile.LinkedIn).To(Equal("ada-lovelace"))
 			Expect(loaded.Profile.Country).To(Equal("UK"))
 		})
+
+		It("should load SummaryHeading from YAML", func() {
+			yamlContent := "profile:\n  summary_heading: \"**{{.Title}} | {{.Years}}+ Years**\"\n"
+			err := os.WriteFile(configPath, []byte(yamlContent), 0o600)
+			Expect(err).NotTo(HaveOccurred())
+
+			cfg, err := config.LoadConfigFromPath(configPath)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(cfg.Profile.SummaryHeading).To(Equal("**{{.Title}} | {{.Years}}+ Years**"))
+		})
+
+		It("should unmarshal with empty string when summary_heading absent", func() {
+			yamlContent := "profile:\n  first_name: Test\n"
+			err := os.WriteFile(configPath, []byte(yamlContent), 0o600)
+			Expect(err).NotTo(HaveOccurred())
+
+			cfg, err := config.LoadConfigFromPath(configPath)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(cfg.Profile.SummaryHeading).To(BeEmpty())
+		})
+
+		It("should round-trip SummaryHeading through save/load", func() {
+			cfg := config.DefaultConfig()
+			cfg.Profile.SummaryHeading = "**{{.Title}} | {{.Specialty}}**"
+
+			err := config.SaveConfigToPath(cfg, configPath)
+			Expect(err).NotTo(HaveOccurred())
+
+			loaded, err := config.LoadConfigFromPath(configPath)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(loaded.Profile.SummaryHeading).To(Equal("**{{.Title}} | {{.Specialty}}**"))
+		})
 	})
 
 	Describe("ScoringConfig", func() {

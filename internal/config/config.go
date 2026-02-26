@@ -101,12 +101,14 @@ type ProfileConfig struct {
 	Systems       []string `yaml:"systems"`
 	WhatIBring    []string `yaml:"what_i_bring"`
 	// New profile fields
-	FirstName string `yaml:"first_name,omitempty"`
-	LastName  string `yaml:"last_name,omitempty"`
-	Prefix    string `yaml:"prefix,omitempty"`
-	Phone     string `yaml:"phone,omitempty"`
-	LinkedIn  string `yaml:"linkedin,omitempty"`
-	Country   string `yaml:"country,omitempty"`
+	FirstName      string `yaml:"first_name,omitempty"`
+	LastName       string `yaml:"last_name,omitempty"`
+	Prefix         string `yaml:"prefix,omitempty"`
+	Phone          string `yaml:"phone,omitempty"`
+	LinkedIn       string `yaml:"linkedin,omitempty"`
+	Country        string `yaml:"country,omitempty"`
+	SkillsLimit    int    `yaml:"skills_limit,omitempty"`
+	SummaryHeading string `yaml:"summary_heading,omitempty"`
 }
 
 // CVConfig contains CV generation configuration.
