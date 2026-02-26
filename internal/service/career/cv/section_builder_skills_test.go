@@ -47,7 +47,7 @@ var _ = Describe("DefaultSectionBuilder - Skills Section", func() {
 
 		Context("Language Agnostic (no selected technologies)", func() {
 			It("should create skills section with all event skills", func() {
-				sections, err := builder.BuildSections(ctx, bullets, events, facts, "principal", &SkillsFormatConfig{Format: "flat", Limit: 0, SelectedTechnologies: nil})
+				sections, err := builder.BuildSections(ctx, bullets, events, facts, "principal", &SkillsFormatConfig{Format: "flat", Limit: 0, SelectedTechnologies: nil}, nil)
 
 				Expect(err).NotTo(HaveOccurred())
 
@@ -84,7 +84,7 @@ var _ = Describe("DefaultSectionBuilder - Skills Section", func() {
 			It("should prioritize selected technologies", func() {
 				selectedTechs := []string{"Go", "Docker"}
 
-				sections, err := builder.BuildSections(ctx, bullets, events, facts, "principal", &SkillsFormatConfig{Format: "flat", Limit: 0, SelectedTechnologies: selectedTechs})
+				sections, err := builder.BuildSections(ctx, bullets, events, facts, "principal", &SkillsFormatConfig{Format: "flat", Limit: 0, SelectedTechnologies: selectedTechs}, nil)
 
 				Expect(err).NotTo(HaveOccurred())
 
@@ -116,7 +116,7 @@ var _ = Describe("DefaultSectionBuilder - Skills Section", func() {
 			It("should show skill names without counts", func() {
 				selectedTechs := []string{"Go"}
 
-				sections, err := builder.BuildSections(ctx, bullets, events, facts, "principal", &SkillsFormatConfig{Format: "flat", Limit: 0, SelectedTechnologies: selectedTechs})
+				sections, err := builder.BuildSections(ctx, bullets, events, facts, "principal", &SkillsFormatConfig{Format: "flat", Limit: 0, SelectedTechnologies: selectedTechs}, nil)
 
 				Expect(err).NotTo(HaveOccurred())
 
@@ -139,7 +139,7 @@ var _ = Describe("DefaultSectionBuilder - Skills Section", func() {
 			It("should prominently feature the selected technology", func() {
 				selectedTechs := []string{"Go"}
 
-				sections, err := builder.BuildSections(ctx, bullets, events, facts, "principal", &SkillsFormatConfig{Format: "flat", Limit: 0, SelectedTechnologies: selectedTechs})
+				sections, err := builder.BuildSections(ctx, bullets, events, facts, "principal", &SkillsFormatConfig{Format: "flat", Limit: 0, SelectedTechnologies: selectedTechs}, nil)
 
 				Expect(err).NotTo(HaveOccurred())
 
@@ -175,7 +175,7 @@ var _ = Describe("DefaultSectionBuilder - Skills Section", func() {
 			It("should show unique skills without duplicates", func() {
 				selectedTechs := []string{"Go"}
 
-				sections, err := builder.BuildSections(ctx, bullets, events, facts, "principal", &SkillsFormatConfig{Format: "flat", Limit: 0, SelectedTechnologies: selectedTechs})
+				sections, err := builder.BuildSections(ctx, bullets, events, facts, "principal", &SkillsFormatConfig{Format: "flat", Limit: 0, SelectedTechnologies: selectedTechs}, nil)
 
 				Expect(err).NotTo(HaveOccurred())
 
@@ -202,7 +202,7 @@ var _ = Describe("DefaultSectionBuilder - Skills Section", func() {
 			})
 
 			It("should return nil skills section", func() {
-				sections, err := builder.BuildSections(ctx, bullets, events, facts, "principal", &SkillsFormatConfig{Format: "flat", Limit: 0, SelectedTechnologies: nil})
+				sections, err := builder.BuildSections(ctx, bullets, events, facts, "principal", &SkillsFormatConfig{Format: "flat", Limit: 0, SelectedTechnologies: nil}, nil)
 
 				Expect(err).NotTo(HaveOccurred())
 

@@ -411,6 +411,13 @@ type CVConfig struct {
 	SkillsFormat string `yaml:"skills_format,omitempty" json:"skills_format,omitempty"`
 	SkillsLimit  int    `yaml:"skills_limit,omitempty" json:"skills_limit,omitempty"`
 
+	// SummaryHeading is a Go text/template string for the CV summary heading.
+	// Template variables: {{.Title}} (profile title), {{.Years}} (computed experience years).
+	// Empty string means no heading — prose only.
+	SummaryHeading string `yaml:"summary_heading,omitempty" json:"summary_heading,omitempty"`
+	// ProfileTitle is the profile's display title (e.g. "Senior Ruby on Rails Developer").
+	ProfileTitle string `yaml:"profile_title,omitempty" json:"profile_title,omitempty"`
+
 	CreatedAt time.Time `yaml:"created_at" json:"created_at"`
 	UpdatedAt time.Time `yaml:"updated_at" json:"updated_at"`
 }

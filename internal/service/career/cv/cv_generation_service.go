@@ -193,7 +193,11 @@ func (svc *DefaultCVGenerationService) GenerateCVFromConfig(ctx context.Context,
 		Limit:                config.SkillsLimit,
 		SelectedTechnologies: config.SelectedTechnologies,
 	}
-	sections, err := svc.sectionBuilder.BuildSections(ctx, cvBullets, events, facts, config.TargetRole, skillsConfig)
+	summaryCfg := &SummaryConfig{
+		SummaryHeading: config.SummaryHeading,
+		ProfileTitle:   config.ProfileTitle,
+	}
+	sections, err := svc.sectionBuilder.BuildSections(ctx, cvBullets, events, facts, config.TargetRole, skillsConfig, summaryCfg)
 	if err != nil {
 		svc.logger.Error("Failed to build sections: %v", err)
 		return nil, fmt.Errorf("failed to build sections: %w", err)
