@@ -299,7 +299,13 @@ func (i *Intent) exportCVAsync() tea.Cmd {
 			content, err = i.context.ExportService.ExportToMarkdown(ctx, i.generatedCV, sections, bulletsMap)
 			exportFormat = cv.ExportFormatMarkdown
 		case ExportFormatYAML:
-			content, err = i.context.ExportService.ExportToYAML(ctx, i.generatedCV, sections, i.context.ProfileConfig)
+			profileCfg := i.context.ProfileConfig
+			if profileCfg != nil {
+				cfgCopy := *profileCfg
+				cfgCopy.SkillsLimit = i.selectedSkillsLimit
+				profileCfg = &cfgCopy
+			}
+			content, err = i.context.ExportService.ExportToYAML(ctx, i.generatedCV, sections, profileCfg)
 			exportFormat = cv.ExportFormatYAML
 		default:
 			return ExportCompleteMsg{Path: "", Error: errors.New("unknown export format")}

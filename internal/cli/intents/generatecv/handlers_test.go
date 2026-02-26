@@ -580,9 +580,9 @@ var _ = Describe("Handlers", func() {
 				Expect(view).To(ContainSubstring("Audience: hiring_manager"))
 			})
 
-			It("should display YOUR SELECTIONS section header", func() {
+			It("should display generation settings section header", func() {
 				view := intentWithProfile.View()
-				Expect(view).To(ContainSubstring("YOUR SELECTIONS"))
+				Expect(view).To(ContainSubstring("🎯 Generation Settings"))
 			})
 		})
 	})
