@@ -86,7 +86,6 @@ var genericValuePropositions = []string{
 //
 // Side effects:
 //   - None.
-// Returns a list of 3-5 strengths based on the user's competency categories.
 func (s *ProfileInferenceService) InferCoreStrengths(
 	events []*career.Event,
 	facts []*career.Fact,
@@ -151,7 +150,6 @@ func (s *ProfileInferenceService) InferCoreStrengths(
 //
 // Side effects:
 //   - None.
-// Returns a list of 3-5 value propositions based on the user's work style and competencies.
 func (s *ProfileInferenceService) InferValuePropositions(
 	events []*career.Event,
 	facts []*career.Fact,
@@ -225,7 +223,6 @@ func (s *ProfileInferenceService) InferValuePropositions(
 //
 // Side effects:
 //   - None.
-// Returns structured technology strings for Languages, Frontend, and Systems.
 func (s *ProfileInferenceService) InferTechnologies(
 	_ []*career.Event,
 	skills []*career.Skill,

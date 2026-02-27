@@ -794,8 +794,6 @@ func (es *ExportService) Export(ctx context.Context, cv *career.CVView, sections
 //
 // Side effects:
 //   - None.
-// For YAML format, always uses standard structure (it's a data format).
-// If profileCfg is nil, uses default profile.
 func (es *ExportService) ExportWithProfile(ctx context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet, structure Structure, format ExportFormat, profileCfg *config.ProfileConfig) (string, error) {
 	if cv == nil {
 		return "", errors.New("CV view is nil")
