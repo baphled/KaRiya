@@ -47,7 +47,7 @@ var _ = Describe("ExportService", func() {
 
 	BeforeEach(func() {
 		log = logger.New(io.Discard, logger.InfoLevel)
-		service = NewExportService(log)
+		service = NewExportService(log, nil, nil)
 		ctx = context.Background()
 	})
 
@@ -353,7 +353,7 @@ var _ = Describe("ExportService", func() {
 
 			BeforeEach(func() {
 				mockClipboard = &MockClipboard{}
-				service = NewExportServiceWithClipboard(log, mockClipboard)
+				service = NewExportServiceWithClipboard(log, mockClipboard, nil, nil)
 			})
 
 			It("should copy content to clipboard when supported", func() {

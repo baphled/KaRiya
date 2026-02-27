@@ -51,6 +51,7 @@ type Intent struct {
 	exportedPath         string
 	exportError          error
 	isExporting          bool
+	exportReturnState    State
 
 	// --- Modals ---
 

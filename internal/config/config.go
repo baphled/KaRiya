@@ -38,7 +38,7 @@ func isTestEnvironment() bool {
 
 // requireTestIsolation panics if we're in a test environment but the config
 // path override hasn't been set. This prevents tests from accidentally
-// writing to the user's real config file (BUG-007 prevention).
+// writing to the user's real config file (prevents test pollution).
 func requireTestIsolation(operation string) {
 	if !isTestEnvironment() {
 		return
@@ -50,7 +50,7 @@ func requireTestIsolation(operation string) {
 
 	if !hasOverride {
 		panic(fmt.Sprintf(
-			"BUG-007 PROTECTION: %s called in test without config isolation!\n\n"+
+			"Test isolation required: %s called in test without config isolation!\n\n"+
 				"Tests must isolate config writes to prevent polluting ~/.kariya/config.yaml.\n\n"+
 				"Fix: Call config.SetConfigPathForTesting(path) before using %s,\n"+
 				"     or use harness.Setup()/harness.SetupWithOnboarding() which handle isolation.\n\n"+
@@ -311,6 +311,13 @@ func ResetConfigPath() {
 // GetConfigPath returns the path to the config file.
 // If SetConfigPathForTesting was called, returns the overridden path.
 // Otherwise, returns the default path: ~/.kariya/config.yaml.
+//
+// Returns:
+//   - string: The path to the config file.
+//   - error: An error if the home directory cannot be determined.
+//
+// Side effects:
+//   - None.
 func GetConfigPath() (string, error) {
 	configPathMu.RLock()
 	override := configPathOverride
@@ -330,6 +337,13 @@ func GetConfigPath() (string, error) {
 
 // LoadConfig loads configuration from the default location.
 // In test environments, this will panic if SetConfigPathForTesting hasn't been called.
+//
+// Returns:
+//   - *Config: The loaded configuration.
+//   - error: An error if the config cannot be loaded.
+//
+// Side effects:
+//   - Panics in test environments if config path isolation is not set.
 func LoadConfig() (*Config, error) {
 	requireTestIsolation("config.LoadConfig()")
 
@@ -342,6 +356,17 @@ func LoadConfig() (*Config, error) {
 }
 
 // LoadConfigFromPath loads configuration from a specific file path.
+//
+// Expected:
+//   - path: A valid file path string.
+//
+// Returns:
+//   - *Config: The loaded configuration, or default config if file doesn't exist.
+//   - error: An error if the config cannot be read or parsed.
+//
+// Side effects:
+//   - Reads from the filesystem.
+//   - Applies default values to missing fields.
 func LoadConfigFromPath(path string) (*Config, error) {
 	// Clean path to prevent path traversal attacks
 	cleanPath := filepath.Clean(path)
@@ -364,6 +389,9 @@ func LoadConfigFromPath(path string) (*Config, error) {
 
 	// Apply defaults for any missing values
 	applyDefaults(&cfg)
+
+	// Migrate legacy Name field to structured FirstName/LastName/Prefix
+	MigrateProfileConfig(&cfg)
 
 	return &cfg, nil
 }
@@ -521,11 +549,12 @@ func SaveConfigToPath(cfg *Config, path string) error {
 
 // MigrateProfileConfig migrates legacy Name field to FirstName/LastName/Prefix.
 //
-// It detects if FirstName and LastName are empty but Name is populated,
-// then parses the Name field to extract prefix, first name, and last name.
+// This function parses the Name field and populates FirstName, LastName, and Prefix
+// based on common name formats. Migration only occurs when Name is populated AND
+// both FirstName and LastName are empty (indicating a legacy config).
 //
-// Returns true if migration was performed, false otherwise (including when
-// Name is empty or FirstName is already set).
+// If FirstName or LastName is already set, migration is skipped to avoid overwriting
+// user data.
 //
 // Supported name formats:
 //   - "John Doe" -> Prefix="", FirstName="John", LastName="Doe"
@@ -535,9 +564,18 @@ func SaveConfigToPath(cfg *Config, path string) error {
 //   - "Mary-Jane Watson-Parker" -> Prefix="", FirstName="Mary-Jane", LastName="Watson-Parker"
 //
 // Supported prefixes: Dr., Prof., Mr., Mrs., Ms.
+//
+// Expected:
+//   - cfg: A valid Config pointer.
+//
+// Returns:
+//   - bool: True if migration was performed, false if skipped.
+//
+// Side effects:
+//   - Modifies cfg.Profile.FirstName, cfg.Profile.LastName, and cfg.Profile.Prefix.
 func MigrateProfileConfig(cfg *Config) bool {
-	// Migration is needed only when Name is populated but FirstName is empty
-	if cfg.Profile.Name == "" || cfg.Profile.FirstName != "" {
+	// Migration is needed only when Name is populated but both FirstName and LastName are empty
+	if cfg.Profile.Name == "" || cfg.Profile.FirstName != "" || cfg.Profile.LastName != "" {
 		return false
 	}
 

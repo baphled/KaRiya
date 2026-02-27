@@ -154,11 +154,6 @@ func NewCVConfigForm(
 		)
 	}
 
-	// Set default skills limit if not already set
-	if data.SkillsLimit == 0 {
-		data.SkillsLimit = 5
-	}
-
 	// Build skills limit options for the select
 	skillsLimitOpts := make([]huh.Option[int], 0, 5)
 	for _, opt := range SkillsLimitOptions() {

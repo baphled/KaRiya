@@ -48,11 +48,11 @@ var _ = Describe("CVConfigForm", func() {
 			Expect(form).NotTo(BeNil())
 		})
 
-		It("should set default skills limit to 5", func() {
+		It("should set default skills limit to 0 (All)", func() {
 			data.SkillsLimit = 0 // Unset
 			_ = forms.NewCVConfigForm(data, profileOptions, extractedTechs, 80, 0, false)
-			// Form should set default to 5
-			Expect(data.SkillsLimit).To(Equal(5))
+			// Form should preserve default of 0 (All)
+			Expect(data.SkillsLimit).To(Equal(0))
 		})
 
 		It("should preserve existing skills limit if already set", func() {

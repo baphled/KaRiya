@@ -31,7 +31,7 @@ var _ = Describe("Summary Format Integration", func() {
 		ctx = context.Background()
 		log = logger.New(io.Discard, logger.InfoLevel)
 		sectionBuilder = cvsvc.NewSectionBuilder(nil, log)
-		exportService = cvsvc.NewExportService(log)
+		exportService = cvsvc.NewExportService(log, nil, nil)
 
 		realisticBullets = []*career.CVBullet{
 			createBullet("b1", "Migrated QuikCV backend from Ruby on Rails to Node.js, reducing server costs by 70% and improving response times by 40% through async processing"),

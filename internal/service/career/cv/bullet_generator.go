@@ -88,32 +88,22 @@ func (eb *Bullet) ToCVBullet() *career.CVBullet {
 	if eb.EnhancedText != "" {
 		text = eb.EnhancedText
 	}
-
-	var audienceRelevance map[string]float64
-	if len(eb.AudienceRelevance) > 0 {
-		audienceRelevance = make(map[string]float64, len(eb.AudienceRelevance))
-		for _, audience := range eb.AudienceRelevance {
-			audienceRelevance[audience] = 1.0
-		}
-	}
-
 	return &career.CVBullet{
-		ID:                eb.ID,
-		Text:              text,
-		EnhancedText:      eb.EnhancedText,
-		SourceEventIDs:    eb.SourceEventIDs,
-		SourceFactIDs:     eb.SourceFactIDs,
-		Rank:              eb.Rank,
-		InclusionReason:   eb.InclusionReason,
-		Confidence:        eb.Confidence,
-		Category:          eb.Category,
-		RoleScore:         eb.RoleScore,
-		AudienceScore:     eb.AudienceScore,
-		MetricScore:       eb.MetricScore,
-		ImpactScore:       eb.ImpactScore,
-		ImpactLevel:       eb.ImpactLevel,
-		KeywordMatches:    eb.KeywordMatches,
-		AudienceRelevance: audienceRelevance,
+		ID:              eb.ID,
+		Text:            text,
+		EnhancedText:    eb.EnhancedText,
+		SourceEventIDs:  eb.SourceEventIDs,
+		SourceFactIDs:   eb.SourceFactIDs,
+		Rank:            eb.Rank,
+		InclusionReason: eb.InclusionReason,
+		Confidence:      eb.Confidence,
+		Category:        eb.Category,
+		RoleScore:       eb.RoleScore,
+		AudienceScore:   eb.AudienceScore,
+		MetricScore:     eb.MetricScore,
+		ImpactScore:     eb.ImpactScore,
+		ImpactLevel:     eb.ImpactLevel,
+		KeywordMatches:  eb.KeywordMatches,
 	}
 }
 
@@ -171,6 +161,21 @@ type RoleFilter struct {
 }
 
 // GenerateBullets generates bullets from events and facts
+//
+// Expected:
+//   - ctx: valid context for cancellation and timeout
+//   - events: slice of career events to process
+//   - facts: slice of career facts to process
+//   - achievements: slice of achievements to process
+//   - targetRole: target career role for filtering
+//   - targetAudience: target audience for filtering
+//
+// Returns:
+//   - []*Bullet: generated and filtered bullets
+//   - error: processing error, nil on success
+//
+// Side effects:
+//   - None.
 func (bg *DefaultBulletGenerator) GenerateBullets(ctx context.Context,
 	events []*career.Event,
 	facts []*career.Fact,
@@ -201,7 +206,7 @@ func (bg *DefaultBulletGenerator) GenerateBullets(ctx context.Context,
 	// Filter by audience
 	bullets = bg.FilterByAudience(bullets, targetAudience)
 
-	// Build event map for company-aware deduplication (BUG-013).
+	// Build event map for company-aware deduplication (prevents duplicate bullets at same company).
 	eventMap := make(map[string]*career.Event, len(events))
 	for _, event := range events {
 		eventMap[event.ID] = event
@@ -332,6 +337,17 @@ func (bg *DefaultBulletGenerator) RankByRelevance(bullets []*Bullet, _ string, _
 }
 
 // EnhanceWording improves bullet text for professional CV use
+//
+// Expected:
+//   - bullet: bullet to enhance with non-empty Text field
+//   - role: target career role for context-specific enhancement
+//
+// Returns:
+//   - *Bullet: enhanced bullet with improved text
+//   - error: enhancement error, nil on success
+//
+// Side effects:
+//   - Modifies bullet.EnhancedText field.
 func (bg *DefaultBulletGenerator) EnhanceWording(bullet *Bullet, role string) (*Bullet, error) {
 	enhanced := bullet.EnhancedText
 	if enhanced == "" {
@@ -456,7 +472,7 @@ func (bg *DefaultBulletGenerator) createBulletsFromEvents(events []*career.Event
 }
 
 // extractPrimaryCategory extracts the primary (first) category from a list of categories
-// and converts it to the type-safe CompetencyCategory constant (BUG-008)
+// and converts it to the type-safe CompetencyCategory constant
 func (bg *DefaultBulletGenerator) extractPrimaryCategory(categories []string) constants.CompetencyCategory {
 	if len(categories) == 0 {
 		return ""
@@ -478,26 +494,26 @@ type dedupKey struct {
 
 // deduplicateBullets removes bullets with identical text at the same company,
 // keeping the one with highest confidence. Bullets at different companies with
-// identical text are kept separate (BUG-013). When merging, it combines source
+// identical text are kept separate (at different companies). When merging, it combines source
 // IDs to preserve lineage information.
 func (bg *DefaultBulletGenerator) deduplicateBullets(bullets []*Bullet, eventMap map[string]*career.Event) []*Bullet {
 	if len(bullets) <= 1 {
 		return bullets
 	}
 
-	// Map to track unique bullets by normalized text + company (BUG-013).
+	// Map to track unique bullets by normalized text + company (prevents duplicates).
 	seen := make(map[dedupKey]*Bullet)
 
 	for _, bullet := range bullets {
 		// Normalize text for comparison (lowercase, trim spaces).
 		normalizedText := strings.ToLower(strings.TrimSpace(bullet.Text))
 
-		// Resolve primary company from source events (BUG-013).
+		// Resolve primary company from source events (company-aware deduplication).
 		company := resolvePrimaryCompany(bullet.SourceEventIDs, eventMap)
 
 		// When company cannot be resolved (no company on source events),
 		// fall back to the first SourceEventID to prevent unrelated bullets
-		// from merging under an empty key (BUG-015 defence-in-depth).
+		// from merging under an empty key (fallback to event ID for safety).
 		// If SourceEventIDs is also empty, use bullet ID as last resort.
 		if company == "" {
 			if len(bullet.SourceEventIDs) > 0 {
@@ -537,7 +553,7 @@ func (bg *DefaultBulletGenerator) deduplicateBullets(bullets []*Bullet, eventMap
 }
 
 // resolvePrimaryCompany determines the primary company for a bullet by counting
-// which company appears most frequently across its source events (BUG-013).
+// which company appears most frequently across its source events (deterministic tie-breaking).
 // When multiple companies are tied, the lexicographically smallest name wins
 // to ensure deterministic results across runs.
 func resolvePrimaryCompany(sourceEventIDs []string, eventMap map[string]*career.Event) string {
@@ -862,6 +878,18 @@ func (bg *DefaultBulletGenerator) getMinConfidenceForRole(role string) float64 {
 
 // FilterByTechnologies filters and boosts bullets based on selected technologies.
 // Applies technology-based scoring adjustments and sorts by final rank.
+//
+// Expected:
+//   - bullets: slice of bullets to filter and boost
+//   - events: slice of events for skill lookup
+//   - techFocus: technology focus strategy (Language Agnostic, Specific, Broad)
+//   - technologies: slice of selected technologies for matching
+//
+// Returns:
+//   - []*Bullet: filtered and boosted bullets sorted by rank
+//
+// Side effects:
+//   - None.
 func (bg *DefaultBulletGenerator) FilterByTechnologies(
 	bullets []*Bullet,
 	events []*career.Event,

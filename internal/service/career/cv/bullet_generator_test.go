@@ -234,45 +234,6 @@ var _ = Describe("Bullet Conversion", func() {
 
 			Expect(cvBullet.Text).To(Equal("Enhanced and improved text"))
 		})
-
-		It("should convert AudienceRelevance slice to map with 1.0 scores", func() {
-			enhanced := &Bullet{
-				ID:                "bullet-4",
-				Text:              "Led cross-functional initiative",
-				AudienceRelevance: []string{"recruiter", "hiring_manager"},
-			}
-
-			cvBullet := enhanced.ToCVBullet()
-
-			Expect(cvBullet.AudienceRelevance).To(Equal(map[string]float64{
-				"recruiter":      1.0,
-				"hiring_manager": 1.0,
-			}))
-		})
-
-		It("should produce nil AudienceRelevance when source slice is nil", func() {
-			enhanced := &Bullet{
-				ID:                "bullet-5",
-				Text:              "Some achievement",
-				AudienceRelevance: nil,
-			}
-
-			cvBullet := enhanced.ToCVBullet()
-
-			Expect(cvBullet.AudienceRelevance).To(BeNil())
-		})
-
-		It("should produce nil AudienceRelevance when source slice is empty", func() {
-			enhanced := &Bullet{
-				ID:                "bullet-6",
-				Text:              "Another achievement",
-				AudienceRelevance: []string{},
-			}
-
-			cvBullet := enhanced.ToCVBullet()
-
-			Expect(cvBullet.AudienceRelevance).To(BeNil())
-		})
 	})
 
 	Describe("ConvertBullets", func() {

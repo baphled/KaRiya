@@ -145,16 +145,20 @@ type ExportResult struct {
 //
 // Expected:
 //   - logger must be valid.
+//   - profileConfig may be nil (uses empty defaults).
+//   - skillRepo may be nil (skills section will be empty).
 //
 // Returns:
 //   - A fully initialized ExportService ready for use.
 //
 // Side effects:
 //   - None.
-func NewExportService(log *logger.Logger) *ExportService {
+func NewExportService(log *logger.Logger, profileConfig *config.ProfileConfig, skillRepo careerrepo.SkillRepository) *ExportService {
 	return &ExportService{
-		logger:    log,
-		clipboard: &SystemClipboard{},
+		logger:        log,
+		clipboard:     &SystemClipboard{},
+		profileConfig: profileConfig,
+		skillRepo:     skillRepo,
 	}
 }
 
@@ -163,16 +167,20 @@ func NewExportService(log *logger.Logger) *ExportService {
 // Expected:
 //   - log must be a valid logger.
 //   - clipboardWriter must be a valid ClipboardWriter.
+//   - profileConfig may be nil (uses empty defaults).
+//   - skillRepo may be nil (skills section will be empty).
 //
 // Returns:
 //   - A fully initialized ExportService ready for use.
 //
 // Side effects:
 //   - None.
-func NewExportServiceWithClipboard(log *logger.Logger, clipboardWriter ClipboardWriter) *ExportService {
+func NewExportServiceWithClipboard(log *logger.Logger, clipboardWriter ClipboardWriter, profileConfig *config.ProfileConfig, skillRepo careerrepo.SkillRepository) *ExportService {
 	return &ExportService{
-		logger:    log,
-		clipboard: clipboardWriter,
+		logger:        log,
+		clipboard:     clipboardWriter,
+		profileConfig: profileConfig,
+		skillRepo:     skillRepo,
 	}
 }
 
@@ -198,6 +206,20 @@ func NewExportServiceWithDeps(log *logger.Logger, profileConfig *config.ProfileC
 }
 
 // ExportToText exports a CV to plain text format.
+//
+// Expected:
+//   - ctx: A valid context (not cancelled).
+//   - cv: A non-nil CVView containing CV metadata.
+//   - sections: A slice of CV sections to export.
+//   - bullets: A map of bullets indexed by section ID.
+//
+// Returns:
+//   - string: The formatted plain text CV.
+//   - error: Non-nil if cv is nil.
+//
+// Side effects:
+//   - Writes formatted text to a buffer.
+//   - Formats headers, metadata, and bullet points.
 func (es *ExportService) ExportToText(_ context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet) (string, error) {
 	if cv == nil {
 		return "", errors.New("CV view is nil")
@@ -259,6 +281,18 @@ func (es *ExportService) ExportToText(_ context.Context, cv *career.CVView, sect
 }
 
 // ExportToMarkdown exports a CV to markdown format.
+//
+// Expected:
+//   - cv must be a valid CVView.
+//   - sections contains the CV sections.
+//   - bullets maps section names to bullet points.
+//
+// Returns:
+//   - A markdown string and nil on success.
+//   - Empty string and error if cv is nil.
+//
+// Side effects:
+//   - None.
 func (es *ExportService) ExportToMarkdown(ctx context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet) (string, error) {
 	if cv == nil {
 		return "", errors.New("CV view is nil")
@@ -345,8 +379,12 @@ func (es *ExportService) ExportToYAML(ctx context.Context, cv *career.CVView, se
 		firstName = effectiveProfile.FirstName
 		lastName = effectiveProfile.LastName
 		email = effectiveProfile.Email
-		location = effectiveProfile.Location
-		if location == "" {
+		// Combine Location and Country
+		if effectiveProfile.Location != "" && effectiveProfile.Country != "" {
+			location = effectiveProfile.Location + " (" + effectiveProfile.Country + ")"
+		} else if effectiveProfile.Location != "" {
+			location = effectiveProfile.Location
+		} else if effectiveProfile.Country != "" {
 			location = effectiveProfile.Country
 		}
 		phone = effectiveProfile.Phone
@@ -584,10 +622,28 @@ func (es *ExportService) buildYAMLSkills(ctx context.Context, limit int) map[str
 		}
 	}
 
+	// Sort skill names within each category
+	for category := range skills {
+		slices.Sort(skills[category])
+	}
+
 	return skills
 }
 
 // SaveToFile saves exported CV content to a file.
+//
+// Expected:
+//   - cvName is a non-empty string.
+//   - format is a valid ExportFormat.
+//   - content is the CV content to save.
+//
+// Returns:
+//   - The file path where the CV was saved and nil on success.
+//   - Empty string and error if directory creation or file write fails.
+//
+// Side effects:
+//   - Creates ~/.kariya/cv_exports directory if it does not exist.
+//   - Writes a file to disk with timestamp-based filename.
 func (es *ExportService) SaveToFile(ctx context.Context, cvName string, format ExportFormat, content string) (string, error) {
 	// Determine export directory
 	homeDir, err := os.UserHomeDir()
@@ -651,6 +707,13 @@ func sanitizeFilename(name string) string {
 }
 
 // GetExportPath returns the default export directory path.
+//
+// Returns:
+//   - The export directory path and nil on success.
+//   - Empty string and error if home directory cannot be determined.
+//
+// Side effects:
+//   - None.
 func (es *ExportService) GetExportPath() (string, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -695,11 +758,42 @@ func (es *ExportService) CopyToClipboard(ctx context.Context, content string) er
 // Export exports a CV using the specified structure and format.
 // For YAML format, always uses standard structure (it's a data format).
 // Uses default profile for narrative structure.
+//
+// Expected:
+//   - cv must be a valid CVView.
+//   - sections contains the CV sections.
+//   - bullets maps section names to bullet points.
+//   - structure is a valid Structure value.
+//   - format is a valid ExportFormat.
+//
+// Returns:
+//   - The exported CV content as a string and nil on success.
+//   - Empty string and error if cv is nil or export fails.
+//
+// Side effects:
+//   - None.
 func (es *ExportService) Export(ctx context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet, structure Structure, format ExportFormat) (string, error) {
 	return es.ExportWithProfile(ctx, cv, sections, bullets, structure, format, nil)
 }
 
 // ExportWithProfile exports a CV using the specified structure, format, and profile config.
+// For YAML format, always uses standard structure (it's a data format).
+// If profileCfg is nil, uses default profile.
+//
+// Expected:
+//   - cv: non-nil CVView with career data
+//   - sections: slice of CVSection to include in export
+//   - bullets: map of section IDs to CVBullet slices
+//   - structure: valid CVStructure (Narrative, Consulting, Highlights, Standard)
+//   - format: valid ExportFormat (Text, Markdown, YAML)
+//   - profileCfg: optional ProfileConfig (uses default if nil)
+//
+// Returns:
+//   - string: exported CV content
+//   - error: nil on success, error if cv is nil or export fails
+//
+// Side effects:
+//   - None.
 // For YAML format, always uses standard structure (it's a data format).
 // If profileCfg is nil, uses default profile.
 func (es *ExportService) ExportWithProfile(ctx context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet, structure Structure, format ExportFormat, profileCfg *config.ProfileConfig) (string, error) {

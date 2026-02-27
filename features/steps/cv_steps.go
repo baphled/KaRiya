@@ -63,8 +63,6 @@ func registerCVReviewSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I press enter to confirm$`, iPressEnterToConfirmCV)
 	sc.Step(`^the CV generation should complete$`, theCVGenerationShouldComplete)
 	sc.Step(`^I press "y" to confirm$`, iPressYToConfirmCV)
-	sc.Step(`^I should see highlights$`, iShouldSeeHighlights)
-	sc.Step(`^I should see key highlights$`, iShouldSeeKeyHighlights)
 }
 
 func registerCVExportSteps(sc *godog.ScenarioContext) {
@@ -565,32 +563,4 @@ func iCompleteAnExport(_ context.Context) error {
 
 func iShouldSeeExportLocation(_ context.Context) error {
 	return godog.ErrPending
-}
-
-func iShouldSeeHighlights(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
-	}
-	view := env.GetView()
-	gomega.Expect(view).To(gomega.SatisfyAny(
-		gomega.ContainSubstring("Top Highlights"),
-		gomega.ContainSubstring("✨"),
-		gomega.ContainSubstring("Highlights"),
-	))
-	return nil
-}
-
-func iShouldSeeKeyHighlights(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
-	}
-	view := env.GetView()
-	gomega.Expect(view).To(gomega.SatisfyAny(
-		gomega.ContainSubstring("Key Highlights"),
-		gomega.ContainSubstring("★"),
-		gomega.ContainSubstring("Highlights"),
-	))
-	return nil
 }

@@ -149,8 +149,8 @@ func (i *Intent) delegateToExportModal(msg tea.Msg) (tea.Cmd, bool) {
 	}
 	if !i.exportModal.IsVisible() && !i.exportModal.IsCompleted() {
 		i.exportModal.Hide()
-		i.state = StatePreview
-		return nil, true
+		// Return to the state we were in before showing the export modal
+		i.state = i.exportReturnState
 	}
 	return cmd, true
 }
@@ -363,6 +363,8 @@ func (i *Intent) exportCVAsync() tea.Cmd {
 }
 
 func (i *Intent) showExportModal() tea.Cmd {
+	// Capture the current state so we can return to it when modal is dismissed
+	i.exportReturnState = i.state
 	termInfo := i.GetTerminalInfo()
 	i.exportModal = cvmodals.NewExportModal(termInfo.Width, termInfo.Height)
 	i.exportModal.Show()

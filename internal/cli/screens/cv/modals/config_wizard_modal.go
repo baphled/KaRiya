@@ -110,6 +110,7 @@ func NewConfigWizardModalWithProfiles(width, height int, profiles []ProfileOptio
 		techsAvailable: false,
 	}
 
+	modal.applyDefaults()
 	modal.buildForm()
 
 	wizard := behaviors.NewWizardBehavior[ConfigData](modal.form, modal.data)
@@ -633,9 +634,9 @@ func (m *ConfigWizardModal) applyDefaults() {
 		}
 	}
 	if m.data.CVLength == "" {
-		m.data.CVLength = "2_page"
+		m.data.CVLength = "detailed"
 		if m.formData != nil {
-			m.formData.CVLength = "2_page"
+			m.formData.CVLength = "detailed"
 		}
 	}
 }

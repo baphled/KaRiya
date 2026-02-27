@@ -214,8 +214,22 @@ func (i *Intent) buildGenerationSummaryScreen() *cv.GenerationSummaryScreen {
 	}
 	if i.generatedCV != nil {
 		summary.SectionCount = len(i.generatedCV.Sections)
+		summary.SourceEventCount = i.generatedCV.SourceEventCount
+		summary.SourceFactCount = i.generatedCV.SourceFactCount
+		summary.TotalBullets = countCVBullets(i.generatedCV.Sections)
 	}
 	return summary
+}
+
+// countCVBullets counts the total number of bullets across all sections.
+func countCVBullets(sections []*career.CVSection) int {
+	count := 0
+	for _, section := range sections {
+		for _, group := range section.Content {
+			count += len(group.Bullets)
+		}
+	}
+	return count
 }
 
 // transitionToPreviewScreen creates and activates the preview screen.

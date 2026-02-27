@@ -39,7 +39,7 @@ var _ = Describe("ConfigWizardModal", func() {
 				Expect(config.Technologies).To(BeEmpty())
 				Expect(config.FocusArea).To(BeEmpty())
 				Expect(config.SkillsFormat).To(Equal("grouped"))
-				Expect(config.CVLength).To(Equal("1_page"))
+				Expect(config.CVLength).To(Equal("detailed"))
 			})
 
 			It("should start with techs not available", func() {
@@ -209,7 +209,7 @@ var _ = Describe("ConfigWizardModal", func() {
 				Expect(config.Audience).To(Equal("hiring_manager"))
 				Expect(config.TechFocus).To(Equal("language_agnostic"))
 				Expect(config.SkillsFormat).To(Equal("grouped"))
-				Expect(config.CVLength).To(Or(Equal("1_page"), Equal("2_page")))
+				Expect(config.CVLength).To(Equal("detailed"))
 			})
 
 			It("should require at least ProfileID to skip", func() {

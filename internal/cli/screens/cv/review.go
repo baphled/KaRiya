@@ -194,7 +194,7 @@ func (s *ReviewScreen) View() string {
 	if s.cv == nil {
 		b.WriteString("No CV data available\n")
 		b.WriteString("\n")
-		b.WriteString(strings.Repeat("─", 60))
+		b.WriteString(strings.Repeat("─", minInt(60, s.width-4)))
 		b.WriteString("\n")
 		b.WriteString(footerStyle.Render("esc: back"))
 		return b.String()
@@ -264,7 +264,7 @@ func (s *ReviewScreen) renderSummarySection() string {
 	var b strings.Builder
 	b.WriteString(sectionTitleStyle.Render("📝 Summary"))
 	b.WriteString("\n")
-	b.WriteString(strings.Repeat("─", 60))
+	b.WriteString(strings.Repeat("─", minInt(60, s.width-4)))
 	b.WriteString("\n")
 
 	for _, line := range strings.Split(summaryText, "\n") {
@@ -292,10 +292,10 @@ func (s *ReviewScreen) renderGenerationSettings() string {
 	var b strings.Builder
 	b.WriteString(sectionTitleStyle.Render("🎯 Generation Settings"))
 	b.WriteString("\n")
-	b.WriteString(strings.Repeat("─", 60))
+	b.WriteString(strings.Repeat("─", minInt(60, s.width-4)))
 	b.WriteString("\n")
 
-	if s.summary.SelectedProfile != nil {
+	if s.summary.SelectedProfile != nil && s.summary.SelectedProfile.Name != "" {
 		profileName := s.summary.SelectedProfile.Name
 		b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Profile:"), valueStyle.Render(profileName)))
 	}
@@ -338,7 +338,7 @@ func (s *ReviewScreen) renderPersonalDetails() string {
 	var b strings.Builder
 	b.WriteString(sectionTitleStyle.Render("👤 Personal Details"))
 	b.WriteString("\n")
-	b.WriteString(strings.Repeat("─", 60))
+	b.WriteString(strings.Repeat("─", minInt(60, s.width-4)))
 	b.WriteString("\n")
 	b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Name:"), valueStyle.Render(profile.Name)))
 	b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Email:"), valueStyle.Render(profile.Email)))
@@ -357,7 +357,7 @@ func (s *ReviewScreen) renderCVDetails() string {
 	var b strings.Builder
 	b.WriteString(sectionTitleStyle.Render("📄 CV Details"))
 	b.WriteString("\n")
-	b.WriteString(strings.Repeat("─", 60))
+	b.WriteString(strings.Repeat("─", minInt(60, s.width-4)))
 	b.WriteString("\n")
 	b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("CV Name:"), valueStyle.Render(s.cv.Name)))
 	b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Role:"), valueStyle.Render(s.cv.TargetRole)))
@@ -376,7 +376,7 @@ func (s *ReviewScreen) renderStatistics() string {
 	var b strings.Builder
 	b.WriteString(sectionTitleStyle.Render("📊 Statistics"))
 	b.WriteString("\n")
-	b.WriteString(strings.Repeat("─", 60))
+	b.WriteString(strings.Repeat("─", minInt(60, s.width-4)))
 	b.WriteString("\n")
 	b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Source Events:"), valueStyle.Render(strconv.Itoa(s.cv.SourceEventCount))))
 	b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Source Facts:"), valueStyle.Render(strconv.Itoa(s.cv.SourceFactCount))))
@@ -439,7 +439,7 @@ func (s *ReviewScreen) renderHighlights() string {
 	})
 
 	// Take top 5
-	topCount := 5
+	topCount := 10
 	if len(allBullets) < topCount {
 		topCount = len(allBullets)
 	}
@@ -480,7 +480,7 @@ func (s *ReviewScreen) renderSectionsList() string {
 	var b strings.Builder
 	b.WriteString(sectionTitleStyle.Render("📑 Sections"))
 	b.WriteString("\n")
-	b.WriteString(strings.Repeat("─", 60))
+	b.WriteString(strings.Repeat("─", minInt(60, s.width-4)))
 	b.WriteString("\n")
 
 	for _, section := range s.cv.Sections {
