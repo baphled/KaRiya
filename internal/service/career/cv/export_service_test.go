@@ -1117,7 +1117,10 @@ var _ = Describe("ExportService YAML Export", func() {
 			goldenContent, err := os.ReadFile(goldenFile)
 			Expect(err).NotTo(HaveOccurred(), "golden file should exist")
 
-			Expect(strings.TrimSpace(yamlOutput)).To(Equal(strings.TrimSpace(string(goldenContent))))
+			normalizeLineEndings := func(s string) string {
+				return strings.ReplaceAll(s, "\r\n", "\n")
+			}
+			Expect(normalizeLineEndings(strings.TrimSpace(yamlOutput))).To(Equal(normalizeLineEndings(strings.TrimSpace(string(goldenContent)))))
 		})
 
 		It("handles nil profileConfig gracefully", func() {

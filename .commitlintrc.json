@@ -37,12 +37,15 @@
         "components",
         "config",
         "cv",
+        "demo",
+        "demos",
         "deps",
         "docs",
         "domain",
         "e2e",
         "events",
         "facts",
+        "generatecv",
         "git",
         "guides",
         "intents",
@@ -80,4 +83,3 @@
     "footer-max-line-length": [2, "always", 100]
   }
 }
-
