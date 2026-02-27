@@ -640,7 +640,7 @@ new-intent:
 ## Run all BDD feature tests (excludes @wip)
 bdd:
 	@echo "Running BDD tests..."
-	@go test -v ./features/... -test.run ^TestFeatures$$ --godog.tags='~@wip'
+	@go test -v -timeout 3m ./features/... -test.run ^TestFeatures$$ --godog.tags='~@wip'
 
 ## Run BDD tests tagged with @wip
 bdd-wip:

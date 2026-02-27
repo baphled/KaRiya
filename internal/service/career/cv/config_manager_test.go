@@ -578,6 +578,9 @@ var _ = Describe("YAMLConfigManager", func() {
 			if os.Getuid() == 0 {
 				return
 			}
+			if runtime.GOOS == "windows" {
+				Skip("filesystem permissions not enforced on Windows")
+			}
 
 			parent := filepath.Join(tempDir, "readonly-parent")
 			Expect(os.Mkdir(parent, 0o555)).To(Succeed())
@@ -593,6 +596,9 @@ var _ = Describe("YAMLConfigManager", func() {
 		It("should return error when directory is not writable", func() {
 			if os.Getuid() == 0 {
 				return
+			}
+			if runtime.GOOS == "windows" {
+				Skip("filesystem permissions not enforced on Windows")
 			}
 
 			readOnlyDir := filepath.Join(tempDir, "not-writable")

@@ -172,6 +172,7 @@ jobs:
         run: ginkgo -v --race --cover --coverprofile=coverage.out --skip-package=testdata,noinlinecareer/testdata,features ./...
 
       - name: Run BDD tests
+        timeout-minutes: 5
         run: make bdd
 
       - name: Upload coverage to Codecov
@@ -260,4 +261,3 @@ jobs:
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: gosec.sarif
-
