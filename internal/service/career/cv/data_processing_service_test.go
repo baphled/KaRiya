@@ -129,6 +129,16 @@ var _ = Describe("DataProcessingService", func() {
 			Expect(achievements[1].FactIDs).To(ContainElement("f1"))
 		})
 
+		It("should skip facts with non-matching source event ID", func() {
+			event := fixtures.EventWith("evt-1", "Event text", "Acme", "")
+			fact := fixtures.Fact("f1", "other-event-id")
+			fact.Text = "Strong leadership capability"
+
+			achievements, err := dps.ExtractAchievements(svc, event, []*career.Fact{fact})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(achievements).To(HaveLen(1))
+		})
+
 		// BUG-008: Achievement.Category propagation tests
 		Context("Category propagation", func() {
 			Context("from event.Categories", func() {
@@ -336,6 +346,99 @@ var _ = Describe("DataProcessingService", func() {
 
 			// Should have aggregated technical skills
 			Expect(result).NotTo(BeEmpty())
+		})
+
+		Context("with facts containing competency categories", func() {
+			It("should extract skills from facts with short text", func() {
+				fact := fixtures.Fact("f1", "evt-1")
+				fact.Text = "System design"
+				fact.CompetencyCategories = []string{"technical"}
+				fact.RoleFit = career.RoleFitPrincipal
+
+				result, err := dps.ExtractSkills(svc, []*career.Event{}, []*career.Fact{fact})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).NotTo(BeEmpty())
+			})
+
+			It("should truncate long fact text for skill name", func() {
+				fact := fixtures.Fact("f1", "evt-1")
+				fact.Text = "one two three four five six seven eight"
+				fact.CompetencyCategories = []string{"technical"}
+
+				result, err := dps.ExtractSkills(svc, []*career.Event{}, []*career.Fact{fact})
+				Expect(err).NotTo(HaveOccurred())
+
+				found := false
+				for _, cat := range result {
+					for _, skill := range cat.Skills {
+						if skill.Name == "one two three four five" {
+							found = true
+						}
+					}
+				}
+				Expect(found).To(BeTrue())
+			})
+
+			It("should set skill level based on fact role fit", func() {
+				fact := fixtures.Fact("f1", "evt-1")
+				fact.Text = "Cloud architecture"
+				fact.CompetencyCategories = []string{"technical"}
+				fact.RoleFit = career.RoleFitPrincipal
+
+				result, err := dps.ExtractSkills(svc, []*career.Event{}, []*career.Fact{fact})
+				Expect(err).NotTo(HaveOccurred())
+
+				found := false
+				for _, cat := range result {
+					for _, skill := range cat.Skills {
+						if skill.Name == "Cloud architecture" && skill.Level == "expert" {
+							found = true
+						}
+					}
+				}
+				Expect(found).To(BeTrue())
+			})
+
+			It("should skip facts with empty skill name extraction", func() {
+				fact := fixtures.Fact("f1", "evt-1")
+				fact.Text = ""
+				fact.CompetencyCategories = []string{"technical"}
+
+				result, err := dps.ExtractSkills(svc, []*career.Event{}, []*career.Fact{fact})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(BeEmpty())
+			})
+
+			It("should handle facts with multiple competency categories", func() {
+				fact := fixtures.Fact("f1", "evt-1")
+				fact.Text = "Team mentoring"
+				fact.CompetencyCategories = []string{"mentoring", "leadership"}
+
+				result, err := dps.ExtractSkills(svc, []*career.Event{}, []*career.Fact{fact})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).NotTo(BeEmpty())
+			})
+
+			It("should handle cancelled context", func() {
+				ctx, cancel := context.WithCancel(context.Background())
+				cancel()
+
+				_, err := dps.ExtractSkills(ctx, []*career.Event{}, []*career.Fact{})
+				Expect(err).To(HaveOccurred())
+			})
+
+			It("should combine event tags and fact skills", func() {
+				event := fixtures.EventWith("1", "Event", "Acme", "")
+				event.Tags = []string{"technical"}
+
+				fact := fixtures.Fact("f1", "1")
+				fact.Text = "API design"
+				fact.CompetencyCategories = []string{"technical"}
+
+				result, err := dps.ExtractSkills(svc, []*career.Event{event}, []*career.Fact{fact})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).NotTo(BeEmpty())
+			})
 		})
 	})
 
@@ -784,6 +887,233 @@ var _ = Describe("DataProcessingService", func() {
 				}
 			}
 			Expect(companyACount).To(Equal(2), "Real company events should still split tenures")
+		})
+	})
+
+	Describe("determineSkillLevelFromFact", func() {
+		var concreteSvc *DefaultDataProcessingService
+
+		BeforeEach(func() {
+			concreteSvc = &DefaultDataProcessingService{logger: logger.DefaultLogger()}
+		})
+
+		It("should return expert for RoleFitPrincipal", func() {
+			fact := fixtures.Fact("f1", "evt-1")
+			fact.RoleFit = career.RoleFitPrincipal
+			Expect(concreteSvc.determineSkillLevelFromFact(fact)).To(Equal("expert"))
+		})
+
+		It("should return advanced for RoleFitStaff", func() {
+			fact := fixtures.Fact("f1", "evt-1")
+			fact.RoleFit = career.RoleFitStaff
+			Expect(concreteSvc.determineSkillLevelFromFact(fact)).To(Equal("advanced"))
+		})
+
+		It("should return advanced for RoleFitSeniorIC", func() {
+			fact := fixtures.Fact("f1", "evt-1")
+			fact.RoleFit = career.RoleFitSeniorIC
+			Expect(concreteSvc.determineSkillLevelFromFact(fact)).To(Equal("advanced"))
+		})
+
+		It("should return advanced for RoleFitEM", func() {
+			fact := fixtures.Fact("f1", "evt-1")
+			fact.RoleFit = career.RoleFitEM
+			Expect(concreteSvc.determineSkillLevelFromFact(fact)).To(Equal("advanced"))
+		})
+
+		It("should return intermediate for unknown role fit", func() {
+			fact := fixtures.Fact("f1", "evt-1")
+			fact.RoleFit = career.RoleFit("unknown")
+			Expect(concreteSvc.determineSkillLevelFromFact(fact)).To(Equal("intermediate"))
+		})
+	})
+
+	Describe("extractSkillNameFromFact", func() {
+		var concreteSvc *DefaultDataProcessingService
+
+		BeforeEach(func() {
+			concreteSvc = &DefaultDataProcessingService{logger: logger.DefaultLogger()}
+		})
+
+		It("should return full text when 5 or fewer words", func() {
+			Expect(concreteSvc.extractSkillNameFromFact("Go programming")).To(Equal("Go programming"))
+		})
+
+		It("should return full text for exactly 5 words", func() {
+			Expect(concreteSvc.extractSkillNameFromFact("one two three four five")).To(Equal("one two three four five"))
+		})
+
+		It("should truncate to first 5 words for longer text", func() {
+			Expect(concreteSvc.extractSkillNameFromFact("one two three four five six seven")).To(Equal("one two three four five"))
+		})
+
+		It("should return empty string for empty text", func() {
+			Expect(concreteSvc.extractSkillNameFromFact("")).To(Equal(""))
+		})
+
+		It("should return single word text", func() {
+			Expect(concreteSvc.extractSkillNameFromFact("Kubernetes")).To(Equal("Kubernetes"))
+		})
+	})
+
+	Describe("determineSkillCategory", func() {
+		var concreteSvc *DefaultDataProcessingService
+
+		BeforeEach(func() {
+			concreteSvc = &DefaultDataProcessingService{logger: logger.DefaultLogger()}
+		})
+
+		It("should use first category when categories exist", func() {
+			skill := &Skill{Name: "test", Categories: []string{"Technical"}}
+			Expect(concreteSvc.determineSkillCategory(skill)).To(Equal("technical"))
+		})
+
+		It("should return technical for skill name containing technical", func() {
+			skill := &Skill{Name: "technical writing"}
+			Expect(concreteSvc.determineSkillCategory(skill)).To(Equal("technical"))
+		})
+
+		It("should return technical for skill name containing engineer", func() {
+			skill := &Skill{Name: "software engineer"}
+			Expect(concreteSvc.determineSkillCategory(skill)).To(Equal("technical"))
+		})
+
+		It("should return leadership for skill name containing leadership", func() {
+			skill := &Skill{Name: "leadership skills"}
+			Expect(concreteSvc.determineSkillCategory(skill)).To(Equal("leadership"))
+		})
+
+		It("should return leadership for skill name containing manage", func() {
+			skill := &Skill{Name: "project manage"}
+			Expect(concreteSvc.determineSkillCategory(skill)).To(Equal("leadership"))
+		})
+
+		It("should return product for skill name containing product", func() {
+			skill := &Skill{Name: "product strategy"}
+			Expect(concreteSvc.determineSkillCategory(skill)).To(Equal("product"))
+		})
+
+		It("should return other for unrecognised skill name", func() {
+			skill := &Skill{Name: "cooking"}
+			Expect(concreteSvc.determineSkillCategory(skill)).To(Equal("other"))
+		})
+	})
+
+	Describe("extractPosition", func() {
+		var concreteSvc *DefaultDataProcessingService
+
+		BeforeEach(func() {
+			concreteSvc = &DefaultDataProcessingService{logger: logger.DefaultLogger()}
+		})
+
+		It("should return Professional when no position words found", func() {
+			event := fixtures.EventWith("1", "Completed quarterly review", "Acme", "")
+			result := concreteSvc.extractPosition([]*career.Event{event})
+			Expect(result).To(Equal("Professional"))
+		})
+
+		It("should detect Manager position", func() {
+			event := fixtures.EventWith("1", "Served as the manager for the delivery team", "Acme", "")
+			result := concreteSvc.extractPosition([]*career.Event{event})
+			Expect(result).To(Equal("Manager"))
+		})
+
+		It("should detect Lead position", func() {
+			event := fixtures.EventWith("1", "Acted as team lead on project", "Acme", "")
+			result := concreteSvc.extractPosition([]*career.Event{event})
+			Expect(result).To(Equal("Lead"))
+		})
+
+		It("should detect Architect position", func() {
+			event := fixtures.EventWith("1", "Worked as solutions architect", "Acme", "")
+			result := concreteSvc.extractPosition([]*career.Event{event})
+			Expect(result).To(Equal("Architect"))
+		})
+
+		It("should detect Director position", func() {
+			event := fixtures.EventWith("1", "Appointed as director of operations", "Acme", "")
+			result := concreteSvc.extractPosition([]*career.Event{event})
+			Expect(result).To(Equal("Director"))
+		})
+
+		It("should return most common position across events", func() {
+			event1 := fixtures.EventWith("1", "Worked as engineer on backend", "Acme", "")
+			event2 := fixtures.EventWith("2", "Served as manager for delivery", "Acme", "")
+			event3 := fixtures.EventWith("3", "Another manager role in operations", "Acme", "")
+			result := concreteSvc.extractPosition([]*career.Event{event1, event2, event3})
+			Expect(result).To(Equal("Manager"))
+		})
+	})
+
+	Describe("determineSkillLevel", func() {
+		var concreteSvc *DefaultDataProcessingService
+
+		BeforeEach(func() {
+			concreteSvc = &DefaultDataProcessingService{logger: logger.DefaultLogger()}
+		})
+
+		It("should return expert for technical tag", func() {
+			Expect(concreteSvc.determineSkillLevel("technical")).To(Equal("expert"))
+		})
+
+		It("should return advanced for leadership tag", func() {
+			Expect(concreteSvc.determineSkillLevel("leadership")).To(Equal("advanced"))
+		})
+
+		It("should return advanced for product tag", func() {
+			Expect(concreteSvc.determineSkillLevel("product")).To(Equal("advanced"))
+		})
+
+		It("should return intermediate for unknown tag", func() {
+			Expect(concreteSvc.determineSkillLevel("research")).To(Equal("intermediate"))
+		})
+
+		It("should be case insensitive", func() {
+			Expect(concreteSvc.determineSkillLevel("TECHNICAL")).To(Equal("expert"))
+		})
+	})
+
+	Describe("calculateDateRange", func() {
+		var concreteSvc *DefaultDataProcessingService
+
+		BeforeEach(func() {
+			concreteSvc = &DefaultDataProcessingService{logger: logger.DefaultLogger()}
+		})
+
+		It("should return now for empty events", func() {
+			before := time.Now()
+			start, end := concreteSvc.calculateDateRange([]*career.Event{})
+			after := time.Now()
+			Expect(start).To(BeTemporally(">=", before))
+			Expect(start).To(BeTemporally("<=", after))
+			Expect(end).To(BeTemporally(">=", before))
+			Expect(end).To(BeTemporally("<=", after))
+		})
+
+		It("should return same date for single event", func() {
+			date := time.Date(2024, 3, 15, 0, 0, 0, 0, time.UTC)
+			event := fixtures.EventWith("1", "Work", "Acme", "")
+			event.Date = date
+			start, end := concreteSvc.calculateDateRange([]*career.Event{event})
+			Expect(start).To(Equal(date))
+			Expect(end).To(Equal(date))
+		})
+
+		It("should return min and max dates for multiple events", func() {
+			early := time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC)
+			mid := time.Date(2023, 6, 15, 0, 0, 0, 0, time.UTC)
+			late := time.Date(2024, 12, 31, 0, 0, 0, 0, time.UTC)
+
+			event1 := fixtures.EventWith("1", "Work", "Acme", "")
+			event1.Date = mid
+			event2 := fixtures.EventWith("2", "Work", "Acme", "")
+			event2.Date = early
+			event3 := fixtures.EventWith("3", "Work", "Acme", "")
+			event3.Date = late
+
+			start, end := concreteSvc.calculateDateRange([]*career.Event{event1, event2, event3})
+			Expect(start).To(Equal(early))
+			Expect(end).To(Equal(late))
 		})
 	})
 })

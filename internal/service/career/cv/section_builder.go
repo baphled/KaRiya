@@ -83,6 +83,20 @@ func NewSectionBuilder(skillRepo careerrepo.SkillRepository, log *logger.Logger)
 }
 
 // BuildSections organizes bullets into CV sections.
+//
+// Expected:
+//   - ctx must be a valid context.
+//   - bullets must be a valid slice of CVBullet pointers.
+//   - events must be a valid slice of Event pointers.
+//   - facts must be a valid slice of Fact pointers.
+//   - targetRole must be a non-empty string.
+//
+// Returns:
+//   - A slice of CVSection pointers organized by section type.
+//   - An error if the context is cancelled.
+//
+// Side effects:
+//   - None.
 func (sb *DefaultSectionBuilder) BuildSections(ctx context.Context, bullets []*career.CVBullet, events []*career.Event, facts []*career.Fact, targetRole string, skillsConfig *SkillsFormatConfig, summaryCfg *SummaryConfig) ([]*career.CVSection, error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
@@ -529,7 +543,7 @@ func (sb *DefaultSectionBuilder) buildSummarySection(bullets []*career.CVBullet,
 
 // groupBulletsByCompany groups bullets by company from source events.
 // It detects separate tenures when events at OTHER companies exist between
-// two periods at the same company (BUG-009 fix).
+// two periods at the same company (issue #009 fix).
 func (sb *DefaultSectionBuilder) groupBulletsByCompany(bullets []*career.CVBullet, events []*career.Event) []*bulletGroup {
 	// Create map of event ID to event.
 	eventMap := make(map[string]*career.Event)
@@ -575,7 +589,7 @@ func (sb *DefaultSectionBuilder) groupBulletsByCompany(bullets []*career.CVBulle
 		}
 
 		// Second pass: compute dates using only events from the primary company.
-		// BUG-014: Previously dates were computed across ALL companies in a single
+		// Previously dates were computed across ALL companies in a single
 		// pass, which corrupted date ranges when SourceEventIDs spanned companies.
 		var earliestDate, latestDate time.Time
 		for _, eventID := range bullet.SourceEventIDs {
@@ -650,7 +664,7 @@ func (sb *DefaultSectionBuilder) groupBulletsByCompany(bullets []*career.CVBulle
 
 // detectBulletTenures splits a company's bullets into separate tenure groups.
 // A new tenure is detected when events at OTHER companies fall between
-// two consecutive bullets at this company (BUG-009).
+// two consecutive bullets at this company (issue #009).
 func (sb *DefaultSectionBuilder) detectBulletTenures(
 	companyBullets []bulletInfo,
 	company string,
@@ -777,7 +791,7 @@ type bulletGroup struct {
 	bullets   []*career.CVBullet
 }
 
-// bulletInfo holds information about a bullet for tenure detection (BUG-009).
+// bulletInfo holds information about a bullet for tenure detection (issue #009).
 type bulletInfo struct {
 	bullet       *career.CVBullet
 	company      string

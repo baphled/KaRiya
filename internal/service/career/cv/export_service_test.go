@@ -692,6 +692,28 @@ var _ = Describe("ExportService", func() {
 			Expect(profile.ValuePropositions).To(BeEmpty())
 		})
 	})
+
+	Describe("maxHighlightsFromProfile", func() {
+		Context("when profile is nil", func() {
+			It("returns the default of 5", func() {
+				Expect(maxHighlightsFromProfile(nil)).To(Equal(5))
+			})
+		})
+
+		Context("when profile has MaxHighlights of 0", func() {
+			It("returns the default of 5", func() {
+				profile := &config.ProfileConfig{MaxHighlights: 0}
+				Expect(maxHighlightsFromProfile(profile)).To(Equal(5))
+			})
+		})
+
+		Context("when profile has a positive MaxHighlights", func() {
+			It("returns the configured value", func() {
+				profile := &config.ProfileConfig{MaxHighlights: 3}
+				Expect(maxHighlightsFromProfile(profile)).To(Equal(3))
+			})
+		})
+	})
 })
 
 var _ = Describe("ExportService YAML Export", func() {
@@ -1341,6 +1363,435 @@ var _ = Describe("ExportService YAML Export", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(yamlOutput).To(ContainSubstring("highlights: \"\""))
 			})
+		})
+	})
+	Describe("maxHighlightsFromProfile", func() {
+		It("returns 5 when profile is nil", func() {
+			Expect(maxHighlightsFromProfile(nil)).To(Equal(5))
+		})
+
+		It("returns 5 when MaxHighlights is 0", func() {
+			profile := &config.ProfileConfig{}
+			Expect(maxHighlightsFromProfile(profile)).To(Equal(5))
+		})
+
+		It("returns the configured value", func() {
+			profile := &config.ProfileConfig{MaxHighlights: 3}
+			Expect(maxHighlightsFromProfile(profile)).To(Equal(3))
+		})
+	})
+})
+
+var _ = Describe("ExportService Coverage", func() {
+	var (
+		service *ExportService
+		log     *logger.Logger
+		ctx     context.Context
+	)
+
+	BeforeEach(func() {
+		log = logger.New(io.Discard, logger.InfoLevel)
+		service = NewExportService(log, nil, nil)
+		ctx = context.Background()
+	})
+
+	Describe("SystemClipboard", func() {
+		Describe("WriteAll", func() {
+			It("should attempt clipboard write without panicking", func() {
+				sc := &SystemClipboard{}
+				err := sc.WriteAll("test content")
+				_ = err
+			})
+		})
+
+		Describe("IsUnsupported", func() {
+			It("should return a boolean without panicking", func() {
+				sc := &SystemClipboard{}
+				_ = sc.IsUnsupported()
+			})
+		})
+	})
+
+	Describe("sortBulletsByConfidenceAndRoleScore", func() {
+		It("should sort by confidence descending", func() {
+			low := fixtures.CVBulletWithScores("b-low", "s1", "Low", 0.5, 0.5, 0.5, 0.0)
+			high := fixtures.CVBulletWithScores("b-high", "s1", "High", 0.5, 0.9, 0.5, 0.0)
+			mid := fixtures.CVBulletWithScores("b-mid", "s1", "Mid", 0.5, 0.7, 0.5, 0.0)
+			bullets := []*career.CVBullet{low, high, mid}
+			sortBulletsByConfidenceAndRoleScore(bullets)
+			Expect(bullets[0].Text).To(Equal("High"))
+			Expect(bullets[1].Text).To(Equal("Mid"))
+			Expect(bullets[2].Text).To(Equal("Low"))
+		})
+
+		It("should use RoleScore as tiebreaker when confidence is equal", func() {
+			lowRole := fixtures.CVBulletWithScores("b-low-role", "s1", "LowRole", 0.5, 0.8, 0.3, 0.0)
+			highRole := fixtures.CVBulletWithScores("b-high-role", "s1", "HighRole", 0.5, 0.8, 0.9, 0.0)
+			midRole := fixtures.CVBulletWithScores("b-mid-role", "s1", "MidRole", 0.5, 0.8, 0.6, 0.0)
+			bullets := []*career.CVBullet{lowRole, highRole, midRole}
+			sortBulletsByConfidenceAndRoleScore(bullets)
+			Expect(bullets[0].Text).To(Equal("HighRole"))
+			Expect(bullets[1].Text).To(Equal("MidRole"))
+			Expect(bullets[2].Text).To(Equal("LowRole"))
+		})
+
+		It("should return 0 when confidence and RoleScore are both equal", func() {
+			a := fixtures.CVBulletWithScores("b-a", "s1", "A", 0.5, 0.8, 0.7, 0.0)
+			b := fixtures.CVBulletWithScores("b-b", "s1", "B", 0.5, 0.8, 0.7, 0.0)
+			bullets := []*career.CVBullet{a, b}
+			sortBulletsByConfidenceAndRoleScore(bullets)
+			Expect(bullets).To(HaveLen(2))
+		})
+
+		It("should handle empty slice without panic", func() {
+			var bullets []*career.CVBullet
+			sortBulletsByConfidenceAndRoleScore(bullets)
+			Expect(bullets).To(BeEmpty())
+		})
+
+		It("should handle single element", func() {
+			only := fixtures.CVBulletWithScores("b-only", "s1", "Only", 0.5, 0.8, 0.7, 0.0)
+			bullets := []*career.CVBullet{only}
+			sortBulletsByConfidenceAndRoleScore(bullets)
+			Expect(bullets[0].Text).To(Equal("Only"))
+		})
+	})
+
+	Describe("exportConsultingWithProfile unknown format", func() {
+		It("should return error for unknown format", func() {
+			cv := fixtures.CVViewWith("cv-1", "Test CV", "senior_ic", "hiring_manager")
+			sections := []*career.CVSection{}
+			bullets := map[string][]*career.CVBullet{}
+			_, err := service.ExportWithProfile(ctx, cv, sections, bullets, CVStructureConsulting, ExportFormat("invalid"), nil)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("unknown export format"))
+		})
+	})
+
+	Describe("exportHighlightsWithProfile unknown format", func() {
+		It("should return error for unknown format", func() {
+			cv := fixtures.CVViewWith("cv-1", "Test CV", "senior_ic", "hiring_manager")
+			sections := []*career.CVSection{}
+			bullets := map[string][]*career.CVBullet{}
+			_, err := service.ExportWithProfile(ctx, cv, sections, bullets, CVStructureHighlights, ExportFormat("invalid"), nil)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("unknown export format"))
+		})
+	})
+
+	Describe("exportNarrativeWithProfile unknown format", func() {
+		It("should return error for unknown format", func() {
+			cv := fixtures.CVViewWith("cv-1", "Test CV", "senior_ic", "hiring_manager")
+			sections := []*career.CVSection{}
+			_, err := service.ExportWithProfile(ctx, cv, sections, nil, CVStructureNarrative, ExportFormat("invalid"), nil)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("unknown export format"))
+		})
+	})
+
+	Describe("exportHighlightsMarkdown branches", func() {
+		It("should use default capabilities when no core strengths in profile", func() {
+			cv := fixtures.CVViewWith("cv-1", "Test CV", "senior_ic", "hiring_manager")
+			bullet := fixtures.CVBulletWith("b1", "s1", "Built something great")
+			bullet.Confidence = 0.9
+			section := fixtures.CVSectionWith("s1", "cv-1", "experience", "Experience", 1)
+			section.Content = []*career.SectionContentGroup{
+				fixtures.ContentGroupWithBullets("Corp", []*career.CVBullet{bullet}),
+			}
+			bullets := map[string][]*career.CVBullet{"s1": {bullet}}
+
+			content, err := service.ExportWithProfile(ctx, cv, []*career.CVSection{section}, bullets, CVStructureHighlights, ExportFormatMarkdown, nil)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(content).To(ContainSubstring("- Technical leadership and architecture"))
+			Expect(content).To(ContainSubstring("- System design and optimization"))
+			Expect(content).To(ContainSubstring("- Cross-functional collaboration"))
+		})
+
+		It("should limit core strengths to 6 in markdown highlights", func() {
+			cv := fixtures.CVViewWith("cv-1", "Test CV", "senior_ic", "hiring_manager")
+			section := fixtures.CVSectionWith("s1", "cv-1", "experience", "Experience", 1)
+			section.Content = []*career.SectionContentGroup{}
+			bullets := map[string][]*career.CVBullet{}
+			profileCfg := &config.ProfileConfig{
+				CoreStrengths: []string{"S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8"},
+			}
+
+			content, err := service.ExportWithProfile(ctx, cv, []*career.CVSection{section}, bullets, CVStructureHighlights, ExportFormatMarkdown, profileCfg)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(content).To(ContainSubstring("- S6"))
+			Expect(content).NotTo(ContainSubstring("- S7"))
+		})
+
+		It("should include technologies section with both languages and systems", func() {
+			cv := fixtures.CVViewWith("cv-1", "Test CV", "senior_ic", "hiring_manager")
+			section := fixtures.CVSectionWith("s1", "cv-1", "experience", "Experience", 1)
+			section.Content = []*career.SectionContentGroup{}
+			bullets := map[string][]*career.CVBullet{}
+			profileCfg := &config.ProfileConfig{
+				Languages: []string{"Go", "Python"},
+				Systems:   []string{"Kubernetes", "Docker"},
+			}
+
+			content, err := service.ExportWithProfile(ctx, cv, []*career.CVSection{section}, bullets, CVStructureHighlights, ExportFormatMarkdown, profileCfg)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(content).To(ContainSubstring("## Technologies"))
+			Expect(content).To(ContainSubstring("**Languages:** Go, Python"))
+			Expect(content).To(ContainSubstring("**Systems:** Kubernetes, Docker"))
+		})
+
+		It("should include technologies with only languages", func() {
+			cv := fixtures.CVViewWith("cv-1", "Test CV", "senior_ic", "hiring_manager")
+			section := fixtures.CVSectionWith("s1", "cv-1", "experience", "Experience", 1)
+			section.Content = []*career.SectionContentGroup{}
+			bullets := map[string][]*career.CVBullet{}
+			profileCfg := &config.ProfileConfig{
+				Languages: []string{"Go"},
+			}
+
+			content, err := service.ExportWithProfile(ctx, cv, []*career.CVSection{section}, bullets, CVStructureHighlights, ExportFormatMarkdown, profileCfg)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(content).To(ContainSubstring("## Technologies"))
+			Expect(content).To(ContainSubstring("**Languages:** Go"))
+			Expect(content).NotTo(ContainSubstring("**Systems:**"))
+		})
+
+		It("should include technologies with only systems", func() {
+			cv := fixtures.CVViewWith("cv-1", "Test CV", "senior_ic", "hiring_manager")
+			section := fixtures.CVSectionWith("s1", "cv-1", "experience", "Experience", 1)
+			section.Content = []*career.SectionContentGroup{}
+			bullets := map[string][]*career.CVBullet{}
+			profileCfg := &config.ProfileConfig{
+				Systems: []string{"AWS"},
+			}
+
+			content, err := service.ExportWithProfile(ctx, cv, []*career.CVSection{section}, bullets, CVStructureHighlights, ExportFormatMarkdown, profileCfg)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(content).To(ContainSubstring("## Technologies"))
+			Expect(content).To(ContainSubstring("**Systems:** AWS"))
+			Expect(content).NotTo(ContainSubstring("**Languages:**"))
+		})
+
+		It("should omit technologies section when no languages or systems", func() {
+			cv := fixtures.CVViewWith("cv-1", "Test CV", "senior_ic", "hiring_manager")
+			section := fixtures.CVSectionWith("s1", "cv-1", "experience", "Experience", 1)
+			section.Content = []*career.SectionContentGroup{}
+			bullets := map[string][]*career.CVBullet{}
+
+			content, err := service.ExportWithProfile(ctx, cv, []*career.CVSection{section}, bullets, CVStructureHighlights, ExportFormatMarkdown, nil)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(content).NotTo(ContainSubstring("## Technologies"))
+		})
+
+		It("should include summary when present", func() {
+			cv := fixtures.CVViewWith("cv-1", "Test CV", "senior_ic", "hiring_manager")
+			summarySection := fixtures.CVSectionWithSummary("s-summary", "cv-1", "A skilled engineer.")
+			section := fixtures.CVSectionWith("s1", "cv-1", "experience", "Experience", 1)
+			section.Content = []*career.SectionContentGroup{}
+			bullets := map[string][]*career.CVBullet{}
+
+			content, err := service.ExportWithProfile(ctx, cv, []*career.CVSection{summarySection, section}, bullets, CVStructureHighlights, ExportFormatMarkdown, nil)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(content).To(ContainSubstring("A skilled engineer."))
+		})
+
+		It("should handle no summary gracefully", func() {
+			cv := fixtures.CVViewWith("cv-1", "Test CV", "senior_ic", "hiring_manager")
+			section := fixtures.CVSectionWith("s1", "cv-1", "experience", "Experience", 1)
+			section.Content = []*career.SectionContentGroup{}
+			bullets := map[string][]*career.CVBullet{}
+
+			content, err := service.ExportWithProfile(ctx, cv, []*career.CVSection{section}, bullets, CVStructureHighlights, ExportFormatMarkdown, nil)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(content).To(ContainSubstring("---"))
+		})
+	})
+
+	Describe("exportConsultingMarkdown branches", func() {
+		It("should include group header without dates", func() {
+			cv := fixtures.CVViewWith("cv-1", "Test CV", "senior_ic", "hiring_manager")
+			bullet := fixtures.CVBulletWith("b1", "s1", "Consulting work")
+			section := fixtures.CVSectionWith("s1", "cv-1", "experience", "Experience", 1)
+			section.Content = []*career.SectionContentGroup{
+				fixtures.ContentGroupWithBullets("NoDates Corp", []*career.CVBullet{bullet}),
+			}
+			bullets := map[string][]*career.CVBullet{"s1": {bullet}}
+
+			content, err := service.ExportWithProfile(ctx, cv, []*career.CVSection{section}, bullets, CVStructureConsulting, ExportFormatMarkdown, nil)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(content).To(ContainSubstring("### NoDates Corp"))
+		})
+
+		It("should include What I Bring section when profile has value propositions", func() {
+			cv := fixtures.CVViewWith("cv-1", "Test CV", "senior_ic", "hiring_manager")
+			section := fixtures.CVSectionWith("s1", "cv-1", "experience", "Experience", 1)
+			section.Content = []*career.SectionContentGroup{}
+			bullets := map[string][]*career.CVBullet{}
+			profileCfg := &config.ProfileConfig{
+				WhatIBring: []string{"Deep expertise", "Strong leadership"},
+			}
+
+			content, err := service.ExportWithProfile(ctx, cv, []*career.CVSection{section}, bullets, CVStructureConsulting, ExportFormatMarkdown, profileCfg)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(content).To(ContainSubstring("## What I Bring"))
+			Expect(content).To(ContainSubstring("- Deep expertise"))
+			Expect(content).To(ContainSubstring("- Strong leadership"))
+		})
+
+		It("should omit What I Bring when profile has no value propositions", func() {
+			cv := fixtures.CVViewWith("cv-1", "Test CV", "senior_ic", "hiring_manager")
+			section := fixtures.CVSectionWith("s1", "cv-1", "experience", "Experience", 1)
+			section.Content = []*career.SectionContentGroup{}
+			bullets := map[string][]*career.CVBullet{}
+
+			content, err := service.ExportWithProfile(ctx, cv, []*career.CVSection{section}, bullets, CVStructureConsulting, ExportFormatMarkdown, nil)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(content).NotTo(ContainSubstring("## What I Bring"))
+		})
+
+		It("should include summary in consulting markdown", func() {
+			cv := fixtures.CVViewWith("cv-1", "Test CV", "senior_ic", "hiring_manager")
+			summarySection := fixtures.CVSectionWithSummary("s-summary", "cv-1", "Expert consultant.")
+			section := fixtures.CVSectionWith("s1", "cv-1", "experience", "Experience", 1)
+			section.Content = []*career.SectionContentGroup{}
+			bullets := map[string][]*career.CVBullet{}
+
+			content, err := service.ExportWithProfile(ctx, cv, []*career.CVSection{summarySection, section}, bullets, CVStructureConsulting, ExportFormatMarkdown, nil)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(content).To(ContainSubstring("Expert consultant."))
+		})
+	})
+
+	Describe("ExportToMarkdown branches", func() {
+		It("should handle same start and end date", func() {
+			cv := fixtures.CVViewWith("cv-1", "Test CV", "Engineer", "hiring_manager")
+			bullet := fixtures.CVBulletWith("b1", "s1", "Short project work")
+			section := fixtures.CVSectionWith("s1", "cv-1", "experience", "Experience", 1)
+			section.Content = []*career.SectionContentGroup{
+				fixtures.ContentGroupFull("ShortCorp", "Jun 2023", "Jun 2023", []*career.CVBullet{bullet}),
+			}
+
+			markdown, err := service.ExportToMarkdown(ctx, cv, []*career.CVSection{section}, map[string][]*career.CVBullet{"s1": {bullet}})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(markdown).To(ContainSubstring("### ShortCorp - _Jun 2023_"))
+		})
+
+		It("should handle content group header without dates", func() {
+			cv := fixtures.CVViewWith("cv-1", "Test CV", "Engineer", "hiring_manager")
+			bullet := fixtures.CVBulletWith("b1", "s1", "Undated work")
+			section := fixtures.CVSectionWith("s1", "cv-1", "experience", "Experience", 1)
+			section.Content = []*career.SectionContentGroup{
+				fixtures.ContentGroupWithBullets("NoDates Corp", []*career.CVBullet{bullet}),
+			}
+
+			markdown, err := service.ExportToMarkdown(ctx, cv, []*career.CVSection{section}, map[string][]*career.CVBullet{"s1": {bullet}})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(markdown).To(ContainSubstring("### NoDates Corp"))
+		})
+
+		It("should render summary section as prose", func() {
+			cv := fixtures.CVViewWith("cv-1", "Test CV", "Engineer", "hiring_manager")
+			summarySection := fixtures.CVSectionWithSummary("s-summary", "cv-1", "A talented engineer.")
+
+			markdown, err := service.ExportToMarkdown(ctx, cv, []*career.CVSection{summarySection}, map[string][]*career.CVBullet{})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(markdown).To(ContainSubstring("A talented engineer."))
+		})
+	})
+
+	Describe("SaveToFile additional coverage", func() {
+		It("should default to .txt extension for unknown format", func() {
+			content := "Unknown format content"
+			filePath, err := service.SaveToFile(ctx, "TestUnknown", ExportFormat("unsupported"), content)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(filePath).To(ContainSubstring(".txt"))
+			os.Remove(filePath)
+		})
+
+		It("should persist correct content to disk", func() {
+			content := "Verified CV\nLine 2\nLine 3"
+			filePath, err := service.SaveToFile(ctx, "VerifyCV", ExportFormatText, content)
+			Expect(err).NotTo(HaveOccurred())
+			savedContent, readErr := os.ReadFile(filePath)
+			Expect(readErr).NotTo(HaveOccurred())
+			Expect(string(savedContent)).To(Equal(content))
+			os.Remove(filePath)
+		})
+	})
+
+	Describe("GetExportPath structure", func() {
+		It("should return path under home with correct subdirectories", func() {
+			path, err := service.GetExportPath()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(path).To(ContainSubstring(filepath.Join(".kariya", "cv_exports")))
+		})
+	})
+
+	Describe("exportNarrativeWithProfile markdown", func() {
+		It("should export narrative markdown with complete profile", func() {
+			cv := fixtures.CVViewWith("cv-1", "Test CV", "senior_ic", "hiring_manager")
+			bullet := fixtures.CVBulletWith("b1", "s1", "Major achievement")
+			bullet.Confidence = 0.90
+			expSection := fixtures.CVSectionWith("s1", "cv-1", "experience", "Experience", 1)
+			expSection.Content = []*career.SectionContentGroup{
+				fixtures.ContentGroupFull("BigCo", "Jan 2020", "Dec 2023", []*career.CVBullet{bullet}),
+			}
+
+			profileCfg := &config.ProfileConfig{
+				Name:          "Test Author",
+				Title:         "Staff Engineer",
+				Location:      "London, UK",
+				Email:         "test@example.com",
+				GitHub:        "testuser",
+				Portfolio:     "https://test.dev",
+				Languages:     []string{"Go", "Python"},
+				Frontend:      []string{"React"},
+				Systems:       []string{"K8s"},
+				CoreStrengths: []string{"Architecture"},
+				WhatIBring:    []string{"Deep knowledge"},
+			}
+
+			content, err := service.ExportWithProfile(ctx, cv, []*career.CVSection{expSection}, map[string][]*career.CVBullet{"s1": {bullet}}, CVStructureNarrative, ExportFormatMarkdown, profileCfg)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(content).To(ContainSubstring("# Test Author"))
+			Expect(content).To(ContainSubstring("**Staff Engineer**"))
+			Expect(content).To(ContainSubstring("## Core Strengths"))
+			Expect(content).To(ContainSubstring("- Architecture"))
+			Expect(content).To(ContainSubstring("## Languages & Technologies"))
+			Expect(content).To(ContainSubstring("**Languages:** Go, Python"))
+			Expect(content).To(ContainSubstring("## Selected Experience"))
+			Expect(content).To(ContainSubstring("### BigCo"))
+			Expect(content).To(ContainSubstring("- Major achievement"))
+			Expect(content).To(ContainSubstring("## What I Bring"))
+			Expect(content).To(ContainSubstring("- Deep knowledge"))
+		})
+
+		It("should handle narrative markdown with experience group without dates", func() {
+			cv := fixtures.CVViewWith("cv-1", "Test CV", "senior_ic", "hiring_manager")
+			bullet := fixtures.CVBulletWith("b1", "s1", "Undated achievement")
+			bullet.Confidence = 0.90
+			expSection := fixtures.CVSectionWith("s1", "cv-1", "experience", "Experience", 1)
+			expSection.Content = []*career.SectionContentGroup{
+				fixtures.ContentGroupWithBullets("NoDates Corp", []*career.CVBullet{bullet}),
+			}
+
+			profileCfg := &config.ProfileConfig{
+				Name:  "Test Author",
+				Title: "Engineer",
+			}
+
+			content, err := service.ExportWithProfile(ctx, cv, []*career.CVSection{expSection}, map[string][]*career.CVBullet{"s1": {bullet}}, CVStructureNarrative, ExportFormatMarkdown, profileCfg)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(content).To(ContainSubstring("### NoDates Corp"))
+		})
+
+		It("should use default summary when no summary section exists", func() {
+			cv := fixtures.CVViewWith("cv-1", "Test CV", "senior_ic", "hiring_manager")
+			expSection := fixtures.CVSectionWith("s1", "cv-1", "experience", "Experience", 1)
+			expSection.Content = []*career.SectionContentGroup{}
+
+			content, err := service.ExportWithProfile(ctx, cv, []*career.CVSection{expSection}, map[string][]*career.CVBullet{}, CVStructureNarrative, ExportFormatMarkdown, nil)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(content).To(ContainSubstring("Experienced software engineer with strong technical leadership skills."))
 		})
 	})
 })

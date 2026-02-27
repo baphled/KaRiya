@@ -418,8 +418,11 @@ func (s *CVPreviewScreen) renderHighlights(width int) string {
 		return allBullets[i].score > allBullets[j].score
 	})
 
-	// Take top 5 (or fewer if less than 5 bullets)
+	// Take top N highlights from config (or fewer if less bullets available)
 	topCount := 5
+	if s.profileConfig != nil && s.profileConfig.MaxHighlights > 0 {
+		topCount = s.profileConfig.MaxHighlights
+	}
 	if len(allBullets) < topCount {
 		topCount = len(allBullets)
 	}

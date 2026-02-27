@@ -533,7 +533,12 @@ func formatBulletsAsDescription(bullets []*career.CVBullet) string {
 	return sb.String()
 }
 
-const maxHighlightBullets = 5
+func maxHighlightsFromProfile(profile *config.ProfileConfig) int {
+	if profile != nil && profile.MaxHighlights > 0 {
+		return profile.MaxHighlights
+	}
+	return 5
+}
 
 func generateHighlights(sections []*career.CVSection, profile *config.ProfileConfig) string {
 	if profile != nil && len(profile.WhatIBring) > 0 {
@@ -547,8 +552,9 @@ func generateHighlights(sections []*career.CVSection, profile *config.ProfileCon
 	bullets := extractExperienceBullets(sections)
 	if len(bullets) > 0 {
 		sortBulletsByConfidenceAndRoleScore(bullets)
-		if len(bullets) > maxHighlightBullets {
-			bullets = bullets[:maxHighlightBullets]
+		maxBullets := maxHighlightsFromProfile(profile)
+		if len(bullets) > maxBullets {
+			bullets = bullets[:maxBullets]
 		}
 		var sb strings.Builder
 		for _, bullet := range bullets {

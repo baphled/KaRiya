@@ -146,6 +146,14 @@ var _ = Describe("ProgressModal", func() {
 
 			Expect(cmd).NotTo(BeNil())
 		})
+
+		It("should execute tick command closure and return SpinnerTickMsg", func() {
+			cmd := modal.Init()
+			Expect(cmd).NotTo(BeNil())
+
+			msg := cmd()
+			Expect(msg).To(BeAssignableToTypeOf(modals.SpinnerTickMsg{}))
+		})
 	})
 
 	Describe("Cancellation", func() {
@@ -334,6 +342,15 @@ var _ = Describe("ProgressModal", func() {
 			}
 
 			Expect(modal.GetSpinnerFrame()).To(BeNumerically("<", 10))
+		})
+
+		It("should return nil from Update when not visible", func() {
+			modal = modals.NewProgressModal("Processing", "Please wait...", true, 120, 40)
+			modal.Hide()
+
+			cmd := modal.Update(modals.SpinnerTickMsg{})
+
+			Expect(cmd).To(BeNil())
 		})
 	})
 })

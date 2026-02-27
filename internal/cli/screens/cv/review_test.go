@@ -8,7 +8,9 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/cv"
+	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/types"
 	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
@@ -123,6 +125,98 @@ var _ = Describe("ReviewScreen", func() {
 				view := screen.View()
 				Expect(view).To(ContainSubstring("🎯 Generation Settings"))
 			})
+		})
+	})
+
+	Describe("Init", func() {
+		It("returns nil command", func() {
+			screen := cv.NewCVReviewScreen(sampleCV)
+			cmd := screen.Init()
+			Expect(cmd).To(BeNil())
+		})
+	})
+
+	Describe("Update key handling", func() {
+		var screen *cv.ReviewScreen
+
+		BeforeEach(func() {
+			screen = cv.NewCVReviewScreenWithProfile(sampleCV, sampleProfile)
+			screen.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+			screen.View()
+		})
+
+		It("returns NavigateResult with 'preview' on enter key", func() {
+			cmd, result := screen.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			Expect(cmd).To(BeNil())
+			Expect(result).NotTo(BeNil())
+			Expect(result.Type()).To(Equal(screens.ResultNavigate))
+			Expect(result.Data()).To(Equal("preview"))
+		})
+
+		It("returns NavigateResult with 'preview' on 'p' key", func() {
+			cmd, result := screen.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'p'}})
+			Expect(cmd).To(BeNil())
+			Expect(result).NotTo(BeNil())
+			Expect(result.Data()).To(Equal("preview"))
+		})
+
+		It("returns NavigateResult with 'export' on 'x' key", func() {
+			cmd, result := screen.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
+			Expect(cmd).To(BeNil())
+			Expect(result).NotTo(BeNil())
+			Expect(result.Data()).To(Equal("export"))
+		})
+
+		It("returns NavigateResult with 'edit' on 'e' key", func() {
+			cmd, result := screen.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
+			Expect(cmd).To(BeNil())
+			Expect(result).NotTo(BeNil())
+			Expect(result.Data()).To(Equal("edit"))
+		})
+
+		It("returns CancelResult on esc key", func() {
+			cmd, result := screen.Update(tea.KeyMsg{Type: tea.KeyEsc})
+			Expect(cmd).To(BeNil())
+			Expect(result).NotTo(BeNil())
+			Expect(result.Type()).To(Equal(screens.ResultCancel))
+		})
+
+		It("handles 'g' key to go to top", func() {
+			cmd, result := screen.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'g'}})
+			Expect(cmd).To(BeNil())
+			Expect(result).To(BeNil())
+		})
+
+		It("handles 'G' key to go to bottom", func() {
+			cmd, result := screen.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'G'}})
+			Expect(cmd).To(BeNil())
+			Expect(result).To(BeNil())
+		})
+
+		It("handles down key for scrolling", func() {
+			cmd, result := screen.Update(tea.KeyMsg{Type: tea.KeyDown})
+			Expect(cmd).To(BeNil())
+			Expect(result).To(BeNil())
+		})
+
+		It("handles up key for scrolling", func() {
+			screen.Update(tea.KeyMsg{Type: tea.KeyDown})
+			cmd, result := screen.Update(tea.KeyMsg{Type: tea.KeyUp})
+			Expect(cmd).To(BeNil())
+			Expect(result).To(BeNil())
+		})
+
+		It("returns nil for scroll keys when viewport not ready", func() {
+			freshScreen := cv.NewCVReviewScreenWithProfile(sampleCV, sampleProfile)
+			cmd, result := freshScreen.Update(tea.KeyMsg{Type: tea.KeyDown})
+			Expect(cmd).To(BeNil())
+			Expect(result).To(BeNil())
+		})
+
+		It("returns nil for unhandled key", func() {
+			cmd, result := screen.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'z'}})
+			Expect(cmd).To(BeNil())
+			Expect(result).To(BeNil())
 		})
 	})
 
@@ -254,6 +348,122 @@ var _ = Describe("ReviewScreen", func() {
 				Expect(view).To(ContainSubstring("Sections: 3"))
 				Expect(view).To(ContainSubstring("Total Bullets: 5")) // 2+2+1 bullets from sections
 			})
+		})
+	})
+
+	Describe("View edge cases", func() {
+		It("shows no data message when CV is nil", func() {
+			nilScreen := cv.NewCVReviewScreen(nil)
+			nilScreen.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+			view := nilScreen.View()
+			Expect(view).To(ContainSubstring("No CV data available"))
+			Expect(view).To(ContainSubstring("esc"))
+		})
+
+		It("handles small viewport dimensions", func() {
+			screen := cv.NewCVReviewScreenWithProfile(sampleCV, sampleProfile)
+			screen.Update(tea.WindowSizeMsg{Width: 35, Height: 8})
+			view := screen.View()
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("uses custom theme when set via SetTheme", func() {
+			screen := cv.NewCVReviewScreenWithProfile(sampleCV, sampleProfile)
+			screen.SetTheme(themes.NewDefaultTheme())
+			screen.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+			view := screen.View()
+			Expect(view).To(ContainSubstring("📋 CV Review"))
+		})
+
+		It("renders summary section without summary text in sections", func() {
+			bullet := fixtures.CVBulletWith("b-nosummary", "s-exp", "Built payment system")
+			group := fixtures.ContentGroupWithBullets("Engineering", []*career.CVBullet{bullet})
+			section := fixtures.CVSectionWithContent("s-exp", "cv-nosummary", []*career.SectionContentGroup{group})
+			section.Title = "Experience"
+			section.SectionType = "experience"
+
+			cvNoSummary := fixtures.CVViewWithSections("cv-nosummary", []*career.CVSection{section})
+			cvNoSummary.Name = "No Summary CV"
+			cvNoSummary.TargetRole = "Engineer"
+			cvNoSummary.TargetAudience = "Manager"
+
+			screen := cv.NewCVReviewScreenWithSummary(cvNoSummary, sampleProfile, sampleSummary)
+			screen.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+			view := screen.View()
+			Expect(view).NotTo(ContainSubstring("📝 Summary"))
+		})
+	})
+
+	Describe("Score and highlight coverage", func() {
+		It("uses confidence only for master audience", func() {
+			bullet := fixtures.CVBulletWith("b-master", "s1", "Designed distributed cache")
+			group := fixtures.ContentGroupWithBullets("Engineering", []*career.CVBullet{bullet})
+			section := fixtures.CVSectionWithContent("s1", "cv-master", []*career.SectionContentGroup{group})
+			section.Title = "Experience"
+
+			masterCV := fixtures.CVViewWithSections("cv-master", []*career.CVSection{section})
+			masterCV.Name = "Master CV"
+			masterCV.TargetRole = "Engineer"
+			masterCV.TargetAudience = "master"
+
+			screen := cv.NewCVReviewScreenWithProfile(masterCV, sampleProfile)
+			screen.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+			view := screen.View()
+			Expect(view).To(ContainSubstring("Top Highlights"))
+			Expect(view).To(ContainSubstring("Designed distributed cache"))
+		})
+
+		It("uses audience relevance for non-master audience with populated map", func() {
+			bullet := fixtures.CVBulletWith("b-ar", "s1", "Led system redesign project")
+			bullet.AudienceRelevance = map[string]float64{"Hiring Manager": 0.95}
+			group := fixtures.ContentGroupWithBullets("Engineering", []*career.CVBullet{bullet})
+			section := fixtures.CVSectionWithContent("s1", "cv-ar", []*career.SectionContentGroup{group})
+			section.Title = "Experience"
+
+			arCV := fixtures.CVViewWithSections("cv-ar", []*career.CVSection{section})
+			arCV.Name = "AR CV"
+			arCV.TargetRole = "Engineer"
+			arCV.TargetAudience = "Hiring Manager"
+
+			screen := cv.NewCVReviewScreenWithProfile(arCV, sampleProfile)
+			screen.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+			view := screen.View()
+			Expect(view).To(ContainSubstring("Led system redesign project"))
+		})
+
+		It("uses confidence for empty audience", func() {
+			bullet := fixtures.CVBulletWith("b-empty", "s1", "Built API gateway")
+			group := fixtures.ContentGroupWithBullets("Engineering", []*career.CVBullet{bullet})
+			section := fixtures.CVSectionWithContent("s1", "cv-empty-aud", []*career.SectionContentGroup{group})
+			section.Title = "Experience"
+
+			emptyAudCV := fixtures.CVViewWithSections("cv-empty-aud", []*career.CVSection{section})
+			emptyAudCV.Name = "Empty Audience CV"
+			emptyAudCV.TargetRole = "Engineer"
+			emptyAudCV.TargetAudience = ""
+
+			screen := cv.NewCVReviewScreenWithProfile(emptyAudCV, sampleProfile)
+			screen.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+			view := screen.View()
+			Expect(view).To(ContainSubstring("Built API gateway"))
+		})
+
+		It("renders highlights using EnhancedText when Text is empty", func() {
+			bullet := fixtures.CVBulletWith("b-enhanced", "s1", "")
+			bullet.EnhancedText = "Enhanced version of the bullet"
+			group := fixtures.ContentGroupWithBullets("Engineering", []*career.CVBullet{bullet})
+			section := fixtures.CVSectionWithContent("s1", "cv-enhanced", []*career.SectionContentGroup{group})
+			section.Title = "Experience"
+
+			enhancedCV := fixtures.CVViewWithSections("cv-enhanced", []*career.CVSection{section})
+			enhancedCV.Name = "Enhanced CV"
+			enhancedCV.TargetRole = "Engineer"
+			enhancedCV.TargetAudience = "Hiring Manager"
+
+			screen := cv.NewCVReviewScreenWithProfile(enhancedCV, sampleProfile)
+			screen.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+			view := screen.View()
+			Expect(view).To(ContainSubstring("Enhanced version of the bullet"))
 		})
 	})
 

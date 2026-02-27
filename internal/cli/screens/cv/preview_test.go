@@ -7,6 +7,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/cv"
+	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
@@ -234,6 +235,14 @@ var _ = Describe("CVPreviewScreen", func() {
 				screen.Update(tea.KeyMsg{Type: tea.KeyCtrlD})
 
 				cmd, result := screen.Update(tea.KeyMsg{Type: tea.KeyCtrlU})
+
+				Expect(cmd).To(BeNil())
+				Expect(result).To(BeNil())
+			})
+
+			It("should return nil for scroll keys when viewport not ready", func() {
+				freshScreen := cv.NewCVPreviewScreen(testCV)
+				cmd, result := freshScreen.Update(tea.KeyMsg{Type: tea.KeyDown})
 
 				Expect(cmd).To(BeNil())
 				Expect(result).To(BeNil())
@@ -472,6 +481,114 @@ var _ = Describe("CVPreviewScreen", func() {
 				Expect(view).NotTo(ContainSubstring("yomi@boodah.net"))
 				Expect(view).NotTo(ContainSubstring("boodah"))
 			})
+		})
+	})
+
+	Describe("Theme coverage", func() {
+		It("should use custom theme when set via SetTheme", func() {
+			themedScreen := cv.NewCVPreviewScreen(testCV)
+			themedScreen.SetTheme(themes.NewDefaultTheme())
+			themedScreen.Update(tea.WindowSizeMsg{Width: 80, Height: 40})
+
+			view := themedScreen.View()
+			Expect(view).To(ContainSubstring("CV Preview"))
+		})
+	})
+
+	Describe("Highlight rendering", func() {
+		It("should use MaxHighlights from profile config", func() {
+			customProfile := &config.ProfileConfig{
+				Name:          "Jane Doe",
+				MaxHighlights: 3,
+			}
+			screenWithMax := cv.NewCVPreviewScreenWithProfile(testCV, customProfile)
+			screenWithMax.Update(tea.WindowSizeMsg{Width: 80, Height: 40})
+
+			view := screenWithMax.View()
+			Expect(view).To(ContainSubstring("Key Highlights"))
+		})
+
+		It("should render highlights using EnhancedText when Text is empty", func() {
+			bullet := fixtures.CVBulletWith("b-enh", "s1", "")
+			bullet.EnhancedText = "Enhanced highlight text for preview"
+			group := fixtures.ContentGroupWithBullets("Engineering", []*career.CVBullet{bullet})
+			section := fixtures.CVSectionWithContent("s1", "cv-enh", []*career.SectionContentGroup{group})
+			section.Title = "Experience"
+
+			enhCV := fixtures.CVViewWith("cv-enh", "Enhanced CV", "Engineer", "Hiring Manager")
+			enhCV.Sections = []*career.CVSection{section}
+
+			enhScreen := cv.NewCVPreviewScreen(enhCV)
+			enhScreen.Update(tea.WindowSizeMsg{Width: 80, Height: 40})
+
+			view := enhScreen.View()
+			Expect(view).To(ContainSubstring("Enhanced highlight text for preview"))
+		})
+
+		It("should use confidence only for master audience", func() {
+			bullet := fixtures.CVBulletWith("b-m", "s1", "Master audience bullet")
+			group := fixtures.ContentGroupWithBullets("Engineering", []*career.CVBullet{bullet})
+			section := fixtures.CVSectionWithContent("s1", "cv-m", []*career.SectionContentGroup{group})
+			section.Title = "Experience"
+
+			masterCV := fixtures.CVViewWith("cv-m", "Master CV", "Engineer", "master")
+			masterCV.Sections = []*career.CVSection{section}
+
+			masterScreen := cv.NewCVPreviewScreen(masterCV)
+			masterScreen.Update(tea.WindowSizeMsg{Width: 80, Height: 40})
+
+			view := masterScreen.View()
+			Expect(view).To(ContainSubstring("Master audience bullet"))
+		})
+
+		It("should use audience relevance for non-master audience with populated map", func() {
+			bullet := fixtures.CVBulletWith("b-ar", "s1", "Audience relevant bullet")
+			bullet.AudienceRelevance = map[string]float64{"hiring manager": 0.95}
+			group := fixtures.ContentGroupWithBullets("Engineering", []*career.CVBullet{bullet})
+			section := fixtures.CVSectionWithContent("s1", "cv-ar", []*career.SectionContentGroup{group})
+			section.Title = "Experience"
+
+			arCV := fixtures.CVViewWith("cv-ar", "AR CV", "Engineer", "Hiring Manager")
+			arCV.Sections = []*career.CVSection{section}
+
+			arScreen := cv.NewCVPreviewScreen(arCV)
+			arScreen.Update(tea.WindowSizeMsg{Width: 80, Height: 40})
+
+			view := arScreen.View()
+			Expect(view).To(ContainSubstring("Audience relevant bullet"))
+		})
+
+		It("should fall back to confidence when audience key not in map", func() {
+			bullet := fixtures.CVBulletWith("b-fb", "s1", "Fallback confidence bullet")
+			bullet.AudienceRelevance = map[string]float64{"recruiter": 0.8}
+			group := fixtures.ContentGroupWithBullets("Engineering", []*career.CVBullet{bullet})
+			section := fixtures.CVSectionWithContent("s1", "cv-fb", []*career.SectionContentGroup{group})
+			section.Title = "Experience"
+
+			fbCV := fixtures.CVViewWith("cv-fb", "Fallback CV", "Engineer", "Hiring Manager")
+			fbCV.Sections = []*career.CVSection{section}
+
+			fbScreen := cv.NewCVPreviewScreen(fbCV)
+			fbScreen.Update(tea.WindowSizeMsg{Width: 80, Height: 40})
+
+			view := fbScreen.View()
+			Expect(view).To(ContainSubstring("Fallback confidence bullet"))
+		})
+
+		It("should use confidence for empty audience", func() {
+			bullet := fixtures.CVBulletWith("b-ea", "s1", "Empty audience bullet")
+			group := fixtures.ContentGroupWithBullets("Engineering", []*career.CVBullet{bullet})
+			section := fixtures.CVSectionWithContent("s1", "cv-ea", []*career.SectionContentGroup{group})
+			section.Title = "Experience"
+
+			eaCV := fixtures.CVViewWith("cv-ea", "Empty Aud CV", "Engineer", "")
+			eaCV.Sections = []*career.CVSection{section}
+
+			eaScreen := cv.NewCVPreviewScreen(eaCV)
+			eaScreen.Update(tea.WindowSizeMsg{Width: 80, Height: 40})
+
+			view := eaScreen.View()
+			Expect(view).To(ContainSubstring("Empty audience bullet"))
 		})
 	})
 })

@@ -2,8 +2,10 @@
 package config_test
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -56,6 +58,29 @@ var _ = Describe("Config", func() {
 
 			Expect(cfg.System.DataDir).NotTo(BeEmpty())
 			Expect(cfg.System.DataDir).To(ContainSubstring(".kariya"))
+		})
+
+		It("should use fallback DataDir when home directory is unavailable", func() {
+			if runtime.GOOS == "windows" {
+				return
+			}
+
+			originalHome := os.Getenv("HOME")
+			os.Setenv("HOME", "")
+			defer os.Setenv("HOME", originalHome)
+
+			cfg := config.DefaultConfig()
+			Expect(cfg.System.DataDir).To(Equal(".kariya"))
+		})
+
+		It("should fallback to current directory when home dir resolver fails", func() {
+			restore := config.SwapHomeDirForTesting(func() (string, error) {
+				return "", errors.New("no home directory")
+			})
+			defer restore()
+
+			cfg := config.DefaultConfig()
+			Expect(cfg.System.DataDir).To(Equal(filepath.Join(".", ".kariya")))
 		})
 	})
 
@@ -172,6 +197,35 @@ scoring:
 			Expect(err).NotTo(HaveOccurred())
 			Expect(path).To(ContainSubstring(".kariya"))
 			Expect(path).To(HaveSuffix("config.yaml"))
+		})
+
+		It("should return error when home directory cannot be determined", func() {
+			if runtime.GOOS == "windows" {
+				return
+			}
+
+			config.ResetConfigPath()
+
+			originalHome := os.Getenv("HOME")
+			os.Setenv("HOME", "")
+			defer os.Setenv("HOME", originalHome)
+
+			_, err := config.GetConfigPath()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("failed to get home directory"))
+		})
+
+		It("should return error when home dir resolver fails and no override set", func() {
+			restore := config.SwapHomeDirForTesting(func() (string, error) {
+				return "", errors.New("no home directory")
+			})
+			defer restore()
+
+			config.ResetConfigPath()
+
+			_, err := config.GetConfigPath()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("failed to get home directory"))
 		})
 	})
 
@@ -852,6 +906,7 @@ cv:
 					Expect(result).To(BeTrue())
 					Expect(cfg.Profile.Prefix).To(Equal("Mr."))
 					Expect(cfg.Profile.FirstName).To(Equal("John"))
+					Expect(cfg.Profile.LastName).To(Equal("Doe"))
 				})
 
 				It("should detect Mrs. prefix", func() {
@@ -865,6 +920,7 @@ cv:
 					Expect(result).To(BeTrue())
 					Expect(cfg.Profile.Prefix).To(Equal("Mrs."))
 					Expect(cfg.Profile.FirstName).To(Equal("Jane"))
+					Expect(cfg.Profile.LastName).To(Equal("Doe"))
 				})
 
 				It("should detect Ms. prefix", func() {
@@ -878,9 +934,98 @@ cv:
 					Expect(result).To(BeTrue())
 					Expect(cfg.Profile.Prefix).To(Equal("Ms."))
 					Expect(cfg.Profile.FirstName).To(Equal("Jane"))
+					Expect(cfg.Profile.LastName).To(Equal("Doe"))
 				})
 			})
 		})
+	})
 
+	Describe("requireTestIsolation", func() {
+		It("should panic when LoadConfig is called without config path override", func() {
+			config.ResetConfigPath()
+
+			Expect(func() {
+				config.LoadConfig()
+			}).To(Panic())
+		})
+
+		It("should panic when SaveConfig is called without config path override", func() {
+			config.ResetConfigPath()
+
+			Expect(func() {
+				config.SaveConfig(config.DefaultConfig())
+			}).To(Panic())
+		})
+	})
+
+	Describe("LoadConfigFromPath error handling", func() {
+		It("should return error when file exists but is not readable", func() {
+			if runtime.GOOS == "windows" {
+				return
+			}
+
+			err := os.WriteFile(configPath, []byte("system:\n  log_level: info\n"), 0o600)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = os.Chmod(configPath, 0o000)
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = config.LoadConfigFromPath(configPath)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("failed to read config"))
+		})
+	})
+
+	Describe("SaveConfigToPath error handling", func() {
+		It("should return error when file path is a directory", func() {
+			dirAsFile := filepath.Join(tempDir, "is-a-dir")
+			err := os.Mkdir(dirAsFile, 0o750)
+			Expect(err).NotTo(HaveOccurred())
+
+			cfg := config.DefaultConfig()
+			err = config.SaveConfigToPath(cfg, dirAsFile)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("failed to write config"))
+		})
+
+		It("should return error when YAML marshalling fails", func() {
+			restore := config.SwapYamlMarshalForTesting(func(_ interface{}) ([]byte, error) {
+				return nil, errors.New("marshal failure")
+			})
+			defer restore()
+
+			cfg := config.DefaultConfig()
+			err := config.SaveConfigToPath(cfg, filepath.Join(tempDir, "marshal-fail.yaml"))
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("failed to marshal config"))
+		})
+	})
+
+	Describe("MigrateProfileConfig with whitespace-only remaining name", func() {
+		It("should handle name that is only a prefix followed by spaces", func() {
+			cfg := config.DefaultConfig()
+			cfg.Profile.Name = "Dr.  "
+			cfg.Profile.FirstName = ""
+			cfg.Profile.LastName = ""
+
+			result := config.MigrateProfileConfig(cfg)
+
+			Expect(result).To(BeTrue())
+			Expect(cfg.Profile.Prefix).To(Equal("Dr."))
+			Expect(cfg.Profile.FirstName).To(BeEmpty())
+			Expect(cfg.Profile.LastName).To(BeEmpty())
+		})
+
+		It("should handle name that is only whitespace", func() {
+			cfg := config.DefaultConfig()
+			cfg.Profile.Name = "   "
+			cfg.Profile.FirstName = ""
+			cfg.Profile.LastName = ""
+
+			result := config.MigrateProfileConfig(cfg)
+
+			Expect(result).To(BeTrue())
+			Expect(cfg.Profile.FirstName).To(BeEmpty())
+		})
 	})
 })

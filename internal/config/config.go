@@ -17,6 +17,9 @@ var (
 	configPathMu       sync.RWMutex
 )
 
+var userHomeDir = os.UserHomeDir
+var yamlMarshal = yaml.Marshal
+
 // isTestEnvironment checks if we're running in a test environment.
 // This detects both `go test` and test binaries.
 func isTestEnvironment() bool {
@@ -109,6 +112,7 @@ type ProfileConfig struct {
 	Country        string `yaml:"country,omitempty"`
 	SkillsLimit    int    `yaml:"skills_limit,omitempty"`
 	SummaryHeading string `yaml:"summary_heading,omitempty"`
+	MaxHighlights  int    `yaml:"max_highlights,omitempty"`
 }
 
 // CVConfig contains CV generation configuration.
@@ -196,7 +200,7 @@ func (s *ScoringConfig) ValidateWeights() error {
 // Side effects:
 //   - None.
 func DefaultConfig() *Config {
-	homeDir, err := os.UserHomeDir()
+	homeDir, err := userHomeDir()
 	if err != nil {
 		// Fallback to current directory if home dir unavailable
 		homeDir = "."
@@ -308,6 +312,38 @@ func ResetConfigPath() {
 	configPathOverride = ""
 }
 
+// SwapHomeDirForTesting replaces the home directory resolver for testing.
+//
+// Expected:
+//   - fn must be a valid function matching os.UserHomeDir signature.
+//
+// Returns:
+//   - A cleanup function that restores the original resolver.
+//
+// Side effects:
+//   - Replaces the package-level userHomeDir function.
+func SwapHomeDirForTesting(fn func() (string, error)) func() {
+	original := userHomeDir
+	userHomeDir = fn
+	return func() { userHomeDir = original }
+}
+
+// SwapYamlMarshalForTesting replaces the YAML marshaller for testing.
+//
+// Expected:
+//   - fn must be a valid function matching yaml.Marshal signature.
+//
+// Returns:
+//   - A cleanup function that restores the original marshaller.
+//
+// Side effects:
+//   - Replaces the package-level yamlMarshal function.
+func SwapYamlMarshalForTesting(fn func(interface{}) ([]byte, error)) func() {
+	original := yamlMarshal
+	yamlMarshal = fn
+	return func() { yamlMarshal = original }
+}
+
 // GetConfigPath returns the path to the config file.
 // If SetConfigPathForTesting was called, returns the overridden path.
 // Otherwise, returns the default path: ~/.kariya/config.yaml.
@@ -327,7 +363,7 @@ func GetConfigPath() (string, error) {
 		return override, nil
 	}
 
-	homeDir, err := os.UserHomeDir()
+	homeDir, err := userHomeDir()
 	if err != nil {
 		return "", fmt.Errorf("failed to get home directory: %w", err)
 	}
@@ -390,7 +426,7 @@ func LoadConfigFromPath(path string) (*Config, error) {
 	// Apply defaults for any missing values
 	applyDefaults(&cfg)
 
-	// Migrate legacy Name field to structured FirstName/LastName/Prefix
+	// Migrate legacy Name field to FirstName/LastName/Prefix
 	MigrateProfileConfig(&cfg)
 
 	return &cfg, nil
@@ -420,6 +456,9 @@ func applyDefaults(cfg *Config) {
 	}
 	if cfg.Profile.DefaultAudience == "" {
 		cfg.Profile.DefaultAudience = defaults.Profile.DefaultAudience
+	}
+	if cfg.Profile.MaxHighlights == 0 {
+		cfg.Profile.MaxHighlights = 5
 	}
 
 	// CV defaults
@@ -535,7 +574,7 @@ func SaveConfigToPath(cfg *Config, path string) error {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
 
-	data, err := yaml.Marshal(cfg)
+	data, err := yamlMarshal(cfg)
 	if err != nil {
 		return fmt.Errorf("failed to marshal config: %w", err)
 	}

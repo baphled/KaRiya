@@ -30,6 +30,16 @@ type YAMLConfigManager struct {
 
 // NewYAMLConfigManager creates a new YAMLConfigManager instance.
 // It initializes the configuration directory if it doesn't exist.
+//
+// Expected:
+//   - log must be a valid Logger.
+//
+// Returns:
+//   - A fully initialized YAMLConfigManager and nil error on success.
+//   - nil and an error if home directory lookup or directory creation fails.
+//
+// Side effects:
+//   - Creates the configuration directory if it does not exist.
 func NewYAMLConfigManager(log *logger.Logger) (*YAMLConfigManager, error) {
 	// Get home directory
 	homeDir, err := os.UserHomeDir()
@@ -51,6 +61,18 @@ func NewYAMLConfigManager(log *logger.Logger) (*YAMLConfigManager, error) {
 }
 
 // LoadConfig loads a CV configuration from a YAML file.
+//
+// Expected:
+//   - ctx must be a valid context.
+//   - name must be a non-empty string.
+//
+// Returns:
+//   - A CVConfig pointer and nil error on success.
+//   - nil and an error if the config cannot be loaded.
+//
+// Side effects:
+//   - Reads from the filesystem.
+//   - Logs the operation.
 func (m *YAMLConfigManager) LoadConfig(ctx context.Context, name string) (*career.CVConfig, error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
@@ -230,6 +252,17 @@ func (m *YAMLConfigManager) DeleteConfig(ctx context.Context, name string) error
 }
 
 // ListConfigs returns all available CV configurations.
+//
+// Expected:
+//   - ctx must be a valid context.
+//
+// Returns:
+//   - A slice of CVConfig pointers and nil error on success.
+//   - nil and an error if the directory cannot be read.
+//
+// Side effects:
+//   - Reads from the filesystem.
+//   - Logs any load failures as warnings.
 func (m *YAMLConfigManager) ListConfigs(ctx context.Context) ([]*career.CVConfig, error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
@@ -290,6 +323,17 @@ func (m *YAMLConfigManager) GetConfigPath(name string) string {
 }
 
 // ConfigExists checks if a configuration exists.
+//
+// Expected:
+//   - ctx must be a valid context.
+//   - name must be a non-empty string.
+//
+// Returns:
+//   - true if the configuration file exists, false otherwise.
+//   - An error if the check fails for reasons other than non-existence.
+//
+// Side effects:
+//   - Checks the filesystem via os.Stat.
 func (m *YAMLConfigManager) ConfigExists(ctx context.Context, name string) (bool, error) {
 	if ctx.Err() != nil {
 		return false, ctx.Err()

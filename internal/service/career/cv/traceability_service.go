@@ -18,6 +18,17 @@ type TraceabilityService struct {
 }
 
 // NewTraceabilityService creates a new TraceabilityService.
+//
+// Expected:
+//   - eventRepo must be a valid EventRepository.
+//   - factRepo must be a valid FactRepository.
+//   - log must be a valid Logger.
+//
+// Returns:
+//   - A fully initialized TraceabilityService ready for use.
+//
+// Side effects:
+//   - None.
 func NewTraceabilityService(
 	eventRepo careerrepo.EventRepository,
 	factRepo careerrepo.FactRepository,
@@ -31,6 +42,19 @@ func NewTraceabilityService(
 }
 
 // GetBulletSources retrieves source events and facts for a bullet.
+//
+// Expected:
+//   - ctx must be a valid context.
+//   - bulletID must be a non-empty string.
+//   - bullet must be a non-nil CVBullet pointer.
+//
+// Returns:
+//   - A slice of source Event pointers.
+//   - A slice of source Fact pointers.
+//   - An error if the bullet is nil.
+//
+// Side effects:
+//   - Logs retrieval progress and any errors.
 func (ts *TraceabilityService) GetBulletSources(
 	ctx context.Context,
 	bulletID string,
@@ -95,6 +119,16 @@ func (vr *ValidationReport) IsValid() bool {
 }
 
 // GetEventUsage finds all bullets using a specific event.
+//
+// Expected:
+//   - eventID must be a non-empty string.
+//   - allBullets must be a valid slice of CVBullet pointers.
+//
+// Returns:
+//   - A slice of CVBullet pointers that reference the given event.
+//
+// Side effects:
+//   - Logs the search operation.
 func (ts *TraceabilityService) GetEventUsage(
 	_ context.Context,
 	eventID string,
@@ -117,6 +151,16 @@ func (ts *TraceabilityService) GetEventUsage(
 }
 
 // GetFactUsage finds all bullets using a specific fact.
+//
+// Expected:
+//   - factID must be a non-empty string.
+//   - allBullets must be a valid slice of CVBullet pointers.
+//
+// Returns:
+//   - A slice of CVBullet pointers that reference the given fact.
+//
+// Side effects:
+//   - Logs the search operation.
 func (ts *TraceabilityService) GetFactUsage(
 	_ context.Context,
 	factID string,
@@ -139,6 +183,15 @@ func (ts *TraceabilityService) GetFactUsage(
 }
 
 // ValidateTraceability validates all bullets have sources.
+//
+// Expected:
+//   - bullets must be a valid slice of CVBullet pointers.
+//
+// Returns:
+//   - A ValidationReport with counts and issues.
+//
+// Side effects:
+//   - Logs the validation operation.
 func (ts *TraceabilityService) ValidateTraceability(
 	_ context.Context,
 	bullets []*career.CVBullet,
@@ -169,6 +222,15 @@ func (ts *TraceabilityService) ValidateTraceability(
 }
 
 // GetEventBulletMapping returns a mapping of events to bullets.
+//
+// Expected:
+//   - bullets must be a valid slice of CVBullet pointers.
+//
+// Returns:
+//   - A map from event ID to slices of CVBullet pointers.
+//
+// Side effects:
+//   - Logs the mapping operation.
 func (ts *TraceabilityService) GetEventBulletMapping(
 	_ context.Context,
 	bullets []*career.CVBullet,
@@ -187,6 +249,15 @@ func (ts *TraceabilityService) GetEventBulletMapping(
 }
 
 // GetFactBulletMapping returns a mapping of facts to bullets.
+//
+// Expected:
+//   - bullets must be a valid slice of CVBullet pointers.
+//
+// Returns:
+//   - A map from fact ID to slices of CVBullet pointers.
+//
+// Side effects:
+//   - Logs the mapping operation.
 func (ts *TraceabilityService) GetFactBulletMapping(
 	_ context.Context,
 	bullets []*career.CVBullet,

@@ -5,6 +5,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"runtime"
 	"time"
 
 	career "github.com/baphled/kariya/internal/domain/career"
@@ -140,6 +141,41 @@ var _ = Describe("YAMLConfigManager", func() {
 			// Should have exactly one file (.yaml) and no temp files
 			Expect(tempAfter).To(Equal(tempBefore + 1))
 		})
+
+		It("should handle context cancellation", func() {
+			config := fixtures.CVConfigWith("test-config", "principal", "hiring_manager")
+
+			cancelCtx, cancel := context.WithCancel(context.Background())
+			cancel()
+
+			err := manager.SaveConfig(cancelCtx, config)
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should set CreatedAt when zero", func() {
+			config := fixtures.CVConfigWith("zero-created", "principal", "hiring_manager")
+			config.CreatedAt = time.Time{}
+
+			err := manager.SaveConfig(ctx, config)
+			Expect(err).NotTo(HaveOccurred())
+
+			loaded, err := manager.LoadConfig(ctx, "zero-created")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(loaded.CreatedAt).NotTo(BeZero())
+		})
+
+		It("should preserve existing CreatedAt on update", func() {
+			config := fixtures.CVConfigWith("preserve-ts", "principal", "hiring_manager")
+			originalCreatedAt := time.Date(2024, 6, 15, 10, 0, 0, 0, time.UTC)
+			config.CreatedAt = originalCreatedAt
+
+			err := manager.SaveConfig(ctx, config)
+			Expect(err).NotTo(HaveOccurred())
+
+			loaded, err := manager.LoadConfig(ctx, "preserve-ts")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(loaded.CreatedAt).To(BeTemporally("~", originalCreatedAt, time.Second))
+		})
 	})
 
 	Describe("LoadConfig", func() {
@@ -186,6 +222,25 @@ var _ = Describe("YAMLConfigManager", func() {
 			_, err := manager.LoadConfig(cancelCtx, "test-config")
 			Expect(err).To(HaveOccurred())
 		})
+
+		It("should return error for invalid YAML content", func() {
+			invalidPath := filepath.Join(tempDir, "bad-yaml.yaml")
+			Expect(os.WriteFile(invalidPath, []byte("{{{invalid yaml: [[["), 0o600)).To(Succeed())
+
+			_, err := manager.LoadConfig(ctx, "bad-yaml")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("unmarshal"))
+		})
+
+		It("should return error when config fails validation", func() {
+			validYAML := "name: invalid-role-config\ntarget_role: not-a-valid-role\ntarget_audience: hiring_manager\n"
+			configPath := filepath.Join(tempDir, "invalid-role-config.yaml")
+			Expect(os.WriteFile(configPath, []byte(validYAML), 0o600)).To(Succeed())
+
+			_, err := manager.LoadConfig(ctx, "invalid-role-config")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("validation failed"))
+		})
 	})
 
 	Describe("DeleteConfig", func() {
@@ -221,6 +276,17 @@ var _ = Describe("YAMLConfigManager", func() {
 
 		It("should reject whitespace name", func() {
 			err := manager.DeleteConfig(ctx, "   ")
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should handle context cancellation", func() {
+			config := fixtures.CVConfigWith("test-config", "principal", "hiring_manager")
+			Expect(manager.SaveConfig(context.Background(), config)).To(Succeed())
+
+			cancelCtx, cancel := context.WithCancel(context.Background())
+			cancel()
+
+			err := manager.DeleteConfig(cancelCtx, "test-config")
 			Expect(err).To(HaveOccurred())
 		})
 	})
@@ -298,6 +364,27 @@ var _ = Describe("YAMLConfigManager", func() {
 
 			_, err := manager.ListConfigs(cancelCtx)
 			Expect(err).To(HaveOccurred())
+		})
+
+		It("should return empty list for non-existent directory", func() {
+			manager.configDir = filepath.Join(tempDir, "does-not-exist")
+
+			loaded, err := manager.ListConfigs(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(loaded).To(BeEmpty())
+		})
+
+		It("should skip subdirectories", func() {
+			config := fixtures.CVConfigWith("config1", "principal", "hiring_manager")
+			Expect(manager.SaveConfig(ctx, config)).To(Succeed())
+
+			subDir := filepath.Join(tempDir, "subdir")
+			Expect(os.Mkdir(subDir, 0o750)).To(Succeed())
+
+			loaded, err := manager.ListConfigs(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(loaded).To(HaveLen(1))
+			Expect(loaded[0].Name).To(Equal("config1"))
 		})
 	})
 
@@ -433,6 +520,146 @@ var _ = Describe("YAMLConfigManager", func() {
 			Expect(err).To(HaveOccurred())
 		})
 	})
+
+	Describe("GetConfigDirectory", func() {
+		It("should return the configured directory", func() {
+			Expect(manager.GetConfigDirectory()).To(Equal(tempDir))
+		})
+
+		It("should return the exact configDir field value", func() {
+			customDir := filepath.Join(tempDir, "custom", "path")
+			manager.configDir = customDir
+			Expect(manager.GetConfigDirectory()).To(Equal(customDir))
+		})
+	})
+
+	Describe("VerifyDirectory", func() {
+		It("should succeed for existing writable directory", func() {
+			err := manager.VerifyDirectory()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should create directory when it does not exist", func() {
+			newDir := filepath.Join(tempDir, "new-subdir", "deep")
+			manager.configDir = newDir
+
+			err := manager.VerifyDirectory()
+			Expect(err).NotTo(HaveOccurred())
+
+			info, statErr := os.Stat(newDir)
+			Expect(statErr).NotTo(HaveOccurred())
+			Expect(info.IsDir()).To(BeTrue())
+		})
+
+		It("should return error when path is a file not directory", func() {
+			filePath := filepath.Join(tempDir, "not-a-dir")
+			Expect(os.WriteFile(filePath, []byte("content"), 0o600)).To(Succeed())
+
+			manager.configDir = filePath
+
+			err := manager.VerifyDirectory()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("not a directory"))
+		})
+
+		It("should return error when stat fails with non-NotExist error", func() {
+			if runtime.GOOS != "linux" {
+				return
+			}
+
+			manager.configDir = "/dev/null/impossible"
+
+			err := manager.VerifyDirectory()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("failed to stat"))
+		})
+
+		It("should return error when directory creation fails", func() {
+			if os.Getuid() == 0 {
+				return
+			}
+
+			parent := filepath.Join(tempDir, "readonly-parent")
+			Expect(os.Mkdir(parent, 0o555)).To(Succeed())
+			defer os.Chmod(parent, 0o755)
+
+			manager.configDir = filepath.Join(parent, "child")
+
+			err := manager.VerifyDirectory()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("failed to create"))
+		})
+
+		It("should return error when directory is not writable", func() {
+			if os.Getuid() == 0 {
+				return
+			}
+
+			readOnlyDir := filepath.Join(tempDir, "not-writable")
+			Expect(os.Mkdir(readOnlyDir, 0o555)).To(Succeed())
+			defer os.Chmod(readOnlyDir, 0o755)
+
+			manager.configDir = readOnlyDir
+
+			err := manager.VerifyDirectory()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("not writable"))
+		})
+
+		It("should work with nil logger on existing directory", func() {
+			manager.logger = nil
+
+			err := manager.VerifyDirectory()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should create directory with nil logger when missing", func() {
+			newDir := filepath.Join(tempDir, "nil-logger-dir")
+			manager.configDir = newDir
+			manager.logger = nil
+
+			err := manager.VerifyDirectory()
+			Expect(err).NotTo(HaveOccurred())
+
+			_, statErr := os.Stat(newDir)
+			Expect(statErr).NotTo(HaveOccurred())
+		})
+
+		It("should return error with nil logger when path is a file", func() {
+			filePath := filepath.Join(tempDir, "file-not-dir")
+			Expect(os.WriteFile(filePath, []byte("data"), 0o600)).To(Succeed())
+
+			manager.configDir = filePath
+			manager.logger = nil
+
+			err := manager.VerifyDirectory()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("not a directory"))
+		})
+
+		It("should return stat error with nil logger", func() {
+			if runtime.GOOS != "linux" {
+				return
+			}
+
+			manager.configDir = "/dev/null/impossible"
+			manager.logger = nil
+
+			err := manager.VerifyDirectory()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("failed to stat"))
+		})
+
+		It("should verify write permissions", func() {
+			err := manager.VerifyDirectory()
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify the write test file was cleaned up
+			testFile := filepath.Join(tempDir, ".write-test")
+			_, statErr := os.Stat(testFile)
+			Expect(os.IsNotExist(statErr)).To(BeTrue())
+		})
+	})
 })
 
 var _ = Describe("NewYAMLConfigManager", func() {
@@ -453,5 +680,279 @@ var _ = Describe("NewYAMLConfigManager", func() {
 		// Verify directory exists
 		_, err = os.Stat(manager.configDir)
 		Expect(err).NotTo(HaveOccurred())
+	})
+
+	It("should have configDir ending with .kariya/cv_configs", func() {
+		log := logger.DefaultLogger()
+		manager, err := NewYAMLConfigManager(log)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(manager.configDir).To(HaveSuffix(filepath.Join(".kariya", "cv_configs")))
+	})
+
+	It("should set the logger field", func() {
+		log := logger.DefaultLogger()
+		manager, err := NewYAMLConfigManager(log)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(manager.logger).To(Equal(log))
+	})
+})
+
+var _ = Describe("isPathWithinDirectory", func() {
+	var tempDir string
+
+	BeforeEach(func() {
+		var err error
+		tempDir, err = os.MkdirTemp("", "kariya-path-test-*")
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	AfterEach(func() {
+		if tempDir != "" {
+			os.RemoveAll(tempDir)
+		}
+	})
+
+	It("should return true for path within directory", func() {
+		filePath := filepath.Join(tempDir, "config.yaml")
+		Expect(isPathWithinDirectory(filePath, tempDir)).To(BeTrue())
+	})
+
+	It("should return true for nested path within directory", func() {
+		filePath := filepath.Join(tempDir, "sub", "dir", "config.yaml")
+		Expect(isPathWithinDirectory(filePath, tempDir)).To(BeTrue())
+	})
+
+	It("should return false for path outside directory", func() {
+		Expect(isPathWithinDirectory("/etc/passwd", tempDir)).To(BeFalse())
+	})
+
+	It("should return false for sibling directory with same prefix", func() {
+		siblingDir := tempDir + "-evil"
+		filePath := filepath.Join(siblingDir, "config.yaml")
+		Expect(isPathWithinDirectory(filePath, tempDir)).To(BeFalse())
+	})
+
+	It("should return false for parent directory traversal", func() {
+		filePath := filepath.Join(tempDir, "..", "outside.yaml")
+		Expect(isPathWithinDirectory(filePath, tempDir)).To(BeFalse())
+	})
+
+	It("should handle directory with trailing separator", func() {
+		filePath := filepath.Join(tempDir, "config.yaml")
+		dirWithSep := tempDir + string(filepath.Separator)
+		Expect(isPathWithinDirectory(filePath, dirWithSep)).To(BeTrue())
+	})
+})
+
+var _ = Describe("MemoryConfigManager", func() {
+	var (
+		manager *MemoryConfigManager
+		ctx     context.Context
+	)
+
+	BeforeEach(func() {
+		manager = NewMemoryConfigManager()
+		ctx = context.Background()
+	})
+
+	Describe("LoadConfig", func() {
+		Context("when the config exists", func() {
+			It("returns the config", func() {
+				config := fixtures.CVConfigWith("test-config", "principal", "hiring_manager")
+				Expect(manager.SaveConfig(ctx, config)).To(Succeed())
+
+				loaded, err := manager.LoadConfig(ctx, "test-config")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(loaded.Name).To(Equal("test-config"))
+				Expect(loaded.TargetRole).To(Equal("principal"))
+				Expect(loaded.TargetAudience).To(Equal("hiring_manager"))
+			})
+
+			It("returns a copy to prevent external modification", func() {
+				config := fixtures.CVConfigWith("test-config", "principal", "hiring_manager")
+				Expect(manager.SaveConfig(ctx, config)).To(Succeed())
+
+				loaded, err := manager.LoadConfig(ctx, "test-config")
+				Expect(err).NotTo(HaveOccurred())
+
+				loaded.TargetRole = "em"
+
+				reloaded, err := manager.LoadConfig(ctx, "test-config")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(reloaded.TargetRole).To(Equal("principal"))
+			})
+		})
+
+		Context("when the config does not exist", func() {
+			It("returns ErrConfigNotFound", func() {
+				_, err := manager.LoadConfig(ctx, "nonexistent")
+				Expect(err).To(MatchError(ErrConfigNotFound))
+			})
+		})
+	})
+
+	Describe("SaveConfig", func() {
+		Context("with a valid config", func() {
+			It("stores the config successfully", func() {
+				config := fixtures.CVConfigWith("test-config", "principal", "hiring_manager")
+
+				err := manager.SaveConfig(ctx, config)
+				Expect(err).NotTo(HaveOccurred())
+
+				loaded, err := manager.LoadConfig(ctx, "test-config")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(loaded.Name).To(Equal("test-config"))
+			})
+
+			It("sets CreatedAt when zero", func() {
+				config := fixtures.CVConfigWith("save-ts", "staff", "recruiter")
+				config.CreatedAt = time.Time{}
+
+				Expect(manager.SaveConfig(ctx, config)).To(Succeed())
+
+				loaded, err := manager.LoadConfig(ctx, "save-ts")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(loaded.CreatedAt).NotTo(BeZero())
+			})
+
+			It("preserves existing CreatedAt on update", func() {
+				config := fixtures.CVConfigWith("update-ts", "staff", "recruiter")
+				originalCreatedAt := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
+				config.CreatedAt = originalCreatedAt
+
+				Expect(manager.SaveConfig(ctx, config)).To(Succeed())
+
+				loaded, err := manager.LoadConfig(ctx, "update-ts")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(loaded.CreatedAt).To(Equal(originalCreatedAt))
+			})
+
+			It("sets UpdatedAt on every save", func() {
+				config := fixtures.CVConfigWith("upd-at", "em", "peer")
+
+				before := time.Now()
+				Expect(manager.SaveConfig(ctx, config)).To(Succeed())
+
+				loaded, err := manager.LoadConfig(ctx, "upd-at")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(loaded.UpdatedAt).To(BeTemporally(">=", before))
+			})
+		})
+
+		Context("with nil config", func() {
+			It("returns ErrInvalidConfigName", func() {
+				err := manager.SaveConfig(ctx, nil)
+				Expect(err).To(MatchError(ErrInvalidConfigName))
+			})
+		})
+
+		Context("with empty name", func() {
+			It("returns ErrInvalidConfigName", func() {
+				config := fixtures.CVConfig("")
+				err := manager.SaveConfig(ctx, config)
+				Expect(err).To(MatchError(ErrInvalidConfigName))
+			})
+		})
+
+		Context("with an invalid config", func() {
+			It("returns a validation error", func() {
+				config := fixtures.CVConfig("invalid-config")
+				config.TargetRole = "not-a-valid-role"
+				err := manager.SaveConfig(ctx, config)
+				Expect(err).To(HaveOccurred())
+			})
+		})
+	})
+
+	Describe("DeleteConfig", func() {
+		Context("when the config exists", func() {
+			It("removes the config", func() {
+				config := fixtures.CVConfigWith("to-delete", "principal", "hiring_manager")
+				Expect(manager.SaveConfig(ctx, config)).To(Succeed())
+
+				err := manager.DeleteConfig(ctx, "to-delete")
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = manager.LoadConfig(ctx, "to-delete")
+				Expect(err).To(MatchError(ErrConfigNotFound))
+			})
+		})
+
+		Context("when the config does not exist", func() {
+			It("returns ErrConfigNotFound", func() {
+				err := manager.DeleteConfig(ctx, "nonexistent")
+				Expect(err).To(MatchError(ErrConfigNotFound))
+			})
+		})
+	})
+
+	Describe("ListConfigs", func() {
+		Context("when configs exist", func() {
+			It("returns all stored configs", func() {
+				configs := []*career.CVConfig{
+					fixtures.CVConfigWith("config-a", "principal", "hiring_manager"),
+					fixtures.CVConfigWith("config-b", "staff", "recruiter"),
+					fixtures.CVConfigWith("config-c", "em", "peer"),
+				}
+				for _, c := range configs {
+					Expect(manager.SaveConfig(ctx, c)).To(Succeed())
+				}
+
+				listed, err := manager.ListConfigs(ctx)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(listed).To(HaveLen(3))
+			})
+
+			It("returns copies to prevent external modification", func() {
+				config := fixtures.CVConfigWith("list-copy", "principal", "hiring_manager")
+				Expect(manager.SaveConfig(ctx, config)).To(Succeed())
+
+				listed, err := manager.ListConfigs(ctx)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(listed).To(HaveLen(1))
+
+				listed[0].TargetRole = "em"
+
+				reloaded, err := manager.LoadConfig(ctx, "list-copy")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(reloaded.TargetRole).To(Equal("principal"))
+			})
+		})
+
+		Context("when no configs exist", func() {
+			It("returns an empty slice", func() {
+				listed, err := manager.ListConfigs(ctx)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(listed).To(BeEmpty())
+			})
+		})
+	})
+
+	Describe("GetConfigPath", func() {
+		It("returns a memory:// URI for the given name", func() {
+			path := manager.GetConfigPath("my-config")
+			Expect(path).To(Equal("memory://my-config"))
+		})
+	})
+
+	Describe("ConfigExists", func() {
+		Context("when the config exists", func() {
+			It("returns true", func() {
+				config := fixtures.CVConfigWith("exists-check", "staff", "recruiter")
+				Expect(manager.SaveConfig(ctx, config)).To(Succeed())
+
+				exists, err := manager.ConfigExists(ctx, "exists-check")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(exists).To(BeTrue())
+			})
+		})
+
+		Context("when the config does not exist", func() {
+			It("returns false", func() {
+				exists, err := manager.ConfigExists(ctx, "nonexistent")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(exists).To(BeFalse())
+			})
+		})
 	})
 })

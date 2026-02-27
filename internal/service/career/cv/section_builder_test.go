@@ -837,3 +837,267 @@ var _ = Describe("buildSummarySection wall-of-text regression", func() {
 		Expect(section.Summary).To(HaveSuffix("."))
 	})
 })
+
+var _ = Describe("formatMonthYear", func() {
+	It("returns empty string for zero time", func() {
+		Expect(formatMonthYear(time.Time{})).To(Equal(""))
+	})
+
+	It("formats a valid time as Month Year", func() {
+		t := time.Date(2023, time.March, 15, 0, 0, 0, 0, time.UTC)
+		Expect(formatMonthYear(t)).To(Equal("Mar 2023"))
+	})
+
+	It("formats different months correctly", func() {
+		jan := time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC)
+		Expect(formatMonthYear(jan)).To(Equal("Jan 2020"))
+
+		dec := time.Date(2025, time.December, 31, 0, 0, 0, 0, time.UTC)
+		Expect(formatMonthYear(dec)).To(Equal("Dec 2025"))
+	})
+})
+
+var _ = Describe("getBulletsPerCompanyForRole", func() {
+	var builder *DefaultSectionBuilder
+
+	BeforeEach(func() {
+		log := logger.DefaultLogger()
+		builder = NewSectionBuilder(nil, log)
+	})
+
+	It("returns 4 for principal", func() {
+		Expect(builder.getBulletsPerCompanyForRole("principal")).To(Equal(4))
+	})
+
+	It("returns 5 for staff", func() {
+		Expect(builder.getBulletsPerCompanyForRole("staff")).To(Equal(5))
+	})
+
+	It("returns 4 for em", func() {
+		Expect(builder.getBulletsPerCompanyForRole("em")).To(Equal(4))
+	})
+
+	It("returns 5 for senior_ic", func() {
+		Expect(builder.getBulletsPerCompanyForRole("senior_ic")).To(Equal(5))
+	})
+
+	It("returns default of 4 for unknown role", func() {
+		Expect(builder.getBulletsPerCompanyForRole("unknown")).To(Equal(4))
+	})
+
+	It("handles mixed case input via ToLower", func() {
+		Expect(builder.getBulletsPerCompanyForRole("STAFF")).To(Equal(5))
+		Expect(builder.getBulletsPerCompanyForRole("Em")).To(Equal(4))
+	})
+})
+
+var _ = Describe("buildGroupedSkills", func() {
+	var builder *DefaultSectionBuilder
+
+	BeforeEach(func() {
+		log := logger.DefaultLogger()
+		builder = NewSectionBuilder(nil, log)
+	})
+
+	It("groups skills by category alphabetically", func() {
+		skills := []skillInfo{
+			{ID: "1", Name: "Go", Category: "Backend"},
+			{ID: "2", Name: "React", Category: "Frontend"},
+			{ID: "3", Name: "Python", Category: "Backend"},
+		}
+		groups := builder.buildGroupedSkills(skills, 0)
+		Expect(groups).To(HaveLen(2))
+		Expect(groups[0].Header).To(Equal("backend"))
+		Expect(groups[1].Header).To(Equal("frontend"))
+	})
+
+	It("places skills with empty category under other", func() {
+		skills := []skillInfo{
+			{ID: "1", Name: "Docker", Category: ""},
+		}
+		groups := builder.buildGroupedSkills(skills, 0)
+		Expect(groups).To(HaveLen(1))
+		Expect(groups[0].Header).To(Equal("other"))
+		Expect(groups[0].Bullets).To(HaveLen(1))
+		Expect(groups[0].Bullets[0].Text).To(Equal("Docker"))
+	})
+
+	It("applies per-group limit when specified", func() {
+		skills := []skillInfo{
+			{ID: "1", Name: "Go", Category: "Backend"},
+			{ID: "2", Name: "Python", Category: "Backend"},
+			{ID: "3", Name: "Ruby", Category: "Backend"},
+		}
+		groups := builder.buildGroupedSkills(skills, 2)
+		Expect(groups).To(HaveLen(1))
+		Expect(groups[0].Bullets).To(HaveLen(2))
+	})
+
+	It("returns empty groups for empty skills", func() {
+		groups := builder.buildGroupedSkills([]skillInfo{}, 0)
+		Expect(groups).To(BeEmpty())
+	})
+
+	It("does not limit when limitPerGroup is zero", func() {
+		skills := []skillInfo{
+			{ID: "1", Name: "Go", Category: "Backend"},
+			{ID: "2", Name: "Python", Category: "Backend"},
+			{ID: "3", Name: "Ruby", Category: "Backend"},
+		}
+		groups := builder.buildGroupedSkills(skills, 0)
+		Expect(groups).To(HaveLen(1))
+		Expect(groups[0].Bullets).To(HaveLen(3))
+	})
+
+	It("creates bullets with correct text per category", func() {
+		skills := []skillInfo{
+			{ID: "1", Name: "Go", Category: "Backend"},
+			{ID: "2", Name: "React", Category: "Frontend"},
+		}
+		groups := builder.buildGroupedSkills(skills, 0)
+		Expect(groups[0].Bullets[0].Text).To(Equal("Go"))
+		Expect(groups[1].Bullets[0].Text).To(Equal("React"))
+	})
+
+	It("handles multiple categories with mixed empty", func() {
+		skills := []skillInfo{
+			{ID: "1", Name: "Go", Category: "Backend"},
+			{ID: "2", Name: "Docker", Category: ""},
+			{ID: "3", Name: "React", Category: "Frontend"},
+		}
+		groups := builder.buildGroupedSkills(skills, 0)
+		Expect(groups).To(HaveLen(3))
+		Expect(groups[0].Header).To(Equal("backend"))
+		Expect(groups[1].Header).To(Equal("frontend"))
+		Expect(groups[2].Header).To(Equal("other"))
+	})
+})
+
+var _ = Describe("buildSkillsSection format branches", func() {
+	var (
+		builder *DefaultSectionBuilder
+		ctx     context.Context
+	)
+
+	BeforeEach(func() {
+		log := logger.DefaultLogger()
+		builder = NewSectionBuilder(nil, log)
+		ctx = context.Background()
+	})
+
+	It("should build grouped skills section via grouped format", func() {
+		event := fixtures.Event("event1")
+		event.Skills = []string{"skill-go", "skill-react"}
+		events := []*career.Event{event}
+
+		config := &SkillsFormatConfig{
+			Format:               "grouped",
+			Limit:                0,
+			SelectedTechnologies: nil,
+		}
+
+		section := builder.buildSkillsSection(ctx, events, config, 0)
+		Expect(section).NotTo(BeNil())
+		Expect(section.SectionType).To(Equal("skills"))
+		Expect(section.Content).To(HaveLen(1))
+		Expect(section.Content[0].Header).To(Equal("other"))
+	})
+
+	It("should apply grouped format with per-group limit", func() {
+		event := fixtures.Event("event1")
+		event.Skills = []string{"s1", "s2", "s3", "s4"}
+		events := []*career.Event{event}
+
+		config := &SkillsFormatConfig{
+			Format:               "grouped",
+			Limit:                2,
+			SelectedTechnologies: nil,
+		}
+
+		section := builder.buildSkillsSection(ctx, events, config, 0)
+		Expect(section).NotTo(BeNil())
+		Expect(section.Content).To(HaveLen(1))
+		Expect(section.Content[0].Bullets).To(HaveLen(2))
+	})
+
+	It("should apply flat limit when skills exceed limit", func() {
+		event := fixtures.Event("event1")
+		event.Skills = []string{"s1", "s2", "s3", "s4", "s5"}
+		events := []*career.Event{event}
+
+		config := &SkillsFormatConfig{
+			Format:               "flat",
+			Limit:                3,
+			SelectedTechnologies: nil,
+		}
+
+		section := builder.buildSkillsSection(ctx, events, config, 0)
+		Expect(section).NotTo(BeNil())
+		Expect(section.Content).To(HaveLen(1))
+		Expect(section.Content[0].Bullets).To(HaveLen(3))
+	})
+
+	It("should return nil when events have no skills", func() {
+		event := fixtures.Event("event1")
+		events := []*career.Event{event}
+
+		config := &SkillsFormatConfig{
+			Format: "flat",
+			Limit:  0,
+		}
+
+		section := builder.buildSkillsSection(ctx, events, config, 0)
+		Expect(section).To(BeNil())
+	})
+})
+
+var _ = Describe("buildProjectsSection bullet cap", func() {
+	var (
+		builder *DefaultSectionBuilder
+		ctx     context.Context
+	)
+
+	BeforeEach(func() {
+		log := logger.DefaultLogger()
+		builder = NewSectionBuilder(nil, log)
+		ctx = context.Background()
+	})
+
+	It("should cap bullets per project based on role", func() {
+		pe0 := fixtures.EventWith("pe0", "Work 0", "", "MyProject")
+		pe0.Date = time.Date(2023, 1, 15, 0, 0, 0, 0, time.UTC)
+		pe1 := fixtures.EventWith("pe1", "Work 1", "", "MyProject")
+		pe1.Date = time.Date(2023, 2, 15, 0, 0, 0, 0, time.UTC)
+		pe2 := fixtures.EventWith("pe2", "Work 2", "", "MyProject")
+		pe2.Date = time.Date(2023, 3, 15, 0, 0, 0, 0, time.UTC)
+		pe3 := fixtures.EventWith("pe3", "Work 3", "", "MyProject")
+		pe3.Date = time.Date(2023, 4, 15, 0, 0, 0, 0, time.UTC)
+		pe4 := fixtures.EventWith("pe4", "Work 4", "", "MyProject")
+		pe4.Date = time.Date(2023, 5, 15, 0, 0, 0, 0, time.UTC)
+		pe5 := fixtures.EventWith("pe5", "Work 5", "", "MyProject")
+		pe5.Date = time.Date(2023, 6, 15, 0, 0, 0, 0, time.UTC)
+		events := []*career.Event{pe0, pe1, pe2, pe3, pe4, pe5}
+
+		b0 := fixtures.CVBulletWithSources("pb0", "", "Achievement 0", []string{"pe0"}, nil)
+		b1 := fixtures.CVBulletWithSources("pb1", "", "Achievement 1", []string{"pe1"}, nil)
+		b2 := fixtures.CVBulletWithSources("pb2", "", "Achievement 2", []string{"pe2"}, nil)
+		b3 := fixtures.CVBulletWithSources("pb3", "", "Achievement 3", []string{"pe3"}, nil)
+		b4 := fixtures.CVBulletWithSources("pb4", "", "Achievement 4", []string{"pe4"}, nil)
+		b5 := fixtures.CVBulletWithSources("pb5", "", "Achievement 5", []string{"pe5"}, nil)
+		bullets := []*career.CVBullet{b0, b1, b2, b3, b4, b5}
+
+		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil, nil)
+		Expect(err).NotTo(HaveOccurred())
+
+		var projectsSection *career.CVSection
+		for _, section := range sections {
+			if section.SectionType == "projects" {
+				projectsSection = section
+				break
+			}
+		}
+		Expect(projectsSection).NotTo(BeNil())
+		Expect(projectsSection.Content).To(HaveLen(1))
+		Expect(projectsSection.Content[0].Bullets).To(HaveLen(4))
+	})
+})
