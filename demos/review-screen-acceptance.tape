@@ -1,9 +1,10 @@
-# ReviewScreen Acceptance Demo
+# ReviewScreen & PreviewScreen Acceptance Demo
 # Demonstrates the new ReviewScreen wizard selections display:
 # 1. Navigate to Generate CV from main menu
 # 2. Complete the CV configuration wizard (defaults are fine)
 # 3. Wait for CV generation to complete
 # 4. ReviewScreen shows "YOUR SELECTIONS" and "GENERATED OUTPUT" sections
+# 5. Navigate to PreviewScreen to view the generated CV content
 
 Output demos/review-screen-acceptance.gif
 
@@ -97,6 +98,27 @@ Sleep 3s
 # - "GENERATED OUTPUT" section showing statistics
 Screenshot demos/review-screen-screenshot.png
 Sleep 3s
+
+# Navigate to PreviewScreen to view the generated CV
+Enter
+Sleep 3s
+
+# PreviewScreen is now visible with full CV content
+# Scroll down to show CV sections
+Down
+Sleep 500ms
+Down
+Sleep 500ms
+Down
+Sleep 500ms
+Down
+Sleep 500ms
+Down
+Sleep 500ms
+
+# Take screenshot of PreviewScreen
+Screenshot demos/preview-screen-screenshot.png
+Sleep 2s
 
 # Exit application
 Ctrl+C
