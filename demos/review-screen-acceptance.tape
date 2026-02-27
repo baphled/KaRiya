@@ -56,48 +56,47 @@ Enter
 Sleep 3s
 
 # CV Configuration Wizard is now visible
-# Step 1: Profile selection (accept default with Enter)
-Enter
-Sleep 1s
+# Skip wizard with defaults (Ctrl+S uses pre-selected profile and audience)
+Ctrl+S
 
-# Step 2: Audience selection (accept default with Enter)
-Enter
-Sleep 1s
-
-# Step 3: TechFocus selection (accept default with Enter)
-Enter
-Sleep 1s
-
-# Step 4: Technologies multiselect (accept default with Enter)
-Enter
-Sleep 1s
-
-# Step 5: FocusArea selection (accept default with Enter)
-Enter
-Sleep 1s
-
-# Step 6: SkillsFormat selection (accept default with Enter)
-Enter
-Sleep 1s
-
-# Step 7: CVLength selection (accept default with Enter)
-Enter
-Sleep 1s
-
-# Final confirmation - Submit the wizard
-Enter
-Sleep 6s
-
-# CV generation is in progress (spinner shows)
-# Wait for generation to complete and ReviewScreen to appear
-Sleep 3s
+# Wait for technology extraction and CV generation to complete
+Sleep 12s
 
 # ReviewScreen is now visible with:
-# - Title: "📋 CV Configuration Review"
-# - "YOUR SELECTIONS" section showing Profile, Audience, TechFocus, etc.
-# - "GENERATED OUTPUT" section showing statistics
+# - Title: "CV Configuration Review"
+# - Personal Details, CV Details, Summary sections
+# Scroll down to show Generation Settings and Statistics sections
+Down
+Sleep 500ms
+Down
+Sleep 500ms
+Down
+Sleep 500ms
+Down
+Sleep 500ms
+Down
+Sleep 500ms
+Down
+Sleep 500ms
+Down
+Sleep 500ms
+Down
+Sleep 500ms
+Down
+Sleep 500ms
+Down
+Sleep 500ms
+Down
+Sleep 500ms
+Down
+Sleep 500ms
+
 Screenshot demos/review-screen-screenshot.png
 Sleep 3s
+
+# Scroll back to top before navigating to preview
+Type "g"
+Sleep 500ms
 
 # Navigate to PreviewScreen to view the generated CV
 Enter
