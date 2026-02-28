@@ -9,12 +9,18 @@ import (
 	"testing"
 	"time"
 
+	"github.com/baphled/kariya/internal/cli/app"
 	"github.com/baphled/kariya/internal/cli/bootstrap"
 	"github.com/baphled/kariya/internal/cli/forms"
+	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/logger"
+	careersql "github.com/baphled/kariya/internal/repository/career/sql"
+	careerservice "github.com/baphled/kariya/internal/service/career"
 	"github.com/baphled/kariya/internal/testutil/e2e"
 	tea "github.com/charmbracelet/bubbletea"
+	"gorm.io/gorm"
 )
 
 // onboardingKey is the context key for storing OnboardingTestModel.
@@ -303,6 +309,52 @@ func (b *BDDTestingT) Error(args ...interface{}) {
 //nolint:thelper // Factory function, not a test helper.
 func NewAppEnv(t *testing.T) *e2e.TestEnv {
 	return e2e.Setup(&BDDTestingT{t: t})
+}
+
+// NewAppEnvFromGormDB creates a TestEnv backed by an existing GORM DB (transaction).
+// This allows per-scenario transaction isolation: each scenario runs inside a
+// GORM transaction that is rolled back in AfterScenario, avoiding full DB re-creation.
+//
+// Expected:
+//   - t must be a valid *testing.T.
+//   - gormDB must be a valid *gorm.DB (typically a transaction from sharedGormDB.Begin()).
+//
+// Returns:
+//   - A fully initialized TestEnv ready for use.
+//
+// Side effects:
+//   - Creates repositories, services, and application model from the given GORM DB.
+//
+//nolint:thelper // Factory function, not a test helper.
+func NewAppEnvFromGormDB(t *testing.T, gormDB *gorm.DB) *e2e.TestEnv {
+	bddT := &BDDTestingT{t: t}
+	ctx := context.Background()
+
+	repos := careersql.NewRepositoriesFromDB(gormDB)
+
+	svc := careerservice.NewService(repos.Event)
+	svc.SetBurstRepository(repos.Burst)
+	svc.SetFactRepository(repos.Fact)
+	svc.SetSkillRepository(repos.Skill)
+
+	cliService := service.NewCLIEventService(svc)
+
+	log := logger.DefaultLogger()
+	bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+
+	model := app.NewModel(cliService, svc, bootstrapResult)
+
+	return &e2e.TestEnv{
+		T:          bddT,
+		Model:      model,
+		EventRepo:  repos.Event,
+		BurstRepo:  repos.Burst,
+		FactRepo:   repos.Fact,
+		SkillRepo:  repos.Skill,
+		Service:    svc,
+		CLIService: cliService,
+		Ctx:        ctx,
+	}
 }
 
 // GetAppEnv retrieves the TestEnv from context.

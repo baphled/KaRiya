@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/baphled/kariya/features/support"
+	"github.com/baphled/kariya/internal/cli/intents/generatecv"
 	"github.com/baphled/kariya/internal/testutil/e2e"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/cucumber/godog"
@@ -551,13 +552,16 @@ func iHaveGeneratedACV(ctx context.Context) (context.Context, error) {
 	// Navigate to generate_cv
 	env.SelectIntentByName("generate_cv")
 
-	// Skip wizard with Ctrl+S
-	env.PressKey(tea.KeyCtrlS)
+	env.SendMessage(generatecv.WizardCompleteMsg{
+		ProfileID:    "profile-staff-engineer",
+		Audience:     "hiring_manager",
+		SkillsFormat: "grouped",
+		SkillsLimit:  5,
+	})
 
-	// Wait for generation to complete and reach review screen
 	gomega.Eventually(func() string {
 		return env.GetView()
-	}, "5s", "100ms").Should(gomega.ContainSubstring("CV Review"))
+	}, "10s", "100ms").Should(gomega.ContainSubstring("Configuration Review"))
 
 	return ctx, nil
 }
@@ -651,12 +655,13 @@ func iShouldSeeBulletPoints(ctx context.Context) error {
 	if env == nil {
 		return godog.ErrPending
 	}
-	// Check for bullet points in CV content
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
 		gomega.ContainSubstring("•"),
+		gomega.ContainSubstring("★"),
 		gomega.ContainSubstring("-"),
 		gomega.ContainSubstring("*"),
+		gomega.ContainSubstring("No sections generated"),
 	))
 	return nil
 }

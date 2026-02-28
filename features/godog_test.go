@@ -16,7 +16,9 @@ import (
 // opts holds the Godog options for test execution.
 var opts = godog.Options{
 	Output: colors.Colored(os.Stdout),
-	Format: "progress",
+	Format: "pretty",
+	Tags:   "~@wip",
+	Strict: true,
 }
 
 func init() {
@@ -39,13 +41,23 @@ func TestFeatures(t *testing.T) {
 	opts.TestingT = t
 
 	suite := godog.TestSuite{
-		ScenarioInitializer: InitializeScenario,
-		Options:             &opts,
+		TestSuiteInitializer: InitializeSuite,
+		ScenarioInitializer:  InitializeScenario,
+		Options:              &opts,
 	}
 
 	if suite.Run() != 0 {
 		t.Fatal("non-zero status returned, failed to run feature tests")
 	}
+}
+
+// InitializeSuite registers suite-level hooks for shared database setup and teardown.
+//
+// Expected: sc is a valid TestSuiteContext.
+// Returns: None.
+// Side effects: Registers suite-level hooks via support.RegisterSuiteHooks.
+func InitializeSuite(sc *godog.TestSuiteContext) {
+	support.RegisterSuiteHooks(sc)
 }
 
 // InitializeScenario sets up the scenario context with step definitions and hooks.
