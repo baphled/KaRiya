@@ -673,7 +673,25 @@ func iShouldSeeConfidenceScores(ctx context.Context) error {
 }
 
 func iHaveBurstSuggestionsAvailable(ctx context.Context) (context.Context, error) {
-	return ctx, godog.ErrPending
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	for range 5 {
+		eventInterface, err := fixtures.EventFactory.Create()
+		if err != nil {
+			return ctx, fmt.Errorf("failed to create event: %w", err)
+		}
+		event, ok := eventInterface.(*career.Event)
+		if !ok {
+			return ctx, errors.New("factory created wrong type: expected *career.Event")
+		}
+		event.ID = ""
+		env.AddEvent(event)
+	}
+	env.SelectIntentByName("burst_management")
+	env.PressKeyRune('s')
+	return ctx, nil
 }
 
 func iAmOnTheBurstSuggestionModal(ctx context.Context) error {

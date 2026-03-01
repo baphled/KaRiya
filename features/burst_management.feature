@@ -287,7 +287,7 @@ Feature: Manage Career Bursts
     Then the suggestion should be marked as rejected
     And there should be 0 bursts
 
-  @happy @wip
+  @happy
   Scenario: Cancel burst suggestion review
     Given I have burst suggestions available
     When I am on the burst suggestion modal
@@ -308,7 +308,7 @@ Feature: Manage Career Bursts
     Then I should see the loading modal
     And I should see "Inferring"
 
-  @happy @wip
+  @happy
   Scenario: Skill inference not available for unconfirmed burst
     Given I have an unconfirmed burst "New Burst" with 3 events
     When I select "burst_management" from the menu
@@ -317,7 +317,7 @@ Feature: Manage Career Bursts
     Then I should still be on the burst detail modal
     And I should not see the loading modal
 
-  @happy @wip
+  @happy
   Scenario: Cancel skill inference
     Given I have a confirmed burst "Backend Development" with 5 events
     When I select "burst_management" from the menu
@@ -326,7 +326,7 @@ Feature: Manage Career Bursts
     And I press escape
     Then I should see the burst detail modal
 
-  @happy @wip
+  @happy
   Scenario: View skill suggestions after inference
     Given I have a confirmed burst "Backend Development" with 5 events
     When I select "burst_management" from the menu

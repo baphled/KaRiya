@@ -533,7 +533,12 @@ func iPressAToAddSkill(ctx context.Context) (context.Context, error) {
 }
 
 func iPressIToInferSkills(ctx context.Context) (context.Context, error) {
-	return ctx, godog.ErrPending
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.PressKeyRune('i')
+	return ctx, nil
 }
 
 func skillsPressDToDelete(ctx context.Context) (context.Context, error) {

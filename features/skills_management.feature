@@ -166,7 +166,7 @@ Feature: Manage Skills
   # Skill Inference
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Trigger skill inference
     Given I have an event "Built REST API in Go with PostgreSQL"
     When I select "manage_skills" from the menu
@@ -174,7 +174,7 @@ Feature: Manage Skills
     Then I should see the loading modal
     And I should see "Analyzing"
 
-  @happy @wip
+  @happy
   Scenario: Cancel skill inference
     Given I have an event "Built REST API in Go"
     When I select "manage_skills" from the menu
@@ -201,7 +201,7 @@ Feature: Manage Skills
     Then I should see "success"
     And there should be 1 skill
 
-  @happy @wip
+  @happy
   Scenario: Reject skill suggestion
     Given I have an event "Built microservices in Go"
     When I select "manage_skills" from the menu
