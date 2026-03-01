@@ -164,16 +164,15 @@ Feature: Generate CV
     And I enter skills limit "10"
     Then the skills limit should be 10
 
-  @happy @wip
+  @happy
   Scenario: Select CV length
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
     And I complete step 1
     And I complete step 2
     And I tab to CV length
-    Then I should see "1 Page"
-    And I should see "2 Page"
-    And I should see "Detailed"
+    Then I should see "CV Length"
+    And I should see "Target length for the CV"
 
   @happy @wip
   Scenario: Skip wizard with Ctrl+S

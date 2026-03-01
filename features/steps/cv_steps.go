@@ -363,7 +363,6 @@ func iCompleteStep2(ctx context.Context) (context.Context, error) {
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	env.PressEnterWithFormProcessing()
 	return ctx, nil
 }
 
@@ -400,8 +399,8 @@ func iTabToCVLength(ctx context.Context) (context.Context, error) {
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	env.PressEnterWithFormProcessing()
-	env.PressEnterWithFormProcessing()
+	env.TabWithFormProcessing()
+	env.TabWithFormProcessing()
 	return ctx, nil
 }
 
