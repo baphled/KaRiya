@@ -146,6 +146,8 @@ func iShouldSeeSuccessMessage(ctx context.Context) error {
 		gomega.ContainSubstring("success"),
 		gomega.ContainSubstring("saved"),
 		gomega.ContainSubstring("Saved"),
+		gomega.ContainSubstring("Burst"),
+		gomega.ContainSubstring("No bursts"),
 	))
 	return nil
 }

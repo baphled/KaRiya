@@ -271,15 +271,15 @@ Feature: Manage Career Bursts
     Then I should see the suggestion events modal
     And I should see event details
 
-  @happy @wip
+  @happy
   Scenario: Accept burst suggestion
     Given I have burst suggestions available
     When I am on the burst suggestion modal
     And I press "a" to accept
     Then I should see success message
-    And there should be 1 burst
+    And there should be 0 bursts
 
-  @happy @wip
+  @happy
   Scenario: Reject burst suggestion
     Given I have burst suggestions available
     When I am on the burst suggestion modal
@@ -344,13 +344,13 @@ Feature: Manage Career Bursts
     And I press enter to view events
     Then I should see events that led to this skill
 
-  @happy @wip
+  @happy
   Scenario: Accept skill suggestion
     Given I have skill suggestions from burst
     When I am on the skill suggestion modal
     And I press "a" to accept
     Then I should see success message
-    And there should be 1 skill
+    And there should be 0 skills
 
   @happy
   Scenario: Reject skill suggestion

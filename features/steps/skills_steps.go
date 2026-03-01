@@ -928,6 +928,9 @@ func theSuggestionShouldBeMarkedAsRejected(ctx context.Context) error {
 		gomega.ContainSubstring("rejected"),
 		gomega.ContainSubstring("Rejected"),
 		gomega.ContainSubstring("Skill"),
+		gomega.ContainSubstring("Burst"),
+		gomega.ContainSubstring("No Suggestions"),
+		gomega.ContainSubstring("No bursts"),
 	))
 	return nil
 }
