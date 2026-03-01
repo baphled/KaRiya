@@ -340,7 +340,7 @@ Feature: Manage Skills
   # Proficiency Level
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Add skill with proficiency level
     Given the database is empty
     When I select "manage_skills" from the menu
@@ -352,7 +352,7 @@ Feature: Manage Skills
     Then there should be 1 skill
     And the skill should have level "Expert"
 
-  @happy @wip
+  @happy
   Scenario: Edit skill proficiency level
     Given I have a skill "Docker" with category "devops" and level "Intermediate"
     When I select "manage_skills" from the menu
@@ -366,7 +366,7 @@ Feature: Manage Skills
   # Years of Experience
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Add skill with years of experience
     Given the database is empty
     When I select "manage_skills" from the menu
@@ -378,7 +378,7 @@ Feature: Manage Skills
     Then there should be 1 skill
     And the skill should have years "8"
 
-  @happy @wip
+  @happy
   Scenario: Edit skill years of experience
     Given I have a skill "Python" with category "backend" and years "3"
     When I select "manage_skills" from the menu

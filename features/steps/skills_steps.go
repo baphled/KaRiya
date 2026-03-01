@@ -19,6 +19,54 @@ import (
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
+// skillFormKey is used to store skill form data in context between steps.
+type skillFormKey struct{}
+
+// skillFormData holds skill form field values accumulated across steps.
+type skillFormData struct {
+	Name     string
+	Category string
+	Level    string
+	Years    string
+}
+
+func getSkillFormData(ctx context.Context) skillFormData {
+	if v, ok := ctx.Value(skillFormKey{}).(skillFormData); ok {
+		return v
+	}
+	return skillFormData{}
+}
+
+func setSkillFormData(ctx context.Context, data skillFormData) context.Context {
+	return context.WithValue(ctx, skillFormKey{}, data)
+}
+
+func mapCategoryToDomain(displayName string) string {
+	mapping := map[string]string{
+		"devops":       "devops",
+		"backend":      "backend",
+		"frontend":     "frontend",
+		"database":     "database",
+		"cloud":        "cloud",
+		"mobile":       "mobile",
+		"tooling":      "tooling",
+		"testing":      "testing",
+		"data":         "data",
+		"ml":           "ml",
+		"monitoring":   "monitoring",
+		"architecture": "architecture",
+		"security":     "security",
+		"practices":    "practices",
+		"other":        "other",
+		"languages":    "backend",
+	}
+	key := strings.ToLower(displayName)
+	if v, ok := mapping[key]; ok {
+		return v
+	}
+	return key
+}
+
 // RegisterSkillsSteps registers skills management step definitions with Godog.
 // Many steps are shared with browse_steps.go and registered there.
 //
@@ -621,26 +669,35 @@ func iEnterSkillName(ctx context.Context, name string) (context.Context, error) 
 		return ctx, godog.ErrPending
 	}
 	env.TypeText(name)
+	data := getSkillFormData(ctx)
+	data.Name = name
+	ctx = setSkillFormData(ctx, data)
 	return ctx, nil
 }
 
-func iSelectCategory(ctx context.Context, _ string) (context.Context, error) {
+func iSelectCategory(ctx context.Context, category string) (context.Context, error) {
 	env := support.GetAppEnv(ctx)
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
 	env.Tab()
 	env.NavigateDown()
+	data := getSkillFormData(ctx)
+	data.Category = mapCategoryToDomain(category)
+	ctx = setSkillFormData(ctx, data)
 	return ctx, nil
 }
 
-func iSelectLevel(ctx context.Context, _ string) (context.Context, error) {
+func iSelectLevel(ctx context.Context, level string) (context.Context, error) {
 	env := support.GetAppEnv(ctx)
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
 	env.Tab()
 	env.NavigateDown()
+	data := getSkillFormData(ctx)
+	data.Level = strings.ToLower(level)
+	ctx = setSkillFormData(ctx, data)
 	return ctx, nil
 }
 
@@ -651,6 +708,9 @@ func iEnterYearsOfExperience(ctx context.Context, years string) (context.Context
 	}
 	env.Tab()
 	env.TypeText(years)
+	data := getSkillFormData(ctx)
+	data.Years = years
+	ctx = setSkillFormData(ctx, data)
 	return ctx, nil
 }
 
@@ -660,32 +720,53 @@ func iSubmitTheSkillForm(ctx context.Context) (context.Context, error) {
 		return ctx, godog.ErrPending
 	}
 
-	// Bypass UI form submission and directly send appropriate message
-	// This matches the pattern used by SubmitEvent() for capture_event tests
+	data := getSkillFormData(ctx)
 
-	// Check if we're editing an existing skill or adding a new one
-	// For edit scenarios, we need to get the existing skill and update it
-	// For add scenarios, we create a new skill
-
-	// Get all skills to check if we're editing
 	skillRepo := env.Service.GetSkillRepository()
 	skills, err := skillRepo.List(env.Ctx, nil)
 	if err != nil {
 		return ctx, err
 	}
 
-	// If there's exactly 1 skill, we're likely editing it (edit scenarios start with 1 skill)
-	// If there are 0 skills, we're adding (add scenarios start empty)
 	if len(skills) == 1 {
-		// Editing existing skill - update with new data
 		skill := skills[0]
-		skill.Name = "TypeScript" // Updated name from test scenario
+		if data.Name != "" {
+			skill.Name = data.Name
+		}
+		if data.Category != "" {
+			skill.Category = data.Category
+		}
+		if data.Level != "" {
+			skill.Level = data.Level
+		}
+		if data.Years != "" {
+			var yearsInt int
+			if _, parseErr := fmt.Sscanf(data.Years, "%d", &yearsInt); parseErr != nil {
+				return ctx, fmt.Errorf("invalid years value %q: %w", data.Years, parseErr)
+			}
+			skill.YearsUsed = &yearsInt
+		}
 		env.SubmitSkillUpdate(skill)
 	} else {
-		// Adding new skill
 		skill := &career.Skill{
-			Name:     "Python",
-			Category: "backend",
+			Name:     data.Name,
+			Category: data.Category,
+		}
+		if skill.Name == "" {
+			skill.Name = "Python"
+		}
+		if skill.Category == "" {
+			skill.Category = "backend"
+		}
+		if data.Level != "" {
+			skill.Level = data.Level
+		}
+		if data.Years != "" {
+			var yearsInt int
+			if _, parseErr := fmt.Sscanf(data.Years, "%d", &yearsInt); parseErr != nil {
+				return ctx, fmt.Errorf("invalid years value %q: %w", data.Years, parseErr)
+			}
+			skill.YearsUsed = &yearsInt
 		}
 		env.SubmitSkill(skill)
 	}
@@ -704,12 +785,15 @@ func iClearTheSkillNameField(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-func iChangeLevelTo(ctx context.Context, _ string) (context.Context, error) {
+func iChangeLevelTo(ctx context.Context, level string) (context.Context, error) {
 	env := support.GetAppEnv(ctx)
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
 	env.NavigateDown()
+	data := getSkillFormData(ctx)
+	data.Level = strings.ToLower(level)
+	ctx = setSkillFormData(ctx, data)
 	return ctx, nil
 }
 
@@ -720,6 +804,9 @@ func iChangeYearsTo(ctx context.Context, years string) (context.Context, error) 
 	}
 	env.ClearTextField(10)
 	env.TypeText(years)
+	data := getSkillFormData(ctx)
+	data.Years = years
+	ctx = setSkillFormData(ctx, data)
 	return ctx, nil
 }
 
@@ -883,7 +970,7 @@ func theSkillShouldHaveLevel(ctx context.Context, expected string) error {
 	gomega.Expect(skills).NotTo(gomega.BeEmpty())
 	var found bool
 	for _, s := range skills {
-		if s.Level == expected {
+		if strings.EqualFold(s.Level, expected) {
 			found = true
 			break
 		}
