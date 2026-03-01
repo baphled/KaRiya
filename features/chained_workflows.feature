@@ -11,20 +11,20 @@ Feature: Chained Workflows
   # Browse After Data Population
   # ============================================================================
 
-  @happy @smoke @wip
+  @happy @smoke
   Scenario: Show events in Browse after populating data
     Given I have 3 events in my timeline
     When I select "browse_timeline" from the menu
     Then I should see a list of events
 
-  @happy @wip
+  @happy
   Scenario: Show facts in FactManagement after populating data
     Given I have 3 events in my timeline
     And I have 2 facts
     When I select "fact_management" from the menu
     Then I should see a list of facts
 
-  @happy @wip
+  @happy
   Scenario: Show bursts in BurstManagement after populating data
     Given I have 5 events in my timeline
     And I have 2 bursts
@@ -35,7 +35,7 @@ Feature: Chained Workflows
   # Multi-Intent Navigation
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Navigate from Browse to Generate CV
     Given I have 5 events in my timeline
     And I have 2 bursts
@@ -48,7 +48,7 @@ Feature: Chained Workflows
       | Select  |
       | CV      |
 
-  @happy @wip
+  @happy
   Scenario: Navigate through multiple intents in sequence
     Given I have 5 events in my timeline
     When I select "browse_timeline" from the menu
@@ -59,7 +59,7 @@ Feature: Chained Workflows
     And I press escape
     Then I should be on the main menu
 
-  @happy @wip
+  @happy
   Scenario: Navigate from BurstManagement to FactManagement
     Given I have 5 events in my timeline
     And I have 2 bursts
@@ -73,7 +73,7 @@ Feature: Chained Workflows
   # Session Persistence Across Intents
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Persist data across intent navigation
     Given I have 3 events in my timeline
     And I have 2 facts
@@ -95,13 +95,13 @@ Feature: Chained Workflows
   # Data Visibility Across Intents
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: See events in Browse
     Given I have 3 events in my timeline
     When I select "browse_timeline" from the menu
     Then I should see a list of events
 
-  @happy @wip
+  @happy
   Scenario: See facts in FactManagement and GenerateCV context
     Given I have 3 events in my timeline
     And I have 3 facts
@@ -117,7 +117,7 @@ Feature: Chained Workflows
   # Workflow: Browse then Configure
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Browse data then configure system
     Given I have 3 events in my timeline
     When I select "browse_timeline" from the menu
@@ -134,7 +134,7 @@ Feature: Chained Workflows
   # Return to Menu Between Intents
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Return to menu after each intent
     When I select "browse_timeline" from the menu
     And I press escape
