@@ -237,7 +237,7 @@ Feature: Generate CV
     And I should see CV metadata
     And I should see statistics
 
-  @happy @wip
+  @happy
   Scenario: Review screen shows section summary
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
@@ -246,14 +246,14 @@ Feature: Generate CV
     And I press enter to preview
     Then I should see section names
 
-  @happy @wip
+  @happy
   Scenario: Navigate to preview from review
     Given I have generated a CV
     When I am on the CV review screen
     And I press enter to preview
     Then I should see the CV preview screen
 
-  @happy @wip
+  @happy
   Scenario: Navigate to preview with p key
     Given I have generated a CV
     When I am on the CV review screen
@@ -267,14 +267,14 @@ Feature: Generate CV
     And I press "x" to export
     Then I should see the export options modal
 
-  @happy @wip
+  @happy
   Scenario: Edit CV from review
     Given I have generated a CV
     When I am on the CV review screen
     And I press "e" to edit
     Then I should see the CV wizard modal
 
-  @happy @wip
+  @happy
   Scenario: Go back from review
     Given I have generated a CV
     When I am on the CV review screen
@@ -301,7 +301,7 @@ Feature: Generate CV
     Then the CV generation should complete
     And I should be on the main menu
 
-  @happy @wip
+  @happy
   Scenario: Confirm CV with y key
     Given I have generated a CV
     When I navigate to the CV preview screen
@@ -315,14 +315,14 @@ Feature: Generate CV
     And I press "x" to export
     Then I should see the export options modal
 
-  @happy @wip
+  @happy
   Scenario: Edit from preview
     Given I have generated a CV
     When I navigate to the CV preview screen
     And I press "e" to edit
     Then I should see the CV wizard modal
 
-  @happy @wip
+  @happy
   Scenario: Go back from preview to review
     Given I have generated a CV
     When I navigate to the CV preview screen
@@ -425,7 +425,7 @@ Feature: Generate CV
     And I press escape
     Then I should be on the main menu
 
-  @sad @wip
+  @sad
   Scenario: Full navigation escape path
     Given I have generated a CV
     When I navigate to the CV preview screen

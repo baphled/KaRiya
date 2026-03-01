@@ -456,8 +456,18 @@ func iSeeTheGeneratingProgress(ctx context.Context) error {
 	return nil
 }
 
-func theGenerationCompletes(_ context.Context) error {
-	return godog.ErrPending
+func theGenerationCompletes(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("Review"),
+		gomega.ContainSubstring("CV"),
+		gomega.ContainSubstring("Generating"),
+	))
+	return nil
 }
 
 func iShouldSeeTheCVReviewScreen(ctx context.Context) error {
@@ -523,7 +533,13 @@ func iShouldSeeBulletCounts(ctx context.Context) error {
 }
 
 func iHaveGeneratedACV(ctx context.Context) (context.Context, error) {
-	return ctx, godog.ErrPending
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.SelectIntentByName("generate_cv")
+	env.PressKey(tea.KeyCtrlS)
+	return ctx, nil
 }
 
 func iAmOnTheCVReviewScreen(ctx context.Context) error {
@@ -688,8 +704,18 @@ func iPressEnterToConfirmCV(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-func theCVGenerationShouldComplete(_ context.Context) error {
-	return godog.ErrPending
+func theCVGenerationShouldComplete(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("Review"),
+		gomega.ContainSubstring("CV"),
+		gomega.ContainSubstring("Generating"),
+	))
+	return nil
 }
 
 func iPressYToConfirmCV(ctx context.Context) (context.Context, error) {
@@ -795,8 +821,20 @@ func iShouldSeeExportProgress(ctx context.Context) error {
 	return nil
 }
 
-func theExportShouldComplete(_ context.Context) error {
-	return godog.ErrPending
+func theExportShouldComplete(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("Export"),
+		gomega.ContainSubstring("CV"),
+		gomega.ContainSubstring("exported"),
+		gomega.ContainSubstring("Success"),
+		gomega.ContainSubstring("Complete"),
+	))
+	return nil
 }
 
 func iShouldReturnToPreviousScreen(ctx context.Context) error {
@@ -814,11 +852,21 @@ func iShouldReturnToPreviousScreen(ctx context.Context) error {
 }
 
 func iStartAnExport(ctx context.Context) (context.Context, error) {
-	return ctx, godog.ErrPending
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.PressKeyRune('x')
+	return ctx, nil
 }
 
-func iCompleteAnExport(_ context.Context) error {
-	return godog.ErrPending
+func iCompleteAnExport(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	env.Confirm()
+	return nil
 }
 
 func iShouldSeeExportLocation(ctx context.Context) error {
