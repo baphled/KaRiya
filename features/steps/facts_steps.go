@@ -445,11 +445,11 @@ func filterCategories(existing, toRemove []string) []string {
 
 func mapRoleFitToDomain(displayName string) career.RoleFit {
 	mapping := map[string]career.RoleFit{
-		"principal":  career.RoleFit("principal"),
-		"em":         career.RoleFit("em"),
-		"staff":      career.RoleFit("staff"),
-		"senior ic":  career.RoleFit("senior_ic"),
-		"senior_ic":  career.RoleFit("senior_ic"),
+		"principal": career.RoleFit("principal"),
+		"em":        career.RoleFit("em"),
+		"staff":     career.RoleFit("staff"),
+		"senior ic": career.RoleFit("senior_ic"),
+		"senior_ic": career.RoleFit("senior_ic"),
 	}
 	key := strings.ToLower(displayName)
 	if v, ok := mapping[key]; ok {
