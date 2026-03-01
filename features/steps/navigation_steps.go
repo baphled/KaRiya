@@ -111,15 +111,25 @@ func navPressQuestionForHelp(ctx context.Context) (context.Context, error) {
 
 func navShouldSeeHelpInformation(ctx context.Context) error {
 	env := support.GetAppEnv(ctx)
-	if env == nil {
+	if env != nil {
+		view := env.GetView()
+		gomega.Expect(view).To(gomega.SatisfyAny(
+			gomega.ContainSubstring("Help"),
+			gomega.ContainSubstring("help"),
+			gomega.ContainSubstring("Keyboard"),
+			gomega.ContainSubstring("Shortcuts"),
+		))
+		return nil
+	}
+	cliEnv := support.GetCLIEnv(ctx)
+	if cliEnv == nil {
 		return godog.ErrPending
 	}
-	view := env.GetView()
-	gomega.Expect(view).To(gomega.SatisfyAny(
-		gomega.ContainSubstring("Help"),
+	output := cliEnv.GetOutput()
+	gomega.Expect(output).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("USAGE"),
+		gomega.ContainSubstring("Usage"),
 		gomega.ContainSubstring("help"),
-		gomega.ContainSubstring("Keyboard"),
-		gomega.ContainSubstring("Shortcuts"),
 	))
 	return nil
 }

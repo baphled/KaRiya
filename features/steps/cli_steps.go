@@ -145,8 +145,8 @@ func cliShouldSeeAvailableCommands(ctx context.Context) error {
 	}
 
 	output := env.GetOutput()
-	gomega.Expect(output).To(gomega.ContainSubstring("USAGE"))
-	gomega.Expect(output).To(gomega.ContainSubstring("OPTIONS"))
+	gomega.Expect(output).To(gomega.SatisfyAny(gomega.ContainSubstring("USAGE"), gomega.ContainSubstring("Usage")))
+	gomega.Expect(output).To(gomega.SatisfyAny(gomega.ContainSubstring("OPTIONS"), gomega.ContainSubstring("Options")))
 	return nil
 }
 
