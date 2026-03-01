@@ -143,7 +143,6 @@ func needsAppEnv(sc *godog.Scenario) bool {
 		"@configure":  true,
 		"@navigation": true,
 		"@workflows":  true,
-		"@enrichment": true,
 	}
 	for _, tag := range sc.Tags {
 		if appTags[tag.Name] {
