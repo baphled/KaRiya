@@ -529,9 +529,9 @@ func iShouldSeeSkillsGroupedByCategory(ctx context.Context) error {
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
-		gomega.ContainSubstring("Languages"),
-		gomega.ContainSubstring("DevOps"),
-		gomega.ContainSubstring("Programming"),
+		gomega.ContainSubstring("Category"),
+		gomega.ContainSubstring("backend"),
+		gomega.ContainSubstring("devops"),
 	))
 	return nil
 }

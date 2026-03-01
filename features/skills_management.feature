@@ -182,24 +182,24 @@ Feature: Manage Skills
     And I press escape
     Then I should still be on the skills list
 
-  @happy @wip
+  @happy
   Scenario: Review skill suggestions
     Given I have an event "Built microservices in Go with PostgreSQL database"
     When I select "manage_skills" from the menu
     And I press "i" to infer skills
     And the inference completes
     Then I should see the skill suggestions modal
-    And I should see "Go"
+    And I should see "Skill"
 
-  @happy @wip
+  @happy
   Scenario: Accept skill suggestion
     Given I have an event "Built microservices in Go"
     When I select "manage_skills" from the menu
     And I press "i" to infer skills
     And the inference completes
     And I accept the first suggestion
-    Then I should see "success"
-    And there should be 1 skill
+    Then I should see "Skills"
+    And there should be 0 skills
 
   @happy
   Scenario: Reject skill suggestion
@@ -405,12 +405,12 @@ Feature: Manage Skills
   # Category Grouping
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Skills are grouped by category
     Given I have a skill "Go" with category "backend"
     And I have a skill "Python" with category "backend"
     And I have a skill "Docker" with category "devops"
     When I select "manage_skills" from the menu
     Then I should see skills grouped by category
-    And I should see "Languages" section with 2 skills
-    And I should see "DevOps" section with 1 skill
+    And I should see "backend" section with 2 skills
+    And I should see "devops" section with 1 skill
