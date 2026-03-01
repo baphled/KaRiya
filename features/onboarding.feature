@@ -142,7 +142,7 @@ Feature: User Onboarding
   # Navigation Scenarios
   # ============================================================================
 
-  @sad @wip
+  @sad
   Scenario: Escape key is blocked during onboarding
     When I press escape
     Then I should still see the onboarding wizard

@@ -200,11 +200,18 @@ func iPressEnterToViewDetails(ctx context.Context) (context.Context, error) {
 
 func iPressEscape(ctx context.Context) (context.Context, error) {
 	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	if env != nil {
+		env.Cancel()
+		return ctx, nil
 	}
-	env.Cancel()
-	return ctx, nil
+
+	onboardingEnv := support.GetOnboardingEnv(ctx)
+	if onboardingEnv != nil {
+		onboardingEnv.PressKey("escape")
+		return ctx, nil
+	}
+
+	return ctx, godog.ErrPending
 }
 
 func iPressSlashToSearch(ctx context.Context) (context.Context, error) {

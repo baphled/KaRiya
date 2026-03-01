@@ -71,7 +71,7 @@ func (e *OnboardingEnv) TypeText(text string) {
 
 // PressKey sends a key press and processes resulting commands.
 //
-// Expected: key is one of "enter", "tab", "shift+tab", "up", "down", or a rune string.
+// Expected: key is one of "enter", "tab", "shift+tab", "up", "down", "escape", or a rune string.
 // Returns: None.
 // Side effects: Updates the model state.
 func (e *OnboardingEnv) PressKey(key string) {
@@ -87,6 +87,8 @@ func (e *OnboardingEnv) PressKey(key string) {
 		msg = tea.KeyMsg{Type: tea.KeyUp}
 	case "down":
 		msg = tea.KeyMsg{Type: tea.KeyDown}
+	case "escape":
+		msg = tea.KeyMsg{Type: tea.KeyEscape}
 	default:
 		msg = tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(key)}
 	}
