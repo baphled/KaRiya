@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 
@@ -15,6 +16,29 @@ import (
 	"github.com/cucumber/godog"
 	"github.com/onsi/gomega"
 )
+
+// factFormKey is used to store fact form data in context between steps.
+type factFormKey struct{}
+
+// factFormData holds fact form field values accumulated across steps.
+type factFormData struct {
+	Text                 string
+	CompetencyCategories []string
+	DeselectedCategories []string
+	RoleFit              string
+	AudienceRelevance    []string
+}
+
+func getFactFormData(ctx context.Context) factFormData {
+	if v, ok := ctx.Value(factFormKey{}).(factFormData); ok {
+		return v
+	}
+	return factFormData{}
+}
+
+func setFactFormData(ctx context.Context, data factFormData) context.Context {
+	return context.WithValue(ctx, factFormKey{}, data)
+}
 
 // RegisterFactsSteps registers fact management step definitions with Godog.
 //
@@ -274,6 +298,9 @@ func iEnterFactText(ctx context.Context, text string) (context.Context, error) {
 		return ctx, godog.ErrPending
 	}
 	env.TypeText(text)
+	data := getFactFormData(ctx)
+	data.Text = text
+	ctx = setFactFormData(ctx, data)
 	return ctx, nil
 }
 
@@ -286,12 +313,15 @@ func iTabToCompetencyCategories(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-func iSelectCompetencyCategory(ctx context.Context, _ string) (context.Context, error) {
+func iSelectCompetencyCategory(ctx context.Context, category string) (context.Context, error) {
 	env := support.GetAppEnv(ctx)
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
 	env.PressKeyRune(' ')
+	data := getFactFormData(ctx)
+	data.CompetencyCategories = append(data.CompetencyCategories, category)
+	ctx = setFactFormData(ctx, data)
 	return ctx, nil
 }
 
@@ -304,12 +334,15 @@ func iTabToRoleFit(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-func iSelectRoleFit(ctx context.Context, _ string) (context.Context, error) {
+func iSelectRoleFit(ctx context.Context, roleFit string) (context.Context, error) {
 	env := support.GetAppEnv(ctx)
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
 	env.Confirm()
+	data := getFactFormData(ctx)
+	data.RoleFit = roleFit
+	ctx = setFactFormData(ctx, data)
 	return ctx, nil
 }
 
@@ -322,12 +355,15 @@ func iTabToAudienceRelevance(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-func iSelectAudience(ctx context.Context, _ string) (context.Context, error) {
+func iSelectAudience(ctx context.Context, audience string) (context.Context, error) {
 	env := support.GetAppEnv(ctx)
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
 	env.PressKeyRune(' ')
+	data := getFactFormData(ctx)
+	data.AudienceRelevance = append(data.AudienceRelevance, audience)
+	ctx = setFactFormData(ctx, data)
 	return ctx, nil
 }
 
@@ -337,8 +373,7 @@ func iSubmitTheFactForm(ctx context.Context) (context.Context, error) {
 		return ctx, godog.ErrPending
 	}
 
-	// Bypass UI form submission and directly create fact
-	// This matches the pattern used by SubmitSkill() for skills_management tests
+	data := getFactFormData(ctx)
 
 	factRepo := env.Service.GetFactRepository()
 	facts, err := factRepo.List(env.Ctx, careerrepo.FactListFilters{})
@@ -346,25 +381,74 @@ func iSubmitTheFactForm(ctx context.Context) (context.Context, error) {
 		return ctx, err
 	}
 
-	// If there's exactly 1 fact, we're editing it
-	// If there are 0 facts, we're creating new
 	if len(facts) == 1 {
-		// Editing existing fact
 		fact := facts[0]
-		fact.Text = "Updated fact text here"
+		if data.Text != "" {
+			fact.Text = data.Text
+		}
+		if len(data.CompetencyCategories) > 0 || len(data.DeselectedCategories) > 0 {
+			filtered := filterCategories(fact.CompetencyCategories, data.DeselectedCategories)
+			fact.CompetencyCategories = append(filtered, data.CompetencyCategories...)
+		}
+		if data.RoleFit != "" {
+			fact.RoleFit = mapRoleFitToDomain(data.RoleFit)
+		}
+		if len(data.AudienceRelevance) > 0 {
+			fact.AudienceRelevance = data.AudienceRelevance
+		}
 		env.SubmitFactUpdate(fact)
 	} else {
-		// Creating new fact
 		fact := &career.Fact{
-			Text:                 "Reduced deployment time by 50% through CI/CD automation",
-			CompetencyCategories: []string{"Technical"},
-			RoleFit:              "senior_ic",
-			AudienceRelevance:    []string{"Hiring Manager"},
+			Text:                 data.Text,
+			CompetencyCategories: data.CompetencyCategories,
+			RoleFit:              mapRoleFitToDomain(data.RoleFit),
+			AudienceRelevance:    data.AudienceRelevance,
+		}
+		if fact.Text == "" {
+			fact.Text = "Reduced deployment time by 50% through CI/CD automation"
+		}
+		if len(fact.CompetencyCategories) == 0 {
+			fact.CompetencyCategories = []string{"Technical"}
+		}
+		if fact.RoleFit == "" {
+			fact.RoleFit = career.RoleFit("senior_ic")
+		}
+		if len(fact.AudienceRelevance) == 0 {
+			fact.AudienceRelevance = []string{"Hiring Manager"}
 		}
 		env.SubmitFact(fact)
 	}
 
 	return ctx, nil
+}
+
+func filterCategories(existing, toRemove []string) []string {
+	removeSet := make(map[string]bool, len(toRemove))
+	for _, r := range toRemove {
+		removeSet[r] = true
+	}
+	result := make([]string, 0, len(existing))
+	for _, c := range existing {
+		if !removeSet[c] {
+			result = append(result, c)
+		}
+	}
+	return result
+}
+
+func mapRoleFitToDomain(displayName string) career.RoleFit {
+	mapping := map[string]career.RoleFit{
+		"principal":  career.RoleFit("principal"),
+		"em":         career.RoleFit("em"),
+		"staff":      career.RoleFit("staff"),
+		"senior ic":  career.RoleFit("senior_ic"),
+		"senior_ic":  career.RoleFit("senior_ic"),
+	}
+	key := strings.ToLower(displayName)
+	if v, ok := mapping[key]; ok {
+		return v
+	}
+	return career.RoleFit(key)
 }
 
 func theFactShouldHaveText(ctx context.Context, text string) error {
@@ -385,7 +469,13 @@ func theFactShouldHaveCategories(ctx context.Context, categories string) error {
 	}
 	facts := env.GetFacts()
 	gomega.Expect(facts).To(gomega.HaveLen(1))
-	gomega.Expect(facts[0].CompetencyCategories).To(gomega.ContainElement(gomega.ContainSubstring(categories)))
+	expected := strings.Split(categories, ",")
+	for _, cat := range expected {
+		gomega.Expect(facts[0].CompetencyCategories).To(
+			gomega.ContainElement(gomega.ContainSubstring(cat)),
+			fmt.Sprintf("expected category %q in %v", cat, facts[0].CompetencyCategories),
+		)
+	}
 	return nil
 }
 
@@ -396,7 +486,13 @@ func theFactShouldHaveAudiences(ctx context.Context, audiences string) error {
 	}
 	facts := env.GetFacts()
 	gomega.Expect(facts).To(gomega.HaveLen(1))
-	gomega.Expect(facts[0].AudienceRelevance).To(gomega.ContainElement(gomega.ContainSubstring(audiences)))
+	expected := strings.Split(audiences, ",")
+	for _, aud := range expected {
+		gomega.Expect(facts[0].AudienceRelevance).To(
+			gomega.ContainElement(gomega.ContainSubstring(aud)),
+			fmt.Sprintf("expected audience %q in %v", aud, facts[0].AudienceRelevance),
+		)
+	}
 	return nil
 }
 
@@ -422,12 +518,15 @@ func iHaveAFactWithCategory(ctx context.Context, category string) (context.Conte
 	return ctx, nil
 }
 
-func iDeselectCompetencyCategory(ctx context.Context, _ string) (context.Context, error) {
+func iDeselectCompetencyCategory(ctx context.Context, category string) (context.Context, error) {
 	env := support.GetAppEnv(ctx)
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
 	env.PressKeyRune(' ')
+	data := getFactFormData(ctx)
+	data.DeselectedCategories = append(data.DeselectedCategories, category)
+	ctx = setFactFormData(ctx, data)
 	return ctx, nil
 }
 
