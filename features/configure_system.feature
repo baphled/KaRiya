@@ -124,20 +124,20 @@ Feature: Configure System
     When I select "configure_system" from the menu
     And I select "Profile" domain
     And I navigate to "Default Role" field
-    Then I should see "Junior IC"
-    And I should see "Senior IC"
-    And I should see "Staff IC"
-    And I should see "Principal IC"
-    And I should see "Manager"
+    Then I should see "junior_ic"
+    And I should see "senior_ic"
+    And I should see "staff_ic"
+    And I should see "principal_ic"
+    And I should see "manager"
 
   @happy @wip
   Scenario: Select default audience
     When I select "configure_system" from the menu
     And I select "Profile" domain
     And I navigate to "Default Audience" field
-    Then I should see "Technical"
-    And I should see "Executive"
-    And I should see "General"
+    Then I should see "technical"
+    And I should see "executive"
+    And I should see "general"
 
   # ============================================================================
   # Export Domain Settings
@@ -206,7 +206,7 @@ Feature: Configure System
     And I press escape
     Then I should be on domain selection
 
-  @happy @wip
+  @happy
   Scenario: Navigate form with tab
     When I select "configure_system" from the menu
     And I select "System" domain
