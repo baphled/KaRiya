@@ -1,4 +1,4 @@
-.PHONY: test test-race coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance check-docblocks check-fixtures check-patterns check-patterns-quiet check-patterns-strict check-intent-architecture check-intent-architecture-files golangci-lint install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ai-commit ci-local ci-install-tools gosec session-start session-end session-reset check-session verify-hooks tdd-check tdd-red tdd-green tdd-refactor tdd-document pre-task what-to-use generate-diagrams generate-state-matrix generate-docs generate-mocks check-mocks-updated diagrams fix-docs fix-all-docs validate-documentation create-doc-go bdd bdd-wip bdd-smoke bdd-feature bdd-happy bdd-sad bdd-check-wip
+.PHONY: test test-race coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance check-docblocks check-fixtures check-patterns check-patterns-quiet check-patterns-strict check-intent-architecture check-intent-architecture-files golangci-lint install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ai-commit ci-local ci-install-tools gosec session-start session-end session-reset check-session verify-hooks tdd-check tdd-red tdd-green tdd-refactor tdd-document pre-task what-to-use generate-mocks check-mocks-updated fix-docs fix-all-docs validate-documentation create-doc-go bdd bdd-wip bdd-smoke bdd-feature bdd-happy bdd-sad bdd-check-wip
 
 # Run all tests in verbose mode (race detection in CI only)
 # Note: BDD tests in features/ are run separately via 'make bdd' with tag filtering
@@ -296,8 +296,8 @@ session-start:
 	@echo ""
 	@echo "  Tier 1: AGENTS.md                        - Quick reference (~100 lines)"
 	@echo "  Tier 2: make what-to-use NEED='keyword'  - Component lookup"
-	@echo "  Tier 3: docs/development/                - Development guides"
-	@echo ""
+	@echo "  Tier/development/                - Development guides"
+ 3: docs	@echo ""
 	@echo "  Key docs:"
 	@echo "    docs/development/SESSION_PROTOCOL.md       - Session rules"
 	@echo "    docs/development/DEVELOPMENT_WORKFLOW.md   - Workflow guide"
@@ -596,20 +596,6 @@ golangci-lint:
 	}
 	@golangci-lint run
 
-# Generate workflow diagrams
-generate-diagrams:
-	@bash scripts/generate_workflow_diagrams.sh
-
-# Generate state matrix documentation
-generate-state-matrix:
-	@bash scripts/generate_state_matrix.sh
-
-# Generate all documentation (diagrams + state matrix)
-generate-docs: generate-diagrams generate-state-matrix
-
-# Alias for convenience
-diagrams: generate-diagrams
-
 # Generate all GoMock mocks from go:generate directives
 generate-mocks:
 	@echo "Generating GoMock mocks..."
@@ -634,22 +620,6 @@ fix-docs:
 		exit 1; \
 	fi
 	@bash scripts/fix-doc-blocks.sh -i "$(FILE)"
-
-# Create new feature task (auto-numbered)
-new-feature:
-	@if [ -z "$(TASK)" ]; then \
-		echo "Usage: make new-feature TASK='feature name'"; \
-		exit 1; \
-	fi
-	@bash scripts/new-feature.sh "$(TASK)"
-
-# Create new bug report (auto-numbered)
-new-bug:
-	@if [ -z "$(BUG)" ]; then \
-		echo "Usage: make new-bug BUG='bug description'"; \
-		exit 1; \
-	fi
-	@bash scripts/new-bug.sh "$(BUG)"
 
 # Create new intent with subdirectory structure
 new-intent:
@@ -766,20 +736,13 @@ help:
 	@echo "  make tdd-red               - Start TDD: write failing test"
 	@echo "  make tdd-green             - Make test pass with minimal code"
 	@echo "  make tdd-refactor          - Improve code quality"
-	@echo "  make tdd-document          - Finalize and commit"
+	@echo "  make tdd-document          - Finalise and commit"
 	@echo ""
-	@echo "📋 Task Management:"
-	@echo "  make new-feature TASK=x    - Create new feature task"
-	@echo "  make new-bug BUG=x         - Create new bug report"
+	@echo "📋 Intent Management:"
 	@echo "  make new-intent NAME=x     - Create new intent subdirectory structure"
 	@echo ""
 	@echo "🏗️  Build:"
 	@echo "  make build             - Build the application"
-	@echo ""
-	@echo "📊 Documentation:"
-	@echo "  make generate-diagrams     - Generate workflow diagrams (Mermaid)"
-	@echo "  make generate-state-matrix - Generate state matrix documentation"
-	@echo "  make generate-docs         - Generate all documentation (diagrams + state matrix)"
 	@echo ""
 	@echo "📚 Rules Reference:"
 	@echo "  docs/rules/RULES_QUICK_REF.md   - Quick reference (60 lines)"
@@ -787,4 +750,3 @@ help:
 	@echo "  docs/rules/CODE_STANDARDS.md    - Code standards"
 	@echo "  docs/rules/TUI_PATTERNS.md      - TUI patterns"
 	@echo ""
-
