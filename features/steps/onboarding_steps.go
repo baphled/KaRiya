@@ -287,13 +287,16 @@ func iShouldStillBeOnStep(ctx context.Context, step int) error {
 	return nil
 }
 
-// iShouldSeeValidationErrorOnboarding checks for validation error in the onboarding view.
+// iShouldSeeValidationErrorOnboarding checks for validation error in the view.
 func iShouldSeeValidationErrorOnboarding(ctx context.Context) error {
-	env := support.GetOnboardingEnv(ctx)
-	if env == nil {
+	var view string
+	if env := support.GetOnboardingEnv(ctx); env != nil {
+		view = env.View()
+	} else if appEnv := support.GetAppEnv(ctx); appEnv != nil {
+		view = appEnv.GetView()
+	} else {
 		return godog.ErrPending
 	}
-	view := env.View()
 	gomega.Expect(view).To(gomega.SatisfyAny(
 		gomega.ContainSubstring("error"),
 		gomega.ContainSubstring("Error"),
@@ -303,7 +306,12 @@ func iShouldSeeValidationErrorOnboarding(ctx context.Context) error {
 		gomega.ContainSubstring("Invalid"),
 		gomega.ContainSubstring("please"),
 		gomega.ContainSubstring("Please"),
-	), "Should see validation error")
+		gomega.ContainSubstring("must be"),
+		gomega.ContainSubstring("at least"),
+		gomega.ContainSubstring("cannot exceed"),
+		gomega.ContainSubstring("minimum"),
+		gomega.ContainSubstring("maximum"),
+	), "Should see validation error in view:\n"+view)
 	return nil
 }
 

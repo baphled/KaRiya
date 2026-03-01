@@ -398,6 +398,10 @@ func iSubmitTheFactForm(ctx context.Context) (context.Context, error) {
 		}
 		env.SubmitFactUpdate(fact)
 	} else {
+		if data.Text != "" && (len(data.Text) < 10 || len(data.Text) > 2000) {
+			env.Confirm()
+			return ctx, nil
+		}
 		fact := &career.Fact{
 			Text:                 data.Text,
 			CompetencyCategories: data.CompetencyCategories,
@@ -587,6 +591,9 @@ func iEnterFactTextWithNCharacters(ctx context.Context, length int) (context.Con
 		runes[i] = 'a'
 	}
 	env.SendMessage(tea.KeyMsg{Type: tea.KeyRunes, Runes: runes})
+	data := getFactFormData(ctx)
+	data.Text = string(runes)
+	ctx = setFactFormData(ctx, data)
 	return ctx, nil
 }
 

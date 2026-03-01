@@ -247,21 +247,21 @@ func iCompleteStep1(ctx context.Context) (context.Context, error) {
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	env.Confirm()
-	env.Tab()
-	env.Confirm()
+	env.PressEnterWithFormProcessing()
+	env.PressEnterWithFormProcessing()
 	return ctx, nil
 }
 
-func iSelectTechnologyFocus(ctx context.Context, _ string) (context.Context, error) {
+func iSelectTechnologyFocus(ctx context.Context, focus string) (context.Context, error) {
 	env := support.GetAppEnv(ctx)
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	// Navigate to focus option and confirm
-	// Different focuses: "Language Agnostic", "Generalist", "Specialist"
-	env.NavigateDown() // Move through options
-	env.Confirm()
+	view := env.GetView()
+	if !strings.Contains(view, focus) {
+		env.NavigateDown()
+	}
+	env.PressEnterWithFormProcessing()
 	return ctx, nil
 }
 
@@ -340,8 +340,7 @@ func iSelectTechFocus(ctx context.Context) (context.Context, error) {
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	env.NavigateDown()
-	env.Confirm()
+	env.PressEnterWithFormProcessing()
 	return ctx, nil
 }
 
@@ -364,7 +363,7 @@ func iCompleteStep2(ctx context.Context) (context.Context, error) {
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	env.Confirm()
+	env.PressEnterWithFormProcessing()
 	return ctx, nil
 }
 
@@ -373,7 +372,7 @@ func iTabToSkillsLimit(ctx context.Context) (context.Context, error) {
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	env.Tab()
+	env.TabWithFormProcessing()
 	return ctx, nil
 }
 
@@ -401,7 +400,8 @@ func iTabToCVLength(ctx context.Context) (context.Context, error) {
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	env.Tab()
+	env.PressEnterWithFormProcessing()
+	env.PressEnterWithFormProcessing()
 	return ctx, nil
 }
 

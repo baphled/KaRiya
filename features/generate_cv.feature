@@ -75,7 +75,7 @@ Feature: Generate CV
   # CV Configuration Wizard - Step 2 (TECH)
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: View step 2 technology options
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
@@ -135,17 +135,17 @@ Feature: Generate CV
   # CV Configuration Wizard - Step 3 (FORMAT)
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: View step 3 format options
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
     And I complete step 1
     And I complete step 2
-    Then I should see "Skills Format"
+    Then I should see "Skills Presentation"
     And I should see "Skills Limit"
     And I should see "CV Length"
 
-  @happy @wip
+  @happy
   Scenario: Select skills format
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
@@ -154,7 +154,7 @@ Feature: Generate CV
     Then I should see "Grouped"
     And I should see "Flat"
 
-  @happy @wip
+  @happy
   Scenario: Set skills limit
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu

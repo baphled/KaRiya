@@ -257,7 +257,7 @@ Feature: Manage Career Facts
   # Validation
   # ============================================================================
 
-  @sad @wip
+  @sad
   Scenario: Fact text minimum length validation
     Given the database is empty
     When I select "fact_management" from the menu
