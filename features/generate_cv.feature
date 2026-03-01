@@ -165,7 +165,7 @@ Feature: Generate CV
     Then I should see "CV Length"
     And I should see "Target length for the CV"
 
-  @happy @wip
+  @happy
   Scenario: Skip wizard with Ctrl+S
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
@@ -177,14 +177,14 @@ Feature: Generate CV
   # Technology Extraction
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: View technology extraction progress
     Given I have a complete profile with skills
     When I select "generate_cv" from the menu
     Then I should see the progress modal
     And I should see "Extracting Technologies"
 
-  @happy @wip
+  @happy
   Scenario: Cancel technology extraction
     Given I have a complete profile with skills
     When I select "generate_cv" from the menu
@@ -196,7 +196,7 @@ Feature: Generate CV
   # CV Generation Progress
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: View CV generation progress
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
@@ -204,7 +204,7 @@ Feature: Generate CV
     Then I should see the progress modal
     And I should see "Generating CV"
 
-  @happy @wip
+  @happy
   Scenario: Cancel CV generation
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
@@ -370,14 +370,14 @@ Feature: Generate CV
   # Export Progress
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: View export progress
     Given I have generated a CV
     When I start an export
     Then I should see the progress modal
     And I should see "Exporting"
 
-  @happy @wip
+  @happy
   Scenario: Export success shows confirmation
     Given I have generated a CV
     When I complete an export
@@ -388,7 +388,7 @@ Feature: Generate CV
   # Error Handling
   # ============================================================================
 
-  @sad @wip
+  @sad
   Scenario: Handle generation error
     Given CV generation will fail
     When I select "generate_cv" from the menu
@@ -396,7 +396,7 @@ Feature: Generate CV
     Then I should see an error modal
     And I should see error details
 
-  @sad @wip
+  @sad
   Scenario: Handle export error
     Given I have generated a CV
     And export will fail

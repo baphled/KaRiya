@@ -268,7 +268,7 @@ func (i *Intent) handleDeleteConfirmState(msg tea.Msg) tea.Cmd {
 	}
 
 	switch keyMsg.String() {
-	case "y":
+	case "y", "enter":
 		if i.context.FactToDelete != nil {
 			if err := i.context.DeleteFact(i.context.FactToDelete.ID); err != nil {
 				i.result = &intents.IntentResult[*Result]{

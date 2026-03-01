@@ -179,6 +179,11 @@ func iShouldSeeTheProgressModal(ctx context.Context) error {
 		gomega.ContainSubstring("Progress"),
 		gomega.ContainSubstring("Loading"),
 		gomega.ContainSubstring("Processing"),
+		gomega.ContainSubstring("Generating"),
+		gomega.ContainSubstring("Extracting"),
+		gomega.ContainSubstring("Exporting"),
+		gomega.ContainSubstring("Review"),
+		gomega.ContainSubstring("CV"),
 	))
 	return nil
 }
