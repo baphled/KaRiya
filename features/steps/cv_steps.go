@@ -354,6 +354,7 @@ func iShouldBeBackOnStep1(ctx context.Context) error {
 		gomega.ContainSubstring("Step 1"),
 		gomega.ContainSubstring("Profile"),
 		gomega.ContainSubstring("Audience"),
+		gomega.ContainSubstring("Technology Focus"),
 	))
 	return nil
 }

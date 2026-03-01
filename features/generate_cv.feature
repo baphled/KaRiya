@@ -105,8 +105,7 @@ Feature: Generate CV
     When I select "generate_cv" from the menu
     And I complete step 1
     And I select "Specialist" technology focus
-    Then I should see technology single-select
-    And I should only select one technology
+    Then I should see "Skills Presentation"
 
   @happy
   Scenario: View focus area options
