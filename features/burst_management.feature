@@ -253,7 +253,7 @@ Feature: Manage Career Bursts
     And I press escape
     Then I should still be on the burst list
 
-  @happy @wip
+  @happy
   Scenario: View burst suggestions after detection
     Given I have 5 unassigned events
     When I select "burst_management" from the menu
@@ -337,7 +337,7 @@ Feature: Manage Career Bursts
     And I should see suggested skills
     And I should see skill categories
 
-   @happy @wip
+   @happy
   Scenario: View events for skill suggestion
     Given I have skill suggestions from burst
     When I am on the skill suggestion modal
@@ -352,7 +352,7 @@ Feature: Manage Career Bursts
     Then I should see success message
     And there should be 1 skill
 
-  @happy @wip
+  @happy
   Scenario: Reject skill suggestion
     Given I have skill suggestions from burst
     When I am on the skill suggestion modal

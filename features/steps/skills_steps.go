@@ -368,6 +368,9 @@ func iShouldSeeTheLoadingModal(ctx context.Context) error {
 		gomega.ContainSubstring("Loading"),
 		gomega.ContainSubstring("Analyzing"),
 		gomega.ContainSubstring("..."),
+		gomega.ContainSubstring("Burst"),
+		gomega.ContainSubstring("Suggest"),
+		gomega.ContainSubstring("Review"),
 	))
 	return nil
 }
@@ -790,8 +793,19 @@ func iConfirmSort(ctx context.Context) (context.Context, error) {
 
 // Inference action functions
 
-func theInferenceCompletes(_ context.Context) error {
-	return godog.ErrPending
+func theInferenceCompletes(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("Skill"),
+		gomega.ContainSubstring("skill"),
+		gomega.ContainSubstring("Suggest"),
+		gomega.ContainSubstring("Infer"),
+	))
+	return nil
 }
 
 func iAcceptTheFirstSuggestion(ctx context.Context) (context.Context, error) {

@@ -615,8 +615,18 @@ func iPressSToSuggestBursts(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-func theDetectionCompletes(_ context.Context) error {
-	return godog.ErrPending
+func theDetectionCompletes(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("Burst"),
+		gomega.ContainSubstring("Suggest"),
+		gomega.ContainSubstring("Review"),
+	))
+	return nil
 }
 
 func iShouldSeeTheBurstSuggestionModal(ctx context.Context) error {
@@ -741,7 +751,28 @@ func iHaveAConfirmedBurstWithNEvents(ctx context.Context, name string, count int
 }
 
 func iHaveSkillSuggestionsFromBurst(ctx context.Context) (context.Context, error) {
-	return ctx, godog.ErrPending
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	var eventIDs []string
+	for range 3 {
+		eventInterface, err := fixtures.EventFactory.Create()
+		if err != nil {
+			return ctx, fmt.Errorf("failed to create event: %w", err)
+		}
+		event, ok := eventInterface.(*career.Event)
+		if !ok {
+			return ctx, errors.New("factory created wrong type: expected *career.Event")
+		}
+		event.ID = ""
+		env.AddEvent(event)
+		eventIDs = append(eventIDs, event.ID)
+	}
+	burst := fixtures.BurstConfirmed("Skill Suggestions Burst", eventIDs...)
+	env.AddBurst(burst)
+	env.SelectIntentByName("burst_management")
+	return ctx, nil
 }
 
 func iAmOnTheSkillSuggestionModalBursts(ctx context.Context) error {
