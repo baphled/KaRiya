@@ -119,12 +119,15 @@ func iPressEnter(ctx context.Context) error {
 
 // iPressTab presses the tab key.
 func iPressTab(ctx context.Context) error {
-	env := support.GetOnboardingEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	if env := support.GetOnboardingEnv(ctx); env != nil {
+		env.PressTab()
+		return nil
 	}
-	env.PressTab()
-	return nil
+	if env := support.GetAppEnv(ctx); env != nil {
+		env.Tab()
+		return nil
+	}
+	return godog.ErrPending
 }
 
 // iSkipOptionalFields tabs through optional fields and submits.

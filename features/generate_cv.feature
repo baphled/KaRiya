@@ -227,7 +227,7 @@ Feature: Generate CV
   # CV Review Screen
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: View CV review after generation
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
@@ -260,7 +260,7 @@ Feature: Generate CV
     And I press "p" to preview
     Then I should see the CV preview screen
 
-  @happy @wip
+  @happy
   Scenario: Export directly from review
     Given I have generated a CV
     When I am on the CV review screen
@@ -285,7 +285,7 @@ Feature: Generate CV
   # CV Preview Screen
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: View full CV preview
     Given I have generated a CV
     When I navigate to the CV preview screen
@@ -293,7 +293,7 @@ Feature: Generate CV
     And I should see all CV sections
      And I should see bullet points
 
-  @happy @wip
+  @happy
    Scenario: Confirm CV from preview
     Given I have generated a CV
     When I navigate to the CV preview screen
@@ -308,7 +308,7 @@ Feature: Generate CV
     And I press "y" to confirm
     Then the CV generation should complete
 
-  @happy @wip
+  @happy
   Scenario: Export from preview
     Given I have generated a CV
     When I navigate to the CV preview screen
@@ -333,7 +333,7 @@ Feature: Generate CV
   # Export Options Modal
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: View export format options
     Given I have generated a CV
     When I open the export options modal
@@ -341,7 +341,7 @@ Feature: Generate CV
     And I should see "Markdown"
     And I should see "YAML"
 
-  @happy @wip
+  @happy
   Scenario: View export location options
     Given I have generated a CV
     When I open the export options modal
@@ -349,7 +349,7 @@ Feature: Generate CV
     Then I should see "File"
     And I should see "Clipboard"
 
-  @happy @wip
+  @happy
   Scenario: Export to file as text
     Given I have generated a CV
     When I open the export options modal
@@ -359,7 +359,7 @@ Feature: Generate CV
     Then I should see export progress
     And the export should complete
 
-  @happy @wip
+  @happy
   Scenario: Export to clipboard as markdown
     Given I have generated a CV
     When I open the export options modal
@@ -369,7 +369,7 @@ Feature: Generate CV
     Then I should see export progress
     And the export should complete
 
-  @happy @wip
+  @happy
   Scenario: Cancel export
     Given I have generated a CV
     When I open the export options modal

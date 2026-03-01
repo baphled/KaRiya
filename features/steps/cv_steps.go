@@ -533,6 +533,10 @@ func iShouldSeeBulletCounts(ctx context.Context) error {
 }
 
 func iHaveGeneratedACV(ctx context.Context) (context.Context, error) {
+	ctx, err := iHaveACompleteProfileWithEventsAndFacts(ctx)
+	if err != nil {
+		return ctx, err
+	}
 	env := support.GetAppEnv(ctx)
 	if env == nil {
 		return ctx, godog.ErrPending
