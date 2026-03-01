@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/baphled/kariya/internal/cli/intents"
+	"github.com/baphled/kariya/internal/cli/configtypes"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/configure"
 )
@@ -20,15 +20,15 @@ func TestConfigureScreens(t *testing.T) {
 var _ = Describe("DomainSelectScreen", func() {
 	var (
 		screen  *configure.DomainSelectScreen
-		domains []intents.ConfigurationDomain
+		domains []configtypes.ConfigurationDomain
 	)
 
 	BeforeEach(func() {
-		domains = []intents.ConfigurationDomain{
-			intents.DomainSystem,
-			intents.DomainProfile,
-			intents.DomainExport,
-			intents.DomainUI,
+		domains = []configtypes.ConfigurationDomain{
+			configtypes.DomainSystem,
+			configtypes.DomainProfile,
+			configtypes.DomainExport,
+			configtypes.DomainUI,
 		}
 		screen = configure.NewDomainSelectScreen(domains)
 		screen.SetTerminalInfo(120, 40)
@@ -79,7 +79,7 @@ var _ = Describe("DomainSelectScreen", func() {
 
 			Expect(result).NotTo(BeNil())
 			Expect(result.Type()).To(Equal(screens.ResultNavigate))
-			Expect(result.Data()).To(Equal(intents.DomainSystem))
+			Expect(result.Data()).To(Equal(configtypes.DomainSystem))
 		})
 	})
 

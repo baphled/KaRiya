@@ -7,6 +7,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/intents/browsetimeline"
 	burstmanagement "github.com/baphled/kariya/internal/cli/intents/burst_management"
 	"github.com/baphled/kariya/internal/cli/intents/captureevent"
+	"github.com/baphled/kariya/internal/cli/intents/configure"
 	"github.com/baphled/kariya/internal/cli/intents/factmanagement"
 	"github.com/baphled/kariya/internal/cli/intents/generatecv"
 	"github.com/baphled/kariya/internal/cli/intents/skillsmanagement"
@@ -206,9 +207,17 @@ func (r *DefaultIntentRegistrar) registerGenerateCV(ctx context.Context, router 
 	})
 }
 
-func (r *DefaultIntentRegistrar) registerConfigureSystem(ctx context.Context, router *intents.DefaultIntentRouter) error {
+func (r *DefaultIntentRegistrar) registerConfigureSystem(_ context.Context, router *intents.DefaultIntentRouter) error {
 	return router.RegisterIntent("configure_system", func() intents.Intent {
-		intent, err := intents.NewConfigureSystemIntent(ctx)
+		cfg, err := config.LoadConfig()
+		if err != nil {
+			cfg = config.DefaultConfig()
+		}
+		intentCtx := &configure.IntentContext{
+			Cfg:      cfg,
+			Settings: configure.SettingsFromConfig(cfg),
+		}
+		intent, err := configure.NewIntent(intentCtx)
 		if err != nil {
 			r.config.Log.Error("Failed to create ConfigureSystem intent: %v", err)
 			return nil
