@@ -84,7 +84,7 @@ Feature: Chained Workflows
     Then there should be 3 events
     And there should be 2 facts
 
-  @happy @wip
+  @happy
   Scenario: Persist data across simulated restart and intent navigation
     Given I have 4 events in my timeline
     When I restart the application

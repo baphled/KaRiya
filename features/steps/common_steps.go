@@ -106,12 +106,16 @@ func iCloseTheModal(ctx context.Context) (context.Context, error) {
 }
 
 // iRestartTheApplication simulates restarting the application.
+// It commits the per-scenario transaction first so that data is visible to
+// the new repositories created by SimulateRestart.
 func iRestartTheApplication(ctx context.Context) (context.Context, error) {
 	env := support.GetAppEnv(ctx)
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	// Simulate application restart
+	if err := support.CommitScenarioTx(ctx); err != nil {
+		return ctx, fmt.Errorf("committing scenario transaction before restart: %w", err)
+	}
 	env.SimulateRestart()
 	return ctx, nil
 }

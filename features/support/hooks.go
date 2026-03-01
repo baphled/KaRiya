@@ -154,14 +154,31 @@ func needsAppEnv(sc *godog.Scenario) bool {
 
 // afterScenario runs after each scenario.
 // It rolls back the per-scenario transaction to reset data without re-migrating.
+// If the transaction was already committed (e.g. by CommitScenarioTx for restart
+// scenarios), it truncates all tables to prevent data leaking into subsequent scenarios.
 func afterScenario(ctx context.Context, _ *godog.Scenario, _ error) (context.Context, error) {
 	tx, ok := ctx.Value(txKey{}).(*gorm.DB)
 	if ok && tx != nil {
-		tx.Rollback()
+		if err := tx.Rollback().Error; err != nil {
+			cleanupCommittedData()
+		}
 	}
 	env := GetAppEnv(ctx)
 	if env != nil {
 		env.Cleanup()
 	}
 	return ctx, nil
+}
+
+// cleanupCommittedData truncates all tables when a committed transaction
+// cannot be rolled back. This prevents data leaking between scenarios.
+func cleanupCommittedData() {
+	if sharedSQLDB == nil {
+		return
+	}
+	sharedSQLDB.Exec("DELETE FROM event_skills")
+	sharedSQLDB.Exec("DELETE FROM facts")
+	sharedSQLDB.Exec("DELETE FROM bursts")
+	sharedSQLDB.Exec("DELETE FROM skills")
+	sharedSQLDB.Exec("DELETE FROM career_events")
 }
