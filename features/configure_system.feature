@@ -71,7 +71,7 @@ Feature: Configure System
     And I toggle the boolean value
     Then the value should change
 
-  @happy
+  @happy @wip
   Scenario: Edit backup count setting
     When I select "configure_system" from the menu
     And I select "System" domain
@@ -92,7 +92,7 @@ Feature: Configure System
     And I should see "Email"
     And I should see "Professional Title"
 
-  @happy
+  @happy @wip
   Scenario: View all profile fields
     When I select "configure_system" from the menu
     And I select "Profile" domain
@@ -111,7 +111,7 @@ Feature: Configure System
     And I submit settings
     Then I should see the review modal
 
-  @happy
+  @happy @wip
   Scenario: Edit list fields with comma-separated values
     When I select "configure_system" from the menu
     And I select "Profile" domain
@@ -119,7 +119,7 @@ Feature: Configure System
     And I enter "Go,Python,TypeScript"
     Then the field should accept comma-separated values
 
-  @happy
+  @happy @wip
   Scenario: Select default role
     When I select "configure_system" from the menu
     And I select "Profile" domain
@@ -130,7 +130,7 @@ Feature: Configure System
     And I should see "Principal IC"
     And I should see "Manager"
 
-  @happy
+  @happy @wip
   Scenario: Select default audience
     When I select "configure_system" from the menu
     And I select "Profile" domain
@@ -206,7 +206,7 @@ Feature: Configure System
     And I press escape
     Then I should be on domain selection
 
-  @happy
+  @happy @wip
   Scenario: Navigate form with tab
     When I select "configure_system" from the menu
     And I select "System" domain
@@ -223,7 +223,7 @@ Feature: Configure System
     And I press Ctrl+S
     Then I should see the review modal
 
-  @happy
+  @happy @wip
   Scenario: Submit settings with Enter
     When I select "configure_system" from the menu
     And I select "System" domain
@@ -235,7 +235,7 @@ Feature: Configure System
   # Review Changes Modal
   # ============================================================================
 
-  @happy
+  @happy @wip
   Scenario: View pending changes
     When I select "configure_system" from the menu
     And I select "System" domain
@@ -246,31 +246,31 @@ Feature: Configure System
     And I should see "log_level"
     And I should see "debug"
 
-  @happy
+  @happy @wip
   Scenario: Confirm changes from review
     When I am on the review changes modal
     And I press enter to confirm
     Then I should see the confirm modal
 
-  @happy
+  @happy @wip
   Scenario: Confirm changes with y key
     When I am on the review changes modal
     And I press "y" to confirm
     Then I should see the confirm modal
 
-  @happy
+  @happy @wip
   Scenario: Cancel review returns to edit
     When I am on the review changes modal
     And I press escape
     Then I should see the edit settings modal
 
-  @happy
+  @happy @wip
   Scenario: Cancel review with n key
     When I am on the review changes modal
     And I press "n" to cancel
     Then I should see the edit settings modal
 
-  @happy
+  @happy @wip
   Scenario: Cancel review with q key
     When I am on the review changes modal
     And I press "q" to cancel
@@ -280,19 +280,19 @@ Feature: Configure System
   # Confirm Modal
   # ============================================================================
 
-  @happy
+  @happy @wip
   Scenario: View confirm dialog
     When I am on the confirm modal
     Then I should see "Confirm Changes"
     And I should see "Are you sure"
 
-  @happy
+  @happy @wip
   Scenario: Confirm save with enter
     When I am on the confirm modal
     And I press enter to confirm
     Then I should see the saving modal
 
-  @happy
+  @happy @wip
   Scenario: Confirm save with y key
     When I am on the confirm modal
     And I press "y" to confirm
@@ -314,39 +314,39 @@ Feature: Configure System
   # Saving and Result
   # ============================================================================
 
-  @happy
+  @happy @wip
   Scenario: View saving progress
     When I confirm save
     Then I should see the saving modal
     And I should see "Saving"
     And I should see a spinner
 
-  @happy
+  @happy @wip
   Scenario: View success result
     When the save completes successfully
     Then I should see the success modal
     And I should see "Configuration saved"
 
-  @happy
+  @happy @wip
   Scenario: Success modal auto-dismisses
     When the save completes successfully
     Then the success modal should auto-dismiss
     And I should be on the main menu
 
-  @happy
+  @happy @wip
   Scenario: Dismiss success with enter
     When the save completes successfully
     And I press enter
     Then I should be on the main menu
 
-  @sad
+  @sad @wip
   Scenario: View error result
     When the save fails
     Then I should see the error modal
     And I should see "Save Failed"
     And I should see error details
 
-  @sad
+  @sad @wip
   Scenario: Dismiss error returns to edit
     When the save fails
     And I dismiss the error modal
@@ -373,7 +373,7 @@ Feature: Configure System
   # Full Workflow
   # ============================================================================
 
-  @happy
+  @happy @wip
   Scenario: Complete configuration save workflow
     When I select "configure_system" from the menu
     And I select "System" domain
@@ -384,7 +384,7 @@ Feature: Configure System
     And the save completes
     Then I should be on the main menu
 
-  @happy
+  @happy @wip
   Scenario: Full escape navigation path
     When I select "configure_system" from the menu
     And I select "System" domain

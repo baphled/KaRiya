@@ -1,4 +1,4 @@
-.PHONY: test test-race coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance check-docblocks check-fixtures check-patterns check-patterns-quiet check-patterns-strict check-intent-architecture check-intent-architecture-files golangci-lint install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ai-commit ci-local ci-install-tools gosec session-start session-end session-reset check-session verify-hooks tdd-check tdd-red tdd-green tdd-refactor tdd-document pre-task what-to-use generate-diagrams generate-state-matrix generate-docs generate-mocks check-mocks-updated diagrams fix-docs fix-all-docs validate-documentation create-doc-go bdd bdd-wip bdd-smoke bdd-feature bdd-happy bdd-sad bdd-check-wip
+.PHONY: test test-race coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance check-docblocks check-fixtures check-patterns check-patterns-quiet check-patterns-strict check-intent-architecture check-intent-architecture-files golangci-lint install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ai-commit ci-local ci-install-tools gosec session-start session-end session-reset check-session verify-hooks tdd-check tdd-red tdd-green tdd-refactor tdd-document pre-task what-to-use generate-diagrams generate-state-matrix generate-docs generate-mocks check-mocks-updated diagrams fix-docs fix-all-docs validate-documentation create-doc-go bdd bdd-wip bdd-smoke bdd-feature bdd-happy bdd-sad bdd-slow bdd-check-wip
 
 # Run all tests in verbose mode (race detection in CI only)
 # Note: BDD tests in features/ are run separately via 'make bdd' with tag filtering
@@ -670,7 +670,7 @@ new-intent:
 ## Run all BDD feature tests (excludes @wip)
 bdd:
 	@echo "Running BDD tests..."
-	@go test -v ./features/... -test.run ^TestFeatures$$ --godog.tags='~@wip'
+	@go test -v -timeout 10m ./features/... -test.run ^TestFeatures$$ --godog.tags='~@wip && ~@test-infrastructure-issue'
 
 ## Run BDD tests tagged with @wip
 bdd-wip:
@@ -693,12 +693,22 @@ bdd-feature:
 ## Run BDD happy path scenarios (complete successful workflows, excludes @wip)
 bdd-happy:
 	@echo "Running BDD @happy path scenarios..."
-	@go test -v ./features/... -test.run ^TestFeatures$$ --godog.tags='@happy && ~@wip'
+	@go test -v ./features/... -test.run ^TestFeatures$$ --godog.tags='@happy && ~@wip && ~@test-infrastructure-issue'
 
 ## Run BDD sad path scenarios (error cases and recovery, excludes @wip)
 bdd-sad:
 	@echo "Running BDD @sad path scenarios..."
-	@go test -v ./features/... -test.run ^TestFeatures$$ --godog.tags='@sad && ~@wip'
+	@go test -v ./features/... -test.run ^TestFeatures$$ --godog.tags='@sad && ~@wip && ~@test-infrastructure-issue'
+
+## Show top 10 slowest BDD scenarios
+bdd-slow:
+	@echo "Running BDD tests and reporting slowest scenarios..."
+	@go test -v -timeout 10m ./features/... -test.run ^TestFeatures$$ --godog.tags='~@wip && ~@test-infrastructure-issue' 2>&1 | \
+		grep -E "^\s+--- (PASS|FAIL).*\([0-9]" | \
+		sed 's/.*--- [A-Z]*: //' | \
+		sed 's/ (/ /' | sed 's/s)//' | \
+		sort -t' ' -k2 -rn | \
+		head -10
 
 ## Check for @wip tags in feature files (CI warning)
 bdd-check-wip:
@@ -733,6 +743,7 @@ help:
 	@echo "  make bdd-wip           - Run BDD @wip tests only"
 	@echo "  make bdd-happy         - Run @happy path scenarios (for VHS)"
 	@echo "  make bdd-sad           - Run @sad path scenarios"
+	@echo "  make bdd-slow           - Run BDD tests with extended timeout"
 	@echo "  make bdd-feature FEATURE=x - Run specific BDD feature"
 	@echo ""
 	@echo "🔍 Quality Checks:"

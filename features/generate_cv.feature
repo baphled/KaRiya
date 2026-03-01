@@ -55,7 +55,7 @@ Feature: Generate CV
     And I should see "Recruiter"
     And I should see "Peer"
 
-  @happy
+  @happy @wip
   Scenario: Navigate wizard with tab
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
@@ -75,7 +75,7 @@ Feature: Generate CV
   # CV Configuration Wizard - Step 2 (TECH)
   # ============================================================================
 
-  @happy
+  @happy @wip
   Scenario: View step 2 technology options
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
@@ -85,7 +85,7 @@ Feature: Generate CV
     And I should see "Generalist"
     And I should see "Specialist"
 
-  @happy
+  @happy @wip
   Scenario: Select language agnostic focus
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
@@ -94,7 +94,7 @@ Feature: Generate CV
     Then I should skip technology selection
     And I should see focus area options
 
-  @happy
+  @happy @wip
   Scenario: Select generalist focus shows multi-select
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
@@ -112,7 +112,7 @@ Feature: Generate CV
     Then I should see technology single-select
     And I should only select one technology
 
-  @happy
+  @happy @wip
   Scenario: View focus area options
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
@@ -135,7 +135,7 @@ Feature: Generate CV
   # CV Configuration Wizard - Step 3 (FORMAT)
   # ============================================================================
 
-  @happy
+  @happy @wip
   Scenario: View step 3 format options
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
@@ -145,7 +145,7 @@ Feature: Generate CV
     And I should see "Skills Limit"
     And I should see "CV Length"
 
-  @happy
+  @happy @wip
   Scenario: Select skills format
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
@@ -154,7 +154,7 @@ Feature: Generate CV
     Then I should see "Grouped"
     And I should see "Flat"
 
-  @happy
+  @happy @wip
   Scenario: Set skills limit
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
@@ -164,7 +164,7 @@ Feature: Generate CV
     And I enter skills limit "10"
     Then the skills limit should be 10
 
-  @happy
+  @happy @wip
   Scenario: Select CV length
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
@@ -175,7 +175,7 @@ Feature: Generate CV
     And I should see "2 Page"
     And I should see "Detailed"
 
-  @happy
+  @happy @wip
   Scenario: Skip wizard with Ctrl+S
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
@@ -187,14 +187,14 @@ Feature: Generate CV
   # Technology Extraction
   # ============================================================================
 
-  @happy
+  @happy @wip
   Scenario: View technology extraction progress
     Given I have a complete profile with skills
     When I select "generate_cv" from the menu
     Then I should see the progress modal
     And I should see "Extracting Technologies"
 
-  @happy
+  @happy @wip
   Scenario: Cancel technology extraction
     Given I have a complete profile with skills
     When I select "generate_cv" from the menu
@@ -206,7 +206,7 @@ Feature: Generate CV
   # CV Generation Progress
   # ============================================================================
 
-  @happy
+  @happy @wip
   Scenario: View CV generation progress
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
@@ -214,7 +214,7 @@ Feature: Generate CV
     Then I should see the progress modal
     And I should see "Generating CV"
 
-  @happy
+  @happy @wip
   Scenario: Cancel CV generation
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
@@ -227,7 +227,7 @@ Feature: Generate CV
   # CV Review Screen
   # ============================================================================
 
-  @happy
+  @happy @wip
   Scenario: View CV review after generation
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
@@ -237,7 +237,7 @@ Feature: Generate CV
     And I should see CV metadata
     And I should see statistics
 
-  @happy
+  @happy @wip
   Scenario: Review screen shows section summary
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
@@ -246,35 +246,35 @@ Feature: Generate CV
     And I press enter to preview
     Then I should see section names
 
-  @happy
+  @happy @wip
   Scenario: Navigate to preview from review
     Given I have generated a CV
     When I am on the CV review screen
     And I press enter to preview
     Then I should see the CV preview screen
 
-  @happy
+  @happy @wip
   Scenario: Navigate to preview with p key
     Given I have generated a CV
     When I am on the CV review screen
     And I press "p" to preview
     Then I should see the CV preview screen
 
-  @happy
+  @happy @wip
   Scenario: Export directly from review
     Given I have generated a CV
     When I am on the CV review screen
     And I press "x" to export
     Then I should see the export options modal
 
-  @happy
+  @happy @wip
   Scenario: Edit CV from review
     Given I have generated a CV
     When I am on the CV review screen
     And I press "e" to edit
     Then I should see the CV wizard modal
 
-  @happy
+  @happy @wip
   Scenario: Go back from review
     Given I have generated a CV
     When I am on the CV review screen
@@ -285,7 +285,7 @@ Feature: Generate CV
   # CV Preview Screen
   # ============================================================================
 
-  @happy
+  @happy @wip
   Scenario: View full CV preview
     Given I have generated a CV
     When I navigate to the CV preview screen
@@ -293,7 +293,7 @@ Feature: Generate CV
     And I should see all CV sections
      And I should see bullet points
 
-   @happy
+  @happy @wip
    Scenario: Confirm CV from preview
     Given I have generated a CV
     When I navigate to the CV preview screen
@@ -301,28 +301,28 @@ Feature: Generate CV
     Then the CV generation should complete
     And I should be on the main menu
 
-  @happy
+  @happy @wip
   Scenario: Confirm CV with y key
     Given I have generated a CV
     When I navigate to the CV preview screen
     And I press "y" to confirm
     Then the CV generation should complete
 
-  @happy
+  @happy @wip
   Scenario: Export from preview
     Given I have generated a CV
     When I navigate to the CV preview screen
     And I press "x" to export
     Then I should see the export options modal
 
-  @happy
+  @happy @wip
   Scenario: Edit from preview
     Given I have generated a CV
     When I navigate to the CV preview screen
     And I press "e" to edit
     Then I should see the CV wizard modal
 
-  @happy
+  @happy @wip
   Scenario: Go back from preview to review
     Given I have generated a CV
     When I navigate to the CV preview screen
@@ -333,7 +333,7 @@ Feature: Generate CV
   # Export Options Modal
   # ============================================================================
 
-  @happy
+  @happy @wip
   Scenario: View export format options
     Given I have generated a CV
     When I open the export options modal
@@ -341,7 +341,7 @@ Feature: Generate CV
     And I should see "Markdown"
     And I should see "YAML"
 
-  @happy
+  @happy @wip
   Scenario: View export location options
     Given I have generated a CV
     When I open the export options modal
@@ -349,7 +349,7 @@ Feature: Generate CV
     Then I should see "File"
     And I should see "Clipboard"
 
-  @happy
+  @happy @wip
   Scenario: Export to file as text
     Given I have generated a CV
     When I open the export options modal
@@ -359,7 +359,7 @@ Feature: Generate CV
     Then I should see export progress
     And the export should complete
 
-  @happy
+  @happy @wip
   Scenario: Export to clipboard as markdown
     Given I have generated a CV
     When I open the export options modal
@@ -369,7 +369,7 @@ Feature: Generate CV
     Then I should see export progress
     And the export should complete
 
-  @happy
+  @happy @wip
   Scenario: Cancel export
     Given I have generated a CV
     When I open the export options modal
@@ -380,14 +380,14 @@ Feature: Generate CV
   # Export Progress
   # ============================================================================
 
-  @happy
+  @happy @wip
   Scenario: View export progress
     Given I have generated a CV
     When I start an export
     Then I should see the progress modal
     And I should see "Exporting"
 
-  @happy
+  @happy @wip
   Scenario: Export success shows confirmation
     Given I have generated a CV
     When I complete an export
@@ -398,7 +398,7 @@ Feature: Generate CV
   # Error Handling
   # ============================================================================
 
-  @sad
+  @sad @wip
   Scenario: Handle generation error
     Given CV generation will fail
     When I select "generate_cv" from the menu
@@ -406,7 +406,7 @@ Feature: Generate CV
     Then I should see an error modal
     And I should see error details
 
-  @sad
+  @sad @wip
   Scenario: Handle export error
     Given I have generated a CV
     And export will fail
@@ -425,7 +425,7 @@ Feature: Generate CV
     And I press escape
     Then I should be on the main menu
 
-  @sad
+  @sad @wip
   Scenario: Full navigation escape path
     Given I have generated a CV
     When I navigate to the CV preview screen

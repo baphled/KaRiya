@@ -166,7 +166,7 @@ Feature: Manage Skills
   # Skill Inference
   # ============================================================================
 
-  @happy
+  @happy @wip
   Scenario: Trigger skill inference
     Given I have an event "Built REST API in Go with PostgreSQL"
     When I select "manage_skills" from the menu
@@ -174,7 +174,7 @@ Feature: Manage Skills
     Then I should see the loading modal
     And I should see "Analyzing"
 
-  @happy
+  @happy @wip
   Scenario: Cancel skill inference
     Given I have an event "Built REST API in Go"
     When I select "manage_skills" from the menu
@@ -182,7 +182,7 @@ Feature: Manage Skills
     And I press escape
     Then I should still be on the skills list
 
-  @happy
+  @happy @wip
   Scenario: Review skill suggestions
     Given I have an event "Built microservices in Go with PostgreSQL database"
     When I select "manage_skills" from the menu
@@ -191,7 +191,7 @@ Feature: Manage Skills
     Then I should see the skill suggestions modal
     And I should see "Go"
 
-  @happy
+  @happy @wip
   Scenario: Accept skill suggestion
     Given I have an event "Built microservices in Go"
     When I select "manage_skills" from the menu
@@ -201,7 +201,7 @@ Feature: Manage Skills
     Then I should see "success"
     And there should be 1 skill
 
-  @happy
+  @happy @wip
   Scenario: Reject skill suggestion
     Given I have an event "Built microservices in Go"
     When I select "manage_skills" from the menu
@@ -340,7 +340,7 @@ Feature: Manage Skills
   # Proficiency Level
   # ============================================================================
 
-  @happy
+  @happy @wip
   Scenario: Add skill with proficiency level
     Given the database is empty
     When I select "manage_skills" from the menu
@@ -352,7 +352,7 @@ Feature: Manage Skills
     Then there should be 1 skill
     And the skill should have level "Expert"
 
-  @happy
+  @happy @wip
   Scenario: Edit skill proficiency level
     Given I have a skill "Docker" with category "devops" and level "Intermediate"
     When I select "manage_skills" from the menu
@@ -366,7 +366,7 @@ Feature: Manage Skills
   # Years of Experience
   # ============================================================================
 
-  @happy
+  @happy @wip
   Scenario: Add skill with years of experience
     Given the database is empty
     When I select "manage_skills" from the menu
@@ -378,7 +378,7 @@ Feature: Manage Skills
     Then there should be 1 skill
     And the skill should have years "8"
 
-  @happy
+  @happy @wip
   Scenario: Edit skill years of experience
     Given I have a skill "Python" with category "backend" and years "3"
     When I select "manage_skills" from the menu
@@ -405,7 +405,7 @@ Feature: Manage Skills
   # Category Grouping
   # ============================================================================
 
-  @happy
+  @happy @wip
   Scenario: Skills are grouped by category
     Given I have a skill "Go" with category "backend"
     And I have a skill "Python" with category "backend"

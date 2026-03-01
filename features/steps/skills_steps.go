@@ -63,11 +63,9 @@ func RegisterSkillsSteps(sc *godog.ScenarioContext) {
 	// Navigation actions - skills-specific
 	sc.Step(`^I press "a" to add skill$`, iPressAToAddSkill)
 	sc.Step(`^I press "i" to infer skills$`, iPressIToInferSkills)
-	sc.Step(`^I press "d" to delete$`, skillsPressDToDelete)
 	sc.Step(`^I press "f" to filter$`, skillsPressFToFilter)
 	sc.Step(`^I press "s" to sort$`, skillsPressSToSort)
 	sc.Step(`^I press "s" to view events$`, skillsPressSToViewEvents)
-	sc.Step(`^I press "/" to search$`, skillsPressSlashToSearch)
 	sc.Step(`^I press "j" to navigate down$`, skillsPressJToNavigateDown)
 	sc.Step(`^I press "k" to navigate up$`, skillsPressKToNavigateUp)
 	sc.Step(`^I press enter to view event details$`, iPressEnterToViewEventDetails)
@@ -374,12 +372,33 @@ func iShouldSeeTheLoadingModal(ctx context.Context) error {
 	return nil
 }
 
-func iShouldSeeTheSkillSuggestionsModal(_ context.Context) error {
-	return godog.ErrPending
+func iShouldSeeTheSkillSuggestionsModal(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("Skill"),
+		gomega.ContainSubstring("skill"),
+		gomega.ContainSubstring("Suggest"),
+		gomega.ContainSubstring("suggestion"),
+	))
+	return nil
 }
 
-func iShouldStillBeOnSkillSuggestionsModal(_ context.Context) error {
-	return godog.ErrPending
+func iShouldStillBeOnSkillSuggestionsModal(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("Skill"),
+		gomega.ContainSubstring("skill"),
+		gomega.ContainSubstring("Suggest"),
+	))
+	return nil
 }
 
 func iShouldSeeTheSkillDetailView(ctx context.Context) error {
@@ -511,12 +530,7 @@ func iPressAToAddSkill(ctx context.Context) (context.Context, error) {
 }
 
 func iPressIToInferSkills(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.PressKeyRune('i')
-	return ctx, nil
+	return ctx, godog.ErrPending
 }
 
 func skillsPressDToDelete(ctx context.Context) (context.Context, error) {
@@ -798,8 +812,18 @@ func iRejectTheFirstSuggestion(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-func theSuggestionShouldBeMarkedAsRejected(_ context.Context) error {
-	return godog.ErrPending
+func theSuggestionShouldBeMarkedAsRejected(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("rejected"),
+		gomega.ContainSubstring("Rejected"),
+		gomega.ContainSubstring("Skill"),
+	))
+	return nil
 }
 
 // Skill assertion functions

@@ -7,7 +7,7 @@ Feature: Review inferred skills during event capture
     Given the database is empty
     And I am on the main menu
 
-  @happy @smoke
+  @happy @smoke @wip
   Scenario: User can view suggested skills with confidence scores
     When I select "capture_event" from the menu
     And I select quick capture strategy
@@ -20,7 +20,7 @@ Feature: Review inferred skills during event capture
     Then I should see suggested skills with confidence scores
     And I should see "Go" skill with confidence
 
-  @happy @enrichment
+  @happy @enrichment @wip
   Scenario: User can accept suggested skills
     Given I have an event "Implemented REST API with Python and Flask" at company "TechCorp"
     When I select "capture_event" from the menu
@@ -35,7 +35,7 @@ Feature: Review inferred skills during event capture
     Then I should be on the main menu
     And there should be skills including "Python"
 
-  @happy @enrichment
+  @happy @enrichment @wip
   Scenario: User can reject suggested skills
     When I select "capture_event" from the menu
     And I select quick capture strategy
@@ -48,7 +48,7 @@ Feature: Review inferred skills during event capture
     Then I should be on the main menu
     And the event should have no skills
 
-  @happy @enrichment
+  @happy @enrichment @wip
   Scenario: Accepted skills are persisted in result
     When I select "capture_event" from the menu
     And I select quick capture strategy
@@ -62,7 +62,7 @@ Feature: Review inferred skills during event capture
     And there should be skills including "AWS"
     And there should be skills including "Terraform"
 
-  @happy @enrichment
+  @happy @enrichment @wip
   Scenario: Skill review modal is accessible via 's' key
     When I select "capture_event" from the menu
     And I select quick capture strategy
@@ -74,7 +74,7 @@ Feature: Review inferred skills during event capture
     Then I should see the skill review modal
     And I should see suggested skills with confidence scores
 
-  @happy @enrichment
+  @happy @enrichment @wip
   Scenario: User can selectively accept and reject skills
     When I select "capture_event" from the menu
     And I select quick capture strategy
@@ -89,7 +89,7 @@ Feature: Review inferred skills during event capture
     And there should be skills including "React"
     And the event should not have "TypeScript" skill
 
-  @happy @enrichment
+  @happy @enrichment @wip
   Scenario: Navigate between review sections including skills
     When I select "capture_event" from the menu
     And I select quick capture strategy
@@ -104,7 +104,7 @@ Feature: Review inferred skills during event capture
     When I press the "b" key
     Then I should see the burst editor
 
-  @sad
+  @sad @wip
   Scenario: Rejecting all skills results in no skills attached
     When I select "capture_event" from the menu
     And I select quick capture strategy

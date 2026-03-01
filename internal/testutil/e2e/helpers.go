@@ -975,6 +975,16 @@ func (e *TestEnv) processCmdResult(msg tea.Msg) {
 		e.updateModelAndExecute(msg)
 	case burstmanagement.BurstSkillsLoadedMsg:
 		e.updateModelAndExecute(msg)
+	case burstmanagement.BurstSuggestionsLoadedMsg:
+		e.updateModelAndExecute(msg)
+	case burstmanagement.SuggestionReviewCompleteMsg:
+		e.updateModelAndExecute(msg)
+	case burstmanagement.SkillSuggestionsLoadedMsg:
+		e.updateModelAndExecute(msg)
+	case burstmanagement.SkillSuggestionsErrorMsg:
+		e.updateModelAndExecute(msg)
+	case burstmanagement.SkillsCreatedMsg:
+		e.updateModelAndExecute(msg)
 	case factmanagement.FactsLoadedMsg:
 		e.updateModelAndExecute(msg)
 	case factmanagement.FactSavedMsg:

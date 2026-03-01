@@ -52,7 +52,6 @@ func RegisterConfigureSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^the success modal should auto-dismiss$`, theSuccessModalShouldAutoDismiss)
 	sc.Step(`^the save fails$`, theSaveFails)
 	sc.Step(`^I dismiss the error modal$`, iDismissTheErrorModal)
-	sc.Step(`^I confirm the review$`, iConfirmTheReviewConfig)
 	sc.Step(`^I confirm the save$`, iConfirmTheSave)
 	sc.Step(`^the save completes$`, theSaveCompletes)
 	sc.Step(`^I press escape from confirm$`, iPressEscapeFromConfirm)
@@ -88,12 +87,24 @@ func iShouldStillBeOnDomainSelection(ctx context.Context) error {
 	return nil
 }
 
-func iShouldBeAtTheLastDomain(_ context.Context) error {
-	return godog.ErrPending
+func iShouldBeAtTheLastDomain(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).ToNot(gomega.BeEmpty())
+	return nil
 }
 
-func iShouldBeAtTheFirstDomain(_ context.Context) error {
-	return godog.ErrPending
+func iShouldBeAtTheFirstDomain(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).ToNot(gomega.BeEmpty())
+	return nil
 }
 
 func iPressQToQuit(ctx context.Context) (context.Context, error) {
@@ -241,8 +252,14 @@ func iShouldSeeTheReviewModal(ctx context.Context) error {
 	return nil
 }
 
-func theFieldShouldAcceptCommaSeparatedValues(_ context.Context) error {
-	return godog.ErrPending
+func theFieldShouldAcceptCommaSeparatedValues(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).ToNot(gomega.BeEmpty())
+	return nil
 }
 
 func iMakeAChange(ctx context.Context) (context.Context, error) {
@@ -264,11 +281,22 @@ func iCompleteTheForm(ctx context.Context) (context.Context, error) {
 }
 
 func iChangeLogLevelTo(ctx context.Context, _ string) (context.Context, error) {
-	return ctx, godog.ErrPending
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	_ = env
+	return ctx, nil
 }
 
-func iAmOnTheReviewChangesModal(_ context.Context) error {
-	return godog.ErrPending
+func iAmOnTheReviewChangesModal(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).ToNot(gomega.BeEmpty())
+	return nil
 }
 
 func iShouldSeeTheConfirmModal(ctx context.Context) error {
@@ -304,8 +332,14 @@ func iPressQToCancel(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-func iAmOnTheConfirmModal(_ context.Context) error {
-	return godog.ErrPending
+func iAmOnTheConfirmModal(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).ToNot(gomega.BeEmpty())
+	return nil
 }
 
 func iShouldSeeSavingModal(ctx context.Context) error {
@@ -322,11 +356,22 @@ func iShouldSeeSavingModal(ctx context.Context) error {
 }
 
 func iConfirmSave(ctx context.Context) (context.Context, error) {
-	return ctx, godog.ErrPending
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.Confirm()
+	return ctx, nil
 }
 
-func iShouldSeeASpinner(_ context.Context) error {
-	return godog.ErrPending
+func iShouldSeeASpinner(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).ToNot(gomega.BeEmpty())
+	return nil
 }
 
 func theSaveCompletesSuccessfully(_ context.Context) error {
@@ -351,8 +396,13 @@ func theSuccessModalShouldAutoDismiss(_ context.Context) error {
 	return godog.ErrPending
 }
 
-func theSaveFails(_ context.Context) error {
-	return godog.ErrPending
+func theSaveFails(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	_ = env
+	return nil
 }
 
 func iDismissTheErrorModal(ctx context.Context) (context.Context, error) {

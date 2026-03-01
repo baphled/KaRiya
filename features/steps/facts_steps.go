@@ -58,7 +58,6 @@ func RegisterFactsSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I should be on role fit field$`, iShouldBeOnRoleFitField)
 	sc.Step(`^I press shift-tab$`, iPressShiftTab)
 	sc.Step(`^I clear the fact text field$`, iClearTheFactTextField)
-	sc.Step(`^I press "y" to confirm$`, iPressYToConfirm)
 	sc.Step(`^I enter fact text with (\d+) characters$`, iEnterFactTextWithNCharacters)
 	sc.Step(`^I press "r" to refresh$`, iPressRToRefresh)
 	sc.Step(`^the facts should be reloaded$`, theFactsShouldBeReloaded)
@@ -484,11 +483,11 @@ func iEnterFactTextWithNCharacters(ctx context.Context, length int) (context.Con
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	text := make([]byte, length)
-	for i := range text {
-		text[i] = 'a'
+	runes := make([]rune, length)
+	for i := range runes {
+		runes[i] = 'a'
 	}
-	env.TypeText(string(text))
+	env.SendMessage(tea.KeyMsg{Type: tea.KeyRunes, Runes: runes})
 	return ctx, nil
 }
 

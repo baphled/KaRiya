@@ -258,7 +258,7 @@ func (b *BDDTestingT) TempDir() string {
 // Side effects:
 //   - None.
 func (b *BDDTestingT) Fatalf(format string, args ...interface{}) {
-	b.t.Fatalf(format, args...)
+	panic(fmt.Sprintf(format, args...))
 }
 
 // Errorf logs an error.
@@ -270,7 +270,7 @@ func (b *BDDTestingT) Fatalf(format string, args ...interface{}) {
 // Side effects:
 //   - None.
 func (b *BDDTestingT) Errorf(format string, args ...interface{}) {
-	b.t.Errorf(format, args...)
+	panic(fmt.Sprintf(format, args...))
 }
 
 // Fatal logs a fatal error.
@@ -281,7 +281,7 @@ func (b *BDDTestingT) Errorf(format string, args ...interface{}) {
 // Side effects:
 //   - None.
 func (b *BDDTestingT) Fatal(args ...interface{}) {
-	b.t.Fatal(args...)
+	panic(fmt.Sprint(args...))
 }
 
 // Error logs an error.
@@ -292,7 +292,7 @@ func (b *BDDTestingT) Fatal(args ...interface{}) {
 // Side effects:
 //   - None.
 func (b *BDDTestingT) Error(args ...interface{}) {
-	b.t.Error(args...)
+	panic(fmt.Sprint(args...))
 }
 
 // NewAppEnv creates a new full application TestEnv for BDD testing.

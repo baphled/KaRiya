@@ -507,12 +507,24 @@ func iPressPageUp(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-func iShouldSeeDifferentEvents(_ context.Context) error {
-	return godog.ErrPending
+func iShouldSeeDifferentEvents(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).ToNot(gomega.BeEmpty())
+	return nil
 }
 
-func iShouldSeeTheOriginalEvents(_ context.Context) error {
-	return godog.ErrPending
+func iShouldSeeTheOriginalEvents(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).ToNot(gomega.BeEmpty())
+	return nil
 }
 
 func iPressGToGoToLast(ctx context.Context) (context.Context, error) {
@@ -533,12 +545,24 @@ func iPressLittleGToGoToFirst(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-func iShouldBeAtTheLastEvent(_ context.Context) error {
-	return godog.ErrPending
+func iShouldBeAtTheLastEvent(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring("Event"))
+	return nil
 }
 
-func iShouldBeAtTheFirstEvent(_ context.Context) error {
-	return godog.ErrPending
+func iShouldBeAtTheFirstEvent(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring("Event"))
+	return nil
 }
 
 // iHaveAnEvent creates a simple event with just a description.

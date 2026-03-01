@@ -221,8 +221,8 @@ func iPressShiftTabOnboarding(ctx context.Context) error {
 	if env == nil {
 		return godog.ErrPending
 	}
-	// Onboarding uses app TestEnv for shift+tab, return pending for now
-	return godog.ErrPending
+	env.PressKey("shift+tab")
+	return nil
 }
 
 // profileShouldHaveTitle verifies the profile has the expected title.

@@ -45,7 +45,6 @@ func RegisterNavigationSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^typing should go to the search input$`, navTypingShouldGoToTheSearchInput)
 	sc.Step(`^pressing escape should close the modal$`, navPressingEscapeShouldCloseTheModal)
 	sc.Step(`^pressing "j" should navigate the list$`, navPressingJShouldNavigateTheList)
-	sc.Step(`^I select "([^"]*)" from the menu$`, navSelectFeatureFromMenu)
 }
 
 func navStartTheApplication(ctx context.Context) (context.Context, error) {
@@ -314,14 +313,4 @@ func navPressingJShouldNavigateTheList(ctx context.Context) error {
 	}
 	env.PressKeyRune('j')
 	return nil
-}
-
-func navSelectFeatureFromMenu(ctx context.Context, feature string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-
-	env.SelectIntentByName(feature)
-	return ctx, nil
 }

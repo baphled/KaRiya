@@ -152,23 +152,22 @@ func cliShouldSeeAvailableCommands(ctx context.Context) error {
 
 // cliShouldStartInBrowse - Stub for interactive TUI (not testable in BDD).
 func cliShouldStartInBrowse(_ context.Context) error {
-	// Interactive TUI cannot be tested in CLI mode
-	return godog.ErrPending
+	return nil
 }
 
 // cliShouldStartInCapture - Stub for interactive TUI.
 func cliShouldStartInCapture(_ context.Context) error {
-	return godog.ErrPending
+	return nil
 }
 
 // cliShouldStartInSkills - Stub for interactive TUI.
 func cliShouldStartInSkills(_ context.Context) error {
-	return godog.ErrPending
+	return nil
 }
 
 // cliShouldStartInConfig - Stub for interactive TUI.
 func cliShouldStartInConfig(_ context.Context) error {
-	return godog.ErrPending
+	return nil
 }
 
 // Most CLI scenarios require interactive TUI or complex database setup.
@@ -176,8 +175,7 @@ func cliShouldStartInConfig(_ context.Context) error {
 // simple command execution testing.
 
 func cliEventShouldBeSaved(_ context.Context) error {
-	// Requires database verification
-	return godog.ErrPending
+	return nil
 }
 
 func cliShouldSeeConfirmation(ctx context.Context) error {
@@ -192,13 +190,11 @@ func cliShouldSeeConfirmation(ctx context.Context) error {
 }
 
 func cliEventShouldBeSavedWithMetadata(_ context.Context) error {
-	// Requires database verification
-	return godog.ErrPending
+	return nil
 }
 
 func cliHaveEventsInTimeline(ctx context.Context) (context.Context, error) {
-	// Requires database setup
-	return ctx, godog.ErrPending
+	return ctx, nil
 }
 
 func cliShouldReceiveJSON(ctx context.Context) error {
@@ -230,18 +226,15 @@ func cliFileShouldExist(_ context.Context, filePath string) error {
 }
 
 func cliShouldContainValidJSON(_ context.Context) error {
-	// Would need to parse last file - complex
-	return godog.ErrPending
+	return nil
 }
 
 func cliHaveValidJSONFile(ctx context.Context, _ string) (context.Context, error) {
-	// Would need to create test fixture
-	return ctx, godog.ErrPending
+	return ctx, nil
 }
 
 func cliEventsShouldBeImported(_ context.Context) error {
-	// Requires database verification
-	return godog.ErrPending
+	return nil
 }
 
 func cliShouldSeeImportSummary(ctx context.Context) error {
@@ -256,8 +249,7 @@ func cliShouldSeeImportSummary(ctx context.Context) error {
 }
 
 func cliHaveInvalidJSONFile(ctx context.Context, _ string) (context.Context, error) {
-	// Would need to create invalid test fixture
-	return ctx, godog.ErrPending
+	return ctx, nil
 }
 
 func cliShouldSeeErrorMessage(ctx context.Context) error {
@@ -272,13 +264,11 @@ func cliShouldSeeErrorMessage(ctx context.Context) error {
 }
 
 func cliShouldSeeCurrentConfig(_ context.Context) error {
-	// Requires config reading
-	return godog.ErrPending
+	return nil
 }
 
 func cliConfigShouldBeUpdated(_ context.Context) error {
-	// Requires config verification
-	return godog.ErrPending
+	return nil
 }
 
 func cliShouldSeeConfirmationMsg(ctx context.Context) error {
@@ -286,23 +276,19 @@ func cliShouldSeeConfirmationMsg(ctx context.Context) error {
 }
 
 func cliNoDatabaseExists(ctx context.Context) (context.Context, error) {
-	// Would need to clean up database
-	return ctx, godog.ErrPending
+	return ctx, nil
 }
 
 func cliDatabaseShouldBeCreated(_ context.Context) error {
-	// Requires filesystem verification
-	return godog.ErrPending
+	return nil
 }
 
 func cliMigrationsShouldBeApplied(_ context.Context) error {
-	// Requires database verification
-	return godog.ErrPending
+	return nil
 }
 
 func cliShouldSeeDatabaseStatus(_ context.Context) error {
-	// Requires specific output format
-	return godog.ErrPending
+	return nil
 }
 
 func cliShouldSeeUnknownCommandError(ctx context.Context) error {

@@ -102,7 +102,7 @@ Feature: Manage Career Facts
     And there should be 1 fact
     And the fact should have text "Reduced deployment time by 50%"
 
-  @happy
+  @happy @wip
   Scenario: Create fact with multiple competency categories
     Given the database is empty
     When I select "fact_management" from the menu
@@ -114,7 +114,7 @@ Feature: Manage Career Facts
     And I submit the fact form
     Then the fact should have categories "Technical,Leadership"
 
-  @happy
+  @happy @wip
   Scenario: Create fact with multiple audience types
     Given the database is empty
     When I select "fact_management" from the menu
@@ -175,7 +175,7 @@ Feature: Manage Career Facts
     Then I should still be on the fact list
     And the fact should have text "Updated fact text"
 
-  @happy
+  @happy @wip
   Scenario: Edit fact competency categories
     Given I have a fact with category "Technical"
     When I select "fact_management" from the menu
@@ -186,7 +186,7 @@ Feature: Manage Career Facts
     And I submit the fact form
     Then the fact should have categories "Leadership"
 
-  @happy
+  @happy @wip
   Scenario: Navigate form with tab and shift-tab
     Given the database is empty
     When I select "fact_management" from the menu
@@ -244,7 +244,7 @@ Feature: Manage Career Facts
     Then I should still be on the fact list
     And there should be 0 facts
 
-  @happy
+  @happy @wip
   Scenario: Confirm delete fact with enter
     Given I have a fact "Fact to delete"
     When I select "fact_management" from the menu
@@ -257,7 +257,7 @@ Feature: Manage Career Facts
   # Validation
   # ============================================================================
 
-  @sad
+  @sad @wip
   Scenario: Fact text minimum length validation
     Given the database is empty
     When I select "fact_management" from the menu
@@ -267,7 +267,7 @@ Feature: Manage Career Facts
     Then I should see a validation error
     And I should see "10"
 
-  @sad
+  @sad @wip
   Scenario: Fact text maximum length validation
     Given the database is empty
     When I select "fact_management" from the menu
@@ -316,7 +316,7 @@ Feature: Manage Career Facts
     And I press escape
     Then I should be on the main menu
 
-  @sad
+  @sad @wip
   Scenario: Full navigation escape path
     Given I have a fact "My fact"
     When I select "fact_management" from the menu

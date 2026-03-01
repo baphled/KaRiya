@@ -17,7 +17,7 @@ import (
 var opts = godog.Options{
 	Output: colors.Colored(os.Stdout),
 	Format: "pretty",
-	Tags:   "~@wip",
+	Tags:   "~@wip && ~@test-infrastructure-issue",
 	Strict: true,
 }
 
@@ -31,7 +31,9 @@ func init() {
 // Returns: None.
 // Side effects: Runs all scenarios and reports results.
 func TestFeatures(t *testing.T) {
-	RegisterTestingT(t)
+	RegisterFailHandler(func(message string, callerSkip ...int) {
+		panic(message)
+	})
 	support.SetTestingT(t)
 
 	// Increase Gomega's format.MaxLength to prevent truncation of long view outputs
@@ -47,7 +49,7 @@ func TestFeatures(t *testing.T) {
 	}
 
 	if suite.Run() != 0 {
-		t.Fatal("non-zero status returned, failed to run feature tests")
+		t.Errorf("non-zero status returned, failed to run feature tests")
 	}
 }
 
