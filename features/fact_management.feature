@@ -186,11 +186,12 @@ Feature: Manage Career Facts
     And I submit the fact form
     Then the fact should have categories "Leadership"
 
-  @happy @wip
+  @happy
   Scenario: Navigate form with tab and shift-tab
     Given the database is empty
     When I select "fact_management" from the menu
     And I press "n" to create new fact
+    And I enter fact text "This is a test fact"
     And I press tab
     Then I should be on competency categories field
     When I press tab

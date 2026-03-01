@@ -562,7 +562,7 @@ func iPressShiftTab(ctx context.Context) (context.Context, error) {
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	env.PressKeyRune('\t')
+	env.SendMessageWithFormProcessing(tea.KeyMsg{Type: tea.KeyShiftTab})
 	return ctx, nil
 }
 

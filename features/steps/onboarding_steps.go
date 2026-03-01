@@ -124,7 +124,7 @@ func iPressTab(ctx context.Context) error {
 		return nil
 	}
 	if env := support.GetAppEnv(ctx); env != nil {
-		env.Tab()
+		env.TabWithFormProcessing()
 		return nil
 	}
 	return godog.ErrPending
