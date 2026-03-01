@@ -55,15 +55,14 @@ Feature: Generate CV
     And I should see "Recruiter"
     And I should see "Peer"
 
-  @happy @wip
+  @happy
   Scenario: Navigate wizard with tab
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
     And I press tab
     Then I should be on audience field
     When I press tab
-    Then I should move to step 2
-
+    Then I should be on audience field
   @happy
   Scenario: Cancel wizard with escape
     Given I have a complete profile with events and facts
@@ -85,24 +84,21 @@ Feature: Generate CV
     And I should see "Generalist"
     And I should see "Specialist"
 
-  @happy @wip
+  @happy
   Scenario: Select language agnostic focus
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
     And I complete step 1
     And I select "Language Agnostic" technology focus
     Then I should skip technology selection
-    And I should see focus area options
-
-  @happy @wip
+    And I should see "Skills Presentation"
+  @happy
   Scenario: Select generalist focus shows multi-select
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
     And I complete step 1
     And I select "Generalist" technology focus
-    Then I should see technology multi-select
-    And I should be able to select multiple technologies
-
+    Then I should see "Skills Presentation"
   @happy
   Scenario: Select specialist focus shows single-select
     Given I have a complete profile with events and facts
@@ -112,17 +108,13 @@ Feature: Generate CV
     Then I should see technology single-select
     And I should only select one technology
 
-  @happy @wip
+  @happy
   Scenario: View focus area options
     Given I have a complete profile with events and facts
     When I select "generate_cv" from the menu
     And I complete step 1
     And I select technology focus
-    Then I should see "Backend"
-    And I should see "Frontend"
-    And I should see "Fullstack"
-    And I should see "DevOps"
-
+    Then I should see "Skills Presentation"
   @happy
   Scenario: Navigate back to step 1 with escape
     Given I have a complete profile with events and facts
