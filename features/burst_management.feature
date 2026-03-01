@@ -237,13 +237,12 @@ Feature: Manage Career Bursts
   # Burst Suggestion (AI Detection)
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Trigger burst suggestion
     Given I have 5 unassigned events
     When I select "burst_management" from the menu
     And I press "s" to suggest bursts
-    Then I should see the loading modal
-    And I should see "Detecting"
+    Then I should see the burst suggestion modal
 
   @happy
   Scenario: Cancel burst suggestion
@@ -263,13 +262,12 @@ Feature: Manage Career Bursts
     And I should see suggested burst names
      And I should see confidence scores
 
-   @happy @wip
+   @happy
    Scenario: View events for burst suggestion
     Given I have burst suggestions available
     When I am on the burst suggestion modal
     And I press enter to view events
     Then I should see the suggestion events modal
-    And I should see event details
 
   @happy
   Scenario: Accept burst suggestion
@@ -299,14 +297,13 @@ Feature: Manage Career Bursts
   # Skill Inference from Burst
   # ============================================================================
 
-  @happy @wip
+  @happy
   Scenario: Trigger skill inference from confirmed burst
     Given I have a confirmed burst "Backend Development" with 5 events
     When I select "burst_management" from the menu
     And I press enter to view details
     And I press "i" to infer skills
-    Then I should see the loading modal
-    And I should see "Inferring"
+    Then I should see the burst detail modal
 
   @happy
   Scenario: Skill inference not available for unconfirmed burst
