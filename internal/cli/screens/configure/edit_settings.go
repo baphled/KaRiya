@@ -1,18 +1,17 @@
 package configure
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 
 	"github.com/baphled/kariya/internal/cli/configtypes"
+	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/terminal"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/layout"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/huh"
 )
 
 // EditSettingsState identifies the settings editing screen in the state
@@ -27,10 +26,10 @@ const EditSettingsState = "edit_settings"
 // SettingsFormData holds the form values for configuration settings.
 type SettingsFormData struct {
 	// Values holds the current values keyed by setting key.
-	// We use pointers to strings to satisfy huh form requirements.
+	// We use pointers to strings to satisfy form requirements.
 	Values map[string]*string
 
-	// BoolValues holds boolean values separately since huh.Confirm needs *bool.
+	// BoolValues holds boolean values separately since Confirm needs *bool.
 	BoolValues map[string]*bool
 
 	// SubmitConfirmed is set to true when form is submitted.
@@ -42,7 +41,7 @@ type EditSettingsScreen struct {
 	domain   configtypes.ConfigurationDomain
 	settings []*configtypes.ConfigurationSetting
 	formData *SettingsFormData
-	form     *huh.Form
+	form     forms.Form
 
 	termInfo *terminal.Info
 	theme    themes.Theme
@@ -96,97 +95,25 @@ func NewEditSettingsScreen(domain configtypes.ConfigurationDomain, settings []*c
 	return screen
 }
 
-// rebuildForm creates the huh form based on current settings.
+// rebuildForm creates the form based on current settings.
 func (s *EditSettingsScreen) rebuildForm() {
 	if len(s.settings) == 0 {
 		s.form = nil
 		return
 	}
 
-	var fields []huh.Field
-	for _, setting := range s.settings {
-		field := s.createFieldForSetting(setting)
-		if field != nil {
-			fields = append(fields, field)
-		}
+	formHeight := s.termInfo.Height - 20
+	if formHeight < 10 {
+		formHeight = 10
 	}
 
-	// Add submit button as the last field to enable form completion
-	submitValue := true
-	fields = append(fields, huh.NewConfirm().
-		Key("submit").
-		Title("Submit Settings").
-		Affirmative("Submit").
-		Negative("Cancel").
-		Value(&submitValue))
-
-	group := huh.NewGroup(fields...)
-
-	huhTheme := themes.GenerateHuhTheme(s.theme)
-
-	s.form = huh.NewForm(group).
-		WithTheme(huhTheme).
-		WithWidth(s.termInfo.Width - 10)
-}
-
-// createFieldForSetting creates the appropriate huh field for a setting.
-func (s *EditSettingsScreen) createFieldForSetting(setting *configtypes.ConfigurationSetting) huh.Field {
-	switch setting.Type {
-	case "string":
-		return huh.NewInput().
-			Key(setting.Key).
-			Title(setting.Label).
-			Description(setting.Description).
-			Value(s.formData.Values[setting.Key])
-
-	case "int":
-		return huh.NewInput().
-			Key(setting.Key).
-			Title(setting.Label).
-			Description(setting.Description).
-			Value(s.formData.Values[setting.Key]).
-			Validate(func(val string) error {
-				if val == "" {
-					return nil
-				}
-				_, err := strconv.Atoi(val)
-				if err != nil {
-					return errors.New("must be a number")
-				}
-				return nil
-			})
-
-	case "bool":
-		return huh.NewConfirm().
-			Key(setting.Key).
-			Title(setting.Label).
-			Description(setting.Description).
-			Value(s.formData.BoolValues[setting.Key]).
-			Affirmative("Yes").
-			Negative("No")
-
-	case "select":
-		if len(setting.Options) == 0 {
-			return nil
-		}
-		options := make([]huh.Option[string], len(setting.Options))
-		for i, opt := range setting.Options {
-			options[i] = huh.NewOption(opt, opt)
-		}
-		return huh.NewSelect[string]().
-			Key(setting.Key).
-			Title(setting.Label).
-			Description(setting.Description).
-			Options(options...).
-			Value(s.formData.Values[setting.Key])
-
-	default:
-		return huh.NewInput().
-			Key(setting.Key).
-			Title(setting.Label).
-			Description(setting.Description).
-			Value(s.formData.Values[setting.Key])
-	}
+	s.form = forms.NewConfigureSettingsForm(
+		s.settings,
+		s.formData.Values,
+		s.formData.BoolValues,
+		s.termInfo.Width-10,
+		formHeight,
+	)
 }
 
 // Screen interface implementation
@@ -236,19 +163,10 @@ func (s *EditSettingsScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult)
 	}
 
 	if s.form != nil {
-		// Special handling for Enter key on the submit button
-		if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.Type == tea.KeyEnter {
-			// Simulate pressing 'y' to select "Submit" on the Confirm field
-			msg = tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}}
-		}
+		var cmd tea.Cmd
+		s.form, cmd = forms.Update(s.form, msg)
 
-		model, cmd := s.form.Update(msg)
-		if f, ok := model.(*huh.Form); ok {
-			s.form = f
-		}
-
-		// Check if form reached completion state
-		if s.form.State == huh.StateCompleted {
+		if forms.IsCompleted(s.form) {
 			s.formData.SubmitConfirmed = true
 			return cmd, &screens.SubmitResult{FormData: s.GetChanges()}
 		}

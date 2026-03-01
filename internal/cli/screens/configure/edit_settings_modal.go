@@ -1,7 +1,6 @@
 package configure
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 
@@ -11,7 +10,6 @@ import (
 	"github.com/baphled/kariya/internal/cli/uikit/containers"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -20,7 +18,7 @@ type EditSettingsModal struct {
 	domain   configtypes.ConfigurationDomain
 	settings []*configtypes.ConfigurationSetting
 	formData *SettingsFormData
-	form     *huh.Form
+	form     forms.Form
 
 	// Dimensions
 	width  int
@@ -92,31 +90,16 @@ func NewEditSettingsModal(
 	return modal
 }
 
-// rebuildForm creates the huh form based on current settings.
+// rebuildForm creates the form based on current settings.
 func (m *EditSettingsModal) rebuildForm() {
 	if len(m.settings) == 0 {
 		m.form = nil
 		return
 	}
 
-	var fields []huh.Field
-	for _, setting := range m.settings {
-		field := m.createFieldForSetting(setting)
-		if field != nil {
-			fields = append(fields, field)
-		}
-	}
+	fields := forms.BuildConfigureFields(m.settings, m.formData.Values, m.formData.BoolValues)
 
-	// Add submit button as the last field to enable form completion
-	submitValue := true
-	fields = append(fields, huh.NewConfirm().
-		Key("submit").
-		Title("Submit Settings").
-		Affirmative("Submit").
-		Negative("Cancel").
-		Value(&submitValue))
-
-	group := huh.NewGroup(fields...)
+	group := forms.NewGroup(fields...)
 
 	modalWidth := m.width - 10
 	if modalWidth > 90 {
@@ -131,71 +114,7 @@ func (m *EditSettingsModal) rebuildForm() {
 
 	group = group.WithHeight(formHeight)
 
-	huhTheme := themes.GenerateHuhTheme(m.theme)
-	m.form = huh.NewForm(group).
-		WithTheme(huhTheme).
-		WithWidth(formWidth).
-		WithHeight(formHeight)
-}
-
-// createFieldForSetting creates the appropriate huh field for a setting.
-func (m *EditSettingsModal) createFieldForSetting(setting *configtypes.ConfigurationSetting) huh.Field {
-	switch setting.Type {
-	case "string":
-		return huh.NewInput().
-			Key(setting.Key).
-			Title(setting.Label).
-			Description(setting.Description).
-			Value(m.formData.Values[setting.Key])
-
-	case "int":
-		return huh.NewInput().
-			Key(setting.Key).
-			Title(setting.Label).
-			Description(setting.Description).
-			Value(m.formData.Values[setting.Key]).
-			Validate(func(val string) error {
-				if val == "" {
-					return nil
-				}
-				_, err := strconv.Atoi(val)
-				if err != nil {
-					return errors.New("must be a number")
-				}
-				return nil
-			})
-
-	case "bool":
-		return huh.NewConfirm().
-			Key(setting.Key).
-			Title(setting.Label).
-			Description(setting.Description).
-			Value(m.formData.BoolValues[setting.Key]).
-			Affirmative("Yes").
-			Negative("No")
-
-	case "select":
-		if len(setting.Options) == 0 {
-			return nil
-		}
-		options := make([]huh.Option[string], len(setting.Options))
-		for i, opt := range setting.Options {
-			options[i] = huh.NewOption(opt, opt)
-		}
-		return huh.NewSelect[string]().
-			Key(setting.Key).
-			Title(setting.Label).
-			Description(setting.Description).
-			Options(options...).
-			Value(m.formData.Values[setting.Key])
-
-	default:
-		return huh.NewInput().
-			Key(setting.Key).
-			Title(setting.Label).
-			Description(setting.Description).
-			Value(m.formData.Values[setting.Key])
-	}
+	m.form = forms.NewFormWithDimensions(formWidth, formHeight, group)
 }
 
 // Init initializes the modal.
@@ -249,15 +168,11 @@ func (m *EditSettingsModal) Update(msg tea.Msg) tea.Cmd {
 		}
 	}
 
-	// Delegate to form
 	if m.form != nil {
-		model, cmd := m.form.Update(msg)
-		if f, ok := model.(*huh.Form); ok {
-			m.form = f
-		}
+		var cmd tea.Cmd
+		m.form, cmd = forms.Update(m.form, msg)
 
-		// Check if form completed
-		if m.form.State == huh.StateCompleted {
+		if forms.IsCompleted(m.form) {
 			m.formData.SubmitConfirmed = true
 			m.completed = true
 			m.visible = false
