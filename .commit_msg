@@ -1,5 +1,0 @@
-feat(captureevent): add factsToPointers helper for value-to-pointer conversion
-
-Adds factsToPointers helper function to convert []career.Fact to []*career.Fact,
-supporting nil and empty inputs by returning empty slice. Includes comprehensive
-tests for nil input, empty input, and valid fact conversion with data preservation.
