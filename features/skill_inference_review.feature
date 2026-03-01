@@ -1,3 +1,4 @@
+@capture
 Feature: Review inferred skills during event capture
   As a professional
   I want to review and manage inferred skills during event capture
@@ -7,7 +8,7 @@ Feature: Review inferred skills during event capture
     Given the database is empty
     And I am on the main menu
 
-  @happy @smoke @wip
+  @happy @smoke
   Scenario: User can view suggested skills with confidence scores
     When I select "capture_event" from the menu
     And I select quick capture strategy

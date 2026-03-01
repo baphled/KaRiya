@@ -68,7 +68,7 @@ func RegisterCaptureSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I open the metadata editor$`, iOpenTheMetadataEditor)
 	sc.Step(`^I change event company to "([^"]*)"$`, iChangeEventCompanyTo)
 	sc.Step(`^I save metadata changes$`, iSaveMetadataChanges)
-	sc.Step(`^I should see "([^"]*)" key badge for (?:editing )?(bursts|facts)$`, iShouldSeeKeyBadgeFor)
+	sc.Step(`^I should see "([^"]*)" key badge for (?:editing )?(bursts|facts|skills)$`, iShouldSeeKeyBadgeFor)
 	sc.Step(`^I try to submit without description$`, iTryToSubmitWithoutDescription)
 	sc.Step(`^I should see a capture validation error$`, iShouldSeeValidationError)
 	sc.Step(`^I press Ctrl\+S$`, iPressCtrlS)
@@ -88,6 +88,20 @@ func RegisterCaptureSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I should see the facts modal$`, iShouldSeeTheFactsModal)
 	sc.Step(`^I should see the metadata modal$`, iShouldSeeTheMetadataModal)
 	sc.Step(`^I should move to the previous field$`, iShouldMoveToThePreviousField)
+
+	// Skill inference review steps
+	sc.Step(`^I open the skill review modal$`, iOpenTheSkillReviewModal)
+	sc.Step(`^I should see suggested skills with confidence scores$`, iShouldSeeSuggestedSkillsWithConfidenceScores)
+	sc.Step(`^I should see "([^"]*)" skill with confidence$`, iShouldSeeSkillWithConfidence)
+	sc.Step(`^I reject all suggested skills$`, iRejectAllSuggestedSkills)
+	sc.Step(`^I accept the "([^"]*)" skill$`, iAcceptTheSkill)
+	sc.Step(`^I reject the "([^"]*)" skill$`, iRejectTheSkill)
+	sc.Step(`^the event should not have "([^"]*)" skill$`, theEventShouldNotHaveSkill)
+	sc.Step(`^the event should have no skills$`, theEventShouldHaveNoSkills)
+	sc.Step(`^I should see the skill review modal$`, iShouldSeeTheSkillReviewModal)
+	sc.Step(`^I should see the metadata editor$`, iShouldSeeTheMetadataEditor)
+	sc.Step(`^I should see the burst editor$`, iShouldSeeTheBurstEditor)
+	sc.Step(`^I press the "([^"]*)" key$`, iPressTheKey)
 }
 
 func theDatabaseIsEmpty(ctx context.Context) (context.Context, error) {
@@ -867,4 +881,140 @@ func iShouldMoveToThePreviousField(ctx context.Context) error {
 	view := env.GetView()
 	gomega.Expect(view).NotTo(gomega.BeEmpty())
 	return nil
+}
+
+func iOpenTheSkillReviewModal(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.PressKeyRune('s')
+	return ctx, nil
+}
+
+func iShouldSeeSuggestedSkillsWithConfidenceScores(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("skill"),
+		gomega.ContainSubstring("Skill"),
+		gomega.ContainSubstring("%"),
+	), "should see suggested skills with confidence scores")
+	return nil
+}
+
+func iShouldSeeSkillWithConfidence(ctx context.Context, skillName string) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring(skillName), "should see %s skill", skillName)
+	return nil
+}
+
+func iRejectAllSuggestedSkills(ctx context.Context) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.PressKeyRune('r')
+	return ctx, nil
+}
+
+func iAcceptTheSkill(ctx context.Context, _ string) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.PressKeyRune('a')
+	return ctx, nil
+}
+
+func iRejectTheSkill(ctx context.Context, _ string) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	env.PressKeyRune('r')
+	return ctx, nil
+}
+
+func theEventShouldNotHaveSkill(ctx context.Context, skillName string) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	skills := env.GetSkills()
+	for _, s := range skills {
+		if strings.EqualFold(s.Name, skillName) {
+			return fmt.Errorf("expected event to not have skill %s, but it does", skillName)
+		}
+	}
+	return nil
+}
+
+func theEventShouldHaveNoSkills(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	skills := env.GetSkills()
+	gomega.Expect(skills).To(gomega.BeEmpty(), "expected event to have no skills")
+	return nil
+}
+
+func iShouldSeeTheSkillReviewModal(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("skill"),
+		gomega.ContainSubstring("Skill"),
+	), "should see skill review modal")
+	return nil
+}
+
+func iShouldSeeTheMetadataEditor(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("metadata"),
+		gomega.ContainSubstring("Metadata"),
+		gomega.ContainSubstring("Company"),
+		gomega.ContainSubstring("Project"),
+	), "should see metadata editor")
+	return nil
+}
+
+func iShouldSeeTheBurstEditor(ctx context.Context) error {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return godog.ErrPending
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("burst"),
+		gomega.ContainSubstring("Burst"),
+	), "should see burst editor")
+	return nil
+}
+
+func iPressTheKey(ctx context.Context, key string) (context.Context, error) {
+	env := support.GetAppEnv(ctx)
+	if env == nil {
+		return ctx, godog.ErrPending
+	}
+	if len(key) == 1 {
+		env.PressKeyRune(rune(key[0]))
+	}
+	return ctx, nil
 }
