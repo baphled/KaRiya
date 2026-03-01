@@ -64,13 +64,13 @@ AI-Generated-By: Claude (Claude 3.7 Sonnet)
 AI-Generated-By: GitHub Copilot (GPT-4)
 ```
 
-TR|### Verification
-HQ|
-BV|```bash
-RZ|make check-ai-attribution   # Check latest commit
-WV|make list-ai-commits        # List all AI commits
-QK|make audit-ai-commits       # Full audit with statistics
-KP|```
+### Verification
+
+```bash
+make check-ai-attribution   # Check latest commit
+make list-ai-commits        # List all AI commits
+make audit-ai-commits       # Full audit with statistics
+```
 
 ## CI/CD Pipeline 🚀
 
@@ -115,10 +115,10 @@ Releases are **automatically created** when you push to `main`:
 4. GitHub release is created
 5. Binaries are uploaded
 
-TR|### Documentation
-YB|
-TR|See AGENTS.md for detailed development guidelines and patterns.
-VQ|
+### Documentation
+
+See AGENTS.md for detailed development guidelines and patterns.
+
 
 ### Validation
 
@@ -134,14 +134,14 @@ npx semantic-release --dry-run
 - Coverage reports are generated in the `coverage` directory
 - HTML report provides detailed code coverage visualization
 
-WB|
 
 
 
-PZ|
+
+
 ## CLI Usage
 
-PW|KaRiya includes an interactive terminal user interface built with BubbleTea. Use `./kariya-cli --help` for CLI usage information.
+KaRiya includes an interactive terminal user interface built with BubbleTea. Use `./kariya-cli --help` for CLI usage information.
 
 ### Quick Start
 
@@ -239,7 +239,7 @@ KaRiya can transform your career events into professional CVs tailored to specif
 - **Multiple Exports**: Export to text, markdown, or copy to clipboard
 - **Quality Filters**: Excludes aspirational language, inferred metrics, and role inflation
 
-XJ|
+
 
 ### Keyboard Shortcuts
 
@@ -258,7 +258,7 @@ XJ|
 - `a` - Select all / `d` - Deselect all
 - `y`/`n` - Confirm/reject burst suggestions
 
-ZQ|
+
 
 ## CLI Architecture
 
@@ -425,7 +425,7 @@ Currently no environment variables. Use command-line flags instead.
 
 **Cause**: Terminal height too small
 
-NY|# Solution: Maximize terminal window vertically
-QS|
-JV|Run `./kariya-cli --help` for more information.
+**Solution**: Maximize terminal window vertically
+
+Run `./kariya-cli --help` for more information.
 
