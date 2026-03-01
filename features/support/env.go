@@ -345,10 +345,10 @@ func NewAppEnvFromGormDB(t *testing.T, gormDB *gorm.DB) *e2e.TestEnv {
 	bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
 
 	model := app.NewModel(cliService, svc, bootstrapResult)
-
 	return &e2e.TestEnv{
 		T:          bddT,
 		Model:      model,
+		DB:         sharedSQLDB,
 		EventRepo:  repos.Event,
 		BurstRepo:  repos.Burst,
 		FactRepo:   repos.Fact,
@@ -357,6 +357,26 @@ func NewAppEnvFromGormDB(t *testing.T, gormDB *gorm.DB) *e2e.TestEnv {
 		CLIService: cliService,
 		Ctx:        ctx,
 	}
+}
+
+// CommitScenarioTx commits the per-scenario GORM transaction so that data
+// becomes visible to new connections (e.g. after SimulateRestart).
+// The afterScenario rollback becomes a no-op on an already-committed tx.
+//
+// Expected:
+//   - ctx contains a GORM transaction stored by beforeScenario.
+//
+// Returns:
+//   - error if the commit fails or no transaction is found.
+//
+// Side effects:
+//   - Commits the per-scenario transaction.
+func CommitScenarioTx(ctx context.Context) error {
+	tx, ok := ctx.Value(txKey{}).(*gorm.DB)
+	if !ok || tx == nil {
+		return fmt.Errorf("no per-scenario transaction found in context")
+	}
+	return tx.Commit().Error
 }
 
 // GetAppEnv retrieves the TestEnv from context.
