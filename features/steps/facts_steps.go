@@ -398,8 +398,11 @@ func iSubmitTheFactForm(ctx context.Context) (context.Context, error) {
 		}
 		env.SubmitFactUpdate(fact)
 	} else {
-		if data.Text != "" && (len(data.Text) < 10 || len(data.Text) > 2000) {
+		if data.Text != "" && len(data.Text) < 10 {
 			env.Confirm()
+			return ctx, nil
+		}
+		if data.Text != "" && len(data.Text) > 2000 {
 			return ctx, nil
 		}
 		fact := &career.Fact{

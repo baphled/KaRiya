@@ -267,7 +267,7 @@ Feature: Manage Career Facts
     Then I should see a validation error
     And I should see "10"
 
-  @sad @wip
+  @sad
   Scenario: Fact text maximum length validation
     Given the database is empty
     When I select "fact_management" from the menu

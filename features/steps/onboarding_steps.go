@@ -311,6 +311,7 @@ func iShouldSeeValidationErrorOnboarding(ctx context.Context) error {
 		gomega.ContainSubstring("cannot exceed"),
 		gomega.ContainSubstring("minimum"),
 		gomega.ContainSubstring("maximum"),
+		gomega.ContainSubstring("characters"),
 	), "Should see validation error in view:\n"+view)
 	return nil
 }
