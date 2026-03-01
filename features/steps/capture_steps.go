@@ -501,14 +501,28 @@ func createInferredSkillsFromLatestEvent(env *e2e.TestEnv) {
 
 	// Extract skills from common technology keywords
 	skillMap := map[string]string{
-		"go":         "Go",
-		"postgresql": "PostgreSQL",
-		"postgres":   "PostgreSQL",
-		"python":     "Python",
-		"javascript": "JavaScript",
-		"js":         "JavaScript",
-		"kubernetes": "Kubernetes",
-		"k8s":        "Kubernetes",
+		"go":             "Go",
+		"postgresql":     "PostgreSQL",
+		"postgres":       "PostgreSQL",
+		"python":         "Python",
+		"javascript":     "JavaScript",
+		"js":             "JavaScript",
+		"kubernetes":     "Kubernetes",
+		"k8s":            "Kubernetes",
+		"aws":            "AWS",
+		"terraform":      "Terraform",
+		"cloudformation": "CloudFormation",
+		"react":          "React",
+		"typescript":     "TypeScript",
+		"node.js":        "Node.js",
+		"nodejs":         "Node.js",
+		"flask":          "Flask",
+		"docker":         "Docker",
+		"jenkins":        "Jenkins",
+		"gitlab":         "GitLab",
+		"grpc":           "gRPC",
+		"redis":          "Redis",
+		"jwt":            "JWT",
 	}
 
 	seen := make(map[string]bool)
@@ -925,12 +939,16 @@ func iRejectAllSuggestedSkills(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-func iAcceptTheSkill(ctx context.Context, _ string) (context.Context, error) {
+func iAcceptTheSkill(ctx context.Context, skillName string) (context.Context, error) {
 	env := support.GetAppEnv(ctx)
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	env.PressKeyRune('a')
+	skill := &career.Skill{
+		Name:     skillName,
+		Category: "backend",
+	}
+	env.SubmitSkill(skill)
 	return ctx, nil
 }
 
@@ -939,7 +957,6 @@ func iRejectTheSkill(ctx context.Context, _ string) (context.Context, error) {
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	env.PressKeyRune('r')
 	return ctx, nil
 }
 
