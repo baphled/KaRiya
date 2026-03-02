@@ -6,6 +6,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/facts"
+	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
@@ -131,6 +132,24 @@ var _ = Describe("FactListScreen", func() {
 			_, result := screen.Update(msg)
 			Expect(result).To(BeNil())
 		})
+
+		It("should navigate down with j key (vim)", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}}
+			_, result := screen.Update(msg)
+			Expect(result).To(BeNil())
+		})
+
+		It("should navigate up with k key (vim)", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}}
+			_, result := screen.Update(msg)
+			Expect(result).To(BeNil())
+		})
+
+		It("should ignore unhandled rune keys", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}}
+			_, result := screen.Update(msg)
+			Expect(result).To(BeNil())
+		})
 	})
 
 	Describe("Rendering", func() {
@@ -171,6 +190,12 @@ var _ = Describe("FactListScreen", func() {
 			content := screen.RenderContent()
 			Expect(content).NotTo(BeEmpty())
 		})
+
+		It("should return output from View", func() {
+			view := screen.View()
+			Expect(view).NotTo(BeEmpty())
+		})
+
 	})
 
 	Describe("Window Size Updates", func() {
@@ -186,4 +211,24 @@ var _ = Describe("FactListScreen", func() {
 			Expect(result).To(BeNil())
 		})
 	})
+
+	Describe("SetTheme", func() {
+		BeforeEach(func() {
+			screen = facts.NewFactListScreen(factList)
+		})
+
+		It("should apply a valid theme", func() {
+			theme := themes.NewDefaultTheme()
+			screen.SetTheme(theme)
+			content := screen.RenderContent()
+			Expect(content).NotTo(BeEmpty())
+		})
+
+		It("should handle non-theme value gracefully", func() {
+			screen.SetTheme("not-a-theme")
+			content := screen.RenderContent()
+			Expect(content).NotTo(BeEmpty())
+		})
+	})
+
 })

@@ -51,6 +51,12 @@ var _ = Describe("View Renderers", func() {
 			result := facts.RenderDeleteConfirm(nil)
 			Expect(result).To(Equal("No fact to delete"))
 		})
+
+		It("truncates long fact text", func() {
+			testFact.Text = "This is a very long career fact that is designed to exceed one hundred characters in total length to test the truncation properly"
+			result := facts.RenderDeleteConfirm(testFact)
+			Expect(result).To(ContainSubstring("..."))
+		})
 	})
 
 	Describe("RenderResults", func() {
