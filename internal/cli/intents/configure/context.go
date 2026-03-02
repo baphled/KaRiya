@@ -363,3 +363,22 @@ func applyDisplayChange(disp *config.DisplayConfig, key string, value interface{
 	}
 	return nil
 }
+
+// ApplyChanges applies a flat map of changes to the config, routing each key
+// to the correct domain using the provided settings map.
+//
+// Expected: cfg, settings, and changes must be valid.
+// Returns: An error value if any change fails to apply.
+// Side effects: Mutates cfg in place.
+func ApplyChanges(cfg *config.Config, settings map[ConfigurationDomain][]*ConfigurationSetting, changes map[string]interface{}) error {
+	for domain, domainSettings := range settings {
+		for _, s := range domainSettings {
+			if val, ok := changes[s.Key]; ok {
+				if err := applyConfigChange(cfg, domain, s.Key, val); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
+}

@@ -1,16 +1,15 @@
-// Package configure provides screens for system configuration.
+// Package configure provides the modal overlay for system configuration.
 //
 // # Overview
 //
-// The configure package contains screens for viewing and editing
-// application configuration settings across different domains.
+// The configure package contains the unified settings modal for viewing
+// and editing application configuration settings across different domains.
 //
-// # Screens
+// # Components
 //
-//   - DomainSelectScreen: Configuration domain selection
-//   - SettingsScreen: Configuration settings display
+//   - SettingsModal: Split-panel modal for editing all configuration domains.
 //
 // # Usage
 //
-// Screens in this package are used by the configure intent.
+// Components in this package are used by the configure intent.
 package configure

@@ -122,7 +122,6 @@ func NewModel(
 		{Name: "Browse Timeline", Intent: "browse_timeline", Help: "View your career events"},
 		{Name: "Manage Skills", Intent: "manage_skills", Help: "Manage your skills"},
 		{Name: "Generate CV", Intent: "generate_cv", Help: "Create a new CV"},
-		{Name: "Configure System", Intent: "configure_system", Help: "Manage settings"},
 		{Name: "Manage Bursts", Intent: "burst_management", Help: "Organize career bursts"},
 		{Name: "Manage Facts", Intent: "fact_management", Help: "Review extracted facts"},
 	}
@@ -244,6 +243,10 @@ func (m *Model) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
+	if m.configModal != nil {
+		return m.updateConfigModal(msg)
+	}
+
 	switch msg.String() {
 	case keyCtrlC:
 		return m, tea.Quit
@@ -296,6 +299,10 @@ func (m *Model) handleDefaultMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// Check for RequestEditEventMsg.
 	if editMsg, ok := msg.(intents.RequestEditEventMsg); ok {
 		return m.handleEditEventRequest(editMsg)
+	}
+
+	if m.configModal != nil {
+		return m.updateConfigModal(msg)
 	}
 
 	// Route to active intent.

@@ -2,7 +2,6 @@ package configure
 
 import (
 	"github.com/baphled/kariya/internal/cli/intents"
-	configscreens "github.com/baphled/kariya/internal/cli/screens/configure"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	tea "github.com/charmbracelet/bubbletea"
@@ -25,13 +24,6 @@ func NewIntent(ctx *IntentContext) (*Intent, error) {
 	baseIntent := intents.NewBaseIntent()
 	baseIntent.SetThemeManager(themes.NewThemeManager())
 
-	domains := []ConfigurationDomain{
-		DomainSystem,
-		DomainProfile,
-		DomainExport,
-		DomainUI,
-	}
-
 	intent := &Intent{
 		BaseIntent:    baseIntent,
 		context:       ctx,
@@ -39,31 +31,24 @@ func NewIntent(ctx *IntentContext) (*Intent, error) {
 		cfg:           ctx.Cfg,
 		settings:      ctx.Settings,
 		active:        false,
-		domainScreen:  configscreens.NewDomainSelectScreen(domains),
 		modalRegistry: intents.NewModalRegistry(),
 	}
 
 	return intent, nil
 }
 
-// Init activates the intent, applies theming, and returns the domain screen's initial command.
+// Init activates the intent, opens the settings modal, and returns its initial command.
 //
 // Returns: A tea.Cmd value.
 // Side effects: None.
 func (i *Intent) Init() tea.Cmd {
 	i.active = true
+	i.openSettingsModal()
 
-	if theme := i.Theme(); theme != nil {
-		i.domainScreen.SetTheme(theme)
+	if i.settingsModal != nil {
+		return i.settingsModal.Init()
 	}
-
-	if termInfo := i.GetTerminalInfo(); termInfo != nil {
-		i.domainScreen.SetTerminalInfo(termInfo.Width, termInfo.Height)
-	}
-
-	i.transitionToScreen(i.domainScreen)
-
-	return i.domainScreen.Init()
+	return nil
 }
 
 // Update drives the configuration workflow state machine.
@@ -96,15 +81,8 @@ func (i *Intent) handleWindowSizeMsg(msg tea.Msg) {
 		return
 	}
 
-	i.domainScreen.SetTerminalInfo(wsMsg.Width, wsMsg.Height)
-	if i.editModal != nil {
-		i.editModal.Update(msg)
-	}
-	if i.reviewModal != nil {
-		i.reviewModal.Update(msg)
-	}
-	if i.confirmModal != nil {
-		i.confirmModal.Update(msg)
+	if i.settingsModal != nil {
+		i.settingsModal.SetDimensions(wsMsg.Width, wsMsg.Height)
 	}
 }
 
@@ -119,7 +97,7 @@ func (i *Intent) handleKeyMsg(msg tea.Msg) bool {
 		return true
 	}
 
-	if keyMsg.String() == "q" && !i.hasFormModals() {
+	if keyMsg.String() == "q" && i.settingsModal == nil {
 		i.setCancelled()
 		return true
 	}
@@ -134,36 +112,14 @@ func (i *Intent) routeToActiveComponent(msg tea.Msg) tea.Cmd {
 	if i.savingModal != nil {
 		return i.updateSavingModal(msg)
 	}
-	if i.isConfirmVisible() {
-		return i.updateConfirmModal(msg)
-	}
-	if i.isReviewVisible() {
-		return i.updateReviewModal(msg)
-	}
-	if i.isEditVisible() {
-		return i.updateEditModal(msg)
+	if i.settingsModal != nil {
+		return i.updateSettingsModal(msg)
 	}
 
-	return i.updateDomainScreen(msg)
+	return nil
 }
 
-func (i *Intent) hasFormModals() bool {
-	return i.editModal != nil || i.reviewModal != nil || i.confirmModal != nil
-}
-
-func (i *Intent) isEditVisible() bool {
-	return i.editModal != nil && i.editModal.IsVisible()
-}
-
-func (i *Intent) isReviewVisible() bool {
-	return i.reviewModal != nil && i.reviewModal.IsVisible()
-}
-
-func (i *Intent) isConfirmVisible() bool {
-	return i.confirmModal != nil && i.confirmModal.IsVisible()
-}
-
-// View composes the visible UI by layering the domain screen with any active modal overlay.
+// View composes the visible UI by layering any active modal overlay.
 //
 // Returns: A string value.
 // Side effects: None.
@@ -176,7 +132,7 @@ func (i *Intent) View() string {
 
 	view := i.CreateViewWithBreadcrumbs("Main Menu", "Configure System", i.getStateName())
 
-	view.WithContent(i.domainScreen.RenderContent())
+	view.WithContent("")
 	view.WithHelp(i.getContextHelp()).WithFooterSeparator(true)
 
 	if overlay := i.activeModalOverlay(width, height); overlay != nil {
@@ -187,14 +143,8 @@ func (i *Intent) View() string {
 }
 
 func (i *Intent) activeModalOverlay(width, height int) interface{ Render(int, int) string } {
-	if i.isEditVisible() {
-		return editModalAdapter{i.editModal, width, height}
-	}
-	if i.isReviewVisible() {
-		return reviewModalAdapter{i.reviewModal, width, height}
-	}
-	if i.isConfirmVisible() {
-		return confirmModalAdapter{i.confirmModal, width, height}
+	if i.settingsModal != nil {
+		return settingsModalAdapter{i.settingsModal, width, height}
 	}
 	if i.savingModal != nil {
 		return i.savingModal
@@ -239,16 +189,8 @@ func (i *Intent) SetState(state ConfigurationState) {
 	i.state = state
 
 	switch state {
-	case ConfigStateEditSettings:
-		if i.selectedDomain != "" {
-			i.openEditModal()
-		}
-	case ConfigStateReviewChanges:
-		if i.pendingChanges != nil {
-			i.openReviewModal()
-		}
-	case ConfigStateConfirm:
-		i.openConfirmModal()
+	case ConfigStateSelectDomain, ConfigStateEditSettings, ConfigStateReviewChanges, ConfigStateConfirm:
+		i.openSettingsModal()
 	case ConfigStateSaving:
 		i.savingModal = feedback.NewLoadingModal("Saving...", false)
 	case ConfigStateComplete:

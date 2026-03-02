@@ -3,6 +3,7 @@ package app
 import (
 	"strings"
 
+	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/terminal"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/charmbracelet/lipgloss"
@@ -59,8 +60,13 @@ func (m *Model) viewMenu() string {
 		tableView,
 	)
 
-	// Footer: Help text
-	helpText := "↑/k Up  ↓/j Down  Enter Select  ? Help  q Quit"
+	helpText := primitives.RenderHelpFooter(m.theme,
+		primitives.NavigateBadge(m.theme),
+		primitives.SelectBadge(m.theme),
+		primitives.HelpKeyBadge(",", "Settings", m.theme),
+		primitives.HelpBadge(m.theme),
+		primitives.QuitBadge(m.theme),
+	)
 
 	// Calculate heights for spacer
 	logoHeight := lipgloss.Height(logoView)
@@ -82,8 +88,13 @@ func (m *Model) viewMenu() string {
 	allParts = append(allParts, helpText)
 
 	combined := primitives.JoinVertical(primitives.AlignCenter, allParts...)
+	background := primitives.PlaceInTerminal(combined, m.width, m.height)
 
-	return primitives.PlaceInTerminal(combined, m.width, m.height)
+	if m.configModal != nil {
+		return behaviors.RenderModalOverlay(m.configModal, background)
+	}
+
+	return background
 }
 
 // renderResponsiveTable creates the menu as simple text lines that can be centered.

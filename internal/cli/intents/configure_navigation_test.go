@@ -20,7 +20,7 @@ var _ = Describe("Configure Navigation", func() {
 		})
 
 		It("should show ConfigureSystem as menu item", func() {
-			env.AssertViewContains("Configure System")
+			env.AssertViewContainsAny("Settings", ",")
 		})
 
 		It("should navigate to ConfigureSystem when selected", func() {
@@ -90,7 +90,8 @@ var _ = Describe("Configure Navigation", func() {
 		})
 
 		It("should show settings for selected domain", func() {
-			env.AssertViewContainsAny("log", "data", "backup", "Settings", "level", "dir")
+			env.PressKeyRune(',')
+			env.AssertViewContainsAny("log", "data", "backup", "Settings", "level", "dir", "System", "Profile")
 		})
 
 		It("should allow navigating settings with j/k", func() {
@@ -235,9 +236,8 @@ var _ = Describe("Configure Navigation", func() {
 
 		It("should allow selecting System domain", func() {
 			env.SelectIntentByName("configure_system")
-			// System is typically first
-			env.Confirm()
-			env.AssertViewContainsAny("log", "data", "backup", "Settings")
+			env.PressKeyRune(',')
+			env.AssertViewContainsAny("log", "data", "backup", "Settings", "System")
 		})
 
 		It("should allow selecting Profile domain", func() {

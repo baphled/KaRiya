@@ -5,7 +5,6 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/intents"
-	"github.com/baphled/kariya/internal/cli/screens"
 	configscreens "github.com/baphled/kariya/internal/cli/screens/configure"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
@@ -22,35 +21,12 @@ func (i *Intent) getTerminalDimensions() (width, height int) {
 	return
 }
 
-// openEditModal opens the edit settings modal for the selected domain.
-func (i *Intent) openEditModal() {
+// openSettingsModal opens the unified settings modal.
+func (i *Intent) openSettingsModal() {
 	width, height := i.getTerminalDimensions()
-	settings := i.settings[i.selectedDomain]
-	i.editModal = configscreens.NewEditSettingsModal(i.selectedDomain, settings, width, height)
+	i.settingsModal = configscreens.NewSettingsModal(i.settings, width, height)
 	if theme := i.Theme(); theme != nil {
-		i.editModal.SetTheme(theme)
-	}
-}
-
-// openReviewModal opens the review changes modal.
-func (i *Intent) openReviewModal() {
-	width, height := i.getTerminalDimensions()
-	i.reviewModal = configscreens.NewReviewChangesModal(i.selectedDomain, i.pendingChanges, width, height)
-	if theme := i.Theme(); theme != nil {
-		i.reviewModal.SetTheme(theme)
-	}
-}
-
-// openConfirmModal opens the confirmation modal.
-func (i *Intent) openConfirmModal() {
-	width, height := i.getTerminalDimensions()
-	i.confirmModal = configscreens.NewConfirmModal(
-		"Confirm Changes",
-		"Are you sure you want to save these changes?",
-		width, height,
-	)
-	if theme := i.Theme(); theme != nil {
-		i.confirmModal.SetTheme(theme)
+		i.settingsModal.SetTheme(theme)
 	}
 }
 
@@ -59,21 +35,19 @@ func (i *Intent) startSaving() tea.Cmd {
 	i.savingModal = feedback.NewLoadingModal("Saving configuration...", false)
 
 	cfg := i.cfg
-	selectedDomain := i.selectedDomain
+	settings := i.settings
 	pendingChanges := make(map[string]interface{}, len(i.pendingChanges))
 	for k, v := range i.pendingChanges {
 		pendingChanges[k] = v
 	}
 
 	asyncCmd := func() tea.Msg {
-		for key, value := range pendingChanges {
-			if err := applyConfigChange(cfg, selectedDomain, key, value); err != nil {
-				return ConfigErrorMsg{
-					Error: &intents.IntentError{
-						Code:    "apply_failed",
-						Message: fmt.Sprintf("Failed to apply change: %s", err),
-					},
-				}
+		if err := ApplyChanges(cfg, settings, pendingChanges); err != nil {
+			return ConfigErrorMsg{
+				Error: &intents.IntentError{
+					Code:    "apply_failed",
+					Message: fmt.Sprintf("Failed to apply change: %s", err),
+				},
 			}
 		}
 
@@ -89,9 +63,9 @@ func (i *Intent) startSaving() tea.Cmd {
 		return ConfigCompleteMsg{
 			Result: &SystemResult{
 				Success: true,
-				Domain:  selectedDomain,
+				Domain:  i.selectedDomain,
 				Changes: &ConfigurationChanges{
-					Domain:   selectedDomain,
+					Domain:   i.selectedDomain,
 					Modified: pendingChanges,
 				},
 			},
@@ -112,14 +86,8 @@ func (i *Intent) getStateName() string {
 	if i.savingModal != nil {
 		return "Saving"
 	}
-	if i.confirmModal != nil && i.confirmModal.IsVisible() {
-		return "Confirm"
-	}
-	if i.reviewModal != nil && i.reviewModal.IsVisible() {
-		return "Review Changes"
-	}
-	if i.editModal != nil && i.editModal.IsVisible() {
-		return "Edit Settings"
+	if i.settingsModal != nil {
+		return "Configure"
 	}
 	return "Select Domain"
 }
@@ -128,13 +96,7 @@ func (i *Intent) getStateName() string {
 func (i *Intent) getContextHelp() string {
 	theme := i.Theme()
 
-	if i.editModal != nil && i.editModal.IsVisible() {
-		return ""
-	}
-	if i.reviewModal != nil && i.reviewModal.IsVisible() {
-		return ""
-	}
-	if i.confirmModal != nil && i.confirmModal.IsVisible() {
+	if i.settingsModal != nil {
 		return ""
 	}
 	if i.savingModal != nil {
@@ -166,70 +128,23 @@ func (i *Intent) setCancelled() {
 
 // clearAllModals removes all active modal references.
 func (i *Intent) clearAllModals() {
-	i.editModal = nil
-	i.reviewModal = nil
-	i.confirmModal = nil
+	i.settingsModal = nil
 	i.savingModal = nil
 	i.resultModal = nil
 }
 
-// transitionToScreen sets the active screen reference.
-func (i *Intent) transitionToScreen(screen screens.Screen) {
-	i.activeScreen = screen
-}
-
-// RenderDomainContent produces the raw domain selection list.
-//
-// Returns: A string value.
-// Side effects: None.
-func (i *Intent) RenderDomainContent() string {
-	return i.domainScreen.RenderContent()
-}
-
-// editModalAdapter wraps EditSettingsModal to satisfy the ModalRenderer interface.
-type editModalAdapter struct {
-	modal         *configscreens.EditSettingsModal
+// settingsModalAdapter wraps SettingsModal to satisfy the ModalRenderer interface.
+type settingsModalAdapter struct {
+	modal         *configscreens.SettingsModal
 	width, height int
 }
 
-// Render produces the edit settings form overlay.
+// Render produces the settings modal overlay.
 //
 // Expected: int must be valid.
 // Returns: A string value.
 //
 // Side effects: None.
-func (a editModalAdapter) Render(_, _ int) string {
-	return a.modal.Render(a.width, a.height)
-}
-
-// reviewModalAdapter wraps ReviewChangesModal to satisfy the ModalRenderer interface.
-type reviewModalAdapter struct {
-	modal         *configscreens.ReviewChangesModal
-	width, height int
-}
-
-// Render produces the review-changes diff overlay.
-//
-// Expected: int must be valid.
-// Returns: A string value.
-//
-// Side effects: None.
-func (a reviewModalAdapter) Render(_, _ int) string {
-	return a.modal.Render(a.width, a.height)
-}
-
-// confirmModalAdapter wraps ConfirmModal to satisfy the ModalRenderer interface.
-type confirmModalAdapter struct {
-	modal         *configscreens.ConfirmModal
-	width, height int
-}
-
-// Render produces the confirmation prompt overlay.
-//
-// Expected: int must be valid.
-// Returns: A string value.
-//
-// Side effects: None.
-func (a confirmModalAdapter) Render(_, _ int) string {
+func (a settingsModalAdapter) Render(_, _ int) string {
 	return a.modal.Render(a.width, a.height)
 }

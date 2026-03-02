@@ -20,12 +20,13 @@ const (
 	keyTab   = "tab"
 
 	// Global keys.
-	keyQuit   = "q"
-	keyHelp   = "?"
-	keyCtrlC  = "ctrl+c"
-	keyCtrlO  = "ctrl+o"
-	keyCtrlD  = "ctrl+d"
-	keyCtrlU  = "ctrl+u"
-	keyPgUp   = "pgup"
-	keyPgDown = "pgdown"
+	keyQuit     = "q"
+	keyHelp     = "?"
+	keyCtrlC    = "ctrl+c"
+	keyCtrlO    = "ctrl+o"
+	keyCtrlD    = "ctrl+d"
+	keyCtrlU    = "ctrl+u"
+	keySettings = ","
+	keyPgUp     = "pgup"
+	keyPgDown   = "pgdown"
 )

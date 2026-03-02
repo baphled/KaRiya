@@ -170,9 +170,9 @@ var _ = Describe("ConfigureSystem Intent", func() {
 				Expect(result.Status).To(Equal(intents.Cancelled))
 			})
 
-			It("should cancel on q key", func() {
+			It("should suppress q key when settings modal is open", func() {
 				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-				Expect(intent.IsActive()).To(BeFalse())
+				Expect(intent.IsActive()).To(BeTrue())
 			})
 		})
 
@@ -225,9 +225,10 @@ var _ = Describe("ConfigureSystem Intent", func() {
 				intent.SetState(configure.ConfigStateFailed)
 			})
 
-			It("should go back to edit on enter (to retry)", func() {
+			It("should stay active for retry on enter", func() {
 				intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
-				Expect(intent.GetState()).To(Equal(configure.ConfigStateEditSettings))
+				Expect(intent.IsActive()).To(BeTrue())
+				Expect(intent.GetResultModal()).To(BeNil())
 			})
 		})
 	})

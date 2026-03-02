@@ -2,10 +2,47 @@ package forms
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/baphled/kariya/internal/cli/configtypes"
 )
+
+// ConfigureSettingsFormData holds bound form values for configuration settings.
+type ConfigureSettingsFormData struct {
+	Values          map[string]*string
+	BoolValues      map[string]*bool
+	SubmitConfirmed bool
+}
+
+// NewConfigureSettingsFormData initialises form data from a slice of settings.
+//
+// Expected:
+//   - settings must be a valid slice of ConfigurationSetting pointers.
+//
+// Returns:
+//   - A fully initialised ConfigureSettingsFormData ready for form binding.
+//
+// Side effects:
+//   - None.
+func NewConfigureSettingsFormData(settings []*configtypes.ConfigurationSetting) *ConfigureSettingsFormData {
+	data := &ConfigureSettingsFormData{
+		Values:     make(map[string]*string),
+		BoolValues: make(map[string]*bool),
+	}
+	for _, s := range settings {
+		switch s.Type {
+		case "bool":
+			boolVal := settingToBool(s.Value)
+			data.BoolValues[s.Key] = &boolVal
+		default:
+			strVal := settingToString(s.Value)
+			data.Values[s.Key] = &strVal
+		}
+	}
+	return data
+}
 
 // NewConfigureSettingField creates the appropriate form field for a configuration setting based on its type.
 //
@@ -21,11 +58,18 @@ func NewConfigureSettingField(
 ) Field {
 	switch setting.Type {
 	case "string":
-		return NewInput(FieldConfig{
+		cfg := FieldConfig{
 			Key:         setting.Key,
 			Title:       setting.Label,
 			Description: setting.Description,
-		}).Value(values[setting.Key])
+		}
+		switch setting.Key {
+		case "email":
+			cfg.Validate = ValidateEmail
+		case "github", "portfolio":
+			cfg.Validate = ValidateURL
+		}
+		return NewInput(cfg).Value(values[setting.Key])
 
 	case "int":
 		return NewInput(FieldConfig{
@@ -52,6 +96,12 @@ func NewConfigureSettingField(
 		return NewSelect(setting.Key, setting.Label, setting.Description, options).
 			Value(values[setting.Key])
 
+	case "list":
+		return NewInput(FieldConfig{
+			Key:         setting.Key,
+			Title:       setting.Label,
+			Description: setting.Description,
+		}).Value(values[setting.Key])
 	default:
 		return NewInput(FieldConfig{
 			Key:         setting.Key,
@@ -128,4 +178,141 @@ func ValidateInteger(val string) error {
 		return errors.New("must be a number")
 	}
 	return nil
+}
+
+// ValidateEmail checks that a string value is either empty or contains an "@" character.
+//
+// Expected: val is any string value.
+//
+// Returns: nil if val is empty or contains "@", otherwise an error.
+//
+// Side effects: none.
+func ValidateEmail(val string) error {
+	if val == "" {
+		return nil
+	}
+	if !strings.Contains(val, "@") {
+		return errors.New("must be a valid email address")
+	}
+	return nil
+}
+
+// ValidateURL checks that a string value is either empty or starts with "http://" or "https://".
+//
+// Expected: val is any string value.
+//
+// Returns: nil if val is empty or starts with a valid URL scheme, otherwise an error.
+//
+// Side effects: none.
+func ValidateURL(val string) error {
+	if val == "" {
+		return nil
+	}
+	if !strings.HasPrefix(val, "http://") && !strings.HasPrefix(val, "https://") {
+		return errors.New("must be a valid URL starting with http:// or https://")
+	}
+	return nil
+}
+
+// GetConfigureSettingChanges returns only the settings that changed from their original values.
+//
+// Expected:
+//   - settings must be a valid slice of ConfigurationSetting pointers.
+//   - data must be a valid ConfigureSettingsFormData pointer.
+//   - originalValues maps setting keys to their original string representations.
+//
+// Returns:
+//   - A map of changed keys to their type-converted new values.
+//
+// Side effects:
+//   - None.
+func GetConfigureSettingChanges(
+	settings []*configtypes.ConfigurationSetting,
+	data *ConfigureSettingsFormData,
+	originalValues map[string]string,
+) map[string]interface{} {
+	changes := make(map[string]interface{})
+	for _, s := range settings {
+		switch s.Type {
+		case "bool":
+			appendBoolChange(changes, s.Key, data.BoolValues, originalValues)
+		case "int":
+			appendIntChange(changes, s.Key, data.Values, originalValues)
+		case "list":
+			appendListChange(changes, s.Key, data.Values, originalValues)
+		default:
+			appendStringChange(changes, s.Key, data.Values, originalValues)
+		}
+	}
+	return changes
+}
+
+func settingToString(val interface{}) string {
+	if val == nil {
+		return ""
+	}
+	if sl, ok := val.([]string); ok {
+		return strings.Join(sl, ", ")
+	}
+	return fmt.Sprintf("%v", val)
+}
+
+func settingToBool(val interface{}) bool {
+	b, ok := val.(bool)
+	return ok && b
+}
+
+func appendBoolChange(changes map[string]interface{}, key string, boolValues map[string]*bool, originalValues map[string]string) {
+	boolPtr, ok := boolValues[key]
+	if !ok || boolPtr == nil {
+		return
+	}
+	current := strconv.FormatBool(*boolPtr)
+	if current != originalValues[key] {
+		changes[key] = *boolPtr
+	}
+}
+
+func appendIntChange(changes map[string]interface{}, key string, values map[string]*string, originalValues map[string]string) {
+	strPtr, ok := values[key]
+	if !ok || strPtr == nil {
+		return
+	}
+	if *strPtr == originalValues[key] {
+		return
+	}
+	iv, err := strconv.Atoi(*strPtr)
+	if err != nil {
+		return
+	}
+	changes[key] = iv
+}
+
+func appendStringChange(changes map[string]interface{}, key string, values map[string]*string, originalValues map[string]string) {
+	strPtr, ok := values[key]
+	if !ok || strPtr == nil {
+		return
+	}
+	if *strPtr != originalValues[key] {
+		changes[key] = *strPtr
+	}
+}
+
+func appendListChange(changes map[string]interface{}, key string, values map[string]*string, originalValues map[string]string) {
+	strPtr, ok := values[key]
+	if !ok || strPtr == nil {
+		return
+	}
+	if *strPtr == originalValues[key] {
+		return
+	}
+	parts := strings.Split(*strPtr, ", ")
+	var result []string
+	for _, p := range parts {
+		trimmed := strings.TrimSpace(p)
+		if trimmed != "" {
+			result = append(result, trimmed)
+		}
+	}
+	changes[key] = result
 }

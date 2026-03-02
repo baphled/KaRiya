@@ -2,7 +2,6 @@ package configure
 
 import (
 	"github.com/baphled/kariya/internal/cli/intents"
-	"github.com/baphled/kariya/internal/cli/screens"
 	configscreens "github.com/baphled/kariya/internal/cli/screens/configure"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/config"
@@ -24,15 +23,10 @@ type Intent struct {
 	selectedDomain ConfigurationDomain
 	pendingChanges map[string]interface{}
 
-	activeScreen screens.Screen
-	domainScreen *configscreens.DomainSelectScreen
+	settingsModal *configscreens.SettingsModal
 
-	editModal    *configscreens.EditSettingsModal
-	reviewModal  *configscreens.ReviewChangesModal
-	confirmModal *configscreens.ConfirmModal
-	savingModal  *feedback.Modal
-	resultModal  *feedback.Modal
-
+	savingModal   *feedback.Modal
+	resultModal   *feedback.Modal
 	modalRegistry *intents.ModalRegistry
 
 	configResult *SystemResult

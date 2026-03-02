@@ -9,7 +9,6 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/screens"
-	configscreens "github.com/baphled/kariya/internal/cli/screens/configure"
 	"github.com/baphled/kariya/internal/cli/terminal"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/config"
@@ -157,113 +156,62 @@ var _ = Describe("Configure intent internals", func() {
 		})
 	})
 
-	Describe("screen result dispatch", func() {
-		It("handles nil result", func() {
-			cmd := intent.handleScreenResult(nil)
-			Expect(cmd).To(BeNil())
+	Describe("ApplyChanges", func() {
+		It("applies changes across domains", func() {
+			changes := map[string]interface{}{
+				"log_level": "warn",
+				"theme":     "light",
+			}
+			settings := settingsFromConfig(cfg)
+			Expect(ApplyChanges(cfg, settings, changes)).To(Succeed())
+			Expect(cfg.System.LogLevel).To(Equal("warn"))
+			Expect(cfg.Display.Theme).To(Equal("light"))
 		})
 
-		It("handles non-ScreenResult", func() {
-			cmd := intent.handleScreenResult("not a screen result")
-			Expect(cmd).To(BeNil())
+		It("ignores keys not present in settings", func() {
+			changes := map[string]interface{}{
+				"nonexistent_key": "value",
+			}
+			settings := settingsFromConfig(cfg)
+			Expect(ApplyChanges(cfg, settings, changes)).To(Succeed())
+		})
+	})
+
+	Describe("settings modal flow", func() {
+		It("openSettingsModal creates modal", func() {
+			intent.clearAllModals()
+			intent.openSettingsModal()
+			Expect(intent.settingsModal).NotTo(BeNil())
 		})
 
-		It("dispatches cancel result", func() {
-			result := &screens.CancelResult{}
-			cmd := intent.handleScreenResult(result)
-			Expect(cmd).To(BeNil())
+		It("updateSettingsModal passes through messages", func() {
+			intent.openSettingsModal()
+			cmd := intent.updateSettingsModal(tea.KeyMsg{Type: tea.KeyDown})
+			_ = cmd
+			Expect(intent.settingsModal).NotTo(BeNil())
+		})
+
+		It("handles cancel from settings modal", func() {
+			intent.openSettingsModal()
+			intent.updateSettingsModal(tea.KeyMsg{Type: tea.KeyEsc})
+			Expect(intent.settingsModal).To(BeNil())
 			Expect(intent.active).To(BeFalse())
 		})
 
-		It("dispatches navigate result", func() {
-			result := &screens.NavigateResult{ResultData: DomainSystem}
-			cmd := intent.handleScreenResult(result)
+		It("handles completion from settings modal", func() {
+			intent.openSettingsModal()
+			intent.selectedDomain = DomainSystem
+			cmd := intent.updateSettingsModal(tea.KeyMsg{Type: tea.KeyCtrlS})
+			Expect(intent.settingsModal).To(BeNil())
+			Expect(intent.state).To(Equal(ConfigStateSaving))
 			Expect(cmd).NotTo(BeNil())
-			Expect(intent.state).To(Equal(ConfigStateEditSettings))
 		})
 	})
 
-	Describe("domain screen update", func() {
-		It("updates domain screen and dispatches cancel", func() {
-			cmd := intent.updateDomainScreen(tea.KeyMsg{Type: tea.KeyEsc})
-			_ = cmd
-			Expect(intent.active).To(BeFalse())
-		})
-
-		It("updates domain screen with passthrough", func() {
-			cmd := intent.updateDomainScreen(tea.KeyMsg{Type: tea.KeyDown})
-			_ = cmd
-			Expect(intent.active).To(BeTrue())
-		})
-	})
-
-	Describe("modal update flows", func() {
+	Describe("saving modal flow", func() {
 		BeforeEach(func() {
 			intent.settings = settingsFromConfig(cfg)
 			intent.selectedDomain = DomainSystem
-		})
-
-		It("edit modal passthrough", func() {
-			intent.openEditModal()
-			cmd := intent.updateEditModal(tea.KeyMsg{Type: tea.KeyDown})
-			_ = cmd
-			Expect(intent.editModal).NotTo(BeNil())
-		})
-
-		It("edit modal submit triggers review", func() {
-			intent.openEditModal()
-			cmd := intent.updateEditModal(tea.KeyMsg{Type: tea.KeyCtrlS})
-			_ = cmd
-		})
-
-		It("edit modal cancel returns to select domain", func() {
-			intent.openEditModal()
-			intent.updateEditModal(tea.KeyMsg{Type: tea.KeyEsc})
-			Expect(intent.state).To(Equal(ConfigStateSelectDomain))
-			Expect(intent.editModal).To(BeNil())
-		})
-
-		It("review modal accept triggers confirm", func() {
-			intent.pendingChanges = map[string]interface{}{"log_level": "warn"}
-			intent.openReviewModal()
-			intent.updateReviewModal(tea.KeyMsg{Type: tea.KeyEnter})
-			Expect(intent.state).To(Equal(ConfigStateConfirm))
-		})
-
-		It("review modal cancel returns to edit", func() {
-			intent.pendingChanges = map[string]interface{}{"log_level": "warn"}
-			intent.openReviewModal()
-			intent.updateReviewModal(tea.KeyMsg{Type: tea.KeyEsc})
-			Expect(intent.state).To(Equal(ConfigStateEditSettings))
-		})
-
-		It("review modal passthrough", func() {
-			intent.pendingChanges = map[string]interface{}{"log_level": "warn"}
-			intent.openReviewModal()
-			cmd := intent.updateReviewModal(tea.KeyMsg{Type: tea.KeyDown})
-			_ = cmd
-			Expect(intent.reviewModal).NotTo(BeNil())
-		})
-
-		It("confirm modal accept triggers saving", func() {
-			intent.pendingChanges = map[string]interface{}{"log_level": "warn"}
-			intent.openConfirmModal()
-			intent.updateConfirmModal(tea.KeyMsg{Type: tea.KeyEnter})
-			Expect(intent.state).To(Equal(ConfigStateSaving))
-		})
-
-		It("confirm modal cancel returns to review", func() {
-			intent.pendingChanges = map[string]interface{}{"log_level": "warn"}
-			intent.openConfirmModal()
-			intent.updateConfirmModal(tea.KeyMsg{Type: tea.KeyEsc})
-			Expect(intent.state).To(Equal(ConfigStateReviewChanges))
-		})
-
-		It("confirm modal passthrough", func() {
-			intent.openConfirmModal()
-			cmd := intent.updateConfirmModal(tea.KeyMsg{Type: tea.KeyDown})
-			_ = cmd
-			Expect(intent.confirmModal).NotTo(BeNil())
 		})
 
 		It("saving modal complete", func() {
@@ -304,28 +252,14 @@ var _ = Describe("Configure intent internals", func() {
 	})
 
 	Describe("render helpers", func() {
-		It("renders domain content", func() {
-			intent.domainScreen = configscreens.NewDomainSelectScreen([]ConfigurationDomain{DomainSystem})
-			Expect(intent.RenderDomainContent()).NotTo(BeEmpty())
-		})
-
 		It("reports all state names", func() {
 			intent.clearAllModals()
 			Expect(intent.getStateName()).To(Equal("Select Domain"))
 
-			intent.openEditModal()
-			Expect(intent.getStateName()).To(Equal("Edit Settings"))
+			intent.openSettingsModal()
+			Expect(intent.getStateName()).To(Equal("Configure"))
 
-			intent.editModal = nil
-			intent.pendingChanges = map[string]interface{}{"log_level": "warn"}
-			intent.openReviewModal()
-			Expect(intent.getStateName()).To(Equal("Review Changes"))
-
-			intent.reviewModal = nil
-			intent.openConfirmModal()
-			Expect(intent.getStateName()).To(Equal("Confirm"))
-
-			intent.confirmModal = nil
+			intent.settingsModal = nil
 			intent.savingModal = feedback.NewLoadingModal("Saving...", false)
 			Expect(intent.getStateName()).To(Equal("Saving"))
 
@@ -343,19 +277,10 @@ var _ = Describe("Configure intent internals", func() {
 			intent.clearAllModals()
 			Expect(intent.getContextHelp()).NotTo(BeEmpty())
 
-			intent.openEditModal()
+			intent.openSettingsModal()
 			Expect(intent.getContextHelp()).To(Equal(""))
 
-			intent.editModal = nil
-			intent.pendingChanges = map[string]interface{}{"log_level": "warn"}
-			intent.openReviewModal()
-			Expect(intent.getContextHelp()).To(Equal(""))
-
-			intent.reviewModal = nil
-			intent.openConfirmModal()
-			Expect(intent.getContextHelp()).To(Equal(""))
-
-			intent.confirmModal = nil
+			intent.settingsModal = nil
 			intent.savingModal = feedback.NewLoadingModal("Saving...", false)
 			Expect(intent.getContextHelp()).NotTo(BeEmpty())
 
@@ -379,23 +304,9 @@ var _ = Describe("Configure intent internals", func() {
 	})
 
 	Describe("modal adapters", func() {
-		It("renders edit modal adapter", func() {
-			intent.selectedDomain = DomainSystem
-			intent.openEditModal()
-			adapter := editModalAdapter{intent.editModal, 80, 24}
-			Expect(adapter.Render(0, 0)).NotTo(BeEmpty())
-		})
-
-		It("renders review modal adapter", func() {
-			intent.pendingChanges = map[string]interface{}{"log_level": "warn"}
-			intent.openReviewModal()
-			adapter := reviewModalAdapter{intent.reviewModal, 80, 24}
-			Expect(adapter.Render(0, 0)).NotTo(BeEmpty())
-		})
-
-		It("renders confirm modal adapter", func() {
-			intent.openConfirmModal()
-			adapter := confirmModalAdapter{intent.confirmModal, 80, 24}
+		It("renders settings modal adapter", func() {
+			intent.openSettingsModal()
+			adapter := settingsModalAdapter{intent.settingsModal, 80, 24}
 			Expect(adapter.Render(0, 0)).NotTo(BeEmpty())
 		})
 	})
@@ -415,44 +326,25 @@ var _ = Describe("Configure intent internals", func() {
 			Expect(cmd).To(BeNil())
 		})
 
-		It("routes to confirm modal", func() {
-			intent.openConfirmModal()
-			cmd := intent.routeToActiveComponent(tea.KeyMsg{Type: tea.KeyEnter})
-			_ = cmd
-		})
-
-		It("routes to review modal", func() {
-			intent.pendingChanges = map[string]interface{}{"log_level": "warn"}
-			intent.openReviewModal()
-			cmd := intent.routeToActiveComponent(tea.KeyMsg{Type: tea.KeyEnter})
-			_ = cmd
-			Expect(intent.state).To(Equal(ConfigStateConfirm))
-		})
-
-		It("routes to edit modal", func() {
-			intent.openEditModal()
+		It("routes to settings modal", func() {
+			intent.openSettingsModal()
 			cmd := intent.routeToActiveComponent(tea.KeyMsg{Type: tea.KeyDown})
 			_ = cmd
+			Expect(intent.settingsModal).NotTo(BeNil())
 		})
 
-		It("routes to domain screen", func() {
+		It("returns nil when no active component", func() {
+			intent.clearAllModals()
 			cmd := intent.routeToActiveComponent(tea.KeyMsg{Type: tea.KeyDown})
-			_ = cmd
-			Expect(intent.active).To(BeTrue())
+			Expect(cmd).To(BeNil())
 		})
 	})
 
 	Describe("window size propagation", func() {
-		It("propagates to all modals", func() {
-			intent.selectedDomain = DomainSystem
-			intent.openEditModal()
-			intent.pendingChanges = map[string]interface{}{"log_level": "warn"}
-			intent.openReviewModal()
-			intent.openConfirmModal()
+		It("propagates to settings modal", func() {
+			intent.openSettingsModal()
 			intent.handleWindowSizeMsg(tea.WindowSizeMsg{Width: 120, Height: 40})
-			Expect(intent.editModal).NotTo(BeNil())
-			Expect(intent.reviewModal).NotTo(BeNil())
-			Expect(intent.confirmModal).NotTo(BeNil())
+			Expect(intent.settingsModal).NotTo(BeNil())
 		})
 
 		It("handles non-window messages", func() {
@@ -466,14 +358,15 @@ var _ = Describe("Configure intent internals", func() {
 			Expect(result).To(BeTrue())
 		})
 
-		It("handles q key", func() {
+		It("handles q key when no settings modal", func() {
+			intent.settingsModal = nil
 			result := intent.handleKeyMsg(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
 			Expect(result).To(BeTrue())
 			Expect(intent.active).To(BeFalse())
 		})
 
-		It("suppresses q when form modals open", func() {
-			intent.openEditModal()
+		It("suppresses q when settings modal is open", func() {
+			intent.openSettingsModal()
 			result := intent.handleKeyMsg(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
 			Expect(result).To(BeFalse())
 			Expect(intent.active).To(BeTrue())
@@ -526,33 +419,21 @@ var _ = Describe("Configure intent internals", func() {
 			Expect(intent.View()).To(BeEmpty())
 		})
 
-		It("renders with edit modal overlay", func() {
-			intent.selectedDomain = DomainSystem
-			intent.openEditModal()
-			view := intent.View()
-			Expect(view).NotTo(BeEmpty())
-		})
-
-		It("renders with review modal overlay", func() {
-			intent.pendingChanges = map[string]interface{}{"log_level": "warn"}
-			intent.openReviewModal()
-			view := intent.View()
-			Expect(view).NotTo(BeEmpty())
-		})
-
-		It("renders with confirm modal overlay", func() {
-			intent.openConfirmModal()
+		It("renders with settings modal overlay", func() {
+			intent.openSettingsModal()
 			view := intent.View()
 			Expect(view).NotTo(BeEmpty())
 		})
 
 		It("renders with saving modal overlay", func() {
+			intent.clearAllModals()
 			intent.savingModal = feedback.NewLoadingModal("Saving...", false)
 			view := intent.View()
 			Expect(view).NotTo(BeEmpty())
 		})
 
 		It("renders with result modal overlay", func() {
+			intent.clearAllModals()
 			intent.resultModal = feedback.NewSuccessModal("Done")
 			view := intent.View()
 			Expect(view).NotTo(BeEmpty())
@@ -594,33 +475,28 @@ var _ = Describe("Configure intent internals", func() {
 	})
 
 	Describe("SetState", func() {
-		It("sets edit with domain", func() {
-			intent.selectedDomain = DomainSystem
+		It("sets select domain with settings modal", func() {
+			intent.SetState(ConfigStateSelectDomain)
+			Expect(intent.state).To(Equal(ConfigStateSelectDomain))
+			Expect(intent.settingsModal).NotTo(BeNil())
+		})
+
+		It("sets edit settings with settings modal", func() {
 			intent.SetState(ConfigStateEditSettings)
-			Expect(intent.editModal).NotTo(BeNil())
+			Expect(intent.state).To(Equal(ConfigStateEditSettings))
+			Expect(intent.settingsModal).NotTo(BeNil())
 		})
 
-		It("sets edit without domain", func() {
-			intent.selectedDomain = ""
-			intent.SetState(ConfigStateEditSettings)
-			Expect(intent.editModal).To(BeNil())
-		})
-
-		It("sets review with pending changes", func() {
-			intent.pendingChanges = map[string]interface{}{"log_level": "warn"}
+		It("sets review changes with settings modal", func() {
 			intent.SetState(ConfigStateReviewChanges)
-			Expect(intent.reviewModal).NotTo(BeNil())
+			Expect(intent.state).To(Equal(ConfigStateReviewChanges))
+			Expect(intent.settingsModal).NotTo(BeNil())
 		})
 
-		It("sets review without pending changes", func() {
-			intent.pendingChanges = nil
-			intent.SetState(ConfigStateReviewChanges)
-			Expect(intent.reviewModal).To(BeNil())
-		})
-
-		It("sets confirm", func() {
+		It("sets confirm with settings modal", func() {
 			intent.SetState(ConfigStateConfirm)
-			Expect(intent.confirmModal).NotTo(BeNil())
+			Expect(intent.state).To(Equal(ConfigStateConfirm))
+			Expect(intent.settingsModal).NotTo(BeNil())
 		})
 
 		It("sets saving", func() {
@@ -638,11 +514,6 @@ var _ = Describe("Configure intent internals", func() {
 			intent.SetState(ConfigStateFailed)
 			Expect(intent.resultModal).NotTo(BeNil())
 		})
-
-		It("sets select domain", func() {
-			intent.SetState(ConfigStateSelectDomain)
-			Expect(intent.state).To(Equal(ConfigStateSelectDomain))
-		})
 	})
 
 	Describe("result modal dismiss", func() {
@@ -653,14 +524,15 @@ var _ = Describe("Configure intent internals", func() {
 			Expect(intent.active).To(BeFalse())
 		})
 
-		It("dismisses failed and returns to edit", func() {
+		It("dismisses failed and reopens settings modal", func() {
 			intent.configResult = &SystemResult{Success: false}
 			intent.resultModal = feedback.NewErrorModal("Failed", "Error")
 			intent.selectedDomain = DomainSystem
 			intent.settings = settingsFromConfig(cfg)
 			cmd := intent.updateResultModal(tea.KeyMsg{Type: tea.KeyEnter})
 			Expect(cmd).NotTo(BeNil())
-			Expect(intent.state).To(Equal(ConfigStateEditSettings))
+			Expect(intent.resultModal).To(BeNil())
+			Expect(intent.settingsModal).NotTo(BeNil())
 		})
 
 		It("handles countdown for success", func() {
@@ -681,14 +553,15 @@ var _ = Describe("Configure intent internals", func() {
 			Expect(intent.active).To(BeFalse())
 		})
 
-		It("dismisses nil result as failed", func() {
+		It("dismisses nil result and reopens settings modal", func() {
 			intent.configResult = nil
 			intent.resultModal = feedback.NewErrorModal("Failed", "Error")
 			intent.selectedDomain = DomainSystem
 			intent.settings = settingsFromConfig(cfg)
 			cmd := intent.updateResultModal(tea.KeyMsg{Type: tea.KeyEnter})
 			Expect(cmd).NotTo(BeNil())
-			Expect(intent.state).To(Equal(ConfigStateEditSettings))
+			Expect(intent.resultModal).To(BeNil())
+			Expect(intent.settingsModal).NotTo(BeNil())
 		})
 	})
 
@@ -718,27 +591,32 @@ var _ = Describe("Configure intent internals", func() {
 			cmd := intent.HandleNavigate(&screens.NavigateResult{ResultData: 42})
 			Expect(cmd).To(BeNil())
 		})
+
+		It("sets selected domain from navigation", func() {
+			cmd := intent.HandleNavigate(&screens.NavigateResult{ResultData: DomainSystem})
+			Expect(cmd).To(BeNil())
+			Expect(intent.selectedDomain).To(Equal(DomainSystem))
+		})
 	})
 
-	Describe("hasFormModals", func() {
-		It("returns false when no modals", func() {
-			Expect(intent.hasFormModals()).To(BeFalse())
+	Describe("clearAllModals", func() {
+		It("clears all modal references", func() {
+			intent.openSettingsModal()
+			intent.savingModal = feedback.NewLoadingModal("Saving...", false)
+			intent.resultModal = feedback.NewSuccessModal("Done")
+			intent.clearAllModals()
+			Expect(intent.settingsModal).To(BeNil())
+			Expect(intent.savingModal).To(BeNil())
+			Expect(intent.resultModal).To(BeNil())
 		})
+	})
 
-		It("returns true with edit modal", func() {
-			intent.openEditModal()
-			Expect(intent.hasFormModals()).To(BeTrue())
-		})
-
-		It("returns true with review modal", func() {
-			intent.pendingChanges = map[string]interface{}{"log_level": "warn"}
-			intent.openReviewModal()
-			Expect(intent.hasFormModals()).To(BeTrue())
-		})
-
-		It("returns true with confirm modal", func() {
-			intent.openConfirmModal()
-			Expect(intent.hasFormModals()).To(BeTrue())
+	Describe("setCancelled", func() {
+		It("deactivates intent and clears config result", func() {
+			intent.configResult = &SystemResult{Success: true}
+			intent.setCancelled()
+			Expect(intent.active).To(BeFalse())
+			Expect(intent.configResult).To(BeNil())
 		})
 	})
 })

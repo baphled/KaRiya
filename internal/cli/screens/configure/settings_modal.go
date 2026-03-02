@@ -1,0 +1,341 @@
+package configure
+
+import (
+	"fmt"
+
+	"github.com/baphled/kariya/internal/cli/configtypes"
+	"github.com/baphled/kariya/internal/cli/forms"
+	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/containers"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+)
+
+const sectionListWidth = 16
+
+// SettingsModal is a split-panel modal overlay that displays a section
+// list on the left and a settings form on the right. It replaces the entire
+// multi-screen configure flow with a single overlay on the main menu.
+type SettingsModal struct {
+	settings       map[configtypes.ConfigurationDomain][]*configtypes.ConfigurationSetting
+	originalValues map[configtypes.ConfigurationDomain]map[string]string
+
+	domains     []configtypes.ConfigurationDomain
+	selectedIdx int
+
+	formData   map[configtypes.ConfigurationDomain]*forms.ConfigureSettingsFormData
+	activeForm forms.Form
+
+	width  int
+	height int
+
+	theme themes.Theme
+
+	completed bool
+	cancelled bool
+}
+
+// NewSettingsModal creates a new split-panel configure settings modal.
+//
+// Expected:
+//   - settings must be a valid map of configuration domains to settings.
+//   - width must be a positive integer.
+//   - height must be a positive integer.
+//
+// Returns:
+//   - A fully initialized SettingsModal ready for use.
+//
+// Side effects:
+//   - Initialises form data from settings.
+func NewSettingsModal(
+	settings map[configtypes.ConfigurationDomain][]*configtypes.ConfigurationSetting,
+	width, height int,
+) *SettingsModal {
+	allDomains := []configtypes.ConfigurationDomain{
+		configtypes.DomainSystem,
+		configtypes.DomainProfile,
+		configtypes.DomainExport,
+		configtypes.DomainUI,
+	}
+
+	var domains []configtypes.ConfigurationDomain
+	for _, d := range allDomains {
+		if domainSettings, ok := settings[d]; ok && len(domainSettings) > 0 {
+			domains = append(domains, d)
+		}
+	}
+
+	formDataMap := make(map[configtypes.ConfigurationDomain]*forms.ConfigureSettingsFormData)
+	originalValues := make(map[configtypes.ConfigurationDomain]map[string]string)
+
+	for _, domain := range domains {
+		domainSettings := settings[domain]
+		formDataMap[domain] = forms.NewConfigureSettingsFormData(domainSettings)
+
+		origMap := make(map[string]string)
+		for _, s := range domainSettings {
+			origMap[s.Key] = fmt.Sprintf("%v", s.Value)
+		}
+		originalValues[domain] = origMap
+	}
+
+	modal := &SettingsModal{
+		settings:       settings,
+		originalValues: originalValues,
+		domains:        domains,
+		selectedIdx:    0,
+		formData:       formDataMap,
+		width:          width,
+		height:         height,
+		theme:          themes.NewDefaultTheme(),
+	}
+
+	modal.rebuildActiveForm()
+	return modal
+}
+
+func (m *SettingsModal) rebuildActiveForm() {
+	if len(m.domains) == 0 {
+		m.activeForm = nil
+		return
+	}
+
+	domain := m.domains[m.selectedIdx]
+	domainSettings := m.settings[domain]
+	data := m.formData[domain]
+
+	if len(domainSettings) == 0 || data == nil {
+		m.activeForm = nil
+		return
+	}
+
+	formWidth, formHeight := m.formDimensions()
+	m.activeForm = forms.NewConfigureSettingsForm(
+		domainSettings, data.Values, data.BoolValues, formWidth, formHeight,
+	)
+
+	if m.activeForm != nil {
+		m.activeForm.Init()
+	}
+}
+
+func (m *SettingsModal) formDimensions() (int, int) {
+	modalWidth := m.width - 4
+	innerWidth := modalWidth - 4
+	formWidth := innerWidth - sectionListWidth
+	if formWidth < 30 {
+		formWidth = 30
+	}
+
+	formHeight := forms.ModalFormHeight(m.height)
+	return formWidth, formHeight
+}
+
+// Init initialises the modal.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
+func (m *SettingsModal) Init() tea.Cmd {
+	if m.activeForm != nil {
+		return m.activeForm.Init()
+	}
+	return nil
+}
+
+// Update handles messages for the modal.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - May update selected section or form state.
+func (m *SettingsModal) Update(msg tea.Msg) tea.Cmd {
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		switch keyMsg.String() {
+		case "j", "down":
+			if m.selectedIdx < len(m.domains)-1 {
+				m.selectedIdx++
+				m.rebuildActiveForm()
+			}
+			return nil
+		case "k", "up":
+			if m.selectedIdx > 0 {
+				m.selectedIdx--
+				m.rebuildActiveForm()
+			}
+			return nil
+		case "ctrl+s":
+			m.completed = true
+			return nil
+		case "esc":
+			m.cancelled = true
+			return nil
+		}
+	}
+
+	if m.activeForm != nil {
+		var cmd tea.Cmd
+		m.activeForm, cmd = forms.Update(m.activeForm, msg)
+		return cmd
+	}
+
+	return nil
+}
+
+// View renders the modal content.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
+func (m *SettingsModal) View() string {
+	leftPanel := m.renderSectionList()
+	rightPanel := m.renderFormPanel()
+
+	body := lipgloss.JoinHorizontal(lipgloss.Top, leftPanel, rightPanel)
+
+	footer := primitives.RenderHelpFooter(m.theme,
+		primitives.NavigateVimBadge(m.theme),
+		primitives.NextFieldBadge(m.theme),
+		primitives.SaveBadge(m.theme),
+		primitives.CancelBadge(m.theme),
+	)
+
+	content := lipgloss.JoinVertical(lipgloss.Left, body, "", footer)
+
+	box := containers.NewBox(m.theme).
+		Title("⚙  Configure System").
+		Content(content).
+		Width(m.width - 4)
+
+	return box.Render()
+}
+
+// Render renders the modal at the specified dimensions.
+//
+// Expected:
+//   - width must be a positive integer.
+//   - height must be a positive integer.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
+func (m *SettingsModal) Render(width, height int) string {
+	m.width = width
+	m.height = height
+	return m.View()
+}
+
+func (m *SettingsModal) renderSectionList() string {
+	var lines []string
+	for i, domain := range m.domains {
+		label := formatDomainLabel(domain)
+		if i == m.selectedIdx {
+			lines = append(lines, primitives.Title("▶ "+label, m.theme).Render())
+		} else {
+			lines = append(lines, primitives.Body("  "+label, m.theme).Render())
+		}
+	}
+
+	listContent := lipgloss.JoinVertical(lipgloss.Left, lines...)
+	panelStyle := lipgloss.NewStyle().Width(sectionListWidth)
+	return panelStyle.Render(listContent)
+}
+
+func (m *SettingsModal) renderFormPanel() string {
+	if m.activeForm == nil {
+		return primitives.Muted("No settings available.", m.theme).Render()
+	}
+	return m.activeForm.View()
+}
+
+// IsCompleted returns whether the modal was completed (saved).
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
+func (m *SettingsModal) IsCompleted() bool {
+	return m.completed
+}
+
+// IsCancelled returns whether the modal was cancelled.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
+func (m *SettingsModal) IsCancelled() bool {
+	return m.cancelled
+}
+
+// GetChanges returns the map of changed settings across all domains.
+//
+// Returns:
+//   - A map[string]interface{} value.
+//
+// Side effects:
+//   - None.
+func (m *SettingsModal) GetChanges() map[string]interface{} {
+	allChanges := make(map[string]interface{})
+	for domain, data := range m.formData {
+		domainSettings := m.settings[domain]
+		originals := m.originalValues[domain]
+		changes := forms.GetConfigureSettingChanges(domainSettings, data, originals)
+		for k, v := range changes {
+			allChanges[k] = v
+		}
+	}
+	return allChanges
+}
+
+// SetTheme updates the theme.
+//
+// Expected:
+//   - theme must be a valid theme instance.
+//
+// Side effects:
+//   - None.
+func (m *SettingsModal) SetTheme(theme themes.Theme) {
+	m.theme = theme
+}
+
+// SetDimensions updates the modal dimensions.
+//
+// Expected:
+//   - width must be a positive integer.
+//   - height must be a positive integer.
+//
+// Side effects:
+//   - None.
+func (m *SettingsModal) SetDimensions(width, height int) {
+	m.width = width
+	m.height = height
+}
+
+func formatDomainLabel(domain configtypes.ConfigurationDomain) string {
+	switch domain {
+	case configtypes.DomainSystem:
+		return "System"
+	case configtypes.DomainProfile:
+		return "Profile"
+	case configtypes.DomainExport:
+		return "Export"
+	case configtypes.DomainUI:
+		return "UI"
+	default:
+		return string(domain)
+	}
+}
