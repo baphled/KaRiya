@@ -146,5 +146,47 @@ var _ = Describe("Logger", func() {
 				Expect(tc.level.String()).To(Equal(tc.expected))
 			})
 		}
+
+		It("returns UNKNOWN for undefined log levels", func() {
+			unknownLevel := LogLevel(99)
+			Expect(unknownLevel.String()).To(Equal("UNKNOWN"))
+		})
+	})
+
+	Describe("Constructor Functions", func() {
+		It("creates a console logger at Info level", func() {
+			l := ConsoleLogger()
+			Expect(l).NotTo(BeNil())
+			Expect(l.level).To(Equal(InfoLevel))
+		})
+
+		It("creates a default logger", func() {
+			l := DefaultLogger()
+			Expect(l).NotTo(BeNil())
+			Expect(l.level).To(Equal(InfoLevel))
+		})
+
+		It("creates a file logger", func() {
+			l := FileLogger()
+			Expect(l).NotTo(BeNil())
+			Expect(l.level).To(Equal(InfoLevel))
+		})
+	})
+
+	Describe("WithFields with existing context", func() {
+		It("preserves existing context when adding new fields", func() {
+			var buf bytes.Buffer
+			l := New(&buf, DebugLevel)
+			l.SetContext("existing_key", "existing_value")
+
+			newLogger := l.WithFields(map[string]string{
+				"new_key": "new_value",
+			})
+
+			newLogger.Info("test message")
+			output := buf.String()
+			Expect(output).To(ContainSubstring("existing_key=existing_value"))
+			Expect(output).To(ContainSubstring("new_key=new_value"))
+		})
 	})
 })
