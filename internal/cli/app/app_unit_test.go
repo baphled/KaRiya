@@ -836,7 +836,7 @@ var _ = Describe("App Unit Tests", func() {
 	Describe("Intent Activation - All Types", func() {
 		// These tests ensure all intent registration factories are exercised.
 		// Menu items: 0=capture_event, 1=browse_timeline, 2=manage_skills,
-		// 3=generate_cv, 4=configure_system, 5=burst_management, 6=fact_management
+		// 3=generate_cv, 4=burst_management, 5=fact_management
 
 		It("should activate browse_timeline intent", func() {
 			// Navigate to browse_timeline (index 1).
@@ -859,8 +859,8 @@ var _ = Describe("App Unit Tests", func() {
 			Expect(cmd).NotTo(BeNil())
 		})
 
-		It("should activate configure_system intent", func() {
-			// Navigate to configure_system (index 4).
+		It("should activate burst_management intent", func() {
+			// Navigate to burst_management (index 4).
 			for range 4 {
 				model.Update(tea.KeyMsg{Type: tea.KeyDown})
 			}
@@ -871,21 +871,9 @@ var _ = Describe("App Unit Tests", func() {
 			Expect(cmd).NotTo(BeNil())
 		})
 
-		It("should activate burst_management intent", func() {
-			// Navigate to burst_management (index 5).
-			for range 5 {
-				model.Update(tea.KeyMsg{Type: tea.KeyDown})
-			}
-			newModel, cmd := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
-			model = newModel.(*app.Model)
-
-			Expect(model.GetState()).To(Equal(app.StateIntent))
-			Expect(cmd).NotTo(BeNil())
-		})
-
 		It("should activate fact_management intent", func() {
-			// Navigate to fact_management (index 6).
-			for range 6 {
+			// Navigate to fact_management (index 5).
+			for range 5 {
 				model.Update(tea.KeyMsg{Type: tea.KeyDown})
 			}
 			newModel, cmd := model.Update(tea.KeyMsg{Type: tea.KeyEnter})

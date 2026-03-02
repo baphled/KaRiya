@@ -329,9 +329,8 @@ var _ = Describe("Intent Navigation - All Intents", func() {
 		testIntentNavigation(1, "BrowseTimeline")
 		testIntentNavigation(2, "ManageSkills")
 		testIntentNavigation(3, "GenerateCV")
-		testIntentNavigation(4, "ConfigureSystem")
-		testIntentNavigation(5, "BurstManagement")
-		testIntentNavigation(6, "FactManagement")
+		testIntentNavigation(4, "BurstManagement")
+		testIntentNavigation(5, "FactManagement")
 	})
 })
 

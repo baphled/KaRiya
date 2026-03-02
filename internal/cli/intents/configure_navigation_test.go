@@ -20,24 +20,25 @@ var _ = Describe("Configure Navigation", func() {
 		})
 
 		It("should show ConfigureSystem as menu item", func() {
-			env.AssertViewContains("Configure System")
+			env.AssertViewContainsAny("Settings", ",")
 		})
 
 		It("should navigate to ConfigureSystem when selected", func() {
-			env.SelectIntentByName("configure_system")
-			env.AssertViewContainsAny("Configure", "Domain", "Select", "System", "Profile", "Export", "UI")
+			env.PressKeyRune(',')
+			env.AssertViewContainsAny("Configure System", "System", "Profile", "Export", "UI")
+			env.AssertViewContainsAny("Settings", "log", "data", "backup", "level")
 		})
 
 		It("should show context help for domain selection", func() {
-			env.SelectIntentByName("configure_system")
-			env.AssertViewContainsAny("Enter", "Esc", "Select")
+			env.PressKeyRune(',')
+			env.AssertViewContainsAny("Esc", "Ctrl+S", "Tab", "j/k")
 		})
 	})
 
 	Describe("Domain Selection State", func() {
 		BeforeEach(func() {
 			env = harness.SetupWithMemory(GinkgoT())
-			env.SelectIntentByName("configure_system")
+			env.PressKeyRune(',')
 		})
 
 		AfterEach(func() {
@@ -67,7 +68,6 @@ var _ = Describe("Configure Navigation", func() {
 		})
 
 		It("should proceed to edit settings when domain is selected", func() {
-			env.Confirm()
 			env.AssertViewContainsAny("Settings", "Edit", "log", "data", "backup", "level")
 		})
 
@@ -81,8 +81,7 @@ var _ = Describe("Configure Navigation", func() {
 	Describe("Edit Settings State", func() {
 		BeforeEach(func() {
 			env = harness.SetupWithMemory(GinkgoT())
-			env.SelectIntentByName("configure_system")
-			env.Confirm() // Select first domain (System)
+			env.PressKeyRune(',')
 		})
 
 		AfterEach(func() {
@@ -90,18 +89,17 @@ var _ = Describe("Configure Navigation", func() {
 		})
 
 		It("should show settings for selected domain", func() {
-			env.AssertViewContainsAny("log", "data", "backup", "Settings", "level", "dir")
+			env.AssertViewContainsAny("log", "data", "backup", "Settings", "level", "dir", "System", "Profile")
 		})
 
 		It("should allow navigating settings with j/k", func() {
 			env.PressKeyRune('j')
-			view := env.GetView()
-			Expect(view).NotTo(BeEmpty())
+			env.AssertViewContainsAny("Profile", "role", "audience", "Settings")
 		})
 
-		It("should go back to domain selection when pressing Escape", func() {
+		It("should close the modal when pressing Escape", func() {
 			env.Cancel()
-			env.AssertViewContainsAny("Domain", "System", "Profile", "Export", "UI")
+			env.AssertViewContains("Capture Event")
 		})
 	})
 
@@ -115,16 +113,16 @@ var _ = Describe("Configure Navigation", func() {
 		})
 
 		It("should cancel from domain selection with Escape", func() {
-			env.SelectIntentByName("configure_system")
+			env.PressKeyRune(',')
 			env.Cancel()
 			env.AssertViewContains("Capture Event")
 		})
 
-		It("should go back from edit settings to domain with Escape", func() {
-			env.SelectIntentByName("configure_system")
-			env.Confirm() // Go to edit settings
-			env.Cancel()  // Go back to domain
-			env.AssertViewContainsAny("Domain", "System", "Profile", "Export", "UI")
+		It("should close the modal after navigating domains", func() {
+			env.PressKeyRune(',')
+			env.PressKeyRune('j')
+			env.Cancel()
+			env.AssertViewContains("Capture Event")
 		})
 	})
 
@@ -138,35 +136,34 @@ var _ = Describe("Configure Navigation", func() {
 		})
 
 		It("should render domain selection without panics", func() {
-			env.SelectIntentByName("configure_system")
+			env.PressKeyRune(',')
 			view := env.GetView()
 			Expect(view).NotTo(BeEmpty())
 			Expect(view).NotTo(ContainSubstring("panic"))
 		})
 
 		It("should render edit settings without panics", func() {
-			env.SelectIntentByName("configure_system")
-			env.Confirm()
+			env.PressKeyRune(',')
 			view := env.GetView()
 			Expect(view).NotTo(BeEmpty())
 			Expect(view).NotTo(ContainSubstring("panic"))
 		})
 
 		It("should show breadcrumbs or context", func() {
-			env.SelectIntentByName("configure_system")
-			env.AssertViewContainsAny("Configure", "System", "Main Menu", "Domain")
+			env.PressKeyRune(',')
+			env.AssertViewContainsAny("Configure System", "System")
 		})
 
 		It("should show footer with navigation hints", func() {
-			env.SelectIntentByName("configure_system")
-			env.AssertViewContainsAny("Esc", "Enter", "Select")
+			env.PressKeyRune(',')
+			env.AssertViewContainsAny("Esc", "Ctrl+S", "Tab", "j/k")
 		})
 	})
 
 	Describe("Vim-style Navigation", func() {
 		BeforeEach(func() {
 			env = harness.SetupWithMemory(GinkgoT())
-			env.SelectIntentByName("configure_system")
+			env.PressKeyRune(',')
 		})
 
 		AfterEach(func() {
@@ -203,7 +200,7 @@ var _ = Describe("Configure Navigation", func() {
 	Describe("Arrow Key Navigation", func() {
 		BeforeEach(func() {
 			env = harness.SetupWithMemory(GinkgoT())
-			env.SelectIntentByName("configure_system")
+			env.PressKeyRune(',')
 		})
 
 		AfterEach(func() {
@@ -234,33 +231,28 @@ var _ = Describe("Configure Navigation", func() {
 		})
 
 		It("should allow selecting System domain", func() {
-			env.SelectIntentByName("configure_system")
-			// System is typically first
-			env.Confirm()
-			env.AssertViewContainsAny("log", "data", "backup", "Settings")
+			env.PressKeyRune(',')
+			env.AssertViewContainsAny("log", "data", "backup", "Settings", "System")
 		})
 
 		It("should allow selecting Profile domain", func() {
-			env.SelectIntentByName("configure_system")
+			env.PressKeyRune(',')
 			env.PressKeyRune('j') // Navigate to Profile
-			env.Confirm()
 			env.AssertViewContainsAny("Settings", "Profile", "role", "audience", "Edit")
 		})
 
 		It("should allow selecting Export domain", func() {
-			env.SelectIntentByName("configure_system")
+			env.PressKeyRune(',')
 			env.PressKeyRune('j')
 			env.PressKeyRune('j') // Navigate to Export
-			env.Confirm()
 			env.AssertViewContainsAny("Settings", "Export", "destination", "open", "Edit")
 		})
 
 		It("should allow selecting UI domain", func() {
-			env.SelectIntentByName("configure_system")
+			env.PressKeyRune(',')
 			env.PressKeyRune('j')
 			env.PressKeyRune('j')
 			env.PressKeyRune('j') // Navigate to UI
-			env.Confirm()
 			env.AssertViewContainsAny("Settings", "UI", "Display", "Edit")
 		})
 	})
@@ -275,20 +267,27 @@ var _ = Describe("Configure Navigation", func() {
 		})
 
 		It("should allow re-entering after cancellation", func() {
-			env.SelectIntentByName("configure_system")
+			env.PressKeyRune(',')
 			env.Cancel()
-			env.SelectIntentByName("configure_system")
-			env.AssertViewContainsAny("System", "Profile", "Export", "UI", "Domain")
+			env.PressKeyRune(',')
+			env.AssertViewContainsAny("System", "Profile", "Export", "UI")
 		})
 
-		It("should allow navigating through domains and returning", func() {
-			env.SelectIntentByName("configure_system")
-			env.Confirm() // Go to System settings
-			env.Cancel()  // Go back to domain selection
+		It("should allow navigating through domains", func() {
+			env.PressKeyRune(',')
+			env.AssertViewContainsAny("System", "Settings")
 			env.PressKeyRune('j')
-			env.Confirm() // Go to Profile settings
-			env.Cancel()  // Go back to domain selection
-			env.AssertViewContainsAny("System", "Profile", "Export", "UI", "Domain")
+			env.AssertViewContainsAny("Profile", "role", "audience")
+			env.PressKeyRune('j')
+			env.AssertViewContainsAny("Export", "destination")
+			env.PressKeyRune('k')
+			env.AssertViewContainsAny("Profile", "role", "audience")
+		})
+
+		It("should close after saving with Ctrl+S", func() {
+			env.PressKeyRune(',')
+			env.PressKey(tea.KeyCtrlS)
+			env.AssertViewContains("Capture Event")
 		})
 	})
 

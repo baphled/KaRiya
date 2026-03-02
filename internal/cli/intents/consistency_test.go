@@ -1,9 +1,10 @@
-package intents
+package intents_test
 
 import (
-	"context"
 	"strings"
 
+	"github.com/baphled/kariya/internal/cli/intents/configure"
+	"github.com/baphled/kariya/internal/config"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -27,9 +28,12 @@ var _ = Describe("StandardView Consistency", func() {
 
 	Describe("ConfigureSystem", func() {
 		It("should use StandardView patterns", func() {
-			ctx := context.Background()
-
-			intent, err := NewConfigureSystemIntent(ctx)
+			cfg := config.DefaultConfig()
+			intentCtx := &configure.IntentContext{
+				Cfg:      cfg,
+				Settings: configure.SettingsFromConfig(cfg),
+			}
+			intent, err := configure.NewIntent(intentCtx)
 			Expect(err).NotTo(HaveOccurred())
 
 			intent.Init()
@@ -58,9 +62,16 @@ var _ = Describe("All Intents Initialization", func() {
 		// GenerateCV Entry is in internal/cli/intents/generatecv/
 		Entry("ConfigureSystem",
 			"ConfigureSystem",
-			func() (interface{}, error) { return NewConfigureSystemIntent(context.Background()) },
-			func(i interface{}) { _ = i.(*ConfigureSystemIntent).Init() }, //nolint:errcheck // Init returns tea.Cmd which is intentionally discarded in tests
-			func(i interface{}) string { return i.(*ConfigureSystemIntent).View() },
+			func() (interface{}, error) {
+				cfg := config.DefaultConfig()
+				intentCtx := &configure.IntentContext{
+					Cfg:      cfg,
+					Settings: configure.SettingsFromConfig(cfg),
+				}
+				return configure.NewIntent(intentCtx)
+			},
+			func(i interface{}) { _ = i.(*configure.Intent).Init() }, //nolint:errcheck // Init returns tea.Cmd which is intentionally discarded in tests
+			func(i interface{}) string { return i.(*configure.Intent).View() },
 		),
 	)
 })

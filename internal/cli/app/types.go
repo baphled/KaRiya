@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/baphled/kariya/internal/cli/intents"
+	configscreens "github.com/baphled/kariya/internal/cli/screens/configure"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/terminal"
 	"github.com/baphled/kariya/internal/cli/themes"
@@ -66,7 +67,8 @@ type Model struct {
 
 	ctx context.Context
 
-	infoModal *feedback.InfoModal
+	infoModal   *feedback.InfoModal
+	configModal *configscreens.SettingsModal
 
 	initialScreen      Screen
 	initialCaptureMode string

@@ -1,9 +1,12 @@
 //nolint:errcheck // Benchmark tests - error handling not relevant for performance measurement.
-package intents
+package intents_test
 
 import (
-	"context"
 	"testing"
+
+	"github.com/baphled/kariya/internal/cli/intents"
+	"github.com/baphled/kariya/internal/cli/intents/configure"
+	"github.com/baphled/kariya/internal/config"
 )
 
 // CaptureEvent benchmarks have been moved to internal/cli/intents/captureevent/benchmarks_test.go
@@ -14,19 +17,26 @@ import (
 
 // BenchmarkConfigureSystemInit benchmarks ConfigureSystem intent initialization.
 func BenchmarkConfigureSystemInit(b *testing.B) {
-	ctx := context.Background()
-
 	b.ResetTimer()
 	for range b.N {
-		intent, _ := NewConfigureSystemIntent(ctx)
+		cfg := config.DefaultConfig()
+		intentCtx := &configure.IntentContext{
+			Cfg:      cfg,
+			Settings: configure.SettingsFromConfig(cfg),
+		}
+		intent, _ := configure.NewIntent(intentCtx)
 		_ = intent.Init()
 	}
 }
 
 // BenchmarkConfigureSystemView benchmarks ConfigureSystem intent view rendering.
 func BenchmarkConfigureSystemView(b *testing.B) {
-	ctx := context.Background()
-	intent, _ := NewConfigureSystemIntent(ctx)
+	cfg := config.DefaultConfig()
+	intentCtx := &configure.IntentContext{
+		Cfg:      cfg,
+		Settings: configure.SettingsFromConfig(cfg),
+	}
+	intent, _ := configure.NewIntent(intentCtx)
 
 	b.ResetTimer()
 	for range b.N {
@@ -36,10 +46,15 @@ func BenchmarkConfigureSystemView(b *testing.B) {
 
 // BenchmarkIntentRouterActivation benchmarks IntentRouter intent activation.
 func BenchmarkIntentRouterActivation(b *testing.B) {
-	router := NewDefaultIntentRouter()
+	router := intents.NewDefaultIntentRouter()
 	//nolint:errcheck // Benchmark setup - error handling not relevant.
-	router.RegisterIntent("test", func() Intent {
-		intent, _ := NewConfigureSystemIntent(b.Context())
+	router.RegisterIntent("test", func() intents.Intent {
+		cfg := config.DefaultConfig()
+		intentCtx := &configure.IntentContext{
+			Cfg:      cfg,
+			Settings: configure.SettingsFromConfig(cfg),
+		}
+		intent, _ := configure.NewIntent(intentCtx)
 		return intent
 	})
 
@@ -53,8 +68,8 @@ func BenchmarkIntentRouterActivation(b *testing.B) {
 func BenchmarkIntentResultCreation(b *testing.B) {
 	b.ResetTimer()
 	for range b.N {
-		_ = &IntentResult[interface{}]{
-			Status: Completed,
+		_ = &intents.IntentResult[interface{}]{
+			Status: intents.Completed,
 			Data:   nil,
 			Error:  nil,
 		}
@@ -63,8 +78,8 @@ func BenchmarkIntentResultCreation(b *testing.B) {
 
 // BenchmarkIntentResultMetadata benchmarks IntentResult metadata operations.
 func BenchmarkIntentResultMetadata(b *testing.B) {
-	result := &IntentResult[interface{}]{
-		Status:   Completed,
+	result := &intents.IntentResult[interface{}]{
+		Status:   intents.Completed,
 		Data:     nil,
 		Error:    nil,
 		Metadata: make(map[string]interface{}),

@@ -1,7 +1,10 @@
 package app
 
 import (
+	"github.com/baphled/kariya/internal/cli/intents/configure"
+	configscreens "github.com/baphled/kariya/internal/cli/screens/configure"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
+	"github.com/baphled/kariya/internal/config"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -23,6 +26,8 @@ func (m *Model) handleMenuInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 	case keyEnter, keySpace:
 		return m.handleMenuSelection()
+	case keySettings:
+		return m.openConfigModal()
 	}
 	return m, nil
 }
@@ -75,4 +80,44 @@ func (m *Model) handleIntentInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 
 	return m, cmd
+}
+
+func (m *Model) openConfigModal() (tea.Model, tea.Cmd) {
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		cfg = config.DefaultConfig()
+	}
+	settings := configure.SettingsFromConfig(cfg)
+	m.configModal = configscreens.NewSettingsModal(settings, m.width, m.height)
+	m.configModal.SetTheme(m.theme)
+	cmd := m.configModal.Init()
+	return m, cmd
+}
+
+func (m *Model) updateConfigModal(msg tea.Msg) (tea.Model, tea.Cmd) {
+	cmd := m.configModal.Update(msg)
+	if m.configModal.IsCompleted() {
+		m.saveConfigChanges()
+		m.configModal = nil
+	}
+	if m.configModal != nil && m.configModal.IsCancelled() {
+		m.configModal = nil
+	}
+	return m, cmd
+}
+
+func (m *Model) saveConfigChanges() {
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		cfg = config.DefaultConfig()
+	}
+	settings := configure.SettingsFromConfig(cfg)
+	changes := m.configModal.GetChanges()
+	if err := configure.ApplyChanges(cfg, settings, changes); err != nil {
+		m.logger.Error("Failed to apply config changes: %v", err)
+		return
+	}
+	if err := config.SaveConfig(cfg); err != nil {
+		m.logger.Error("Failed to save config: %v", err)
+	}
 }
