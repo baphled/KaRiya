@@ -21,7 +21,7 @@ var _ = Describe("Repositories", func() {
 	var repos *Repositories
 
 	BeforeEach(func() {
-		repos = &Repositories{}
+		repos = NewRepositories()
 	})
 
 	Describe("SetCloser", func() {

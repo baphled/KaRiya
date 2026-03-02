@@ -14,6 +14,11 @@ type Repositories struct {
 	closer io.Closer
 }
 
+// NewRepositories creates a new empty Repositories instance.
+func NewRepositories() *Repositories {
+	return &Repositories{}
+}
+
 // SetCloser sets the closer used to release underlying resources (e.g. database connections).
 //
 // Expected:
