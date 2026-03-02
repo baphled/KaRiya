@@ -632,4 +632,67 @@ var _ = Describe("ConfigWizardModal", func() {
 			Expect(config.ProfileID).To(Equal("profile-1"))
 		})
 	})
+
+	Describe("Data Setters", func() {
+		BeforeEach(func() {
+			modal = modals.NewConfigWizardModal(120, 40)
+		})
+
+		It("SetTechnology should update technology field", func() {
+			modal.SetTechnology("Go")
+
+			config := modal.GetConfigData()
+			Expect(config.Technology).To(Equal("Go"))
+		})
+
+		It("SetAudience should update audience field", func() {
+			modal.SetAudience("Technical Leaders")
+
+			config := modal.GetConfigData()
+			Expect(config.Audience).To(Equal("Technical Leaders"))
+		})
+
+		It("SetTechFocus should update technology focus", func() {
+			modal.SetTechFocus("Backend Development")
+
+			config := modal.GetConfigData()
+			Expect(config.TechFocus).To(Equal("Backend Development"))
+		})
+
+		It("SetFocusArea should update focus area", func() {
+			modal.SetFocusArea("Architecture Design")
+
+			config := modal.GetConfigData()
+			Expect(config.FocusArea).To(Equal("Architecture Design"))
+		})
+
+		It("SetSkillsFormat should update skills format", func() {
+			modal.SetSkillsFormat("detailed")
+
+			config := modal.GetConfigData()
+			Expect(config.SkillsFormat).To(Equal("detailed"))
+		})
+
+		It("SetSkillsLimit should update skills limit", func() {
+			modal.SetSkillsLimit(15)
+
+			config := modal.GetConfigData()
+			Expect(config.SkillsLimit).To(Equal(15))
+		})
+
+		It("SetCVLength should update CV length", func() {
+			modal.SetCVLength("2-pages")
+
+			config := modal.GetConfigData()
+			Expect(config.CVLength).To(Equal("2-pages"))
+		})
+
+		It("SetTechnologies should update technologies slice", func() {
+			techs := []string{"Go", "Rust", "Python"}
+			modal.SetTechnologies(techs)
+
+			config := modal.GetConfigData()
+			Expect(config.Technologies).To(Equal(techs))
+		})
+	})
 })
