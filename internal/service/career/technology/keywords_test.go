@@ -410,3 +410,21 @@ var _ = Describe("Keywords", func() {
 		})
 	})
 })
+
+var _ = Describe("GetKeywordMap", func() {
+	It("should return all keywords as a map keyed by keyword string", func() {
+		keywordMap := technology.GetKeywordMap()
+		Expect(keywordMap).NotTo(BeEmpty())
+		Expect(keywordMap).To(HaveLen(len(technology.Keywords)))
+	})
+
+	It("should allow lookup of keyword entries by keyword string", func() {
+		keywordMap := technology.GetKeywordMap()
+		// Pick a known keyword from the Keywords slice
+		if len(technology.Keywords) > 0 {
+			expectedEntry := technology.Keywords[0]
+			Expect(keywordMap).To(HaveKey(expectedEntry.Keyword))
+			Expect(keywordMap[expectedEntry.Keyword]).To(Equal(expectedEntry))
+		}
+	})
+})
