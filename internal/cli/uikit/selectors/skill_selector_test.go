@@ -2,8 +2,8 @@ package selectors_test
 
 import (
 	"github.com/baphled/kariya/internal/cli/uikit/selectors"
-	"github.com/baphled/kariya/internal/testutil/fixtures"
 	domain "github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )

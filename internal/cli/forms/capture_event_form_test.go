@@ -1,6 +1,8 @@
 package forms_test
 
 import (
+	"time"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -111,8 +113,11 @@ var _ = Describe("CaptureEventForm", func() {
 		It("extracts form data from an event", func() {
 			event := fixtures.EventFactory.MustCreate().(*career.Event)
 			event.Text = "Delivered a major feature"
+			event.Date = time.Date(2024, 6, 15, 0, 0, 0, 0, time.UTC)
 			event.Company = "Acme Corp"
 			event.Project = "Phoenix"
+			event.Tags = []string{"delivery", "feature"}
+			event.Categories = []string{"engineering"}
 
 			data := forms.GetCaptureEventFormData(event)
 
