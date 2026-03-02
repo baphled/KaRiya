@@ -297,6 +297,67 @@ var _ = Describe("Validators", func() {
 		})
 	})
 
+	Describe("TagName", func() {
+		It("should pass for valid tag names", func() {
+			err := forms.TagName("deployment")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should pass for empty strings", func() {
+			err := forms.TagName("")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should pass for whitespace-only strings", func() {
+			err := forms.TagName("   ")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should pass for names with hyphens and underscores", func() {
+			err := forms.TagName("my-tag_name")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should fail for names with special characters", func() {
+			err := forms.TagName("tag@name!")
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should fail for names exceeding 50 characters", func() {
+			longTag := "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+			err := forms.TagName(longTag)
+			Expect(err).To(HaveOccurred())
+		})
+	})
+
+	Describe("AudienceName", func() {
+		It("should pass for valid audience names", func() {
+			err := forms.AudienceName("Engineering Managers")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should fail for empty names", func() {
+			err := forms.AudienceName("")
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should fail for single character names", func() {
+			err := forms.AudienceName("A")
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should pass for exactly 2 character names", func() {
+			err := forms.AudienceName("AB")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should fail for names exceeding 100 characters", func() {
+			longName := string(make([]byte, 101))
+			err := forms.AudienceName(longName)
+			Expect(err).To(HaveOccurred())
+		})
+	})
+
 	Describe("OneOf", func() {
 		It("should pass when value is in allowed list", func() {
 			validator := forms.OneOf([]string{"quick", "manual", "csv"})
