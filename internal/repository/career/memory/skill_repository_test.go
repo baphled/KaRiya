@@ -532,6 +532,56 @@ var _ = Describe("SkillRepository", func() {
 		})
 	})
 
+	Describe("GetSkillsForEvents", func() {
+		It("returns empty list when given empty event IDs slice", func() {
+			skills, err := skillRepo.GetSkillsForEvents(ctx, []string{})
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(skills).To(BeEmpty())
+		})
+
+		It("returns empty list when no skills are associated with given events", func() {
+			event1 := fixtures.EventWith("event-1", "Work description", "", "")
+			event2 := fixtures.EventWith("event-2", "Another work description", "", "")
+			eventRepo.Create(ctx, event1)
+			eventRepo.Create(ctx, event2)
+
+			skills, err := skillRepo.GetSkillsForEvents(ctx, []string{"event-1", "event-2"})
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(skills).To(BeEmpty())
+		})
+
+		It("returns all unique skills linked to multiple events", func() {
+			event1 := fixtures.EventWith("event-1", "Go and Docker work", "", "")
+			event2 := fixtures.EventWith("event-2", "Go and Kubernetes work", "", "")
+			eventRepo.Create(ctx, event1)
+			eventRepo.Create(ctx, event2)
+
+			goSkill := fixtures.SkillWith("skill-go", "Go", "backend", "")
+			dockerSkill := fixtures.SkillWith("skill-docker", "Docker", "devops", "")
+			k8sSkill := fixtures.SkillWith("skill-k8s", "Kubernetes", "devops", "")
+			skillRepo.Create(ctx, goSkill)
+			skillRepo.Create(ctx, dockerSkill)
+			skillRepo.Create(ctx, k8sSkill)
+
+			eventRepo.LinkSkill(ctx, "event-1", "skill-go")
+			eventRepo.LinkSkill(ctx, "event-1", "skill-docker")
+			eventRepo.LinkSkill(ctx, "event-2", "skill-go")
+			eventRepo.LinkSkill(ctx, "event-2", "skill-k8s")
+
+			skills, err := skillRepo.GetSkillsForEvents(ctx, []string{"event-1", "event-2"})
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(skills).To(HaveLen(3))
+
+			names := []string{skills[0].Name, skills[1].Name, skills[2].Name}
+			Expect(names).To(ContainElement("Go"))
+			Expect(names).To(ContainElement("Docker"))
+			Expect(names).To(ContainElement("Kubernetes"))
+		})
+	})
+
 	Describe("DisassociateSkillFromEvent", func() {
 		It("removes the association between skill and event", func() {
 			event := fixtures.EventWith("e1", "Built Go microservice with Docker", "", "")
