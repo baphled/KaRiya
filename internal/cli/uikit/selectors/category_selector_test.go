@@ -2,6 +2,7 @@ package selectors_test
 
 import (
 	"github.com/baphled/kariya/internal/cli/uikit/selectors"
+	"github.com/baphled/kariya/internal/service/career/classification"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -328,6 +329,53 @@ var _ = Describe("CategorySelector", func() {
 			Expect(selector.SelectCategory("technical")).To(Succeed())
 			Expect(selector.IsSelected("Technical")).To(BeTrue())
 			Expect(selector.IsSelected("TECHNICAL")).To(BeTrue())
+		})
+
+		Describe("MapToClassificationCategories", func() {
+			It("should map all known categories", func() {
+				categories := []string{
+					"technical", "leadership", "product", "consulting",
+					"research", "mentoring", "communication", "collaboration",
+					"problem-solving", "project-management", "architecture",
+				}
+				result := selectors.MapToClassificationCategories(categories)
+				Expect(result).To(HaveLen(11))
+				Expect(result).To(ContainElement(classification.TechnicalCompetency))
+				Expect(result).To(ContainElement(classification.LeadershipCompetency))
+				Expect(result).To(ContainElement(classification.ProductCompetency))
+				Expect(result).To(ContainElement(classification.ConsultingCompetency))
+				Expect(result).To(ContainElement(classification.ResearchCompetency))
+				Expect(result).To(ContainElement(classification.MentoringCompetency))
+				Expect(result).To(ContainElement(classification.CommunicationCompetency))
+				Expect(result).To(ContainElement(classification.CollaborationCompetency))
+				Expect(result).To(ContainElement(classification.ProblemSolvingCompetency))
+				Expect(result).To(ContainElement(classification.ProjectManagementCompetency))
+				Expect(result).To(ContainElement(classification.ArchitectureCompetency))
+			})
+
+			It("should return empty slice for empty input", func() {
+				result := selectors.MapToClassificationCategories([]string{})
+				Expect(result).To(BeEmpty())
+			})
+
+			It("should skip unknown categories", func() {
+				result := selectors.MapToClassificationCategories([]string{"unknown", "invalid"})
+				Expect(result).To(BeEmpty())
+			})
+
+			It("should handle case-insensitive input", func() {
+				result := selectors.MapToClassificationCategories([]string{"TECHNICAL", "Leadership"})
+				Expect(result).To(HaveLen(2))
+				Expect(result).To(ContainElement(classification.TechnicalCompetency))
+				Expect(result).To(ContainElement(classification.LeadershipCompetency))
+			})
+
+			It("should handle mixed valid and invalid categories", func() {
+				result := selectors.MapToClassificationCategories([]string{"technical", "invalid", "product"})
+				Expect(result).To(HaveLen(2))
+				Expect(result).To(ContainElement(classification.TechnicalCompetency))
+				Expect(result).To(ContainElement(classification.ProductCompetency))
+			})
 		})
 	})
 })

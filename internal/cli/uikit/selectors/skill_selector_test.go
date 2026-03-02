@@ -175,6 +175,20 @@ var _ = Describe("SkillSelector", func() {
 			Expect(filtered).To(HaveLen(1))
 			Expect(filtered[0].Name).To(Equal("Python"))
 		})
+
+		It("should return multiple matching skills sorted by name", func() {
+			multiSkills := []*domain.Skill{
+				fixtures.SkillWith("react", "React", "frontend", "expert"),
+				fixtures.SkillWith("ruby", "Ruby", "backend", "advanced"),
+				fixtures.SkillWith("rust", "Rust", "systems", "intermediate"),
+			}
+			multiSelector := selectors.NewSkillSelector(multiSkills)
+			filtered := multiSelector.FilterSkills("r")
+			Expect(filtered).To(HaveLen(3))
+			Expect(filtered[0].Name).To(Equal("React"))
+			Expect(filtered[1].Name).To(Equal("Ruby"))
+			Expect(filtered[2].Name).To(Equal("Rust"))
+		})
 	})
 
 	Describe("GetSkillByID", func() {

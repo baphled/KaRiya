@@ -224,4 +224,44 @@ var _ = Describe("TagSelector", func() {
 			Expect(afterDeselection).To(Equal(originalOrder))
 		})
 	})
+
+	Describe("SetSelectedTags", func() {
+		It("should set valid tags directly", func() {
+			selector.SetSelectedTags([]string{"technical", "leadership", "product"})
+			Expect(selector.SelectedTags()).To(HaveLen(3))
+			Expect(selector.SelectedTags()).To(ContainElements("technical", "leadership", "product"))
+		})
+
+		It("should silently ignore invalid tags", func() {
+			selector.SetSelectedTags([]string{"technical", "invalid-tag", "leadership"})
+			Expect(selector.SelectedTags()).To(HaveLen(2))
+			Expect(selector.SelectedTags()).To(ContainElements("technical", "leadership"))
+		})
+
+		It("should enforce max 8 tags limit", func() {
+			duplicatedTags := []string{
+				"project", "achievement", "leadership", "technical",
+				"consulting", "research", "product", "mentoring",
+				"technical",
+			}
+			selector.SetSelectedTags(duplicatedTags)
+			Expect(len(selector.SelectedTags())).To(BeNumerically("<=", 8))
+		})
+
+		It("should replace previous selections", func() {
+			Expect(selector.SelectTag("technical")).To(Succeed())
+			Expect(selector.SelectTag("leadership")).To(Succeed())
+
+			selector.SetSelectedTags([]string{"product", "research"})
+			Expect(selector.SelectedTags()).To(HaveLen(2))
+			Expect(selector.SelectedTags()).To(ContainElements("product", "research"))
+			Expect(selector.IsSelected("technical")).To(BeFalse())
+		})
+
+		It("should handle empty list", func() {
+			Expect(selector.SelectTag("technical")).To(Succeed())
+			selector.SetSelectedTags([]string{})
+			Expect(selector.SelectedTags()).To(BeEmpty())
+		})
+	})
 })
