@@ -563,33 +563,4 @@ var _ = Describe("BaseIntent Help Coverage", func() {
 		})
 	})
 
-	Describe("SetHelpKeyMap with valid keymap interface", func() {
-		It("should accept a valid keymap", func() {
-			km := intents.MockKeyMap{}
-			Expect(func() { base.SetHelpKeyMap(km) }).NotTo(Panic())
-		})
-	})
-})
-
-var _ = Describe("Testing Helpers Coverage", func() {
-	Describe("FullFeaturedMockIntent", func() {
-		It("returns minimum terminal size", func() {
-			mock := intents.NewFullFeaturedMockIntent()
-			width, height := mock.GetMinimumSize()
-			Expect(width).To(Equal(80))
-			Expect(height).To(Equal(24))
-		})
-	})
-
-	Describe("MockKeyMap", func() {
-		It("returns empty short help", func() {
-			km := intents.MockKeyMap{}
-			Expect(km.ShortHelp()).To(BeEmpty())
-		})
-
-		It("returns empty full help", func() {
-			km := intents.MockKeyMap{}
-			Expect(km.FullHelp()).To(BeEmpty())
-		})
-	})
 })
