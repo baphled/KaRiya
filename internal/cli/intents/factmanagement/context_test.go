@@ -272,6 +272,15 @@ var _ = Describe("Context", func() {
 				pageFacts := intentCtx.GetPageFacts()
 				Expect(pageFacts).To(HaveLen(5))
 			})
+
+			It("should return empty when page exceeds data range", func() {
+				mockRepo.facts = testFacts
+				intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
+				_ = intentCtx.LoadFacts() //nolint:errcheck // test setup
+				intentCtx.CurrentPage = 5
+				pageFacts := intentCtx.GetPageFacts()
+				Expect(pageFacts).To(BeEmpty())
+			})
 		})
 
 		Describe("Form Error Handling", func() {
@@ -478,6 +487,85 @@ var _ = Describe("Context", func() {
 			It("should ignore invalid index", func() {
 				intentCtx.SelectFact(100)
 				Expect(intentCtx.SelectedFact).To(Equal(testFacts[0]))
+			})
+		})
+
+		Describe("UpdateFact", func() {
+			var (
+				intentCtx  *factmanagement.IntentContext
+				updateFact *career.Fact
+			)
+
+			BeforeEach(func() {
+				updateFact = fixtures.Fact("fact-1", "event-1")
+				updateFact.Text = "Test fact for updates"
+				mockRepo.facts = []*career.Fact{updateFact}
+				intentCtx = factmanagement.NewIntentContext(ctx, mockRepo)
+				_ = intentCtx.LoadFacts() //nolint:errcheck // test setup
+			})
+
+			Context("with nil repository", func() {
+				It("should return service not available error", func() {
+					intentCtx.FactRepository = nil
+					err := intentCtx.UpdateFact(updateFact)
+					Expect(err).To(Equal(factmanagement.ErrServiceNotAvailable))
+				})
+			})
+
+			Context("with invalid fact data", func() {
+				It("should return validation error", func() {
+					invalidFact := fixtures.FactWith("bad-fact", "")
+					err := intentCtx.UpdateFact(invalidFact)
+					Expect(err).To(HaveOccurred())
+				})
+			})
+
+			Context("when repository update fails", func() {
+				It("should propagate the repository error", func() {
+					mockRepo.updateErr = errors.New("update failed")
+					err := intentCtx.UpdateFact(updateFact)
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("update failed"))
+				})
+			})
+
+			Context("when fact exists in the collection", func() {
+				It("should update the in-memory fact", func() {
+					updated := fixtures.Fact("fact-1", "event-1")
+					updated.Text = "Updated text for coverage"
+					updated.RoleFit = "senior_ic"
+					err := intentCtx.UpdateFact(updated)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(intentCtx.Facts[0].Text).To(Equal("Updated text for coverage"))
+				})
+			})
+		})
+
+		Describe("CreateFact", func() {
+			var intentCtx *factmanagement.IntentContext
+
+			BeforeEach(func() {
+				intentCtx = factmanagement.NewIntentContext(ctx, mockRepo)
+			})
+
+			Context("with invalid fact data", func() {
+				It("should return validation error", func() {
+					invalidFact := fixtures.FactWith("bad-fact", "")
+					err := intentCtx.CreateFact(invalidFact)
+					Expect(err).To(HaveOccurred())
+				})
+			})
+
+			Context("when repository create fails", func() {
+				It("should propagate the repository error", func() {
+					mockRepo.createErr = errors.New("create failed")
+					validFact := fixtures.Fact("new-fact", "event-1")
+					validFact.Text = "Valid fact for creation"
+					validFact.RoleFit = "senior_ic"
+					err := intentCtx.CreateFact(validFact)
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("create failed"))
+				})
 			})
 		})
 	})
