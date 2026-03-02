@@ -389,3 +389,15 @@ var _ = Describe("KeyMaps", func() {
 		})
 	})
 })
+
+var _ = Describe("NewCombinedFormKeyMap", func() {
+	It("should create a CombinedKeyMap with provided global and form keymaps", func() {
+		global := DefaultGlobalKeyMap()
+		form := DefaultFormKeyMap()
+
+		combined := NewCombinedFormKeyMap(global, form)
+
+		Expect(combined.Global).To(Equal(global))
+		Expect(combined.Form).To(Equal(form))
+	})
+})
