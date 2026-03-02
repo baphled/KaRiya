@@ -325,7 +325,7 @@ var _ = Describe("Coverage Extended", func() {
 	Describe("showBurstFactsModal with service", func() {
 		It("should load facts from service", func() {
 			mockService := mocks.NewBurstServiceMock().
-				SetExtractedFacts([]career.Fact{{ID: "f1", Text: "Test fact"}})
+				SetExtractedFacts([]career.Fact{*fixtures.FactWith("f1", "Test fact")})
 
 			burst := fixtures.BurstConfirmed("b-facts-svc", "e1", "e2")
 			burst.Name = "Facts Svc Test"
@@ -1627,8 +1627,8 @@ var _ = Describe("Coverage Extended", func() {
 		It("should extract and save facts successfully", func() {
 			mockService := mocks.NewBurstServiceMock().
 				SetExtractedFacts([]career.Fact{
-					{ID: "f1", Text: "Fact one"},
-					{ID: "f2", Text: "Fact two"},
+					*fixtures.FactWith("f1", "Fact one"),
+					*fixtures.FactWith("f2", "Fact two"),
 				})
 
 			repo := careermemory.NewBurstRepository()
