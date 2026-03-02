@@ -118,7 +118,6 @@ func RegisterSkillsSteps(sc *godog.ScenarioContext) {
 	// Navigation actions - skills-specific
 	sc.Step(`^I press "a" to add skill$`, iPressAToAddSkill)
 	sc.Step(`^I press "i" to infer skills$`, iPressIToInferSkills)
-	sc.Step(`^I press "d" to delete$`, skillsPressDToDelete)
 	sc.Step(`^I press "s" to view events$`, skillsPressSToViewEvents)
 	sc.Step(`^I press "/" to search$`, skillsPressSlashToSearch)
 	sc.Step(`^I press enter to view event details$`, iPressEnterToViewEventDetails)
@@ -163,9 +162,9 @@ func RegisterSkillsSteps(sc *godog.ScenarioContext) {
 // Data setup functions
 
 func iHaveNSkillsInMyProfile(ctx context.Context, count int) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	categories := []string{"backend", "database", "cloud", "devops", "testing"}
 	for i := range count {
@@ -179,9 +178,9 @@ func iHaveNSkillsInMyProfile(ctx context.Context, count int) (context.Context, e
 }
 
 func iHaveASkillWithCategory(ctx context.Context, name, category string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	skill := &career.Skill{
 		Name:     name,
@@ -190,7 +189,7 @@ func iHaveASkillWithCategory(ctx context.Context, name, category string) (contex
 
 	// Create skill in repository (which generates an ID and modifies skill in place)
 	skillRepo := env.Service.GetSkillRepository()
-	err := skillRepo.Create(env.Ctx, skill)
+	err = skillRepo.Create(env.Ctx, skill)
 	if err != nil {
 		return ctx, err
 	}
@@ -204,9 +203,9 @@ func iHaveASkillWithCategory(ctx context.Context, name, category string) (contex
 }
 
 func iHaveASkillWithCategoryAndLevel(ctx context.Context, name, category, level string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	skill := &career.Skill{
 		Name:     name,
@@ -218,9 +217,9 @@ func iHaveASkillWithCategoryAndLevel(ctx context.Context, name, category, level 
 }
 
 func iHaveASkillWithCategoryAndYears(ctx context.Context, name, category, years string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	var yearsInt int
 	if _, err := fmt.Sscanf(years, "%d", &yearsInt); err != nil {
@@ -236,13 +235,14 @@ func iHaveASkillWithCategoryAndYears(ctx context.Context, name, category, years 
 }
 
 func iHaveAnEventThatUsesSkill(ctx context.Context, description, skillName string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 
 	skillRepo := env.Service.GetSkillRepository()
-	skills, err := skillRepo.List(env.Ctx, nil)
+	var skills []*career.Skill
+	skills, err = skillRepo.List(env.Ctx, nil)
 	if err != nil {
 		return ctx, fmt.Errorf("failed to list skills: %w", err)
 	}
@@ -266,13 +266,14 @@ func iHaveAnEventThatUsesSkill(ctx context.Context, description, skillName strin
 }
 
 func iHaveNEventsThatUseSkill(ctx context.Context, count int, skillName string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 
 	skillRepo := env.Service.GetSkillRepository()
-	skills, err := skillRepo.List(env.Ctx, nil)
+	var skills []*career.Skill
+	skills, err = skillRepo.List(env.Ctx, nil)
 	if err != nil {
 		return ctx, fmt.Errorf("failed to list skills: %w", err)
 	}
@@ -300,9 +301,9 @@ func iHaveNEventsThatUseSkill(ctx context.Context, count int, skillName string) 
 // View assertion functions
 
 func iShouldSeeAListOfSkills(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -314,9 +315,9 @@ func iShouldSeeAListOfSkills(ctx context.Context) error {
 }
 
 func iShouldStillBeOnTheSkillsList(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -328,9 +329,9 @@ func iShouldStillBeOnTheSkillsList(ctx context.Context) error {
 }
 
 func iShouldSeeTheAddSkillForm(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -343,9 +344,9 @@ func iShouldSeeTheAddSkillForm(ctx context.Context) error {
 }
 
 func iShouldSeeTheEditSkillForm(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -358,9 +359,9 @@ func iShouldSeeTheEditSkillForm(ctx context.Context) error {
 }
 
 func iShouldSeeTheLoadingModal(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -371,18 +372,30 @@ func iShouldSeeTheLoadingModal(ctx context.Context) error {
 	return nil
 }
 
-func iShouldSeeTheSkillSuggestionsModal(_ context.Context) error {
-	return godog.ErrPending
+func iShouldSeeTheSkillSuggestionsModal(ctx context.Context) error {
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring("Review Skill Suggestions"))
+	return nil
 }
 
-func iShouldStillBeOnSkillSuggestionsModal(_ context.Context) error {
-	return godog.ErrPending
+func iShouldStillBeOnSkillSuggestionsModal(ctx context.Context) error {
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring("Review Skill Suggestions"))
+	return nil
 }
 
 func iShouldSeeTheSkillDetailView(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -395,9 +408,9 @@ func iShouldSeeTheSkillDetailView(ctx context.Context) error {
 }
 
 func iShouldSeeTheSkillEventsModal(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -409,9 +422,9 @@ func iShouldSeeTheSkillEventsModal(ctx context.Context) error {
 }
 
 func iShouldSeeWithEventCount(ctx context.Context, skillName, count string) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.ContainSubstring(skillName))
@@ -420,9 +433,9 @@ func iShouldSeeWithEventCount(ctx context.Context, skillName, count string) erro
 }
 
 func iShouldSeeSkillsGroupedByCategory(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -434,9 +447,9 @@ func iShouldSeeSkillsGroupedByCategory(ctx context.Context) error {
 }
 
 func iShouldSeeSectionWithNSkills(ctx context.Context, section string, _ int) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.ContainSubstring(section))
@@ -444,9 +457,9 @@ func iShouldSeeSectionWithNSkills(ctx context.Context, section string, _ int) er
 }
 
 func iShouldSeeNEvents(ctx context.Context, expected int) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.ContainSubstring(strconv.Itoa(expected)))
@@ -454,9 +467,9 @@ func iShouldSeeNEvents(ctx context.Context, expected int) error {
 }
 
 func iShouldSeeTheFullEventDescription(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -469,54 +482,45 @@ func iShouldSeeTheFullEventDescription(ctx context.Context) error {
 // Navigation action functions
 
 func iPressAToAddSkill(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.PressKeyRune('a')
 	return ctx, nil
 }
 
 func iPressIToInferSkills(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.PressKeyRune('i')
 	return ctx, nil
 }
 
-func skillsPressDToDelete(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.PressKeyRune('d')
-	return ctx, nil
-}
-
 func skillsPressSToViewEvents(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.PressKey(tea.KeyCtrlE)
 	return ctx, nil
 }
 
 func skillsPressSlashToSearch(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.PressKeyRune('/')
 	return ctx, nil
 }
 
 func iPressEnterToViewEventDetails(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.PressKey(tea.KeyEnter)
 	return ctx, nil
@@ -545,9 +549,9 @@ func iEnterYearsOfExperience(ctx context.Context, years string) (context.Context
 }
 
 func iSubmitTheSkillForm(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 
 	env.PressKey(tea.KeyEscape)
@@ -584,9 +588,9 @@ func iChangeYearsTo(ctx context.Context, years string) (context.Context, error) 
 }
 
 func iSelectSkill(ctx context.Context, _ string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	// Pressing Enter on selected skill opens detail modal
 	// This is what we want - skill is now selected (via detail modal)
@@ -598,38 +602,48 @@ func iSelectSkill(ctx context.Context, _ string) (context.Context, error) {
 
 // Inference action functions
 
-func theInferenceCompletes(_ context.Context) error {
-	return godog.ErrPending
+func theInferenceCompletes(ctx context.Context) error {
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
+	}
+	return support.WaitForViewContains(env, "Review Skill Suggestions", 20, 100)
 }
 
 func iAcceptTheFirstSuggestion(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.PressKeyRune('a')
 	return ctx, nil
 }
 
 func iRejectTheFirstSuggestion(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.PressKeyRune('r')
 	return ctx, nil
 }
 
-func theSuggestionShouldBeMarkedAsRejected(_ context.Context) error {
-	return godog.ErrPending
+func theSuggestionShouldBeMarkedAsRejected(ctx context.Context) error {
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring("Review Skill Suggestions"))
+	return nil
 }
 
 // Skill assertion functions
 
 func thereShouldBeNSkills(ctx context.Context, expected int) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.ContainSubstring(fmt.Sprintf("Skills: %d", expected)))
@@ -637,9 +651,9 @@ func thereShouldBeNSkills(ctx context.Context, expected int) error {
 }
 
 func theSkillShouldHaveName(ctx context.Context, expected string) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.ContainSubstring(expected), "Should see skill with name %s in view", expected)
@@ -647,9 +661,9 @@ func theSkillShouldHaveName(ctx context.Context, expected string) error {
 }
 
 func theSkillShouldHaveLevel(ctx context.Context, expected string) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.ContainSubstring(expected), "Should see skill with level %s in view", expected)
@@ -657,9 +671,9 @@ func theSkillShouldHaveLevel(ctx context.Context, expected string) error {
 }
 
 func theSkillShouldHaveYears(ctx context.Context, expected string) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.ContainSubstring(expected), "Should see skill with years %s in view", expected)
@@ -674,9 +688,9 @@ func theSkillShouldHaveYears(ctx context.Context, expected string) error {
 type inferenceResultKey struct{}
 
 func getLastEvent(ctx context.Context) (*career.Event, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return nil, errors.New("app env not found")
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return nil, err
 	}
 	events := env.GetEvents()
 	if len(events) == 0 {
@@ -686,16 +700,17 @@ func getLastEvent(ctx context.Context) (*career.Event, error) {
 }
 
 func noSkillsAreLinkedToTheEvent(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	event, err := getLastEvent(ctx)
 	if err != nil {
 		return ctx, err
 	}
 	skillRepo := env.Service.GetSkillRepository()
-	linked, err := skillRepo.GetSkillsForEvent(env.Ctx, event.ID)
+	var linked []*career.Skill
+	linked, err = skillRepo.GetSkillsForEvent(env.Ctx, event.ID)
 	if err != nil {
 		return ctx, fmt.Errorf("checking linked skills: %w", err)
 	}
@@ -704,16 +719,17 @@ func noSkillsAreLinkedToTheEvent(ctx context.Context) (context.Context, error) {
 }
 
 func skillIsNotLinkedToTheEvent(ctx context.Context, skillName string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	event, err := getLastEvent(ctx)
 	if err != nil {
 		return ctx, err
 	}
 	skillRepo := env.Service.GetSkillRepository()
-	linked, err := skillRepo.GetSkillsForEvent(env.Ctx, event.ID)
+	var linked []*career.Skill
+	linked, err = skillRepo.GetSkillsForEvent(env.Ctx, event.ID)
 	if err != nil {
 		return ctx, fmt.Errorf("checking linked skills: %w", err)
 	}
@@ -726,9 +742,9 @@ func skillIsNotLinkedToTheEvent(ctx context.Context, skillName string) (context.
 }
 
 func iInferAndAcceptSkillForTheEvent(ctx context.Context, skillName string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	event, err := getLastEvent(ctx)
 	if err != nil {
@@ -767,9 +783,9 @@ func iInferAndAcceptSkillForTheEvent(ctx context.Context, skillName string) (con
 }
 
 func iTriggerInferenceForTheEvent(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	event, err := getLastEvent(ctx)
 	if err != nil {
@@ -790,16 +806,17 @@ func iTriggerInferenceForTheEvent(ctx context.Context) (context.Context, error) 
 }
 
 func skillShouldBeLinkedToTheEvent(ctx context.Context, skillName string) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	event, err := getLastEvent(ctx)
 	if err != nil {
 		return err
 	}
 	skillRepo := env.Service.GetSkillRepository()
-	linked, err := skillRepo.GetSkillsForEvent(env.Ctx, event.ID)
+	var linked []*career.Skill
+	linked, err = skillRepo.GetSkillsForEvent(env.Ctx, event.ID)
 	if err != nil {
 		return fmt.Errorf("getting linked skills: %w", err)
 	}

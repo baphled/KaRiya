@@ -67,9 +67,9 @@ func RegisterBrowseSteps(sc *godog.ScenarioContext) {
 }
 
 func iHaveNEventsInMyTimeline(ctx context.Context, count int) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	for i := range count {
 		event := fixtures.EventWith("", fmt.Sprintf("Event %d description", i+1), fmt.Sprintf("Company%d", i+1), "")
@@ -79,9 +79,9 @@ func iHaveNEventsInMyTimeline(ctx context.Context, count int) (context.Context, 
 }
 
 func iShouldSeeAListOfEvents(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -93,9 +93,9 @@ func iShouldSeeAListOfEvents(ctx context.Context) error {
 }
 
 func iShouldStillBeOnTheTimeline(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -107,9 +107,9 @@ func iShouldStillBeOnTheTimeline(ctx context.Context) error {
 }
 
 func iPressEnterToViewDetails(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 
 	env.Confirm()
@@ -117,27 +117,27 @@ func iPressEnterToViewDetails(ctx context.Context) (context.Context, error) {
 }
 
 func iPressEscape(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.Cancel()
 	return ctx, nil
 }
 
 func iPressSlashToSearch(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.PressKeyRune('/')
 	return ctx, nil
 }
 
 func iShouldSeeTheSearchModal(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -148,18 +148,18 @@ func iShouldSeeTheSearchModal(ctx context.Context) error {
 }
 
 func iPressAToAddEvent(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.PressKeyRune('a')
 	return ctx, nil
 }
 
 func iShouldSeeTheAddEventForm(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -172,18 +172,18 @@ func iShouldSeeTheAddEventForm(ctx context.Context) error {
 }
 
 func iEnterAsDescription(ctx context.Context, text string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.TypeText(text)
 	return ctx, nil
 }
 
 func iSubmitTheForm(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.Confirm()
 	env.Confirm()
@@ -196,18 +196,18 @@ func iSubmitTheForm(ctx context.Context) (context.Context, error) {
 }
 
 func iPressEToEdit(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.PressKeyRune('e')
 	return ctx, nil
 }
 
 func iShouldSeeTheEditEventForm(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -219,9 +219,9 @@ func iShouldSeeTheEditEventForm(ctx context.Context) error {
 }
 
 func iNavigateToCompanyField(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.NextFormField()
 	env.NextFormField()
@@ -229,36 +229,36 @@ func iNavigateToCompanyField(ctx context.Context) (context.Context, error) {
 }
 
 func iClearTheCompanyField(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.ClearTextField(50)
 	return ctx, nil
 }
 
 func iEnterAsCompany(ctx context.Context, company string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.TypeText(company)
 	return ctx, nil
 }
 
 func iPressDToDelete(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.PressKeyRune('d')
 	return ctx, nil
 }
 
 func iShouldSeeTheDeleteConfirmation(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -272,27 +272,27 @@ func iShouldSeeTheDeleteConfirmation(ctx context.Context) error {
 }
 
 func iCancelTheConfirmation(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.Cancel()
 	return ctx, nil
 }
 
 func iConfirmTheDeletion(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.Confirm()
 	return ctx, nil
 }
 
 func iShouldBeAbleToGoBackToTheMenu(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	env.Cancel()
 	gomega.Expect(env.IsInMenuState()).To(gomega.BeTrue())
@@ -301,9 +301,9 @@ func iShouldBeAbleToGoBackToTheMenu(ctx context.Context) error {
 
 // iHaveAnEvent creates a simple event with just a description.
 func iHaveAnEvent(ctx context.Context, description string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	event := fixtures.EventWith("", description, "", "")
 	env.AddEvent(event)
@@ -326,9 +326,9 @@ func iHaveAnEvent(ctx context.Context, description string) (context.Context, err
 
 // iPressAToAccept presses 'a' to accept.
 func iPressAToAccept(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.PressKeyRune('a')
 	return ctx, nil
@@ -336,9 +336,9 @@ func iPressAToAccept(ctx context.Context) (context.Context, error) {
 
 // iPressRToReject presses 'r' to reject.
 func iPressRToReject(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.PressKeyRune('r')
 	return ctx, nil
@@ -348,9 +348,9 @@ func iPressRToReject(ctx context.Context) (context.Context, error) {
 
 // iShouldSeeSkillCategories asserts skill categories are visible.
 func iShouldSeeSkillCategories(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -363,9 +363,9 @@ func iShouldSeeSkillCategories(ctx context.Context) error {
 
 // iShouldSeeSuggestedSkills asserts suggested skills are visible.
 func iShouldSeeSuggestedSkills(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -378,9 +378,9 @@ func iShouldSeeSuggestedSkills(ctx context.Context) error {
 
 // iShouldSeeTheEventDetailModal asserts event detail modal is visible.
 func iShouldSeeTheEventDetailModal(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -393,9 +393,9 @@ func iShouldSeeTheEventDetailModal(ctx context.Context) error {
 
 // iShouldSeeTheSkillSuggestionModal asserts skill suggestion modal is visible.
 func iShouldSeeTheSkillSuggestionModal(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -407,9 +407,9 @@ func iShouldSeeTheSkillSuggestionModal(ctx context.Context) error {
 
 // iShouldSeeTheSkillsDetailModal asserts skills detail modal is visible.
 func iShouldSeeTheSkillsDetailModal(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -422,9 +422,9 @@ func iShouldSeeTheSkillsDetailModal(ctx context.Context) error {
 // theEventHasSkills sets skills on the most recent event (GIVEN step).
 // This is called AFTER an event is created, so we need to update it with skills.
 func theEventHasSkills(ctx context.Context, skillsStr string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 
 	// Parse skill names

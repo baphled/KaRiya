@@ -2,6 +2,7 @@ package steps
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -47,7 +48,7 @@ func getViewFromContext(ctx context.Context) (string, bool) {
 func iShouldSee(ctx context.Context, text string) error {
 	view, ok := getViewFromContext(ctx)
 	if !ok {
-		return godog.ErrPending
+		return errors.New("no test environment in context: check scenario tags and BeforeScenario hook")
 	}
 	if !strings.Contains(view, text) {
 		return fmt.Errorf("expected view to contain %q, but it was not found", text)
@@ -61,7 +62,7 @@ func iShouldSee(ctx context.Context, text string) error {
 func iShouldSeeOneOf(ctx context.Context, table *godog.Table) error {
 	view, ok := getViewFromContext(ctx)
 	if !ok {
-		return godog.ErrPending
+		return errors.New("no test environment in context: check scenario tags and BeforeScenario hook")
 	}
 
 	for _, row := range table.Rows {
@@ -85,9 +86,9 @@ func iShouldSeeOneOf(ctx context.Context, table *godog.Table) error {
 
 // iCloseTheModal closes the currently open modal.
 func iCloseTheModal(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.Cancel()
 	return ctx, nil
@@ -95,9 +96,9 @@ func iCloseTheModal(ctx context.Context) (context.Context, error) {
 
 // iShouldSeeSuccessMessage asserts a success message is visible.
 func iShouldSeeSuccessMessage(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -111,15 +112,18 @@ func iShouldSeeSuccessMessage(ctx context.Context) error {
 
 // iShouldSeeTheProgressModal asserts a progress modal is visible.
 func iShouldSeeTheProgressModal(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
 		gomega.ContainSubstring("Progress"),
 		gomega.ContainSubstring("Loading"),
 		gomega.ContainSubstring("Processing"),
+		gomega.ContainSubstring("Generating"),
+		gomega.ContainSubstring("Extracting"),
+		gomega.ContainSubstring("Exporting"),
 	))
 	return nil
 }
@@ -128,9 +132,9 @@ func iShouldSeeTheProgressModal(ctx context.Context) error {
 
 // iHaveNoData asserts that the system has no data (empty state).
 func iHaveNoData(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.AssertEventCount(0)
 	return ctx, nil
@@ -138,9 +142,9 @@ func iHaveNoData(ctx context.Context) (context.Context, error) {
 
 // commonShouldSeeHelpInformation asserts that help information is visible.
 func commonShouldSeeHelpInformation(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -154,9 +158,9 @@ func commonShouldSeeHelpInformation(ctx context.Context) error {
 
 // commonPressNToCancel presses "n" to cancel.
 func commonPressNToCancel(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.PressKeyRune('n')
 	return ctx, nil

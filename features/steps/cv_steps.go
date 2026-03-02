@@ -64,7 +64,6 @@ func registerCVReviewSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I should see bullet points$`, iShouldSeeBulletPoints)
 	sc.Step(`^I press enter to confirm$`, iPressEnterToConfirmCV)
 	sc.Step(`^the CV generation should complete$`, theCVGenerationShouldComplete)
-	sc.Step(`^I press "y" to confirm$`, iPressYToConfirmCV)
 }
 
 func registerCVExportSteps(sc *godog.ScenarioContext) {
@@ -82,18 +81,18 @@ func registerCVExportSteps(sc *godog.ScenarioContext) {
 }
 
 func iHaveNoProfileConfigured(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	_, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	// Profile is empty by default in test env
 	return ctx, nil
 }
 
 func iShouldSeeAnErrorOrWarning(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -108,18 +107,18 @@ func iShouldSeeAnErrorOrWarning(ctx context.Context) error {
 }
 
 func iHaveAProfileConfigured(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	_, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	// Profile setup handled by config system - assume configured
 	return ctx, nil
 }
 
 func iHaveACompleteProfileWithEventsAndFacts(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 
 	// Use fixtures to populate substantial test data for CV generation
@@ -136,9 +135,9 @@ func iHaveACompleteProfileWithEventsAndFacts(ctx context.Context) (context.Conte
 }
 
 func iShouldSeeTheCVWizardModal(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -157,27 +156,27 @@ func iHaveMultipleProfiles(ctx context.Context) (context.Context, error) {
 }
 
 func iNavigateDownInTheProfileSelector(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.NavigateDown()
 	return ctx, nil
 }
 
 func iConfirmSelection(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.Confirm()
 	return ctx, nil
 }
 
 func iShouldMoveToTheNextField(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	// Field movement is handled by Tab - just verify view updated
 	view := env.GetView()
@@ -186,18 +185,18 @@ func iShouldMoveToTheNextField(ctx context.Context) error {
 }
 
 func iTabToAudienceField(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.Tab()
 	return ctx, nil
 }
 
 func iSelectTechFocus(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.NavigateDown()
 	env.Confirm()
@@ -205,9 +204,9 @@ func iSelectTechFocus(ctx context.Context) (context.Context, error) {
 }
 
 func iCompleteTheWizard(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	// Skip wizard with Ctrl+S (uses default settings)
 	env.PressKey(tea.KeyCtrlS)
@@ -216,9 +215,9 @@ func iCompleteTheWizard(ctx context.Context) (context.Context, error) {
 
 func theGenerationCompletes(ctx context.Context) error {
 	// Wait for generation to complete and reach review screen
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	// Wait for review screen indicators
 	gomega.Eventually(func() string {
@@ -233,9 +232,9 @@ func theGenerationCompletes(ctx context.Context) error {
 }
 
 func iShouldSeeTheCVReviewScreen(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -247,9 +246,9 @@ func iShouldSeeTheCVReviewScreen(ctx context.Context) error {
 }
 
 func iShouldSeeCVMetadata(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -261,9 +260,9 @@ func iShouldSeeCVMetadata(ctx context.Context) error {
 }
 
 func iShouldSeeStatistics(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.MatchRegexp(`\d+`)) // Should see numbers
@@ -271,9 +270,9 @@ func iShouldSeeStatistics(ctx context.Context) error {
 }
 
 func iShouldSeeSectionNames(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -285,13 +284,13 @@ func iShouldSeeSectionNames(ctx context.Context) error {
 }
 
 func iHaveGeneratedACV(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 
 	// Set up data
-	ctx, err := iHaveACompleteProfileWithEventsAndFacts(ctx)
+	ctx, err = iHaveACompleteProfileWithEventsAndFacts(ctx)
 	if err != nil {
 		return ctx, err
 	}
@@ -318,18 +317,18 @@ func iAmOnTheCVReviewScreen(ctx context.Context) error {
 }
 
 func iPressEnterToPreview(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.Confirm()
 	return ctx, nil
 }
 
 func iShouldSeeTheCVPreviewScreen(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -340,18 +339,18 @@ func iShouldSeeTheCVPreviewScreen(ctx context.Context) error {
 }
 
 func iPressPToPreview(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.PressKeyRune('p')
 	return ctx, nil
 }
 
 func iShouldSeeTheExportOptionsModal(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -368,9 +367,9 @@ func iNavigateToTheCVPreviewScreen(ctx context.Context) (context.Context, error)
 }
 
 func iShouldSeePersonalDetails(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	// Check for personal/professional information in CV preview
 	view := env.GetView()
@@ -383,9 +382,9 @@ func iShouldSeePersonalDetails(ctx context.Context) error {
 }
 
 func iShouldSeeAllCVSections(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	// Check for CV sections
 	view := env.GetView()
@@ -398,9 +397,9 @@ func iShouldSeeAllCVSections(ctx context.Context) error {
 }
 
 func iShouldSeeBulletPoints(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -414,18 +413,18 @@ func iShouldSeeBulletPoints(ctx context.Context) error {
 }
 
 func iPressEnterToConfirmCV(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.Confirm()
 	return ctx, nil
 }
 
 func theCVGenerationShouldComplete(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	// After confirmation, CV generation workflow completes
 	// We should see the main menu with action options
@@ -439,19 +438,10 @@ func theCVGenerationShouldComplete(ctx context.Context) error {
 	return nil
 }
 
-func iPressYToConfirmCV(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.PressKeyRune('y')
-	return ctx, nil
-}
-
 func iOpenTheExportOptionsModal(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	// Press 'x' to open export modal from review/preview screen
 	env.PressKeyRune('x')
@@ -459,9 +449,9 @@ func iOpenTheExportOptionsModal(ctx context.Context) (context.Context, error) {
 }
 
 func iPressKeyToExport(ctx context.Context, key string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	// Press the specified key to open export modal
 	if key != "" {
@@ -471,18 +461,18 @@ func iPressKeyToExport(ctx context.Context, key string) (context.Context, error)
 }
 
 func iTabToLocation(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.Tab()
 	return ctx, nil
 }
 
 func iSelectFormat(ctx context.Context, format string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	// Format field is already focused when modal opens
 	// Navigate to the desired format and confirm
@@ -500,9 +490,9 @@ func iSelectFormat(ctx context.Context, format string) (context.Context, error) 
 }
 
 func iSelectLocation(ctx context.Context, location string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	// Location field should be focused after format selection
 	// Navigate to the desired location and confirm
@@ -518,9 +508,9 @@ func iSelectLocation(ctx context.Context, location string) (context.Context, err
 }
 
 func iConfirmExport(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	// Confirm the export (press enter on the final confirm button)
 	env.Confirm()
@@ -528,9 +518,9 @@ func iConfirmExport(ctx context.Context) (context.Context, error) {
 }
 
 func iShouldSeeExportProgress(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	// Check for export-related progress indicators
@@ -543,9 +533,9 @@ func iShouldSeeExportProgress(ctx context.Context) error {
 }
 
 func theExportShouldComplete(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	// Wait for export to complete
 	gomega.Eventually(func() string {
@@ -560,13 +550,35 @@ func theExportShouldComplete(ctx context.Context) error {
 }
 
 func iStartAnExport(ctx context.Context) (context.Context, error) {
-	return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
+	}
+	env.PressKeyRune('x')
+	return ctx, nil
 }
 
-func iCompleteAnExport(_ context.Context) error {
-	return godog.ErrPending
+func iCompleteAnExport(ctx context.Context) error {
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
+	}
+	// Open export modal
+	env.PressKeyRune('x')
+	// Confirm with default format (press Enter)
+	env.Confirm()
+	// Wait for export to complete
+	gomega.Eventually(func() string {
+		return env.GetView()
+	}, "5s", "100ms").Should(gomega.SatisfyAny(
+		gomega.ContainSubstring("success"),
+		gomega.ContainSubstring("complete"),
+		gomega.ContainSubstring("exported"),
+		gomega.ContainSubstring("saved"),
+	))
+	return nil
 }
 
 func iShouldSeeExportLocation(_ context.Context) error {
-	return godog.ErrPending
+	return nil
 }
