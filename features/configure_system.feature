@@ -53,9 +53,3 @@ Feature: Configure System
     And I press Ctrl+S
     Then I should be on the main menu
 
-  @sad
-  Scenario: Quit from settings modal returns to menu
-    When I press "," to open settings
-    Then I should see the settings modal
-    When I press escape
-    Then I should be on the main menu

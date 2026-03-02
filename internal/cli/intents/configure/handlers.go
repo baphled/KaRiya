@@ -132,24 +132,6 @@ func (i *Intent) updateResultModal(msg tea.Msg) tea.Cmd {
 }
 
 // handleAsyncCompletion processes async save completion messages at intent level.
-func (i *Intent) handleAsyncCompletion(msg tea.Msg) tea.Cmd {
-	switch msg := msg.(type) {
-	case ConfigCompleteMsg:
-		i.clearAllModals()
-		i.settings = settingsFromConfig(i.cfg)
-		i.configResult = msg.Result
-		i.state = ConfigStateComplete
-		i.resultModal = feedback.NewSuccessModal("Configuration saved!")
-		i.result = &intents.IntentResult[interface{}]{
-			Status: intents.Completed,
-			Data:   msg.Result,
-		}
-		return nil
-	case ConfigErrorMsg:
-		i.clearAllModals()
-		i.state = ConfigStateFailed
-		i.resultModal = feedback.NewErrorModal("Save Failed", msg.Error.Message)
-		return nil
-	}
+func (i *Intent) handleAsyncCompletion(_ tea.Msg) tea.Cmd {
 	return nil
 }

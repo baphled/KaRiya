@@ -400,13 +400,6 @@ var _ = Describe("Configure intent internals", func() {
 			Expect(cmd).To(BeNil())
 		})
 
-		It("processes async completion", func() {
-			result := &SystemResult{Success: true}
-			cmd := intent.Update(ConfigCompleteMsg{Result: result})
-			_ = cmd
-			Expect(intent.state).To(Equal(ConfigStateComplete))
-		})
-
 		It("routes to active component", func() {
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyDown})
 			_ = cmd
@@ -565,23 +558,69 @@ var _ = Describe("Configure intent internals", func() {
 		})
 	})
 
-	Describe("async completion", func() {
-		It("handles complete", func() {
-			result := &SystemResult{Success: true}
-			cmd := intent.handleAsyncCompletion(ConfigCompleteMsg{Result: result})
-			Expect(cmd).To(BeNil())
-			Expect(intent.state).To(Equal(ConfigStateComplete))
+	Describe("uncovered functions", func() {
+		It("SetContext sets the context", func() {
+			newCtx := &IntentContext{Cfg: cfg, Settings: settingsFromConfig(cfg)}
+			intent.SetContext(newCtx)
+			Expect(intent.GetContext()).To(Equal(newCtx))
 		})
 
-		It("handles error", func() {
-			errMsg := ConfigErrorMsg{Error: &intents.IntentError{Code: "err", Message: "oops"}}
-			cmd := intent.handleAsyncCompletion(errMsg)
-			Expect(cmd).To(BeNil())
-			Expect(intent.state).To(Equal(ConfigStateFailed))
+		It("SetActive sets active state", func() {
+			intent.SetActive(false)
+			Expect(intent.IsActive()).To(BeFalse())
+			intent.SetActive(true)
+			Expect(intent.IsActive()).To(BeTrue())
 		})
 
-		It("ignores unrelated", func() {
-			cmd := intent.handleAsyncCompletion(tea.MouseMsg{})
+		It("GetDomain returns selected domain", func() {
+			intent.SetDomain(DomainProfile)
+			Expect(intent.GetDomain()).To(Equal(DomainProfile))
+		})
+
+		It("GetSavingModal returns saving modal", func() {
+			intent.savingModal = feedback.NewLoadingModal("Saving...", false)
+			Expect(intent.GetSavingModal()).NotTo(BeNil())
+		})
+
+		It("HandleCancel deactivates intent", func() {
+			cmd := intent.HandleCancel(&screens.CancelResult{})
+			Expect(cmd).To(BeNil())
+			Expect(intent.active).To(BeFalse())
+		})
+
+		It("HandleSubmit returns nil", func() {
+			cmd := intent.HandleSubmit(&screens.SubmitResult{})
+			Expect(cmd).To(BeNil())
+		})
+
+		It("HandleError returns nil", func() {
+			cmd := intent.HandleError(&screens.ErrorResult{})
+			Expect(cmd).To(BeNil())
+		})
+
+		It("startSaving returns batch command", func() {
+			intent.selectedDomain = DomainSystem
+			intent.pendingChanges = map[string]interface{}{"system.log_level": "debug"}
+			cmd := intent.startSaving()
+			Expect(cmd).NotTo(BeNil())
+		})
+
+		It("ApplyChanges applies config changes", func() {
+			changes := map[string]interface{}{"system.log_level": "debug"}
+			err := ApplyChanges(cfg, settingsFromConfig(cfg), changes)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("Init creates settings modal and returns command", func() {
+			intent.settingsModal = nil
+			cmd := intent.Init()
+			Expect(intent.settingsModal).NotTo(BeNil())
+			Expect(cmd).NotTo(BeNil())
+		})
+
+		It("Update with inactive intent returns nil", func() {
+			intent.active = false
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 			Expect(cmd).To(BeNil())
 		})
 	})

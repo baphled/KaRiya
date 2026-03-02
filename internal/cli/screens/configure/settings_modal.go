@@ -121,14 +121,29 @@ func (m *SettingsModal) rebuildActiveForm() {
 }
 
 func (m *SettingsModal) formDimensions() (int, int) {
-	modalWidth := m.width - 4
+	modalWidth := m.width - 12
+	if modalWidth > 100 {
+		modalWidth = 100
+	}
+	if modalWidth < 80 {
+		modalWidth = 80
+	}
+
+	modalHeight := int(float64(m.height) * 0.7)
+	if modalHeight > 30 {
+		modalHeight = 30
+	}
+	if modalHeight < 20 {
+		modalHeight = 20
+	}
+
 	innerWidth := modalWidth - 4
 	formWidth := innerWidth - sectionListWidth
 	if formWidth < 30 {
 		formWidth = 30
 	}
 
-	formHeight := forms.ModalFormHeight(m.height)
+	formHeight := forms.ModalFormHeight(modalHeight)
 	return formWidth, formHeight
 }
 
@@ -211,10 +226,18 @@ func (m *SettingsModal) View() string {
 
 	content := lipgloss.JoinVertical(lipgloss.Left, body, "", footer)
 
+	modalWidth := m.width - 12
+	if modalWidth > 100 {
+		modalWidth = 100
+	}
+	if modalWidth < 80 {
+		modalWidth = 80
+	}
+
 	box := containers.NewBox(m.theme).
 		Title("⚙  Configure System").
 		Content(content).
-		Width(m.width - 4)
+		Width(modalWidth)
 
 	return box.Render()
 }

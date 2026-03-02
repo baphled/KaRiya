@@ -1,8 +1,8 @@
-// Package steps provides BDD step definitions for Godog feature tests.
 package steps
 
 import (
 	"context"
+	"strings"
 
 	"github.com/baphled/kariya/features/support"
 	"github.com/cucumber/godog"
@@ -50,14 +50,22 @@ func iNavigateToSection(ctx context.Context, section string) (context.Context, e
 	if env == nil {
 		return ctx, godog.ErrPending
 	}
-	sectionOrder := []string{"System", "Profile", "Export", "UI"}
-	for i, s := range sectionOrder {
-		if s == section {
-			for range i {
-				env.NavigateDown()
-			}
-			break
+	sectionIndicators := map[string]string{
+		"System":  "Log Level",
+		"Profile": "Full Name",
+		"Export":  "Default Destination",
+		"UI":      "Theme",
+	}
+	targetIndicator, ok := sectionIndicators[section]
+	if !ok {
+		return ctx, godog.ErrPending
+	}
+	for range 4 {
+		view := env.GetView()
+		if strings.Contains(view, targetIndicator) {
+			return ctx, nil
 		}
+		env.NavigateDown()
 	}
 	return ctx, nil
 }

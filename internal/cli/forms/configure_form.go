@@ -34,10 +34,10 @@ func NewConfigureSettingsFormData(settings []*configtypes.ConfigurationSetting) 
 	for _, s := range settings {
 		switch s.Type {
 		case "bool":
-			boolVal := settingToBool(s.Value)
+			boolVal := SettingToBool(s.Value)
 			data.BoolValues[s.Key] = &boolVal
 		default:
-			strVal := settingToString(s.Value)
+			strVal := SettingToString(s.Value)
 			data.Values[s.Key] = &strVal
 		}
 	}
@@ -235,19 +235,26 @@ func GetConfigureSettingChanges(
 	for _, s := range settings {
 		switch s.Type {
 		case "bool":
-			appendBoolChange(changes, s.Key, data.BoolValues, originalValues)
+			AppendBoolChange(changes, s.Key, data.BoolValues, originalValues)
 		case "int":
-			appendIntChange(changes, s.Key, data.Values, originalValues)
+			AppendIntChange(changes, s.Key, data.Values, originalValues)
 		case "list":
-			appendListChange(changes, s.Key, data.Values, originalValues)
+			AppendListChange(changes, s.Key, data.Values, originalValues)
 		default:
-			appendStringChange(changes, s.Key, data.Values, originalValues)
+			AppendStringChange(changes, s.Key, data.Values, originalValues)
 		}
 	}
 	return changes
 }
 
-func settingToString(val interface{}) string {
+// SettingToString converts a configuration setting value to its string representation.
+//
+// Expected: val must be a valid configuration value (string, bool, int, or []string).
+//
+// Returns: The string representation of val.
+//
+// Side effects: None.
+func SettingToString(val interface{}) string {
 	if val == nil {
 		return ""
 	}
@@ -257,12 +264,26 @@ func settingToString(val interface{}) string {
 	return fmt.Sprintf("%v", val)
 }
 
-func settingToBool(val interface{}) bool {
+// SettingToBool converts a configuration setting value to a boolean.
+//
+// Expected: val must be a valid configuration value.
+//
+// Returns: The boolean representation of val, or false if not a bool.
+//
+// Side effects: None.
+func SettingToBool(val interface{}) bool {
 	b, ok := val.(bool)
 	return ok && b
 }
 
-func appendBoolChange(changes map[string]interface{}, key string, boolValues map[string]*bool, originalValues map[string]string) {
+// AppendBoolChange appends a bool setting change to changes if the value differs from the original.
+//
+// Expected: changes, boolValues, and originalValues must be non-nil maps.
+//
+// Returns: Nothing.
+//
+// Side effects: May add an entry to changes.
+func AppendBoolChange(changes map[string]interface{}, key string, boolValues map[string]*bool, originalValues map[string]string) {
 	boolPtr, ok := boolValues[key]
 	if !ok || boolPtr == nil {
 		return
@@ -273,7 +294,14 @@ func appendBoolChange(changes map[string]interface{}, key string, boolValues map
 	}
 }
 
-func appendIntChange(changes map[string]interface{}, key string, values map[string]*string, originalValues map[string]string) {
+// AppendIntChange appends an int setting change to changes if the value differs from the original.
+//
+// Expected: changes, values, and originalValues must be non-nil maps.
+//
+// Returns: Nothing.
+//
+// Side effects: May add an entry to changes.
+func AppendIntChange(changes map[string]interface{}, key string, values map[string]*string, originalValues map[string]string) {
 	strPtr, ok := values[key]
 	if !ok || strPtr == nil {
 		return
@@ -288,7 +316,14 @@ func appendIntChange(changes map[string]interface{}, key string, values map[stri
 	changes[key] = iv
 }
 
-func appendStringChange(changes map[string]interface{}, key string, values map[string]*string, originalValues map[string]string) {
+// AppendStringChange appends a string setting change to changes if the value differs from the original.
+//
+// Expected: changes, values, and originalValues must be non-nil maps.
+//
+// Returns: Nothing.
+//
+// Side effects: May add an entry to changes.
+func AppendStringChange(changes map[string]interface{}, key string, values map[string]*string, originalValues map[string]string) {
 	strPtr, ok := values[key]
 	if !ok || strPtr == nil {
 		return
@@ -298,7 +333,14 @@ func appendStringChange(changes map[string]interface{}, key string, values map[s
 	}
 }
 
-func appendListChange(changes map[string]interface{}, key string, values map[string]*string, originalValues map[string]string) {
+// AppendListChange appends a list setting change to changes if the value differs from the original.
+//
+// Expected: changes, values, and originalValues must be non-nil maps.
+//
+// Returns: Nothing.
+//
+// Side effects: May add an entry to changes.
+func AppendListChange(changes map[string]interface{}, key string, values map[string]*string, originalValues map[string]string) {
 	strPtr, ok := values[key]
 	if !ok || strPtr == nil {
 		return
