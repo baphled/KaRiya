@@ -59,9 +59,8 @@ func (e *TestEnv) SelectIntentByName(name string) *TestEnv {
 		"browse_timeline":  1,
 		"manage_skills":    2,
 		"generate_cv":      3,
-		"configure_system": 4,
-		"burst_management": 5,
-		"fact_management":  6,
+		"burst_management": 4,
+		"fact_management":  5,
 	}
 
 	index, ok := intentOrder[name]
