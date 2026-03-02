@@ -1,9 +1,9 @@
 package harness
 
 import (
-	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/intents/burst_management"
 	"github.com/baphled/kariya/internal/cli/intents/captureevent"
+	configure "github.com/baphled/kariya/internal/cli/intents/configure"
 	"github.com/baphled/kariya/internal/cli/intents/factmanagement"
 	"github.com/baphled/kariya/internal/cli/intents/generatecv"
 	"github.com/baphled/kariya/internal/cli/intents/skillsmanagement"
@@ -43,7 +43,7 @@ func (e *TestEnv) processCmdResult(msg tea.Msg) {
 		e.updateModelAndExecute(msg)
 	case captureevent.DismissModalMsg:
 		e.updateModelAndExecute(msg)
-	case intents.ConfigCompleteMsg:
+	case configure.ConfigCompleteMsg:
 		e.updateModelAndExecute(msg)
 	case generatecv.TechnologiesExtractedMsg:
 		e.updateModelAndExecute(msg)
