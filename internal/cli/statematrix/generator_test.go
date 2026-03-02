@@ -303,6 +303,195 @@ var _ = Describe("Generator", func() {
 			Expect(betaPos).To(BeNumerically("<", zebraPos), "Beta should come before Zebra")
 		})
 	})
+
+	Describe("Mermaid Diagram Generation", func() {
+		It("should render transitions for all state types", func() {
+			allTypesMatrix := &statematrix.StateMatrix{
+				GeneratedAt:  time.Now(),
+				TotalIntents: 1,
+				TotalStates:  6,
+				Intents: []statematrix.ComponentInfo{
+					{
+						Name:       "AllTypes",
+						File:       "/path/to/alltypes.go",
+						Kind:       "intent",
+						StateCount: 6,
+						States: []statematrix.StateInfo{
+							{Constant: "AllTypesStart", Type: "ROOT", EscapeBehavior: "Cancel intent \u2192 Main Menu"},
+							{Constant: "AllTypesForm", Type: "Intermediate", EscapeBehavior: "Back \u2192 Previous state"},
+							{Constant: "AllTypesConfirm", Type: "Confirmation", EscapeBehavior: "Cancel \u2192 Parent state"},
+							{Constant: "AllTypesProcess", Type: "Async", EscapeBehavior: "Varies"},
+							{Constant: "AllTypesDone", Type: "Final", EscapeBehavior: "Deactivate intent"},
+							{Constant: "AllTypesFailed", Type: "Error", EscapeBehavior: "Deactivate intent"},
+						},
+					},
+				},
+				Screens: []statematrix.ComponentInfo{},
+			}
+
+			mdPath := filepath.Join(tmpDir, "all_types.md")
+			err := statematrix.GenerateMarkdown(allTypesMatrix, mdPath)
+			Expect(err).ToNot(HaveOccurred())
+
+			content, err := os.ReadFile(mdPath)
+			Expect(err).ToNot(HaveOccurred())
+
+			markdown := string(content)
+			Expect(markdown).To(ContainSubstring("stateDiagram-v2"))
+			Expect(markdown).To(ContainSubstring("AllTypesProcess --> AllTypesDone : complete"))
+			Expect(markdown).To(ContainSubstring("AllTypesProcess --> AllTypesFailed : error"))
+			Expect(markdown).To(ContainSubstring("AllTypesFailed --> [*]"))
+			Expect(markdown).To(ContainSubstring("AllTypesDone --> [*]"))
+			Expect(markdown).To(ContainSubstring("AllTypesConfirm --> AllTypesProcess : confirm"))
+			Expect(markdown).To(ContainSubstring("AllTypesConfirm --> AllTypesForm : cancel"))
+		})
+
+		It("should render modal close transition", func() {
+			modalMatrix := &statematrix.StateMatrix{
+				GeneratedAt:  time.Now(),
+				TotalIntents: 1,
+				TotalStates:  3,
+				Intents: []statematrix.ComponentInfo{
+					{
+						Name:       "ModalWorkflow",
+						File:       "/path/to/modal.go",
+						Kind:       "intent",
+						StateCount: 3,
+						States: []statematrix.StateInfo{
+							{Constant: "ModalStart", Type: "ROOT", EscapeBehavior: "Cancel intent \u2192 Main Menu"},
+							{Constant: "ModalForm", Type: "Intermediate", EscapeBehavior: "Back \u2192 Previous state"},
+							{Constant: "ModalEdit", Type: "Modal", EscapeBehavior: "Close modal \u2192 Parent state"},
+						},
+					},
+				},
+				Screens: []statematrix.ComponentInfo{},
+			}
+
+			mdPath := filepath.Join(tmpDir, "modal.md")
+			err := statematrix.GenerateMarkdown(modalMatrix, mdPath)
+			Expect(err).ToNot(HaveOccurred())
+
+			content, err := os.ReadFile(mdPath)
+			Expect(err).ToNot(HaveOccurred())
+
+			markdown := string(content)
+			Expect(markdown).To(ContainSubstring("ModalEdit --> ModalForm : close"))
+		})
+
+		It("should use first state as entry when no ROOT exists", func() {
+			noRootMatrix := &statematrix.StateMatrix{
+				GeneratedAt:  time.Now(),
+				TotalIntents: 1,
+				TotalStates:  2,
+				Intents: []statematrix.ComponentInfo{
+					{
+						Name:       "NoRoot",
+						File:       "/path/to/noroot.go",
+						Kind:       "intent",
+						StateCount: 2,
+						States: []statematrix.StateInfo{
+							{Constant: "NoRootForm", Type: "Intermediate", EscapeBehavior: "Back \u2192 Previous state"},
+							{Constant: "NoRootDone", Type: "Final", EscapeBehavior: "Deactivate intent"},
+						},
+					},
+				},
+				Screens: []statematrix.ComponentInfo{},
+			}
+
+			mdPath := filepath.Join(tmpDir, "noroot.md")
+			err := statematrix.GenerateMarkdown(noRootMatrix, mdPath)
+			Expect(err).ToNot(HaveOccurred())
+
+			content, err := os.ReadFile(mdPath)
+			Expect(err).ToNot(HaveOccurred())
+
+			markdown := string(content)
+			Expect(markdown).To(ContainSubstring("[*] --> NoRootForm"))
+		})
+	})
+
+	Describe("Zero GeneratedAt", func() {
+		It("should auto-set timestamp for markdown generation", func() {
+			zeroMatrix := &statematrix.StateMatrix{
+				TotalIntents: 1,
+				TotalStates:  1,
+				Intents: []statematrix.ComponentInfo{
+					{
+						Name:       "ZeroTime",
+						File:       "/path/to/zero.go",
+						Kind:       "intent",
+						StateCount: 1,
+						States: []statematrix.StateInfo{
+							{Constant: "ZeroStart", Type: "ROOT", EscapeBehavior: "Cancel intent \u2192 Main Menu"},
+						},
+					},
+				},
+				Screens: []statematrix.ComponentInfo{},
+			}
+
+			mdPath := filepath.Join(tmpDir, "zero_md.md")
+			err := statematrix.GenerateMarkdown(zeroMatrix, mdPath)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(zeroMatrix.GeneratedAt.IsZero()).To(BeFalse())
+		})
+
+		It("should auto-set timestamp for JSON generation", func() {
+			zeroMatrix := &statematrix.StateMatrix{
+				TotalIntents: 1,
+				TotalStates:  1,
+				Intents: []statematrix.ComponentInfo{
+					{
+						Name:       "ZeroTime",
+						File:       "/path/to/zero.go",
+						Kind:       "intent",
+						StateCount: 1,
+						States: []statematrix.StateInfo{
+							{Constant: "ZeroStart", Type: "ROOT", EscapeBehavior: "Cancel intent \u2192 Main Menu"},
+						},
+					},
+				},
+				Screens: []statematrix.ComponentInfo{},
+			}
+
+			jsonPath := filepath.Join(tmpDir, "zero.json")
+			err := statematrix.GenerateJSON(zeroMatrix, jsonPath)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(zeroMatrix.GeneratedAt.IsZero()).To(BeFalse())
+		})
+	})
+
+	Describe("Empty Intents", func() {
+		It("should show placeholder when intents section is empty", func() {
+			emptyIntents := &statematrix.StateMatrix{
+				GeneratedAt:  time.Now(),
+				TotalIntents: 0,
+				TotalScreens: 1,
+				TotalStates:  1,
+				Intents:      []statematrix.ComponentInfo{},
+				Screens: []statematrix.ComponentInfo{
+					{
+						Name:       "TestScreen",
+						File:       "/path/to/screen.go",
+						Kind:       "screen",
+						StateCount: 1,
+						States: []statematrix.StateInfo{
+							{Constant: "ScreenActive", Type: "ROOT", EscapeBehavior: "Cancel \u2192 Parent screen"},
+						},
+					},
+				},
+			}
+
+			mdPath := filepath.Join(tmpDir, "empty_intents.md")
+			err := statematrix.GenerateMarkdown(emptyIntents, mdPath)
+			Expect(err).ToNot(HaveOccurred())
+
+			content, err := os.ReadFile(mdPath)
+			Expect(err).ToNot(HaveOccurred())
+
+			markdown := string(content)
+			Expect(markdown).To(ContainSubstring("No intent states found"))
+		})
+	})
 })
 
 var _ = Describe("Scanner", func() {
@@ -436,6 +625,71 @@ var _ = Describe("Scanner", func() {
 			}
 
 			Expect(matrix.TotalStates).To(Equal(totalStates))
+		})
+
+		Context("when intent files have overlapping states", func() {
+			var tmpIntentsDir, tmpScreensDir string
+
+			BeforeEach(func() {
+				var err error
+				tmpIntentsDir, err = os.MkdirTemp("", "sm-intents-*")
+				Expect(err).ToNot(HaveOccurred())
+
+				tmpScreensDir, err = os.MkdirTemp("", "sm-screens-*")
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			AfterEach(func() {
+				os.RemoveAll(tmpIntentsDir)
+				os.RemoveAll(tmpScreensDir)
+			})
+
+			It("should deduplicate states from multiple files in the same intent", func() {
+				intentDir := filepath.Join(tmpIntentsDir, "testworkflow")
+				err := os.MkdirAll(intentDir, 0o755)
+				Expect(err).ToNot(HaveOccurred())
+
+				err = os.WriteFile(filepath.Join(intentDir, "constants.go"), []byte(`package testworkflow
+
+const (
+	StateStart = iota
+	StateForm
+)
+`), 0o644)
+				Expect(err).ToNot(HaveOccurred())
+
+				err = os.WriteFile(filepath.Join(intentDir, "types.go"), []byte(`package testworkflow
+
+const (
+	StateStart = iota
+	StateReview
+)
+`), 0o644)
+				Expect(err).ToNot(HaveOccurred())
+
+				matrix, err := statematrix.ScanAll(tmpIntentsDir, tmpScreensDir)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(matrix.TotalIntents).To(Equal(1))
+
+				intent := matrix.Intents[0]
+				Expect(intent.StateCount).To(Equal(3))
+
+				stateNames := make([]string, len(intent.States))
+				for i, s := range intent.States {
+					stateNames[i] = s.Constant
+				}
+				Expect(stateNames).To(ContainElement("StateStart"))
+				Expect(stateNames).To(ContainElement("StateForm"))
+				Expect(stateNames).To(ContainElement("StateReview"))
+			})
+
+			It("should handle empty intents and screens directories", func() {
+				matrix, err := statematrix.ScanAll(tmpIntentsDir, tmpScreensDir)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(matrix.TotalIntents).To(Equal(0))
+				Expect(matrix.TotalScreens).To(Equal(0))
+				Expect(matrix.TotalStates).To(Equal(0))
+			})
 		})
 	})
 })

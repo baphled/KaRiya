@@ -236,4 +236,38 @@ var _ = Describe("Handlers", func() {
 			})
 		})
 	})
+
+	Describe("handleEditKeyInList with empty list", func() {
+		It("should return nil when no fact is selected", func() {
+			emptyRepo := NewIntentMockFactRepository()
+			intentCtx := factmanagement.NewIntentContext(ctx, emptyRepo)
+			emptyIntent, err := factmanagement.NewIntent(intentCtx)
+			Expect(err).NotTo(HaveOccurred())
+			emptyIntent.Init()
+			cmd := emptyIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
+			Expect(cmd).To(BeNil())
+		})
+	})
+
+	Describe("handleListKeyActions with empty list", func() {
+		It("should not transition to delete confirm when no fact is selected", func() {
+			emptyRepo := NewIntentMockFactRepository()
+			intentCtx := factmanagement.NewIntentContext(ctx, emptyRepo)
+			emptyIntent, err := factmanagement.NewIntent(intentCtx)
+			Expect(err).NotTo(HaveOccurred())
+			emptyIntent.Init()
+			cmd := emptyIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'d'}})
+			Expect(cmd).To(BeNil())
+		})
+
+		It("should not transition to view when no fact is selected on enter", func() {
+			emptyRepo := NewIntentMockFactRepository()
+			intentCtx := factmanagement.NewIntentContext(ctx, emptyRepo)
+			emptyIntent, err := factmanagement.NewIntent(intentCtx)
+			Expect(err).NotTo(HaveOccurred())
+			emptyIntent.Init()
+			cmd := emptyIntent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			Expect(cmd).To(BeNil())
+		})
+	})
 })

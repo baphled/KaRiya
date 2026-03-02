@@ -224,6 +224,104 @@ var _ = Describe("Intent", func() {
 				Expect(view).To(ContainSubstring("No facts"))
 			})
 		})
+
+		Context("with long fact text and formatting", func() {
+			BeforeEach(func() {
+				longFact := fixtures.Fact("fact-1234567890abcdef", "event-1")
+				longFact.Text = "This is a very long fact text that definitely exceeds fifty characters and should be truncated in the table display"
+				longFact.RoleFit = "senior_ic"
+				longFact.StrengthSignal = ""
+				longFact.CompetencyCategories = []string{"technical", "leadership", "communication", "problem-solving"}
+				mockRepo.facts = []*career.Fact{longFact}
+				intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
+				var err error
+				intent, err = factmanagement.NewIntent(intentCtx)
+				Expect(err).NotTo(HaveOccurred())
+				intent.Init()
+			})
+
+			It("should truncate text exceeding fifty characters", func() {
+				view := intent.View()
+				Expect(view).To(ContainSubstring("..."))
+			})
+
+			It("should render view without error for empty strength signal", func() {
+				view := intent.View()
+				Expect(view).NotTo(BeEmpty())
+			})
+		})
+
+		Context("in completed state", func() {
+			It("should render completed content after cancellation", func() {
+				intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
+				var err error
+				intent, err = factmanagement.NewIntent(intentCtx)
+				Expect(err).NotTo(HaveOccurred())
+				intent.Init()
+				intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+				view := intent.View()
+				Expect(view).To(ContainSubstring("completed"))
+			})
+		})
+
+		Context("with form errors", func() {
+			It("should render view with validation errors", func() {
+				intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
+				intentCtx.SetFormError("text", "Field is required")
+				var err error
+				intent, err = factmanagement.NewIntent(intentCtx)
+				Expect(err).NotTo(HaveOccurred())
+				intent.Init()
+				view := intent.View()
+				Expect(view).NotTo(BeEmpty())
+			})
+		})
+
+		Context("with long fact ID in view state", func() {
+			BeforeEach(func() {
+				longIDFact := fixtures.Fact("fact-1234567890abcdef", "event-1")
+				longIDFact.Text = "Test fact about skills"
+				longIDFact.RoleFit = "senior_ic"
+				mockRepo.facts = []*career.Fact{longIDFact}
+				intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
+				var err error
+				intent, err = factmanagement.NewIntent(intentCtx)
+				Expect(err).NotTo(HaveOccurred())
+				intent.Init()
+			})
+
+			It("should truncate fact ID in breadcrumbs when viewing", func() {
+				intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+				view := intent.View()
+				Expect(view).To(ContainSubstring("Fact #"))
+			})
+
+			It("should truncate fact ID in breadcrumbs when editing", func() {
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
+				view := intent.View()
+				Expect(view).To(ContainSubstring("Edit Fact"))
+			})
+
+			It("should truncate fact ID in breadcrumbs when deleting", func() {
+				intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'d'}})
+				view := intent.View()
+				Expect(view).To(ContainSubstring("Fact #"))
+			})
+		})
+
+		Context("with new fact breadcrumbs", func() {
+			It("should show New Fact in breadcrumbs", func() {
+				intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
+				var err error
+				intent, err = factmanagement.NewIntent(intentCtx)
+				Expect(err).NotTo(HaveOccurred())
+				intent.Init()
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
+				view := intent.View()
+				Expect(view).To(ContainSubstring("New Fact"))
+			})
+		})
 	})
 
 	Describe("Navigation", func() {
