@@ -11,8 +11,8 @@ import (
 
 	"github.com/baphled/kariya/features/support"
 	"github.com/baphled/kariya/internal/domain/career"
-	"github.com/baphled/kariya/internal/testutil/e2e"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
+	"github.com/baphled/kariya/internal/testutil/harness"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/cucumber/godog"
 	"github.com/google/uuid"
@@ -306,7 +306,7 @@ func thereShouldBeNEvents(ctx context.Context, expected int) error {
 	return nil
 }
 
-func navigateToMainMenu(env *e2e.TestEnv) {
+func navigateToMainMenu(env *harness.TestEnv) {
 	for range 10 {
 		if isOnMainMenu(env) {
 			return
@@ -315,7 +315,7 @@ func navigateToMainMenu(env *e2e.TestEnv) {
 	}
 }
 
-func isOnMainMenu(env *e2e.TestEnv) bool {
+func isOnMainMenu(env *harness.TestEnv) bool {
 	view := env.GetView()
 	return strings.Contains(view, "Career Event Management System") &&
 		strings.Contains(view, "Capture Event") &&
@@ -516,7 +516,7 @@ func theAcceptedBurstShouldHaveAtLeastNEventIDs(ctx context.Context, minCount in
 	return nil
 }
 
-func createSuggestedBurstFromEvents(env *e2e.TestEnv) error {
+func createSuggestedBurstFromEvents(env *harness.TestEnv) error {
 	events := env.GetEvents()
 	if len(events) == 0 {
 		return errors.New("no events found in database")
@@ -559,7 +559,7 @@ func iAcceptAllInferredSkills(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-func createInferredSkillsFromLatestEvent(env *e2e.TestEnv) {
+func createInferredSkillsFromLatestEvent(env *harness.TestEnv) {
 	// Use domain function to filter skills from view state
 	view := env.GetView()
 	if view == "" {
@@ -639,7 +639,7 @@ func iSaveTheBurstEdit(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-func createEditedBurstFromEvents(env *e2e.TestEnv, burstName string) error {
+func createEditedBurstFromEvents(env *harness.TestEnv, burstName string) error {
 	// This is a "When" helper - bypass UI and directly create a burst
 	burst := &career.Burst{
 		Name:      burstName,
@@ -717,7 +717,7 @@ func iSaveMetadataChanges(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-func updateEventMetadata(env *e2e.TestEnv, company string) {
+func updateEventMetadata(env *harness.TestEnv, company string) {
 	events := env.GetEvents()
 	if len(events) == 0 {
 		return
@@ -729,7 +729,7 @@ func updateEventMetadata(env *e2e.TestEnv, company string) {
 	}
 }
 
-func persistEventWithSkills(env *e2e.TestEnv, event *career.Event) error {
+func persistEventWithSkills(env *harness.TestEnv, event *career.Event) error {
 	eventRepo := env.Service.GetEventRepository()
 	if eventRepo != nil {
 		if err := eventRepo.Create(env.Ctx, event); err != nil {

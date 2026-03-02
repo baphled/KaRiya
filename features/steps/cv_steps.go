@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/baphled/kariya/features/support"
-	"github.com/baphled/kariya/internal/testutil/e2e"
+	"github.com/baphled/kariya/internal/testutil/harness"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/cucumber/godog"
 	"github.com/onsi/gomega"
@@ -125,7 +125,7 @@ func iHaveACompleteProfileWithEventsAndFacts(ctx context.Context) (context.Conte
 	env.PopulateTestData(50, 5, 30)
 
 	// Add skills - CV generation requires skills for sections
-	skills := e2e.CreateSampleSkills(20)
+	skills := harness.CreateSampleSkills(20)
 	for _, skill := range skills {
 		env.AddSkill(skill)
 	}

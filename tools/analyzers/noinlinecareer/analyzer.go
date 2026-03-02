@@ -98,7 +98,7 @@ func isExcludedPackage(pkgPath string) bool {
 	exclusions := []string{
 		"domain/career",
 		"fixtures",
-		"testutil/e2e",
+		"testutil/harness",
 	}
 
 	for _, exclusion := range exclusions {

@@ -4,7 +4,7 @@ KaRiya is a career event capture terminal user interface built with Go and Bubbl
 
 ## Prerequisites
 
-- Go 1.24 or higher
+- Go 1.25.4 or higher
 - Ginkgo v2
 - Make (optional, for task automation)
 - Node.js 18+ and npm (for commitlint)

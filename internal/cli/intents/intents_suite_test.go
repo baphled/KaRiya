@@ -6,7 +6,7 @@
 // tests (package intents_test). Using `package intents` ensures that internal tests
 // like configure_system_test.go get the config isolation set up by BeforeSuite.
 //
-// External tests (package intents_test) that use e2e.Setup() get their own config
+// External tests (package intents_test) that use harness.Setup() get their own config
 // isolation through SwapConfigPathForTesting, which preserves and restores the
 // suite-level path set here.
 //

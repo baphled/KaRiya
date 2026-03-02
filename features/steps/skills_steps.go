@@ -15,8 +15,8 @@ import (
 	skillsmanagement "github.com/baphled/kariya/internal/cli/intents/skillsmanagement"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/service/career/skillinference"
-	"github.com/baphled/kariya/internal/testutil/e2e"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
+	"github.com/baphled/kariya/internal/testutil/harness"
 )
 
 type pendingSkillForm struct {
@@ -33,7 +33,7 @@ func resetPendingSkill() {
 	pendingSkill = pendingSkillForm{}
 }
 
-func updateExistingSkill(env *e2e.TestEnv) error {
+func updateExistingSkill(env *harness.TestEnv) error {
 	skills := env.GetSkills()
 	if len(skills) == 0 {
 		return errors.New("no existing skills to edit")

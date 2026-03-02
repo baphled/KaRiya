@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/baphled/kariya/features/support"
-	"github.com/baphled/kariya/internal/testutil/e2e"
+	"github.com/baphled/kariya/internal/testutil/harness"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/cucumber/godog"
 )
@@ -16,7 +16,7 @@ import (
 // FormHelper provides form navigation and interaction abstraction.
 // If form navigation changes (Tab → Arrow keys), update methods here only.
 type FormHelper struct {
-	env *e2e.TestEnv
+	env *harness.TestEnv
 	ctx context.Context
 }
 

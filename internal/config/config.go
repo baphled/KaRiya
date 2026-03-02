@@ -53,7 +53,7 @@ func requireTestIsolation(operation string) {
 			"BUG-007 PROTECTION: %s called in test without config isolation!\n\n"+
 				"Tests must isolate config writes to prevent polluting ~/.kariya/config.yaml.\n\n"+
 				"Fix: Call config.SetConfigPathForTesting(path) before using %s,\n"+
-				"     or use e2e.Setup()/e2e.SetupWithOnboarding() which handle isolation.\n\n"+
+				"     or use harness.Setup()/harness.SetupWithOnboarding() which handle isolation.\n\n"+
 				"Example:\n"+
 				"    tempDir := t.TempDir()\n"+
 				"    config.SetConfigPathForTesting(filepath.Join(tempDir, \"config.yaml\"))\n"+

@@ -18,7 +18,7 @@ import (
 	"github.com/baphled/kariya/internal/logger"
 	careersql "github.com/baphled/kariya/internal/repository/career/sql"
 	careerservice "github.com/baphled/kariya/internal/service/career"
-	"github.com/baphled/kariya/internal/testutil/e2e"
+	"github.com/baphled/kariya/internal/testutil/harness"
 	tea "github.com/charmbracelet/bubbletea"
 	"gorm.io/gorm"
 )
@@ -310,8 +310,8 @@ func (b *BDDTestingT) Error(args ...interface{}) {
 // should point to this function, not the caller.
 //
 //nolint:thelper // Factory constructor that returns a new TestEnv — t.Helper() is inappropriate here because
-func NewAppEnv(t *testing.T) *e2e.TestEnv {
-	return e2e.Setup(&BDDTestingT{t: t})
+func NewAppEnv(t *testing.T) *harness.TestEnv {
+	return harness.Setup(&BDDTestingT{t: t})
 }
 
 // GetAppEnv retrieves the TestEnv from context.
@@ -324,8 +324,8 @@ func NewAppEnv(t *testing.T) *e2e.TestEnv {
 //
 // Side effects:
 //   - None.
-func GetAppEnv(ctx context.Context) *e2e.TestEnv {
-	env, ok := ctx.Value(appEnvKey{}).(*e2e.TestEnv)
+func GetAppEnv(ctx context.Context) *harness.TestEnv {
+	env, ok := ctx.Value(appEnvKey{}).(*harness.TestEnv)
 	if !ok {
 		return nil
 	}
@@ -342,7 +342,7 @@ func GetAppEnv(ctx context.Context) *e2e.TestEnv {
 //
 // Side effects:
 //   - None.
-func WithAppEnv(ctx context.Context, env *e2e.TestEnv) context.Context {
+func WithAppEnv(ctx context.Context, env *harness.TestEnv) context.Context {
 	return context.WithValue(ctx, appEnvKey{}, env)
 }
 
@@ -415,7 +415,7 @@ func (d *EventData) BuildEvent() (*career.Event, error) {
 // It searches the current view for the item text and navigates down until found.
 //
 // Expected:
-//   - env must be a valid *e2e.TestEnv.
+//   - env must be a valid *harness.TestEnv.
 //   - itemName is the text to search for in the table.
 //   - maxAttempts is the maximum number of down presses (default 20).
 //
@@ -425,7 +425,7 @@ func (d *EventData) BuildEvent() (*career.Event, error) {
 // Side effects:
 //   - Presses 'Home' to go to table start.
 //   - Presses 'Down' repeatedly until item found.
-func NavigateToTableItem(env *e2e.TestEnv, itemName string, maxAttempts int) error {
+func NavigateToTableItem(env *harness.TestEnv, itemName string, maxAttempts int) error {
 	if maxAttempts == 0 {
 		maxAttempts = 20
 	}
@@ -448,7 +448,7 @@ func NavigateToTableItem(env *e2e.TestEnv, itemName string, maxAttempts int) err
 // WaitForViewContains polls the view until it contains the expected string.
 //
 // Expected:
-//   - env must be a valid *e2e.TestEnv.
+//   - env must be a valid *harness.TestEnv.
 //   - expected is the substring to wait for.
 //   - maxAttempts is the maximum number of polls (default 10).
 //   - delayMs is the delay between polls in milliseconds (default 50ms).
@@ -458,7 +458,7 @@ func NavigateToTableItem(env *e2e.TestEnv, itemName string, maxAttempts int) err
 //
 // Side effects:
 //   - Polls the view multiple times with delay.
-func WaitForViewContains(env *e2e.TestEnv, expected string, maxAttempts int, delayMs int) error {
+func WaitForViewContains(env *harness.TestEnv, expected string, maxAttempts int, delayMs int) error {
 	if maxAttempts == 0 {
 		maxAttempts = 10
 	}
@@ -643,7 +643,7 @@ func WithCLIEnv(ctx context.Context, env *CLIEnv) context.Context {
 // should point to this function, not the caller.
 //
 //nolint:thelper // Factory constructor that returns a new TestEnv — t.Helper() is inappropriate here because
-func NewAppEnvFromGormDB(t *testing.T, gormDB *gorm.DB) *e2e.TestEnv {
+func NewAppEnvFromGormDB(t *testing.T, gormDB *gorm.DB) *harness.TestEnv {
 	ctx := context.Background()
 
 	repos := careersql.NewRepositoriesFromDB(gormDB)
@@ -659,9 +659,9 @@ func NewAppEnvFromGormDB(t *testing.T, gormDB *gorm.DB) *e2e.TestEnv {
 	bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
 
 	model := app.NewModel(cliService, svc, bootstrapResult)
-	model.Update(tea.WindowSizeMsg{Width: e2e.TerminalWidth, Height: e2e.TerminalHeightLarge})
+	model.Update(tea.WindowSizeMsg{Width: harness.TerminalWidth, Height: harness.TerminalHeightLarge})
 
-	return &e2e.TestEnv{
+	return &harness.TestEnv{
 		T:          &BDDTestingT{t: t},
 		Model:      model,
 		EventRepo:  repos.Event,
