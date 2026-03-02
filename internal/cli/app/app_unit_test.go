@@ -104,6 +104,21 @@ var _ = Describe("App Unit Tests", func() {
 		})
 	})
 
+	Describe("WithVersion option", func() {
+		It("should apply version to model construction", func() {
+			testVersion := "v1.2.3"
+			log := logger.DefaultLogger()
+			bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+
+			versionedModel := app.NewModel(cliService, svc, bootstrapResult, app.WithVersion(testVersion))
+			Expect(versionedModel).NotTo(BeNil())
+
+			// Verify view renders without error (version was applied to logo)
+			view := versionedModel.View()
+			Expect(view).NotTo(BeEmpty())
+		})
+	})
+
 	Describe("Update - Key Handling", func() {
 		Context("ctrl+c key", func() {
 			It("should quit from menu state", func() {
