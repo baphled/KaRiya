@@ -9,6 +9,8 @@ import (
 	"github.com/baphled/kariya/internal/cli/uikit/layout"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"github.com/charmbracelet/lipgloss"
 )
 
 // stripAnsi removes ANSI escape codes from a string for reliable test comparisons.
@@ -34,6 +36,19 @@ func (m *MockLogo) ViewStatic() string {
 
 func (m *MockLogo) SetWidth(width int) {
 	m.width = width
+}
+
+// MockModal implements ModalRenderer for testing.
+type MockModal struct {
+	content string
+}
+
+func NewMockModal(content string) *MockModal {
+	return &MockModal{content: content}
+}
+
+func (m *MockModal) Render(_, _ int) string {
+	return m.content
 }
 
 var _ = Describe("ScreenLayout Pinned Layout", func() {
@@ -899,6 +914,335 @@ var _ = Describe("Footer", func() {
 				view := stripAnsi(f.View())
 				Expect(view).To(ContainSubstring("status"))
 			})
+		})
+	})
+})
+
+var _ = Describe("ScreenLayout Coverage", func() {
+	var (
+		termInfo *terminal.Info
+		theme    themes.Theme
+	)
+
+	BeforeEach(func() {
+		termInfo = &terminal.Info{
+			Width:   80,
+			Height:  24,
+			IsValid: true,
+		}
+		theme = themes.NewDefaultTheme()
+	})
+
+	Describe("NewScreenLayout", func() {
+		Context("when info is nil", func() {
+			It("should use default terminal dimensions", func() {
+				view := layout.NewScreenLayout(nil)
+				rendered := view.Render()
+				Expect(rendered).NotTo(BeEmpty())
+			})
+		})
+
+		Context("when info has zero dimensions", func() {
+			It("should use default terminal dimensions", func() {
+				zeroInfo := &terminal.Info{Width: 0, Height: 0}
+				view := layout.NewScreenLayout(zeroInfo)
+				rendered := view.Render()
+				Expect(rendered).NotTo(BeEmpty())
+			})
+		})
+	})
+
+	Describe("getTheme", func() {
+		Context("when no theme is set", func() {
+			It("should use the default theme for rendering", func() {
+				view := layout.NewScreenLayout(termInfo).
+					WithContent("Content").
+					WithHelp("Help")
+				rendered := view.Render()
+				Expect(rendered).To(ContainSubstring("Content"))
+			})
+		})
+	})
+
+	Describe("WithTitle", func() {
+		It("should display the title in the rendered output", func() {
+			view := layout.NewScreenLayout(termInfo).
+				WithTitle("My Title", "").
+				WithTheme(theme).
+				WithContent("Content")
+			rendered := stripAnsi(view.Render())
+			Expect(rendered).To(ContainSubstring("My Title"))
+		})
+
+		It("should display the subtitle when provided", func() {
+			view := layout.NewScreenLayout(termInfo).
+				WithTitle("Title", "A subtitle").
+				WithTheme(theme).
+				WithContent("Content")
+			rendered := stripAnsi(view.Render())
+			Expect(rendered).To(ContainSubstring("A subtitle"))
+		})
+
+		It("should set ShowHeader to true", func() {
+			view := layout.NewScreenLayout(termInfo).
+				WithTitle("Title", "")
+			Expect(view.ShowHeader).To(BeTrue())
+		})
+
+		It("should render title without subtitle when subtitle is empty", func() {
+			view := layout.NewScreenLayout(termInfo).
+				WithTitle("Only Title", "").
+				WithTheme(theme).
+				WithContent("Content")
+			rendered := stripAnsi(view.Render())
+			Expect(rendered).To(ContainSubstring("Only Title"))
+		})
+	})
+
+	Describe("WithContentStyle", func() {
+		It("should apply the content style to rendered output", func() {
+			style := lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#FF0000"))
+			view := layout.NewScreenLayout(termInfo).
+				WithContentStyle(style).
+				WithTheme(theme).
+				WithContent("Styled Content")
+			rendered := view.Render()
+			Expect(rendered).To(ContainSubstring("Styled Content"))
+		})
+
+		It("should store the style on the layout", func() {
+			style := lipgloss.NewStyle().
+				Background(lipgloss.Color("#00FF00"))
+			view := layout.NewScreenLayout(termInfo).
+				WithContentStyle(style)
+			Expect(view.ContentStyle.GetBackground()).NotTo(Equal(lipgloss.NoColor{}))
+		})
+	})
+
+	Describe("WithFooterSeparator", func() {
+		It("should render a separator line when enabled", func() {
+			view := layout.NewScreenLayout(termInfo).
+				WithTheme(theme).
+				WithContent("Content").
+				WithHelp("Help text").
+				WithFooterSeparator(true)
+			rendered := stripAnsi(view.Render())
+			Expect(rendered).To(ContainSubstring("─"))
+		})
+
+		It("should not render a separator when disabled", func() {
+			view := layout.NewScreenLayout(termInfo).
+				WithTheme(theme).
+				WithContent("Content").
+				WithHelp("Help text").
+				WithFooterSeparator(false)
+			rendered := stripAnsi(view.Render())
+			Expect(rendered).NotTo(ContainSubstring("─"))
+		})
+
+		It("should set the ShowFooterSeparator field", func() {
+			view := layout.NewScreenLayout(termInfo).
+				WithFooterSeparator(true)
+			Expect(view.ShowFooterSeparator).To(BeTrue())
+		})
+	})
+
+	Describe("ShowModalOverlay", func() {
+		It("should render the modal content over the layout", func() {
+			modal := NewMockModal("MODAL CONTENT")
+			view := layout.NewScreenLayout(termInfo).
+				WithTheme(theme).
+				WithContent("Background").
+				ShowModalOverlay(modal)
+			rendered := stripAnsi(view.Render())
+			Expect(rendered).To(ContainSubstring("MODAL CONTENT"))
+		})
+
+		It("should set ShowModal to true", func() {
+			modal := NewMockModal("Modal")
+			view := layout.NewScreenLayout(termInfo).
+				ShowModalOverlay(modal)
+			Expect(view.ShowModal).To(BeTrue())
+		})
+
+		It("should store the modal renderer", func() {
+			modal := NewMockModal("Modal")
+			view := layout.NewScreenLayout(termInfo).
+				ShowModalOverlay(modal)
+			Expect(view.Modal).NotTo(BeNil())
+		})
+
+		It("should dim the background content", func() {
+			modal := NewMockModal("OVERLAY")
+			view := layout.NewScreenLayout(termInfo).
+				WithTheme(theme).
+				WithContent("Background Content").
+				ShowModalOverlay(modal)
+			rendered := view.Render()
+			Expect(rendered).NotTo(BeEmpty())
+			Expect(stripAnsi(rendered)).To(ContainSubstring("OVERLAY"))
+		})
+
+		It("should overlay a multi-line modal centered vertically", func() {
+			multiLineModal := NewMockModal("Line1\nLine2\nLine3")
+			view := layout.NewScreenLayout(termInfo).
+				WithTheme(theme).
+				WithContent("Background").
+				ShowModalOverlay(multiLineModal)
+			rendered := stripAnsi(view.Render())
+			Expect(rendered).To(ContainSubstring("Line1"))
+			Expect(rendered).To(ContainSubstring("Line2"))
+			Expect(rendered).To(ContainSubstring("Line3"))
+		})
+	})
+
+	Describe("SetUseFullWidth", func() {
+		It("should set UseFullWidth to false", func() {
+			view := layout.NewScreenLayout(termInfo).
+				SetUseFullWidth(false)
+			Expect(view.UseFullWidth).To(BeFalse())
+		})
+
+		It("should set UseFullWidth to true", func() {
+			view := layout.NewScreenLayout(termInfo).
+				SetUseFullWidth(true)
+			Expect(view.UseFullWidth).To(BeTrue())
+		})
+
+		It("should return the layout for chaining", func() {
+			view := layout.NewScreenLayout(termInfo)
+			result := view.SetUseFullWidth(false)
+			Expect(result).To(BeIdenticalTo(view))
+		})
+	})
+
+	Describe("buildHeaderParts with title and subtitle", func() {
+		It("should include title in header when WithTitle is used", func() {
+			view := layout.NewScreenLayout(termInfo).
+				WithTitle("Header Title", "Header Subtitle").
+				WithTheme(theme).
+				WithContent("Content")
+			rendered := stripAnsi(view.Render())
+			Expect(rendered).To(ContainSubstring("Header Title"))
+			Expect(rendered).To(ContainSubstring("Header Subtitle"))
+		})
+
+		It("should include both breadcrumbs and title when both are set", func() {
+			view := layout.NewScreenLayout(termInfo).
+				WithBreadcrumbs("Home", "Page").
+				WithTitle("Page Title", "Description").
+				WithTheme(theme).
+				WithContent("Content")
+			rendered := stripAnsi(view.Render())
+			Expect(rendered).To(ContainSubstring("Page Title"))
+			Expect(rendered).To(ContainSubstring("Description"))
+		})
+	})
+
+	Describe("buildFooterParts with separator", func() {
+		It("should include separator in footer height calculation", func() {
+			withSep := layout.NewScreenLayout(termInfo).
+				WithTheme(theme).
+				WithHelp("Help").
+				WithFooterSeparator(true)
+			withoutSep := layout.NewScreenLayout(termInfo).
+				WithTheme(theme).
+				WithHelp("Help").
+				WithFooterSeparator(false)
+			heightWithSep := withSep.GetAvailableContentHeight()
+			heightWithoutSep := withoutSep.GetAvailableContentHeight()
+			Expect(heightWithSep).To(BeNumerically("<", heightWithoutSep))
+		})
+	})
+
+	Describe("GetAvailableContentHeight", func() {
+		Context("when header and footer consume all space", func() {
+			It("should return minimum height of 1", func() {
+				tinyTerm := &terminal.Info{Width: 80, Height: 3, IsValid: true}
+				logo := NewMockLogo("L1\nL2\nL3\nL4\nL5")
+				view := layout.NewScreenLayout(tinyTerm).
+					WithLogo(logo, 2).
+					WithBreadcrumbs("A", "B").
+					WithTheme(theme).
+					WithHelp("Help")
+				availableHeight := view.GetAvailableContentHeight()
+				Expect(availableHeight).To(Equal(1))
+			})
+		})
+	})
+
+	Describe("Render with ContentStyle", func() {
+		It("should apply foreground style to content", func() {
+			style := lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#FF0000"))
+			view := layout.NewScreenLayout(termInfo).
+				WithTheme(theme).
+				WithContentStyle(style).
+				WithContent("Red Content")
+			rendered := view.Render()
+			Expect(stripAnsi(rendered)).To(ContainSubstring("Red Content"))
+		})
+
+		It("should apply background style to content", func() {
+			style := lipgloss.NewStyle().
+				Background(lipgloss.Color("#0000FF"))
+			view := layout.NewScreenLayout(termInfo).
+				WithTheme(theme).
+				WithContentStyle(style).
+				WithContent("Blue BG Content")
+			rendered := view.Render()
+			Expect(rendered).NotTo(BeEmpty())
+			Expect(stripAnsi(rendered)).To(ContainSubstring("Blue BG Content"))
+		})
+
+		It("should not apply style when content is empty", func() {
+			style := lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#FF0000"))
+			view := layout.NewScreenLayout(termInfo).
+				WithTheme(theme).
+				WithContentStyle(style).
+				WithContent("")
+			rendered := view.Render()
+			Expect(rendered).NotTo(BeEmpty())
+		})
+	})
+
+	Describe("Render with empty content", func() {
+		It("should render without panicking when content is empty", func() {
+			view := layout.NewScreenLayout(termInfo).
+				WithTheme(theme).
+				WithHelp("Help")
+			Expect(func() {
+				_ = view.Render()
+			}).NotTo(Panic())
+		})
+	})
+
+	Describe("Render with empty header", func() {
+		It("should render when header parts produce empty string", func() {
+			view := layout.NewScreenLayout(termInfo).
+				WithTheme(theme).
+				WithContent("Content")
+			rendered := view.Render()
+			lines := strings.Split(rendered, "\n")
+			Expect(lines).To(HaveLen(termInfo.Height))
+		})
+	})
+
+	Describe("Render content area height minimum", func() {
+		It("should enforce minimum content area height of 1", func() {
+			tinyTerm := &terminal.Info{Width: 80, Height: 3, IsValid: true}
+			logo := NewMockLogo("L1\nL2\nL3\nL4\nL5")
+			view := layout.NewScreenLayout(tinyTerm).
+				WithLogo(logo, 2).
+				WithBreadcrumbs("A", "B").
+				WithTheme(theme).
+				WithContent("Content").
+				WithHelp("Help")
+			Expect(func() {
+				_ = view.Render()
+			}).NotTo(Panic())
 		})
 	})
 })
