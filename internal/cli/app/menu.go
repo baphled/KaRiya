@@ -91,6 +91,7 @@ func (m *Model) viewMenu() string {
 	background := primitives.PlaceInTerminal(combined, m.width, m.height)
 
 	if m.configModal != nil {
+		m.configModal.SetDimensions(m.width, m.height)
 		return behaviors.RenderModalOverlay(m.configModal, background)
 	}
 
