@@ -466,4 +466,16 @@ var _ = Describe("Event Repository", func() {
 			Expect(err).To(HaveOccurred())
 		})
 	})
+
+	Describe("saveSkillAssociations error path", func() {
+		It("returns error when event_skills table is missing", func() {
+			Expect(db.Exec("DROP TABLE event_skills").Error).NotTo(HaveOccurred())
+
+			event := fixtures.EventWith("", "Test event", "", "")
+			event.Skills = []string{"skill-1"}
+
+			err := repo.Create(ctx, event)
+			Expect(err).To(HaveOccurred())
+		})
+	})
 })

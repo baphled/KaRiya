@@ -215,6 +215,28 @@ func (m *EditFactModal) GetFooter() string {
 	return "Enter: Confirm  |  Esc: Cancel  |  Tab: Next Field  |  Shift+Tab: Previous"
 }
 
+// GetForm returns the underlying huh form for testing purposes.
+//
+// Returns:
+//   - The underlying huh.Form instance.
+//
+// Side effects:
+//   - None.
+func (m *EditFactModal) GetForm() forms.Form {
+	return m.form
+}
+
+// GetFormData returns the form data for testing purposes.
+//
+// Returns:
+//   - The underlying FactFormData instance.
+//
+// Side effects:
+//   - None.
+func (m *EditFactModal) GetFormData() *forms.FactFormData {
+	return m.formData
+}
+
 func modalTitleStyle(theme themes.Theme) lipgloss.Style {
 	if theme == nil {
 		theme = themes.NewDefaultTheme()
