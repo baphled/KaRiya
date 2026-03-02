@@ -376,4 +376,114 @@ var _ = Describe("BurstListScreen", func() {
 			Expect(result).To(BeNil())
 		})
 	})
+	Describe("Update with unhandled message", func() {
+		BeforeEach(func() {
+			screen = burst_management.NewBurstListScreen(bursts)
+		})
+
+		It("should return nil for non-key non-window messages", func() {
+			type customMsg struct{}
+			cmd, result := screen.Update(customMsg{})
+			Expect(cmd).To(BeNil())
+			Expect(result).To(BeNil())
+		})
+	})
+
+	Describe("Arrow key navigation", func() {
+		BeforeEach(func() {
+			screen = burst_management.NewBurstListScreen(bursts)
+		})
+
+		It("should handle up arrow key type", func() {
+			msg := tea.KeyMsg{Type: tea.KeyUp}
+			cmd, result := screen.Update(msg)
+			Expect(cmd).To(BeNil())
+			Expect(result).To(BeNil())
+		})
+
+		It("should handle down arrow key type", func() {
+			msg := tea.KeyMsg{Type: tea.KeyDown}
+			cmd, result := screen.Update(msg)
+			Expect(cmd).To(BeNil())
+			Expect(result).To(BeNil())
+		})
+
+		It("should handle page down key type", func() {
+			msg := tea.KeyMsg{Type: tea.KeyPgDown}
+			cmd, result := screen.Update(msg)
+			Expect(cmd).To(BeNil())
+			Expect(result).To(BeNil())
+		})
+
+		It("should handle page up key type", func() {
+			msg := tea.KeyMsg{Type: tea.KeyPgUp}
+			cmd, result := screen.Update(msg)
+			Expect(cmd).To(BeNil())
+			Expect(result).To(BeNil())
+		})
+	})
+
+	Describe("View with theme", func() {
+		It("should render with explicit theme set", func() {
+			screen = burst_management.NewBurstListScreen(bursts)
+			screen.SetTheme(themes.NewDefaultTheme())
+			view := screen.View()
+			Expect(view).NotTo(BeEmpty())
+			Expect(view).To(ContainSubstring("First Achievement Period"))
+		})
+
+		It("should render with non-Theme interface value", func() {
+			screen = burst_management.NewBurstListScreen(bursts)
+			screen.SetTheme("not-a-theme")
+			view := screen.View()
+			Expect(view).NotTo(BeEmpty())
+		})
+	})
+
+	Describe("burstRowFormatter edge cases", func() {
+		It("should truncate long burst names", func() {
+			longNameBurst := fixtures.Burst("burst-long", "e1")
+			longNameBurst.Name = "This Is A Very Long Burst Name That Exceeds Twenty Seven Characters"
+			longNameBurst.Description = "Short desc"
+			screen = burst_management.NewBurstListScreen([]*career.Burst{longNameBurst})
+			content := screen.RenderContent()
+			Expect(content).NotTo(ContainSubstring("This Is A Very Long Burst Name That Exceeds Twenty Seven Characters"))
+		})
+
+		It("should show dash for empty description", func() {
+			emptyDescBurst := fixtures.Burst("burst-empty-desc", "e1")
+			emptyDescBurst.Name = "Test Burst"
+			emptyDescBurst.Description = ""
+			screen = burst_management.NewBurstListScreen([]*career.Burst{emptyDescBurst})
+			content := screen.RenderContent()
+			Expect(content).To(ContainSubstring("-"))
+		})
+
+		It("should truncate long descriptions", func() {
+			longDescBurst := fixtures.Burst("burst-long-desc", "e1")
+			longDescBurst.Name = "Test Burst"
+			longDescBurst.Description = "This description is quite long and exceeds thirty two characters easily"
+			screen = burst_management.NewBurstListScreen([]*career.Burst{longDescBurst})
+			content := screen.RenderContent()
+			Expect(content).To(ContainSubstring("..."))
+		})
+
+		It("should replace newlines in descriptions", func() {
+			newlineBurst := fixtures.Burst("burst-newline", "e1")
+			newlineBurst.Name = "Test Burst"
+			newlineBurst.Description = "Line one\nLine two\rLine three"
+			screen = burst_management.NewBurstListScreen([]*career.Burst{newlineBurst})
+			content := screen.RenderContent()
+			Expect(content).To(ContainSubstring("Line one Line two Line three"))
+		})
+
+		It("should handle whitespace-only description", func() {
+			whitespaceBurst := fixtures.Burst("burst-ws", "e1")
+			whitespaceBurst.Name = "Test Burst"
+			whitespaceBurst.Description = "   \t  "
+			screen = burst_management.NewBurstListScreen([]*career.Burst{whitespaceBurst})
+			content := screen.RenderContent()
+			Expect(content).To(ContainSubstring("-"))
+		})
+	})
 })

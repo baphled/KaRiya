@@ -300,4 +300,36 @@ var _ = Describe("BurstDetailScreen", func() {
 			Expect(data["action"]).To(Equal("help"))
 		})
 	})
+	Describe("View", func() {
+		BeforeEach(func() {
+			screen = burstscreens.NewBurstDetailScreen(burst)
+			screen.SetTerminalInfo(120, 40)
+		})
+
+		It("should return rendered content", func() {
+			view := screen.View()
+			Expect(view).NotTo(BeEmpty())
+			Expect(view).To(ContainSubstring("Senior Backend Engineer Career Growth"))
+		})
+
+		It("should handle nil burst", func() {
+			nilScreen := burstscreens.NewBurstDetailScreen(nil)
+			nilScreen.SetTerminalInfo(120, 40)
+			view := nilScreen.View()
+			Expect(view).To(ContainSubstring("No burst selected"))
+		})
+	})
+
+	Describe("Update with unhandled message", func() {
+		BeforeEach(func() {
+			screen = burstscreens.NewBurstDetailScreen(burst)
+		})
+
+		It("should return nil for non-key non-window messages", func() {
+			type customMsg struct{}
+			cmd, result := screen.Update(customMsg{})
+			Expect(cmd).To(BeNil())
+			Expect(result).To(BeNil())
+		})
+	})
 })
