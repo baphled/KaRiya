@@ -652,3 +652,162 @@ var _ = ginkgo.Describe("ExportService", func() {
 		})
 	})
 })
+
+var _ = ginkgo.Describe("ExportWithProfile structure branches", func() {
+	var (
+		service  *ExportService
+		log      *logger.Logger
+		ctx      context.Context
+		cv       *career.CVView
+		sections []*career.CVSection
+		bullets  map[string][]*career.CVBullet
+	)
+
+	ginkgo.BeforeEach(func() {
+		log = logger.New(io.Discard, logger.InfoLevel)
+		service = NewExportService(log)
+		ctx = context.Background()
+
+		cv = fixtures.CVViewWith("cv-1", "Test CV", "senior_ic", "hiring_manager")
+
+		bullet1 := fixtures.CVBulletWith("bullet-1", "section-exp", "Led migration to microservices")
+		bullet1.Rank = 0.9
+		bullet1.Confidence = 0.95
+
+		bullet2 := fixtures.CVBulletWith("bullet-2", "section-exp", "Implemented CI/CD pipeline")
+		bullet2.Rank = 0.7
+		bullet2.Confidence = 0.70
+
+		summarySection := fixtures.CVSectionWithSummary("section-summary", "cv-1", "Experienced engineer with 10+ years.")
+
+		expSection := fixtures.CVSectionWith("section-exp", "cv-1", "experience", "Experience", 1)
+		expSection.Content = []*career.SectionContentGroup{
+			fixtures.ContentGroupFull("TechCorp", "Jan 2020", "Present", []*career.CVBullet{bullet1, bullet2}),
+		}
+
+		sections = []*career.CVSection{summarySection, expSection}
+
+		bullets = map[string][]*career.CVBullet{
+			"section-exp": {bullet1, bullet2},
+		}
+	})
+
+	ginkgo.Describe("Consulting structure", func() {
+		ginkgo.It("should export consulting text format", func() {
+			content, err := service.ExportWithProfile(ctx, cv, sections, bullets, CVStructureConsulting, ExportFormatText, nil)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(content).To(gomega.ContainSubstring("CLIENT ENGAGEMENTS"))
+		})
+
+		ginkgo.It("should export consulting markdown format", func() {
+			content, err := service.ExportWithProfile(ctx, cv, sections, bullets, CVStructureConsulting, ExportFormatMarkdown, nil)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(content).To(gomega.ContainSubstring("## Client Engagements"))
+		})
+
+		ginkgo.It("should return error for unknown format in consulting", func() {
+			_, err := service.ExportWithProfile(ctx, cv, sections, bullets, CVStructureConsulting, ExportFormat("unknown"), nil)
+			gomega.Expect(err).To(gomega.HaveOccurred())
+			gomega.Expect(err.Error()).To(gomega.ContainSubstring("unknown export format"))
+		})
+
+		ginkgo.It("should include profile data in consulting text", func() {
+			profileCfg := &config.ProfileConfig{
+				Name:       "Jane Doe",
+				Title:      "Principal Consultant",
+				Email:      "jane@example.com",
+				WhatIBring: []string{"Strategic thinking", "Technical depth"},
+			}
+			content, err := service.ExportWithProfile(ctx, cv, sections, bullets, CVStructureConsulting, ExportFormatText, profileCfg)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(content).To(gomega.ContainSubstring("JANE DOE"))
+			gomega.Expect(content).To(gomega.ContainSubstring("WHAT I BRING"))
+			gomega.Expect(content).To(gomega.ContainSubstring("Strategic thinking"))
+		})
+
+		ginkgo.It("should include profile data in consulting markdown", func() {
+			profileCfg := &config.ProfileConfig{
+				Name:       "Jane Doe",
+				Title:      "Principal Consultant",
+				Email:      "jane@example.com",
+				WhatIBring: []string{"Strategic thinking"},
+			}
+			content, err := service.ExportWithProfile(ctx, cv, sections, bullets, CVStructureConsulting, ExportFormatMarkdown, profileCfg)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(content).To(gomega.ContainSubstring("# Jane Doe"))
+			gomega.Expect(content).To(gomega.ContainSubstring("## What I Bring"))
+		})
+	})
+
+	ginkgo.Describe("Highlights structure", func() {
+		ginkgo.It("should export highlights text format", func() {
+			content, err := service.ExportWithProfile(ctx, cv, sections, bullets, CVStructureHighlights, ExportFormatText, nil)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(content).To(gomega.ContainSubstring("KEY CAPABILITIES"))
+			gomega.Expect(content).To(gomega.ContainSubstring("SELECTED HIGHLIGHTS"))
+		})
+
+		ginkgo.It("should export highlights markdown format", func() {
+			content, err := service.ExportWithProfile(ctx, cv, sections, bullets, CVStructureHighlights, ExportFormatMarkdown, nil)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(content).To(gomega.ContainSubstring("## Key Capabilities"))
+			gomega.Expect(content).To(gomega.ContainSubstring("## Selected Highlights"))
+		})
+
+		ginkgo.It("should return error for unknown format in highlights", func() {
+			_, err := service.ExportWithProfile(ctx, cv, sections, bullets, CVStructureHighlights, ExportFormat("unknown"), nil)
+			gomega.Expect(err).To(gomega.HaveOccurred())
+			gomega.Expect(err.Error()).To(gomega.ContainSubstring("unknown export format"))
+		})
+
+		ginkgo.It("should include core strengths in highlights text", func() {
+			profileCfg := &config.ProfileConfig{
+				Name:          "John Smith",
+				Title:         "Staff Engineer",
+				CoreStrengths: []string{"Backend development", "System design", "API architecture"},
+				Languages:     []string{"Go", "Python"},
+				Systems:       []string{"Docker", "K8s"},
+			}
+			content, err := service.ExportWithProfile(ctx, cv, sections, bullets, CVStructureHighlights, ExportFormatText, profileCfg)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(content).To(gomega.ContainSubstring("Backend development"))
+			gomega.Expect(content).To(gomega.ContainSubstring("TECHNOLOGIES"))
+			gomega.Expect(content).To(gomega.ContainSubstring("Go, Python"))
+		})
+
+		ginkgo.It("should include core strengths in highlights markdown", func() {
+			profileCfg := &config.ProfileConfig{
+				Name:          "John Smith",
+				Title:         "Staff Engineer",
+				CoreStrengths: []string{"Backend development", "System design", "API architecture"},
+				Languages:     []string{"Go", "Python"},
+				Systems:       []string{"Docker", "K8s"},
+			}
+			content, err := service.ExportWithProfile(ctx, cv, sections, bullets, CVStructureHighlights, ExportFormatMarkdown, profileCfg)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(content).To(gomega.ContainSubstring("Backend development"))
+			gomega.Expect(content).To(gomega.ContainSubstring("## Technologies"))
+			gomega.Expect(content).To(gomega.ContainSubstring("**Languages:** Go, Python"))
+		})
+
+		ginkgo.It("should use default capabilities when no core strengths provided", func() {
+			content, err := service.ExportWithProfile(ctx, cv, sections, bullets, CVStructureHighlights, ExportFormatText, nil)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(content).To(gomega.ContainSubstring("Technical leadership and architecture"))
+		})
+
+		ginkgo.It("should use default capabilities in markdown when no core strengths", func() {
+			content, err := service.ExportWithProfile(ctx, cv, sections, bullets, CVStructureHighlights, ExportFormatMarkdown, nil)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(content).To(gomega.ContainSubstring("Technical leadership and architecture"))
+		})
+	})
+
+	ginkgo.Describe("Narrative structure error", func() {
+		ginkgo.It("should return error for unknown format in narrative", func() {
+			_, err := service.ExportWithProfile(ctx, cv, sections, bullets, CVStructureNarrative, ExportFormat("unknown"), nil)
+			gomega.Expect(err).To(gomega.HaveOccurred())
+			gomega.Expect(err.Error()).To(gomega.ContainSubstring("unknown export format"))
+		})
+	})
+})

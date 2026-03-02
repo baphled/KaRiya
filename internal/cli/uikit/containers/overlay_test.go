@@ -135,6 +135,21 @@ var _ = Describe("Overlay", func() {
 				Expect(width).To(BeNumerically("<=", 45))
 			}
 		})
+
+		It("should render empty overlay when no content is set", func() {
+			rendered := overlay.Render()
+
+			Expect(rendered).NotTo(BeEmpty())
+			lines := strings.Split(rendered, "\n")
+			Expect(len(lines)).To(BeNumerically(">=", 8))
+		})
+
+		It("should render dimmed overlay without content", func() {
+			overlay.Dimmed()
+			rendered := overlay.Render()
+
+			Expect(rendered).NotTo(BeEmpty())
+		})
 	})
 })
 

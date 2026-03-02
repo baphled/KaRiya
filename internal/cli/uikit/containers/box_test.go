@@ -92,6 +92,16 @@ var _ = Describe("Box", func() {
 			Expect(result).To(Equal(box))
 		})
 
+		It("should set background color", func() {
+			result := box.Background(lipgloss.Color("#1e1e2e"))
+			Expect(result).To(Equal(box))
+		})
+
+		It("should set border color override", func() {
+			result := box.BorderColor(lipgloss.Color("#ff0000"))
+			Expect(result).To(Equal(box))
+		})
+
 		It("should support chaining", func() {
 			result := box.
 				Title("Test").
@@ -211,6 +221,133 @@ var _ = Describe("Box", func() {
 				Padding(1)
 
 			Expect(result).To(Equal(box))
+		})
+
+		It("should apply background color in render output", func() {
+			box.Background(lipgloss.Color("#1e1e2e")).Content("BG Content")
+			rendered := box.Render()
+
+			Expect(rendered).To(ContainSubstring("BG Content"))
+			Expect(rendered).NotTo(BeEmpty())
+		})
+
+		It("should use custom border color when set", func() {
+			box.BorderColor(lipgloss.Color("#ff0000")).Content("Custom Border")
+			rendered := box.Render()
+
+			Expect(rendered).To(ContainSubstring("Custom Border"))
+			Expect(rendered).To(MatchRegexp(`[─│╭╮╰╯]`))
+		})
+
+		It("should respect height constraint", func() {
+			box.Height(10).Content("Height constrained")
+			rendered := box.Render()
+
+			Expect(rendered).To(ContainSubstring("Height constrained"))
+			lines := splitLines(rendered)
+			Expect(len(lines)).To(BeNumerically("<=", 15))
+		})
+
+		It("should render with background and border color combined", func() {
+			box.Background(lipgloss.Color("#1e1e2e")).
+				BorderColor(lipgloss.Color("#cba6f7")).
+				Content("Combined")
+			rendered := box.Render()
+
+			Expect(rendered).To(ContainSubstring("Combined"))
+		})
+
+		Context("when rendering all variants with theme", func() {
+			It("should render Success variant", func() {
+				box.Variant(containers.BoxSuccess).Content("Success")
+				rendered := box.Render()
+
+				Expect(rendered).To(ContainSubstring("Success"))
+				Expect(rendered).To(MatchRegexp(`[─│╭╮╰╯]`))
+			})
+
+			It("should render Warning variant", func() {
+				box.Variant(containers.BoxWarning).Content("Warning")
+				rendered := box.Render()
+
+				Expect(rendered).To(ContainSubstring("Warning"))
+				Expect(rendered).To(MatchRegexp(`[─│╭╮╰╯]`))
+			})
+
+			It("should render Info variant", func() {
+				box.Variant(containers.BoxInfo).Content("Info")
+				rendered := box.Render()
+
+				Expect(rendered).To(ContainSubstring("Info"))
+				Expect(rendered).To(MatchRegexp(`[─│╭╮╰╯]`))
+			})
+
+			It("should render Subtle variant", func() {
+				box.Variant(containers.BoxSubtle).Content("Subtle")
+				rendered := box.Render()
+
+				Expect(rendered).To(ContainSubstring("Subtle"))
+				Expect(rendered).To(MatchRegexp(`[─│╭╮╰╯]`))
+			})
+
+			It("should render Emphasized variant", func() {
+				box.Variant(containers.BoxEmphasized).Content("Emphasis")
+				rendered := box.Render()
+
+				Expect(rendered).To(ContainSubstring("Emphasis"))
+				Expect(rendered).To(MatchRegexp(`[━┃┏┓┗┛]`))
+			})
+		})
+
+		Context("when theme is nil (fallback colors)", func() {
+			var nilThemeBox *containers.Box
+
+			BeforeEach(func() {
+				nilThemeBox = containers.NewBox(nil)
+			})
+
+			It("should render Default variant with fallback color", func() {
+				nilThemeBox.Variant(containers.BoxDefault).Content("Default")
+				rendered := nilThemeBox.Render()
+
+				Expect(rendered).To(ContainSubstring("Default"))
+				Expect(rendered).To(MatchRegexp(`[─│╭╮╰╯]`))
+			})
+
+			It("should render Destructive variant with fallback color", func() {
+				nilThemeBox.Variant(containers.BoxDestructive).Content("Destructive")
+				rendered := nilThemeBox.Render()
+
+				Expect(rendered).To(ContainSubstring("Destructive"))
+			})
+
+			It("should render Success variant with fallback color", func() {
+				nilThemeBox.Variant(containers.BoxSuccess).Content("Success")
+				rendered := nilThemeBox.Render()
+
+				Expect(rendered).To(ContainSubstring("Success"))
+			})
+
+			It("should render Warning variant with fallback color", func() {
+				nilThemeBox.Variant(containers.BoxWarning).Content("Warning")
+				rendered := nilThemeBox.Render()
+
+				Expect(rendered).To(ContainSubstring("Warning"))
+			})
+
+			It("should render Info variant with fallback color", func() {
+				nilThemeBox.Variant(containers.BoxInfo).Content("Info")
+				rendered := nilThemeBox.Render()
+
+				Expect(rendered).To(ContainSubstring("Info"))
+			})
+
+			It("should render Subtle variant with fallback color", func() {
+				nilThemeBox.Variant(containers.BoxSubtle).Content("Subtle")
+				rendered := nilThemeBox.Render()
+
+				Expect(rendered).To(ContainSubstring("Subtle"))
+			})
 		})
 	})
 })
