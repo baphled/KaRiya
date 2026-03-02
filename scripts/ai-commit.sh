@@ -367,6 +367,12 @@ if [ -z "$REVIEWER_NAME" ] || [ -z "$REVIEWER_EMAIL" ]; then
     exit 1
 fi
 
+if [ -z "$REVIEWER_EMAIL" ]; then
+    echo -e "${YELLOW}⚠️  Warning: git user.email not set${NC}"
+    echo "Set it with: git config user.email \"your.email@example.com\""
+    REVIEWER_EMAIL="unknown"
+fi
+
 # Format reviewer as "Name <email>"
 REVIEWER_FORMATTED="${REVIEWER_NAME} <${REVIEWER_EMAIL}>"
 
@@ -383,7 +389,7 @@ fi
 echo ""
 echo "Agent:    ${AGENT_NAME}"
 echo "Model:    ${MODEL_NAME}"
-echo "Reviewer: ${REVIEWER_NAME}"
+echo "Reviewer: ${REVIEWER_NAME} <${REVIEWER_EMAIL}>"
 echo ""
 
 # Build full commit message with attribution

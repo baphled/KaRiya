@@ -142,6 +142,6 @@ App -> Intents -> Screens/Modals -> UIKit -> Behaviors
 
 ## Key Docs
 
-- Architecture: `docs/development/ARCHITECTURE_OVERVIEW.md`
-- Testing: `docs/development/BDD_WORKFLOW.md`
-- Intents: `docs/INTENT_ARCHITECTURE_GUIDE.md`
+#MV|- Architecture: See AGENTS.md architecture section above and Obsidian KB
+#HN|- Testing: See AGENTS.md testing section above and Obsidian KB
+#QZ|- Intents: See AGENTS.md architecture section above and Obsidian KB

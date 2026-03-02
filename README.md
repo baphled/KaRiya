@@ -1,10 +1,10 @@
-# KaRiya Career Event Capture
+# KaRiya: Career Event Capture for Engineers
 
-KaRiya is a career event capture terminal user interface built with Go and Bubble Tea. It helps you track achievements, manage career growth, and generate tailored CVs directly from your terminal.
+KaRiya is a terminal user interface for capturing career achievements and generating tailored CVs. Built with Go and Bubble Tea, it transforms your career events into professional, role-specific CVs directly from your terminal—no external tools required.
 
 ## Prerequisites
 
-- Go 1.25.4 or higher
+- Go 1.24 or higher
 - Ginkgo v2
 - Make (optional, for task automation)
 - Node.js 18+ and npm (for commitlint)
@@ -18,33 +18,40 @@ KaRiya is a career event capture terminal user interface built with Go and Bubbl
 
 ## CLI Usage
 
-KaRiya includes an interactive terminal user interface. Use `./kariya-cli --help` for full command information.
+KaRiya includes an interactive terminal user interface. Use `./kariya --help` for full command information.
 
 ### Quick Start
 
 ```bash
-# Build the CLI
-go build -o kariya-cli ./cmd/cli
+# Option 1: Build from source
+make build
 
+# Option 2: Download a release binary from GitHub
+# See https://github.com/baphled/KaRiya/releases
+```
+
+### Usage Examples
+
+```bash
 # Run with defaults
-./kariya-cli
+./kariya
 
 # Run with custom database
-./kariya-cli --db ~/.kariya/events.db
+./kariya --db ~/.kariya/events.db
 
 # Start in specific capture mode
-./kariya-cli --mode timeline
+./kariya --mode timeline
 
 # Import CSV with automatic burst and fact detection
-./kariya-cli --import events.csv
+./kariya --import events.csv
 
 # View help
-./kariya-cli --help
+./kariya --help
 ```
 
 ## Features
 
-- **Event Capture**: Timeline Journaling, CV Backfill, and Manual Entry modes
+- **Event Capture**: Timeline journaling, CV backfill, and manual entry modes
 - **Event Management**: List, filter, search, sort, and edit event details
 - **Metadata Enrichment**: Review and validate event metadata with quality scoring
 - **Bulk Operations**: Update metadata for multiple events with conditional logic
@@ -61,13 +68,13 @@ KaRiya transforms your career events into professional CVs tailored to specific 
 
 ```bash
 # Manage CV configurations
-./kariya-cli --manage-cv
+./kariya --manage-cv
 
 # Generate a CV from existing config
-./kariya-cli --generate-cv "My Staff Engineer CV"
+./kariya --generate-cv "My Staff Engineer CV"
 
 # List all CV configurations
-./kariya-cli --list-cv-configs
+./kariya --list-cv-configs
 ```
 
 Features include intelligent bullet ranking, automatic compression to respect role caps, and full source traceability for every bullet point.
@@ -92,7 +99,8 @@ Features include intelligent bullet ranking, automatic compression to respect ro
 ## CLI Examples
 
 ### Example 1: Capture Timeline Event
-1. Run: `./kariya-cli --mode timeline`
+
+1. Run: `./kariya --mode timeline`
 2. Press `c` to capture
 3. Enter: "Led API redesign for performance improvement"
 4. Date: "today" (or leave blank)
@@ -102,7 +110,8 @@ Features include intelligent bullet ranking, automatic compression to respect ro
 8. Submit
 
 ### Example 2: Backfill CV Event
-1. Run: `./kariya-cli --mode backfill`
+
+1. Run: `./kariya --mode backfill`
 2. Press `c` to capture
 3. Enter: "Architected microservices migration"
 4. Date: "2023-06-15"
@@ -121,22 +130,31 @@ Features include intelligent bullet ranking, automatic compression to respect ro
 ## Troubleshooting
 
 ### Events disappear after restart
+
 **Cause**: Using the default in-memory database.
+
 **Solution**: Use the `--db` flag with a persistent SQLite path:
+
 ```bash
-./kariya-cli --db ~/.kariya/events.db
+./kariya --db ~/.kariya/events.db
 ```
 
 ### Form field navigation issues
+
 **Cause**: Terminal window is too small.
+
 **Solution**: Increase terminal width to at least 80 columns.
 
 ### Special characters not displaying
+
 **Cause**: Terminal does not support UTF-8.
+
 **Solution**: Ensure your terminal is set to UTF-8 encoding.
 
 ### Help system not showing
+
 **Cause**: Terminal height is insufficient.
+
 **Solution**: Increase terminal window height.
 
 ## Development
