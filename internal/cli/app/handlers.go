@@ -89,6 +89,7 @@ func (m *Model) openConfigModal() (tea.Model, tea.Cmd) {
 	}
 	settings := configure.SettingsFromConfig(cfg)
 	m.configModal = configscreens.NewSettingsModal(settings, m.width, m.height)
+	m.configModal.SetTheme(m.theme)
 	cmd := m.configModal.Init()
 	return m, cmd
 }
