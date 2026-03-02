@@ -256,6 +256,7 @@ func (m *SettingsModal) View() string {
 func (m *SettingsModal) Render(width, height int) string {
 	m.width = width
 	m.height = height
+	m.rebuildActiveForm()
 	return m.View()
 }
 
@@ -346,6 +347,7 @@ func (m *SettingsModal) SetTheme(theme themes.Theme) {
 func (m *SettingsModal) SetDimensions(width, height int) {
 	m.width = width
 	m.height = height
+	m.rebuildActiveForm()
 }
 
 func formatDomainLabel(domain configtypes.ConfigurationDomain) string {
