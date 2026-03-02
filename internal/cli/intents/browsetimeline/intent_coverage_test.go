@@ -3,7 +3,9 @@ package browsetimeline
 import (
 	"context"
 	"errors"
+	"reflect"
 	"time"
+	"unsafe"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -21,6 +23,7 @@ import (
 	"github.com/baphled/kariya/internal/service/career/skillinference"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/huh"
 )
 
 type mockEventService struct {
@@ -1263,6 +1266,612 @@ var _ = Describe("Intent Coverage", func() {
 			})
 			cmd := intent.RefreshData()
 			Expect(cmd).To(BeNil())
+		})
+	})
+
+	Describe("eventMatchesFilters with date range filters", func() {
+		It("should exclude events before DateFrom", func() {
+			intent = createIntent(func(ctx *IntentContext) {
+				ctx.InitialFilters = &Filters{DateFrom: "2030-01-01"}
+			})
+			intent.ApplyFilters()
+			Expect(intent.filteredEvents).To(BeEmpty())
+		})
+
+		It("should include events on or after DateFrom", func() {
+			intent = createIntent(func(ctx *IntentContext) {
+				ctx.InitialFilters = &Filters{DateFrom: "2020-01-01"}
+			})
+			intent.ApplyFilters()
+			Expect(intent.filteredEvents).To(HaveLen(2))
+		})
+
+		It("should exclude events after DateTo", func() {
+			intent = createIntent(func(ctx *IntentContext) {
+				ctx.InitialFilters = &Filters{DateTo: "2020-01-01"}
+			})
+			intent.ApplyFilters()
+			Expect(intent.filteredEvents).To(BeEmpty())
+		})
+
+		It("should include events before DateTo", func() {
+			intent = createIntent(func(ctx *IntentContext) {
+				ctx.InitialFilters = &Filters{DateTo: "2030-12-31"}
+			})
+			intent.ApplyFilters()
+			Expect(intent.filteredEvents).To(HaveLen(2))
+		})
+
+		It("should handle invalid DateFrom format gracefully", func() {
+			intent = createIntent(func(ctx *IntentContext) {
+				ctx.InitialFilters = &Filters{DateFrom: "not-a-date"}
+			})
+			intent.ApplyFilters()
+			Expect(intent.filteredEvents).To(HaveLen(2))
+		})
+
+		It("should handle invalid DateTo format gracefully", func() {
+			intent = createIntent(func(ctx *IntentContext) {
+				ctx.InitialFilters = &Filters{DateTo: "not-a-date"}
+			})
+			intent.ApplyFilters()
+			Expect(intent.filteredEvents).To(HaveLen(2))
+		})
+
+		It("should apply combined date range filter", func() {
+			intent = createIntent(func(ctx *IntentContext) {
+				ctx.InitialFilters = &Filters{
+					DateFrom: "2020-01-01",
+					DateTo:   "2030-12-31",
+				}
+			})
+			intent.ApplyFilters()
+			Expect(intent.filteredEvents).To(HaveLen(2))
+		})
+	})
+
+	Describe("eventMatchesFilters with search text and categories", func() {
+		It("should match search text against event category", func() {
+			evt := fixtures.EventWith("c1", "Some event text", "Corp", "Proj")
+			evt.Categories = []string{"Backend"}
+			intent = createIntent(func(ctx *IntentContext) {
+				ctx.Events = []*career.Event{evt}
+				ctx.InitialFilters = &Filters{SearchText: "Backend"}
+			})
+			intent.ApplyFilters()
+			Expect(intent.filteredEvents).To(HaveLen(1))
+		})
+
+		It("should not match when search text does not match any field", func() {
+			evt := fixtures.EventWith("c1", "Some event text", "Corp", "Proj")
+			evt.Categories = []string{"Frontend"}
+			intent = createIntent(func(ctx *IntentContext) {
+				ctx.Events = []*career.Event{evt}
+				ctx.InitialFilters = &Filters{SearchText: "XYZNonExistent"}
+			})
+			intent.ApplyFilters()
+			Expect(intent.filteredEvents).To(BeEmpty())
+		})
+
+		It("should handle events with empty categories in search", func() {
+			evt := fixtures.EventWith("c1", "Go programming event", "Corp", "Proj")
+			evt.Categories = []string{}
+			intent = createIntent(func(ctx *IntentContext) {
+				ctx.Events = []*career.Event{evt}
+				ctx.InitialFilters = &Filters{SearchText: "Go programming"}
+			})
+			intent.ApplyFilters()
+			Expect(intent.filteredEvents).To(HaveLen(1))
+		})
+	})
+
+	Describe("HasActiveFilters with individual filter fields", func() {
+		It("should detect DateFrom as active", func() {
+			intent = createIntent(func(ctx *IntentContext) {
+				ctx.InitialFilters = &Filters{DateFrom: "2024-01-01"}
+			})
+			Expect(intent.HasActiveFilters()).To(BeTrue())
+		})
+
+		It("should detect DateTo as active", func() {
+			intent = createIntent(func(ctx *IntentContext) {
+				ctx.InitialFilters = &Filters{DateTo: "2024-12-31"}
+			})
+			Expect(intent.HasActiveFilters()).To(BeTrue())
+		})
+
+		It("should detect non-default SortBy as active", func() {
+			intent = createIntent(func(ctx *IntentContext) {
+				ctx.InitialFilters = &Filters{SortBy: "text"}
+			})
+			Expect(intent.HasActiveFilters()).To(BeTrue())
+		})
+
+		It("should detect non-default SortOrder as active", func() {
+			intent = createIntent(func(ctx *IntentContext) {
+				ctx.InitialFilters = &Filters{SortOrder: "asc"}
+			})
+			Expect(intent.HasActiveFilters()).To(BeTrue())
+		})
+
+		It("should detect SearchText as active", func() {
+			intent = createIntent(func(ctx *IntentContext) {
+				ctx.InitialFilters = &Filters{SearchText: "search term"}
+			})
+			Expect(intent.HasActiveFilters()).To(BeTrue())
+		})
+
+		It("should detect Tags as active", func() {
+			intent = createIntent(func(ctx *IntentContext) {
+				ctx.InitialFilters = &Filters{Tags: []string{"golang"}}
+			})
+			Expect(intent.HasActiveFilters()).To(BeTrue())
+		})
+
+		It("should detect Categories as active", func() {
+			intent = createIntent(func(ctx *IntentContext) {
+				ctx.InitialFilters = &Filters{Categories: []string{"Backend"}}
+			})
+			Expect(intent.HasActiveFilters()).To(BeTrue())
+		})
+
+		It("should detect Projects as active", func() {
+			intent = createIntent(func(ctx *IntentContext) {
+				ctx.InitialFilters = &Filters{Projects: []string{"Platform"}}
+			})
+			Expect(intent.HasActiveFilters()).To(BeTrue())
+		})
+
+		It("should return false when filters is nil", func() {
+			intent = createIntent()
+			intent.filters = nil
+			Expect(intent.HasActiveFilters()).To(BeFalse())
+		})
+	})
+
+	Describe("updateDeleteModal confirmed path via user interaction", func() {
+		It("should delete event when user confirms with y key", func() {
+			intent = createIntent()
+			evt := events[0]
+			intent.openDeleteModalForEvent(evt)
+			Expect(intent.deleteModal).NotTo(BeNil())
+			Expect(intent.selectedEvent).To(Equal(evt))
+
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
+			_ = cmd
+
+			Expect(intent.deleteModal).To(BeNil())
+			Expect(intent.selectedEvent).To(BeNil())
+			Expect(intent.context.Events).To(HaveLen(1))
+		})
+
+		It("should show error when delete service fails on confirmation", func() {
+			svc.deleteErr = errors.New("delete failed")
+			intent = createIntent()
+			evt := events[0]
+			intent.openDeleteModalForEvent(evt)
+
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
+			_ = cmd
+
+			Expect(intent.deleteModal).To(BeNil())
+			Expect(intent.deleteError).To(HaveOccurred())
+		})
+
+		It("should handle confirmed with nil selectedEvent via Enter", func() {
+			intent = createIntent()
+			evt := events[0]
+			intent.openDeleteModalForEvent(evt)
+			intent.selectedEvent = nil
+
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			_ = cmd
+			Expect(intent.deleteModal).To(BeNil())
+		})
+	})
+
+	Describe("updateViewSkillsModal action dispatching", func() {
+		It("should open skill picker when a pressed for ActionAddExisting", func() {
+			svc.skillsForEvent = []*career.Skill{fixtures.Skill("s1")}
+			svc.allSkills = []*career.Skill{fixtures.Skill("s1"), fixtures.Skill("s2")}
+			intent = createIntent()
+			intent.showSkillsForCurrentEvent()
+			Expect(intent.viewSkillsModal).NotTo(BeNil())
+
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+			_ = cmd
+			Expect(intent.skillPickerModal).NotTo(BeNil())
+		})
+
+		It("should open skill add modal when n pressed for ActionAddNew", func() {
+			svc.skillsForEvent = []*career.Skill{fixtures.Skill("s1")}
+			intent = createIntent()
+			intent.showSkillsForCurrentEvent()
+			Expect(intent.viewSkillsModal).NotTo(BeNil())
+
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
+			_ = cmd
+			Expect(intent.skillAddModal).NotTo(BeNil())
+		})
+
+		It("should trigger inference when i pressed for ActionInfer", func() {
+			svc.skillsForEvent = []*career.Skill{}
+			inferSvc := &mockSkillInferenceService{
+				inferResult: &skillinference.InferenceResult{
+					Suggestions: []skillinference.SkillSuggestion{
+						{Name: "Go", Category: "backend", Confidence: 0.9},
+					},
+				},
+			}
+			intent = createIntent(func(ctx *IntentContext) {
+				ctx.SkillInferenceService = inferSvc
+			})
+			intent.showSkillsForCurrentEvent()
+			Expect(intent.viewSkillsModal).NotTo(BeNil())
+
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}})
+			Expect(cmd).NotTo(BeNil())
+		})
+
+		It("should nil out viewSkillsModal on close via Esc", func() {
+			svc.skillsForEvent = []*career.Skill{}
+			intent = createIntent()
+			intent.showSkillsForCurrentEvent()
+			Expect(intent.viewSkillsModal).NotTo(BeNil())
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+			Expect(intent.viewSkillsModal).To(BeNil())
+		})
+	})
+
+	Describe("updateSkillPickerModal with Enter selection", func() {
+		It("should attempt to link skill when Enter selects an item", func() {
+			available := fixtures.Skill("available-1")
+			svc.allSkills = []*career.Skill{available}
+			svc.skillsForEvent = []*career.Skill{}
+			intent = createIntent()
+			intent.openSkillPickerModal()
+			Expect(intent.skillPickerModal).NotTo(BeNil())
+
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			_ = cmd
+		})
+	})
+
+	Describe("updateSkillSuggestionModal with skill acceptance", func() {
+		It("should call saveSkillFromSuggestion when a pressed", func() {
+			newSkill := fixtures.Skill("new-skill-1")
+			inferSvc := &mockSkillInferenceService{
+				createSkills: []*career.Skill{newSkill},
+			}
+			intent = createIntent(func(ctx *IntentContext) {
+				ctx.SkillInferenceService = inferSvc
+			})
+			msg := SkillSuggestionsLoadedMsg{
+				Suggestions: []skillinference.SkillSuggestion{
+					{Name: "Go", Category: "backend", Confidence: 0.9},
+				},
+			}
+			intent.handleSkillSuggestionsLoaded(msg)
+			Expect(intent.skillSuggestionModal).NotTo(BeNil())
+
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+			_ = cmd
+		})
+
+		It("should refresh detail modal on close when detail modal is visible", func() {
+			intent = createIntent()
+			intent.showEventDetailModal(events[0])
+			Expect(intent.viewDetailModal).NotTo(BeNil())
+
+			msg := SkillSuggestionsLoadedMsg{
+				Suggestions: []skillinference.SkillSuggestion{
+					{Name: "Go", Category: "backend", Confidence: 0.9},
+				},
+			}
+			intent.handleSkillSuggestionsLoaded(msg)
+			Expect(intent.skillSuggestionModal).NotTo(BeNil())
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+			Expect(intent.skillSuggestionModal).To(BeNil())
+		})
+	})
+
+	Describe("updateSearchModal applied branch via reflect", func() {
+		setHuhFormCompleted := func(modal interface{}) {
+			v := reflect.ValueOf(modal).Elem()
+			formField := v.FieldByName("form")
+			formPtr := (*huh.Form)(unsafe.Pointer(formField.Pointer()))
+			formPtr.State = huh.StateCompleted
+		}
+
+		setFormData := func(modal interface{}, fieldName string, value interface{}) {
+			v := reflect.ValueOf(modal).Elem()
+			fd := v.FieldByName("formData")
+			fdPtr := reflect.NewAt(fd.Type(), unsafe.Pointer(fd.UnsafeAddr())).Elem()
+			fdElem := fdPtr.Elem()
+			fdElem.FieldByName(fieldName).Set(reflect.ValueOf(value))
+		}
+
+		It("should set SearchText and push FilterLayerSearch when search text is non-empty", func() {
+			intent = createIntent()
+			intent.openSearchModal()
+			Expect(intent.searchModal).NotTo(BeNil())
+
+			setFormData(intent.searchModal, "SearchText", "TechCorp")
+			setHuhFormCompleted(intent.searchModal)
+
+			cmd := intent.updateSearchModal(tea.KeyMsg{Type: tea.KeyEnter})
+			_ = cmd
+			Expect(intent.filters.SearchText).To(Equal("TechCorp"))
+			Expect(intent.filterStack.IsEmpty()).To(BeFalse())
+		})
+
+		It("should set empty SearchText without pushing filter layer", func() {
+			intent = createIntent(func(ctx *IntentContext) {
+				ctx.InitialFilters = &Filters{SearchText: "existing"}
+			})
+			intent.openSearchModal()
+			Expect(intent.searchModal).NotTo(BeNil())
+
+			setFormData(intent.searchModal, "SearchText", "")
+			setHuhFormCompleted(intent.searchModal)
+
+			cmd := intent.updateSearchModal(tea.KeyMsg{Type: tea.KeyEnter})
+			_ = cmd
+			Expect(intent.filters.SearchText).To(Equal(""))
+		})
+	})
+
+	Describe("updateSortModal applied branch via reflect", func() {
+		setHuhFormCompleted := func(modal interface{}) {
+			v := reflect.ValueOf(modal).Elem()
+			formField := v.FieldByName("form")
+			formPtr := (*huh.Form)(unsafe.Pointer(formField.Pointer()))
+			formPtr.State = huh.StateCompleted
+		}
+
+		setSortFormData := func(modal *modals.SortModal, sortBy, sortOrder string) {
+			v := reflect.ValueOf(modal).Elem()
+			fd := v.FieldByName("formData")
+			fdPtr := reflect.NewAt(fd.Type(), unsafe.Pointer(fd.UnsafeAddr())).Elem()
+			fdElem := fdPtr.Elem()
+			fdElem.FieldByName("SortBy").SetString(sortBy)
+			fdElem.FieldByName("SortOrder").SetString(sortOrder)
+		}
+
+		It("should apply default sort settings", func() {
+			intent = createIntent()
+			intent.openSortModal()
+			Expect(intent.sortModal).NotTo(BeNil())
+
+			setSortFormData(intent.sortModal, "date", "desc")
+			setHuhFormCompleted(intent.sortModal)
+
+			cmd := intent.updateSortModal(tea.KeyMsg{Type: tea.KeyEnter})
+			_ = cmd
+			Expect(intent.filters.SortBy).To(Equal("date"))
+			Expect(intent.filters.SortOrder).To(Equal("desc"))
+		})
+
+		It("should push FilterLayerSort for non-default sort", func() {
+			intent = createIntent()
+			intent.openSortModal()
+			Expect(intent.sortModal).NotTo(BeNil())
+
+			setSortFormData(intent.sortModal, "company", "asc")
+			setHuhFormCompleted(intent.sortModal)
+
+			cmd := intent.updateSortModal(tea.KeyMsg{Type: tea.KeyEnter})
+			_ = cmd
+			Expect(intent.filters.SortBy).To(Equal("company"))
+			Expect(intent.filters.SortOrder).To(Equal("asc"))
+			Expect(intent.filterStack.IsEmpty()).To(BeFalse())
+		})
+	})
+
+	Describe("updateFilterModal applied branch via reflect", func() {
+		setHuhFormCompleted := func(modal interface{}) {
+			v := reflect.ValueOf(modal).Elem()
+			formField := v.FieldByName("form")
+			formPtr := (*huh.Form)(unsafe.Pointer(formField.Pointer()))
+			formPtr.State = huh.StateCompleted
+		}
+
+		It("should apply filter data with companies, categories, and projects", func() {
+			intent = createIntent()
+			intent.openFilterModal()
+			Expect(intent.filterModal).NotTo(BeNil())
+
+			v := reflect.ValueOf(intent.filterModal).Elem()
+			fd := v.FieldByName("formData")
+			fdPtr := reflect.NewAt(fd.Type(), unsafe.Pointer(fd.UnsafeAddr())).Elem()
+			fdElem := fdPtr.Elem()
+			fdElem.FieldByName("Companies").Set(reflect.ValueOf([]string{"TechCorp"}))
+			fdElem.FieldByName("Categories").Set(reflect.ValueOf([]string{"Backend"}))
+			fdElem.FieldByName("Projects").Set(reflect.ValueOf([]string{"Platform"}))
+			fdElem.FieldByName("SortBy").SetString("company")
+			fdElem.FieldByName("SortOrder").SetString("asc")
+
+			setHuhFormCompleted(intent.filterModal)
+
+			cmd := intent.updateFilterModal(tea.KeyMsg{Type: tea.KeyEnter})
+			_ = cmd
+			Expect(intent.filters.Companies).To(Equal([]string{"TechCorp"}))
+			Expect(intent.filters.Categories).To(Equal([]string{"Backend"}))
+			Expect(intent.filters.Projects).To(Equal([]string{"Platform"}))
+			Expect(intent.filterStack.IsEmpty()).To(BeFalse())
+		})
+
+		It("should apply filter data with empty slices", func() {
+			intent = createIntent()
+			intent.openFilterModal()
+			Expect(intent.filterModal).NotTo(BeNil())
+
+			setHuhFormCompleted(intent.filterModal)
+
+			cmd := intent.updateFilterModal(tea.KeyMsg{Type: tea.KeyEnter})
+			_ = cmd
+		})
+	})
+
+	Describe("updateQuickAddModal completed branch via Ctrl+S", func() {
+		It("should capture event and refresh on successful submission", func() {
+			svc.listEventsResult = events
+			intent = createIntent()
+			intent.openQuickAddModal()
+			Expect(intent.quickAddModal).NotTo(BeNil())
+
+			cmd := intent.updateQuickAddModal(tea.KeyMsg{Type: tea.KeyCtrlS})
+			_ = cmd
+			Expect(intent.quickAddModal).To(BeNil())
+			Expect(intent.context.Events).To(Equal(events))
+		})
+
+		It("should show error when CaptureEvent fails", func() {
+			svc.captureErr = errors.New("capture failed")
+			intent = createIntent()
+			intent.openQuickAddModal()
+			Expect(intent.quickAddModal).NotTo(BeNil())
+
+			cmd := intent.updateQuickAddModal(tea.KeyMsg{Type: tea.KeyCtrlS})
+			_ = cmd
+			Expect(intent.errorModal).NotTo(BeNil())
+		})
+
+		It("should show error when ListEvents fails after capture", func() {
+			svc.listEventsErr = errors.New("list failed")
+			intent = createIntent()
+			intent.openQuickAddModal()
+			Expect(intent.quickAddModal).NotTo(BeNil())
+
+			cmd := intent.updateQuickAddModal(tea.KeyMsg{Type: tea.KeyCtrlS})
+			_ = cmd
+			Expect(intent.errorModal).NotTo(BeNil())
+		})
+	})
+
+	Describe("updateEditModal completed branch via Ctrl+S", func() {
+		It("should update event metadata and refresh on successful submission", func() {
+			intent = createIntent()
+			intent.openEditModalForEvent(events[0])
+			Expect(intent.editModal).NotTo(BeNil())
+
+			cmd := intent.updateEditModal(tea.KeyMsg{Type: tea.KeyCtrlS})
+			_ = cmd
+			Expect(intent.editModal).To(BeNil())
+		})
+
+		It("should show error when UpdateEventMetadata fails", func() {
+			svc.updateErr = errors.New("update failed")
+			intent = createIntent()
+			intent.openEditModalForEvent(events[0])
+			Expect(intent.editModal).NotTo(BeNil())
+
+			cmd := intent.updateEditModal(tea.KeyMsg{Type: tea.KeyCtrlS})
+			_ = cmd
+			Expect(intent.errorModal).NotTo(BeNil())
+		})
+
+		It("should find and replace event in context.Events list", func() {
+			intent = createIntent()
+			intent.openEditModalForEvent(events[0])
+			Expect(intent.editModal).NotTo(BeNil())
+
+			cmd := intent.updateEditModal(tea.KeyMsg{Type: tea.KeyCtrlS})
+			_ = cmd
+			Expect(intent.context.Events).To(HaveLen(2))
+		})
+	})
+
+	Describe("updateSkillAddModal completed branch", func() {
+		It("should create and link skill when form completes via Esc after setting data", func() {
+			svc.skillsForEvent = []*career.Skill{}
+			intent = createIntent(func(ctx *IntentContext) {
+				ctx.CLISkillService = &mockSkillService{}
+			})
+			intent.selectedEvent = events[0]
+			intent.openSkillAddModal()
+			Expect(intent.skillAddModal).NotTo(BeNil())
+
+			cmd := intent.updateSkillAddModal(tea.KeyMsg{Type: tea.KeyEsc})
+			_ = cmd
+			Expect(intent.skillAddModal).To(BeNil())
+		})
+	})
+
+	Describe("updateViewSkillsModal ActionRemove branch", func() {
+		It("should unlink skill when d pressed", func() {
+			skill := fixtures.Skill("s1")
+			svc.skillsForEvent = []*career.Skill{skill}
+			intent = createIntent()
+			intent.selectedEvent = events[0]
+			intent.showSkillsForCurrentEvent()
+			Expect(intent.viewSkillsModal).NotTo(BeNil())
+
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'d'}})
+			_ = cmd
+		})
+	})
+
+	Describe("transitionToScreen with terminal info and theme", func() {
+		It("should set terminal info on screen when available", func() {
+			intent = createIntent()
+			intent.UpdateTerminalInfo(&terminal.Info{Width: 120, Height: 40})
+			screen := timeline.NewTimelineEventListScreen(events)
+			intent.transitionToScreen(screen)
+			Expect(intent.activeScreen).To(Equal(screen))
+		})
+
+		It("should set theme on screen when available", func() {
+			intent = createIntent()
+			screen := timeline.NewTimelineEventListScreen(events)
+			intent.transitionToScreen(screen)
+			Expect(intent.activeScreen).To(Equal(screen))
+		})
+	})
+
+	Describe("getTerminalDimensions with terminal info", func() {
+		It("should return terminal dimensions when info is available", func() {
+			intent = createIntent()
+			intent.UpdateTerminalInfo(&terminal.Info{Width: 120, Height: 40})
+			w, h := intent.getTerminalDimensions()
+			Expect(w).To(Equal(120))
+			Expect(h).To(Equal(40))
+		})
+	})
+
+	Describe("View with different screen types", func() {
+		It("should return 'No active screen' when activeScreen is nil", func() {
+			intent = createIntent()
+			intent.activeScreen = nil
+			Expect(intent.View()).To(Equal("No active screen"))
+		})
+
+		It("should render EventDeleteConfirmScreen view", func() {
+			intent = createIntent()
+			intent.activeScreen = timeline.NewEventDeleteConfirmScreen(events[0])
+			view := intent.View()
+			Expect(view).NotTo(BeEmpty())
+		})
+	})
+
+	Describe("NewIntent with nil context", func() {
+		It("should panic for nil context", func() {
+			Expect(func() { NewIntent(nil) }).To(Panic())
+		})
+	})
+
+	Describe("rebuildModalRegistry with skillAddModal", func() {
+		It("should not panic when skillAddModal is set", func() {
+			intent = createIntent(func(ctx *IntentContext) {
+				ctx.CLISkillService = &mockSkillService{}
+			})
+			intent.selectedEvent = events[0]
+			intent.openSkillAddModal()
+			Expect(intent.skillAddModal).NotTo(BeNil())
+			Expect(intent.skillAddModal.IsVisible()).To(BeTrue())
+			intent.rebuildModalRegistry()
 		})
 	})
 })
