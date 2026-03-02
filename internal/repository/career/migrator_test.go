@@ -258,6 +258,20 @@ var _ = Describe("Migrator", func() {
 				Expect(version).To(Equal(int64(6)))
 			})
 		})
+
+		Context("when the database connection is invalid", func() {
+			It("returns an error from baseline handling", func() {
+				var err error
+				db, err = sql.Open("sqlite", dbPath)
+				Expect(err).NotTo(HaveOccurred())
+
+				db.Close()
+
+				err = RunMigrations(db)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("failed to handle baseline"))
+			})
+		})
 	})
 
 	Describe("MigrationStatus", func() {
@@ -283,6 +297,51 @@ var _ = Describe("Migrator", func() {
 			version, err := MigrationStatus(db)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(version).To(Equal(int64(6)))
+		})
+	})
+
+	Describe("RunMigrationsForTests", func() {
+		Context("with a fresh database", func() {
+			It("applies all migrations successfully", func() {
+				var err error
+				db, err = sql.Open("sqlite", dbPath)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = RunMigrationsForTests(db)
+				Expect(err).NotTo(HaveOccurred())
+
+				tables := []string{"career_events", "bursts", "facts", "skills", "event_skills", "goose_db_version"}
+				for _, table := range tables {
+					Expect(hasTable(db, table)).To(BeTrue(), "table %s should exist", table)
+				}
+			})
+
+			It("reaches the latest migration version", func() {
+				var err error
+				db, err = sql.Open("sqlite", dbPath)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = RunMigrationsForTests(db)
+				Expect(err).NotTo(HaveOccurred())
+
+				version, err := MigrationStatus(db)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(version).To(Equal(int64(6)))
+			})
+		})
+
+		Context("when the database connection is invalid", func() {
+			It("returns an error", func() {
+				var err error
+				db, err = sql.Open("sqlite", dbPath)
+				Expect(err).NotTo(HaveOccurred())
+
+				db.Close()
+
+				err = RunMigrationsForTests(db)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("failed to run migrations"))
+			})
 		})
 	})
 
