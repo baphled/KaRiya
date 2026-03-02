@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/baphled/kariya/features/support"
-	"github.com/baphled/kariya/internal/testutil/e2e"
+	"github.com/baphled/kariya/internal/testutil/harness"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/cucumber/godog"
 	"github.com/onsi/gomega"
@@ -14,7 +14,7 @@ import (
 
 // ModalHelper provides modal interaction abstraction.
 type ModalHelper struct {
-	env *e2e.TestEnv
+	env *harness.TestEnv
 	ctx context.Context
 }
 

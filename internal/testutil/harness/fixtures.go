@@ -1,5 +1,5 @@
-// Package e2e provides test fixtures for E2E testing.
-package e2e
+// Package harness provides a shared test harness for BDD and integration tests.
+package harness
 
 import (
 	"fmt"

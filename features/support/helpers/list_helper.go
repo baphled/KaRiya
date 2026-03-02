@@ -7,13 +7,13 @@ import (
 	"strings"
 
 	"github.com/baphled/kariya/features/support"
-	"github.com/baphled/kariya/internal/testutil/e2e"
+	"github.com/baphled/kariya/internal/testutil/harness"
 	"github.com/cucumber/godog"
 )
 
 // ListHelper provides list navigation abstraction.
 type ListHelper struct {
-	env *e2e.TestEnv
+	env *harness.TestEnv
 	ctx context.Context
 }
 

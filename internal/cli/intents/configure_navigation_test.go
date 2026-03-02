@@ -1,18 +1,18 @@
 package intents_test
 
 import (
-	"github.com/baphled/kariya/internal/testutil/e2e"
+	"github.com/baphled/kariya/internal/testutil/harness"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Configure Navigation", func() {
-	var env *e2e.TestEnv
+	var env *harness.TestEnv
 
 	Describe("Navigation to ConfigureSystem Intent", func() {
 		BeforeEach(func() {
-			env = e2e.SetupWithMemory(GinkgoT())
+			env = harness.SetupWithMemory(GinkgoT())
 		})
 
 		AfterEach(func() {
@@ -36,7 +36,7 @@ var _ = Describe("Configure Navigation", func() {
 
 	Describe("Domain Selection State", func() {
 		BeforeEach(func() {
-			env = e2e.SetupWithMemory(GinkgoT())
+			env = harness.SetupWithMemory(GinkgoT())
 			env.SelectIntentByName("configure_system")
 		})
 
@@ -80,7 +80,7 @@ var _ = Describe("Configure Navigation", func() {
 
 	Describe("Edit Settings State", func() {
 		BeforeEach(func() {
-			env = e2e.SetupWithMemory(GinkgoT())
+			env = harness.SetupWithMemory(GinkgoT())
 			env.SelectIntentByName("configure_system")
 			env.Confirm() // Select first domain (System)
 		})
@@ -107,7 +107,7 @@ var _ = Describe("Configure Navigation", func() {
 
 	Describe("Cancel at Each State", func() {
 		BeforeEach(func() {
-			env = e2e.SetupWithMemory(GinkgoT())
+			env = harness.SetupWithMemory(GinkgoT())
 		})
 
 		AfterEach(func() {
@@ -130,7 +130,7 @@ var _ = Describe("Configure Navigation", func() {
 
 	Describe("View Rendering", func() {
 		BeforeEach(func() {
-			env = e2e.SetupWithMemory(GinkgoT())
+			env = harness.SetupWithMemory(GinkgoT())
 		})
 
 		AfterEach(func() {
@@ -165,7 +165,7 @@ var _ = Describe("Configure Navigation", func() {
 
 	Describe("Vim-style Navigation", func() {
 		BeforeEach(func() {
-			env = e2e.SetupWithMemory(GinkgoT())
+			env = harness.SetupWithMemory(GinkgoT())
 			env.SelectIntentByName("configure_system")
 		})
 
@@ -202,7 +202,7 @@ var _ = Describe("Configure Navigation", func() {
 
 	Describe("Arrow Key Navigation", func() {
 		BeforeEach(func() {
-			env = e2e.SetupWithMemory(GinkgoT())
+			env = harness.SetupWithMemory(GinkgoT())
 			env.SelectIntentByName("configure_system")
 		})
 
@@ -226,7 +226,7 @@ var _ = Describe("Configure Navigation", func() {
 
 	Describe("Domain Selection", func() {
 		BeforeEach(func() {
-			env = e2e.SetupWithMemory(GinkgoT())
+			env = harness.SetupWithMemory(GinkgoT())
 		})
 
 		AfterEach(func() {
@@ -267,7 +267,7 @@ var _ = Describe("Configure Navigation", func() {
 
 	Describe("Workflow Navigation", func() {
 		BeforeEach(func() {
-			env = e2e.SetupWithMemory(GinkgoT())
+			env = harness.SetupWithMemory(GinkgoT())
 		})
 
 		AfterEach(func() {

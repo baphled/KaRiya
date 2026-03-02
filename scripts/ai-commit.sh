@@ -345,14 +345,30 @@ if [ -z "$MODEL_NAME" ]; then
     exit 1
 fi
 
-# Get reviewer name from git config
+# Get reviewer name and email from git config
 REVIEWER_NAME=$(git config user.name)
+REVIEWER_EMAIL=$(git config user.email)
 
-if [ -z "$REVIEWER_NAME" ]; then
-    echo -e "${YELLOW}⚠️  Warning: git user.name not set${NC}"
-    echo "Set it with: git config user.name \"Your Name\""
-    REVIEWER_NAME="Unknown"
+if [ -z "$REVIEWER_NAME" ] || [ -z "$REVIEWER_EMAIL" ]; then
+    echo -e "${RED}❌ ERROR: Git user identity is not fully configured${NC}"
+    echo ""
+    if [ -z "$REVIEWER_NAME" ]; then
+        echo "Missing git user.name. Set it with:"
+        echo "  git config user.name \"Your Name\""
+        echo ""
+    fi
+    if [ -z "$REVIEWER_EMAIL" ]; then
+        echo "Missing git user.email. Set it with:"
+        echo "  git config user.email \"your.email@example.com\""
+        echo ""
+    fi
+    echo "This script uses your configured Git identity for the Reviewed-By trailer."
+    echo "Please configure the missing values and re-run the command."
+    exit 1
 fi
+
+# Format reviewer as "Name <email>"
+REVIEWER_FORMATTED="${REVIEWER_NAME} <${REVIEWER_EMAIL}>"
 
 # ============================================================================
 # Step 5: Create or amend commit with AI attribution
@@ -377,7 +393,7 @@ cat > "$FINAL_MSG_FILE" << EOF
 ${COMMIT_MSG}
 
 AI-Generated-By: ${AGENT_NAME} (${MODEL_NAME})
-Reviewed-By: ${REVIEWER_NAME}
+Reviewed-By: ${REVIEWER_FORMATTED}
 EOF
 
 # Build commit flags

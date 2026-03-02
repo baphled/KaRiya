@@ -1,5 +1,5 @@
-// Package e2e provides E2E test utilities for integration testing of the KaRiya TUI.
-package e2e
+// Package harness provides test utilities for integration testing of the KaRiya TUI.
+package harness
 
 import (
 	"context"
