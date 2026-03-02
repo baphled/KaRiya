@@ -54,6 +54,38 @@ var _ = Describe("ViewEventDetailModal", func() {
 		})
 	})
 
+	Describe("WithShowSkillsOption", func() {
+		It("returns the modal for chaining", func() {
+			result := modal.WithShowSkillsOption(false)
+			Expect(result).To(Equal(modal))
+		})
+
+		It("hides skills option when set to false", func() {
+			noSkillsEvent := fixtures.EventWith("no-skills", "Event without skills for testing", "Company", "Project")
+			noSkillsModal := components.NewViewEventDetailModal(noSkillsEvent, testTheme)
+			noSkillsModal.WithShowSkillsOption(false)
+			noSkillsModal.SetDimensions(100, 50)
+			noSkillsModal.Show()
+			view := noSkillsModal.View()
+			Expect(view).NotTo(ContainSubstring("Skills"))
+		})
+
+		It("shows skills option when set to true", func() {
+			modal.WithShowSkillsOption(true)
+			modal.SetDimensions(100, 50)
+			modal.Show()
+			view := modal.View()
+			Expect(view).To(ContainSubstring("Skills"))
+		})
+	})
+
+	Describe("Init", func() {
+		It("returns nil command", func() {
+			cmd := modal.Init()
+			Expect(cmd).To(BeNil())
+		})
+	})
+
 	Describe("Visibility", func() {
 		It("can be shown", func() {
 			modal.Show()

@@ -87,6 +87,57 @@ var _ = Describe("OnboardingWizardModal", func() {
 		})
 	})
 
+	Describe("View when completed", func() {
+		It("should render summary when wizard is completed with all fields", func() {
+			completedModal := components.NewOnboardingWizardModalWithConfig(80, 24, &config.ProfileConfig{
+				Name:      "Alice Smith",
+				Email:     "alice@example.com",
+				Location:  "London",
+				Title:     "Senior Engineer",
+				GitHub:    "alicesmith",
+				Portfolio: "https://alice.dev",
+			})
+			completedModal.Init()
+			completedModal.SetDataForTesting(&components.OnboardingData{
+				Name:      "Alice Smith",
+				Email:     "alice@example.com",
+				Location:  "London",
+				Title:     "Senior Engineer",
+				GitHub:    "alicesmith",
+				Portfolio: "https://alice.dev",
+			})
+			completedModal.CompleteWizardForTesting()
+
+			view := completedModal.View()
+			Expect(view).To(ContainSubstring("Profile Setup Complete!"))
+			Expect(view).To(ContainSubstring("Name: Alice Smith"))
+			Expect(view).To(ContainSubstring("Email: alice@example.com"))
+			Expect(view).To(ContainSubstring("Location: London"))
+			Expect(view).To(ContainSubstring("Title: Senior Engineer"))
+			Expect(view).To(ContainSubstring("GitHub: alicesmith"))
+			Expect(view).To(ContainSubstring("Portfolio: https://alice.dev"))
+		})
+
+		It("should render summary with only required fields", func() {
+			completedModal := components.NewOnboardingWizardModal(80, 24)
+			completedModal.Init()
+			completedModal.SetDataForTesting(&components.OnboardingData{
+				Name:  "Bob Jones",
+				Email: "bob@example.com",
+			})
+			completedModal.CompleteWizardForTesting()
+
+			view := completedModal.View()
+			Expect(view).To(ContainSubstring("Profile Setup Complete!"))
+			Expect(view).To(ContainSubstring("Name: Bob Jones"))
+			Expect(view).To(ContainSubstring("Email: bob@example.com"))
+			Expect(view).NotTo(ContainSubstring("Location:"))
+			Expect(view).NotTo(ContainSubstring("Title:"))
+			Expect(view).NotTo(ContainSubstring("GitHub:"))
+			Expect(view).NotTo(ContainSubstring("Portfolio:"))
+		})
+	})
+
 	Describe("Update", func() {
 		Context("window resize", func() {
 			It("should handle window resize", func() {
@@ -115,12 +166,56 @@ var _ = Describe("OnboardingWizardModal", func() {
 				Expect(modal.WasCancelled()).To(BeFalse())
 			})
 		})
+
+		Context("when wizard is not visible", func() {
+			It("should return nil without processing", func() {
+				modal.Hide()
+				cmd := modal.Update(tea.KeyMsg{Type: tea.KeyEnter})
+				Expect(cmd).To(BeNil())
+			})
+		})
+
+		Context("when wizard completes", func() {
+			It("should sync form data on completion", func() {
+				completedModal := components.NewOnboardingWizardModalWithConfig(80, 24, &config.ProfileConfig{
+					Name:  "Test User",
+					Email: "test@example.com",
+				})
+				completedModal.Init()
+				completedModal.CompleteWizardForTesting()
+
+				Expect(completedModal.IsCompleted()).To(BeTrue())
+				Expect(completedModal.IsVisible()).To(BeFalse())
+			})
+		})
 	})
 
 	Describe("GetProfileConfig", func() {
 		It("should return nil when not completed", func() {
 			cfg := modal.GetProfileConfig()
 			Expect(cfg).To(BeNil())
+		})
+
+		It("should return profile config when completed", func() {
+			completedModal := components.NewOnboardingWizardModalWithConfig(80, 24, &config.ProfileConfig{
+				Name:      "Alice Smith",
+				Email:     "alice@example.com",
+				Location:  "London",
+				Title:     "Senior Engineer",
+				GitHub:    "alicesmith",
+				Portfolio: "https://alice.dev",
+			})
+			completedModal.Init()
+			completedModal.CompleteWizardForTesting()
+
+			cfg := completedModal.GetProfileConfig()
+			Expect(cfg).NotTo(BeNil())
+			Expect(cfg.Name).To(Equal("Alice Smith"))
+			Expect(cfg.Email).To(Equal("alice@example.com"))
+			Expect(cfg.Location).To(Equal("London"))
+			Expect(cfg.Title).To(Equal("Senior Engineer"))
+			Expect(cfg.GitHub).To(Equal("alicesmith"))
+			Expect(cfg.Portfolio).To(Equal("https://alice.dev"))
 		})
 	})
 
@@ -148,6 +243,14 @@ var _ = Describe("OnboardingWizardModal", func() {
 				Expect(modalWithData).NotTo(BeNil())
 			})
 		})
+
+		Context("with nil config", func() {
+			It("should create modal with empty data", func() {
+				modalNilCfg := components.NewOnboardingWizardModalWithConfig(80, 24, nil)
+				Expect(modalNilCfg).NotTo(BeNil())
+				Expect(modalNilCfg.IsVisible()).To(BeTrue())
+			})
+		})
 	})
 
 	Describe("Required Fields Validation", func() {
@@ -159,6 +262,48 @@ var _ = Describe("OnboardingWizardModal", func() {
 	Describe("Step Navigation", func() {
 		It("should have 3 steps total", func() {
 			Expect(modal.TotalSteps()).To(Equal(3))
+		})
+
+		It("should start at step 0", func() {
+			Expect(modal.CurrentStep()).To(Equal(0))
+		})
+	})
+
+	Describe("GetOnboardingData", func() {
+		It("should return the onboarding data", func() {
+			data := modal.GetOnboardingData()
+			Expect(data).NotTo(BeNil())
+		})
+
+		It("should return data with pre-filled values", func() {
+			prefilledModal := components.NewOnboardingWizardModalWithConfig(80, 24, &config.ProfileConfig{
+				Name:  "Test User",
+				Email: "test@example.com",
+			})
+			data := prefilledModal.GetOnboardingData()
+			Expect(data).NotTo(BeNil())
+		})
+	})
+
+	Describe("calcOnboardingModalWidth", func() {
+		It("should cap width at 80", func() {
+			width := components.CalcOnboardingModalWidthForTesting(120)
+			Expect(width).To(Equal(80))
+		})
+
+		It("should return width minus 20 when in range", func() {
+			width := components.CalcOnboardingModalWidthForTesting(80)
+			Expect(width).To(Equal(60))
+		})
+
+		It("should enforce minimum width of 50", func() {
+			width := components.CalcOnboardingModalWidthForTesting(40)
+			Expect(width).To(Equal(50))
+		})
+
+		It("should enforce minimum width of 50 for very small terminals", func() {
+			width := components.CalcOnboardingModalWidthForTesting(20)
+			Expect(width).To(Equal(50))
 		})
 	})
 })
