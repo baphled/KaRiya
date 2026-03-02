@@ -1668,7 +1668,7 @@ var _ = Describe("Coverage Extended", func() {
 		It("should continue extraction when individual fact save fails", func() {
 			mockService := mocks.NewBurstServiceMock().
 				SetExtractedFacts([]career.Fact{
-					{ID: "f1", Text: "Fact one"},
+					*fixtures.FactWith("f1", "Fact one"),
 				}).
 				SetSaveFactError(errors.New("save failed"))
 
