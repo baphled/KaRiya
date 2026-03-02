@@ -387,3 +387,142 @@ var _ = Describe("BaseIntent", func() {
 		})
 	})
 })
+
+var _ = Describe("ModalEditResult", func() {
+	Describe("HasChanges", func() {
+		It("should return false when changes map is empty", func() {
+			result := &intents.ModalEditResult[string]{
+				Original: "original",
+				Modified: "modified",
+				Accepted: true,
+				Changes:  map[string]interface{}{},
+			}
+			Expect(result.HasChanges()).To(BeFalse())
+		})
+
+		It("should return true when changes map has entries", func() {
+			result := &intents.ModalEditResult[string]{
+				Original: "original",
+				Modified: "modified",
+				Accepted: true,
+				Changes:  map[string]interface{}{"field": "new_value"},
+			}
+			Expect(result.HasChanges()).To(BeTrue())
+		})
+
+		It("should return false when changes map is nil", func() {
+			result := &intents.ModalEditResult[string]{
+				Original: "original",
+				Modified: "original",
+				Accepted: false,
+				Changes:  nil,
+			}
+			Expect(result.HasChanges()).To(BeFalse())
+		})
+	})
+
+	Describe("WasAccepted", func() {
+		It("should return true when accepted", func() {
+			result := &intents.ModalEditResult[string]{
+				Accepted: true,
+			}
+			Expect(result.WasAccepted()).To(BeTrue())
+		})
+
+		It("should return false when cancelled", func() {
+			result := &intents.ModalEditResult[string]{
+				Accepted: false,
+			}
+			Expect(result.WasAccepted()).To(BeFalse())
+		})
+	})
+
+	Describe("GetChange", func() {
+		It("should return the value for an existing key", func() {
+			result := &intents.ModalEditResult[string]{
+				Changes: map[string]interface{}{"name": "Alice"},
+			}
+			Expect(result.GetChange("name")).To(Equal("Alice"))
+		})
+
+		It("should return nil for a non-existent key", func() {
+			result := &intents.ModalEditResult[string]{
+				Changes: map[string]interface{}{"name": "Alice"},
+			}
+			Expect(result.GetChange("missing")).To(BeNil())
+		})
+
+		It("should return nil when changes map is nil", func() {
+			result := &intents.ModalEditResult[string]{
+				Changes: nil,
+			}
+			Expect(result.GetChange("any")).To(BeNil())
+		})
+	})
+
+	Describe("NewModalEditResult", func() {
+		It("should create a result with provided values", func() {
+			changes := map[string]interface{}{"field1": "value1"}
+			result := intents.NewModalEditResult("original", "modified", true, changes)
+
+			Expect(result.Original).To(Equal("original"))
+			Expect(result.Modified).To(Equal("modified"))
+			Expect(result.Accepted).To(BeTrue())
+			Expect(result.Changes).To(HaveKeyWithValue("field1", "value1"))
+		})
+
+		It("should initialize nil changes to empty map", func() {
+			result := intents.NewModalEditResult("original", "modified", true, nil)
+
+			Expect(result.Changes).NotTo(BeNil())
+			Expect(result.Changes).To(BeEmpty())
+		})
+	})
+
+	Describe("NewCancelledModalEditResult", func() {
+		It("should set Accepted to false", func() {
+			result := intents.NewCancelledModalEditResult("original")
+
+			Expect(result.Accepted).To(BeFalse())
+		})
+
+		It("should set Modified equal to Original", func() {
+			result := intents.NewCancelledModalEditResult("original")
+
+			Expect(result.Modified).To(Equal(result.Original))
+			Expect(result.Original).To(Equal("original"))
+		})
+
+		It("should initialize changes to empty map", func() {
+			result := intents.NewCancelledModalEditResult("original")
+
+			Expect(result.Changes).NotTo(BeNil())
+			Expect(result.Changes).To(BeEmpty())
+		})
+	})
+})
+
+var _ = Describe("BaseIntent Help Modal", func() {
+	var base *intents.BaseIntent
+
+	BeforeEach(func() {
+		base = intents.NewBaseIntent()
+	})
+
+	Describe("GetHelpModal", func() {
+		It("should return the help modal", func() {
+			modal := base.GetHelpModal()
+			Expect(modal).NotTo(BeNil())
+		})
+	})
+
+	Describe("SetHelpKeyMap", func() {
+		It("should not panic when called with nil", func() {
+			Expect(func() { base.SetHelpKeyMap(nil) }).NotTo(Panic())
+		})
+
+		It("should not panic when called with a non-keymap value", func() {
+			Expect(func() { base.SetHelpKeyMap("not-a-keymap") }).NotTo(Panic())
+		})
+	})
+})

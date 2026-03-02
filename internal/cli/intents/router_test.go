@@ -3,7 +3,9 @@ package intents_test
 
 import (
 	"github.com/baphled/kariya/internal/cli/intents"
+	"github.com/baphled/kariya/internal/cli/terminal"
 	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/display"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -309,6 +311,68 @@ var _ = Describe("DefaultIntentRouter", func() {
 			restoredIntent := router.GetActiveIntent().(*intents.MockIntentWithSelection)
 			Expect(restoredIntent.GetSelectedIndex()).To(Equal(5))
 			Expect(restoredIntent).To(Equal(intent1))
+		})
+	})
+})
+
+var _ = Describe("DefaultIntentRouter Terminal and Logo", func() {
+	var router *intents.DefaultIntentRouter
+
+	BeforeEach(func() {
+		router = intents.NewDefaultIntentRouter()
+	})
+
+	Describe("RegisterResultHandler", func() {
+		It("should register a handler without error", func() {
+			handler := func(result *intents.IntentResult[interface{}]) tea.Cmd {
+				return nil
+			}
+			Expect(func() { router.RegisterResultHandler("test", handler) }).NotTo(Panic())
+		})
+	})
+
+	Describe("UpdateTerminalInfo", func() {
+		It("should store terminal info", func() {
+			info := terminal.NewInfo()
+			info.Width = 120
+			info.Height = 40
+			info.IsValid = true
+
+			router.UpdateTerminalInfo(info)
+
+			Expect(router.GetTerminalInfo()).To(Equal(info))
+		})
+
+		It("should propagate to active terminal-aware intent", func() {
+			router.RegisterIntent("test", func() intents.Intent {
+				return intents.NewMockIntent()
+			})
+			router.ActivateIntent("test", nil)
+
+			info := terminal.NewInfo()
+			info.Width = 100
+			info.Height = 50
+			router.UpdateTerminalInfo(info)
+
+			Expect(router.GetTerminalInfo()).To(Equal(info))
+		})
+	})
+
+	Describe("GetTerminalInfo", func() {
+		It("should return default terminal info initially", func() {
+			Expect(router.GetTerminalInfo()).NotTo(BeNil())
+		})
+	})
+
+	Describe("GetLogo", func() {
+		It("should return nil initially", func() {
+			Expect(router.GetLogo()).To(BeNil())
+		})
+
+		It("should return logo after SetLogo", func() {
+			logo := display.NewLogo(false, 80)
+			router.SetLogo(logo)
+			Expect(router.GetLogo()).To(Equal(logo))
 		})
 	})
 })

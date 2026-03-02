@@ -9,6 +9,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/uikit/display"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
+	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -287,5 +288,26 @@ var _ = Describe("View Helpers", func() {
 				Expect(combined).To(ContainSubstring("Navigate"))
 			})
 		})
+	})
+})
+
+var _ = Describe("MessageInterceptor OnQuit", func() {
+	It("should register quit handler and support chaining", func() {
+		interceptor := intents.NewMessageInterceptor()
+		returned := interceptor.OnQuit(func() tea.Cmd {
+			return tea.Quit
+		})
+
+		Expect(returned).To(Equal(interceptor))
+	})
+})
+
+var _ = Describe("StandardQuitHandler", func() {
+	It("should return a handler that sends tea.Quit", func() {
+		handler := intents.StandardQuitHandler()
+		Expect(handler).NotTo(BeNil())
+
+		cmd := handler()
+		Expect(cmd).NotTo(BeNil())
 	})
 })

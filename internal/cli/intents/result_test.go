@@ -223,3 +223,61 @@ var _ = Describe("IntentError", func() {
 		})
 	})
 })
+
+var _ = Describe("IntentResult Builders", func() {
+	Describe("WithError", func() {
+		It("should set error on result", func() {
+			result := intents.NewCompletedResult("data")
+			intentErr := &intents.IntentError{Code: "err", Message: "something failed"}
+
+			result.WithError(intentErr)
+
+			Expect(result.Error).NotTo(BeNil())
+			Expect(result.Error.Code).To(Equal("err"))
+			Expect(result.Error.Message).To(Equal("something failed"))
+		})
+
+		It("should support method chaining", func() {
+			result := intents.NewCompletedResult("data").
+				WithError(&intents.IntentError{Code: "c", Message: "m"})
+
+			Expect(result.Error).NotTo(BeNil())
+		})
+	})
+
+	Describe("WithStatus", func() {
+		It("should override the status", func() {
+			result := intents.NewCompletedResult("data")
+			Expect(result.Status).To(Equal(intents.Completed))
+
+			result.WithStatus(intents.Failed)
+
+			Expect(result.Status).To(Equal(intents.Failed))
+		})
+
+		It("should support method chaining", func() {
+			result := intents.NewCompletedResult("data").
+				WithStatus(intents.Partial)
+
+			Expect(result.Status).To(Equal(intents.Partial))
+		})
+	})
+
+	Describe("WithData", func() {
+		It("should replace the data payload", func() {
+			result := intents.NewCompletedResult("original")
+			Expect(result.Data).To(Equal("original"))
+
+			result.WithData("replaced")
+
+			Expect(result.Data).To(Equal("replaced"))
+		})
+
+		It("should support method chaining", func() {
+			result := intents.NewCompletedResult("data").
+				WithData("new-data")
+
+			Expect(result.Data).To(Equal("new-data"))
+		})
+	})
+})
