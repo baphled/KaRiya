@@ -1,16 +1,12 @@
-package configure_test
+package configure
 
 import (
-	"reflect"
-	"unsafe"
-
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/baphled/kariya/internal/cli/configtypes"
 	"github.com/baphled/kariya/internal/cli/forms"
-	configure "github.com/baphled/kariya/internal/cli/screens/configure"
 	"github.com/baphled/kariya/internal/cli/themes"
 )
 
@@ -37,39 +33,24 @@ func makeSettingsWithDomain(domain configtypes.ConfigurationDomain, settings ...
 	}
 }
 
-func getModalFormData(modal *configure.SettingsModal) map[configtypes.ConfigurationDomain]*forms.ConfigureSettingsFormData {
-	inner := reflect.ValueOf(modal).Elem()
-	field := inner.FieldByName("formData")
-	ptr := (*map[configtypes.ConfigurationDomain]*forms.ConfigureSettingsFormData)(unsafe.Pointer(field.UnsafeAddr()))
-	return *ptr
+func getModalFormData(modal *SettingsModal) map[configtypes.ConfigurationDomain]*forms.ConfigureSettingsFormData {
+	return modal.formData
 }
 
-func setModalDomains(modal *configure.SettingsModal, domains []configtypes.ConfigurationDomain) {
-	inner := reflect.ValueOf(modal).Elem()
-	field := inner.FieldByName("domains")
-	ptr := (*[]configtypes.ConfigurationDomain)(unsafe.Pointer(field.UnsafeAddr()))
-	*ptr = domains
+func setModalDomains(modal *SettingsModal, domains []configtypes.ConfigurationDomain) {
+	modal.domains = domains
 }
 
-func setModalSettings(modal *configure.SettingsModal, settings map[configtypes.ConfigurationDomain][]*configtypes.ConfigurationSetting) {
-	inner := reflect.ValueOf(modal).Elem()
-	field := inner.FieldByName("settings")
-	ptr := (*map[configtypes.ConfigurationDomain][]*configtypes.ConfigurationSetting)(unsafe.Pointer(field.UnsafeAddr()))
-	*ptr = settings
+func setModalSettings(modal *SettingsModal, settings map[configtypes.ConfigurationDomain][]*configtypes.ConfigurationSetting) {
+	modal.settings = settings
 }
 
-func setModalSelectedIdx(modal *configure.SettingsModal, idx int) {
-	inner := reflect.ValueOf(modal).Elem()
-	field := inner.FieldByName("selectedIdx")
-	ptr := (*int)(unsafe.Pointer(field.UnsafeAddr()))
-	*ptr = idx
+func setModalSelectedIdx(modal *SettingsModal, idx int) {
+	modal.selectedIdx = idx
 }
 
-func setModalActiveForm(modal *configure.SettingsModal, form forms.Form) {
-	inner := reflect.ValueOf(modal).Elem()
-	field := inner.FieldByName("activeForm")
-	ptr := (*forms.Form)(unsafe.Pointer(field.UnsafeAddr()))
-	*ptr = form
+func setModalActiveForm(modal *SettingsModal, form forms.Form) {
+	modal.activeForm = form
 }
 
 func updateFormDataString(data map[configtypes.ConfigurationDomain]*forms.ConfigureSettingsFormData, domain configtypes.ConfigurationDomain, key, value string) {
@@ -82,13 +63,13 @@ func updateFormDataBool(data map[configtypes.ConfigurationDomain]*forms.Configur
 
 var _ = Describe("SettingsModal", func() {
 	var (
-		modal    *configure.SettingsModal
+		modal    *SettingsModal
 		settings map[configtypes.ConfigurationDomain][]*configtypes.ConfigurationSetting
 	)
 
 	BeforeEach(func() {
 		settings = makeTestSettings()
-		modal = configure.NewSettingsModal(settings, 120, 40)
+		modal = NewSettingsModal(settings, 120, 40)
 	})
 
 	Describe("NewSettingsModal", func() {
@@ -100,7 +81,7 @@ var _ = Describe("SettingsModal", func() {
 
 		It("should not panic with empty settings map", func() {
 			emptySettings := make(map[configtypes.ConfigurationDomain][]*configtypes.ConfigurationSetting)
-			emptyModal := configure.NewSettingsModal(emptySettings, 120, 40)
+			emptyModal := NewSettingsModal(emptySettings, 120, 40)
 			Expect(emptyModal).NotTo(BeNil())
 			Expect(emptyModal.IsCompleted()).To(BeFalse())
 			Expect(emptyModal.IsCancelled()).To(BeFalse())
@@ -258,7 +239,7 @@ var _ = Describe("SettingsModal", func() {
 	Describe("rebuildActiveForm with empty domains", func() {
 		It("should handle nil activeForm when no domains", func() {
 			emptySettings := make(map[configtypes.ConfigurationDomain][]*configtypes.ConfigurationSetting)
-			emptyModal := configure.NewSettingsModal(emptySettings, 120, 40)
+			emptyModal := NewSettingsModal(emptySettings, 120, 40)
 			view := emptyModal.View()
 			Expect(view).NotTo(BeEmpty())
 		})
@@ -267,7 +248,7 @@ var _ = Describe("SettingsModal", func() {
 	Describe("rebuildActiveForm with nil domain data", func() {
 		It("should handle missing form data for selected domain", func() {
 			settingsWithSystem := makeSettingsWithDomain(configtypes.DomainSystem)
-			missingFormModal := configure.NewSettingsModal(settingsWithSystem, 120, 40)
+			missingFormModal := NewSettingsModal(settingsWithSystem, 120, 40)
 			formData := getModalFormData(missingFormModal)
 			formData[configtypes.DomainSystem] = nil
 			setModalDomains(missingFormModal, []configtypes.ConfigurationDomain{configtypes.DomainSystem})
@@ -281,7 +262,7 @@ var _ = Describe("SettingsModal", func() {
 	Describe("rebuildActiveForm with empty domain settings", func() {
 		It("should clear the active form when domain settings are empty", func() {
 			settingsWithSystem := makeSettingsWithDomain(configtypes.DomainSystem)
-			emptySettingsModal := configure.NewSettingsModal(settingsWithSystem, 120, 40)
+			emptySettingsModal := NewSettingsModal(settingsWithSystem, 120, 40)
 			setModalDomains(emptySettingsModal, []configtypes.ConfigurationDomain{configtypes.DomainSystem})
 			setModalSettings(emptySettingsModal, settingsWithSystem)
 			setModalSelectedIdx(emptySettingsModal, 0)
@@ -297,7 +278,7 @@ var _ = Describe("SettingsModal", func() {
 				configtypes.ConfigurationDomain("custom"),
 				&configtypes.ConfigurationSetting{Key: "custom", Label: "Custom", Value: "value", DefaultValue: "value", Type: "string"},
 			)
-			unknownModal := configure.NewSettingsModal(settingsWithUnknown, 120, 40)
+			unknownModal := NewSettingsModal(settingsWithUnknown, 120, 40)
 			setModalDomains(unknownModal, []configtypes.ConfigurationDomain{configtypes.ConfigurationDomain("custom")})
 			setModalSelectedIdx(unknownModal, 0)
 			view := unknownModal.View()
@@ -307,7 +288,7 @@ var _ = Describe("SettingsModal", func() {
 
 	Describe("formDimensions with small width", func() {
 		It("should enforce minimum form width of 30", func() {
-			smallModal := configure.NewSettingsModal(makeTestSettings(), 40, 40)
+			smallModal := NewSettingsModal(makeTestSettings(), 40, 40)
 			view := smallModal.View()
 			Expect(view).NotTo(BeEmpty())
 		})
@@ -316,7 +297,7 @@ var _ = Describe("SettingsModal", func() {
 	Describe("Init with nil activeForm", func() {
 		It("should return nil when activeForm is nil", func() {
 			emptySettings := make(map[configtypes.ConfigurationDomain][]*configtypes.ConfigurationSetting)
-			emptyModal := configure.NewSettingsModal(emptySettings, 120, 40)
+			emptyModal := NewSettingsModal(emptySettings, 120, 40)
 			cmd := emptyModal.Init()
 			Expect(cmd).To(BeNil())
 		})
@@ -325,7 +306,7 @@ var _ = Describe("SettingsModal", func() {
 	Describe("renderFormPanel with nil activeForm", func() {
 		It("should render muted message when activeForm is nil", func() {
 			emptySettings := make(map[configtypes.ConfigurationDomain][]*configtypes.ConfigurationSetting)
-			emptyModal := configure.NewSettingsModal(emptySettings, 120, 40)
+			emptyModal := NewSettingsModal(emptySettings, 120, 40)
 			view := emptyModal.View()
 			Expect(view).To(ContainSubstring("No settings available"))
 		})
@@ -393,7 +374,7 @@ var _ = Describe("SettingsModal", func() {
 				configtypes.DomainSystem,
 				&configtypes.ConfigurationSetting{Key: "enabled", Label: "Enabled", Value: false, DefaultValue: false, Type: "bool"},
 			)
-			boolModal := configure.NewSettingsModal(settingsWithBool, 120, 40)
+			boolModal := NewSettingsModal(settingsWithBool, 120, 40)
 			data := getModalFormData(boolModal)
 			updateFormDataBool(data, configtypes.DomainSystem, "enabled", true)
 			changes := boolModal.GetChanges()
@@ -407,7 +388,7 @@ var _ = Describe("SettingsModal", func() {
 				configtypes.DomainSystem,
 				&configtypes.ConfigurationSetting{Key: "refresh_interval", Label: "Refresh Interval", Value: 5, DefaultValue: 5, Type: "int"},
 			)
-			intModal := configure.NewSettingsModal(settingsWithInt, 120, 40)
+			intModal := NewSettingsModal(settingsWithInt, 120, 40)
 			data := getModalFormData(intModal)
 			updateFormDataString(data, configtypes.DomainSystem, "refresh_interval", "10")
 			changes := intModal.GetChanges()
@@ -421,7 +402,7 @@ var _ = Describe("SettingsModal", func() {
 				configtypes.DomainSystem,
 				&configtypes.ConfigurationSetting{Key: "favorites", Label: "Favorites", Value: []string{"alpha"}, DefaultValue: []string{"alpha"}, Type: "list"},
 			)
-			listModal := configure.NewSettingsModal(settingsWithList, 120, 40)
+			listModal := NewSettingsModal(settingsWithList, 120, 40)
 			data := getModalFormData(listModal)
 			updateFormDataString(data, configtypes.DomainSystem, "favorites", "alpha, beta")
 			changes := listModal.GetChanges()
