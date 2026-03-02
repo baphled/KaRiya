@@ -116,6 +116,11 @@ var _ = Describe("Theme Package", func() {
 				color := aware.MutedColor()
 				Expect(color).NotTo(Equal(lipgloss.Color("")))
 			})
+
+			It("should return valid InfoColor", func() {
+				color := aware.InfoColor()
+				Expect(color).NotTo(Equal(lipgloss.Color("")))
+			})
 		})
 
 		Describe("Color Getters with Nil Theme", func() {
@@ -126,6 +131,7 @@ var _ = Describe("Theme Package", func() {
 				Expect(aware.AccentColor()).NotTo(Equal(lipgloss.Color("")))
 				Expect(aware.ErrorColor()).NotTo(Equal(lipgloss.Color("")))
 				Expect(aware.SuccessColor()).NotTo(Equal(lipgloss.Color("")))
+				Expect(aware.InfoColor()).NotTo(Equal(lipgloss.Color("")))
 				Expect(aware.WarningColor()).NotTo(Equal(lipgloss.Color("")))
 				Expect(aware.BorderColor()).NotTo(Equal(lipgloss.Color("")))
 				Expect(aware.BackgroundColor()).NotTo(Equal(lipgloss.Color("")))
