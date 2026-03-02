@@ -5,6 +5,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/skills"
+	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
@@ -251,4 +252,47 @@ var _ = Describe("SkillDetailScreen", func() {
 			Expect(data).To(Equal("help"))
 		})
 	})
+
+	Describe("Theme Integration", func() {
+		BeforeEach(func() {
+			screen = skills.NewSkillDetailScreen(skill)
+			screen.SetTerminalInfo(120, 40)
+		})
+
+		It("should render with explicitly set theme", func() {
+			th := themes.NewDefaultTheme()
+			screen.SetTheme(th)
+
+			view := screen.View()
+			Expect(view).NotTo(BeEmpty())
+			Expect(view).To(ContainSubstring("Kubernetes"))
+		})
+	})
+
+	Describe("Category Colors", func() {
+		It("should render with unknown category using default color", func() {
+			unknownCategorySkill := fixtures.SkillWith("skill-unk", "Security", "security", "advanced")
+			unknownCategorySkill.CreatedAt = time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
+			unknownCategorySkill.UpdatedAt = time.Date(2025, 12, 31, 0, 0, 0, 0, time.UTC)
+			screen = skills.NewSkillDetailScreen(unknownCategorySkill)
+			screen.SetTerminalInfo(120, 40)
+
+			view := screen.View()
+			Expect(view).To(ContainSubstring("Security"))
+			Expect(view).To(ContainSubstring("security"))
+		})
+	})
+
+	Describe("Unhandled Messages", func() {
+		BeforeEach(func() {
+			screen = skills.NewSkillDetailScreen(skill)
+		})
+
+		It("should return nil for unhandled message types", func() {
+			cmd, result := screen.Update(struct{}{})
+			Expect(cmd).To(BeNil())
+			Expect(result).To(BeNil())
+		})
+	})
+
 })

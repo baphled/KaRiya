@@ -201,5 +201,44 @@ var _ = Describe("Types", func() {
 				Expect(true).To(BeTrue())
 			})
 		})
+
+		Describe("Test Helpers", func() {
+			var intent *burst_management.Intent
+
+			BeforeEach(func() {
+				ctx := &burst_management.IntentContext{
+					Bursts: []*career.Burst{fixtures.Burst("burst-1")},
+				}
+				ctx.Validate()
+				intent, _ = burst_management.NewIntent(ctx)
+			})
+
+			Describe("GetTestContext", func() {
+				It("should return the intent context", func() {
+					testCtx := intent.GetTestContext()
+					Expect(testCtx).NotTo(BeNil())
+					Expect(testCtx.Bursts).To(HaveLen(1))
+				})
+			})
+
+			Describe("IsExtractingFacts", func() {
+				It("should return false by default", func() {
+					Expect(intent.IsExtractingFacts()).To(BeFalse())
+				})
+			})
+
+			Describe("SetLoadingFactsForTesting", func() {
+				It("should set loading facts flag without panic", func() {
+					Expect(func() {
+						intent.SetLoadingFactsForTesting(true)
+					}).NotTo(Panic())
+				})
+
+				It("should allow toggling loading facts flag", func() {
+					intent.SetLoadingFactsForTesting(true)
+					intent.SetLoadingFactsForTesting(false)
+				})
+			})
+		})
 	})
 })

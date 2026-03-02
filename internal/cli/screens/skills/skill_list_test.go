@@ -4,6 +4,7 @@ package skills_test
 import (
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/skills"
+	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
@@ -441,4 +442,107 @@ var _ = Describe("SkillsListScreen", func() {
 			Expect(data["action"]).To(Equal("help"))
 		})
 	})
+
+	Describe("SetEventCounts", func() {
+		BeforeEach(func() {
+			screen = skills.NewSkillsListScreen(skillsList)
+			screen.SetTerminalInfo(120, 40)
+		})
+
+		It("should display event counts in the view", func() {
+			counts := map[string]int{
+				"1": 5,
+				"2": 3,
+			}
+			screen.SetEventCounts(counts)
+
+			view := screen.View()
+			Expect(view).To(ContainSubstring("5"))
+			Expect(view).To(ContainSubstring("3"))
+		})
+
+		It("should handle empty event counts", func() {
+			screen.SetEventCounts(map[string]int{})
+
+			view := screen.View()
+			Expect(view).NotTo(BeEmpty())
+		})
+	})
+
+	Describe("Theme Integration", func() {
+		BeforeEach(func() {
+			screen = skills.NewSkillsListScreen(skillsList)
+			screen.SetTerminalInfo(120, 40)
+		})
+
+		It("should apply themes.Theme to table behavior", func() {
+			th := themes.NewDefaultTheme()
+			screen.SetTheme(th)
+			Expect(screen.Theme()).To(Equal(th))
+		})
+
+		It("should render with explicitly set theme", func() {
+			th := themes.NewDefaultTheme()
+			screen.SetTheme(th)
+
+			view := screen.View()
+			Expect(view).NotTo(BeEmpty())
+			Expect(view).To(ContainSubstring("Ruby"))
+		})
+
+		It("should render empty list with theme set", func() {
+			emptyScreen := skills.NewSkillsListScreen([]*career.Skill{})
+			emptyScreen.SetTerminalInfo(120, 40)
+			th := themes.NewDefaultTheme()
+			emptyScreen.SetTheme(th)
+
+			view := emptyScreen.View()
+			Expect(view).To(ContainSubstring("No skills"))
+		})
+	})
+
+	Describe("Row Formatting", func() {
+		It("should display years of experience when set", func() {
+			skillsWithYears := []*career.Skill{
+				fixtures.SkillWithYears("y1", "Go", "backend", 7),
+			}
+			screenWithYears := skills.NewSkillsListScreen(skillsWithYears)
+			screenWithYears.SetTerminalInfo(120, 40)
+
+			view := screenWithYears.View()
+			Expect(view).To(ContainSubstring("7"))
+		})
+
+		It("should handle skills with empty category and level", func() {
+			emptyFieldsSkill := fixtures.SkillWith("5", "EmptyFields", "", "")
+			screenWithEmpty := skills.NewSkillsListScreen([]*career.Skill{emptyFieldsSkill})
+			screenWithEmpty.SetTerminalInfo(120, 40)
+
+			view := screenWithEmpty.View()
+			Expect(view).To(ContainSubstring("-"))
+		})
+
+		It("should display event counts via row formatter", func() {
+			screen = skills.NewSkillsListScreen(skillsList)
+			screen.SetTerminalInfo(120, 40)
+			counts := map[string]int{"1": 12}
+			screen.SetEventCounts(counts)
+
+			view := screen.View()
+			Expect(view).To(ContainSubstring("12"))
+		})
+	})
+
+	Describe("Unhandled Messages", func() {
+		BeforeEach(func() {
+			screen = skills.NewSkillsListScreen(skillsList)
+		})
+
+		It("should return nil for unhandled message types", func() {
+			cmd, result := screen.Update(struct{}{})
+			Expect(cmd).To(BeNil())
+			Expect(result).To(BeNil())
+		})
+	})
+
 })
