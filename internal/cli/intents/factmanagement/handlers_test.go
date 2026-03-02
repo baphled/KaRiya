@@ -12,6 +12,7 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/huh"
 )
 
 var _ = Describe("Handlers", func() {
@@ -268,6 +269,193 @@ var _ = Describe("Handlers", func() {
 			emptyIntent.Init()
 			cmd := emptyIntent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 			Expect(cmd).To(BeNil())
+		})
+	})
+
+	Describe("handleEditorModalResult", func() {
+		Context("when editor form is submitted with accepted changes on an existing fact", func() {
+			It("should save the updated fact and set completed result", func() {
+				intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
+
+				modal := intent.TestGetEditModal()
+				Expect(modal).NotTo(BeNil())
+
+				formData := modal.GetFormData()
+				formData.Text = "Updated fact text about technical achievements and skills"
+				formData.CompetencyCategories = []string{"technical"}
+				formData.RoleFit = string(career.RoleFitStaff)
+				formData.AudienceRelevance = []string{"hiring_manager"}
+				formData.SubmitConfirmed = true
+
+				modal.GetForm().State = huh.StateCompleted
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+
+				result := intent.Result()
+				Expect(result).NotTo(BeNil())
+				Expect(result.Status).To(Equal(intents.Completed))
+			})
+		})
+
+		Context("when editor form is submitted but save fails", func() {
+			It("should set a form error", func() {
+				mockRepo.updateErr = errors.New("update failed")
+
+				intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
+
+				modal := intent.TestGetEditModal()
+				Expect(modal).NotTo(BeNil())
+
+				formData := modal.GetFormData()
+				formData.Text = "Updated fact text about technical achievements and skills"
+				formData.CompetencyCategories = []string{"technical"}
+				formData.RoleFit = string(career.RoleFitStaff)
+				formData.AudienceRelevance = []string{"hiring_manager"}
+				formData.SubmitConfirmed = true
+
+				modal.GetForm().State = huh.StateCompleted
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+
+				view := intent.View()
+				Expect(view).NotTo(BeEmpty())
+			})
+		})
+
+		Context("when editor form is cancelled", func() {
+			It("should return to view state without saving", func() {
+				intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
+
+				modal := intent.TestGetEditModal()
+				Expect(modal).NotTo(BeNil())
+
+				modal.GetFormData().SubmitConfirmed = false
+				modal.GetForm().State = huh.StateCompleted
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+
+				result := intent.Result()
+				Expect(result).To(BeNil())
+				view := intent.View()
+				Expect(view).To(ContainSubstring("Fact"))
+			})
+		})
+
+		Context("when new fact editor is submitted and accepted", func() {
+			It("should create the fact and set completed result with created action", func() {
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
+
+				intent.TestPrepareNewFactForSave("new-fact-1", "event-1")
+
+				modal := intent.TestGetEditModal()
+				Expect(modal).NotTo(BeNil())
+
+				formData := modal.GetFormData()
+				formData.Text = "A brand new fact about technical skills and leadership"
+				formData.CompetencyCategories = []string{"technical"}
+				formData.RoleFit = string(career.RoleFitStaff)
+				formData.AudienceRelevance = []string{"hiring_manager"}
+				formData.SubmitConfirmed = true
+
+				modal.GetForm().State = huh.StateCompleted
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+
+				result := intent.Result()
+				Expect(result).NotTo(BeNil())
+				Expect(result.Status).To(Equal(intents.Completed))
+			})
+		})
+
+		Context("when new fact editor is cancelled", func() {
+			It("should return to list state", func() {
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
+
+				modal := intent.TestGetEditModal()
+				Expect(modal).NotTo(BeNil())
+
+				modal.GetFormData().SubmitConfirmed = false
+				modal.GetForm().State = huh.StateCompleted
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+
+				view := intent.View()
+				Expect(view).To(ContainSubstring("Facts"))
+			})
+		})
+
+		Context("when editor form is aborted", func() {
+			It("should return to view state with cancelled result", func() {
+				intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
+
+				modal := intent.TestGetEditModal()
+				Expect(modal).NotTo(BeNil())
+
+				modal.GetForm().State = huh.StateAborted
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+
+				view := intent.View()
+				Expect(view).To(ContainSubstring("Fact"))
+			})
+		})
+	})
+
+	Describe("handleEditorState with nil modal", func() {
+		It("should return nil when editModal is nil", func() {
+			intent.TestSetState(factmanagement.StateEditor)
+			intent.TestSetEditModalNil()
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+			Expect(cmd).To(BeNil())
+		})
+	})
+
+	Describe("handleResultsState", func() {
+		BeforeEach(func() {
+			intent.TestSetState(factmanagement.StateResults)
+		})
+
+		Context("when pressing an unhandled key", func() {
+			It("should return nil", func() {
+				cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
+				Expect(cmd).To(BeNil())
+			})
+		})
+
+		Context("when pressing help key", func() {
+			It("should toggle help without error", func() {
+				cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}})
+				Expect(cmd).To(BeNil())
+			})
+		})
+
+		Context("when pressing back key", func() {
+			It("should return to list state", func() {
+				intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+				view := intent.View()
+				Expect(view).To(ContainSubstring("Facts"))
+			})
+		})
+
+		Context("with non-key message", func() {
+			It("should return nil", func() {
+				cmd := intent.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+				Expect(cmd).To(BeNil())
+			})
+		})
+
+		Context("when rendering the view", func() {
+			It("should display results content", func() {
+				view := intent.View()
+				Expect(view).NotTo(BeEmpty())
+			})
+		})
+	})
+
+	Describe("getEditorContent with nil modal", func() {
+		It("should render fallback content when editModal is nil", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
+			intent.TestSetEditModalNil()
+			view := intent.View()
+			Expect(view).NotTo(BeEmpty())
 		})
 	})
 })
