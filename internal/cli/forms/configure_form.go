@@ -348,7 +348,7 @@ func AppendListChange(changes map[string]interface{}, key string, values map[str
 	if *strPtr == originalValues[key] {
 		return
 	}
-	parts := strings.Split(*strPtr, ", ")
+	parts := strings.Split(*strPtr, ",")
 	var result []string
 	for _, p := range parts {
 		trimmed := strings.TrimSpace(p)
