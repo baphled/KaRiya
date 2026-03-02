@@ -13,6 +13,7 @@ coverage.html
 docs/
 tasks/
 bugs/
+examples/
 *.csv.backup
 
 .opencode
