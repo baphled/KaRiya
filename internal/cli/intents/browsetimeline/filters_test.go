@@ -166,4 +166,72 @@ var _ = Describe("Filtering Business Logic", func() {
 			Expect(view).NotTo(ContainSubstring("Acme Corp"))
 		})
 	})
+
+	Describe("Tag Filtering", func() {
+		It("should filter events by tag", func() {
+			eventsWithTags := []*career.Event{
+				fixtures.EventWith("evt-1", "Go project", "TechCorp", "Backend"),
+				fixtures.EventWith("evt-2", "Python project", "TechCorp", "Backend"),
+				fixtures.EventWith("evt-3", "Rust project", "CloudInc", "Systems"),
+			}
+			eventsWithTags[0].Tags = []string{"golang", "backend"}
+			eventsWithTags[1].Tags = []string{"python", "backend"}
+			eventsWithTags[2].Tags = []string{"rust", "systems"}
+
+			ctx := &browsetimeline.IntentContext{
+				Events: eventsWithTags,
+				InitialFilters: &browsetimeline.Filters{
+					Tags: []string{"golang"},
+				},
+			}
+			intent, err := browsetimeline.NewIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			intent.Init()
+
+			view := intent.View()
+			Expect(view).To(ContainSubstring("Go project"))
+			Expect(view).NotTo(ContainSubstring("Python project"))
+			Expect(view).NotTo(ContainSubstring("Rust project"))
+		})
+	})
+
+	Describe("Project Filtering", func() {
+		It("should filter events by project", func() {
+			ctx := &browsetimeline.IntentContext{
+				Events: events,
+				InitialFilters: &browsetimeline.Filters{
+					Projects: []string{"Platform"},
+				},
+			}
+			intent, err := browsetimeline.NewIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			intent.Init()
+
+			view := intent.View()
+			Expect(view).To(ContainSubstring("Platform work"))
+			Expect(view).NotTo(ContainSubstring("Infrastructure work"))
+		})
+	})
+
+	Describe("ApplyFilters", func() {
+		It("should reapply filters when called", func() {
+			ctx := &browsetimeline.IntentContext{
+				Events: events,
+				InitialFilters: &browsetimeline.Filters{
+					Companies: []string{"TechCorp"},
+				},
+			}
+			intent, err := browsetimeline.NewIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			intent.Init()
+
+			view := intent.View()
+			Expect(view).To(ContainSubstring("TechCorp"))
+			Expect(view).NotTo(ContainSubstring("CloudInc"))
+
+			intent.ApplyFilters()
+			view = intent.View()
+			Expect(view).To(ContainSubstring("TechCorp"))
+		})
+	})
 })
