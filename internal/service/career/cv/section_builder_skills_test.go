@@ -221,3 +221,104 @@ var _ = Describe("DefaultSectionBuilder - Skills Section", func() {
 		})
 	})
 })
+
+var _ = Describe("buildGroupedSkills", func() {
+	var builder *DefaultSectionBuilder
+
+	BeforeEach(func() {
+		log := logger.New(io.Discard, logger.InfoLevel)
+		builder = NewSectionBuilder(nil, log)
+	})
+
+	It("should group skills by category", func() {
+		skills := []skillInfo{
+			{ID: "s1", Name: "Go", Category: "technical"},
+			{ID: "s2", Name: "Python", Category: "technical"},
+			{ID: "s3", Name: "Team management", Category: "leadership"},
+		}
+
+		groups := builder.buildGroupedSkills(skills, 0)
+		Expect(groups).To(HaveLen(2))
+
+		headers := make(map[string]bool)
+		for _, g := range groups {
+			headers[g.Header] = true
+		}
+		Expect(headers).To(HaveKey("technical"))
+		Expect(headers).To(HaveKey("leadership"))
+	})
+
+	It("should sort categories alphabetically", func() {
+		skills := []skillInfo{
+			{ID: "s1", Name: "Go", Category: "technical"},
+			{ID: "s2", Name: "Leadership", Category: "leadership"},
+			{ID: "s3", Name: "Product", Category: "product"},
+		}
+
+		groups := builder.buildGroupedSkills(skills, 0)
+		Expect(groups).To(HaveLen(3))
+		Expect(groups[0].Header).To(Equal("leadership"))
+		Expect(groups[1].Header).To(Equal("product"))
+		Expect(groups[2].Header).To(Equal("technical"))
+	})
+
+	It("should default empty category to other", func() {
+		skills := []skillInfo{
+			{ID: "s1", Name: "Something", Category: ""},
+		}
+
+		groups := builder.buildGroupedSkills(skills, 0)
+		Expect(groups).To(HaveLen(1))
+		Expect(groups[0].Header).To(Equal("other"))
+	})
+
+	It("should apply per-group limit", func() {
+		skills := []skillInfo{
+			{ID: "s1", Name: "Go", Category: "technical"},
+			{ID: "s2", Name: "Python", Category: "technical"},
+			{ID: "s3", Name: "Rust", Category: "technical"},
+		}
+
+		groups := builder.buildGroupedSkills(skills, 2)
+		Expect(groups).To(HaveLen(1))
+		Expect(groups[0].Bullets).To(HaveLen(2))
+	})
+
+	It("should not limit when limitPerGroup is 0", func() {
+		skills := []skillInfo{
+			{ID: "s1", Name: "Go", Category: "technical"},
+			{ID: "s2", Name: "Python", Category: "technical"},
+			{ID: "s3", Name: "Rust", Category: "technical"},
+		}
+
+		groups := builder.buildGroupedSkills(skills, 0)
+		Expect(groups[0].Bullets).To(HaveLen(3))
+	})
+
+	It("should create bullets with skill names as text", func() {
+		skills := []skillInfo{
+			{ID: "s1", Name: "Go", Category: "technical"},
+		}
+
+		groups := builder.buildGroupedSkills(skills, 0)
+		Expect(groups[0].Bullets[0].Text).To(Equal("Go"))
+		Expect(groups[0].Bullets[0].ID).NotTo(BeEmpty())
+	})
+
+	It("should handle empty skills list", func() {
+		groups := builder.buildGroupedSkills([]skillInfo{}, 0)
+		Expect(groups).To(BeEmpty())
+	})
+
+	It("should normalise category to lowercase", func() {
+		skills := []skillInfo{
+			{ID: "s1", Name: "Go", Category: "Technical"},
+			{ID: "s2", Name: "Python", Category: "TECHNICAL"},
+		}
+
+		groups := builder.buildGroupedSkills(skills, 0)
+		Expect(groups).To(HaveLen(1))
+		Expect(groups[0].Header).To(Equal("technical"))
+		Expect(groups[0].Bullets).To(HaveLen(2))
+	})
+})

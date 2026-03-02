@@ -2,6 +2,7 @@ package cv
 
 import (
 	"context"
+	"errors"
 	"io"
 	"time"
 
@@ -508,6 +509,359 @@ var _ = Describe("DefaultCVGenerationService", func() {
 	})
 })
 
+var _ = Describe("GenerateCVFromConfig error paths", func() {
+	var (
+		log *logger.Logger
+		ctx context.Context
+	)
+
+	BeforeEach(func() {
+		log = logger.New(io.Discard, logger.InfoLevel)
+		ctx = context.Background()
+	})
+
+	Context("when event repository returns error", func() {
+		It("should return error from retrieveEventsWithFilters", func() {
+			config := fixtures.CVConfigWith("test-cv", "principal", "hiring_manager")
+			config.EventFilters = make(map[string]interface{})
+
+			service := NewCVGenerationService(
+				&ErrorEventRepository{},
+				NewEmptyFactRepository(),
+				NewMockConfigManager(),
+				NewEmptyBulletGenerator(),
+				NewMockDataProcessingService(),
+				NewEmptySectionBuilder(),
+				log,
+			)
+
+			_, err := service.GenerateCVFromConfig(ctx, config)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("failed to retrieve events"))
+		})
+	})
+
+	Context("when fact repository returns error", func() {
+		It("should continue with empty facts", func() {
+			config := fixtures.CVConfigWith("test-cv", "principal", "hiring_manager")
+			config.EventFilters = make(map[string]interface{})
+
+			service := NewCVGenerationService(
+				NewCountingRepository(2),
+				&ErrorFactRepository{},
+				NewMockConfigManager(),
+				NewEmptyBulletGenerator(),
+				NewMockDataProcessingService(),
+				NewEmptySectionBuilder(),
+				log,
+			)
+
+			cv, err := service.GenerateCVFromConfig(ctx, config)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cv).NotTo(BeNil())
+			Expect(cv.SourceFactCount).To(Equal(0))
+		})
+	})
+
+	Context("when bullet generator returns error", func() {
+		It("should return error from GenerateBullets", func() {
+			config := fixtures.CVConfigWith("test-cv", "principal", "hiring_manager")
+			config.EventFilters = make(map[string]interface{})
+
+			service := NewCVGenerationService(
+				NewCountingRepository(2),
+				NewEmptyFactRepository(),
+				NewMockConfigManager(),
+				&ErrorBulletGenerator{},
+				NewMockDataProcessingService(),
+				NewEmptySectionBuilder(),
+				log,
+			)
+
+			_, err := service.GenerateCVFromConfig(ctx, config)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("failed to generate bullets"))
+		})
+	})
+
+	Context("when section builder returns error", func() {
+		It("should return error from BuildSections", func() {
+			config := fixtures.CVConfigWith("test-cv", "principal", "hiring_manager")
+			config.EventFilters = make(map[string]interface{})
+
+			service := NewCVGenerationService(
+				NewCountingRepository(2),
+				NewEmptyFactRepository(),
+				NewMockConfigManager(),
+				NewEmptyBulletGenerator(),
+				NewMockDataProcessingService(),
+				&ErrorSectionBuilder{},
+				log,
+			)
+
+			_, err := service.GenerateCVFromConfig(ctx, config)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("failed to build sections"))
+		})
+	})
+
+	Context("with length format that filters events by date", func() {
+		It("should apply MaxYearsHistory filter", func() {
+			config := fixtures.CVConfigWith("test-cv", "principal", "hiring_manager")
+			config.EventFilters = make(map[string]interface{})
+			config.LengthFormat = string(LengthShort)
+
+			service := NewCVGenerationService(
+				NewCountingRepository(3),
+				NewEmptyFactRepository(),
+				NewMockConfigManager(),
+				NewEmptyBulletGenerator(),
+				NewMockDataProcessingService(),
+				NewEmptySectionBuilder(),
+				log,
+			)
+
+			cv, err := service.GenerateCVFromConfig(ctx, config)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cv).NotTo(BeNil())
+		})
+	})
+})
+
+var _ = Describe("GenerateCVFromConfig with nil factRepo", func() {
+	var (
+		log *logger.Logger
+		ctx context.Context
+	)
+
+	BeforeEach(func() {
+		log = logger.New(io.Discard, logger.InfoLevel)
+		ctx = context.Background()
+	})
+
+	It("should handle nil factRepo gracefully", func() {
+		eventRepo := NewCountingRepository(3)
+		service := NewCVGenerationService(
+			eventRepo,
+			nil,
+			NewMockConfigManager(),
+			NewEmptyBulletGenerator(),
+			NewMockDataProcessingService(),
+			NewEmptySectionBuilder(),
+			log,
+		)
+
+		config := fixtures.CVConfigWith("nil-fact-test", "senior_ic", "recruiter")
+		config.EventFilters = make(map[string]interface{})
+
+		cv, err := service.GenerateCVFromConfig(ctx, config)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(cv).NotTo(BeNil())
+	})
+
+	It("should return error for invalid config", func() {
+		service := NewCVGenerationService(
+			NewEmptyRepository(),
+			NewEmptyFactRepository(),
+			NewMockConfigManager(),
+			NewEmptyBulletGenerator(),
+			NewMockDataProcessingService(),
+			NewEmptySectionBuilder(),
+			log,
+		)
+
+		config := fixtures.CVConfigWith("", "", "")
+		_, err := service.GenerateCVFromConfig(ctx, config)
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("invalid configuration"))
+	})
+})
+
+var _ = Describe("eventMatchesFilters", func() {
+	var svc *DefaultCVGenerationService
+
+	BeforeEach(func() {
+		log := logger.New(io.Discard, logger.InfoLevel)
+		svc = NewCVGenerationService(
+			NewEmptyRepository(),
+			NewEmptyFactRepository(),
+			NewMockConfigManager(),
+			NewEmptyBulletGenerator(),
+			NewMockDataProcessingService(),
+			NewEmptySectionBuilder(),
+			log,
+		)
+	})
+
+	Context("with empty filters", func() {
+		It("should match any event", func() {
+			event := fixtures.EventWith("e1", "test", "Acme", "")
+			Expect(svc.eventMatchesFilters(event, map[string]interface{}{})).To(BeTrue())
+		})
+	})
+
+	Context("with minDate filter", func() {
+		It("should exclude events before minDate", func() {
+			event := fixtures.EventWith("e1", "test", "Acme", "")
+			event.Date = time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
+			filters := map[string]interface{}{
+				"minDate": time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+			}
+			Expect(svc.eventMatchesFilters(event, filters)).To(BeFalse())
+		})
+
+		It("should include events after minDate", func() {
+			event := fixtures.EventWith("e1", "test", "Acme", "")
+			event.Date = time.Date(2022, 6, 1, 0, 0, 0, 0, time.UTC)
+			filters := map[string]interface{}{
+				"minDate": time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+			}
+			Expect(svc.eventMatchesFilters(event, filters)).To(BeTrue())
+		})
+	})
+
+	Context("with maxDate filter", func() {
+		It("should exclude events after maxDate", func() {
+			event := fixtures.EventWith("e1", "test", "Acme", "")
+			event.Date = time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
+			filters := map[string]interface{}{
+				"maxDate": time.Date(2023, 12, 31, 0, 0, 0, 0, time.UTC),
+			}
+			Expect(svc.eventMatchesFilters(event, filters)).To(BeFalse())
+		})
+
+		It("should include events before maxDate", func() {
+			event := fixtures.EventWith("e1", "test", "Acme", "")
+			event.Date = time.Date(2023, 6, 1, 0, 0, 0, 0, time.UTC)
+			filters := map[string]interface{}{
+				"maxDate": time.Date(2023, 12, 31, 0, 0, 0, 0, time.UTC),
+			}
+			Expect(svc.eventMatchesFilters(event, filters)).To(BeTrue())
+		})
+	})
+
+	Context("with companies filter", func() {
+		It("should include events matching company", func() {
+			event := fixtures.EventWith("e1", "test", "Acme Corp", "")
+			filters := map[string]interface{}{
+				"companies": []string{"Acme Corp", "TechCo"},
+			}
+			Expect(svc.eventMatchesFilters(event, filters)).To(BeTrue())
+		})
+
+		It("should exclude events not matching any company", func() {
+			event := fixtures.EventWith("e1", "test", "Other Inc", "")
+			filters := map[string]interface{}{
+				"companies": []string{"Acme Corp", "TechCo"},
+			}
+			Expect(svc.eventMatchesFilters(event, filters)).To(BeFalse())
+		})
+
+		It("should match when companies list is empty", func() {
+			event := fixtures.EventWith("e1", "test", "Acme Corp", "")
+			filters := map[string]interface{}{
+				"companies": []string{},
+			}
+			Expect(svc.eventMatchesFilters(event, filters)).To(BeTrue())
+		})
+	})
+
+	Context("with tags filter", func() {
+		It("should include events matching tag", func() {
+			event := fixtures.EventWith("e1", "test", "Acme", "")
+			event.Tags = []string{"technical", "leadership"}
+			filters := map[string]interface{}{
+				"tags": []string{"leadership"},
+			}
+			Expect(svc.eventMatchesFilters(event, filters)).To(BeTrue())
+		})
+
+		It("should exclude events not matching any tag", func() {
+			event := fixtures.EventWith("e1", "test", "Acme", "")
+			event.Tags = []string{"mentoring"}
+			filters := map[string]interface{}{
+				"tags": []string{"leadership", "technical"},
+			}
+			Expect(svc.eventMatchesFilters(event, filters)).To(BeFalse())
+		})
+
+		It("should match when tags list is empty", func() {
+			event := fixtures.EventWith("e1", "test", "Acme", "")
+			filters := map[string]interface{}{
+				"tags": []string{},
+			}
+			Expect(svc.eventMatchesFilters(event, filters)).To(BeTrue())
+		})
+	})
+
+	Context("with categories filter", func() {
+		It("should match when event has matching category", func() {
+			event := fixtures.EventWith("e1", "test", "Acme", "")
+			event.Categories = []string{"leadership", "technical"}
+			filters := map[string]interface{}{
+				"categories": []string{"technical"},
+			}
+			Expect(svc.eventMatchesFilters(event, filters)).To(BeTrue())
+		})
+
+		It("should exclude when event has no matching category", func() {
+			event := fixtures.EventWith("e1", "test", "Acme", "")
+			event.Categories = []string{"mentoring"}
+			filters := map[string]interface{}{
+				"categories": []string{"technical", "leadership"},
+			}
+			Expect(svc.eventMatchesFilters(event, filters)).To(BeFalse())
+		})
+
+		It("should fall back to tags when event has no categories", func() {
+			event := fixtures.EventWith("e1", "test", "Acme", "")
+			event.Categories = nil
+			event.Tags = []string{"technical"}
+			filters := map[string]interface{}{
+				"categories": []string{"technical"},
+			}
+			Expect(svc.eventMatchesFilters(event, filters)).To(BeTrue())
+		})
+
+		It("should exclude when falling back to tags but no match", func() {
+			event := fixtures.EventWith("e1", "test", "Acme", "")
+			event.Categories = nil
+			event.Tags = []string{"mentoring"}
+			filters := map[string]interface{}{
+				"categories": []string{"technical"},
+			}
+			Expect(svc.eventMatchesFilters(event, filters)).To(BeFalse())
+		})
+	})
+
+	Context("with combined filters", func() {
+		It("should require all filters to match", func() {
+			event := fixtures.EventWith("e1", "test", "Acme Corp", "")
+			event.Date = time.Date(2022, 6, 1, 0, 0, 0, 0, time.UTC)
+			event.Tags = []string{"technical"}
+			filters := map[string]interface{}{
+				"minDate":   time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+				"maxDate":   time.Date(2023, 12, 31, 0, 0, 0, 0, time.UTC),
+				"companies": []string{"Acme Corp"},
+				"tags":      []string{"technical"},
+			}
+			Expect(svc.eventMatchesFilters(event, filters)).To(BeTrue())
+		})
+
+		It("should fail if any single filter does not match", func() {
+			event := fixtures.EventWith("e1", "test", "Other Inc", "")
+			event.Date = time.Date(2022, 6, 1, 0, 0, 0, 0, time.UTC)
+			event.Tags = []string{"technical"}
+			filters := map[string]interface{}{
+				"minDate":   time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+				"companies": []string{"Acme Corp"},
+				"tags":      []string{"technical"},
+			}
+			Expect(svc.eventMatchesFilters(event, filters)).To(BeFalse())
+		})
+	})
+})
+
 // Mock implementations for testing
 
 type MockConfigManager struct {
@@ -874,4 +1228,84 @@ func (g *MockBulletGenerator) EnhanceWording(bullet *Bullet, _ string) (*Bullet,
 
 func (g *MockBulletGenerator) FilterByTechnologies(bullets []*Bullet, _ []*career.Event, _ TechnologyFocus, _ []string) []*Bullet {
 	return bullets
+}
+
+// ErrorEventRepository returns errors from List.
+type ErrorEventRepository struct{}
+
+func (r *ErrorEventRepository) List(_ context.Context, _ careerrepo.EventListFilters) ([]*career.Event, error) {
+	return nil, errors.New("database connection failed")
+}
+
+func (r *ErrorEventRepository) GetByID(_ context.Context, _ string) (*career.Event, error) {
+	return nil, nil //nolint:nilnil // test stub
+}
+
+func (r *ErrorEventRepository) Create(_ context.Context, _ *career.Event) error { return nil }
+func (r *ErrorEventRepository) Update(_ context.Context, _ *career.Event) error { return nil }
+func (r *ErrorEventRepository) Delete(_ context.Context, _ string) error        { return nil }
+
+func (r *ErrorEventRepository) Count(_ context.Context, _ careerrepo.EventListFilters) (int, error) {
+	return 0, nil
+}
+
+func (r *ErrorEventRepository) LinkSkill(_ context.Context, _ string, _ string) error   { return nil }
+func (r *ErrorEventRepository) UnlinkSkill(_ context.Context, _ string, _ string) error { return nil }
+
+// ErrorFactRepository returns errors from List.
+type ErrorFactRepository struct{}
+
+func (r *ErrorFactRepository) List(_ context.Context, _ careerrepo.FactListFilters) ([]*career.Fact, error) {
+	return nil, errors.New("fact database error")
+}
+
+func (r *ErrorFactRepository) GetByID(_ context.Context, _ string) (*career.Fact, error) {
+	return nil, nil //nolint:nilnil // test stub
+}
+
+func (r *ErrorFactRepository) Create(_ context.Context, _ *career.Fact) error { return nil }
+func (r *ErrorFactRepository) Update(_ context.Context, _ *career.Fact) error { return nil }
+func (r *ErrorFactRepository) Delete(_ context.Context, _ string) error       { return nil }
+
+func (r *ErrorFactRepository) Count(_ context.Context, _ careerrepo.FactListFilters) (int, error) {
+	return 0, nil
+}
+
+func (r *ErrorFactRepository) GetBySourceEventID(_ context.Context, _ string) ([]*career.Fact, error) {
+	return nil, nil //nolint:nilnil // test stub
+}
+
+func (r *ErrorFactRepository) GetBySourceBurstID(_ context.Context, _ string) ([]*career.Fact, error) {
+	return nil, nil //nolint:nilnil // test stub
+}
+
+// ErrorBulletGenerator returns errors from GenerateBullets.
+type ErrorBulletGenerator struct{}
+
+func (g *ErrorBulletGenerator) GenerateBullets(_ context.Context, _ []*career.Event, _ []*career.Fact, _ []*Achievement, _ string, _ string) ([]*Bullet, error) {
+	return nil, errors.New("bullet generation failed")
+}
+
+func (g *ErrorBulletGenerator) FilterByRole(bullets []*Bullet, _ string) []*Bullet { return bullets }
+func (g *ErrorBulletGenerator) FilterByAudience(bullets []*Bullet, _ string) []*Bullet {
+	return bullets
+}
+
+func (g *ErrorBulletGenerator) RankByRelevance(bullets []*Bullet, _ string, _ string) []*Bullet {
+	return bullets
+}
+
+func (g *ErrorBulletGenerator) EnhanceWording(bullet *Bullet, _ string) (*Bullet, error) {
+	return bullet, nil
+}
+
+func (g *ErrorBulletGenerator) FilterByTechnologies(bullets []*Bullet, _ []*career.Event, _ TechnologyFocus, _ []string) []*Bullet {
+	return bullets
+}
+
+// ErrorSectionBuilder returns errors from BuildSections.
+type ErrorSectionBuilder struct{}
+
+func (b *ErrorSectionBuilder) BuildSections(_ context.Context, _ []*career.CVBullet, _ []*career.Event, _ []*career.Fact, _ string, _ *SkillsFormatConfig) ([]*career.CVSection, error) {
+	return nil, errors.New("section building failed")
 }

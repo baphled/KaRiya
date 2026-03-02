@@ -347,6 +347,36 @@ var _ = Describe("ProfileInferenceService", func() {
 			})
 		})
 	})
+	Describe("InferValuePropositions - collaboration via facts", func() {
+		It("should detect collaboration from fact text", func() {
+			facts = []*career.Fact{
+				fixtures.FactWithCategories("fact-1", "Collaborated with cross-functional teams on delivery", "ev-1", []string{"technical"}, []string{"peer"}),
+			}
+			propositions := service.InferValuePropositions(events, facts, skills)
+			Expect(propositions).To(ContainElement(ContainSubstring("collaboration")))
+		})
+
+		It("should detect collaboration from event categories", func() {
+			ev := fixtures.EventWithCategories("ev-1", "Managed project delivery", []string{"leadership"})
+			ev.Date = time.Now().AddDate(-1, 0, 0)
+			events = []*career.Event{ev}
+			propositions := service.InferValuePropositions(events, facts, skills)
+			Expect(propositions).To(ContainElement(ContainSubstring("collaboration")))
+		})
+
+		It("should detect stakeholder keyword from events", func() {
+			ev := fixtures.EventWithCategories("ev-1", "Presented to stakeholder group", []string{"technical"})
+			ev.Date = time.Now().AddDate(-1, 0, 0)
+			events = []*career.Event{ev}
+			propositions := service.InferValuePropositions(events, facts, skills)
+			Expect(propositions).To(ContainElement(ContainSubstring("collaboration")))
+		})
+
+		It("should return at least 3 propositions even with no data", func() {
+			propositions := service.InferValuePropositions(nil, nil, nil)
+			Expect(len(propositions)).To(BeNumerically(">=", 3))
+		})
+	})
 })
 
 // ContainsAny checks if the string contains any of the substrings (case-insensitive).

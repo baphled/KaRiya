@@ -2,11 +2,13 @@ package cv
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
 	career "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
+	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -533,3 +535,259 @@ var _ = Describe("DefaultSectionBuilder", func() {
 		})
 	})
 })
+
+var _ = Describe("formatMonthYear", func() {
+	It("should return empty for zero time", func() {
+		Expect(formatMonthYear(time.Time{})).To(BeEmpty())
+	})
+
+	It("should format date as month year", func() {
+		date := time.Date(2023, 6, 15, 0, 0, 0, 0, time.UTC)
+		Expect(formatMonthYear(date)).To(Equal("Jun 2023"))
+	})
+
+	It("should format January correctly", func() {
+		date := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
+		Expect(formatMonthYear(date)).To(Equal("Jan 2020"))
+	})
+})
+
+var _ = Describe("getBulletsPerCompanyForRole", func() {
+	var builder *DefaultSectionBuilder
+
+	BeforeEach(func() {
+		log := logger.DefaultLogger()
+		builder = NewSectionBuilder(nil, log)
+	})
+
+	It("should return 4 for principal", func() {
+		Expect(builder.getBulletsPerCompanyForRole("principal")).To(Equal(4))
+	})
+
+	It("should return 5 for staff", func() {
+		Expect(builder.getBulletsPerCompanyForRole("staff")).To(Equal(5))
+	})
+
+	It("should return 4 for em", func() {
+		Expect(builder.getBulletsPerCompanyForRole("em")).To(Equal(4))
+	})
+
+	It("should return 5 for senior_ic", func() {
+		Expect(builder.getBulletsPerCompanyForRole("senior_ic")).To(Equal(5))
+	})
+
+	It("should return 4 for unknown role", func() {
+		Expect(builder.getBulletsPerCompanyForRole("unknown")).To(Equal(4))
+	})
+
+	It("should be case insensitive", func() {
+		Expect(builder.getBulletsPerCompanyForRole("STAFF")).To(Equal(5))
+	})
+})
+
+var _ = Describe("buildSkillsSection with grouped format", func() {
+	var (
+		builder *DefaultSectionBuilder
+		ctx     context.Context
+	)
+
+	BeforeEach(func() {
+		log := logger.DefaultLogger()
+		builder = NewSectionBuilder(nil, log)
+		ctx = context.Background()
+	})
+
+	It("should return nil for events with no skills", func() {
+		ev := fixtures.EventWith("e1", "Built API", "Acme", "")
+		ev.Skills = nil
+		result := builder.buildSkillsSection(ctx, []*career.Event{ev}, &SkillsFormatConfig{Format: "flat"}, 1)
+		Expect(result).To(BeNil())
+	})
+
+	It("should build flat skills with limit", func() {
+		ev := fixtures.EventWith("e1", "Built API", "Acme", "")
+		ev.Skills = []string{"skill-1", "skill-2", "skill-3"}
+		result := builder.buildSkillsSection(ctx, []*career.Event{ev}, &SkillsFormatConfig{Format: "flat", Limit: 2}, 1)
+		Expect(result).NotTo(BeNil())
+		Expect(result.SectionType).To(Equal("skills"))
+		totalBullets := 0
+		for _, group := range result.Content {
+			totalBullets += len(group.Bullets)
+		}
+		Expect(totalBullets).To(Equal(2))
+	})
+
+	It("should build grouped skills by category", func() {
+		ev := fixtures.EventWith("e1", "Built API", "Acme", "")
+		ev.Skills = []string{"skill-1", "skill-2"}
+		result := builder.buildSkillsSection(ctx, []*career.Event{ev}, &SkillsFormatConfig{Format: "grouped", Limit: 0}, 1)
+		Expect(result).NotTo(BeNil())
+		Expect(result.SectionType).To(Equal("skills"))
+	})
+
+	It("should handle empty skill IDs", func() {
+		ev := fixtures.EventWith("e1", "Built API", "Acme", "")
+		ev.Skills = []string{"", "skill-1", ""}
+		result := builder.buildSkillsSection(ctx, []*career.Event{ev}, &SkillsFormatConfig{Format: "flat"}, 1)
+		Expect(result).NotTo(BeNil())
+		totalBullets := 0
+		for _, group := range result.Content {
+			totalBullets += len(group.Bullets)
+		}
+		Expect(totalBullets).To(Equal(1))
+	})
+})
+
+var _ = Describe("buildExperienceSection bullet cap", func() {
+	var (
+		builder *DefaultSectionBuilder
+		_       context.Context
+	)
+
+	BeforeEach(func() {
+		log := logger.DefaultLogger()
+		builder = NewSectionBuilder(nil, log)
+		_ = context.Background()
+	})
+
+	It("should cap bullets per company for principal role", func() {
+		events := []*career.Event{
+			fixtures.EventWith("e1", "Event 1", "BigCorp", ""),
+		}
+
+		bullets := make([]*career.CVBullet, 6)
+		for i := range 6 {
+			b := fixtures.CVBulletWithSources(
+				strings.Replace("bullet-X", "X", string(rune('0'+i)), 1),
+				"",
+				"Achievement number "+string(rune('0'+i)),
+				[]string{"e1"},
+				[]string{},
+			)
+			b.Rank = float64(6-i) * 0.1
+			bullets[i] = b
+		}
+
+		section := builder.buildExperienceSection(bullets, events, 0, "principal")
+		Expect(section).NotTo(BeNil())
+		Expect(section.Content).To(HaveLen(1))
+		Expect(len(section.Content[0].Bullets)).To(BeNumerically("<=", 4))
+	})
+})
+
+var _ = Describe("buildProjectsSection", func() {
+	var (
+		builder *DefaultSectionBuilder
+	)
+
+	BeforeEach(func() {
+		log := logger.DefaultLogger()
+		builder = NewSectionBuilder(nil, log)
+	})
+
+	It("should group bullets by project for events without company", func() {
+		ev1 := fixtures.EventWith("e1", "Built feature A", "", "")
+		ev1.Project = "OpenSource"
+		ev1.Date = time.Now().AddDate(0, -1, 0)
+
+		ev2 := fixtures.EventWith("e2", "Built feature B", "", "")
+		ev2.Project = "OpenSource"
+		ev2.Date = time.Now().AddDate(0, -2, 0)
+
+		events := []*career.Event{ev1, ev2}
+
+		bullets := []*career.CVBullet{
+			fixtures.CVBulletWithSources("b1", "", "Feature A", []string{"e1"}, nil),
+			fixtures.CVBulletWithSources("b2", "", "Feature B", []string{"e2"}, nil),
+		}
+
+		section := builder.buildProjectsSection(bullets, events, 0, "principal")
+		Expect(section).NotTo(BeNil())
+		Expect(section.SectionType).To(Equal("projects"))
+		Expect(section.Content).To(HaveLen(1))
+		Expect(section.Content[0].Header).To(Equal("OpenSource"))
+	})
+
+	It("should cap bullets per project", func() {
+		events := make([]*career.Event, 6)
+		bullets := make([]*career.CVBullet, 6)
+		for i := range 6 {
+			id := "e" + string(rune('0'+i))
+			ev := fixtures.EventWith(id, "Event", "", "")
+			ev.Project = "BigProject"
+			ev.Date = time.Now().AddDate(0, -i, 0)
+			events[i] = ev
+			bullets[i] = fixtures.CVBulletWithSources("b"+string(rune('0'+i)), "", "Bullet", []string{id}, nil)
+		}
+
+		section := builder.buildProjectsSection(bullets, events, 0, "principal")
+		Expect(section).NotTo(BeNil())
+		Expect(section.Content[0].Bullets).To(HaveLen(4))
+	})
+})
+
+var _ = Describe("buildSkillsSection with skillRepo", func() {
+	It("should use skill names from repository", func() {
+		log := logger.DefaultLogger()
+		skillRepo := &MockSkillRepo{
+			skills: map[string]*career.Skill{
+				"s1": fixtures.SkillWith("s1", "Go", "backend", "expert"),
+			},
+		}
+		builder := NewSectionBuilder(skillRepo, log)
+		ctx := context.Background()
+
+		ev := fixtures.EventWith("e1", "Built API", "Acme", "")
+		ev.Skills = []string{"s1", "s2"}
+
+		result := builder.buildSkillsSection(ctx, []*career.Event{ev}, &SkillsFormatConfig{Format: "flat"}, 1)
+		Expect(result).NotTo(BeNil())
+		Expect(result.SectionType).To(Equal("skills"))
+	})
+})
+
+// MockSkillRepo implements careerrepo.SkillRepository for testing.
+type MockSkillRepo struct {
+	skills map[string]*career.Skill
+}
+
+func (r *MockSkillRepo) GetByID(_ context.Context, id string) (*career.Skill, error) {
+	if skill, ok := r.skills[id]; ok {
+		return skill, nil
+	}
+	return nil, errors.New("skill not found")
+}
+
+func (r *MockSkillRepo) Create(_ context.Context, _ *career.Skill) error { return nil }
+func (r *MockSkillRepo) GetByName(_ context.Context, _ string) (*career.Skill, error) {
+	return nil, nil
+}
+func (r *MockSkillRepo) Update(_ context.Context, _ *career.Skill) error { return nil }
+func (r *MockSkillRepo) Delete(_ context.Context, _ string) error        { return nil }
+func (r *MockSkillRepo) List(_ context.Context, _ *careerrepo.SkillListFilters) ([]*career.Skill, error) {
+	return nil, nil
+}
+func (r *MockSkillRepo) Count(_ context.Context, _ *careerrepo.SkillListFilters) (int, error) {
+	return 0, nil
+}
+func (r *MockSkillRepo) LinkToEvent(_ context.Context, _ string, _ string) error     { return nil }
+func (r *MockSkillRepo) UnlinkFromEvent(_ context.Context, _ string, _ string) error { return nil }
+func (r *MockSkillRepo) GetEventIDs(_ context.Context, _ string) ([]string, error)   { return nil, nil }
+func (r *MockSkillRepo) GetByCategory(_ context.Context, _ string) ([]*career.Skill, error) {
+	return nil, nil
+}
+func (r *MockSkillRepo) GetSkillsForEvent(_ context.Context, _ string) ([]*career.Skill, error) {
+	return nil, nil
+}
+func (r *MockSkillRepo) GetSkillsForEvents(_ context.Context, _ []string) ([]*career.Skill, error) {
+	return nil, nil
+}
+func (r *MockSkillRepo) GetEventCountsForSkills(_ context.Context) (map[string]int, error) {
+	return nil, nil
+}
+func (r *MockSkillRepo) GetLastUsedForSkills(_ context.Context) (map[string]time.Time, error) {
+	return nil, nil
+}
+func (r *MockSkillRepo) GetEventsUsingSkill(_ context.Context, _ string) ([]*career.Event, error) {
+	return nil, nil
+}

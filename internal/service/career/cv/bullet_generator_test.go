@@ -1243,3 +1243,404 @@ var _ = Describe("BUG-013: Company-aware bullet deduplication", func() {
 			"orphaned bullets with distinct IDs must not merge under an empty key")
 	})
 })
+
+var _ = Describe("addMetricContext", func() {
+	var gen *DefaultBulletGenerator
+
+	BeforeEach(func() {
+		log := logger.New(io.Discard, logger.InfoLevel)
+		gen = NewBulletGenerator(log, nil).(*DefaultBulletGenerator)
+	})
+
+	It("should return text unchanged when no metrics", func() {
+		result := gen.addMetricContext("Led team migration", []*Metric{})
+		Expect(result).To(Equal("Led team migration"))
+	})
+
+	It("should append first metric when not already in text", func() {
+		metrics := []*Metric{{Value: "40", Unit: "%"}}
+		result := gen.addMetricContext("Reduced costs", metrics)
+		Expect(result).To(Equal("Reduced costs (40%)"))
+	})
+
+	It("should not duplicate metric already in text", func() {
+		metrics := []*Metric{{Value: "40", Unit: "%"}}
+		result := gen.addMetricContext("Reduced costs by 40%", metrics)
+		Expect(result).To(Equal("Reduced costs by 40%"))
+	})
+
+	It("should only use the first metric", func() {
+		metrics := []*Metric{
+			{Value: "50", Unit: "%"},
+			{Value: "1000", Unit: " users"},
+		}
+		result := gen.addMetricContext("Improved performance", metrics)
+		Expect(result).To(ContainSubstring("50%"))
+		Expect(result).NotTo(ContainSubstring("1000"))
+	})
+})
+
+var _ = Describe("FilterByTechnologies", func() {
+	var gen *DefaultBulletGenerator
+
+	BeforeEach(func() {
+		log := logger.New(io.Discard, logger.InfoLevel)
+		gen = NewBulletGenerator(log, nil).(*DefaultBulletGenerator)
+	})
+
+	It("should return bullets unchanged for language agnostic focus", func() {
+		bullets := []*Bullet{{ID: "b1", Rank: 0.5}}
+		result := gen.FilterByTechnologies(bullets, nil, TechnologyFocusLanguageAgnostic, nil)
+		Expect(result).To(HaveLen(1))
+		Expect(result[0].Rank).To(Equal(0.5))
+	})
+
+	It("should boost bullets matching selected technologies", func() {
+		event := fixtures.EventWith("e1", "Built API", "TechCo", "")
+		event.Skills = []string{"Go", "PostgreSQL"}
+		events := []*career.Event{event}
+
+		bullets := []*Bullet{
+			{ID: "b1", SourceEventIDs: []string{"e1"}, Rank: 0.5},
+		}
+
+		result := gen.FilterByTechnologies(bullets, events, TechnologyFocusSpecialist, []string{"Go"})
+		Expect(result).To(HaveLen(1))
+		Expect(result[0].Rank).To(BeNumerically(">", 0.5))
+	})
+
+	It("should not boost bullets without matching technologies", func() {
+		event := fixtures.EventWith("e1", "Built API", "TechCo", "")
+		event.Skills = []string{"Ruby"}
+		events := []*career.Event{event}
+
+		bullets := []*Bullet{
+			{ID: "b1", SourceEventIDs: []string{"e1"}, Rank: 0.5},
+		}
+
+		result := gen.FilterByTechnologies(bullets, events, TechnologyFocusSpecialist, []string{"Go"})
+		Expect(result).To(HaveLen(1))
+		Expect(result[0].Rank).To(Equal(0.5))
+	})
+
+	It("should skip bullets without source events", func() {
+		bullets := []*Bullet{
+			{ID: "b1", SourceEventIDs: nil, Rank: 0.5},
+		}
+
+		result := gen.FilterByTechnologies(bullets, []*career.Event{}, TechnologyFocusSpecialist, []string{"Go"})
+		Expect(result).To(HaveLen(1))
+		Expect(result[0].Rank).To(Equal(0.5))
+	})
+
+	It("should skip bullets referencing unknown events", func() {
+		bullets := []*Bullet{
+			{ID: "b1", SourceEventIDs: []string{"missing-event"}, Rank: 0.5},
+		}
+
+		result := gen.FilterByTechnologies(bullets, []*career.Event{}, TechnologyFocusSpecialist, []string{"Go"})
+		Expect(result).To(HaveLen(1))
+		Expect(result[0].Rank).To(Equal(0.5))
+	})
+
+	It("should sort bullets by rank descending after boost", func() {
+		event1 := fixtures.EventWith("e1", "Built API", "TechCo", "")
+		event1.Skills = []string{"Go"}
+		event2 := fixtures.EventWith("e2", "Led team", "TechCo", "")
+		event2.Skills = []string{"Ruby"}
+		events := []*career.Event{event1, event2}
+
+		bullets := []*Bullet{
+			{ID: "b1", SourceEventIDs: []string{"e2"}, Rank: 0.7},
+			{ID: "b2", SourceEventIDs: []string{"e1"}, Rank: 0.4},
+		}
+
+		result := gen.FilterByTechnologies(bullets, events, TechnologyFocusSpecialist, []string{"Go"})
+		Expect(result[0].ID).To(Equal("b1"))
+		Expect(result[1].Rank).To(BeNumerically(">", 0.4))
+	})
+
+	It("should cap boosted rank at 1.0", func() {
+		event := fixtures.EventWith("e1", "Built API", "TechCo", "")
+		event.Skills = []string{"Go"}
+		events := []*career.Event{event}
+
+		bullets := []*Bullet{
+			{ID: "b1", SourceEventIDs: []string{"e1"}, Rank: 0.95},
+		}
+
+		result := gen.FilterByTechnologies(bullets, events, TechnologyFocusSpecialist, []string{"Go"})
+		Expect(result[0].Rank).To(BeNumerically("<=", 1.0))
+	})
+})
+
+var _ = Describe("calculateMetricScore", func() {
+	var gen *DefaultBulletGenerator
+
+	BeforeEach(func() {
+		log := logger.New(io.Discard, logger.InfoLevel)
+		gen = NewBulletGenerator(log, nil).(*DefaultBulletGenerator)
+	})
+
+	It("should return 0.3 for no metrics", func() {
+		bullet := &Bullet{Metrics: nil}
+		Expect(gen.calculateMetricScore(bullet)).To(Equal(0.3))
+	})
+
+	It("should return higher score for one metric", func() {
+		bullet := &Bullet{Metrics: []*Metric{{Value: "40", Unit: "%"}}}
+		score := gen.calculateMetricScore(bullet)
+		Expect(score).To(BeNumerically(">", 0.3))
+		Expect(score).To(BeNumerically("~", 0.7, 0.01))
+	})
+
+	It("should cap at 1.0 for many metrics", func() {
+		bullet := &Bullet{Metrics: make([]*Metric, 10)}
+		for i := range bullet.Metrics {
+			bullet.Metrics[i] = &Metric{Value: fmt.Sprintf("%d", i), Unit: "%"}
+		}
+		Expect(gen.calculateMetricScore(bullet)).To(Equal(1.0))
+	})
+})
+
+var _ = Describe("determineImpactLevel", func() {
+	var gen *DefaultBulletGenerator
+
+	BeforeEach(func() {
+		log := logger.New(io.Discard, logger.InfoLevel)
+		gen = NewBulletGenerator(log, nil).(*DefaultBulletGenerator)
+	})
+
+	It("should return high for multiple metrics and high confidence", func() {
+		achievement := &Achievement{
+			Metrics:    []*Metric{{Value: "40", Unit: "%"}, {Value: "100", Unit: " users"}},
+			Confidence: 0.90,
+		}
+		Expect(gen.determineImpactLevel(achievement)).To(Equal("high"))
+	})
+
+	It("should return medium for one metric", func() {
+		achievement := &Achievement{
+			Metrics:    []*Metric{{Value: "40", Unit: "%"}},
+			Confidence: 0.90,
+		}
+		Expect(gen.determineImpactLevel(achievement)).To(Equal("medium"))
+	})
+
+	It("should return low for no metrics", func() {
+		achievement := &Achievement{Metrics: nil, Confidence: 0.90}
+		Expect(gen.determineImpactLevel(achievement)).To(Equal("low"))
+	})
+
+	It("should return medium for multiple metrics but low confidence", func() {
+		achievement := &Achievement{
+			Metrics:    []*Metric{{Value: "40", Unit: "%"}, {Value: "100", Unit: " users"}},
+			Confidence: 0.50,
+		}
+		Expect(gen.determineImpactLevel(achievement)).To(Equal("medium"))
+	})
+})
+
+var _ = Describe("structureForImpact", func() {
+	var gen *DefaultBulletGenerator
+
+	BeforeEach(func() {
+		gen = NewBulletGenerator(logger.DefaultLogger(), nil).(*DefaultBulletGenerator)
+	})
+
+	It("should remove 'I ' prefix", func() {
+		Expect(gen.structureForImpact("I built the API")).To(Equal("built the API"))
+	})
+
+	It("should remove 'We ' prefix", func() {
+		Expect(gen.structureForImpact("We delivered the project")).To(Equal("delivered the project"))
+	})
+
+	It("should remove 'The team ' prefix", func() {
+		Expect(gen.structureForImpact("The team shipped the feature")).To(Equal("shipped the feature"))
+	})
+
+	It("should not modify text without weak starters", func() {
+		Expect(gen.structureForImpact("Led migration to microservices")).To(Equal("Led migration to microservices"))
+	})
+
+	It("should trim whitespace", func() {
+		Expect(gen.structureForImpact("  Led team  ")).To(Equal("Led team"))
+	})
+})
+
+var _ = Describe("extractPrimaryCategory (bullet generator)", func() {
+	var gen *DefaultBulletGenerator
+
+	BeforeEach(func() {
+		gen = NewBulletGenerator(logger.DefaultLogger(), nil).(*DefaultBulletGenerator)
+	})
+
+	It("should return empty for no categories", func() {
+		Expect(gen.extractPrimaryCategory(nil)).To(Equal(constants.CompetencyCategory("")))
+	})
+
+	It("should return valid category", func() {
+		result := gen.extractPrimaryCategory([]string{"leadership"})
+		Expect(result).To(Equal(constants.CompetencyLeadership))
+	})
+
+	It("should return empty for invalid category", func() {
+		result := gen.extractPrimaryCategory([]string{"invalid_category"})
+		Expect(result).To(Equal(constants.CompetencyCategory("")))
+	})
+
+	It("should use first category as primary", func() {
+		result := gen.extractPrimaryCategory([]string{"technical", "leadership"})
+		Expect(result).To(Equal(constants.CompetencyTechnical))
+	})
+})
+
+var _ = Describe("calculateImpactScore", func() {
+	var gen *DefaultBulletGenerator
+
+	BeforeEach(func() {
+		gen = NewBulletGenerator(logger.DefaultLogger(), nil).(*DefaultBulletGenerator)
+	})
+
+	It("should return base score for low impact with no metrics", func() {
+		bullet := &Bullet{ImpactLevel: "low", Metrics: nil}
+		Expect(gen.calculateImpactScore(bullet)).To(Equal(0.5))
+	})
+
+	It("should add 0.4 for high impact", func() {
+		bullet := &Bullet{ImpactLevel: "high", Metrics: nil}
+		Expect(gen.calculateImpactScore(bullet)).To(Equal(0.9))
+	})
+
+	It("should add 0.2 for medium impact", func() {
+		bullet := &Bullet{ImpactLevel: "medium", Metrics: nil}
+		Expect(gen.calculateImpactScore(bullet)).To(Equal(0.7))
+	})
+
+	It("should add bonus for multiple metrics", func() {
+		bullet := &Bullet{
+			ImpactLevel: "medium",
+			Metrics:     []*Metric{{Value: "40", Unit: "%"}, {Value: "100", Unit: " users"}},
+		}
+		Expect(gen.calculateImpactScore(bullet)).To(BeNumerically("~", 0.8, 0.001))
+	})
+
+	It("should cap at 1.0", func() {
+		bullet := &Bullet{
+			ImpactLevel: "high",
+			Metrics:     []*Metric{{Value: "40", Unit: "%"}, {Value: "100", Unit: " users"}},
+		}
+		Expect(gen.calculateImpactScore(bullet)).To(Equal(1.0))
+	})
+})
+
+var _ = Describe("GenerateBullets context cancellation", func() {
+	It("should return error when context is cancelled", func() {
+		log := logger.New(io.Discard, logger.InfoLevel)
+		gen := NewBulletGenerator(log, nil)
+
+		cancelCtx, cancel := context.WithCancel(context.Background())
+		cancel()
+
+		_, err := gen.GenerateBullets(cancelCtx, []*career.Event{}, []*career.Fact{}, nil, "principal", "hiring_manager")
+		Expect(err).To(HaveOccurred())
+	})
+})
+
+var _ = Describe("deduplicateBullets merge path", func() {
+	var gen *DefaultBulletGenerator
+
+	BeforeEach(func() {
+		log := logger.New(io.Discard, logger.InfoLevel)
+		gen = NewBulletGenerator(log, nil).(*DefaultBulletGenerator)
+	})
+
+	It("should merge duplicate bullets keeping higher confidence", func() {
+		eventMap := map[string]*career.Event{
+			"e1": fixtures.EventWith("e1", "Test", "Acme", ""),
+		}
+
+		bullets := []*Bullet{
+			{
+				ID:             "b1",
+				Text:           "Implemented authentication system",
+				Confidence:     0.9,
+				SourceEventIDs: []string{"e1"},
+				SourceFactIDs:  []string{"f1"},
+			},
+			{
+				ID:             "b2",
+				Text:           "Implemented authentication system",
+				Confidence:     0.7,
+				SourceEventIDs: []string{"e1"},
+				SourceFactIDs:  []string{"f2"},
+			},
+		}
+
+		result := gen.deduplicateBullets(bullets, eventMap)
+		Expect(result).To(HaveLen(1))
+		Expect(result[0].Confidence).To(Equal(0.9))
+		Expect(result[0].SourceFactIDs).To(ContainElement("f2"))
+	})
+
+	It("should merge keeping existing when existing has higher confidence", func() {
+		eventMap := map[string]*career.Event{
+			"e1": fixtures.EventWith("e1", "Test", "Acme", ""),
+		}
+
+		bullets := []*Bullet{
+			{
+				ID:             "b1",
+				Text:           "Built scalable API",
+				Confidence:     0.6,
+				SourceEventIDs: []string{"e1"},
+				SourceFactIDs:  []string{"f1"},
+			},
+			{
+				ID:             "b2",
+				Text:           "Built scalable API",
+				Confidence:     0.8,
+				SourceEventIDs: []string{"e1"},
+				SourceFactIDs:  []string{"f2"},
+			},
+		}
+
+		result := gen.deduplicateBullets(bullets, eventMap)
+		Expect(result).To(HaveLen(1))
+		Expect(result[0].Confidence).To(Equal(0.8))
+		Expect(result[0].SourceFactIDs).To(ContainElement("f1"))
+	})
+})
+
+var _ = Describe("EnhanceWording with metrics", func() {
+	It("should enhance bullet with metrics", func() {
+		log := logger.New(io.Discard, logger.InfoLevel)
+		gen := NewBulletGenerator(log, nil)
+
+		bullet := &Bullet{
+			Text:        "Improved system performance",
+			Metrics:     []*Metric{{Type: "percentage", Value: "40", Unit: "%"}},
+			ImpactLevel: "high",
+		}
+
+		enhanced, err := gen.EnhanceWording(bullet, "principal")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(enhanced.EnhancedText).NotTo(BeEmpty())
+	})
+})
+
+var _ = Describe("calculateAudienceScore high impact", func() {
+	It("should add bonus for high impact level", func() {
+		log := logger.New(io.Discard, logger.InfoLevel)
+		gen := NewBulletGenerator(log, nil).(*DefaultBulletGenerator)
+
+		bullet := &Bullet{
+			ImpactLevel:       "high",
+			AudienceRelevance: []string{"hiring_manager"},
+		}
+
+		score := gen.calculateAudienceScore(bullet, "hiring_manager")
+		Expect(score).To(BeNumerically(">", 0.5))
+	})
+})

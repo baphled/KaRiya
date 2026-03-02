@@ -388,3 +388,142 @@ var _ = Describe("CV Generation Integration Tests", func() {
 		})
 	})
 })
+
+var _ = Describe("GenerateCVFromConfig additional branches", func() {
+	var (
+		log          *logger.Logger
+		ctx          context.Context
+		tempDir      string
+		repos        *careerrepo.Repositories
+		cvGenService CVGenerationService
+	)
+
+	BeforeEach(func() {
+		log = logger.New(io.Discard, logger.InfoLevel)
+		ctx = context.Background()
+
+		var err error
+		tempDir, err = os.MkdirTemp("", "kariya-cv-branch-test-")
+		Expect(err).NotTo(HaveOccurred())
+
+		dbPath := filepath.Join(tempDir, "test_events.db")
+		repos, err = careersql.NewRepositoriesFromPath(dbPath)
+		Expect(err).NotTo(HaveOccurred())
+
+		bulletGenerator := NewBulletGenerator(log, nil)
+		sectionBuilder := NewSectionBuilder(nil, log)
+		configManager := NewMemoryConfigManager()
+		dataProcessor := NewDataProcessingService(log)
+
+		cvGenService = NewCVGenerationService(
+			repos.Event,
+			repos.Fact,
+			configManager,
+			bulletGenerator,
+			dataProcessor,
+			sectionBuilder,
+			log,
+		)
+	})
+
+	AfterEach(func() {
+		if repos != nil {
+			repos.Close()
+		}
+		if tempDir != "" {
+			os.RemoveAll(tempDir)
+		}
+	})
+
+	It("should return error for nil config", func() {
+		cv, err := cvGenService.GenerateCVFromConfig(ctx, nil)
+		Expect(err).To(HaveOccurred())
+		Expect(cv).To(BeNil())
+	})
+
+	It("should return error for cancelled context", func() {
+		cancelCtx, cancel := context.WithCancel(ctx)
+		cancel()
+		cv, err := cvGenService.GenerateCVFromConfig(cancelCtx, fixtures.CVConfig("cancelled-test"))
+		Expect(err).To(HaveOccurred())
+		Expect(cv).To(BeNil())
+	})
+
+	It("should return empty CV when no events match", func() {
+		config := fixtures.CVConfigWithFilters("empty-cv", map[string]interface{}{
+			"categories": []string{"nonexistent"},
+		})
+		config.TargetRole = "senior_ic"
+		config.TargetAudience = "recruiter"
+
+		cv, err := cvGenService.GenerateCVFromConfig(ctx, config)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(cv).NotTo(BeNil())
+		Expect(cv.SourceEventCount).To(Equal(0))
+	})
+
+	It("should apply length format constraints", func() {
+		for i := range 5 {
+			eventID := fmt.Sprintf("length-test-%d", i)
+			event := fixtures.EventWith(eventID, "Built microservices architecture", "TechCorp", "")
+			event.Date = time.Now().AddDate(0, 0, -i)
+			event.Tags = []string{"technical"}
+			event.Categories = []string{"technical"}
+			err := repos.Event.Create(ctx, event)
+			Expect(err).NotTo(HaveOccurred())
+		}
+
+		config := fixtures.CVConfigWithFilters("length-test", map[string]interface{}{})
+		config.TargetRole = "senior_ic"
+		config.TargetAudience = "recruiter"
+		config.LengthFormat = "one_page"
+
+		cv, err := cvGenService.GenerateCVFromConfig(ctx, config)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(cv).NotTo(BeNil())
+	})
+
+	It("should apply technology focus filtering", func() {
+		for i := range 5 {
+			eventID := fmt.Sprintf("tech-focus-%d", i)
+			event := fixtures.EventWith(eventID, "Developed Go microservices", "TechCorp", "")
+			event.Date = time.Now().AddDate(0, 0, -i)
+			event.Tags = []string{"go", "microservices"}
+			event.Categories = []string{"technical"}
+			err := repos.Event.Create(ctx, event)
+			Expect(err).NotTo(HaveOccurred())
+		}
+
+		config := fixtures.CVConfigWithFilters("tech-focus-test", map[string]interface{}{})
+		config.TargetRole = "senior_ic"
+		config.TargetAudience = "recruiter"
+		config.TechnologyFocus = string(TechnologyFocusSpecialist)
+		config.SelectedTechnologies = []string{"go"}
+
+		cv, err := cvGenService.GenerateCVFromConfig(ctx, config)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(cv).NotTo(BeNil())
+	})
+
+	It("should apply skills format config", func() {
+		for i := range 3 {
+			eventID := fmt.Sprintf("skills-fmt-%d", i)
+			event := fixtures.EventWith(eventID, "Led team delivery", "TechCorp", "")
+			event.Date = time.Now().AddDate(0, 0, -i)
+			event.Tags = []string{"leadership"}
+			event.Categories = []string{"leadership"}
+			err := repos.Event.Create(ctx, event)
+			Expect(err).NotTo(HaveOccurred())
+		}
+
+		config := fixtures.CVConfigWithFilters("skills-fmt-test", map[string]interface{}{})
+		config.TargetRole = "principal"
+		config.TargetAudience = "hiring_manager"
+		config.SkillsFormat = "grouped"
+		config.SkillsLimit = 5
+
+		cv, err := cvGenService.GenerateCVFromConfig(ctx, config)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(cv).NotTo(BeNil())
+	})
+})

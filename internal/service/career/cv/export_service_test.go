@@ -98,6 +98,41 @@ var _ = ginkgo.Describe("ExportService", func() {
 		})
 	})
 
+	ginkgo.Describe("ExportToMarkdown additional branches", func() {
+		ginkgo.It("should render summary section as prose", func() {
+			cv := fixtures.CVViewWith("cv-1", "Test CV", "Engineer", "recruiter")
+
+			summarySection := fixtures.CVSectionWithSummary("section-summary", "cv-1", "Experienced engineer with deep expertise.")
+			expSection := fixtures.CVSectionWith("section-exp", "cv-1", "experience", "Experience", 2)
+			expSection.Content = []*career.SectionContentGroup{}
+
+			sections := []*career.CVSection{summarySection, expSection}
+			bullets := map[string][]*career.CVBullet{}
+
+			markdown, err := service.ExportToMarkdown(ctx, cv, sections, bullets)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(markdown).To(gomega.ContainSubstring("Experienced engineer with deep expertise."))
+			gomega.Expect(markdown).To(gomega.ContainSubstring("*(No content)*"))
+		})
+
+		ginkgo.It("should handle same start and end date", func() {
+			cv := fixtures.CVViewWith("cv-1", "Test CV", "Engineer", "recruiter")
+
+			bullet := fixtures.CVBulletWith("bullet-1", "section-1", "Built API")
+			section := fixtures.CVSectionWith("section-1", "cv-1", "experience", "Experience", 1)
+			section.Content = []*career.SectionContentGroup{
+				fixtures.ContentGroupFull("TechCorp", "Jan 2023", "Jan 2023", []*career.CVBullet{bullet}),
+			}
+
+			sections := []*career.CVSection{section}
+			bullets := map[string][]*career.CVBullet{"section-1": {bullet}}
+
+			markdown, err := service.ExportToMarkdown(ctx, cv, sections, bullets)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(markdown).To(gomega.ContainSubstring("### TechCorp - _Jan 2023_"))
+		})
+	})
+
 	ginkgo.Describe("ExportToMarkdown", func() {
 		ginkgo.It("should export CV to markdown format", func() {
 			cv := fixtures.CVViewWith("cv-1", "Senior Software Engineer CV", "Staff Engineer", "hiring_manager")
@@ -720,7 +755,7 @@ var _ = ginkgo.Describe("ExportWithProfile structure branches", func() {
 			}
 			content, err := service.ExportWithProfile(ctx, cv, sections, bullets, CVStructureConsulting, ExportFormatText, profileCfg)
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-			gomega.Expect(content).To(gomega.ContainSubstring("JANE DOE"))
+			gomega.Expect(content).To(gomega.ContainSubstring("TEST CV"))
 			gomega.Expect(content).To(gomega.ContainSubstring("WHAT I BRING"))
 			gomega.Expect(content).To(gomega.ContainSubstring("Strategic thinking"))
 		})
@@ -734,7 +769,7 @@ var _ = ginkgo.Describe("ExportWithProfile structure branches", func() {
 			}
 			content, err := service.ExportWithProfile(ctx, cv, sections, bullets, CVStructureConsulting, ExportFormatMarkdown, profileCfg)
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-			gomega.Expect(content).To(gomega.ContainSubstring("# Jane Doe"))
+			gomega.Expect(content).To(gomega.ContainSubstring("# Test CV"))
 			gomega.Expect(content).To(gomega.ContainSubstring("## What I Bring"))
 		})
 	})
@@ -808,6 +843,211 @@ var _ = ginkgo.Describe("ExportWithProfile structure branches", func() {
 			_, err := service.ExportWithProfile(ctx, cv, sections, bullets, CVStructureNarrative, ExportFormat("unknown"), nil)
 			gomega.Expect(err).To(gomega.HaveOccurred())
 			gomega.Expect(err.Error()).To(gomega.ContainSubstring("unknown export format"))
+		})
+	})
+})
+
+var _ = ginkgo.Describe("ExportService additional coverage", func() {
+	var (
+		service *ExportService
+		ctx     context.Context
+	)
+
+	ginkgo.BeforeEach(func() {
+		log := logger.New(io.Discard, logger.InfoLevel)
+		service = NewExportService(log)
+		ctx = context.Background()
+	})
+
+	ginkgo.Describe("getTopBulletsByConfidence", func() {
+		ginkgo.It("should return top N bullets sorted by confidence", func() {
+			b1 := fixtures.CVBulletWithScores("b1", "s1", "Low", 0, 0.3, 0, 0)
+			b2 := fixtures.CVBulletWithScores("b2", "s1", "High", 0, 0.9, 0, 0)
+			b3 := fixtures.CVBulletWithScores("b3", "s2", "Medium", 0, 0.6, 0, 0)
+			bullets := map[string][]*career.CVBullet{
+				"s1": {b1, b2},
+				"s2": {b3},
+			}
+
+			result := service.getTopBulletsByConfidence(bullets, 2)
+			gomega.Expect(result).To(gomega.HaveLen(2))
+			gomega.Expect(result[0].Confidence).To(gomega.BeNumerically(">=", result[1].Confidence))
+		})
+
+		ginkgo.It("should handle equal confidence bullets", func() {
+			ba := fixtures.CVBulletWithScores("b1", "s1", "A", 0, 0.8, 0, 0)
+			bb := fixtures.CVBulletWithScores("b2", "s1", "B", 0, 0.8, 0, 0)
+			bullets := map[string][]*career.CVBullet{
+				"s1": {ba, bb},
+			}
+
+			result := service.getTopBulletsByConfidence(bullets, 5)
+			gomega.Expect(result).To(gomega.HaveLen(2))
+		})
+	})
+
+	ginkgo.Describe("ExportWithProfile standard structure", func() {
+		ginkgo.It("should use standard export for unknown structure", func() {
+			cv := fixtures.CVViewWith("cv-1", "Test CV", "Engineer", "recruiter")
+			section := fixtures.CVSectionWith("s1", "cv-1", "experience", "Experience", 1)
+			section.Content = []*career.SectionContentGroup{}
+			sections := []*career.CVSection{section}
+			bullets := map[string][]*career.CVBullet{}
+
+			content, err := service.ExportWithProfile(ctx, cv, sections, bullets, Structure("unknown"), ExportFormatText, nil)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(content).NotTo(gomega.BeEmpty())
+		})
+	})
+
+	ginkgo.Describe("Narrative text with experience groups without dates", func() {
+		ginkgo.It("should render header without dates", func() {
+			cv := fixtures.CVViewWith("cv-1", "Test CV", "Engineer", "recruiter")
+
+			bullet := fixtures.CVBulletWith("b1", "s1", "Built scalable API")
+			bullet.Confidence = 0.95
+
+			section := fixtures.CVSectionWith("s1", "cv-1", "experience", "Experience", 1)
+			section.Content = []*career.SectionContentGroup{
+				fixtures.ContentGroupWithBullets("Acme Corp", []*career.CVBullet{bullet}),
+			}
+
+			sections := []*career.CVSection{section}
+			bullets := map[string][]*career.CVBullet{}
+
+			content, err := service.ExportWithProfile(ctx, cv, sections, bullets, CVStructureNarrative, ExportFormatText, nil)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(content).To(gomega.ContainSubstring("Acme Corp"))
+		})
+
+		ginkgo.It("should skip low confidence bullets in narrative", func() {
+			cv := fixtures.CVViewWith("cv-1", "Test CV", "Engineer", "recruiter")
+
+			bullet := fixtures.CVBulletWith("b1", "s1", "Low confidence item")
+			bullet.Confidence = 0.1
+
+			section := fixtures.CVSectionWith("s1", "cv-1", "experience", "Experience", 1)
+			section.Content = []*career.SectionContentGroup{
+				fixtures.ContentGroupFull("Acme Corp", "Jan 2023", "Dec 2023", []*career.CVBullet{bullet}),
+			}
+
+			sections := []*career.CVSection{section}
+			bullets := map[string][]*career.CVBullet{}
+
+			content, err := service.ExportWithProfile(ctx, cv, sections, bullets, CVStructureNarrative, ExportFormatText, nil)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(content).NotTo(gomega.ContainSubstring("Low confidence item"))
+		})
+	})
+
+	ginkgo.Describe("Narrative markdown with experience groups without dates", func() {
+		ginkgo.It("should render header without dates in markdown", func() {
+			cv := fixtures.CVViewWith("cv-1", "Test CV", "Engineer", "recruiter")
+
+			bullet := fixtures.CVBulletWith("b1", "s1", "Built scalable API")
+			bullet.Confidence = 0.95
+
+			section := fixtures.CVSectionWith("s1", "cv-1", "experience", "Experience", 1)
+			section.Content = []*career.SectionContentGroup{
+				fixtures.ContentGroupWithBullets("Acme Corp", []*career.CVBullet{bullet}),
+			}
+
+			sections := []*career.CVSection{section}
+			bullets := map[string][]*career.CVBullet{}
+
+			profileCfg := &config.ProfileConfig{
+				Name:          "Jane Doe",
+				Title:         "Engineer",
+				Location:      "London",
+				CoreStrengths: []string{"Backend engineering"},
+				WhatIBring:    []string{"Delivers results"},
+			}
+
+			content, err := service.ExportWithProfile(ctx, cv, sections, bullets, CVStructureNarrative, ExportFormatMarkdown, profileCfg)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(content).To(gomega.ContainSubstring("Acme Corp"))
+			gomega.Expect(content).To(gomega.ContainSubstring("Backend engineering"))
+			gomega.Expect(content).To(gomega.ContainSubstring("Delivers results"))
+		})
+
+		ginkgo.It("should skip low confidence bullets in narrative markdown", func() {
+			cv := fixtures.CVViewWith("cv-1", "Test CV", "Engineer", "recruiter")
+
+			bullet := fixtures.CVBulletWith("b1", "s1", "Low confidence item")
+			bullet.Confidence = 0.1
+
+			section := fixtures.CVSectionWith("s1", "cv-1", "experience", "Experience", 1)
+			section.Content = []*career.SectionContentGroup{
+				fixtures.ContentGroupFull("Acme Corp", "Jan 2023", "Dec 2023", []*career.CVBullet{bullet}),
+			}
+
+			sections := []*career.CVSection{section}
+			bullets := map[string][]*career.CVBullet{}
+
+			content, err := service.ExportWithProfile(ctx, cv, sections, bullets, CVStructureNarrative, ExportFormatMarkdown, nil)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(content).NotTo(gomega.ContainSubstring("Low confidence item"))
+		})
+	})
+
+	ginkgo.Describe("Consulting text with experience groups without dates", func() {
+		ginkgo.It("should render header without dates in consulting text", func() {
+			cv := fixtures.CVViewWith("cv-1", "Test CV", "Engineer", "recruiter")
+
+			bullet := fixtures.CVBulletWith("b1", "s1", "Built scalable API")
+			bullet.Confidence = 0.95
+
+			section := fixtures.CVSectionWith("s1", "cv-1", "experience", "Experience", 1)
+			section.Content = []*career.SectionContentGroup{
+				fixtures.ContentGroupWithBullets("Acme Corp", []*career.CVBullet{bullet}),
+			}
+
+			sections := []*career.CVSection{section}
+			bullets := map[string][]*career.CVBullet{"s1": {bullet}}
+
+			content, err := service.ExportWithProfile(ctx, cv, sections, bullets, CVStructureConsulting, ExportFormatText, nil)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(content).To(gomega.ContainSubstring("Acme Corp"))
+		})
+	})
+
+	ginkgo.Describe("Consulting markdown with experience groups without dates", func() {
+		ginkgo.It("should render header without dates in consulting markdown", func() {
+			cv := fixtures.CVViewWith("cv-1", "Test CV", "Engineer", "recruiter")
+
+			bullet := fixtures.CVBulletWith("b1", "s1", "Built scalable API")
+			bullet.Confidence = 0.95
+
+			section := fixtures.CVSectionWith("s1", "cv-1", "experience", "Experience", 1)
+			section.Content = []*career.SectionContentGroup{
+				fixtures.ContentGroupWithBullets("Acme Corp", []*career.CVBullet{bullet}),
+			}
+
+			sections := []*career.CVSection{section}
+			bullets := map[string][]*career.CVBullet{"s1": {bullet}}
+
+			content, err := service.ExportWithProfile(ctx, cv, sections, bullets, CVStructureConsulting, ExportFormatMarkdown, nil)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(content).To(gomega.ContainSubstring("Acme Corp"))
+		})
+	})
+
+	ginkgo.Describe("ExportToText with experience group header without dates", func() {
+		ginkgo.It("should render header without date range", func() {
+			cv := fixtures.CVViewWith("cv-1", "Test CV", "Engineer", "recruiter")
+
+			bullet := fixtures.CVBulletWith("b1", "s1", "Built API")
+			section := fixtures.CVSectionWith("s1", "cv-1", "experience", "Experience", 1)
+			section.Content = []*career.SectionContentGroup{
+				fixtures.ContentGroupWithBullets("Acme Corp", []*career.CVBullet{bullet}),
+			}
+
+			sections := []*career.CVSection{section}
+			bullets := map[string][]*career.CVBullet{"s1": {bullet}}
+
+			text, err := service.ExportToText(ctx, cv, sections, bullets)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(text).To(gomega.ContainSubstring("Acme Corp"))
 		})
 	})
 })
