@@ -117,4 +117,110 @@ var _ = Describe("Glamour Theme Integration", func() {
 			Expect(result).To(BeEmpty())
 		})
 	})
+
+	Describe("MarkdownRenderer", func() {
+		Describe("NewMarkdownRenderer", func() {
+			It("should create a renderer with a dark theme", func() {
+				renderer, err := themes.NewMarkdownRenderer(theme, 80)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(renderer).NotTo(BeNil())
+			})
+
+			It("should create a renderer with nil theme", func() {
+				renderer, err := themes.NewMarkdownRenderer(nil, 80)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(renderer).NotTo(BeNil())
+			})
+
+			It("should create a renderer with a light theme", func() {
+				lightPalette := &themes.ColorPalette{
+					Background: "#ffffff",
+					Foreground: "#000000",
+				}
+				lightTheme := themes.NewBaseTheme("light", "Light Theme", "Test", false, lightPalette)
+				renderer, err := themes.NewMarkdownRenderer(lightTheme, 80)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(renderer).NotTo(BeNil())
+			})
+		})
+
+		Describe("Render", func() {
+			var renderer *themes.MarkdownRenderer
+
+			BeforeEach(func() {
+				var err error
+				renderer, err = themes.NewMarkdownRenderer(theme, 80)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("should render markdown content", func() {
+				result, err := renderer.Render("# Hello")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(ContainSubstring("Hello"))
+			})
+
+			It("should return empty string for empty content", func() {
+				result, err := renderer.Render("")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(BeEmpty())
+			})
+
+			It("should render complex markdown", func() {
+				markdown := "## Features\n\n- Item 1\n- Item 2"
+				result, err := renderer.Render(markdown)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).NotTo(BeEmpty())
+			})
+		})
+
+		Describe("SetWidth", func() {
+			It("should update the renderer width", func() {
+				renderer, err := themes.NewMarkdownRenderer(theme, 80)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = renderer.SetWidth(40)
+				Expect(err).NotTo(HaveOccurred())
+
+				result, err := renderer.Render("# Test")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(ContainSubstring("Test"))
+			})
+
+			It("should work with nil theme", func() {
+				renderer, err := themes.NewMarkdownRenderer(nil, 80)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = renderer.SetWidth(60)
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		Describe("SetTheme", func() {
+			It("should update the renderer theme", func() {
+				renderer, err := themes.NewMarkdownRenderer(theme, 80)
+				Expect(err).NotTo(HaveOccurred())
+
+				lightPalette := &themes.ColorPalette{
+					Background: "#ffffff",
+					Foreground: "#000000",
+				}
+				lightTheme := themes.NewBaseTheme("light", "Light", "Test", false, lightPalette)
+
+				err = renderer.SetTheme(lightTheme)
+				Expect(err).NotTo(HaveOccurred())
+
+				result, err := renderer.Render("# Test")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(ContainSubstring("Test"))
+			})
+
+			It("should work with nil theme", func() {
+				renderer, err := themes.NewMarkdownRenderer(theme, 80)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = renderer.SetTheme(nil)
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+	})
 })

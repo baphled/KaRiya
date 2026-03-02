@@ -177,4 +177,34 @@ var _ = Describe("Bubbles Theme Integration", func() {
 			Expect(view).To(ContainSubstring("Test"))
 		})
 	})
+
+	Describe("NewThemedListDelegate", func() {
+		It("should create a themed delegate", func() {
+			delegate := themes.NewThemedListDelegate(theme)
+			Expect(delegate).NotTo(BeNil())
+		})
+
+		It("should apply theme styling to selected title", func() {
+			delegate := themes.NewThemedListDelegate(theme)
+			rendered := delegate.Styles.SelectedTitle.Render("Selected")
+			Expect(rendered).To(ContainSubstring("Selected"))
+		})
+
+		It("should apply theme styling to normal title", func() {
+			delegate := themes.NewThemedListDelegate(theme)
+			rendered := delegate.Styles.NormalTitle.Render("Normal")
+			Expect(rendered).To(ContainSubstring("Normal"))
+		})
+
+		It("should apply theme styling to dimmed title", func() {
+			delegate := themes.NewThemedListDelegate(theme)
+			rendered := delegate.Styles.DimmedTitle.Render("Dimmed")
+			Expect(rendered).To(ContainSubstring("Dimmed"))
+		})
+
+		It("should handle nil theme gracefully", func() {
+			delegate := themes.NewThemedListDelegate(nil)
+			Expect(delegate).NotTo(BeNil())
+		})
+	})
 })

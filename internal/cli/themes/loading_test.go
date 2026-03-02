@@ -46,6 +46,46 @@ var _ = Describe("Loading Theme Integration", func() {
 			s := themes.NewThemedSpinnerWithType(theme, themes.SpinnerType(999))
 			Expect(s).NotTo(BeNil())
 		})
+
+		It("should create a mini dot spinner", func() {
+			s := themes.NewThemedSpinnerWithType(theme, themes.SpinnerMiniDot)
+			Expect(s).NotTo(BeNil())
+		})
+
+		It("should create a jump spinner", func() {
+			s := themes.NewThemedSpinnerWithType(theme, themes.SpinnerJump)
+			Expect(s).NotTo(BeNil())
+		})
+
+		It("should create a pulse spinner", func() {
+			s := themes.NewThemedSpinnerWithType(theme, themes.SpinnerPulse)
+			Expect(s).NotTo(BeNil())
+		})
+
+		It("should create a points spinner", func() {
+			s := themes.NewThemedSpinnerWithType(theme, themes.SpinnerPoints)
+			Expect(s).NotTo(BeNil())
+		})
+
+		It("should create a moon spinner", func() {
+			s := themes.NewThemedSpinnerWithType(theme, themes.SpinnerMoon)
+			Expect(s).NotTo(BeNil())
+		})
+
+		It("should create a monkey spinner", func() {
+			s := themes.NewThemedSpinnerWithType(theme, themes.SpinnerMonkey)
+			Expect(s).NotTo(BeNil())
+		})
+
+		It("should create a meter spinner", func() {
+			s := themes.NewThemedSpinnerWithType(theme, themes.SpinnerMeter)
+			Expect(s).NotTo(BeNil())
+		})
+
+		It("should create a hamburger spinner", func() {
+			s := themes.NewThemedSpinnerWithType(theme, themes.SpinnerHamburger)
+			Expect(s).NotTo(BeNil())
+		})
 	})
 
 	Describe("LoadingView", func() {
@@ -80,8 +120,14 @@ var _ = Describe("Loading Theme Integration", func() {
 			view := lv.View()
 			Expect(view).To(ContainSubstring("Test message"))
 		})
-	})
 
+		It("should allow setting the spinner model", func() {
+			newSpinner := themes.NewThemedSpinnerWithType(theme, themes.SpinnerGlobe)
+			loadingView.SetSpinner(newSpinner)
+			spinner := loadingView.GetSpinner()
+			Expect(spinner).NotTo(BeNil())
+		})
+	})
 	Describe("RenderLoadingBox", func() {
 		It("should render a loading box with theme", func() {
 			result := themes.RenderLoadingBox(theme, "Loading CV", "Generating content...", "⠋")

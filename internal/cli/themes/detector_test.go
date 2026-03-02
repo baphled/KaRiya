@@ -1,4 +1,3 @@
-//nolint:errcheck // Test file - error handling for test setup is not relevant.
 package themes_test
 
 import (
@@ -185,6 +184,47 @@ var _ = Describe("Terminal Detector", func() {
 			os.Unsetenv("COLORFGBG") // Forces dark mode detection
 			manager.AutoSelect()
 			Expect(manager.Active().IsDark()).To(BeTrue())
+		})
+		Context("with an empty theme manager", func() {
+			It("should return without error when no themes are registered", func() {
+				emptyManager := themes.NewEmptyThemeManager()
+				emptyManager.AutoSelect()
+				Expect(emptyManager.Active()).To(BeNil())
+			})
+		})
+
+		Context("in light mode", func() {
+			var originalColorfgbg string
+
+			BeforeEach(func() {
+				originalColorfgbg = os.Getenv("COLORFGBG")
+				os.Setenv("COLORFGBG", "0;15")
+			})
+
+			AfterEach(func() {
+				if originalColorfgbg != "" {
+					os.Setenv("COLORFGBG", originalColorfgbg)
+				} else {
+					os.Unsetenv("COLORFGBG")
+				}
+			})
+
+			It("should select a light theme when available", func() {
+				lightPalette := &themes.ColorPalette{
+					Background: "#ffffff",
+					Foreground: "#000000",
+				}
+				lightTheme := themes.NewBaseTheme("light", "Light Theme", "Test", false, lightPalette)
+				_ = manager.Register(lightTheme)
+
+				manager.AutoSelect()
+				Expect(manager.Active().IsDark()).To(BeFalse())
+			})
+
+			It("should fall back to default when no light theme is available", func() {
+				manager.AutoSelect()
+				Expect(manager.Active().Name()).To(Equal("default"))
+			})
 		})
 	})
 })
