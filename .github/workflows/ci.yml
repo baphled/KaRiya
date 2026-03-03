@@ -198,7 +198,6 @@ jobs:
     name: SonarCloud
     runs-on: ubuntu-latest
     needs: [test]
-    if: ${{ secrets.SONAR_TOKEN != '' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -209,9 +208,11 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: coverage-report
+        continue-on-error: true  # Coverage may not exist
 
       - name: SonarCloud Scan
         uses: sonarsource/sonarcloud-github-action@v3
+        continue-on-error: true  # Don't fail if SONAR_TOKEN not configured
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
