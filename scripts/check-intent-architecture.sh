@@ -347,7 +347,11 @@ for file in $INTENT_FILES; do
         HAS_SQL=$(echo "$UPDATE_METHOD" | grep -E "\.Query\(|\.Exec\(|\.QueryRow\(|INSERT INTO|SELECT.*FROM|UPDATE.*SET|DELETE FROM" || true)
         
         if [[ -n "$HAS_SQL" ]]; then
+<<<<<<< HEAD
             echo -e "${RED}❌ VIOLATION: Business logic in Update()${NC}" >&2
+=======
+            echo -e "${RED}❌ VIOLATION: Business logic in Update()${NC}"
+>>>>>>> 9d54c19c (fix(ci): use [[ instead of [ for bash conditionals)
             echo "   File: $file"
             echo "   Rule: Intents should orchestrate, not contain business logic"
             echo "   Found: Direct SQL/database calls in Update() method"
@@ -620,7 +624,11 @@ for file in $INTENT_FILES; do
     CONTEXT_STRUCTS=$(grep "^type.*Context struct" "$file" | grep -v "// " || true)
     
     if [[ -n "$CONTEXT_STRUCTS" ]]; then
+<<<<<<< HEAD
         echo -e "${RED}❌ VIOLATION: Context struct(s) defined in intent file${NC}" >&2
+=======
+        echo -e "${RED}❌ VIOLATION: Context struct(s) defined in intent file${NC}"
+>>>>>>> 9d54c19c (fix(ci): use [[ instead of [ for bash conditionals)
         echo "   File: $file"
         echo "   Rule: Context structs must be in separate file"
         echo ""
@@ -641,7 +649,11 @@ for file in $INTENT_FILES; do
     MODEL_STRUCTS=$(grep "^type.*Model struct" "$file" | grep -v "// " || true)
     
     if [[ -n "$MODEL_STRUCTS" ]]; then
+<<<<<<< HEAD
         echo -e "${RED}❌ VIOLATION: Model struct(s) defined in intent file${NC}" >&2
+=======
+        echo -e "${RED}❌ VIOLATION: Model struct(s) defined in intent file${NC}"
+>>>>>>> 9d54c19c (fix(ci): use [[ instead of [ for bash conditionals)
         echo "   File: $file"
         echo "   Rule: Model structs must be flattened into intent OR in separate file"
         echo ""
@@ -661,7 +673,11 @@ for file in $INTENT_FILES; do
     SCREEN_IN_INTENT=$(grep -q "^type.*Screen struct" "$file" && echo "yes" || echo "no")
     
     if [[ "$SCREEN_IN_INTENT" = "yes" ]]; then
+<<<<<<< HEAD
         echo -e "${RED}❌ VIOLATION: Screen defined in intent file${NC}" >&2
+=======
+        echo -e "${RED}❌ VIOLATION: Screen defined in intent file${NC}"
+>>>>>>> 9d54c19c (fix(ci): use [[ instead of [ for bash conditionals)
         echo "   File: $file"
         echo "   Rule: Screen structs must be in screens/ package"
         echo ""
@@ -676,7 +692,11 @@ for file in $INTENT_FILES; do
     MODAL_IN_INTENT=$(grep -q "^type.*Modal struct" "$file" && echo "yes" || echo "no")
     
     if [[ "$MODAL_IN_INTENT" = "yes" ]]; then
+<<<<<<< HEAD
         echo -e "${RED}❌ VIOLATION: Modal defined in intent file${NC}" >&2
+=======
+        echo -e "${RED}❌ VIOLATION: Modal defined in intent file${NC}"
+>>>>>>> 9d54c19c (fix(ci): use [[ instead of [ for bash conditionals)
         echo "   File: $file"
         echo "   Rule: Modal structs must be in components/ or uikit/feedback/"
         echo ""
@@ -719,7 +739,11 @@ if [[ -n "$SUBDIRS" ]]; then
         done
         
         if [[ -n "$MISSING_FILES" ]]; then
+<<<<<<< HEAD
             echo -e "${RED}❌ VIOLATION: Incomplete subdirectory structure${NC}" >&2
+=======
+            echo -e "${RED}❌ VIOLATION: Incomplete subdirectory structure${NC}"
+>>>>>>> 9d54c19c (fix(ci): use [[ instead of [ for bash conditionals)
             echo "   Intent: $INTENT_NAME"
             echo "   Missing required files:$MISSING_FILES"
             echo ""
@@ -812,7 +836,11 @@ if [[ -n "$SUBDIRS" ]]; then
             INTENT_NAME=$(basename "$intent_dir")
             
             if [[ $LINE_COUNT -gt 600 ]]; then
+<<<<<<< HEAD
                 echo -e "${RED}❌ VIOLATION: intent.go exceeds 600 lines${NC}" >&2
+=======
+                echo -e "${RED}❌ VIOLATION: intent.go exceeds 600 lines${NC}"
+>>>>>>> 9d54c19c (fix(ci): use [[ instead of [ for bash conditionals)
                 echo "   File: $INTENT_FILE ($LINE_COUNT lines)"
                 echo "   Rule: Intent should be broker only (orchestration)"
                 echo ""
@@ -883,7 +911,11 @@ if [[ -n "$SUBDIRS" ]]; then
             
             # Allow View() + 1 helper = 2 methods max
             if [[ $TOTAL_RENDER -gt 2 ]]; then
+<<<<<<< HEAD
                 echo -e "${RED}❌ VIOLATION: Rendering methods in intent.go${NC}" >&2
+=======
+                echo -e "${RED}❌ VIOLATION: Rendering methods in intent.go${NC}"
+>>>>>>> 9d54c19c (fix(ci): use [[ instead of [ for bash conditionals)
                 echo "   File: $INTENT_FILE ($TOTAL_RENDER render methods)"
                 echo "   Rule: Intent should only have View() that delegates to screens"
                 echo ""
@@ -924,7 +956,11 @@ if [[ -n "$SUBDIRS" ]]; then
         if [[ -f "$intent_dir/intent.go" ]]; then
             CONTEXT_IN_INTENT=$(grep "^type.*Context struct" "$intent_dir/intent.go" 2>/dev/null || true)
             if [[ -n "$CONTEXT_IN_INTENT" ]]; then
+<<<<<<< HEAD
                 echo -e "${RED}❌ VIOLATION: Context defined in intent.go${NC}" >&2
+=======
+                echo -e "${RED}❌ VIOLATION: Context defined in intent.go${NC}"
+>>>>>>> 9d54c19c (fix(ci): use [[ instead of [ for bash conditionals)
                 echo "   Intent: $INTENT_NAME"
                 echo "   Rule: Context must be in context.go"
                 echo ""
@@ -935,7 +971,11 @@ if [[ -n "$SUBDIRS" ]]; then
         if [[ -f "$intent_dir/types.go" ]]; then
             CONTEXT_IN_TYPES=$(grep "^type.*Context struct" "$intent_dir/types.go" 2>/dev/null || true)
             if [[ -n "$CONTEXT_IN_TYPES" ]]; then
+<<<<<<< HEAD
                 echo -e "${RED}❌ VIOLATION: Context defined in types.go${NC}" >&2
+=======
+                echo -e "${RED}❌ VIOLATION: Context defined in types.go${NC}"
+>>>>>>> 9d54c19c (fix(ci): use [[ instead of [ for bash conditionals)
                 echo "   Intent: $INTENT_NAME"
                 echo "   Rule: Context must be in context.go"
                 echo ""
@@ -947,7 +987,11 @@ if [[ -n "$SUBDIRS" ]]; then
         if [[ -f "$intent_dir/intent.go" ]]; then
             RESULT_IN_INTENT=$(grep "^type.*Result struct" "$intent_dir/intent.go" 2>/dev/null || true)
             if [[ -n "$RESULT_IN_INTENT" ]]; then
+<<<<<<< HEAD
                 echo -e "${RED}❌ VIOLATION: Result defined in intent.go${NC}" >&2
+=======
+                echo -e "${RED}❌ VIOLATION: Result defined in intent.go${NC}"
+>>>>>>> 9d54c19c (fix(ci): use [[ instead of [ for bash conditionals)
                 echo "   Intent: $INTENT_NAME"
                 echo "   Rule: Result must be in result.go"
                 echo ""
@@ -958,7 +1002,11 @@ if [[ -n "$SUBDIRS" ]]; then
         if [[ -f "$intent_dir/types.go" ]]; then
             RESULT_IN_TYPES=$(grep "^type.*Result struct" "$intent_dir/types.go" 2>/dev/null || true)
             if [[ -n "$RESULT_IN_TYPES" ]]; then
+<<<<<<< HEAD
                 echo -e "${RED}❌ VIOLATION: Result defined in types.go${NC}" >&2
+=======
+                echo -e "${RED}❌ VIOLATION: Result defined in types.go${NC}"
+>>>>>>> 9d54c19c (fix(ci): use [[ instead of [ for bash conditionals)
                 echo "   Intent: $INTENT_NAME"
                 echo "   Rule: Result must be in result.go"
                 echo ""
@@ -970,7 +1018,11 @@ if [[ -n "$SUBDIRS" ]]; then
         if [[ -f "$intent_dir/intent.go" ]]; then
             STATE_IN_INTENT=$(grep "^type.*State string" "$intent_dir/intent.go" 2>/dev/null || true)
             if [[ -n "$STATE_IN_INTENT" ]]; then
+<<<<<<< HEAD
                 echo -e "${RED}❌ VIOLATION: State enum defined in intent.go${NC}" >&2
+=======
+                echo -e "${RED}❌ VIOLATION: State enum defined in intent.go${NC}"
+>>>>>>> 9d54c19c (fix(ci): use [[ instead of [ for bash conditionals)
                 echo "   Intent: $INTENT_NAME"
                 echo "   Rule: State enum must be in constants.go"
                 echo ""
@@ -981,7 +1033,11 @@ if [[ -n "$SUBDIRS" ]]; then
         if [[ -f "$intent_dir/types.go" ]]; then
             STATE_IN_TYPES=$(grep "^type.*State string" "$intent_dir/types.go" 2>/dev/null || true)
             if [[ -n "$STATE_IN_TYPES" ]]; then
+<<<<<<< HEAD
                 echo -e "${RED}❌ VIOLATION: State enum defined in types.go${NC}" >&2
+=======
+                echo -e "${RED}❌ VIOLATION: State enum defined in types.go${NC}"
+>>>>>>> 9d54c19c (fix(ci): use [[ instead of [ for bash conditionals)
                 echo "   Intent: $INTENT_NAME"
                 echo "   Rule: State enum must be in constants.go"
                 echo ""
@@ -993,7 +1049,11 @@ if [[ -n "$SUBDIRS" ]]; then
         if [[ -f "$intent_dir/intent.go" ]]; then
             MSG_IN_INTENT=$(grep "^type.*Msg struct" "$intent_dir/intent.go" 2>/dev/null || true)
             if [[ -n "$MSG_IN_INTENT" ]]; then
+<<<<<<< HEAD
                 echo -e "${RED}❌ VIOLATION: Msg types defined in intent.go${NC}" >&2
+=======
+                echo -e "${RED}❌ VIOLATION: Msg types defined in intent.go${NC}"
+>>>>>>> 9d54c19c (fix(ci): use [[ instead of [ for bash conditionals)
                 echo "   Intent: $INTENT_NAME"
                 echo "   Rule: ALL *Msg types must be in messages.go"
                 echo ""
@@ -1007,7 +1067,11 @@ if [[ -n "$SUBDIRS" ]]; then
         if [[ -f "$intent_dir/types.go" ]]; then
             MSG_IN_TYPES=$(grep "^type.*Msg struct" "$intent_dir/types.go" 2>/dev/null || true)
             if [[ -n "$MSG_IN_TYPES" ]]; then
+<<<<<<< HEAD
                 echo -e "${RED}❌ VIOLATION: Msg types defined in types.go${NC}" >&2
+=======
+                echo -e "${RED}❌ VIOLATION: Msg types defined in types.go${NC}"
+>>>>>>> 9d54c19c (fix(ci): use [[ instead of [ for bash conditionals)
                 echo "   Intent: $INTENT_NAME"
                 echo "   Rule: ALL *Msg types must be in messages.go"
                 echo ""
@@ -1022,7 +1086,11 @@ if [[ -n "$SUBDIRS" ]]; then
         if [[ -f "$intent_dir/constants.go" ]]; then
             MSG_IN_CONSTANTS=$(grep "^type.*Msg struct" "$intent_dir/constants.go" 2>/dev/null || true)
             if [[ -n "$MSG_IN_CONSTANTS" ]]; then
+<<<<<<< HEAD
                 echo -e "${RED}❌ VIOLATION: Msg types in constants.go${NC}" >&2
+=======
+                echo -e "${RED}❌ VIOLATION: Msg types in constants.go${NC}"
+>>>>>>> 9d54c19c (fix(ci): use [[ instead of [ for bash conditionals)
                 echo "   Intent: $INTENT_NAME"
                 echo "   Rule: Msg types must be in messages.go (not constants.go)"
                 echo ""
@@ -1046,7 +1114,11 @@ if [[ -n "$SUBDIRS" ]]; then
         fi
         
         if [[ "$HAS_INTENT_STRUCT" = false ]]; then
+<<<<<<< HEAD
             echo -e "${RED}❌ VIOLATION: No Intent struct found${NC}" >&2
+=======
+            echo -e "${RED}❌ VIOLATION: No Intent struct found${NC}"
+>>>>>>> 9d54c19c (fix(ci): use [[ instead of [ for bash conditionals)
             echo "   Intent: $INTENT_NAME"
             echo "   Rule: Intent struct must be in intent.go OR types.go"
             echo ""
@@ -1073,7 +1145,11 @@ for file in $INTENT_FILES; do
     # Check for components.KeyBadge (should use primitives.HelpKeyBadge)
     KEYBADGE_USAGE=$(grep "components\.KeyBadge" "$file" 2>/dev/null || true)
     if [[ -n "$KEYBADGE_USAGE" ]]; then
+<<<<<<< HEAD
         echo -e "${RED}❌ VIOLATION: Deprecated components.KeyBadge${NC}" >&2
+=======
+        echo -e "${RED}❌ VIOLATION: Deprecated components.KeyBadge${NC}"
+>>>>>>> 9d54c19c (fix(ci): use [[ instead of [ for bash conditionals)
         echo "   File: $file"
         echo "   Rule: Use primitives.HelpKeyBadge() instead"
         echo ""
@@ -1090,7 +1166,11 @@ for file in $INTENT_FILES; do
     # Check for components.StandardView (should use layout.NewScreenLayout)
     STANDARDVIEW_USAGE=$(grep "components\.StandardView" "$file" 2>/dev/null || true)
     if [[ -n "$STANDARDVIEW_USAGE" ]]; then
+<<<<<<< HEAD
         echo -e "${RED}❌ VIOLATION: Deprecated components.StandardView${NC}" >&2
+=======
+        echo -e "${RED}❌ VIOLATION: Deprecated components.StandardView${NC}"
+>>>>>>> 9d54c19c (fix(ci): use [[ instead of [ for bash conditionals)
         echo "   File: $file"
         echo "   Rule: Use layout.NewScreenLayout() instead"
         echo ""
@@ -1151,7 +1231,11 @@ if [[ -n "$SUBDIRS" ]]; then
             # Same checks for subdirectory intents
             KEYBADGE_USAGE=$(grep "components\.KeyBadge" "$INTENT_FILE" 2>/dev/null || true)
             if [[ -n "$KEYBADGE_USAGE" ]]; then
+<<<<<<< HEAD
                 echo -e "${RED}❌ VIOLATION: Deprecated components.KeyBadge${NC}" >&2
+=======
+                echo -e "${RED}❌ VIOLATION: Deprecated components.KeyBadge${NC}"
+>>>>>>> 9d54c19c (fix(ci): use [[ instead of [ for bash conditionals)
                 echo "   File: $INTENT_FILE"
                 echo "   Rule: Use primitives.HelpKeyBadge() instead"
                 echo ""
@@ -1160,7 +1244,11 @@ if [[ -n "$SUBDIRS" ]]; then
             
             STANDARDVIEW_USAGE=$(grep "components\.StandardView" "$INTENT_FILE" 2>/dev/null || true)
             if [[ -n "$STANDARDVIEW_USAGE" ]]; then
+<<<<<<< HEAD
                 echo -e "${RED}❌ VIOLATION: Deprecated components.StandardView${NC}" >&2
+=======
+                echo -e "${RED}❌ VIOLATION: Deprecated components.StandardView${NC}"
+>>>>>>> 9d54c19c (fix(ci): use [[ instead of [ for bash conditionals)
                 echo "   File: $INTENT_FILE"
                 echo "   Rule: Use layout.NewScreenLayout() instead"
                 echo ""
@@ -1329,7 +1417,11 @@ for file in $INTENTS_ALL_FILES; do
     MODAL_STRUCTS=$(grep "^type.*Modal struct" "$file" 2>/dev/null || true)
     
     if [[ -n "$MODAL_STRUCTS" ]]; then
+<<<<<<< HEAD
         echo -e "${RED}❌ VIOLATION: Modal struct defined in intents package${NC}" >&2
+=======
+        echo -e "${RED}❌ VIOLATION: Modal struct defined in intents package${NC}"
+>>>>>>> 9d54c19c (fix(ci): use [[ instead of [ for bash conditionals)
         echo "   File: $file"
         echo ""
         echo "   Found:"
@@ -1370,7 +1462,11 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 HUH_IN_INTENTS=$(grep -l "github.com/charmbracelet/huh" internal/cli/intents/*.go internal/cli/intents/**/*.go 2>/dev/null | grep -v "_test.go" || true)
 
 if [[ -n "$HUH_IN_INTENTS" ]]; then
+<<<<<<< HEAD
     echo -e "${RED}❌ VIOLATION: Direct huh import in intents package${NC}" >&2
+=======
+    echo -e "${RED}❌ VIOLATION: Direct huh import in intents package${NC}"
+>>>>>>> 9d54c19c (fix(ci): use [[ instead of [ for bash conditionals)
     echo ""
     echo "   Files with violation:"
     echo "$HUH_IN_INTENTS" | sed 's/^/   - /'
@@ -1429,7 +1525,11 @@ if [[ -n "$SUBDIRS" ]]; then
             RENDER_METHODS=$(grep -E "func.*\) (get[A-Z][a-zA-Z]*Content|render[A-Z]|view[A-Z])\(" "$HELPERS_FILE" 2>/dev/null | grep -v "getContextHelp\|getBreadcrumbs\|ModalContent" | wc -l)
             
             if [[ "$RENDER_METHODS" -gt 2 ]]; then
+<<<<<<< HEAD
                 echo -e "${RED}❌ VIOLATION: Too many render methods in helpers.go${NC}" >&2
+=======
+                echo -e "${RED}❌ VIOLATION: Too many render methods in helpers.go${NC}"
+>>>>>>> 9d54c19c (fix(ci): use [[ instead of [ for bash conditionals)
                 echo "   File: $HELPERS_FILE ($RENDER_METHODS render methods)"
                 echo "   Rule: Render logic must be in screens/ package"
                 echo ""
@@ -1517,7 +1617,11 @@ if [[ -n "$SUBDIRS" ]]; then
                 fi
                 
                 if [[ "$FOUND_SCREENS" = false ]]; then
+<<<<<<< HEAD
                     echo -e "${RED}❌ VIOLATION: Intent has $STATE_COUNT states but no screens directory${NC}" >&2
+=======
+                    echo -e "${RED}❌ VIOLATION: Intent has $STATE_COUNT states but no screens directory${NC}"
+>>>>>>> 9d54c19c (fix(ci): use [[ instead of [ for bash conditionals)
                     echo "   Intent: $INTENT_NAME"
                     echo "   States: $STATE_COUNT"
                     echo ""
@@ -1558,7 +1662,11 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 SCREEN_WRONG_LOCATIONS=$(find internal/cli -name "*.go" -not -path "*/screens/*" -not -name "*_test.go" -exec grep -l "^type.*Screen struct" {} \; 2>/dev/null || true)
 
 if [[ -n "$SCREEN_WRONG_LOCATIONS" ]]; then
+<<<<<<< HEAD
     echo -e "${RED}❌ VIOLATION: Screen struct defined outside screens/ package${NC}" >&2
+=======
+    echo -e "${RED}❌ VIOLATION: Screen struct defined outside screens/ package${NC}"
+>>>>>>> 9d54c19c (fix(ci): use [[ instead of [ for bash conditionals)
     echo ""
     echo "   Files with violation:"
     echo "$SCREEN_WRONG_LOCATIONS" | sed 's/^/   - /'
@@ -1584,7 +1692,11 @@ MODAL_WRONG_LOCATIONS=$(find internal/cli -name "*.go" \
     -exec grep -l "^type.*Modal struct" {} \; 2>/dev/null || true)
 
 if [[ -n "$MODAL_WRONG_LOCATIONS" ]]; then
+<<<<<<< HEAD
     echo -e "${RED}❌ VIOLATION: Modal struct defined in wrong location${NC}" >&2
+=======
+    echo -e "${RED}❌ VIOLATION: Modal struct defined in wrong location${NC}"
+>>>>>>> 9d54c19c (fix(ci): use [[ instead of [ for bash conditionals)
     echo ""
     echo "   Files with violation:"
     echo "$MODAL_WRONG_LOCATIONS" | sed 's/^/   - /'
@@ -1690,7 +1802,11 @@ for modal_file in $MODAL_FILES $FEEDBACK_MODAL_FILES; do
         MODAL_STRUCT_COUNT=$(grep -c "^type.*Modal struct" "$modal_file" 2>/dev/null || echo 0)
         
         if [[ "$MODAL_STRUCT_COUNT" -gt 1 ]]; then
+<<<<<<< HEAD
             echo -e "${RED}❌ VIOLATION: Multiple modal structs in single file${NC}" >&2
+=======
+            echo -e "${RED}❌ VIOLATION: Multiple modal structs in single file${NC}"
+>>>>>>> 9d54c19c (fix(ci): use [[ instead of [ for bash conditionals)
             echo "   File: $modal_file ($MODAL_STRUCT_COUNT modal structs)"
             echo "   Rule: One modal struct per file (data structs are allowed)"
             echo ""
