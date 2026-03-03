@@ -335,20 +335,71 @@ Feature: Generate CV
   # Export Progress
   # ============================================================================
 
-  @happy @wip
-  Scenario: View export progress
+  @happy
+  Scenario: Export Text to file
     Given I have generated a CV
-    When I start an export
-    Then I should see the progress modal
-    And I should see "Exporting"
+    When I open the export options modal
+    And I select format "Text"
+    And I select location "File"
+    And I confirm export
+    Then I should see export progress
+    And the export should complete
+    And CV is exported as a text file
 
   @happy
-  Scenario: Export success shows confirmation
+  Scenario: Export Markdown to file
     Given I have generated a CV
-    When I complete an export
-    Then I should see success message
-    And I dismiss the success modal
-    And I should see export location
+    When I open the export options modal
+    And I select format "Markdown"
+    And I select location "File"
+    And I confirm export
+    Then I should see export progress
+    And the export should complete
+    And CV is exported as a markdown file
+
+  @happy
+  Scenario: Export YAML to file
+    Given I have generated a CV
+    When I open the export options modal
+    And I select format "YAML"
+    And I select location "File"
+    And I confirm export
+    Then I should see export progress
+    And the export should complete
+    And CV is exported as a YAML file
+
+  @happy
+  Scenario: Export as Text to clipboard
+    Given I have generated a CV
+    When I open the export options modal
+    And I select format "Text"
+    And I select location "Clipboard"
+    And I confirm export
+    Then I should see export progress
+    And I should see "Exported to clipboard"
+    And the clipboard should contain the CV as text
+
+  @happy
+  Scenario: Export as Markdown to clipboard
+    Given I have generated a CV
+    When I open the export options modal
+    And I select format "Markdown"
+    And I select location "Clipboard"
+    And I confirm export
+    Then I should see export progress
+    And I should see "Exported to clipboard"
+    And the clipboard should contain the CV as markdown
+
+  @happy
+  Scenario: Export as YAML to clipboard
+    Given I have generated a CV
+    When I open the export options modal
+    And I select format "YAML"
+    And I select location "Clipboard"
+    And I confirm export
+    Then I should see export progress
+    And I should see "Exported to clipboard"
+    And the clipboard should contain the CV as YAML
 
   # ============================================================================
   # Error Handling
