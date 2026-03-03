@@ -203,13 +203,15 @@ jobs:
       - name: Run tests
         run: ginkgo -v --race --cover --coverprofile="coverage.out" --skip-package=testdata,noinlinecareer/testdata,features ./...
 
-      - name: Upload coverage
+      - name: Upload coverage to Codecov
         if: matrix.os == 'ubuntu-latest'
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
-          file: ./coverage.out
+          files: ./coverage.out
           flags: unittests
           name: codecov-umbrella
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
 
   report:
     name: Architecture Report
