@@ -27,11 +27,11 @@ jobs:
     # Only run when:
     # - CI workflow completed successfully
     # - The triggering event was a pull request
-    # - The actor is dependabot[bot]
+    # Note: Dependabot verification is done via API in "Verify PR is from dependabot" step
+    # to avoid relying on forgeable github.actor context (SonarCloud S8232)
     if: >-
       github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.event == 'pull_request' &&
-      github.actor == 'dependabot[bot]'
+      github.event.workflow_run.event == 'pull_request'
     steps:
       - name: Get PR number from workflow run
         id: get-pr
@@ -88,18 +88,19 @@ jobs:
         run: |
           echo "Rebasing PR #${PR_NUMBER}..."
           
-          # gh pr update-branch --rebase rebases the PR onto the base branch
-          # It exits 0 even if already up to date, so we capture the output
+          # Capture exit code separately to handle expected failures gracefully
+          EXIT_CODE=0
           OUTPUT=$(gh pr update-branch "${PR_NUMBER}" \
             --repo "${REPO}" \
-            --rebase 2>&1) || true
+            --rebase 2>&1) || EXIT_CODE=$?
           
           echo "$OUTPUT"
           
           if echo "$OUTPUT" | grep -qi "already up to date"; then
             echo "PR is already up to date with base branch"
-          elif echo "$OUTPUT" | grep -qi "updated"; then
-            echo "Successfully rebased PR #${PR_NUMBER}"
+          elif [ "$EXIT_CODE" -ne 0 ]; then
+            echo "gh pr update-branch failed with exit code $EXIT_CODE"
+            exit "$EXIT_CODE"
           else
-            echo "Rebase completed"
+            echo "Successfully rebased PR #${PR_NUMBER}"
           fi
