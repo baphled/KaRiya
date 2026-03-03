@@ -38,12 +38,6 @@ echo "🔍 PRE-COMMIT CHECKS"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-# Session check (warn only, don't block)
-if [ ! -f ".session-active" ]; then
-    echo -e "${YELLOW}⚠️  No active session. Run 'make session-start' for full workflow.${NC}"
-    echo ""
-fi
-
 # Check if this is documentation-only changes
 STAGED_FILES=$(git diff --cached --name-only)
 DOCS_ONLY=true
@@ -59,7 +53,7 @@ if [ "$DOCS_ONLY" = true ]; then
     echo -e "${BLUE}📝 Documentation-only commit detected${NC}"
     echo -e "${BLUE}ℹ️  Skipping build and test checks${NC}"
     echo ""
-    
+
     # Still check for secrets in documentation
     SECRET_PATTERNS='password["\s]*[:=]|secret["\s]*[:=]|api[_-]?key["\s]*[:=]|token["\s]*[:=]'
     if git diff --cached | grep -iE "$SECRET_PATTERNS" | grep -v 'password_hash' > /dev/null 2>&1; then
@@ -68,7 +62,7 @@ if [ "$DOCS_ONLY" = true ]; then
         echo "DO NOT commit secrets! Use environment variables."
         exit 1
     fi
-    
+
     echo ""
     echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo -e "${GREEN}✅ Documentation checks passed${NC}"
@@ -113,7 +107,7 @@ if [ -n "$STAGED_GO" ]; then
         if [[ "$file" == "AGENTS.md" ]] || [[ "$file" == ".git-hooks/pre-commit" ]]; then
             continue
         fi
-        
+
         # Check for forbidden markers in STAGED content of this file only
         STAGED_CONTENT=$(git diff --cached -- "$file" | grep '^+' | grep -v '^+++' || true)
         if echo "$STAGED_CONTENT" | grep -E "$FORBIDDEN_MARKERS" > /dev/null 2>&1; then
@@ -226,7 +220,7 @@ if command -v golangci-lint > /dev/null 2>&1; then
                 CHANGED_PACKAGES+=("./$dir/...")
             fi
         done < <(echo "$CHANGED_GO_FILES" | xargs -I{} dirname {} | sort -u)
-        
+
         if [ ${#CHANGED_PACKAGES[@]} -eq 0 ]; then
             echo -e "${GREEN}✅ golangci-lint skipped (only deleted packages)${NC}"
         else
@@ -279,7 +273,7 @@ if [ "$SKIP_TESTS" != "1" ]; then
     if [ -n "$CHANGED_GO_FILES" ]; then
         echo "Running localized tests for changed packages..."
         CHANGED_PACKAGES=$(echo "$CHANGED_GO_FILES" | xargs -I{} dirname {} | sort -u | sed 's|^|./|' | sed 's|$|/...|')
-        
+
         # Filter to only packages that have test files
         TESTABLE_PACKAGES=""
         for pkg in $CHANGED_PACKAGES; do
@@ -293,7 +287,7 @@ if [ "$SKIP_TESTS" != "1" ]; then
                 TESTABLE_PACKAGES="$TESTABLE_PACKAGES $pkg"
             fi
         done
-        
+
         if [ -n "$TESTABLE_PACKAGES" ]; then
             if ! go test -count=1 -short $TESTABLE_PACKAGES > /dev/null 2>&1; then
                 echo -e "${RED}❌ ERROR: Tests failed for changed packages${NC}"
@@ -305,7 +299,7 @@ if [ "$SKIP_TESTS" != "1" ]; then
                 exit 1
             fi
             echo -e "${GREEN}✅ Localized tests passed${NC}"
-            
+
             # Coverage check - 95% per-package requirement for modified packages
             if [ "$SKIP_COVERAGE_CHECK" != "1" ]; then
                 echo "Checking coverage for modified packages (>= 95% required)..."
@@ -317,14 +311,14 @@ if [ "$SKIP_TESTS" != "1" ]; then
                         # Extract coverage percentage
                         COVERAGE_PCT=$(echo "$COVERAGE_OUTPUT" | grep -oP 'coverage: \K[0-9.]+' || echo "0")
                         COVERAGE_INT=$(printf "%.0f" "$COVERAGE_PCT" 2>/dev/null || echo "0")
-                        
+
                         # Skip packages with 0% (no statements to cover)
                         if [ "$COVERAGE_INT" -gt 0 ] && [ "$COVERAGE_INT" -lt 95 ]; then
                             COVERAGE_FAILED="$COVERAGE_FAILED\n  $pkg: ${COVERAGE_PCT}%"
                         fi
                     fi
                 done
-                
+
                 if [ -n "$COVERAGE_FAILED" ]; then
                     echo -e "${RED}❌ ERROR: Coverage below 95% for modified packages${NC}"
                     echo ""
@@ -411,14 +405,14 @@ if [ "$SKIP_DOC_CHECK" != "1" ]; then
                 exit 1
             fi
         fi
-        
+
         # Step 2: ALWAYS run docblocks analyzer for structured sections (Expected/Returns/Side effects)
         # This is the authoritative check - validate-documentation.sh is a lighter pre-check
         if [ ! -f "./bin/docblocks" ]; then
             echo "Building docblocks analyzer..."
             go build -o ./bin/docblocks ./cmd/docblocks > /dev/null 2>&1
         fi
-        
+
         # Run docblocks analyzer on staged packages
         STAGED_PACKAGES=$(echo "$STAGED_GO" | xargs -I{} dirname {} | sort -u | sed 's|^|./|' | sed 's|$|/...|')
         echo "Checking docblock sections (Expected/Returns/Side effects)..."
