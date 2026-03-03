@@ -8,10 +8,6 @@ on:
   pull_request_review_comment:
     types: [created, deleted]
 
-permissions:
-  contents: read
-  pull-requests: write
-
 jobs:
   # Validate PR targets correct branch
   validate-target-branch:
@@ -19,10 +15,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check target branch
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
-          BASE_REF="${{ github.event.pull_request.base.ref }}"
-          HEAD_REF="${{ github.event.pull_request.head.ref }}"
-          
           echo "PR: $HEAD_REF → $BASE_REF"
           
           # Allow next → main (release PRs)
@@ -81,12 +77,11 @@ jobs:
           fetch-depth: 0
 
       - name: Check commits for AI attribution
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           echo "Checking commits for AI attribution..."
-
-          # Get all commits in the PR
-          BASE_SHA=${{ github.event.pull_request.base.sha }}
-          HEAD_SHA=${{ github.event.pull_request.head.sha }}
 
           # Get commits between base and head
           COMMITS=$(git log --format=%H $BASE_SHA..$HEAD_SHA)
@@ -163,13 +158,19 @@ jobs:
         run: npm ci
 
       - name: Validate all commits in PR
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
+          npx commitlint --from "$BASE_SHA" --to "$HEAD_SHA" --verbose
 
   # Check for breaking changes
   breaking-changes:
     name: Check Breaking Changes
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     # Only run on pull_request events
     if: github.event_name == 'pull_request'
     steps:
@@ -180,10 +181,10 @@ jobs:
 
       - name: Check for breaking changes
         id: breaking
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          BASE_SHA=${{ github.event.pull_request.base.sha }}
-          HEAD_SHA=${{ github.event.pull_request.head.sha }}
-
           # Check commit messages for BREAKING CHANGE
           if git log $BASE_SHA..$HEAD_SHA --format=%B | grep -qi "BREAKING CHANGE"; then
             echo "has_breaking=true" >> $GITHUB_OUTPUT
@@ -209,6 +210,9 @@ jobs:
   size-label:
     name: PR Size Label
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     # Only run on pull_request events, not on review/comment events
     if: github.event_name == 'pull_request'
     steps:
@@ -231,6 +235,8 @@ jobs:
   check-unresolved-comments:
     name: Check Unresolved Review Comments
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
     steps:
       - name: Check for unresolved review threads
         uses: actions/github-script@v7
