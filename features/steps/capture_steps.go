@@ -811,9 +811,10 @@ func theEventShouldHaveDate(ctx context.Context, expected string) error {
 	if err != nil {
 		return err
 	}
+	env.DismissSuccessModal()
 	view := env.GetView()
 	if !strings.Contains(view, expected) {
-		return fmt.Errorf("expected date '%s' not found in view", expected)
+		return fmt.Errorf("expected date %q not found in view", expected)
 	}
 	return nil
 }
@@ -823,6 +824,7 @@ func theEventShouldHaveTodaysDate(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	env.DismissSuccessModal()
 	view := env.GetView()
 	today := time.Now().Format("2006-01-02")
 	gomega.Expect(view).To(gomega.ContainSubstring(today))
@@ -834,6 +836,7 @@ func theEventShouldHaveDateDaysAgo(ctx context.Context, daysAgo int) error {
 	if err != nil {
 		return err
 	}
+	env.DismissSuccessModal()
 	view := env.GetView()
 	expected := time.Now().AddDate(0, 0, -daysAgo).Format("2006-01-02")
 	gomega.Expect(view).To(gomega.ContainSubstring(expected))

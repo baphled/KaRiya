@@ -367,6 +367,8 @@ func iShouldSeeTheLoadingModal(ctx context.Context) error {
 	gomega.Expect(view).To(gomega.SatisfyAny(
 		gomega.ContainSubstring("Loading"),
 		gomega.ContainSubstring("Analyzing"),
+		gomega.ContainSubstring("Detecting"),
+		gomega.ContainSubstring("Inferring"),
 		gomega.ContainSubstring("..."),
 	))
 	return nil

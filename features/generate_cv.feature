@@ -347,6 +347,7 @@ Feature: Generate CV
     Given I have generated a CV
     When I complete an export
     Then I should see success message
+    And I dismiss the success modal
     And I should see export location
 
   # ============================================================================

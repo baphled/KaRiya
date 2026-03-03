@@ -348,7 +348,7 @@ var ErrEnvNotInitialised = errors.New("test environment not initialised: check B
 //
 // Side effects:
 //   - None.
-func RequireEnv(ctx context.Context) (*e2e.TestEnv, error) {
+func RequireEnv(ctx context.Context) (*harness.TestEnv, error) {
 	env := GetAppEnv(ctx)
 	if env == nil {
 		return nil, ErrEnvNotInitialised

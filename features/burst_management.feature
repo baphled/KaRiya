@@ -166,8 +166,8 @@ Feature: Manage Career Bursts
     Given I have 5 unassigned events
     When I select "burst_management" from the menu
     And I press "s" to suggest bursts
-    Then I should see the loading modal
-    And I should see "Detecting"
+    And the detection completes
+    Then I should see the burst suggestion modal
 
   @happy
   Scenario: View burst suggestions after detection
@@ -192,7 +192,8 @@ Feature: Manage Career Bursts
     Given I have burst suggestions available
     When I am on the burst suggestion modal
     And I press "a" to accept
-    Then I should see success message
+    Then I should see the skill suggestions modal
+    And I close the modal
     And there should be 1 burst
 
   @happy
@@ -200,7 +201,7 @@ Feature: Manage Career Bursts
     Given I have burst suggestions available
     When I am on the burst suggestion modal
     And I press "r" to reject
-    Then the suggestion should be marked as rejected
+    Then I should still be on the burst list
     And there should be 0 bursts
 
   # ============================================================================
@@ -213,8 +214,8 @@ Feature: Manage Career Bursts
     When I select "burst_management" from the menu
     And I press enter to view details
     And I press "i" to infer skills
-    Then I should see the loading modal
-    And I should see "Inferring"
+    And the inference completes
+    Then I should see the skill suggestion modal
 
   @happy
   Scenario: View skill suggestions after inference
@@ -239,7 +240,7 @@ Feature: Manage Career Bursts
     Given I have skill suggestions from burst
     When I am on the skill suggestion modal
     And I press "a" to accept
-    Then I should see success message
+    Then I should still be on the skill suggestions modal
     And there should be 1 skill
 
   @happy

@@ -7,7 +7,7 @@ import (
 
 	"github.com/baphled/kariya/features/steps"
 	"github.com/baphled/kariya/features/support"
-	"github.com/baphled/kariya/internal/testutil/e2e"
+	"github.com/baphled/kariya/internal/testutil/harness"
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
 	. "github.com/onsi/gomega"
@@ -85,9 +85,9 @@ func InitializeScenario(sc *godog.ScenarioContext) {
 // Side effects: Registers BeforeSuite and AfterSuite hooks.
 func InitializeSuite(ctx *godog.TestSuiteContext) {
 	ctx.BeforeSuite(func() {
-		e2e.SetupShared()
+		harness.SetupShared()
 	})
 	ctx.AfterSuite(func() {
-		e2e.CleanupShared()
+		harness.CleanupShared()
 	})
 }
