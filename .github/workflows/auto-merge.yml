@@ -2,7 +2,7 @@ name: Auto Merge
 
 on:
   pull_request:
-    types: [opened, reopened, ready_for_review]
+    types: [opened, reopened, ready_for_review, synchronize]
 
 jobs:
   enable-auto-merge-dependabot:
@@ -11,7 +11,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-    if: github.event.pull_request.user.login == 'dependabot[bot]' && (github.event.action == 'opened' || github.event.action == 'reopened')
+    if: github.event.pull_request.user.login == 'dependabot[bot]' && (github.event.action == 'opened' || github.event.action == 'reopened' || github.event.action == 'synchronize')
     steps:
       - name: Enable auto-merge (squash)
         uses: peter-evans/enable-pull-request-automerge@a660677d5469627102a1c1e11409dd063606628d  # v3
