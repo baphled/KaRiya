@@ -24,13 +24,15 @@ check_pass() {
 }
 
 check_fail() {
-    echo -e "${RED}❌ Fail${NC} - $1" >&2
+    local message="$1"
+    echo -e "${RED}❌ Fail${NC} - $message" >&2
     VIOLATIONS=$((VIOLATIONS+1))
     return 0
 }
 
 check_warn() {
-    echo -e "${YELLOW}⚠️  Warning${NC} - $1"
+    local message="$1"
+    echo -e "${YELLOW}⚠️  Warning${NC} - $message"
     WARNINGS=$((WARNINGS+1))
     return 0
 }

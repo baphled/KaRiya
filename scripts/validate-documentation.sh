@@ -44,22 +44,25 @@ ERROR_COUNT=0
 WARNING_COUNT=0
 
 log_info() {
+    local message="$1"
     if [[ "$VERBOSE" == "true" ]]; then
-        echo -e "${GREEN}[INFO]${NC} $1"
+        echo -e "${GREEN}[INFO]${NC} $message"
     else
-        echo -e "${GREEN}✓${NC} $1"
+        echo -e "${GREEN}✓${NC} $message"
     fi
     return 0
 }
 
 log_warn() {
-    echo -e "${YELLOW}[WARN]${NC} $1" >&2
+    local message="$1"
+    echo -e "${YELLOW}[WARN]${NC} $message" >&2
     ((WARNING_COUNT++))
     return 0
 }
 
 log_error() {
-    echo -e "${RED}[ERROR]${NC} $1" >&2
+    local message="$1"
+    echo -e "${RED}[ERROR]${NC} $message" >&2
     ((ERROR_COUNT++))
     return 0
 }
