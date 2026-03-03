@@ -1243,3 +1243,414 @@ var _ = Describe("BUG-013: Company-aware bullet deduplication", func() {
 			"orphaned bullets with distinct IDs must not merge under an empty key")
 	})
 })
+
+// Coverage: Internal scoring and text processing helpers.
+var _ = Describe("Internal scoring and text processing", func() {
+	var (
+		gen *DefaultBulletGenerator
+		log *logger.Logger
+	)
+
+	BeforeEach(func() {
+		log = logger.New(io.Discard, logger.InfoLevel)
+		gen = NewBulletGenerator(log, nil).(*DefaultBulletGenerator)
+	})
+
+	Describe("addMetricContext", func() {
+		It("should return text unchanged when metrics are empty", func() {
+			result := gen.addMetricContext("Led team migration", nil)
+			Expect(result).To(Equal("Led team migration"))
+		})
+
+		It("should return text unchanged when metrics slice is empty", func() {
+			result := gen.addMetricContext("Led team migration", []*Metric{})
+			Expect(result).To(Equal("Led team migration"))
+		})
+
+		It("should append first metric when value is not in text", func() {
+			metrics := []*Metric{
+				{Type: "percentage", Value: "40%", Unit: " reduction", Context: "cost"},
+			}
+			result := gen.addMetricContext("Reduced operational costs", metrics)
+			Expect(result).To(Equal("Reduced operational costs (40% reduction)"))
+		})
+
+		It("should not append metric when value already in text", func() {
+			metrics := []*Metric{
+				{Type: "percentage", Value: "40%", Unit: " reduction", Context: "cost"},
+			}
+			result := gen.addMetricContext("Reduced operational costs by 40%", metrics)
+			Expect(result).To(Equal("Reduced operational costs by 40%"))
+		})
+
+		It("should use only the first metric when multiple provided", func() {
+			metrics := []*Metric{
+				{Type: "count", Value: "5", Unit: " teams", Context: "scope"},
+				{Type: "percentage", Value: "30%", Unit: " improvement", Context: "perf"},
+			}
+			result := gen.addMetricContext("Led cross-team initiative", metrics)
+			Expect(result).To(Equal("Led cross-team initiative (5 teams)"))
+		})
+
+		It("should handle metric with empty unit", func() {
+			metrics := []*Metric{
+				{Type: "count", Value: "12", Unit: "", Context: ""},
+			}
+			result := gen.addMetricContext("Delivered features", metrics)
+			Expect(result).To(Equal("Delivered features (12)"))
+		})
+	})
+
+	Describe("FilterByTechnologies", func() {
+		It("should return bullets unchanged for LanguageAgnostic focus", func() {
+			bullets := []*Bullet{
+				{ID: "b1", Rank: 0.5, SourceEventIDs: []string{"e1"}},
+				{ID: "b2", Rank: 0.3, SourceEventIDs: []string{"e2"}},
+			}
+			e1 := fixtures.Event("e1")
+			e1.Skills = []string{"Go", "Python"}
+			events := []*career.Event{e1}
+
+			result := gen.FilterByTechnologies(bullets, events, TechnologyFocusLanguageAgnostic, []string{"Go"})
+
+			Expect(result).To(HaveLen(2))
+			Expect(result[0].Rank).To(Equal(0.5))
+			Expect(result[1].Rank).To(Equal(0.3))
+		})
+
+		It("should boost rank for bullets with matching technologies", func() {
+			bullets := []*Bullet{
+				{ID: "b1", Rank: 0.5, SourceEventIDs: []string{"e1"}},
+			}
+			e1 := fixtures.Event("e1")
+			e1.Skills = []string{"Go", "Python"}
+			events := []*career.Event{e1}
+
+			result := gen.FilterByTechnologies(bullets, events, TechnologyFocusSpecialist, []string{"Go"})
+
+			Expect(result).To(HaveLen(1))
+			Expect(result[0].Rank).To(BeNumerically(">", 0.5))
+			Expect(result[0].Rank).To(BeNumerically("~", 0.65, 0.01))
+		})
+
+		It("should not boost rank for bullets without matching technologies", func() {
+			bullets := []*Bullet{
+				{ID: "b1", Rank: 0.5, SourceEventIDs: []string{"e1"}},
+			}
+			e1 := fixtures.Event("e1")
+			e1.Skills = []string{"Ruby", "Python"}
+			events := []*career.Event{e1}
+
+			result := gen.FilterByTechnologies(bullets, events, TechnologyFocusSpecialist, []string{"Go"})
+
+			Expect(result).To(HaveLen(1))
+			Expect(result[0].Rank).To(Equal(0.5))
+		})
+
+		It("should skip bullets without source event IDs", func() {
+			bullets := []*Bullet{
+				{ID: "b1", Rank: 0.5, SourceEventIDs: nil},
+				{ID: "b2", Rank: 0.3, SourceEventIDs: []string{}},
+			}
+			e1 := fixtures.Event("e1")
+			e1.Skills = []string{"Go"}
+			events := []*career.Event{e1}
+
+			result := gen.FilterByTechnologies(bullets, events, TechnologyFocusGeneralist, []string{"Go"})
+
+			Expect(result).To(HaveLen(2))
+			Expect(result[0].Rank).To(Equal(0.5))
+			Expect(result[1].Rank).To(Equal(0.3))
+		})
+
+		It("should skip bullets whose source event is not in event map", func() {
+			bullets := []*Bullet{
+				{ID: "b1", Rank: 0.5, SourceEventIDs: []string{"missing-event"}},
+			}
+			e1 := fixtures.Event("e1")
+			e1.Skills = []string{"Go"}
+			events := []*career.Event{e1}
+
+			result := gen.FilterByTechnologies(bullets, events, TechnologyFocusSpecialist, []string{"Go"})
+
+			Expect(result).To(HaveLen(1))
+			Expect(result[0].Rank).To(Equal(0.5))
+		})
+
+		It("should sort bullets by rank descending after boosting", func() {
+			bullets := []*Bullet{
+				{ID: "b1", Rank: 0.3, SourceEventIDs: []string{"e1"}},
+				{ID: "b2", Rank: 0.5, SourceEventIDs: []string{"e2"}},
+			}
+			e1 := fixtures.Event("e1")
+			e1.Skills = []string{"Go"}
+			e2 := fixtures.Event("e2")
+			e2.Skills = []string{"Ruby"}
+			events := []*career.Event{e1, e2}
+
+			result := gen.FilterByTechnologies(bullets, events, TechnologyFocusSpecialist, []string{"Go"})
+
+			Expect(result[0].ID).To(Equal("b2"))
+			Expect(result[1].ID).To(Equal("b1"))
+		})
+
+		It("should cap boosted rank at 1.0", func() {
+			bullets := []*Bullet{
+				{ID: "b1", Rank: 0.95, SourceEventIDs: []string{"e1"}},
+			}
+			e1 := fixtures.Event("e1")
+			e1.Skills = []string{"Go"}
+			events := []*career.Event{e1}
+
+			result := gen.FilterByTechnologies(bullets, events, TechnologyFocusSpecialist, []string{"Go"})
+
+			Expect(result[0].Rank).To(BeNumerically("<=", 1.0))
+		})
+
+		It("should handle empty bullets slice", func() {
+			result := gen.FilterByTechnologies([]*Bullet{}, []*career.Event{}, TechnologyFocusSpecialist, []string{"Go"})
+			Expect(result).To(BeEmpty())
+		})
+	})
+
+	Describe("calculateMetricScore", func() {
+		It("should return 0.3 for bullet with no metrics", func() {
+			bullet := &Bullet{Metrics: nil}
+			Expect(gen.calculateMetricScore(bullet)).To(Equal(0.3))
+		})
+
+		It("should return 0.3 for bullet with empty metrics", func() {
+			bullet := &Bullet{Metrics: []*Metric{}}
+			Expect(gen.calculateMetricScore(bullet)).To(Equal(0.3))
+		})
+
+		It("should return 0.7 for bullet with one metric", func() {
+			bullet := &Bullet{
+				Metrics: []*Metric{{Type: "percentage", Value: "40%", Unit: "%"}},
+			}
+			Expect(gen.calculateMetricScore(bullet)).To(BeNumerically("~", 0.7, 0.01))
+		})
+
+		It("should return 0.8 for bullet with two metrics", func() {
+			bullet := &Bullet{
+				Metrics: []*Metric{
+					{Type: "percentage", Value: "40%", Unit: "%"},
+					{Type: "count", Value: "5", Unit: " teams"},
+				},
+			}
+			Expect(gen.calculateMetricScore(bullet)).To(BeNumerically("~", 0.8, 0.01))
+		})
+
+		It("should cap at 1.0 for bullet with many metrics", func() {
+			bullet := &Bullet{
+				Metrics: []*Metric{
+					{Type: "a", Value: "1"},
+					{Type: "b", Value: "2"},
+					{Type: "c", Value: "3"},
+					{Type: "d", Value: "4"},
+					{Type: "e", Value: "5"},
+				},
+			}
+			Expect(gen.calculateMetricScore(bullet)).To(Equal(1.0))
+		})
+	})
+
+	Describe("determineImpactLevel", func() {
+		It("should return high for multiple metrics and high confidence", func() {
+			achievement := &Achievement{
+				Metrics: []*Metric{
+					{Type: "percentage", Value: "40%"},
+					{Type: "count", Value: "5"},
+				},
+				Confidence: 0.90,
+			}
+			Expect(gen.determineImpactLevel(achievement)).To(Equal("high"))
+		})
+
+		It("should return medium for multiple metrics but low confidence", func() {
+			achievement := &Achievement{
+				Metrics: []*Metric{
+					{Type: "percentage", Value: "40%"},
+					{Type: "count", Value: "5"},
+				},
+				Confidence: 0.70,
+			}
+			Expect(gen.determineImpactLevel(achievement)).To(Equal("medium"))
+		})
+
+		It("should return medium for one metric", func() {
+			achievement := &Achievement{
+				Metrics:    []*Metric{{Type: "percentage", Value: "40%"}},
+				Confidence: 0.90,
+			}
+			Expect(gen.determineImpactLevel(achievement)).To(Equal("medium"))
+		})
+
+		It("should return low for no metrics", func() {
+			achievement := &Achievement{
+				Metrics:    nil,
+				Confidence: 0.90,
+			}
+			Expect(gen.determineImpactLevel(achievement)).To(Equal("low"))
+		})
+
+		It("should return low for empty metrics slice", func() {
+			achievement := &Achievement{
+				Metrics:    []*Metric{},
+				Confidence: 0.90,
+			}
+			Expect(gen.determineImpactLevel(achievement)).To(Equal("low"))
+		})
+
+		It("should return high at exact confidence boundary", func() {
+			achievement := &Achievement{
+				Metrics: []*Metric{
+					{Type: "a", Value: "1"},
+					{Type: "b", Value: "2"},
+				},
+				Confidence: 0.86,
+			}
+			Expect(gen.determineImpactLevel(achievement)).To(Equal("high"))
+		})
+
+		It("should return medium at confidence just below boundary", func() {
+			achievement := &Achievement{
+				Metrics: []*Metric{
+					{Type: "a", Value: "1"},
+					{Type: "b", Value: "2"},
+				},
+				Confidence: 0.85,
+			}
+			Expect(gen.determineImpactLevel(achievement)).To(Equal("medium"))
+		})
+	})
+
+	Describe("structureForImpact", func() {
+		It("should remove 'I ' prefix", func() {
+			Expect(gen.structureForImpact("I led the team migration")).To(Equal("led the team migration"))
+		})
+
+		It("should remove 'We ' prefix", func() {
+			Expect(gen.structureForImpact("We built a new platform")).To(Equal("built a new platform"))
+		})
+
+		It("should remove 'The team ' prefix", func() {
+			Expect(gen.structureForImpact("The team delivered on time")).To(Equal("delivered on time"))
+		})
+
+		It("should leave text without weak starter unchanged", func() {
+			Expect(gen.structureForImpact("Led team migration")).To(Equal("Led team migration"))
+		})
+
+		It("should handle empty string", func() {
+			Expect(gen.structureForImpact("")).To(Equal(""))
+		})
+
+		It("should trim trailing whitespace", func() {
+			Expect(gen.structureForImpact("  Led team migration  ")).To(Equal("Led team migration"))
+		})
+
+		It("should only remove the first matching prefix", func() {
+			Expect(gen.structureForImpact("I We The team did it")).To(Equal("We The team did it"))
+		})
+
+		It("should not remove prefix if it is part of a word", func() {
+			Expect(gen.structureForImpact("Ideal solution")).To(Equal("Ideal solution"))
+		})
+	})
+
+	Describe("calculateImpactScore", func() {
+		It("should return 0.5 for low impact with no metrics", func() {
+			bullet := &Bullet{ImpactLevel: "low"}
+			Expect(gen.calculateImpactScore(bullet)).To(Equal(0.5))
+		})
+
+		It("should return 0.5 for empty impact level", func() {
+			bullet := &Bullet{ImpactLevel: ""}
+			Expect(gen.calculateImpactScore(bullet)).To(Equal(0.5))
+		})
+
+		It("should return 0.9 for high impact with no extra metrics", func() {
+			bullet := &Bullet{
+				ImpactLevel: "high",
+				Metrics:     []*Metric{{Type: "a", Value: "1"}},
+			}
+			Expect(gen.calculateImpactScore(bullet)).To(BeNumerically("~", 0.9, 0.01))
+		})
+
+		It("should return 0.7 for medium impact with one metric", func() {
+			bullet := &Bullet{
+				ImpactLevel: "medium",
+				Metrics:     []*Metric{{Type: "a", Value: "1"}},
+			}
+			Expect(gen.calculateImpactScore(bullet)).To(BeNumerically("~", 0.7, 0.01))
+		})
+
+		It("should add 0.1 bonus for multiple metrics on high impact", func() {
+			bullet := &Bullet{
+				ImpactLevel: "high",
+				Metrics: []*Metric{
+					{Type: "a", Value: "1"},
+					{Type: "b", Value: "2"},
+				},
+			}
+			Expect(gen.calculateImpactScore(bullet)).To(Equal(1.0))
+		})
+
+		It("should add 0.1 bonus for multiple metrics on medium impact", func() {
+			bullet := &Bullet{
+				ImpactLevel: "medium",
+				Metrics: []*Metric{
+					{Type: "a", Value: "1"},
+					{Type: "b", Value: "2"},
+				},
+			}
+			Expect(gen.calculateImpactScore(bullet)).To(BeNumerically("~", 0.8, 0.01))
+		})
+
+		It("should cap at 1.0", func() {
+			bullet := &Bullet{
+				ImpactLevel: "high",
+				Metrics: []*Metric{
+					{Type: "a", Value: "1"},
+					{Type: "b", Value: "2"},
+				},
+			}
+			Expect(gen.calculateImpactScore(bullet)).To(BeNumerically("<=", 1.0))
+		})
+	})
+
+	Describe("extractPrimaryCategory", func() {
+		It("should return empty for nil categories", func() {
+			Expect(gen.extractPrimaryCategory(nil)).To(Equal(constants.CompetencyCategory("")))
+		})
+
+		It("should return empty for empty categories", func() {
+			Expect(gen.extractPrimaryCategory([]string{})).To(Equal(constants.CompetencyCategory("")))
+		})
+
+		It("should return first valid category", func() {
+			Expect(gen.extractPrimaryCategory([]string{"technical", "leadership"})).To(Equal(constants.CompetencyTechnical))
+		})
+
+		It("should return empty for invalid category", func() {
+			Expect(gen.extractPrimaryCategory([]string{"invalid_category"})).To(Equal(constants.CompetencyCategory("")))
+		})
+
+		It("should handle uppercase input by normalizing to lowercase", func() {
+			Expect(gen.extractPrimaryCategory([]string{"Technical"})).To(Equal(constants.CompetencyTechnical))
+		})
+
+		It("should return leadership category", func() {
+			Expect(gen.extractPrimaryCategory([]string{"leadership"})).To(Equal(constants.CompetencyLeadership))
+		})
+
+		It("should return mentoring category", func() {
+			Expect(gen.extractPrimaryCategory([]string{"mentoring"})).To(Equal(constants.CompetencyMentoring))
+		})
+
+		It("should return empty for ALLCAPS invalid input", func() {
+			Expect(gen.extractPrimaryCategory([]string{"INVALID"})).To(Equal(constants.CompetencyCategory("")))
+		})
+	})
+})

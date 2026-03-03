@@ -230,14 +230,15 @@ type CVBullet struct {
 	Confidence      float64  `json:"confidence"`
 
 	// Enhanced fields from BulletGenerator (Task 44)
-	EnhancedText   string                       `json:"enhanced_text,omitempty"`
-	Category       constants.CompetencyCategory `json:"category,omitempty"`
-	RoleScore      float64                      `json:"role_score,omitempty"`
-	AudienceScore  float64                      `json:"audience_score,omitempty"`
-	MetricScore    float64                      `json:"metric_score,omitempty"`
-	ImpactScore    float64                      `json:"impact_score,omitempty"`
-	ImpactLevel    string                       `json:"impact_level,omitempty"`
-	KeywordMatches []string                     `json:"keyword_matches,omitempty"`
+	EnhancedText      string                       `json:"enhanced_text,omitempty"`
+	Category          constants.CompetencyCategory `json:"category,omitempty"`
+	RoleScore         float64                      `json:"role_score,omitempty"`
+	AudienceScore     float64                      `json:"audience_score,omitempty"`
+	MetricScore       float64                      `json:"metric_score,omitempty"`
+	ImpactScore       float64                      `json:"impact_score,omitempty"`
+	ImpactLevel       string                       `json:"impact_level,omitempty"`
+	KeywordMatches    []string                     `json:"keyword_matches,omitempty"`
+	AudienceRelevance map[string]float64           `json:"audience_relevance,omitempty" yaml:"audience_relevance,omitempty"`
 }
 
 // Validate checks if the CVBullet meets all defined criteria.
@@ -410,6 +411,17 @@ type CVConfig struct {
 	// Skills section format (Phase 11 enhancement)
 	SkillsFormat string `yaml:"skills_format,omitempty" json:"skills_format,omitempty"`
 	SkillsLimit  int    `yaml:"skills_limit,omitempty" json:"skills_limit,omitempty"`
+
+	// SummaryHeading is a Go text/template string for the CV summary heading.
+	// Template variables: {{.Title}} (profile title), {{.Years}} (computed experience years).
+	// Empty string means no heading — prose only.
+	SummaryHeading string `yaml:"summary_heading,omitempty" json:"summary_heading,omitempty"`
+	// ProfileTitle is the profile's display title (e.g. "Senior Ruby on Rails Developer").
+	ProfileTitle string `yaml:"profile_title,omitempty" json:"profile_title,omitempty"`
+	// WhatIBring contains value propositions from the profile config.
+	WhatIBring []string `yaml:"what_i_bring,omitempty" json:"what_i_bring,omitempty"`
+	// CoreStrengths contains core strengths from the profile config.
+	CoreStrengths []string `yaml:"core_strengths,omitempty" json:"core_strengths,omitempty"`
 
 	CreatedAt time.Time `yaml:"created_at" json:"created_at"`
 	UpdatedAt time.Time `yaml:"updated_at" json:"updated_at"`

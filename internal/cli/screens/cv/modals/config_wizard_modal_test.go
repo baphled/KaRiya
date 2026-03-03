@@ -39,7 +39,7 @@ var _ = Describe("ConfigWizardModal", func() {
 				Expect(config.Technologies).To(BeEmpty())
 				Expect(config.FocusArea).To(BeEmpty())
 				Expect(config.SkillsFormat).To(Equal("grouped"))
-				Expect(config.CVLength).To(Equal("1_page"))
+				Expect(config.CVLength).To(Equal("detailed"))
 			})
 
 			It("should start with techs not available", func() {
@@ -209,7 +209,7 @@ var _ = Describe("ConfigWizardModal", func() {
 				Expect(config.Audience).To(Equal("hiring_manager"))
 				Expect(config.TechFocus).To(Equal("language_agnostic"))
 				Expect(config.SkillsFormat).To(Equal("grouped"))
-				Expect(config.CVLength).To(Or(Equal("1_page"), Equal("2_page")))
+				Expect(config.CVLength).To(Equal("detailed"))
 			})
 
 			It("should require at least ProfileID to skip", func() {
@@ -219,6 +219,23 @@ var _ = Describe("ConfigWizardModal", func() {
 				emptyModal.Update(tea.KeyMsg{Type: tea.KeyCtrlS})
 
 				Expect(emptyModal.IsCompleted()).To(BeFalse())
+			})
+
+			It("should apply defaults to formData when fields are cleared before skip", func() {
+				modal.SetProfileID("profile-1")
+				modal.SetAudience("")
+				modal.SetTechFocus("")
+				modal.SetSkillsFormat("")
+				modal.SetCVLength("")
+
+				modal.Update(tea.KeyMsg{Type: tea.KeyCtrlS})
+
+				Expect(modal.IsCompleted()).To(BeTrue())
+				config := modal.GetConfigData()
+				Expect(config.Audience).To(Equal("hiring_manager"))
+				Expect(config.TechFocus).To(Equal("language_agnostic"))
+				Expect(config.SkillsFormat).To(Equal("grouped"))
+				Expect(config.CVLength).To(Equal("detailed"))
 			})
 		})
 	})
@@ -310,6 +327,32 @@ var _ = Describe("ConfigWizardModal", func() {
 			if !hasRequiredFields {
 				Expect(modal.IsCompleted()).To(BeFalse())
 			}
+		})
+	})
+
+	Describe("SetTechnology", func() {
+		BeforeEach(func() {
+			profiles := []modals.ProfileOption{
+				{ID: "profile-1", Name: "Senior Go Engineer"},
+			}
+			modal = modals.NewConfigWizardModalWithProfiles(120, 40, profiles)
+			modal.Init()
+		})
+
+		It("should set the technology in config data", func() {
+			modal.SetTechnology("Go")
+
+			config := modal.GetConfigData()
+			Expect(config.Technology).To(Equal("Go"))
+		})
+
+		It("should update technology for specialist mode", func() {
+			modal.SetTechFocus("specialist")
+			modal.SetTechnology("Python")
+
+			config := modal.GetConfigData()
+			Expect(config.TechFocus).To(Equal("specialist"))
+			Expect(config.Technology).To(Equal("Python"))
 		})
 	})
 

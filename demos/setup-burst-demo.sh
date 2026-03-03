@@ -16,7 +16,12 @@ system:
   backup_count: 5
 profile:
   name: Yomi Colledge
+  first_name: Yomi
+  last_name: Colledge
   email: yomi@boodah.net
+  phone: ""
+  linkedin: ""
+  country: ""
   default_role: ""
   default_audience: ""
   title: ""

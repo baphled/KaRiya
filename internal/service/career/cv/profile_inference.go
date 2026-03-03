@@ -75,6 +75,17 @@ var genericValuePropositions = []string{
 
 // InferCoreStrengths analyzes career data to infer core strengths.
 // Returns a list of 3-5 strengths based on the user's competency categories.
+//
+// Expected:
+//   - events: slice of career events with categories
+//   - facts: slice of career facts with competency categories
+//   - skills: slice of career skills with categories
+//
+// Returns:
+//   - []string: 3-5 core strength descriptions, or generic defaults if no data
+//
+// Side effects:
+//   - None.
 func (s *ProfileInferenceService) InferCoreStrengths(
 	events []*career.Event,
 	facts []*career.Fact,
@@ -128,6 +139,17 @@ func (s *ProfileInferenceService) InferCoreStrengths(
 
 // InferValuePropositions analyzes career data to infer value propositions.
 // Returns a list of 3-5 value propositions based on the user's work style and competencies.
+//
+// Expected:
+//   - events: slice of career events with categories and text
+//   - facts: slice of career facts with competency categories and text
+//   - skills: slice of career skills with categories
+//
+// Returns:
+//   - []string: 3-5 value proposition descriptions, or generic defaults if no data
+//
+// Side effects:
+//   - None.
 func (s *ProfileInferenceService) InferValuePropositions(
 	events []*career.Event,
 	facts []*career.Fact,
@@ -192,6 +214,15 @@ func (s *ProfileInferenceService) InferValuePropositions(
 
 // InferTechnologies extracts technology information from skills.
 // Returns structured technology strings for Languages, Frontend, and Systems.
+//
+// Expected:
+//   - skills: slice of career skills with categories and names
+//
+// Returns:
+//   - TechnologyInference: struct with Languages, Frontend, and Systems slices
+//
+// Side effects:
+//   - None.
 func (s *ProfileInferenceService) InferTechnologies(
 	_ []*career.Event,
 	skills []*career.Skill,

@@ -1,9 +1,13 @@
 package cv
 
 import (
+	"bytes"
 	"context"
+	"fmt"
+	stdlog "log"
 	"sort"
 	"strings"
+	"text/template"
 	"time"
 
 	career "github.com/baphled/kariya/internal/domain/career"
@@ -19,6 +23,18 @@ type SkillsFormatConfig struct {
 	SelectedTechnologies []string
 }
 
+// SummaryConfig holds configuration for building the summary section.
+type SummaryConfig struct {
+	// SummaryHeading is a Go text/template string. Empty = no heading.
+	SummaryHeading string
+	// ProfileTitle is the profile title for template rendering.
+	ProfileTitle string
+	// WhatIBring contains value propositions from the profile config.
+	WhatIBring []string
+	// CoreStrengths contains core strengths from the profile config.
+	CoreStrengths []string
+}
+
 // skillInfo holds skill data for formatting.
 type skillInfo struct {
 	ID       string
@@ -30,6 +46,7 @@ type skillInfo struct {
 type SectionBuilder interface {
 	// BuildSections organizes bullets into CV sections
 	// skillsConfig: optional configuration for skills section formatting (Phase 11 - Task 40)
+	// summaryCfg: optional configuration for summary section formatting (nil is safe — no heading, no years)
 	BuildSections(
 		ctx context.Context,
 		bullets []*career.CVBullet,
@@ -37,6 +54,7 @@ type SectionBuilder interface {
 		facts []*career.Fact,
 		targetRole string,
 		skillsConfig *SkillsFormatConfig,
+		summaryCfg *SummaryConfig,
 	) ([]*career.CVSection, error)
 }
 
@@ -65,7 +83,21 @@ func NewSectionBuilder(skillRepo careerrepo.SkillRepository, log *logger.Logger)
 }
 
 // BuildSections organizes bullets into CV sections.
-func (sb *DefaultSectionBuilder) BuildSections(ctx context.Context, bullets []*career.CVBullet, events []*career.Event, facts []*career.Fact, targetRole string, skillsConfig *SkillsFormatConfig) ([]*career.CVSection, error) {
+//
+// Expected:
+//   - ctx must be a valid context.
+//   - bullets must be a valid slice of CVBullet pointers.
+//   - events must be a valid slice of Event pointers.
+//   - facts must be a valid slice of Fact pointers.
+//   - targetRole must be a non-empty string.
+//
+// Returns:
+//   - A slice of CVSection pointers organized by section type.
+//   - An error if the context is cancelled.
+//
+// Side effects:
+//   - None.
+func (sb *DefaultSectionBuilder) BuildSections(ctx context.Context, bullets []*career.CVBullet, events []*career.Event, facts []*career.Fact, targetRole string, skillsConfig *SkillsFormatConfig, summaryCfg *SummaryConfig) ([]*career.CVSection, error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
@@ -73,9 +105,10 @@ func (sb *DefaultSectionBuilder) BuildSections(ctx context.Context, bullets []*c
 	var sections []*career.CVSection
 	order := 0
 
-	// 1. Summary FIRST (prose)
+	// 1. Summary FIRST (prose with optional heading)
 	if sb.shouldIncludeSummary(targetRole) && len(bullets) > 0 {
-		summarySection := sb.buildSummarySection(bullets, order)
+		years := computeExperienceYears(events)
+		summarySection := sb.buildSummarySection(bullets, order, summaryCfg, years)
 		if summarySection != nil {
 			sections = append(sections, summarySection)
 			order++
@@ -107,6 +140,32 @@ func (sb *DefaultSectionBuilder) BuildSections(ctx context.Context, bullets []*c
 
 	sb.logger.Info("Built %d CV sections from %d bullets, %d events, %d facts", len(sections), len(bullets), len(events), len(facts))
 	return sections, nil
+}
+
+// computeExperienceYears calculates the wall-clock years of experience from event dates.
+// It uses the earliest and latest event dates to compute the span.
+// If the latest date is in the past, it computes years from earliest to now.
+func computeExperienceYears(events []*career.Event) int {
+	if len(events) == 0 {
+		return 0
+	}
+	earliest := events[0].Date
+	latest := events[0].Date
+	for _, e := range events[1:] {
+		if e.Date.Before(earliest) {
+			earliest = e.Date
+		}
+		if e.Date.After(latest) {
+			latest = e.Date
+		}
+	}
+	// Use current time if latest is in the past
+	end := latest
+	if end.Before(time.Now()) {
+		end = time.Now()
+	}
+	// Calculate years as wall-clock duration
+	return int(end.Sub(earliest).Hours() / (24 * 365.25))
 }
 
 // buildExperienceSection creates the experience section.
@@ -370,43 +429,121 @@ func (sb *DefaultSectionBuilder) buildGroupedSkills(skills []skillInfo, limitPer
 	return groups
 }
 
-// buildSummarySection creates a brief professional summary.
-func (sb *DefaultSectionBuilder) buildSummarySection(bullets []*career.CVBullet, order int) *career.CVSection {
+// firstSentence extracts the first sentence from text, capped at maxChars.
+// It splits on ". " to find the first sentence boundary. If the first sentence
+// exceeds maxChars, it truncates at the last word boundary before maxChars.
+// The result always ends with a period.
+func firstSentence(text string, maxChars int) string {
+	if text == "" {
+		return ""
+	}
+
+	sentence := text
+	if idx := strings.Index(text, ". "); idx >= 0 {
+		sentence = text[:idx]
+	}
+
+	sentence = strings.TrimRight(sentence, ".!? ")
+
+	if len(sentence) > maxChars {
+		truncated := sentence[:maxChars]
+		if lastSpace := strings.LastIndex(truncated, " "); lastSpace > 0 {
+			truncated = truncated[:lastSpace]
+		}
+		sentence = truncated
+	}
+
+	sentence = strings.TrimRight(sentence, ".!?, ")
+	if sentence == "" {
+		return ""
+	}
+
+	return sentence + "."
+}
+
+// summaryTemplateData holds data for rendering the summary heading template.
+type summaryTemplateData struct {
+	Title string
+	Years int
+}
+
+// buildSummarySection creates a professional summary from top 3 bullets with optional heading.
+// If summaryCfg is provided with a non-empty SummaryHeading, the heading is rendered as a
+// Go text/template with {{.Title}} and {{.Years}} variables, followed by the prose.
+//
+//nolint:unparam // order is currently always 0 but kept for API consistency with other section builders
+func (sb *DefaultSectionBuilder) buildSummarySection(bullets []*career.CVBullet, order int, summaryCfg *SummaryConfig, years int) *career.CVSection {
 	if len(bullets) == 0 {
 		return nil
 	}
 
-	// Use top 2 bullets to create summary prose
-	summaryBullets := bullets
-	if len(summaryBullets) > 2 {
-		summaryBullets = summaryBullets[:2]
+	var prose string
+
+	// Build prose from top bullets — each bullet's first sentence joined as flowing paragraph
+	var summaryParts []string
+	for _, bullet := range bullets {
+		if len(summaryParts) >= 2 {
+			break
+		}
+		text := strings.TrimSpace(bullet.Text)
+		text = strings.TrimPrefix(text, "- ")
+		text = strings.TrimPrefix(text, "* ")
+
+		sentence := firstSentence(text, 150)
+		if sentence != "" {
+			summaryParts = append(summaryParts, sentence)
+		}
 	}
 
-	var content strings.Builder
-	content.WriteString("Experienced professional specializing in ")
-
-	// Extract key terms from top bullets
-	keyTerms := sb.extractKeyTerms(summaryBullets)
-	if len(keyTerms) > 0 {
-		content.WriteString(strings.Join(keyTerms, ", "))
-		content.WriteString(". ")
+	if len(summaryParts) > 0 {
+		// Join sentences with space only (each already ends with ".")
+		prose = strings.Join(summaryParts, " ")
 	}
 
-	content.WriteString("Proven track record of delivering high-quality results.")
+	// Render heading template if provided
+	var heading string
+	if summaryCfg != nil && summaryCfg.SummaryHeading != "" {
+		tmpl, err := template.New("summary").Parse(summaryCfg.SummaryHeading)
+		if err != nil {
+			stdlog.Printf("WARNING: failed to parse summary heading template: %v", err)
+		} else {
+			data := summaryTemplateData{
+				Title: summaryCfg.ProfileTitle,
+				Years: years,
+			}
+			var buf bytes.Buffer
+			if err := tmpl.Execute(&buf, data); err != nil {
+				stdlog.Printf("WARNING: failed to execute summary heading template: %v", err)
+			} else {
+				heading = buf.String()
+			}
+		}
+	} else if summaryCfg != nil && summaryCfg.ProfileTitle != "" && years > 0 {
+		// Auto-generate heading from ProfileTitle and computed years
+		heading = fmt.Sprintf("**%s | %d+ Years Experience**", summaryCfg.ProfileTitle, years)
+	}
+
+	// Combine heading and prose
+	var summary string
+	if heading != "" {
+		summary = heading + "\n" + prose
+	} else {
+		summary = prose
+	}
 
 	return &career.CVSection{
 		ID:          uuid.New().String(),
 		SectionType: "summary",
 		Title:       "Professional Summary",
 		Order:       order,
-		Summary:     content.String(),
+		Summary:     summary,
 		Content:     nil,
 	}
 }
 
 // groupBulletsByCompany groups bullets by company from source events.
 // It detects separate tenures when events at OTHER companies exist between
-// two periods at the same company (BUG-009 fix).
+// two periods at the same company (issue #009 fix).
 func (sb *DefaultSectionBuilder) groupBulletsByCompany(bullets []*career.CVBullet, events []*career.Event) []*bulletGroup {
 	// Create map of event ID to event.
 	eventMap := make(map[string]*career.Event)
@@ -452,7 +589,7 @@ func (sb *DefaultSectionBuilder) groupBulletsByCompany(bullets []*career.CVBulle
 		}
 
 		// Second pass: compute dates using only events from the primary company.
-		// BUG-014: Previously dates were computed across ALL companies in a single
+		// Previously dates were computed across ALL companies in a single
 		// pass, which corrupted date ranges when SourceEventIDs spanned companies.
 		var earliestDate, latestDate time.Time
 		for _, eventID := range bullet.SourceEventIDs {
@@ -527,7 +664,7 @@ func (sb *DefaultSectionBuilder) groupBulletsByCompany(bullets []*career.CVBulle
 
 // detectBulletTenures splits a company's bullets into separate tenure groups.
 // A new tenure is detected when events at OTHER companies fall between
-// two consecutive bullets at this company (BUG-009).
+// two consecutive bullets at this company (issue #009).
 func (sb *DefaultSectionBuilder) detectBulletTenures(
 	companyBullets []bulletInfo,
 	company string,
@@ -640,53 +777,10 @@ func (sb *DefaultSectionBuilder) groupBulletsByProject(bullets []*career.CVBulle
 	return groupSlice
 }
 
-// extractKeyTerms extracts key terms from bullets for summary.
-func (sb *DefaultSectionBuilder) extractKeyTerms(bullets []*career.CVBullet) []string {
-	terms := make(map[string]bool)
-
-	for _, bullet := range bullets {
-		// Extract nouns and important terms
-		words := strings.Fields(bullet.Text)
-		for i, word := range words {
-			word = strings.ToLower(word)
-			// Skip common words and short words
-			if len(word) > 4 && !isCommonWord(word) {
-				terms[word] = true
-			}
-			// Also look for two-word combinations
-			if i < len(words)-1 {
-				phrase := word + " " + strings.ToLower(words[i+1])
-				if len(phrase) > 6 {
-					terms[phrase] = true
-				}
-			}
-		}
-	}
-
-	// Convert to slice and limit to 3 terms
-	var result []string
-	count := 0
-	for term := range terms {
-		if count >= 3 {
-			break
-		}
-		result = append(result, term)
-		count++
-	}
-
-	sort.Strings(result)
-	return result
-}
-
 // shouldIncludeSummary determines if a summary section should be included.
-func (sb *DefaultSectionBuilder) shouldIncludeSummary(targetRole string) bool {
-	// Include summary for higher-level roles
-	switch strings.ToLower(targetRole) {
-	case "principal", "staff":
-		return true
-	default:
-		return false
-	}
+// Summary sections are now generated for ALL target roles.
+func (sb *DefaultSectionBuilder) shouldIncludeSummary(_ string) bool {
+	return true
 }
 
 // bulletGroup represents a group of bullets under a company/project.
@@ -697,7 +791,7 @@ type bulletGroup struct {
 	bullets   []*career.CVBullet
 }
 
-// bulletInfo holds information about a bullet for tenure detection (BUG-009).
+// bulletInfo holds information about a bullet for tenure detection (issue #009).
 type bulletInfo struct {
 	bullet       *career.CVBullet
 	company      string
@@ -711,91 +805,6 @@ func formatMonthYear(t time.Time) string {
 		return ""
 	}
 	return t.Format("Jan 2006")
-}
-
-// isCommonWord checks if a word is a common word to skip.
-func isCommonWord(word string) bool {
-	commonWords := map[string]bool{
-		"and":     true,
-		"the":     true,
-		"for":     true,
-		"with":    true,
-		"from":    true,
-		"that":    true,
-		"this":    true,
-		"have":    true,
-		"been":    true,
-		"were":    true,
-		"will":    true,
-		"your":    true,
-		"their":   true,
-		"would":   true,
-		"about":   true,
-		"which":   true,
-		"when":    true,
-		"make":    true,
-		"like":    true,
-		"time":    true,
-		"just":    true,
-		"know":    true,
-		"take":    true,
-		"people":  true,
-		"into":    true,
-		"year":    true,
-		"could":   true,
-		"them":    true,
-		"some":    true,
-		"than":    true,
-		"then":    true,
-		"now":     true,
-		"look":    true,
-		"only":    true,
-		"come":    true,
-		"its":     true,
-		"over":    true,
-		"think":   true,
-		"also":    true,
-		"back":    true,
-		"after":   true,
-		"use":     true,
-		"two":     true,
-		"how":     true,
-		"our":     true,
-		"work":    true,
-		"first":   true,
-		"well":    true,
-		"way":     true,
-		"even":    true,
-		"new":     true,
-		"want":    true,
-		"because": true,
-		"any":     true,
-		"these":   true,
-		"give":    true,
-		"day":     true,
-		"most":    true,
-		"does":    true,
-		"very":    true,
-		"through": true,
-		"being":   true,
-		"each":    true,
-		"much":    true,
-		"made":    true,
-		"many":    true,
-		"must":    true,
-		"before":  true,
-		"such":    true,
-		"where":   true,
-		"those":   true,
-		"both":    true,
-		"during":  true,
-		"same":    true,
-		"until":   true,
-		"while":   true,
-		"too":     true,
-		"try":     true,
-	}
-	return commonWords[word]
 }
 
 // getBulletsPerCompanyForRole returns the maximum bullets per company for a role.

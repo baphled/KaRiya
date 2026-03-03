@@ -17,6 +17,9 @@ var (
 	configPathMu       sync.RWMutex
 )
 
+var userHomeDir = os.UserHomeDir
+var yamlMarshal = yaml.Marshal
+
 // isTestEnvironment checks if we're running in a test environment.
 // This detects both `go test` and test binaries.
 func isTestEnvironment() bool {
@@ -38,7 +41,7 @@ func isTestEnvironment() bool {
 
 // requireTestIsolation panics if we're in a test environment but the config
 // path override hasn't been set. This prevents tests from accidentally
-// writing to the user's real config file (BUG-007 prevention).
+// writing to the user's real config file (prevents test pollution).
 func requireTestIsolation(operation string) {
 	if !isTestEnvironment() {
 		return
@@ -50,7 +53,7 @@ func requireTestIsolation(operation string) {
 
 	if !hasOverride {
 		panic(fmt.Sprintf(
-			"BUG-007 PROTECTION: %s called in test without config isolation!\n\n"+
+			"Test isolation required: %s called in test without config isolation!\n\n"+
 				"Tests must isolate config writes to prevent polluting ~/.kariya/config.yaml.\n\n"+
 				"Fix: Call config.SetConfigPathForTesting(path) before using %s,\n"+
 				"     or use harness.Setup()/harness.SetupWithOnboarding() which handle isolation.\n\n"+
@@ -83,6 +86,8 @@ type SystemConfig struct {
 
 // ProfileConfig contains user profile configuration.
 type ProfileConfig struct {
+	// Name is kept for backward compatibility. Prefer FirstName/LastName.
+	// Will be removed once all callers are updated to use FirstName and LastName.
 	Name            string `yaml:"name"`
 	Email           string `yaml:"email"`
 	DefaultRole     string `yaml:"default_role"`
@@ -98,6 +103,16 @@ type ProfileConfig struct {
 	Frontend      []string `yaml:"frontend"`
 	Systems       []string `yaml:"systems"`
 	WhatIBring    []string `yaml:"what_i_bring"`
+	// New profile fields
+	FirstName      string `yaml:"first_name,omitempty"`
+	LastName       string `yaml:"last_name,omitempty"`
+	Prefix         string `yaml:"prefix,omitempty"`
+	Phone          string `yaml:"phone,omitempty"`
+	LinkedIn       string `yaml:"linkedin,omitempty"`
+	Country        string `yaml:"country,omitempty"`
+	SkillsLimit    int    `yaml:"skills_limit,omitempty"`
+	SummaryHeading string `yaml:"summary_heading,omitempty"`
+	MaxHighlights  int    `yaml:"max_highlights,omitempty"`
 }
 
 // CVConfig contains CV generation configuration.
@@ -185,7 +200,7 @@ func (s *ScoringConfig) ValidateWeights() error {
 // Side effects:
 //   - None.
 func DefaultConfig() *Config {
-	homeDir, err := os.UserHomeDir()
+	homeDir, err := userHomeDir()
 	if err != nil {
 		// Fallback to current directory if home dir unavailable
 		homeDir = "."
@@ -297,9 +312,48 @@ func ResetConfigPath() {
 	configPathOverride = ""
 }
 
+// SwapHomeDirForTesting replaces the home directory resolver for testing.
+//
+// Expected:
+//   - fn must be a valid function matching os.UserHomeDir signature.
+//
+// Returns:
+//   - A cleanup function that restores the original resolver.
+//
+// Side effects:
+//   - Replaces the package-level userHomeDir function.
+func SwapHomeDirForTesting(fn func() (string, error)) func() {
+	original := userHomeDir
+	userHomeDir = fn
+	return func() { userHomeDir = original }
+}
+
+// SwapYamlMarshalForTesting replaces the YAML marshaller for testing.
+//
+// Expected:
+//   - fn must be a valid function matching yaml.Marshal signature.
+//
+// Returns:
+//   - A cleanup function that restores the original marshaller.
+//
+// Side effects:
+//   - Replaces the package-level yamlMarshal function.
+func SwapYamlMarshalForTesting(fn func(interface{}) ([]byte, error)) func() {
+	original := yamlMarshal
+	yamlMarshal = fn
+	return func() { yamlMarshal = original }
+}
+
 // GetConfigPath returns the path to the config file.
 // If SetConfigPathForTesting was called, returns the overridden path.
 // Otherwise, returns the default path: ~/.kariya/config.yaml.
+//
+// Returns:
+//   - string: The path to the config file.
+//   - error: An error if the home directory cannot be determined.
+//
+// Side effects:
+//   - None.
 func GetConfigPath() (string, error) {
 	configPathMu.RLock()
 	override := configPathOverride
@@ -309,7 +363,7 @@ func GetConfigPath() (string, error) {
 		return override, nil
 	}
 
-	homeDir, err := os.UserHomeDir()
+	homeDir, err := userHomeDir()
 	if err != nil {
 		return "", fmt.Errorf("failed to get home directory: %w", err)
 	}
@@ -319,6 +373,13 @@ func GetConfigPath() (string, error) {
 
 // LoadConfig loads configuration from the default location.
 // In test environments, this will panic if SetConfigPathForTesting hasn't been called.
+//
+// Returns:
+//   - *Config: The loaded configuration.
+//   - error: An error if the config cannot be loaded.
+//
+// Side effects:
+//   - Panics in test environments if config path isolation is not set.
 func LoadConfig() (*Config, error) {
 	requireTestIsolation("config.LoadConfig()")
 
@@ -331,6 +392,17 @@ func LoadConfig() (*Config, error) {
 }
 
 // LoadConfigFromPath loads configuration from a specific file path.
+//
+// Expected:
+//   - path: A valid file path string.
+//
+// Returns:
+//   - *Config: The loaded configuration, or default config if file doesn't exist.
+//   - error: An error if the config cannot be read or parsed.
+//
+// Side effects:
+//   - Reads from the filesystem.
+//   - Applies default values to missing fields.
 func LoadConfigFromPath(path string) (*Config, error) {
 	// Clean path to prevent path traversal attacks
 	cleanPath := filepath.Clean(path)
@@ -353,6 +425,9 @@ func LoadConfigFromPath(path string) (*Config, error) {
 
 	// Apply defaults for any missing values
 	applyDefaults(&cfg)
+
+	// Migrate legacy Name field to FirstName/LastName/Prefix
+	MigrateProfileConfig(&cfg)
 
 	return &cfg, nil
 }
@@ -381,6 +456,9 @@ func applyDefaults(cfg *Config) {
 	}
 	if cfg.Profile.DefaultAudience == "" {
 		cfg.Profile.DefaultAudience = defaults.Profile.DefaultAudience
+	}
+	if cfg.Profile.MaxHighlights == 0 {
+		cfg.Profile.MaxHighlights = 5
 	}
 
 	// CV defaults
@@ -496,7 +574,7 @@ func SaveConfigToPath(cfg *Config, path string) error {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
 
-	data, err := yaml.Marshal(cfg)
+	data, err := yamlMarshal(cfg)
 	if err != nil {
 		return fmt.Errorf("failed to marshal config: %w", err)
 	}
@@ -506,4 +584,93 @@ func SaveConfigToPath(cfg *Config, path string) error {
 	}
 
 	return nil
+}
+
+// MigrateProfileConfig migrates legacy Name field to FirstName/LastName/Prefix.
+//
+// This function parses the Name field and populates FirstName, LastName, and Prefix
+// based on common name formats. Migration only occurs when Name is populated AND
+// both FirstName and LastName are empty (indicating a legacy config).
+//
+// If FirstName or LastName is already set, migration is skipped to avoid overwriting
+// user data.
+//
+// Supported name formats:
+//   - "John Doe" -> Prefix="", FirstName="John", LastName="Doe"
+//   - "Dr. Jane Smith" -> Prefix="Dr.", FirstName="Jane", LastName="Smith"
+//   - "John Paul Jones" -> Prefix="", FirstName="John", LastName="Paul Jones"
+//   - "Madonna" -> Prefix="", FirstName="Madonna", LastName=""
+//   - "Mary-Jane Watson-Parker" -> Prefix="", FirstName="Mary-Jane", LastName="Watson-Parker"
+//
+// Supported prefixes: Dr., Prof., Mr., Mrs., Ms.
+//
+// Expected:
+//   - cfg: A valid Config pointer.
+//
+// Returns:
+//   - bool: True if migration was performed, false if skipped.
+//
+// Side effects:
+//   - Modifies cfg.Profile.FirstName, cfg.Profile.LastName, and cfg.Profile.Prefix.
+func MigrateProfileConfig(cfg *Config) bool {
+	// Migration is needed only when Name is populated but both FirstName and LastName are empty
+	if cfg.Profile.Name == "" || cfg.Profile.FirstName != "" || cfg.Profile.LastName != "" {
+		return false
+	}
+
+	name := cfg.Profile.Name
+
+	// Define prefixes to detect
+	prefixes := []string{"Dr.", "Prof.", "Mr.", "Mrs.", "Ms."}
+
+	var prefix string
+	var remaining string
+
+	// Check for prefix
+	for _, p := range prefixes {
+		if len(name) > len(p) && name[:len(p)] == p && name[len(p)] == ' ' {
+			prefix = p
+			remaining = name[len(p):]
+			break
+		}
+	}
+
+	if prefix == "" {
+		remaining = name
+	}
+
+	// Trim leading space from remaining
+	remaining = trimLeadingSpace(remaining)
+
+	// Split on first space to get first name and last name
+	spaceIndex := -1
+	for i, ch := range remaining {
+		if ch == ' ' {
+			spaceIndex = i
+			break
+		}
+	}
+
+	if spaceIndex == -1 {
+		// Single name (e.g., "Madonna")
+		cfg.Profile.FirstName = remaining
+		cfg.Profile.LastName = ""
+	} else {
+		cfg.Profile.FirstName = remaining[:spaceIndex]
+		cfg.Profile.LastName = trimLeadingSpace(remaining[spaceIndex:])
+	}
+
+	cfg.Profile.Prefix = prefix
+
+	return true
+}
+
+// trimLeadingSpace removes leading spaces from a string.
+func trimLeadingSpace(s string) string {
+	for i, ch := range s {
+		if ch != ' ' && ch != '\t' {
+			return s[i:]
+		}
+	}
+	return ""
 }

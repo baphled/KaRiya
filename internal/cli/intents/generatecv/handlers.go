@@ -193,8 +193,43 @@ func (i *Intent) handleCVGenerated(msg CVGenerationCompleteMsg) tea.Cmd {
 
 // transitionToReviewScreen creates and activates the review screen.
 func (i *Intent) transitionToReviewScreen() {
-	i.reviewScreen = cv.NewCVReviewScreenWithProfile(i.generatedCV, i.context.ProfileConfig)
+	summary := i.buildGenerationSummaryScreen()
+	i.reviewScreen = cv.NewCVReviewScreenWithSummary(i.generatedCV, i.context.ProfileConfig, summary)
 	i.activeScreen = i.reviewScreen
+}
+
+// buildGenerationSummaryScreen constructs a GenerationSummaryScreen from intent state.
+func (i *Intent) buildGenerationSummaryScreen() *cv.GenerationSummaryScreen {
+	summary := &cv.GenerationSummaryScreen{
+		SelectedAudience: i.selectedAudience,
+		TechnologyFocus:  string(i.selectedTechnologyFocus),
+		Technologies:     i.selectedTechnologies,
+		FocusArea:        string(i.selectedFocusArea),
+		SkillsFormat:     i.selectedSkillsFormat,
+		SkillsLimit:      i.selectedSkillsLimit,
+		CVLength:         i.selectedCVLength,
+	}
+	if i.selectedProfile != nil {
+		summary.SelectedProfile = i.selectedProfile
+	}
+	if i.generatedCV != nil {
+		summary.SectionCount = len(i.generatedCV.Sections)
+		summary.SourceEventCount = i.generatedCV.SourceEventCount
+		summary.SourceFactCount = i.generatedCV.SourceFactCount
+		summary.TotalBullets = countCVBullets(i.generatedCV.Sections)
+	}
+	return summary
+}
+
+// countCVBullets counts the total number of bullets across all sections.
+func countCVBullets(sections []*career.CVSection) int {
+	count := 0
+	for _, section := range sections {
+		for _, group := range section.Content {
+			count += len(group.Bullets)
+		}
+	}
+	return count
 }
 
 // transitionToPreviewScreen creates and activates the preview screen.

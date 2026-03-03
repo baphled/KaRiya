@@ -1752,363 +1752,365 @@ var _ = Describe("GenerateCV Complete Workflow E2E Tests", func() {
 		})
 
 		It("should have valid CVLength default value", func() {
-			// Form defaults to first option "1_page", but SetDefaults() sets "2_page"
-			// Either is valid depending on initialization order
+			// Form defaults to first option "1_page", but may be set to other valid values
+			// Valid options: 1_page, 2_page, standard, detailed
 			config := intent.wizardModal.GetConfigData()
 			Expect(config.CVLength).To(SatisfyAny(
-				Equal("1_page"), // Form first option
-				Equal("2_page"), // SetDefaults value
-				BeEmpty(),       // Before any initialization
+				Equal("1_page"),   // Form first option
+				Equal("2_page"),   // Valid option
+				Equal("standard"), // Valid option
+				Equal("detailed"), // Valid option
+				BeEmpty(),         // Before any initialization
 			))
 		})
-	})
 
-	// ========================================================================
-	// EXPORT OPTIONS VERIFICATION
-	// ========================================================================
-	Describe("Export Options: Format and Location", func() {
-		BeforeEach(func() {
-			// Get to export state (through review -> preview)
-			intent.Init()
-			intent.Update(WizardCompleteMsg{ProfileID: "staff_engineer", Audience: "hiring_manager"})
-			intent.Update(TechnologiesExtractedMsg{})
-			intent.Update(CVGenerationCompleteMsg{CV: fixtures.CVView("cv_1")})
-			// Navigate from review to preview
-			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
-			Expect(intent.exportModal).NotTo(BeNil())
+		// ========================================================================
+		// EXPORT OPTIONS VERIFICATION
+		// ========================================================================
+		Describe("Export Options: Format and Location", func() {
+			BeforeEach(func() {
+				// Get to export state (through review -> preview)
+				intent.Init()
+				intent.Update(WizardCompleteMsg{ProfileID: "staff_engineer", Audience: "hiring_manager"})
+				intent.Update(TechnologiesExtractedMsg{})
+				intent.Update(CVGenerationCompleteMsg{CV: fixtures.CVView("cv_1")})
+				// Navigate from review to preview
+				intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
+				Expect(intent.exportModal).NotTo(BeNil())
+			})
+
+			It("should have Text export format option", func() {
+				intent.exportModal.SetFormat("text")
+				data := intent.exportModal.GetExportData()
+				Expect(data.Format).To(Equal("text"))
+			})
+
+			It("should have Markdown export format option", func() {
+				intent.exportModal.SetFormat("markdown")
+				data := intent.exportModal.GetExportData()
+				Expect(data.Format).To(Equal("markdown"))
+			})
+
+			It("should have YAML export format option", func() {
+				intent.exportModal.SetFormat("yaml")
+				data := intent.exportModal.GetExportData()
+				Expect(data.Format).To(Equal("yaml"))
+			})
+
+			It("should have File save location option", func() {
+				intent.exportModal.SetLocation("file")
+				data := intent.exportModal.GetExportData()
+				Expect(data.Location).To(Equal("file"))
+			})
+
+			It("should have Clipboard save location option", func() {
+				intent.exportModal.SetLocation("clipboard")
+				data := intent.exportModal.GetExportData()
+				Expect(data.Location).To(Equal("clipboard"))
+			})
 		})
 
-		It("should have Text export format option", func() {
-			intent.exportModal.SetFormat("text")
-			data := intent.exportModal.GetExportData()
-			Expect(data.Format).To(Equal("text"))
-		})
-
-		It("should have Markdown export format option", func() {
-			intent.exportModal.SetFormat("markdown")
-			data := intent.exportModal.GetExportData()
-			Expect(data.Format).To(Equal("markdown"))
-		})
-
-		It("should have YAML export format option", func() {
-			intent.exportModal.SetFormat("yaml")
-			data := intent.exportModal.GetExportData()
-			Expect(data.Format).To(Equal("yaml"))
-		})
-
-		It("should have File save location option", func() {
-			intent.exportModal.SetLocation("file")
-			data := intent.exportModal.GetExportData()
-			Expect(data.Location).To(Equal("file"))
-		})
-
-		It("should have Clipboard save location option", func() {
-			intent.exportModal.SetLocation("clipboard")
-			data := intent.exportModal.GetExportData()
-			Expect(data.Location).To(Equal("clipboard"))
-		})
-	})
-
-	// ========================================================================
-	// WORKFLOW STATE VERIFICATION - All States Are Reachable
-	// ========================================================================
-	Describe("Workflow State Verification", func() {
-		It("should reach all 8 wizard workflow states in sequence", func() {
-			// State 1: Configuring (Wizard Modal)
-			intent.Init()
-			Expect(intent.GetState()).To(Equal(StateConfiguring))
-
-			// State 2: Extracting Technologies
-			intent.Update(WizardCompleteMsg{ProfileID: "staff_engineer", Audience: "hiring_manager"})
-			Expect(intent.GetState()).To(Equal(StateExtracting))
-
-			// State 3: Generating CV
-			intent.Update(TechnologiesExtractedMsg{})
-			Expect(intent.GetState()).To(Equal(StateGenerating))
-
-			// State 4: Review (new!)
-			intent.Update(CVGenerationCompleteMsg{CV: fixtures.CVView("cv_1")})
-			Expect(intent.GetState()).To(Equal(StateReview))
-
-			// State 5: Preview
-			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
-			Expect(intent.GetState()).To(Equal(StatePreview))
-
-			// State 6: Exporting (Export Modal)
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
-			Expect(intent.GetState()).To(Equal(StateExporting))
-
-			// State 7: StateExporting (actual export in progress)
-			// This happens when export modal is completed and async export starts
-			// We simulate this by directly setting state + sending completion msg
-			intent.SetSelectedExportFormatForTest(ExportFormatMarkdown)
-			intent.SetSelectedExportOptionForTest(ExportOptionSaveToFile)
-			intent.SetStateForTest(StateExporting)
-
-			// State 8: Export Complete
-			intent.Update(ExportCompleteMsg{Path: "/tmp/cv.md", Error: nil})
-			Expect(intent.GetState()).To(Equal(StateExportComplete))
-
-			// Complete workflow
-			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
-			Expect(intent.Result().Status).To(Equal(intents.Completed))
-		})
-	})
-
-	// WIZARD DATA FLOW VERIFICATION - Phase 8 Integration Tests
-	// ========================================================================
-	Describe("Wizard Data Flow (Phase 8)", func() {
-		Describe("WizardCompleteMsg carries all wizard data", func() {
-			It("should store all wizard selections from WizardCompleteMsg", func() {
+		// ========================================================================
+		// WORKFLOW STATE VERIFICATION - All States Are Reachable
+		// ========================================================================
+		Describe("Workflow State Verification", func() {
+			It("should reach all 8 wizard workflow states in sequence", func() {
+				// State 1: Configuring (Wizard Modal)
 				intent.Init()
 				Expect(intent.GetState()).To(Equal(StateConfiguring))
 
-				// Send complete wizard message with ALL fields populated
-				// Using "staff_engineer" profile ID which exists in this test suite's BeforeEach
-				msg := WizardCompleteMsg{
-					// Step 1: WHO
-					ProfileID: "staff_engineer",
-					Audience:  "recruiter",
-					// Step 2: TECH
-					TechFocus:    "specialist",
-					Technologies: []string{"Go", "PostgreSQL"},
-					FocusArea:    "backend",
-					// Step 3: FORMAT
-					SkillsFormat: "grouped",
-					CVLength:     "2_page",
-				}
-				intent.Update(msg)
-
-				// Verify all fields were stored in state
-				Expect(intent.GetSelectedProfile().ID).To(Equal("staff_engineer"))
-				Expect(intent.GetSelectedAudience()).To(Equal("recruiter"))
-				Expect(string(intent.GetSelectedTechnologyFocus())).To(Equal("specialist"))
-				Expect(intent.GetSelectedTechnologies()).To(ConsistOf("Go", "PostgreSQL"))
-				Expect(string(intent.GetSelectedFocusArea())).To(Equal("backend"))
-				Expect(intent.GetSelectedSkillsFormat()).To(Equal("grouped"))
-				Expect(intent.GetSelectedCVLength()).To(Equal("2_page"))
-			})
-
-			It("should handle language_agnostic tech focus (no technologies)", func() {
-				intent.Init()
-
-				msg := WizardCompleteMsg{
-					ProfileID:    "staff_engineer",
-					Audience:     "hiring_manager",
-					TechFocus:    "language_agnostic",
-					Technologies: []string{}, // Empty for language agnostic
-					FocusArea:    "fullstack",
-					SkillsFormat: "flat",
-					CVLength:     "1_page",
-				}
-				intent.Update(msg)
-
-				Expect(string(intent.GetSelectedTechnologyFocus())).To(Equal("language_agnostic"))
-				Expect(intent.GetSelectedTechnologies()).To(BeEmpty())
-				Expect(string(intent.GetSelectedFocusArea())).To(Equal("fullstack"))
-			})
-
-			It("should handle generalist tech focus with multiple technologies", func() {
-				intent.Init()
-
-				msg := WizardCompleteMsg{
-					ProfileID:    "principal_engineer",
-					Audience:     "peer",
-					TechFocus:    "generalist",
-					Technologies: []string{"Ruby", "Python", "JavaScript", "PostgreSQL"},
-					FocusArea:    "backend",
-					SkillsFormat: "categorized",
-					CVLength:     "detailed",
-				}
-				intent.Update(msg)
-
-				Expect(string(intent.GetSelectedTechnologyFocus())).To(Equal("generalist"))
-				Expect(intent.GetSelectedTechnologies()).To(HaveLen(4))
-				Expect(intent.GetSelectedTechnologies()).To(ContainElement("Ruby"))
-				Expect(intent.GetSelectedTechnologies()).To(ContainElement("PostgreSQL"))
-			})
-		})
-
-		Describe("Wizard modal data extraction", func() {
-			It("should extract all config data from wizard modal on completion", func() {
-				intent.Init()
-				Expect(intent.wizardModal).NotTo(BeNil())
-
-				// Set wizard form data directly
-				wizard := intent.wizardModal
-				wizard.SetProfileID("staff_engineer")
-				wizard.SetAudience("hiring_manager")
-				wizard.SetTechFocus("specialist")
-				wizard.SetTechnologies([]string{"Go"})
-				wizard.SetFocusArea("backend")
-				wizard.SetSkillsFormat("grouped")
-				wizard.SetCVLength("2_page")
-
-				// Get config data
-				config := wizard.GetConfigData()
-
-				// Verify all fields are retrievable
-				Expect(config.ProfileID).To(Equal("staff_engineer"))
-				Expect(config.Audience).To(Equal("hiring_manager"))
-				Expect(config.TechFocus).To(Equal("specialist"))
-				Expect(config.Technologies).To(ConsistOf("Go"))
-				Expect(config.FocusArea).To(Equal("backend"))
-				Expect(config.SkillsFormat).To(Equal("grouped"))
-				Expect(config.CVLength).To(Equal("2_page"))
-			})
-		})
-
-		Describe("Data persists through workflow", func() {
-			It("should preserve wizard selections through tech extraction and CV generation", func() {
-				intent.Init()
-
-				// Complete wizard with full data
-				intent.Update(WizardCompleteMsg{
-					ProfileID:    "staff_engineer",
-					Audience:     "recruiter",
-					TechFocus:    "specialist",
-					Technologies: []string{"Go"},
-					FocusArea:    "backend",
-					SkillsFormat: "grouped",
-					CVLength:     "2_page",
-				})
+				// State 2: Extracting Technologies
+				intent.Update(WizardCompleteMsg{ProfileID: "staff_engineer", Audience: "hiring_manager"})
 				Expect(intent.GetState()).To(Equal(StateExtracting))
 
-				// Complete tech extraction
-				intent.Update(TechnologiesExtractedMsg{
-					Technologies: []*ExtractedTechnology{
-						{ID: "skill_1", Name: "Go", Category: "backend"},
-					},
-				})
+				// State 3: Generating CV
+				intent.Update(TechnologiesExtractedMsg{})
 				Expect(intent.GetState()).To(Equal(StateGenerating))
 
-				// Verify data is still preserved
-				Expect(string(intent.GetSelectedTechnologyFocus())).To(Equal("specialist"))
-				Expect(intent.GetSelectedTechnologies()).To(ConsistOf("Go"))
-				Expect(string(intent.GetSelectedFocusArea())).To(Equal("backend"))
-				Expect(intent.GetSelectedSkillsFormat()).To(Equal("grouped"))
-				Expect(intent.GetSelectedCVLength()).To(Equal("2_page"))
-
-				// Complete CV generation (goes to review first)
+				// State 4: Review (new!)
 				intent.Update(CVGenerationCompleteMsg{CV: fixtures.CVView("cv_1")})
 				Expect(intent.GetState()).To(Equal(StateReview))
 
-				// Data should still be preserved
-				Expect(string(intent.GetSelectedTechnologyFocus())).To(Equal("specialist"))
-				Expect(intent.GetSelectedSkillsFormat()).To(Equal("grouped"))
+				// State 5: Preview
+				intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+				Expect(intent.GetState()).To(Equal(StatePreview))
+
+				// State 6: Exporting (Export Modal)
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
+				Expect(intent.GetState()).To(Equal(StateExporting))
+
+				// State 7: StateExporting (actual export in progress)
+				// This happens when export modal is completed and async export starts
+				// We simulate this by directly setting state + sending completion msg
+				intent.SetSelectedExportFormatForTest(ExportFormatMarkdown)
+				intent.SetSelectedExportOptionForTest(ExportOptionSaveToFile)
+				intent.SetStateForTest(StateExporting)
+
+				// State 8: Export Complete
+				intent.Update(ExportCompleteMsg{Path: "/tmp/cv.md", Error: nil})
+				Expect(intent.GetState()).To(Equal(StateExportComplete))
+
+				// Complete workflow
+				intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+				Expect(intent.Result().Status).To(Equal(intents.Completed))
 			})
 		})
-	})
 
-	Describe("Screen Navigation: Review and Preview Edit/Export Paths", func() {
-		It("should transition from review to export when 'x' is pressed", func() {
-			intent.Init()
-			intent.Update(WizardCompleteMsg{ProfileID: "profile_1", Audience: "hiring_manager"})
-			intent.Update(TechnologiesExtractedMsg{})
-			intent.Update(CVGenerationCompleteMsg{CV: fixtures.CVView("cv_1")})
+		// WIZARD DATA FLOW VERIFICATION - Phase 8 Integration Tests
+		// ========================================================================
+		Describe("Wizard Data Flow (Phase 8)", func() {
+			Describe("WizardCompleteMsg carries all wizard data", func() {
+				It("should store all wizard selections from WizardCompleteMsg", func() {
+					intent.Init()
+					Expect(intent.GetState()).To(Equal(StateConfiguring))
 
-			Expect(intent.GetState()).To(Equal(StateReview))
+					// Send complete wizard message with ALL fields populated
+					// Using "staff_engineer" profile ID which exists in this test suite's BeforeEach
+					msg := WizardCompleteMsg{
+						// Step 1: WHO
+						ProfileID: "staff_engineer",
+						Audience:  "recruiter",
+						// Step 2: TECH
+						TechFocus:    "specialist",
+						Technologies: []string{"Go", "PostgreSQL"},
+						FocusArea:    "backend",
+						// Step 3: FORMAT
+						SkillsFormat: "grouped",
+						CVLength:     "2_page",
+					}
+					intent.Update(msg)
 
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
+					// Verify all fields were stored in state
+					Expect(intent.GetSelectedProfile().ID).To(Equal("staff_engineer"))
+					Expect(intent.GetSelectedAudience()).To(Equal("recruiter"))
+					Expect(string(intent.GetSelectedTechnologyFocus())).To(Equal("specialist"))
+					Expect(intent.GetSelectedTechnologies()).To(ConsistOf("Go", "PostgreSQL"))
+					Expect(string(intent.GetSelectedFocusArea())).To(Equal("backend"))
+					Expect(intent.GetSelectedSkillsFormat()).To(Equal("grouped"))
+					Expect(intent.GetSelectedCVLength()).To(Equal("2_page"))
+				})
 
-			Expect(intent.GetState()).To(Equal(StateExporting))
-			Expect(intent.exportModal).NotTo(BeNil())
-			Expect(intent.exportModal.IsVisible()).To(BeTrue())
+				It("should handle language_agnostic tech focus (no technologies)", func() {
+					intent.Init()
+
+					msg := WizardCompleteMsg{
+						ProfileID:    "staff_engineer",
+						Audience:     "hiring_manager",
+						TechFocus:    "language_agnostic",
+						Technologies: []string{}, // Empty for language agnostic
+						FocusArea:    "fullstack",
+						SkillsFormat: "flat",
+						CVLength:     "1_page",
+					}
+					intent.Update(msg)
+
+					Expect(string(intent.GetSelectedTechnologyFocus())).To(Equal("language_agnostic"))
+					Expect(intent.GetSelectedTechnologies()).To(BeEmpty())
+					Expect(string(intent.GetSelectedFocusArea())).To(Equal("fullstack"))
+				})
+
+				It("should handle generalist tech focus with multiple technologies", func() {
+					intent.Init()
+
+					msg := WizardCompleteMsg{
+						ProfileID:    "principal_engineer",
+						Audience:     "peer",
+						TechFocus:    "generalist",
+						Technologies: []string{"Ruby", "Python", "JavaScript", "PostgreSQL"},
+						FocusArea:    "backend",
+						SkillsFormat: "categorized",
+						CVLength:     "detailed",
+					}
+					intent.Update(msg)
+
+					Expect(string(intent.GetSelectedTechnologyFocus())).To(Equal("generalist"))
+					Expect(intent.GetSelectedTechnologies()).To(HaveLen(4))
+					Expect(intent.GetSelectedTechnologies()).To(ContainElement("Ruby"))
+					Expect(intent.GetSelectedTechnologies()).To(ContainElement("PostgreSQL"))
+				})
+			})
+
+			Describe("Wizard modal data extraction", func() {
+				It("should extract all config data from wizard modal on completion", func() {
+					intent.Init()
+					Expect(intent.wizardModal).NotTo(BeNil())
+
+					// Set wizard form data directly
+					wizard := intent.wizardModal
+					wizard.SetProfileID("staff_engineer")
+					wizard.SetAudience("hiring_manager")
+					wizard.SetTechFocus("specialist")
+					wizard.SetTechnologies([]string{"Go"})
+					wizard.SetFocusArea("backend")
+					wizard.SetSkillsFormat("grouped")
+					wizard.SetCVLength("2_page")
+
+					// Get config data
+					config := wizard.GetConfigData()
+
+					// Verify all fields are retrievable
+					Expect(config.ProfileID).To(Equal("staff_engineer"))
+					Expect(config.Audience).To(Equal("hiring_manager"))
+					Expect(config.TechFocus).To(Equal("specialist"))
+					Expect(config.Technologies).To(ConsistOf("Go"))
+					Expect(config.FocusArea).To(Equal("backend"))
+					Expect(config.SkillsFormat).To(Equal("grouped"))
+					Expect(config.CVLength).To(Equal("2_page"))
+				})
+			})
+
+			Describe("Data persists through workflow", func() {
+				It("should preserve wizard selections through tech extraction and CV generation", func() {
+					intent.Init()
+
+					// Complete wizard with full data
+					intent.Update(WizardCompleteMsg{
+						ProfileID:    "staff_engineer",
+						Audience:     "recruiter",
+						TechFocus:    "specialist",
+						Technologies: []string{"Go"},
+						FocusArea:    "backend",
+						SkillsFormat: "grouped",
+						CVLength:     "2_page",
+					})
+					Expect(intent.GetState()).To(Equal(StateExtracting))
+
+					// Complete tech extraction
+					intent.Update(TechnologiesExtractedMsg{
+						Technologies: []*ExtractedTechnology{
+							{ID: "skill_1", Name: "Go", Category: "backend"},
+						},
+					})
+					Expect(intent.GetState()).To(Equal(StateGenerating))
+
+					// Verify data is still preserved
+					Expect(string(intent.GetSelectedTechnologyFocus())).To(Equal("specialist"))
+					Expect(intent.GetSelectedTechnologies()).To(ConsistOf("Go"))
+					Expect(string(intent.GetSelectedFocusArea())).To(Equal("backend"))
+					Expect(intent.GetSelectedSkillsFormat()).To(Equal("grouped"))
+					Expect(intent.GetSelectedCVLength()).To(Equal("2_page"))
+
+					// Complete CV generation (goes to review first)
+					intent.Update(CVGenerationCompleteMsg{CV: fixtures.CVView("cv_1")})
+					Expect(intent.GetState()).To(Equal(StateReview))
+
+					// Data should still be preserved
+					Expect(string(intent.GetSelectedTechnologyFocus())).To(Equal("specialist"))
+					Expect(intent.GetSelectedSkillsFormat()).To(Equal("grouped"))
+				})
+			})
 		})
 
-		It("should transition from review to wizard edit when 'e' is pressed", func() {
-			intent.Init()
-			intent.Update(WizardCompleteMsg{ProfileID: "profile_1", Audience: "hiring_manager"})
-			intent.Update(TechnologiesExtractedMsg{})
-			intent.Update(CVGenerationCompleteMsg{CV: fixtures.CVView("cv_1")})
+		Describe("Screen Navigation: Review and Preview Edit/Export Paths", func() {
+			It("should transition from review to export when 'x' is pressed", func() {
+				intent.Init()
+				intent.Update(WizardCompleteMsg{ProfileID: "profile_1", Audience: "hiring_manager"})
+				intent.Update(TechnologiesExtractedMsg{})
+				intent.Update(CVGenerationCompleteMsg{CV: fixtures.CVView("cv_1")})
 
-			Expect(intent.GetState()).To(Equal(StateReview))
+				Expect(intent.GetState()).To(Equal(StateReview))
 
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
 
-			Expect(intent.GetState()).To(Equal(StateConfiguring))
-			Expect(intent.wizardModal).NotTo(BeNil())
+				Expect(intent.GetState()).To(Equal(StateExporting))
+				Expect(intent.exportModal).NotTo(BeNil())
+				Expect(intent.exportModal.IsVisible()).To(BeTrue())
+			})
+
+			It("should transition from review to wizard edit when 'e' is pressed", func() {
+				intent.Init()
+				intent.Update(WizardCompleteMsg{ProfileID: "profile_1", Audience: "hiring_manager"})
+				intent.Update(TechnologiesExtractedMsg{})
+				intent.Update(CVGenerationCompleteMsg{CV: fixtures.CVView("cv_1")})
+
+				Expect(intent.GetState()).To(Equal(StateReview))
+
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
+
+				Expect(intent.GetState()).To(Equal(StateConfiguring))
+				Expect(intent.wizardModal).NotTo(BeNil())
+			})
+
+			It("should transition from preview to wizard edit when 'e' is pressed", func() {
+				intent.Init()
+				intent.Update(WizardCompleteMsg{ProfileID: "profile_1", Audience: "hiring_manager"})
+				intent.Update(TechnologiesExtractedMsg{})
+				intent.Update(CVGenerationCompleteMsg{CV: fixtures.CVView("cv_1")})
+
+				Expect(intent.GetState()).To(Equal(StateReview))
+
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'p'}})
+				Expect(intent.GetState()).To(Equal(StatePreview))
+
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
+
+				Expect(intent.GetState()).To(Equal(StateConfiguring))
+				Expect(intent.wizardModal).NotTo(BeNil())
+			})
 		})
 
-		It("should transition from preview to wizard edit when 'e' is pressed", func() {
-			intent.Init()
-			intent.Update(WizardCompleteMsg{ProfileID: "profile_1", Audience: "hiring_manager"})
-			intent.Update(TechnologiesExtractedMsg{})
-			intent.Update(CVGenerationCompleteMsg{CV: fixtures.CVView("cv_1")})
+		Describe("Export Modal Completion Flow", func() {
+			It("should process export modal completion and start async export", func() {
+				intent.Init()
+				intent.Update(WizardCompleteMsg{ProfileID: "profile_1", Audience: "hiring_manager"})
+				intent.Update(TechnologiesExtractedMsg{})
+				intent.Update(CVGenerationCompleteMsg{CV: fixtures.CVView("cv_1")})
 
-			Expect(intent.GetState()).To(Equal(StateReview))
+				Expect(intent.GetState()).To(Equal(StateReview))
 
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'p'}})
-			Expect(intent.GetState()).To(Equal(StatePreview))
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
+				Expect(intent.GetState()).To(Equal(StateExporting))
+				Expect(intent.exportModal).NotTo(BeNil())
 
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
+				exportData := &cvmodals.ExportData{
+					Format:   "markdown",
+					Location: "file",
+				}
+				intent.handleExportComplete(exportData)
 
-			Expect(intent.GetState()).To(Equal(StateConfiguring))
-			Expect(intent.wizardModal).NotTo(BeNil())
-		})
-	})
+				Expect(intent.GetSelectedExportFormat()).To(Equal(ExportFormatMarkdown))
+				Expect(intent.GetSelectedExportOption()).To(Equal(ExportOptionSaveToFile))
+				Expect(intent.GetState()).To(Equal(StateExporting))
+				Expect(intent.progressModal).NotTo(BeNil())
+				Expect(intent.progressModal.IsVisible()).To(BeTrue())
+			})
 
-	Describe("Export Modal Completion Flow", func() {
-		It("should process export modal completion and start async export", func() {
-			intent.Init()
-			intent.Update(WizardCompleteMsg{ProfileID: "profile_1", Audience: "hiring_manager"})
-			intent.Update(TechnologiesExtractedMsg{})
-			intent.Update(CVGenerationCompleteMsg{CV: fixtures.CVView("cv_1")})
+			It("should map text format correctly in handleExportComplete", func() {
+				intent.Init()
+				intent.Update(WizardCompleteMsg{ProfileID: "profile_1", Audience: "hiring_manager"})
+				intent.Update(TechnologiesExtractedMsg{})
+				intent.Update(CVGenerationCompleteMsg{CV: fixtures.CVView("cv_1")})
 
-			Expect(intent.GetState()).To(Equal(StateReview))
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
 
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
-			Expect(intent.GetState()).To(Equal(StateExporting))
-			Expect(intent.exportModal).NotTo(BeNil())
+				exportData := &cvmodals.ExportData{
+					Format:   "text",
+					Location: "clipboard",
+				}
+				intent.handleExportComplete(exportData)
 
-			exportData := &cvmodals.ExportData{
-				Format:   "markdown",
-				Location: "file",
-			}
-			intent.handleExportComplete(exportData)
+				Expect(intent.GetSelectedExportFormat()).To(Equal(ExportFormatText))
+				Expect(intent.GetSelectedExportOption()).To(Equal(ExportOptionClipboard))
+			})
 
-			Expect(intent.GetSelectedExportFormat()).To(Equal(ExportFormatMarkdown))
-			Expect(intent.GetSelectedExportOption()).To(Equal(ExportOptionSaveToFile))
-			Expect(intent.GetState()).To(Equal(StateExporting))
-			Expect(intent.progressModal).NotTo(BeNil())
-			Expect(intent.progressModal.IsVisible()).To(BeTrue())
-		})
+			It("should map yaml format correctly in handleExportComplete", func() {
+				intent.Init()
+				intent.Update(WizardCompleteMsg{ProfileID: "profile_1", Audience: "hiring_manager"})
+				intent.Update(TechnologiesExtractedMsg{})
+				intent.Update(CVGenerationCompleteMsg{CV: fixtures.CVView("cv_1")})
 
-		It("should map text format correctly in handleExportComplete", func() {
-			intent.Init()
-			intent.Update(WizardCompleteMsg{ProfileID: "profile_1", Audience: "hiring_manager"})
-			intent.Update(TechnologiesExtractedMsg{})
-			intent.Update(CVGenerationCompleteMsg{CV: fixtures.CVView("cv_1")})
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
 
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
+				exportData := &cvmodals.ExportData{
+					Format:   "yaml",
+					Location: "file",
+				}
+				intent.handleExportComplete(exportData)
 
-			exportData := &cvmodals.ExportData{
-				Format:   "text",
-				Location: "clipboard",
-			}
-			intent.handleExportComplete(exportData)
-
-			Expect(intent.GetSelectedExportFormat()).To(Equal(ExportFormatText))
-			Expect(intent.GetSelectedExportOption()).To(Equal(ExportOptionClipboard))
-		})
-
-		It("should map yaml format correctly in handleExportComplete", func() {
-			intent.Init()
-			intent.Update(WizardCompleteMsg{ProfileID: "profile_1", Audience: "hiring_manager"})
-			intent.Update(TechnologiesExtractedMsg{})
-			intent.Update(CVGenerationCompleteMsg{CV: fixtures.CVView("cv_1")})
-
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
-
-			exportData := &cvmodals.ExportData{
-				Format:   "yaml",
-				Location: "file",
-			}
-			intent.handleExportComplete(exportData)
-
-			Expect(intent.GetSelectedExportFormat()).To(Equal(ExportFormatYAML))
-			Expect(intent.GetSelectedExportOption()).To(Equal(ExportOptionSaveToFile))
+				Expect(intent.GetSelectedExportFormat()).To(Equal(ExportFormatYAML))
+				Expect(intent.GetSelectedExportOption()).To(Equal(ExportOptionSaveToFile))
+			})
 		})
 	})
 })

@@ -115,19 +115,29 @@ func (i *Intent) Result() *intents.IntentResult[interface{}] {
 
 // setCompleted marks the intent as completed with success.
 func (i *Intent) setCompleted() {
+	now := time.Now()
+	var exportedAt *time.Time
+	if i.exportedPath != "" {
+		exportedAt = &now
+	}
 	i.result = &intents.IntentResult[*Result]{
 		Status: intents.Completed,
 		Data: &Result{
 			GeneratedCV:     i.generatedCV,
 			SelectedProfile: i.selectedProfile,
 			AcceptedFields:  make(map[string]bool),
+			ExportPath:      i.exportedPath,
+			CVExportFormat:  string(i.selectedExportFormat),
+			ExportedAt:      exportedAt,
 		},
 		Metadata: map[string]interface{}{
-			"profile":     i.selectedProfile.ID,
-			"audience":    i.selectedAudience,
-			"timestamp":   time.Now(),
-			"event_count": len(i.context.Events),
-			"fact_count":  len(i.context.Facts),
+			"profile":         i.selectedProfile.ID,
+			"audience":        i.selectedAudience,
+			"timestamp":       now,
+			"event_count":     len(i.context.Events),
+			"fact_count":      len(i.context.Facts),
+			"export_format":   string(i.selectedExportFormat),
+			"export_location": i.exportedPath,
 		},
 	}
 	i.active = false

@@ -171,6 +171,17 @@ var _ = Describe("ExportModal", func() {
 		})
 	})
 
+	Describe("Update", func() {
+		It("should return nil when modal is not visible", func() {
+			modal = modals.NewExportModal(120, 40)
+			modal.Hide()
+
+			cmd := modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+
+			Expect(cmd).To(BeNil())
+		})
+	})
+
 	Describe("WindowSizeMsg Handling", func() {
 		BeforeEach(func() {
 			modal = modals.NewExportModal(120, 40)

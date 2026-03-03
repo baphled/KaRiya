@@ -29,7 +29,7 @@ type Services struct {
 func InitServices(careerService *careerservice.Service, cfg *config.Config, log *logger.Logger) *Services {
 	configMgr := initConfigManager(log)
 	cvGenService := initCVGenerationService(careerService, configMgr, &cfg.Scoring, log)
-	cvExportService := cv.NewExportService(log)
+	cvExportService := cv.NewExportServiceWithDeps(log, &cfg.Profile, careerService.GetSkillRepository())
 
 	return &Services{
 		ConfigManager:   configMgr,

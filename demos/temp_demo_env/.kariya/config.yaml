@@ -1,15 +1,5 @@
-#!/bin/bash
-set -e
-
-# Set up fake home for skill acceptance demo
-FAKE_HOME="$(pwd)/demos/temp_demo_env"
-rm -rf "$FAKE_HOME"
-mkdir -p "$FAKE_HOME/.kariya"
-
-# Create config
-cat <<EOF > "$FAKE_HOME/.kariya/config.yaml"
 system:
-  data_dir: "$FAKE_HOME/.kariya"
+  data_dir: "/home/baphled/Projects/KaRiya/task-56-reviewscreen-quikcv-export/demos/temp_demo_env/.kariya"
   log_level: info
   auto_backup: true
   backup_count: 5
@@ -23,15 +13,25 @@ profile:
   country: ""
   default_role: ""
   default_audience: ""
-  title: ""
+  title: "Staff Software Engineer"
   location: Remote
   github: baphled
   portfolio: http://boodah.net
-  core_strengths: []
-  languages: []
+  core_strengths:
+    - Technical Leadership
+    - System Architecture
+    - Go Development
+  languages:
+    - Go
+    - TypeScript
+    - Ruby
   frontend: []
-  systems: []
-  what_i_bring: []
+  systems:
+    - PostgreSQL
+    - Redis
+  what_i_bring:
+    - Deep expertise in TUI development
+    - Strong mentoring skills
 cv:
   default_format: markdown
   max_bullets: 50
@@ -71,6 +71,3 @@ scoring:
     staff:
       min_confidence: 0.75
       max_bullets_per_company: 5
-EOF
-
-echo "Skill demo environment setup complete at $FAKE_HOME"

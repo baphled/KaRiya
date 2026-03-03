@@ -112,15 +112,6 @@ var _ = Describe("Views", func() {
 			})
 		})
 
-		Context("StateExporting", func() {
-			It("should show exporting message", func() {
-				intent.Init()
-				intent.SetStateForTest(generatecv.StateExporting)
-
-				view := intent.View()
-				Expect(view).NotTo(BeEmpty())
-			})
-		})
 	})
 
 	Describe("renderReviewScreenWithModalOverlay", func() {

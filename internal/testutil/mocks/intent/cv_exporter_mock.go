@@ -8,6 +8,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	config "github.com/baphled/kariya/internal/config"
 	career "github.com/baphled/kariya/internal/domain/career"
 	cv "github.com/baphled/kariya/internal/service/career/cv"
 	gomock "github.com/golang/mock/gomock"
@@ -81,7 +82,7 @@ func (mr *MockCVExporterMockRecorder) ExportToText(arg0, arg1, arg2, arg3 interf
 }
 
 // ExportToYAML mocks base method.
-func (m *MockCVExporter) ExportToYAML(arg0 context.Context, arg1 *career.CVView, arg2 []*career.CVSection, arg3 map[string][]*career.CVBullet) (string, error) {
+func (m *MockCVExporter) ExportToYAML(arg0 context.Context, arg1 *career.CVView, arg2 []*career.CVSection, arg3 *config.ProfileConfig) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ExportToYAML", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(string)

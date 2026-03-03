@@ -29,18 +29,6 @@ var _ = Describe("Constants", func() {
 			Expect(string(generatecv.StatePreview)).To(Equal("preview"))
 		})
 
-		It("should define exporting state", func() {
-			Expect(string(generatecv.StateExporting)).To(Equal("exporting"))
-		})
-
-		It("should define export select location state", func() {
-			Expect(string(generatecv.StateExportSelectLocation)).To(Equal("export_select_location"))
-		})
-
-		It("should define export complete state", func() {
-			Expect(string(generatecv.StateExportComplete)).To(Equal("export_complete"))
-		})
-
 		It("should have unique values for all states", func() {
 			states := []generatecv.State{
 				generatecv.StateConfiguring,
@@ -48,9 +36,6 @@ var _ = Describe("Constants", func() {
 				generatecv.StateGenerating,
 				generatecv.StateReview,
 				generatecv.StatePreview,
-				generatecv.StateExporting,
-				generatecv.StateExportSelectLocation,
-				generatecv.StateExportComplete,
 			}
 			seen := make(map[generatecv.State]bool)
 			for _, s := range states {

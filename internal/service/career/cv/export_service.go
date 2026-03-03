@@ -18,8 +18,20 @@ import (
 	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
+	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	"gopkg.in/yaml.v3"
 )
+
+// audienceSummaryPrefixes maps audience identifiers to summary prefix text.
+// When generating highlights for a specific audience, these prefixes replace the
+// default profile summary to frame the candidate appropriately.
+// Empty string or "master" uses the profile summary as-is (no prefix override).
+var audienceSummaryPrefixes = map[string]string{
+	"technical-peer":      "Technically deep engineer with",
+	"hiring-manager":      "Results-driven engineer delivering",
+	"recruiter":           "Versatile software engineer with",
+	"engineering-manager": "Collaborative engineer who",
+}
 
 // ClipboardWriter defines the interface for clipboard operations.
 type ClipboardWriter interface {
@@ -65,8 +77,10 @@ func (s *SystemClipboard) IsUnsupported() bool {
 
 // ExportService handles exporting CVs to various formats.
 type ExportService struct {
-	logger    *logger.Logger
-	clipboard ClipboardWriter
+	logger        *logger.Logger
+	clipboard     ClipboardWriter
+	profileConfig *config.ProfileConfig
+	skillRepo     careerrepo.SkillRepository
 }
 
 // ExportFormat defines the export format type.
@@ -81,6 +95,44 @@ const (
 	ExportFormatYAML ExportFormat = "yaml"
 )
 
+// yamlLink preserves field order: label, url.
+type yamlLink struct {
+	Label string `yaml:"label"`
+	URL   string `yaml:"url"`
+}
+
+// yamlJob preserves field order: company, position, start_date, end_date, description.
+type yamlJob struct {
+	Company     string `yaml:"company"`
+	Position    string `yaml:"position"`
+	StartDate   string `yaml:"start_date"`
+	EndDate     string `yaml:"end_date"`
+	Description string `yaml:"description"`
+}
+
+// yamlProject preserves field order: name, description, url, key_achievements.
+type yamlProject struct {
+	Name            string   `yaml:"name"`
+	Description     string   `yaml:"description"`
+	URL             string   `yaml:"url"`
+	KeyAchievements []string `yaml:"key_achievements"`
+}
+
+// yamlCV is the top-level output struct preserving exact field order.
+type yamlCV struct {
+	FirstName  string              `yaml:"first_name"`
+	LastName   string              `yaml:"last_name"`
+	Email      string              `yaml:"email"`
+	Location   string              `yaml:"location"`
+	Phone      string              `yaml:"phone"`
+	Links      []yamlLink          `yaml:"links"`
+	Summary    string              `yaml:"summary"`
+	Highlights string              `yaml:"highlights"`
+	Jobs       []yamlJob           `yaml:"jobs"`
+	Projects   []yamlProject       `yaml:"projects"`
+	Skills     map[string][]string `yaml:"skills"`
+}
+
 // ExportResult contains the result of an export operation.
 type ExportResult struct {
 	Format   ExportFormat
@@ -93,16 +145,20 @@ type ExportResult struct {
 //
 // Expected:
 //   - logger must be valid.
+//   - profileConfig may be nil (uses empty defaults).
+//   - skillRepo may be nil (skills section will be empty).
 //
 // Returns:
 //   - A fully initialized ExportService ready for use.
 //
 // Side effects:
 //   - None.
-func NewExportService(log *logger.Logger) *ExportService {
+func NewExportService(log *logger.Logger, profileConfig *config.ProfileConfig, skillRepo careerrepo.SkillRepository) *ExportService {
 	return &ExportService{
-		logger:    log,
-		clipboard: &SystemClipboard{},
+		logger:        log,
+		clipboard:     &SystemClipboard{},
+		profileConfig: profileConfig,
+		skillRepo:     skillRepo,
 	}
 }
 
@@ -111,20 +167,59 @@ func NewExportService(log *logger.Logger) *ExportService {
 // Expected:
 //   - log must be a valid logger.
 //   - clipboardWriter must be a valid ClipboardWriter.
+//   - profileConfig may be nil (uses empty defaults).
+//   - skillRepo may be nil (skills section will be empty).
 //
 // Returns:
 //   - A fully initialized ExportService ready for use.
 //
 // Side effects:
 //   - None.
-func NewExportServiceWithClipboard(log *logger.Logger, clipboardWriter ClipboardWriter) *ExportService {
+func NewExportServiceWithClipboard(log *logger.Logger, clipboardWriter ClipboardWriter, profileConfig *config.ProfileConfig, skillRepo careerrepo.SkillRepository) *ExportService {
 	return &ExportService{
-		logger:    log,
-		clipboard: clipboardWriter,
+		logger:        log,
+		clipboard:     clipboardWriter,
+		profileConfig: profileConfig,
+		skillRepo:     skillRepo,
+	}
+}
+
+// NewExportServiceWithDeps creates a new export service with profile config and skill repository.
+//
+// Expected:
+//   - log must be a valid logger.
+//   - profileConfig may be nil (uses empty defaults).
+//   - skillRepo may be nil (skills section will be empty).
+//
+// Returns:
+//   - A fully initialized ExportService ready for use.
+//
+// Side effects:
+//   - None.
+func NewExportServiceWithDeps(log *logger.Logger, profileConfig *config.ProfileConfig, skillRepo careerrepo.SkillRepository) *ExportService {
+	return &ExportService{
+		logger:        log,
+		clipboard:     &SystemClipboard{},
+		profileConfig: profileConfig,
+		skillRepo:     skillRepo,
 	}
 }
 
 // ExportToText exports a CV to plain text format.
+//
+// Expected:
+//   - ctx: A valid context (not cancelled).
+//   - cv: A non-nil CVView containing CV metadata.
+//   - sections: A slice of CV sections to export.
+//   - bullets: A map of bullets indexed by section ID.
+//
+// Returns:
+//   - string: The formatted plain text CV.
+//   - error: Non-nil if cv is nil.
+//
+// Side effects:
+//   - Writes formatted text to a buffer.
+//   - Formats headers, metadata, and bullet points.
 func (es *ExportService) ExportToText(_ context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet) (string, error) {
 	if cv == nil {
 		return "", errors.New("CV view is nil")
@@ -186,6 +281,18 @@ func (es *ExportService) ExportToText(_ context.Context, cv *career.CVView, sect
 }
 
 // ExportToMarkdown exports a CV to markdown format.
+//
+// Expected:
+//   - cv must be a valid CVView.
+//   - sections contains the CV sections.
+//   - bullets maps section names to bullet points.
+//
+// Returns:
+//   - A markdown string and nil on success.
+//   - Empty string and error if cv is nil.
+//
+// Side effects:
+//   - None.
 func (es *ExportService) ExportToMarkdown(ctx context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet) (string, error) {
 	if cv == nil {
 		return "", errors.New("CV view is nil")
@@ -243,36 +350,306 @@ func (es *ExportService) ExportToMarkdown(ctx context.Context, cv *career.CVView
 	return buf.String(), nil
 }
 
-// ExportToYAML exports a CV to YAML format.
-func (es *ExportService) ExportToYAML(ctx context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet) (string, error) {
+// ExportToYAML exports a CV to YAML format (flat structure for external tools).
+//
+// Expected:
+//   - cv must be a valid CVView.
+//   - sections contains the CV sections.
+//   - profileCfg is optional; if non-nil, uses the provided profile; otherwise uses es.profileConfig.
+//
+// Returns:
+//   - A YAML string in flat format and nil on success.
+//   - Empty string and error if cv is nil or marshalling fails.
+//
+// Side effects:
+//   - Queries skillRepo if available to populate skills section.
+func (es *ExportService) ExportToYAML(ctx context.Context, cv *career.CVView, sections []*career.CVSection, profileCfg *config.ProfileConfig) (string, error) {
 	if cv == nil {
 		return "", errors.New("CV view is nil")
 	}
 
-	// Build a structured output
-	output := map[string]interface{}{
-		"name":               cv.Name,
-		"target_role":        cv.TargetRole,
-		"target_audience":    cv.TargetAudience,
-		"generated_at":       cv.GeneratedAt,
-		"source_event_count": cv.SourceEventCount,
-		"source_fact_count":  cv.SourceFactCount,
-		"sections":           []map[string]interface{}{},
+	var firstName, lastName, email, location, phone, linkedIn, gitHub, portfolio, summary string
+
+	effectiveProfile := profileCfg
+	if effectiveProfile == nil {
+		effectiveProfile = es.profileConfig
 	}
 
-	// Add sections (sections already have the correct structure with Content groups)
-	output["sections"] = sections
+	if effectiveProfile != nil {
+		firstName = effectiveProfile.FirstName
+		lastName = effectiveProfile.LastName
+		email = effectiveProfile.Email
+		// Combine Location and Country
+		if effectiveProfile.Location != "" && effectiveProfile.Country != "" {
+			location = effectiveProfile.Location + " (" + effectiveProfile.Country + ")"
+		} else if effectiveProfile.Location != "" {
+			location = effectiveProfile.Location
+		} else if effectiveProfile.Country != "" {
+			location = effectiveProfile.Country
+		}
+		phone = effectiveProfile.Phone
+		linkedIn = effectiveProfile.LinkedIn
+		gitHub = effectiveProfile.GitHub
+		portfolio = effectiveProfile.Portfolio
+	}
 
-	// Marshal to YAML
-	data, err := yaml.Marshal(output)
+	summary = es.getSummaryFromSectionsYAML(sections)
+
+	links := es.buildYAMLLinks(linkedIn, gitHub, portfolio)
+
+	jobs := es.buildYAMLJobs(sections, effectiveProfile)
+
+	projects := es.buildYAMLProjects(sections)
+
+	skillsLimit := 0
+	if effectiveProfile != nil {
+		skillsLimit = effectiveProfile.SkillsLimit
+	}
+	skills := es.buildYAMLSkills(ctx, skillsLimit)
+
+	output := yamlCV{
+		FirstName:  firstName,
+		LastName:   lastName,
+		Email:      email,
+		Location:   location,
+		Phone:      phone,
+		Links:      links,
+		Summary:    summary,
+		Highlights: generateHighlights(sections, effectiveProfile),
+		Jobs:       jobs,
+		Projects:   projects,
+		Skills:     skills,
+	}
+
+	var buf bytes.Buffer
+	enc := yaml.NewEncoder(&buf)
+	enc.SetIndent(2)
+	if err := enc.Encode(output); err != nil {
+		return "", fmt.Errorf("failed to marshal YAML: %w", err)
+	}
+	return buf.String(), nil
+}
+
+func (es *ExportService) getSummaryFromSectionsYAML(sections []*career.CVSection) string {
+	for _, section := range sections {
+		if section.SectionType == "summary" && section.Summary != "" {
+			return section.Summary
+		}
+	}
+	return ""
+}
+
+const (
+	githubURLPrefix   = "https://github.com/"
+	linkedInURLPrefix = "https://www.linkedin.com/in/"
+)
+
+func ensureURL(value, prefix string) string {
+	if value == "" {
+		return ""
+	}
+	if strings.HasPrefix(value, "http://") || strings.HasPrefix(value, "https://") {
+		return value
+	}
+	return prefix + value
+}
+
+func (es *ExportService) buildYAMLLinks(linkedIn, gitHub, portfolio string) []yamlLink {
+	var links []yamlLink
+
+	if linkedIn != "" {
+		links = append(links, yamlLink{Label: "LinkedIn", URL: ensureURL(linkedIn, linkedInURLPrefix)})
+	}
+
+	if gitHub != "" {
+		links = append(links, yamlLink{Label: "GitHub", URL: ensureURL(gitHub, githubURLPrefix)})
+	}
+
+	if portfolio != "" {
+		links = append(links, yamlLink{Label: "Portfolio", URL: portfolio})
+	}
+
+	return links
+}
+
+func (es *ExportService) buildYAMLJobs(sections []*career.CVSection, effectiveProfile *config.ProfileConfig) []yamlJob {
+	var jobs []yamlJob
+
+	for _, section := range sections {
+		if section.SectionType != "experience" {
+			continue
+		}
+
+		for _, group := range section.Content {
+			position := ""
+			if effectiveProfile != nil {
+				position = effectiveProfile.Title
+			}
+
+			jobs = append(jobs, yamlJob{
+				Company:     group.Header,
+				Position:    position,
+				StartDate:   group.StartDate,
+				EndDate:     group.EndDate,
+				Description: formatBulletsAsDescription(group.Bullets),
+			})
+		}
+	}
+
+	return jobs
+}
+
+func (es *ExportService) buildYAMLProjects(sections []*career.CVSection) []yamlProject {
+	var projects []yamlProject
+
+	for _, section := range sections {
+		if section.SectionType != "projects" {
+			continue
+		}
+
+		for _, group := range section.Content {
+			var keyAchievements []string
+			for _, bullet := range group.Bullets {
+				keyAchievements = append(keyAchievements, bullet.Text)
+			}
+
+			projects = append(projects, yamlProject{
+				Name:            group.Header,
+				Description:     formatBulletsAsDescription(group.Bullets),
+				URL:             "",
+				KeyAchievements: keyAchievements,
+			})
+		}
+	}
+
+	return projects
+}
+
+func formatBulletsAsDescription(bullets []*career.CVBullet) string {
+	var sb strings.Builder
+	for _, bullet := range bullets {
+		sb.WriteString("- " + bullet.Text + "\n")
+	}
+	return sb.String()
+}
+
+func maxHighlightsFromProfile(profile *config.ProfileConfig) int {
+	if profile != nil && profile.MaxHighlights > 0 {
+		return profile.MaxHighlights
+	}
+	return 5
+}
+
+func generateHighlights(sections []*career.CVSection, profile *config.ProfileConfig) string {
+	if profile != nil && len(profile.WhatIBring) > 0 {
+		var sb strings.Builder
+		for _, item := range profile.WhatIBring {
+			sb.WriteString("- " + item + "\n")
+		}
+		return sb.String()
+	}
+
+	bullets := extractExperienceBullets(sections)
+	if len(bullets) > 0 {
+		sortBulletsByConfidenceAndRoleScore(bullets)
+		maxBullets := maxHighlightsFromProfile(profile)
+		if len(bullets) > maxBullets {
+			bullets = bullets[:maxBullets]
+		}
+		var sb strings.Builder
+		for _, bullet := range bullets {
+			sb.WriteString("- " + bullet.Text + "\n")
+		}
+		return sb.String()
+	}
+
+	if profile != nil && len(profile.CoreStrengths) > 0 {
+		var sb strings.Builder
+		for _, strength := range profile.CoreStrengths {
+			sb.WriteString("- " + strength + "\n")
+		}
+		return sb.String()
+	}
+
+	return ""
+}
+
+func extractExperienceBullets(sections []*career.CVSection) []*career.CVBullet {
+	var bullets []*career.CVBullet
+	for _, section := range sections {
+		if section.SectionType != "experience" {
+			continue
+		}
+		for _, group := range section.Content {
+			bullets = append(bullets, group.Bullets...)
+		}
+	}
+	return bullets
+}
+
+func sortBulletsByConfidenceAndRoleScore(bullets []*career.CVBullet) {
+	slices.SortFunc(bullets, func(a, b *career.CVBullet) int {
+		if a.Confidence > b.Confidence {
+			return -1
+		}
+		if a.Confidence < b.Confidence {
+			return 1
+		}
+		if a.RoleScore > b.RoleScore {
+			return -1
+		}
+		if a.RoleScore < b.RoleScore {
+			return 1
+		}
+		return 0
+	})
+}
+
+func (es *ExportService) buildYAMLSkills(ctx context.Context, limit int) map[string][]string {
+	skills := make(map[string][]string)
+
+	if limit <= 0 {
+		limit = 5
+	}
+
+	if es.skillRepo == nil {
+		return skills
+	}
+
+	allSkills, err := es.skillRepo.List(ctx, nil)
 	if err != nil {
-		return "", fmt.Errorf("failed to marshal CV to YAML: %w", err)
+		return skills
 	}
 
-	return string(data), nil
+	for _, skill := range allSkills {
+		category := skill.Category
+		if len(skills[category]) < limit {
+			skills[category] = append(skills[category], skill.Name)
+		}
+	}
+
+	// Sort skill names within each category
+	for category := range skills {
+		slices.Sort(skills[category])
+	}
+
+	return skills
 }
 
 // SaveToFile saves exported CV content to a file.
+//
+// Expected:
+//   - cvName is a non-empty string.
+//   - format is a valid ExportFormat.
+//   - content is the CV content to save.
+//
+// Returns:
+//   - The file path where the CV was saved and nil on success.
+//   - Empty string and error if directory creation or file write fails.
+//
+// Side effects:
+//   - Creates ~/.kariya/cv_exports directory if it does not exist.
+//   - Writes a file to disk with timestamp-based filename.
 func (es *ExportService) SaveToFile(ctx context.Context, cvName string, format ExportFormat, content string) (string, error) {
 	// Determine export directory
 	homeDir, err := os.UserHomeDir()
@@ -336,6 +713,13 @@ func sanitizeFilename(name string) string {
 }
 
 // GetExportPath returns the default export directory path.
+//
+// Returns:
+//   - The export directory path and nil on success.
+//   - Empty string and error if home directory cannot be determined.
+//
+// Side effects:
+//   - None.
 func (es *ExportService) GetExportPath() (string, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -380,6 +764,20 @@ func (es *ExportService) CopyToClipboard(ctx context.Context, content string) er
 // Export exports a CV using the specified structure and format.
 // For YAML format, always uses standard structure (it's a data format).
 // Uses default profile for narrative structure.
+//
+// Expected:
+//   - cv must be a valid CVView.
+//   - sections contains the CV sections.
+//   - bullets maps section names to bullet points.
+//   - structure is a valid Structure value.
+//   - format is a valid ExportFormat.
+//
+// Returns:
+//   - The exported CV content as a string and nil on success.
+//   - Empty string and error if cv is nil or export fails.
+//
+// Side effects:
+//   - None.
 func (es *ExportService) Export(ctx context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet, structure Structure, format ExportFormat) (string, error) {
 	return es.ExportWithProfile(ctx, cv, sections, bullets, structure, format, nil)
 }
@@ -387,14 +785,29 @@ func (es *ExportService) Export(ctx context.Context, cv *career.CVView, sections
 // ExportWithProfile exports a CV using the specified structure, format, and profile config.
 // For YAML format, always uses standard structure (it's a data format).
 // If profileCfg is nil, uses default profile.
+//
+// Expected:
+//   - cv: non-nil CVView with career data
+//   - sections: slice of CVSection to include in export
+//   - bullets: map of section IDs to CVBullet slices
+//   - structure: valid CVStructure (Narrative, Consulting, Highlights, Standard)
+//   - format: valid ExportFormat (Text, Markdown, YAML)
+//   - profileCfg: optional ProfileConfig (uses default if nil)
+//
+// Returns:
+//   - string: exported CV content
+//   - error: nil on success, error if cv is nil or export fails
+//
+// Side effects:
+//   - None.
 func (es *ExportService) ExportWithProfile(ctx context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet, structure Structure, format ExportFormat, profileCfg *config.ProfileConfig) (string, error) {
 	if cv == nil {
 		return "", errors.New("CV view is nil")
 	}
 
-	// YAML always uses standard structure (it's data, not presentation)
+	// YAML uses flat structure for external tools
 	if format == ExportFormatYAML {
-		return es.ExportToYAML(ctx, cv, sections, bullets)
+		return es.ExportToYAML(ctx, cv, sections, profileCfg)
 	}
 
 	// Route to structure-specific renderer
@@ -568,6 +981,82 @@ func (es *ExportService) exportHighlightsWithProfile(ctx context.Context, cv *ca
 	}
 }
 
+// ExportHighlightsForAudience exports a highlights-format CV tailored to a specific audience.
+// It uses GetTopBulletsForAudience instead of getTopBulletsByConfidence and generates
+// an audience-specific summary prefix. The existing exportHighlightsWithProfile remains
+// unchanged for backward compatibility.
+//
+// Expected:
+//   - view must be a valid CVView with populated sections.
+//   - profile must be a valid ProfileConfig (nil uses defaults).
+//   - audience identifies the target audience for bullet scoring and summary prefix.
+//
+// Returns:
+//   - A string containing the formatted highlights CV in plain text.
+//
+// Side effects:
+//   - None.
+func ExportHighlightsForAudience(view career.CVView, profile config.ProfileConfig, audience string) string {
+	var buf bytes.Buffer
+	narrative := NarrativeProfileFromConfig(&profile)
+
+	buf.WriteString(strings.ToUpper(view.Name) + "\n")
+	buf.WriteString(strings.Repeat("=", len(view.Name)) + "\n")
+	buf.WriteString(fmt.Sprintf("%s | %s | %s\n\n", narrative.Role, narrative.Location, narrative.Email))
+
+	summaryPrefix, hasPrefix := audienceSummaryPrefixes[audience]
+	if hasPrefix {
+		buf.WriteString(summaryPrefix + "\n\n")
+	} else {
+		summary := getSummaryFromSections(view.Sections)
+		if summary != "" {
+			buf.WriteString(summary + "\n\n")
+		}
+	}
+
+	buf.WriteString(strings.Repeat("-", 60) + "\n\n")
+
+	buf.WriteString("KEY CAPABILITIES\n")
+	buf.WriteString(strings.Repeat("-", 16) + "\n\n")
+	if len(narrative.CoreStrengths) > 0 {
+		maxStrengths := 6
+		if len(narrative.CoreStrengths) < maxStrengths {
+			maxStrengths = len(narrative.CoreStrengths)
+		}
+		for i := range maxStrengths {
+			buf.WriteString(fmt.Sprintf("  * %s\n", narrative.CoreStrengths[i]))
+		}
+	} else {
+		buf.WriteString("  * Technical leadership and architecture\n")
+		buf.WriteString("  * System design and optimization\n")
+		buf.WriteString("  * Cross-functional collaboration\n")
+	}
+	buf.WriteString("\n")
+
+	buf.WriteString("SELECTED HIGHLIGHTS\n")
+	buf.WriteString(strings.Repeat("-", 19) + "\n\n")
+
+	topBullets := GetTopBulletsForAudience(view, audience, 5)
+	for _, bullet := range topBullets {
+		buf.WriteString(fmt.Sprintf("  * %s\n", bullet.Text))
+	}
+	buf.WriteString("\n")
+
+	if len(narrative.Languages) > 0 || len(narrative.Systems) > 0 {
+		buf.WriteString("TECHNOLOGIES\n")
+		buf.WriteString(strings.Repeat("-", 12) + "\n\n")
+		if len(narrative.Languages) > 0 {
+			buf.WriteString(fmt.Sprintf("Languages: %s\n", strings.Join(narrative.Languages, ", ")))
+		}
+		if len(narrative.Systems) > 0 {
+			buf.WriteString(fmt.Sprintf("Systems: %s\n", strings.Join(narrative.Systems, ", ")))
+		}
+		buf.WriteString("\n")
+	}
+
+	return buf.String()
+}
+
 // exportHighlightsText exports highlights CV to plain text format.
 func (es *ExportService) exportHighlightsText(ctx context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet, profileCfg *config.ProfileConfig) (string, error) {
 	var buf bytes.Buffer
@@ -713,6 +1202,61 @@ func (es *ExportService) getTopBulletsByConfidence(bullets map[string][]*career.
 		return allBullets[:n]
 	}
 	return allBullets
+}
+
+// GetTopBulletsForAudience returns the top N bullets scored by audience relevance.
+// Each bullet is scored as confidence * audienceRelevance[audience] when audience
+// data exists. Falls back to confidence-only when AudienceRelevance is nil, empty,
+// or the audience key is missing.
+//
+// Expected:
+//   - view must contain sections with content groups containing bullets.
+//   - audience identifies which audience relevance score to use.
+//   - limit must be a positive integer.
+//
+// Returns:
+//   - A slice of CVBullet pointers sorted by combined score descending, limited to limit.
+//
+// Side effects:
+//   - None.
+func GetTopBulletsForAudience(view career.CVView, audience string, limit int) []*career.CVBullet {
+	var allBullets []*career.CVBullet
+	for _, section := range view.Sections {
+		for _, group := range section.Content {
+			allBullets = append(allBullets, group.Bullets...)
+		}
+	}
+
+	slices.SortFunc(allBullets, func(a, b *career.CVBullet) int {
+		scoreA := audienceScore(a, audience)
+		scoreB := audienceScore(b, audience)
+		if scoreA > scoreB {
+			return -1
+		}
+		if scoreA < scoreB {
+			return 1
+		}
+		return 0
+	})
+
+	if len(allBullets) > limit {
+		return allBullets[:limit]
+	}
+	return allBullets
+}
+
+// audienceScore computes the combined score for a bullet given an audience.
+// Returns confidence * audienceRelevance[audience] when audience data exists,
+// or confidence alone as fallback.
+func audienceScore(bullet *career.CVBullet, audience string) float64 {
+	if len(bullet.AudienceRelevance) == 0 {
+		return bullet.Confidence
+	}
+	relevance, ok := bullet.AudienceRelevance[audience]
+	if !ok {
+		return bullet.Confidence
+	}
+	return bullet.Confidence * relevance
 }
 
 // exportNarrativeWithProfile exports using the narrative CV structure with optional profile config.

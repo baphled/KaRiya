@@ -23,7 +23,7 @@ var _ = Describe("CV Structure Export", func() {
 
 	BeforeEach(func() {
 		log = logger.New(io.Discard, logger.InfoLevel)
-		service = cv.NewExportService(log)
+		service = cv.NewExportService(log, nil, nil)
 		ctx = context.Background()
 		cvView = fixtures.CVViewWith("cv-1", "Test User", "principal", "hiring_manager")
 		cvView.SourceFactCount = 25

@@ -63,6 +63,17 @@ func NewMemoryConfigManager() *MemoryConfigManager {
 }
 
 // LoadConfig loads a configuration by name.
+//
+// Expected:
+//   - ctx: valid context for cancellation
+//   - name: configuration name to load
+//
+// Returns:
+//   - *career.CVConfig: loaded configuration, nil if not found
+//   - error: ErrConfigNotFound if config does not exist, nil on success
+//
+// Side effects:
+//   - None.
 func (m *MemoryConfigManager) LoadConfig(_ context.Context, name string) (*career.CVConfig, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -137,6 +148,16 @@ func (m *MemoryConfigManager) DeleteConfig(_ context.Context, name string) error
 }
 
 // ListConfigs returns all configurations.
+//
+// Expected:
+//   - context: A context for cancellation and timeouts.
+//
+// Returns:
+//   - []*career.CVConfig: A slice of all stored configurations.
+//   - error: An error if the operation fails.
+//
+// Side effects:
+//   - None.
 func (m *MemoryConfigManager) ListConfigs(_ context.Context) ([]*career.CVConfig, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -165,6 +186,17 @@ func (m *MemoryConfigManager) GetConfigPath(name string) string {
 }
 
 // ConfigExists checks if a configuration exists.
+//
+// Expected:
+//   - context: A context for cancellation and timeouts.
+//   - name: The name of the configuration to check.
+//
+// Returns:
+//   - bool: True if the configuration exists, false otherwise.
+//   - error: An error if the operation fails.
+//
+// Side effects:
+//   - None.
 func (m *MemoryConfigManager) ConfigExists(_ context.Context, name string) (bool, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()

@@ -149,8 +149,8 @@ func (i *Intent) delegateToExportModal(msg tea.Msg) (tea.Cmd, bool) {
 	}
 	if !i.exportModal.IsVisible() && !i.exportModal.IsCompleted() {
 		i.exportModal.Hide()
-		i.state = StatePreview
-		return nil, true
+		// Return to the state we were in before showing the export modal
+		i.state = i.exportReturnState
 	}
 	return cmd, true
 }
@@ -207,6 +207,32 @@ func (i *Intent) generateCVAsync() tea.Cmd {
 			LengthFormat:         string(cv.MapUILengthToFormat(i.selectedCVLength)),
 			SkillsFormat:         i.selectedSkillsFormat,
 			SkillsLimit:          i.selectedSkillsLimit,
+
+			// Wire ProfileConfig fields for summary section
+			SummaryHeading: func() string {
+				if i.context.ProfileConfig != nil {
+					return i.context.ProfileConfig.SummaryHeading
+				}
+				return ""
+			}(),
+			ProfileTitle: func() string {
+				if i.context.ProfileConfig != nil {
+					return i.context.ProfileConfig.Title
+				}
+				return ""
+			}(),
+			WhatIBring: func() []string {
+				if i.context.ProfileConfig != nil {
+					return i.context.ProfileConfig.WhatIBring
+				}
+				return nil
+			}(),
+			CoreStrengths: func() []string {
+				if i.context.ProfileConfig != nil {
+					return i.context.ProfileConfig.CoreStrengths
+				}
+				return nil
+			}(),
 		}
 
 		cvView, err := i.context.CVGenerationService.GenerateCVFromConfig(ctx, config)
@@ -299,7 +325,13 @@ func (i *Intent) exportCVAsync() tea.Cmd {
 			content, err = i.context.ExportService.ExportToMarkdown(ctx, i.generatedCV, sections, bulletsMap)
 			exportFormat = cv.ExportFormatMarkdown
 		case ExportFormatYAML:
-			content, err = i.context.ExportService.ExportToYAML(ctx, i.generatedCV, sections, bulletsMap)
+			profileCfg := i.context.ProfileConfig
+			if profileCfg != nil {
+				cfgCopy := *profileCfg
+				cfgCopy.SkillsLimit = i.selectedSkillsLimit
+				profileCfg = &cfgCopy
+			}
+			content, err = i.context.ExportService.ExportToYAML(ctx, i.generatedCV, sections, profileCfg)
 			exportFormat = cv.ExportFormatYAML
 		default:
 			return ExportCompleteMsg{Path: "", Error: errors.New("unknown export format")}
@@ -331,6 +363,8 @@ func (i *Intent) exportCVAsync() tea.Cmd {
 }
 
 func (i *Intent) showExportModal() tea.Cmd {
+	// Capture the current state so we can return to it when modal is dismissed
+	i.exportReturnState = i.state
 	termInfo := i.GetTerminalInfo()
 	i.exportModal = cvmodals.NewExportModal(termInfo.Width, termInfo.Height)
 	i.exportModal.Show()

@@ -570,19 +570,19 @@ var _ = Describe("Handlers", func() {
 				intentWithProfile.Update(generatecv.CVGenerationCompleteMsg{CV: fixtures.CVView("cv-1")})
 			})
 
-			It("should display user name from ProfileConfig", func() {
+			It("should display profile name from wizard selection", func() {
 				view := intentWithProfile.View()
-				Expect(view).To(ContainSubstring("Test User"))
+				Expect(view).To(ContainSubstring("Profile: Staff Engineer"))
 			})
 
-			It("should display user email from ProfileConfig", func() {
+			It("should display audience from wizard selection", func() {
 				view := intentWithProfile.View()
-				Expect(view).To(ContainSubstring("test@example.com"))
+				Expect(view).To(ContainSubstring("Audience: hiring_manager"))
 			})
 
-			It("should display user location from ProfileConfig", func() {
+			It("should display generation settings section header", func() {
 				view := intentWithProfile.View()
-				Expect(view).To(ContainSubstring("Test City, TC"))
+				Expect(view).To(ContainSubstring("🎯 Generation Settings"))
 			})
 		})
 	})

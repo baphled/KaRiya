@@ -58,17 +58,6 @@ func (i *Intent) wizardView() string {
 	return baseView
 }
 
-func (i *Intent) getTheme() themes.Theme {
-	if themeVal := i.Theme(); themeVal != nil {
-		return themeVal
-	}
-	return themes.NewDefaultTheme()
-}
-
-func (i *Intent) getCardStyle() lipgloss.Style {
-	return i.getTheme().Styles().CardBase
-}
-
 func (i *Intent) getWizardBreadcrumbs() []string {
 	crumbs := []string{"Main Menu", "Generate CV"}
 
@@ -171,6 +160,17 @@ func (i *Intent) renderPreviewScreenWithModalOverlay(width, height int) string {
 	}
 
 	return baseView
+}
+
+func (i *Intent) getTheme() themes.Theme {
+	if themeVal := i.Theme(); themeVal != nil {
+		return themeVal
+	}
+	return themes.NewDefaultTheme()
+}
+
+func (i *Intent) getCardStyle() lipgloss.Style {
+	return i.getTheme().Styles().CardBase
 }
 
 func (i *Intent) viewExportComplete() string {

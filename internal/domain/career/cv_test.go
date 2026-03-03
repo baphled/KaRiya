@@ -688,6 +688,99 @@ var _ = Describe("CVConfig", func() {
 		})
 	})
 
+	Describe("SummaryHeading and ProfileTitle fields", func() {
+		var cvConfig *CVConfig
+
+		BeforeEach(func() {
+			cvConfig = &CVConfig{
+				Name:           "Staff Engineer CV",
+				TargetRole:     "staff",
+				TargetAudience: "hiring_manager",
+				EventFilters: map[string]interface{}{
+					"date_from": "2020-01-01",
+					"tags":      []string{"technical", "leadership"},
+				},
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+			}
+		})
+
+		It("should pass validation with SummaryHeading set", func() {
+			cvConfig.SummaryHeading = "**{{.Title}} | {{.Years}}+ Years Experience**"
+			err := cvConfig.Validate()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should pass validation with ProfileTitle set", func() {
+			cvConfig.ProfileTitle = "Senior Ruby on Rails Developer"
+			err := cvConfig.Validate()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should pass validation with both fields set", func() {
+			cvConfig.SummaryHeading = "**{{.Title}} | {{.Years}}+ Years**"
+			cvConfig.ProfileTitle = "Staff Engineer"
+			err := cvConfig.Validate()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should pass validation with empty SummaryHeading (prose only)", func() {
+			cvConfig.SummaryHeading = ""
+			err := cvConfig.Validate()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should pass validation with empty ProfileTitle", func() {
+			cvConfig.ProfileTitle = ""
+			err := cvConfig.Validate()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should include SummaryHeading in JSON serialization", func() {
+			cvConfig.SummaryHeading = "**{{.Title}}**"
+			jsonBytes, err := cvConfig.ToJSON()
+			Expect(err).NotTo(HaveOccurred())
+
+			var result map[string]interface{}
+			err = json.Unmarshal(jsonBytes, &result)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result["summary_heading"]).To(Equal("**{{.Title}}**"))
+		})
+
+		It("should include ProfileTitle in JSON serialization", func() {
+			cvConfig.ProfileTitle = "DevOps Engineer"
+			jsonBytes, err := cvConfig.ToJSON()
+			Expect(err).NotTo(HaveOccurred())
+
+			var result map[string]interface{}
+			err = json.Unmarshal(jsonBytes, &result)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result["profile_title"]).To(Equal("DevOps Engineer"))
+		})
+
+		It("should round-trip SummaryHeading through JSON serialization", func() {
+			cvConfig.SummaryHeading = "**{{.Title}} | {{.Years}}+ Years**"
+			jsonBytes, err := cvConfig.ToJSON()
+			Expect(err).NotTo(HaveOccurred())
+
+			newConfig := &CVConfig{}
+			err = newConfig.FromJSON(jsonBytes)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(newConfig.SummaryHeading).To(Equal(cvConfig.SummaryHeading))
+		})
+
+		It("should round-trip ProfileTitle through JSON serialization", func() {
+			cvConfig.ProfileTitle = "Full Stack Engineer"
+			jsonBytes, err := cvConfig.ToJSON()
+			Expect(err).NotTo(HaveOccurred())
+
+			newConfig := &CVConfig{}
+			err = newConfig.FromJSON(jsonBytes)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(newConfig.ProfileTitle).To(Equal(cvConfig.ProfileTitle))
+		})
+	})
+
 	Describe("ToJSON and FromJSON", func() {
 		var cvConfig *CVConfig
 

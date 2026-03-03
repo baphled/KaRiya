@@ -35,6 +35,21 @@ type DefaultCVGenerationService struct {
 }
 
 // NewCVGenerationService creates a new CVGenerationService instance.
+//
+// Expected:
+//   - eventRepo: A non-nil EventRepository for accessing career events.
+//   - factRepo: A non-nil FactRepository for accessing extracted facts.
+//   - configManager: A non-nil ConfigManager for CV configurations.
+//   - bulletGenerator: A non-nil BulletGenerator for creating CV bullets.
+//   - dataProcessor: A non-nil DataProcessingService for processing data.
+//   - sectionBuilder: A non-nil SectionBuilder for building CV sections.
+//   - log: A non-nil Logger for logging operations.
+//
+// Returns:
+//   - *DefaultCVGenerationService: A fully initialized CV generation service.
+//
+// Side effects:
+//   - Panics if dataProcessor is nil.
 func NewCVGenerationService(
 	eventRepo careerrepo.EventRepository,
 	factRepo careerrepo.FactRepository,
@@ -59,6 +74,18 @@ func NewCVGenerationService(
 }
 
 // GenerateCV generates a CV from a saved configuration by name.
+//
+// Expected:
+//   - ctx: A valid context (not cancelled).
+//   - configName: A non-empty string identifying a saved CV configuration.
+//
+// Returns:
+//   - *career.CVView: A fully generated CV view with sections and metadata.
+//   - error: Non-nil if configuration loading or generation fails.
+//
+// Side effects:
+//   - Logs configuration loading and CV generation progress.
+//   - Calls configManager.LoadConfig to retrieve the configuration.
 func (svc *DefaultCVGenerationService) GenerateCV(ctx context.Context, configName string) (*career.CVView, error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
@@ -75,6 +102,19 @@ func (svc *DefaultCVGenerationService) GenerateCV(ctx context.Context, configNam
 }
 
 // GenerateCVFromConfig generates a CV from a configuration object.
+//
+// Expected:
+//   - ctx: A valid context (not cancelled).
+//   - config: A non-nil, validated CVConfig object.
+//
+// Returns:
+//   - *career.CVView: A fully generated CV view with sections and metadata.
+//   - error: Non-nil if configuration validation, event retrieval, or section building fails.
+//
+// Side effects:
+//   - Logs CV generation progress (events retrieved, bullets generated, sections built).
+//   - Calls eventRepo, factRepo, bulletGenerator, and sectionBuilder.
+//   - Applies length format and technology filters to events and bullets.
 func (svc *DefaultCVGenerationService) GenerateCVFromConfig(ctx context.Context, config *career.CVConfig) (*career.CVView, error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
@@ -193,7 +233,13 @@ func (svc *DefaultCVGenerationService) GenerateCVFromConfig(ctx context.Context,
 		Limit:                config.SkillsLimit,
 		SelectedTechnologies: config.SelectedTechnologies,
 	}
-	sections, err := svc.sectionBuilder.BuildSections(ctx, cvBullets, events, facts, config.TargetRole, skillsConfig)
+	summaryCfg := &SummaryConfig{
+		SummaryHeading: config.SummaryHeading,
+		ProfileTitle:   config.ProfileTitle,
+		WhatIBring:     config.WhatIBring,
+		CoreStrengths:  config.CoreStrengths,
+	}
+	sections, err := svc.sectionBuilder.BuildSections(ctx, cvBullets, events, facts, config.TargetRole, skillsConfig, summaryCfg)
 	if err != nil {
 		svc.logger.Error("Failed to build sections: %v", err)
 		return nil, fmt.Errorf("failed to build sections: %w", err)

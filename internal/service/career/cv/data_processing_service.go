@@ -118,6 +118,18 @@ type SkillCategory struct {
 // GroupEventsByCompany organizes events into company-based structure.
 // It detects separate tenures when events at OTHER companies exist between
 // two periods at the same company (BUG-009 fix).
+//
+// Expected:
+//   - ctx: A valid context (not cancelled).
+//   - events: A slice of career events (may be empty).
+//
+// Returns:
+//   - map[string]*CompanyGroup: A map of company groups keyed by company name or "Company#N" for multiple tenures.
+//   - error: Non-nil if context is cancelled.
+//
+// Side effects:
+//   - Logs the number of events grouped and companies/tenures created.
+//   - Calls detectTenures to identify separate employment periods.
 func (svc *DefaultDataProcessingService) GroupEventsByCompany(
 	ctx context.Context, events []*career.Event,
 ) (map[string]*CompanyGroup, error) {
@@ -281,6 +293,19 @@ func hasInterveningCompanyEvents(
 }
 
 // ExtractAchievements identifies key achievements from events and facts.
+//
+// Expected:
+//   - ctx: A valid context (not cancelled).
+//   - event: A non-nil career event.
+//   - facts: A slice of facts related to the event (may be empty).
+//
+// Returns:
+//   - []*Achievement: A slice of achievements extracted from the event and related facts.
+//   - error: Non-nil if context is cancelled.
+//
+// Side effects:
+//   - Logs warnings if metric extraction fails.
+//   - Calls CalculateMetrics to extract quantifiable metrics from event text.
 func (svc *DefaultDataProcessingService) ExtractAchievements(
 	ctx context.Context, event *career.Event, facts []*career.Fact,
 ) ([]*Achievement, error) {
@@ -329,6 +354,19 @@ func (svc *DefaultDataProcessingService) ExtractAchievements(
 }
 
 // ExtractSkills identifies skills from events and facts.
+//
+// Expected:
+//   - ctx: A valid context (not cancelled).
+//   - events: A slice of career events (may be empty).
+//   - facts: A slice of facts related to events (may be empty).
+//
+// Returns:
+//   - map[string]*SkillCategory: A map of skill categories indexed by category name.
+//   - error: Non-nil if context is cancelled.
+//
+// Side effects:
+//   - Logs information about extracted skill categories.
+//   - Calls helper methods to determine skill levels and categories.
 func (svc *DefaultDataProcessingService) ExtractSkills(
 	ctx context.Context, events []*career.Event, facts []*career.Fact,
 ) (map[string]*SkillCategory, error) {
@@ -391,6 +429,18 @@ func (svc *DefaultDataProcessingService) ExtractSkills(
 }
 
 // CalculateMetrics extracts quantifiable metrics from text.
+//
+// Expected:
+//   - ctx: A valid context (not cancelled).
+//   - text: A non-empty string containing event description.
+//
+// Returns:
+//   - []*Metric: A slice of extracted metrics (percentages, counts, currency, time, ratios).
+//   - error: Non-nil if context is cancelled.
+//
+// Side effects:
+//   - Uses regex patterns to extract metrics from text.
+//   - Calls extractContext helper to determine metric context.
 func (svc *DefaultDataProcessingService) CalculateMetrics(ctx context.Context, text string) ([]*Metric, error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
@@ -466,6 +516,19 @@ func (svc *DefaultDataProcessingService) CalculateMetrics(ctx context.Context, t
 }
 
 // ExtractProjectsFromEvents identifies unique projects within events.
+//
+// Expected:
+//   - ctx: A valid context (not cancelled).
+//   - events: A slice of career events (may be empty).
+//
+// Returns:
+//   - []*ProjectGroup: A slice of project groups sorted by most recent end date.
+//   - error: Non-nil if context is cancelled.
+//
+// Side effects:
+//   - Groups events by project name.
+//   - Calculates date ranges for each project.
+//   - Sorts projects by end date in descending order.
 func (svc *DefaultDataProcessingService) ExtractProjectsFromEvents(
 	ctx context.Context, events []*career.Event,
 ) ([]*ProjectGroup, error) {

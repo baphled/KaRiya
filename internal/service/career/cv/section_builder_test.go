@@ -26,7 +26,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 	})
 
 	It("should return empty sections for no bullets", func() {
-		sections, err := builder.BuildSections(ctx, []*career.CVBullet{}, []*career.Event{}, []*career.Fact{}, "principal", &SkillsFormatConfig{Format: "flat", Limit: 0, SelectedTechnologies: nil})
+		sections, err := builder.BuildSections(ctx, []*career.CVBullet{}, []*career.Event{}, []*career.Fact{}, "principal", &SkillsFormatConfig{Format: "flat", Limit: 0, SelectedTechnologies: nil}, nil)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(sections).To(BeEmpty())
 	})
@@ -39,7 +39,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 		event := fixtures.EventWith("event1", "Implemented authentication system", "TechCorp", "")
 		events := []*career.Event{event}
 
-		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil)
+		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil, nil)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(sections).ToNot(BeEmpty())
 
@@ -68,7 +68,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 		event.Skills = []string{"Go", "PostgreSQL"}
 		events := []*career.Event{event}
 
-		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil)
+		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil, nil)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(sections).ToNot(BeEmpty())
 
@@ -104,7 +104,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 		event := fixtures.EventWith("event1", "Implemented feature", "TechCorp", "")
 		events := []*career.Event{event}
 
-		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil)
+		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil, nil)
 		Expect(err).NotTo(HaveOccurred())
 
 		// Should only have experience section, no skills
@@ -121,7 +121,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 		event := fixtures.EventWith("event1", "Led architecture implementation", "TechCorp", "")
 		events := []*career.Event{event}
 
-		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil)
+		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil, nil)
 		Expect(err).NotTo(HaveOccurred())
 
 		// Should include summary section for principal role
@@ -134,11 +134,11 @@ var _ = Describe("DefaultSectionBuilder", func() {
 		}
 		Expect(summarySection).NotTo(BeNil())
 		Expect(summarySection.Title).To(Equal("Professional Summary"))
-		// Summary section uses Summary field, not Content
-		Expect(summarySection.Summary).To(ContainSubstring("Experienced"))
+		// Summary should contain the actual bullet text, not a template
+		Expect(summarySection.Summary).To(ContainSubstring("Led architecture implementation"))
 	})
 
-	It("should not create summary section for junior roles", func() {
+	It("should create summary section for all roles", func() {
 		bullets := []*career.CVBullet{
 			fixtures.CVBulletWithSources("bullet1", "", "Implemented feature", []string{"event1"}, []string{}),
 		}
@@ -146,13 +146,19 @@ var _ = Describe("DefaultSectionBuilder", func() {
 		event := fixtures.EventWith("event1", "Implemented feature", "TechCorp", "")
 		events := []*career.Event{event}
 
-		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "senior_ic", nil)
+		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "senior_ic", nil, nil)
 		Expect(err).NotTo(HaveOccurred())
 
-		// Should not include summary section for senior_ic
+		// Should include summary section for senior_ic (all roles get summary now)
+		var summarySection *career.CVSection
 		for _, section := range sections {
-			Expect(section.SectionType).NotTo(Equal("summary"))
+			if section.SectionType == "summary" {
+				summarySection = section
+				break
+			}
 		}
+		Expect(summarySection).NotTo(BeNil())
+		Expect(summarySection.Title).To(Equal("Professional Summary"))
 	})
 
 	It("should order sections correctly", func() {
@@ -163,7 +169,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 		event := fixtures.EventWith("event1", "Implemented feature", "TechCorp", "")
 		events := []*career.Event{event}
 
-		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil)
+		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil, nil)
 		Expect(err).NotTo(HaveOccurred())
 
 		// Should have experience first, then skills, then summary
@@ -188,7 +194,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 		event2 := fixtures.EventWith("event2", "Feature B", "CompanyB", "")
 		events := []*career.Event{event1, event2}
 
-		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil)
+		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil, nil)
 		Expect(err).NotTo(HaveOccurred())
 
 		// Find experience section
@@ -223,7 +229,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 		cancelCtx, cancel := context.WithCancel(context.Background())
 		cancel()
 
-		_, err := builder.BuildSections(cancelCtx, bullets, []*career.Event{}, []*career.Fact{}, "principal", &SkillsFormatConfig{Format: "flat", Limit: 0, SelectedTechnologies: nil})
+		_, err := builder.BuildSections(cancelCtx, bullets, []*career.Event{}, []*career.Fact{}, "principal", &SkillsFormatConfig{Format: "flat", Limit: 0, SelectedTechnologies: nil}, nil)
 		Expect(err).To(HaveOccurred())
 	})
 
@@ -235,7 +241,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 		event := fixtures.EventWith("event1", "Feature", "", "MyProject") // Has project instead of company
 		events := []*career.Event{event}
 
-		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil)
+		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil, nil)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(sections).ToNot(BeEmpty())
 
@@ -264,7 +270,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 		event := fixtures.EventWith("event1", "Feature A", "TechCorp", "")
 		events := []*career.Event{event}
 
-		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil)
+		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil, nil)
 		Expect(err).NotTo(HaveOccurred())
 
 		// All section IDs should be unique
@@ -305,7 +311,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 				bulletA2,
 			}
 
-			sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "senior_ic", nil)
+			sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "senior_ic", nil, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Find experience section
@@ -355,7 +361,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 				bulletB3,
 			}
 
-			sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "senior_ic", nil)
+			sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "senior_ic", nil, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Find experience section
@@ -389,7 +395,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 				bulletB2,
 			}
 
-			sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "senior_ic", nil)
+			sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "senior_ic", nil, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Find experience section
@@ -433,7 +439,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 			bullet := fixtures.CVBulletWithSources("bullet-cross", "", "Cross-company bullet", []string{"beis1", "beis2", "waf1"}, nil)
 			bullets := []*career.CVBullet{bullet}
 
-			sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "senior_ic", nil)
+			sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "senior_ic", nil, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Find experience section.
@@ -479,7 +485,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 			bullet := fixtures.CVBulletWithSources("bullet-multi", "", "Multi-company bullet", []string{"a1", "a2", "a3", "b1", "c1"}, nil)
 			bullets := []*career.CVBullet{bullet}
 
-			sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "senior_ic", nil)
+			sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "senior_ic", nil, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Find experience section.
@@ -515,7 +521,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 			bullet := fixtures.CVBulletWithSources("bullet-single", "", "Single-company bullet", []string{"e1", "e2"}, nil)
 			bullets := []*career.CVBullet{bullet}
 
-			sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "senior_ic", nil)
+			sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "senior_ic", nil, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			var expSection *career.CVSection
@@ -531,5 +537,567 @@ var _ = Describe("DefaultSectionBuilder", func() {
 			Expect(expSection.Content[0].StartDate).To(Equal("Apr 2021"))
 			Expect(expSection.Content[0].EndDate).To(Equal("Aug 2021"))
 		})
+	})
+})
+
+var _ = Describe("computeExperienceYears", func() {
+	It("should return 0 for empty events", func() {
+		years := computeExperienceYears([]*career.Event{})
+		Expect(years).To(Equal(0))
+	})
+
+	It("should return 0 for nil events", func() {
+		years := computeExperienceYears(nil)
+		Expect(years).To(Equal(0))
+	})
+
+	It("should compute years from single event to now", func() {
+		event := fixtures.Event("e1")
+		event.Date = time.Now().AddDate(-5, 0, 0) // 5 years ago
+		years := computeExperienceYears([]*career.Event{event})
+		Expect(years).To(BeNumerically(">=", 4))
+		Expect(years).To(BeNumerically("<=", 6))
+	})
+
+	It("should compute years from earliest to latest event when latest is in the past", func() {
+		event1 := fixtures.Event("e1")
+		event1.Date = time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC)
+
+		event2 := fixtures.Event("e2")
+		event2.Date = time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
+
+		// Latest is in the past, so it uses now as end date
+		years := computeExperienceYears([]*career.Event{event1, event2})
+		// From 2015 to now (~11 years as of 2026)
+		Expect(years).To(BeNumerically(">=", 10))
+	})
+
+	It("should use min/max dates, not sum durations", func() {
+		// Timeline: 2018, 2019, 2020 - overlapping events
+		event1 := fixtures.Event("e1")
+		event1.Date = time.Date(2018, 6, 1, 0, 0, 0, 0, time.UTC)
+
+		event2 := fixtures.Event("e2")
+		event2.Date = time.Date(2019, 3, 1, 0, 0, 0, 0, time.UTC)
+
+		event3 := fixtures.Event("e3")
+		event3.Date = time.Date(2020, 12, 1, 0, 0, 0, 0, time.UTC)
+
+		years := computeExperienceYears([]*career.Event{event1, event2, event3})
+		// From mid-2018 to now (~7-8 years)
+		Expect(years).To(BeNumerically(">=", 5))
+		Expect(years).To(BeNumerically("<=", 10))
+	})
+})
+
+var _ = Describe("buildSummarySection with SummaryConfig", func() {
+	var (
+		builder *DefaultSectionBuilder
+		log     *logger.Logger
+	)
+
+	BeforeEach(func() {
+		log = logger.DefaultLogger()
+		builder = NewSectionBuilder(nil, log)
+	})
+
+	It("should render prose from top 2 bullets only", func() {
+		bullets := []*career.CVBullet{
+			fixtures.CVBulletWith("b1", "", "First achievement"),
+			fixtures.CVBulletWith("b2", "", "Second achievement"),
+			fixtures.CVBulletWith("b3", "", "Third achievement"),
+		}
+		for i, b := range bullets {
+			b.SourceEventIDs = []string{"e1"}
+			b.Rank = float64(3-i) / 3.0
+		}
+
+		section := builder.buildSummarySection(bullets, 0, nil, 10)
+
+		Expect(section).NotTo(BeNil())
+		// Should contain only top 2 bullets joined with space
+		Expect(section.Summary).To(ContainSubstring("First achievement"))
+		Expect(section.Summary).To(ContainSubstring("Second achievement"))
+		// Should NOT contain 3rd bullet
+		Expect(section.Summary).To(Equal("First achievement. Second achievement."))
+	})
+
+	It("should render heading template with Title and Years", func() {
+		bullet := fixtures.CVBulletWith("b1", "", "Some achievement")
+		bullet.SourceEventIDs = []string{"e1"}
+
+		summaryCfg := &SummaryConfig{
+			SummaryHeading: "**{{.Title}} | {{.Years}}+ Years Experience**",
+			ProfileTitle:   "Senior Ruby Developer",
+		}
+
+		section := builder.buildSummarySection([]*career.CVBullet{bullet}, 0, summaryCfg, 15)
+
+		Expect(section).NotTo(BeNil())
+		Expect(section.Summary).To(HavePrefix("**Senior Ruby Developer | 15+ Years Experience**"))
+		Expect(section.Summary).To(ContainSubstring("\n"))
+		Expect(section.Summary).To(ContainSubstring("Some achievement"))
+	})
+
+	It("should return prose only when SummaryHeading is empty", func() {
+		bullet := fixtures.CVBulletWith("b1", "", "Some achievement")
+		bullet.SourceEventIDs = []string{"e1"}
+
+		summaryCfg := &SummaryConfig{
+			SummaryHeading: "",
+			ProfileTitle:   "",
+		}
+
+		section := builder.buildSummarySection([]*career.CVBullet{bullet}, 0, summaryCfg, 10)
+
+		Expect(section).NotTo(BeNil())
+		// Should NOT have a newline at the start (no heading)
+		Expect(section.Summary).NotTo(HavePrefix("\n"))
+		Expect(section.Summary).To(Equal("Some achievement."))
+	})
+
+	It("should auto-generate heading from ProfileTitle when SummaryHeading is empty", func() {
+		bullet := fixtures.CVBulletWith("b1", "", "Built production systems serving millions of users")
+		bullet.SourceEventIDs = []string{"e1"}
+
+		summaryCfg := &SummaryConfig{
+			SummaryHeading: "", // empty — no template
+			ProfileTitle:   "Staff Software Engineer",
+		}
+
+		section := builder.buildSummarySection([]*career.CVBullet{bullet}, 0, summaryCfg, 20)
+
+		Expect(section).NotTo(BeNil())
+		Expect(section.Summary).To(HavePrefix("**Staff Software Engineer | 20+ Years Experience**"))
+		Expect(section.Summary).To(ContainSubstring("\n"))
+		Expect(section.Summary).To(ContainSubstring("Built production systems"))
+	})
+
+	It("should gracefully handle invalid template syntax", func() {
+		bullet := fixtures.CVBulletWith("b1", "", "Achievement text")
+		bullet.SourceEventIDs = []string{"e1"}
+
+		summaryCfg := &SummaryConfig{
+			SummaryHeading: "**{{.InvalidSyntax", // Missing closing braces
+			ProfileTitle:   "Title",
+		}
+
+		section := builder.buildSummarySection([]*career.CVBullet{bullet}, 0, summaryCfg, 10)
+
+		Expect(section).NotTo(BeNil())
+		// Should fall back to prose only
+		Expect(section.Summary).To(Equal("Achievement text."))
+	})
+
+	It("should gracefully handle template execution errors", func() {
+		bullet := fixtures.CVBulletWith("b1", "", "Achievement text")
+		bullet.SourceEventIDs = []string{"e1"}
+
+		summaryCfg := &SummaryConfig{
+			// Valid syntax but references non-existent field
+			SummaryHeading: "{{.NonExistentField}}",
+			ProfileTitle:   "Title",
+		}
+
+		section := builder.buildSummarySection([]*career.CVBullet{bullet}, 0, summaryCfg, 10)
+
+		Expect(section).NotTo(BeNil())
+		// Template execution with missing field produces empty string, not error
+		// So we get empty heading which is treated as no heading
+		Expect(section.Summary).To(ContainSubstring("Achievement text."))
+	})
+
+	It("should return nil for empty bullets", func() {
+		section := builder.buildSummarySection([]*career.CVBullet{}, 0, nil, 10)
+		Expect(section).To(BeNil())
+	})
+
+	It("should strip bullet markers from text", func() {
+		bullets := []*career.CVBullet{
+			fixtures.CVBulletWith("b1", "", "- Bullet with dash"),
+			fixtures.CVBulletWith("b2", "", "* Bullet with asterisk"),
+		}
+		for _, b := range bullets {
+			b.SourceEventIDs = []string{"e1"}
+		}
+
+		section := builder.buildSummarySection(bullets, 0, nil, 5)
+
+		Expect(section).NotTo(BeNil())
+		Expect(section.Summary).NotTo(ContainSubstring("- Bullet"))
+		Expect(section.Summary).NotTo(ContainSubstring("* Bullet"))
+		Expect(section.Summary).To(ContainSubstring("Bullet with dash"))
+		Expect(section.Summary).To(ContainSubstring("Bullet with asterisk"))
+	})
+
+	It("should ensure prose ends with period", func() {
+		bullet := fixtures.CVBulletWith("b1", "", "Achievement without period")
+		bullet.SourceEventIDs = []string{"e1"}
+
+		section := builder.buildSummarySection([]*career.CVBullet{bullet}, 0, nil, 5)
+
+		Expect(section).NotTo(BeNil())
+		Expect(section.Summary).To(HaveSuffix("."))
+	})
+
+	It("should not double period if bullet already ends with period", func() {
+		bullet := fixtures.CVBulletWith("b1", "", "Achievement with period.")
+		bullet.SourceEventIDs = []string{"e1"}
+
+		section := builder.buildSummarySection([]*career.CVBullet{bullet}, 0, nil, 5)
+
+		Expect(section).NotTo(BeNil())
+		Expect(section.Summary).NotTo(HaveSuffix(".."))
+		Expect(section.Summary).To(Equal("Achievement with period."))
+	})
+
+})
+
+var _ = Describe("firstSentence", func() {
+	It("extracts first sentence from multi-sentence text", func() {
+		text := "Migrated backend to Node.js. This reduced costs by 70% and improved response times."
+		Expect(firstSentence(text, 150)).To(Equal("Migrated backend to Node.js."))
+	})
+
+	It("returns full text when no sentence boundary exists and under maxChars", func() {
+		text := "Short achievement without period boundary"
+		Expect(firstSentence(text, 150)).To(Equal("Short achievement without period boundary."))
+	})
+
+	It("truncates at word boundary when first sentence exceeds maxChars", func() {
+		text := "Migrated QuikCV backend from Ruby on Rails to Node.js reducing server costs by 70% and improving response times by 40% through async processing and connection pooling optimisations across the entire platform infrastructure"
+		result := firstSentence(text, 150)
+		Expect(len(result)).To(BeNumerically("<=", 151))
+		Expect(result).To(HaveSuffix("."))
+		Expect(result).To(HavePrefix("Migrated QuikCV backend"))
+	})
+
+	It("returns empty string for empty input", func() {
+		Expect(firstSentence("", 150)).To(Equal(""))
+	})
+
+	It("handles text that is exactly at maxChars", func() {
+		text := "Exactly at limit"
+		Expect(firstSentence(text, 200)).To(Equal("Exactly at limit."))
+	})
+
+	It("handles text with trailing punctuation", func() {
+		text := "Achievement with period."
+		Expect(firstSentence(text, 150)).To(Equal("Achievement with period."))
+	})
+
+	It("extracts first sentence even when it has trailing punctuation", func() {
+		text := "First sentence here. Second sentence follows."
+		Expect(firstSentence(text, 150)).To(Equal("First sentence here."))
+	})
+})
+
+var _ = Describe("buildSummarySection wall-of-text regression", func() {
+	var (
+		builder *DefaultSectionBuilder
+		log     *logger.Logger
+	)
+
+	BeforeEach(func() {
+		log = logger.DefaultLogger()
+		builder = NewSectionBuilder(nil, log)
+	})
+
+	It("produces short prose from long multi-sentence bullets (top 2)", func() {
+		bullets := []*career.CVBullet{
+			fixtures.CVBulletWith("b1", "", "Migrated QuikCV backend from Ruby on Rails to Node.js, reducing server costs by 70% and improving response times by 40% through async processing and connection pooling optimisations across the entire platform infrastructure. This was a major undertaking that took six months."),
+			fixtures.CVBulletWith("b2", "", "Founded n-vyro.io IoT platform, delivering production-ready firmware in C/C++ and backend services in Go and Node.js for real-time device control. The platform served thousands of connected devices across multiple regions."),
+			fixtures.CVBulletWith("b3", "", "Adopted Jest early for QuikCV testing, establishing a test-first culture that reduced regression bugs by 60% across the engineering team. This approach was later adopted company-wide as the standard testing methodology."),
+		}
+		for i, b := range bullets {
+			b.SourceEventIDs = []string{"e1"}
+			b.Rank = float64(3-i) / 3.0
+		}
+
+		section := builder.buildSummarySection(bullets, 0, nil, 10)
+
+		Expect(section).NotTo(BeNil())
+		Expect(len(section.Summary)).To(BeNumerically("<", 400), "summary must be under 400 chars with 2 bullets, got: "+section.Summary)
+		Expect(section.Summary).To(ContainSubstring("Migrated QuikCV backend"))
+		Expect(section.Summary).To(ContainSubstring("Founded n-vyro.io"))
+		Expect(section.Summary).NotTo(ContainSubstring("This was a major undertaking"))
+		Expect(section.Summary).NotTo(ContainSubstring("The platform served"))
+		Expect(section.Summary).NotTo(ContainSubstring("Adopted Jest early"))
+		Expect(section.Summary).NotTo(ContainSubstring("Built AI-powered customer service dashboards"))
+	})
+
+	It("produces short prose from single long bullet without sentence boundary", func() {
+		bullet := fixtures.CVBulletWith("b1", "", "Migrated QuikCV backend from Ruby on Rails to Node.js reducing server costs by 70% and improving response times by 40% through async processing and connection pooling optimisations across the entire platform infrastructure which was a significant engineering effort")
+		bullet.SourceEventIDs = []string{"e1"}
+
+		section := builder.buildSummarySection([]*career.CVBullet{bullet}, 0, nil, 5)
+
+		Expect(section).NotTo(BeNil())
+		Expect(len(section.Summary)).To(BeNumerically("<", 250), "single bullet summary must be under 250 chars with maxChars=150")
+		Expect(section.Summary).To(HaveSuffix("."))
+	})
+})
+
+var _ = Describe("formatMonthYear", func() {
+	It("returns empty string for zero time", func() {
+		Expect(formatMonthYear(time.Time{})).To(Equal(""))
+	})
+
+	It("formats a valid time as Month Year", func() {
+		t := time.Date(2023, time.March, 15, 0, 0, 0, 0, time.UTC)
+		Expect(formatMonthYear(t)).To(Equal("Mar 2023"))
+	})
+
+	It("formats different months correctly", func() {
+		jan := time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC)
+		Expect(formatMonthYear(jan)).To(Equal("Jan 2020"))
+
+		dec := time.Date(2025, time.December, 31, 0, 0, 0, 0, time.UTC)
+		Expect(formatMonthYear(dec)).To(Equal("Dec 2025"))
+	})
+})
+
+var _ = Describe("getBulletsPerCompanyForRole", func() {
+	var builder *DefaultSectionBuilder
+
+	BeforeEach(func() {
+		log := logger.DefaultLogger()
+		builder = NewSectionBuilder(nil, log)
+	})
+
+	It("returns 4 for principal", func() {
+		Expect(builder.getBulletsPerCompanyForRole("principal")).To(Equal(4))
+	})
+
+	It("returns 5 for staff", func() {
+		Expect(builder.getBulletsPerCompanyForRole("staff")).To(Equal(5))
+	})
+
+	It("returns 4 for em", func() {
+		Expect(builder.getBulletsPerCompanyForRole("em")).To(Equal(4))
+	})
+
+	It("returns 5 for senior_ic", func() {
+		Expect(builder.getBulletsPerCompanyForRole("senior_ic")).To(Equal(5))
+	})
+
+	It("returns default of 4 for unknown role", func() {
+		Expect(builder.getBulletsPerCompanyForRole("unknown")).To(Equal(4))
+	})
+
+	It("handles mixed case input via ToLower", func() {
+		Expect(builder.getBulletsPerCompanyForRole("STAFF")).To(Equal(5))
+		Expect(builder.getBulletsPerCompanyForRole("Em")).To(Equal(4))
+	})
+})
+
+var _ = Describe("buildGroupedSkills", func() {
+	var builder *DefaultSectionBuilder
+
+	BeforeEach(func() {
+		log := logger.DefaultLogger()
+		builder = NewSectionBuilder(nil, log)
+	})
+
+	It("groups skills by category alphabetically", func() {
+		skills := []skillInfo{
+			{ID: "1", Name: "Go", Category: "Backend"},
+			{ID: "2", Name: "React", Category: "Frontend"},
+			{ID: "3", Name: "Python", Category: "Backend"},
+		}
+		groups := builder.buildGroupedSkills(skills, 0)
+		Expect(groups).To(HaveLen(2))
+		Expect(groups[0].Header).To(Equal("backend"))
+		Expect(groups[1].Header).To(Equal("frontend"))
+	})
+
+	It("places skills with empty category under other", func() {
+		skills := []skillInfo{
+			{ID: "1", Name: "Docker", Category: ""},
+		}
+		groups := builder.buildGroupedSkills(skills, 0)
+		Expect(groups).To(HaveLen(1))
+		Expect(groups[0].Header).To(Equal("other"))
+		Expect(groups[0].Bullets).To(HaveLen(1))
+		Expect(groups[0].Bullets[0].Text).To(Equal("Docker"))
+	})
+
+	It("applies per-group limit when specified", func() {
+		skills := []skillInfo{
+			{ID: "1", Name: "Go", Category: "Backend"},
+			{ID: "2", Name: "Python", Category: "Backend"},
+			{ID: "3", Name: "Ruby", Category: "Backend"},
+		}
+		groups := builder.buildGroupedSkills(skills, 2)
+		Expect(groups).To(HaveLen(1))
+		Expect(groups[0].Bullets).To(HaveLen(2))
+	})
+
+	It("returns empty groups for empty skills", func() {
+		groups := builder.buildGroupedSkills([]skillInfo{}, 0)
+		Expect(groups).To(BeEmpty())
+	})
+
+	It("does not limit when limitPerGroup is zero", func() {
+		skills := []skillInfo{
+			{ID: "1", Name: "Go", Category: "Backend"},
+			{ID: "2", Name: "Python", Category: "Backend"},
+			{ID: "3", Name: "Ruby", Category: "Backend"},
+		}
+		groups := builder.buildGroupedSkills(skills, 0)
+		Expect(groups).To(HaveLen(1))
+		Expect(groups[0].Bullets).To(HaveLen(3))
+	})
+
+	It("creates bullets with correct text per category", func() {
+		skills := []skillInfo{
+			{ID: "1", Name: "Go", Category: "Backend"},
+			{ID: "2", Name: "React", Category: "Frontend"},
+		}
+		groups := builder.buildGroupedSkills(skills, 0)
+		Expect(groups[0].Bullets[0].Text).To(Equal("Go"))
+		Expect(groups[1].Bullets[0].Text).To(Equal("React"))
+	})
+
+	It("handles multiple categories with mixed empty", func() {
+		skills := []skillInfo{
+			{ID: "1", Name: "Go", Category: "Backend"},
+			{ID: "2", Name: "Docker", Category: ""},
+			{ID: "3", Name: "React", Category: "Frontend"},
+		}
+		groups := builder.buildGroupedSkills(skills, 0)
+		Expect(groups).To(HaveLen(3))
+		Expect(groups[0].Header).To(Equal("backend"))
+		Expect(groups[1].Header).To(Equal("frontend"))
+		Expect(groups[2].Header).To(Equal("other"))
+	})
+})
+
+var _ = Describe("buildSkillsSection format branches", func() {
+	var (
+		builder *DefaultSectionBuilder
+		ctx     context.Context
+	)
+
+	BeforeEach(func() {
+		log := logger.DefaultLogger()
+		builder = NewSectionBuilder(nil, log)
+		ctx = context.Background()
+	})
+
+	It("should build grouped skills section via grouped format", func() {
+		event := fixtures.Event("event1")
+		event.Skills = []string{"skill-go", "skill-react"}
+		events := []*career.Event{event}
+
+		config := &SkillsFormatConfig{
+			Format:               "grouped",
+			Limit:                0,
+			SelectedTechnologies: nil,
+		}
+
+		section := builder.buildSkillsSection(ctx, events, config, 0)
+		Expect(section).NotTo(BeNil())
+		Expect(section.SectionType).To(Equal("skills"))
+		Expect(section.Content).To(HaveLen(1))
+		Expect(section.Content[0].Header).To(Equal("other"))
+	})
+
+	It("should apply grouped format with per-group limit", func() {
+		event := fixtures.Event("event1")
+		event.Skills = []string{"s1", "s2", "s3", "s4"}
+		events := []*career.Event{event}
+
+		config := &SkillsFormatConfig{
+			Format:               "grouped",
+			Limit:                2,
+			SelectedTechnologies: nil,
+		}
+
+		section := builder.buildSkillsSection(ctx, events, config, 0)
+		Expect(section).NotTo(BeNil())
+		Expect(section.Content).To(HaveLen(1))
+		Expect(section.Content[0].Bullets).To(HaveLen(2))
+	})
+
+	It("should apply flat limit when skills exceed limit", func() {
+		event := fixtures.Event("event1")
+		event.Skills = []string{"s1", "s2", "s3", "s4", "s5"}
+		events := []*career.Event{event}
+
+		config := &SkillsFormatConfig{
+			Format:               "flat",
+			Limit:                3,
+			SelectedTechnologies: nil,
+		}
+
+		section := builder.buildSkillsSection(ctx, events, config, 0)
+		Expect(section).NotTo(BeNil())
+		Expect(section.Content).To(HaveLen(1))
+		Expect(section.Content[0].Bullets).To(HaveLen(3))
+	})
+
+	It("should return nil when events have no skills", func() {
+		event := fixtures.Event("event1")
+		events := []*career.Event{event}
+
+		config := &SkillsFormatConfig{
+			Format: "flat",
+			Limit:  0,
+		}
+
+		section := builder.buildSkillsSection(ctx, events, config, 0)
+		Expect(section).To(BeNil())
+	})
+})
+
+var _ = Describe("buildProjectsSection bullet cap", func() {
+	var (
+		builder *DefaultSectionBuilder
+		ctx     context.Context
+	)
+
+	BeforeEach(func() {
+		log := logger.DefaultLogger()
+		builder = NewSectionBuilder(nil, log)
+		ctx = context.Background()
+	})
+
+	It("should cap bullets per project based on role", func() {
+		pe0 := fixtures.EventWith("pe0", "Work 0", "", "MyProject")
+		pe0.Date = time.Date(2023, 1, 15, 0, 0, 0, 0, time.UTC)
+		pe1 := fixtures.EventWith("pe1", "Work 1", "", "MyProject")
+		pe1.Date = time.Date(2023, 2, 15, 0, 0, 0, 0, time.UTC)
+		pe2 := fixtures.EventWith("pe2", "Work 2", "", "MyProject")
+		pe2.Date = time.Date(2023, 3, 15, 0, 0, 0, 0, time.UTC)
+		pe3 := fixtures.EventWith("pe3", "Work 3", "", "MyProject")
+		pe3.Date = time.Date(2023, 4, 15, 0, 0, 0, 0, time.UTC)
+		pe4 := fixtures.EventWith("pe4", "Work 4", "", "MyProject")
+		pe4.Date = time.Date(2023, 5, 15, 0, 0, 0, 0, time.UTC)
+		pe5 := fixtures.EventWith("pe5", "Work 5", "", "MyProject")
+		pe5.Date = time.Date(2023, 6, 15, 0, 0, 0, 0, time.UTC)
+		events := []*career.Event{pe0, pe1, pe2, pe3, pe4, pe5}
+
+		b0 := fixtures.CVBulletWithSources("pb0", "", "Achievement 0", []string{"pe0"}, nil)
+		b1 := fixtures.CVBulletWithSources("pb1", "", "Achievement 1", []string{"pe1"}, nil)
+		b2 := fixtures.CVBulletWithSources("pb2", "", "Achievement 2", []string{"pe2"}, nil)
+		b3 := fixtures.CVBulletWithSources("pb3", "", "Achievement 3", []string{"pe3"}, nil)
+		b4 := fixtures.CVBulletWithSources("pb4", "", "Achievement 4", []string{"pe4"}, nil)
+		b5 := fixtures.CVBulletWithSources("pb5", "", "Achievement 5", []string{"pe5"}, nil)
+		bullets := []*career.CVBullet{b0, b1, b2, b3, b4, b5}
+
+		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil, nil)
+		Expect(err).NotTo(HaveOccurred())
+
+		var projectsSection *career.CVSection
+		for _, section := range sections {
+			if section.SectionType == "projects" {
+				projectsSection = section
+				break
+			}
+		}
+		Expect(projectsSection).NotTo(BeNil())
+		Expect(projectsSection.Content).To(HaveLen(1))
+		Expect(projectsSection.Content[0].Bullets).To(HaveLen(4))
 	})
 })

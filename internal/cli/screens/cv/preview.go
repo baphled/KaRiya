@@ -3,6 +3,7 @@ package cv
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/viewport"
@@ -243,6 +244,10 @@ func (s *CVPreviewScreen) renderCVContent() string {
 	b.WriteString(s.renderPersonalDetails(contentWidth))
 	b.WriteString("\n")
 
+	// Render Key Highlights section
+	b.WriteString(s.renderHighlights(contentWidth))
+	b.WriteString("\n")
+
 	if len(s.cv.Sections) == 0 {
 		b.WriteString("No sections generated yet\n")
 		return b.String()
@@ -358,12 +363,122 @@ func (s *CVPreviewScreen) renderPersonalDetails(width int) string {
 	return b.String()
 }
 
-// wordWrap wraps text to the specified width, breaking at word boundaries.
+// renderHighlights renders the Key Highlights section with top-scored bullets.
+func (s *CVPreviewScreen) renderHighlights(width int) string {
+	if s.cv == nil || len(s.cv.Sections) == 0 {
+		return ""
+	}
+
+	var b strings.Builder
+	theme := s.getTheme()
+
+	// Section title style
+	sectionTitleStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(theme.AccentColor())
+
+	highlightStyle := lipgloss.NewStyle().
+		Foreground(theme.WarningColor())
+
+	// Collect all bullets from all sections
+	type bulletWithScore struct {
+		bullet *career.CVBullet
+		score  float64
+	}
+
+	var allBullets []bulletWithScore
+	for _, section := range s.cv.Sections {
+		for _, group := range section.Content {
+			for _, bullet := range group.Bullets {
+				var score float64
+				// If target audience is set and not "master", use audience relevance * confidence
+				if s.cv.TargetAudience != "" && strings.ToLower(s.cv.TargetAudience) != "master" {
+					if audienceScore, ok := bullet.AudienceRelevance[strings.ToLower(s.cv.TargetAudience)]; ok {
+						score = audienceScore * bullet.Confidence
+					} else {
+						// Fallback to confidence if audience score not available
+						score = bullet.Confidence
+					}
+				} else {
+					// Use confidence only
+					score = bullet.Confidence
+				}
+				allBullets = append(allBullets, bulletWithScore{bullet: bullet, score: score})
+			}
+		}
+	}
+
+	// If no bullets, return empty
+	if len(allBullets) == 0 {
+		return ""
+	}
+
+	// Sort by score descending
+	sort.Slice(allBullets, func(i, j int) bool {
+		return allBullets[i].score > allBullets[j].score
+	})
+
+	// Take top N highlights from config (or fewer if less bullets available)
+	topCount := 5
+	if s.profileConfig != nil && s.profileConfig.MaxHighlights > 0 {
+		topCount = s.profileConfig.MaxHighlights
+	}
+	if len(allBullets) < topCount {
+		topCount = len(allBullets)
+	}
+	topBullets := allBullets[:topCount]
+
+	// Render section header
+	b.WriteString(sectionTitleStyle.Render("## Key Highlights"))
+	b.WriteString("\n")
+	b.WriteString(strings.Repeat("─", 16))
+	b.WriteString("\n")
+
+	// Render each highlight with star prefix
+	bulletWidth := width - 6
+	for _, bws := range topBullets {
+		text := bws.bullet.Text
+		if text == "" {
+			text = bws.bullet.EnhancedText
+		}
+		wrapped := wordWrap(text, bulletWidth)
+		lines := strings.Split(wrapped, "\n")
+		for i, line := range lines {
+			if i == 0 {
+				b.WriteString(highlightStyle.Render("  ★ " + line))
+			} else {
+				b.WriteString(highlightStyle.Render("    " + line))
+			}
+			b.WriteString("\n")
+		}
+	}
+
+	return b.String()
+}
+
+// wordWrap wraps text to the specified width, preserving explicit newlines.
 func wordWrap(text string, width int) string {
 	if width <= 0 {
 		return text
 	}
 
+	paragraphs := strings.Split(text, "\n")
+	var wrappedParagraphs []string
+	for _, para := range paragraphs {
+		if para == "" {
+			wrappedParagraphs = append(wrappedParagraphs, "")
+			continue
+		}
+		wrappedParagraphs = append(wrappedParagraphs, wrapParagraph(para, width))
+	}
+	return strings.Join(wrappedParagraphs, "\n")
+}
+
+// wrapParagraph wraps a single paragraph to the specified width.
+func wrapParagraph(text string, width int) string {
+	if width <= 0 {
+		return text
+	}
 	var result strings.Builder
 	var currentLine strings.Builder
 	currentLen := 0
@@ -371,25 +486,18 @@ func wordWrap(text string, width int) string {
 	words := strings.Fields(text)
 	for i, word := range words {
 		wordLen := len(word)
-
-		// If adding this word exceeds width, start a new line
 		if currentLen > 0 && currentLen+1+wordLen > width {
 			result.WriteString(currentLine.String())
 			result.WriteString("\n")
 			currentLine.Reset()
 			currentLen = 0
 		}
-
-		// Add space before word (except at start of line)
 		if currentLen > 0 {
 			currentLine.WriteString(" ")
 			currentLen++
 		}
-
 		currentLine.WriteString(word)
 		currentLen += wordLen
-
-		// Handle very long words that exceed width
 		if wordLen > width && i < len(words)-1 {
 			result.WriteString(currentLine.String())
 			result.WriteString("\n")
@@ -397,12 +505,9 @@ func wordWrap(text string, width int) string {
 			currentLen = 0
 		}
 	}
-
-	// Write remaining content
 	if currentLine.Len() > 0 {
 		result.WriteString(currentLine.String())
 	}
-
 	return result.String()
 }
 

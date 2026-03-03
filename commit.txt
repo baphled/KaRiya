@@ -1,0 +1,7 @@
+fix(cv): join summary sentences with space, each ending with period
+
+Ensure summary text is properly formatted by joining sentences with a space
+and verifying each sentence ends with a period. This improves readability
+and consistency in generated CV summaries.
+
+Co-authored-by: Claude <claude@anthropic.com>

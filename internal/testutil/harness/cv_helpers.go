@@ -84,7 +84,7 @@ func SetupWithCVMocks(t TestingT, mockCfg *CVMockConfig) *TestEnv {
 	log := logger.DefaultLogger()
 	bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
 
-	cvExportService := cv.NewExportServiceWithClipboard(log, mockCfg.ClipboardWriter)
+	cvExportService := cv.NewExportServiceWithClipboard(log, mockCfg.ClipboardWriter, nil, repos.Skill)
 
 	registrar := newCVMockRegistrar(
 		cliService,

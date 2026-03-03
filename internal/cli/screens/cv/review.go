@@ -3,6 +3,7 @@ package cv
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/base"
 	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
 	cvservice "github.com/baphled/kariya/internal/service/career/cv"
@@ -29,6 +31,7 @@ type ReviewScreen struct {
 
 	cv            *career.CVView
 	profileConfig *config.ProfileConfig
+	summary       *GenerationSummaryScreen
 	viewport      viewport.Model
 	ready         bool
 	width         int
@@ -61,10 +64,27 @@ func NewCVReviewScreen(cv *career.CVView) *ReviewScreen {
 // Side effects:
 //   - None.
 func NewCVReviewScreenWithProfile(cv *career.CVView, profileConfig *config.ProfileConfig) *ReviewScreen {
+	return NewCVReviewScreenWithSummary(cv, profileConfig, nil)
+}
+
+// NewCVReviewScreenWithSummary creates a new CV review screen with generation summary.
+//
+// Expected:
+//   - cvview must be valid.
+//   - profileConfig may be nil.
+//   - summary may be nil.
+//
+// Returns:
+//   - A fully initialized ReviewScreen ready for use.
+//
+// Side effects:
+//   - None.
+func NewCVReviewScreenWithSummary(cv *career.CVView, profileConfig *config.ProfileConfig, summary *GenerationSummaryScreen) *ReviewScreen {
 	return &ReviewScreen{
 		Screen:        base.NewBaseScreen(),
 		cv:            cv,
 		profileConfig: profileConfig,
+		summary:       summary,
 		width:         80,
 		height:        24,
 		ready:         false,
@@ -162,7 +182,11 @@ func (s *ReviewScreen) View() string {
 	footerStyle := lipgloss.NewStyle().
 		Foreground(theme.SecondaryColor())
 
-	b.WriteString(titleStyle.Render("📋 CV Review"))
+	title := "📋 CV Review"
+	if s.summary != nil {
+		title = "📋 CV Configuration Review"
+	}
+	b.WriteString(titleStyle.Render(title))
 	b.WriteString("\n")
 	b.WriteString(strings.Repeat("═", minInt(60, s.width-4)))
 	b.WriteString("\n\n")
@@ -170,7 +194,7 @@ func (s *ReviewScreen) View() string {
 	if s.cv == nil {
 		b.WriteString("No CV data available\n")
 		b.WriteString("\n")
-		b.WriteString(strings.Repeat("─", 60))
+		b.WriteString(strings.Repeat("─", minInt(60, s.width-4)))
 		b.WriteString("\n")
 		b.WriteString(footerStyle.Render("esc: back"))
 		return b.String()
@@ -202,12 +226,103 @@ func (s *ReviewScreen) View() string {
 
 // renderContent renders the scrollable content.
 func (s *ReviewScreen) renderContent() string {
+	if s.summary != nil {
+		return s.renderSummaryContent()
+	}
 	var b strings.Builder
 
 	b.WriteString(s.renderPersonalDetails())
 	b.WriteString(s.renderCVDetails())
 	b.WriteString(s.renderStatistics())
+	b.WriteString(s.renderHighlights())
 	b.WriteString(s.renderSectionsList())
+
+	return b.String()
+}
+
+func (s *ReviewScreen) renderSummaryContent() string {
+	var b strings.Builder
+
+	b.WriteString(s.renderPersonalDetails())
+	b.WriteString(s.renderCVDetails())
+	b.WriteString(s.renderSummarySection())
+	b.WriteString(s.renderGenerationSettings())
+	b.WriteString(s.renderStatistics())
+
+	return b.String()
+}
+
+func (s *ReviewScreen) renderSummarySection() string {
+	summaryText := s.getSummaryText()
+	if summaryText == "" {
+		return ""
+	}
+
+	theme := s.getTheme()
+	sectionTitleStyle := lipgloss.NewStyle().Bold(true).Foreground(theme.AccentColor())
+
+	var b strings.Builder
+	b.WriteString(sectionTitleStyle.Render("📝 Summary"))
+	b.WriteString("\n")
+	b.WriteString(strings.Repeat("─", minInt(60, s.width-4)))
+	b.WriteString("\n")
+
+	for _, line := range strings.Split(summaryText, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			b.WriteString("\n")
+			continue
+		}
+		wrapped := wordWrap(line, 56)
+		for _, wl := range strings.Split(wrapped, "\n") {
+			b.WriteString("  " + wl + "\n")
+		}
+	}
+	b.WriteString("\n")
+
+	return b.String()
+}
+
+func (s *ReviewScreen) renderGenerationSettings() string {
+	theme := s.getTheme()
+	sectionTitleStyle := lipgloss.NewStyle().Bold(true).Foreground(theme.AccentColor())
+	labelStyle := lipgloss.NewStyle().Foreground(theme.SecondaryColor())
+	valueStyle := lipgloss.NewStyle().Foreground(theme.ForegroundColor())
+
+	var b strings.Builder
+	b.WriteString(sectionTitleStyle.Render("🎯 Generation Settings"))
+	b.WriteString("\n")
+	b.WriteString(strings.Repeat("─", minInt(60, s.width-4)))
+	b.WriteString("\n")
+
+	if s.summary.SelectedProfile != nil && s.summary.SelectedProfile.Name != "" {
+		profileName := s.summary.SelectedProfile.Name
+		b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Profile:"), valueStyle.Render(profileName)))
+	}
+	if s.summary.SelectedAudience != "" {
+		b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Audience:"), valueStyle.Render(s.summary.SelectedAudience)))
+	}
+	if s.summary.TechnologyFocus != "" {
+		b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Tech Focus:"), valueStyle.Render(s.summary.TechnologyFocus)))
+	}
+	if len(s.summary.Technologies) > 0 {
+		techText := strings.Join(s.summary.Technologies, ", ")
+		b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Technologies:"), valueStyle.Render(techText)))
+	}
+	if s.summary.FocusArea != "" {
+		b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Focus Area:"), valueStyle.Render(s.summary.FocusArea)))
+	}
+	if s.summary.SkillsFormat != "" {
+		skillsText := s.summary.SkillsFormat
+		if s.summary.SkillsLimit > 0 {
+			skillsText = fmt.Sprintf("%s (%d max)", skillsText, s.summary.SkillsLimit)
+		}
+		b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Skills Format:"), valueStyle.Render(skillsText)))
+	}
+	if s.summary.CVLength != "" {
+		b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("CV Length:"), valueStyle.Render(s.summary.CVLength)))
+	}
+	b.WriteString("\n")
 
 	return b.String()
 }
@@ -223,7 +338,7 @@ func (s *ReviewScreen) renderPersonalDetails() string {
 	var b strings.Builder
 	b.WriteString(sectionTitleStyle.Render("👤 Personal Details"))
 	b.WriteString("\n")
-	b.WriteString(strings.Repeat("─", 60))
+	b.WriteString(strings.Repeat("─", minInt(60, s.width-4)))
 	b.WriteString("\n")
 	b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Name:"), valueStyle.Render(profile.Name)))
 	b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Email:"), valueStyle.Render(profile.Email)))
@@ -242,7 +357,7 @@ func (s *ReviewScreen) renderCVDetails() string {
 	var b strings.Builder
 	b.WriteString(sectionTitleStyle.Render("📄 CV Details"))
 	b.WriteString("\n")
-	b.WriteString(strings.Repeat("─", 60))
+	b.WriteString(strings.Repeat("─", minInt(60, s.width-4)))
 	b.WriteString("\n")
 	b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("CV Name:"), valueStyle.Render(s.cv.Name)))
 	b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Role:"), valueStyle.Render(s.cv.TargetRole)))
@@ -261,7 +376,7 @@ func (s *ReviewScreen) renderStatistics() string {
 	var b strings.Builder
 	b.WriteString(sectionTitleStyle.Render("📊 Statistics"))
 	b.WriteString("\n")
-	b.WriteString(strings.Repeat("─", 60))
+	b.WriteString(strings.Repeat("─", minInt(60, s.width-4)))
 	b.WriteString("\n")
 	b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Source Events:"), valueStyle.Render(strconv.Itoa(s.cv.SourceEventCount))))
 	b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Source Facts:"), valueStyle.Render(strconv.Itoa(s.cv.SourceFactCount))))
@@ -284,6 +399,74 @@ func (s *ReviewScreen) countTotalBullets() int {
 	return total
 }
 
+func (s *ReviewScreen) scoreBullet(bullet *career.CVBullet) float64 {
+	if s.cv.TargetAudience != "" && !strings.EqualFold(s.cv.TargetAudience, "master") {
+		audienceRelevance := 0.0
+		if bullet.AudienceRelevance != nil {
+			if relevance, ok := bullet.AudienceRelevance[s.cv.TargetAudience]; ok {
+				audienceRelevance = relevance
+			}
+		}
+		return audienceRelevance * bullet.Confidence
+	}
+	return bullet.Confidence
+}
+
+func (s *ReviewScreen) renderHighlights() string {
+	theme := s.getTheme()
+	sectionTitleStyle := lipgloss.NewStyle().Bold(true).Foreground(theme.AccentColor())
+	valueStyle := lipgloss.NewStyle().Foreground(theme.ForegroundColor())
+
+	// Collect all bullets from all sections
+	type scoredBullet struct {
+		bullet *career.CVBullet
+		score  float64
+	}
+
+	var allBullets []scoredBullet
+	for _, section := range s.cv.Sections {
+		for _, group := range section.Content {
+			for _, bullet := range group.Bullets {
+				score := s.scoreBullet(bullet)
+				allBullets = append(allBullets, scoredBullet{bullet: bullet, score: score})
+			}
+		}
+	}
+
+	// Sort by score descending
+	sort.Slice(allBullets, func(i, j int) bool {
+		return allBullets[i].score > allBullets[j].score
+	})
+
+	// Take top 5
+	topCount := 10
+	if len(allBullets) < topCount {
+		topCount = len(allBullets)
+	}
+
+	if topCount == 0 {
+		return ""
+	}
+
+	var b strings.Builder
+	b.WriteString(sectionTitleStyle.Render("✨ Top Highlights"))
+	b.WriteString("\n")
+	b.WriteString(strings.Repeat("─", 60))
+	b.WriteString("\n")
+
+	for i := range topCount {
+		bullet := allBullets[i].bullet
+		text := bullet.Text
+		if text == "" {
+			text = bullet.EnhancedText
+		}
+		b.WriteString(fmt.Sprintf("  • %s\n", valueStyle.Render(text)))
+	}
+	b.WriteString("\n")
+
+	return b.String()
+}
+
 func (s *ReviewScreen) renderSectionsList() string {
 	theme := s.getTheme()
 	sectionTitleStyle := lipgloss.NewStyle().Bold(true).Foreground(theme.AccentColor())
@@ -297,7 +480,7 @@ func (s *ReviewScreen) renderSectionsList() string {
 	var b strings.Builder
 	b.WriteString(sectionTitleStyle.Render("📑 Sections"))
 	b.WriteString("\n")
-	b.WriteString(strings.Repeat("─", 60))
+	b.WriteString(strings.Repeat("─", minInt(60, s.width-4)))
 	b.WriteString("\n")
 
 	for _, section := range s.cv.Sections {
@@ -331,16 +514,19 @@ func (s *ReviewScreen) countSectionBullets(section *career.CVSection) int {
 
 // renderFooter renders the help footer with scroll indicator.
 func (s *ReviewScreen) renderFooter() string {
-	theme := s.getTheme()
-	footerStyle := lipgloss.NewStyle().
-		Foreground(theme.SecondaryColor())
-
-	scrollInfo := ""
-	if s.ready {
-		scrollInfo = fmt.Sprintf(" (%d%%)", int(s.viewport.ScrollPercent()*100))
+	th := s.getTheme()
+	badges := []*primitives.Badge{
+		primitives.HelpKeyBadge("↑↓/jk", "Scroll", th),
+		primitives.HelpKeyBadge("Enter/p", "Preview", th),
+		primitives.HelpKeyBadge("x", "Export", th),
+		primitives.HelpKeyBadge("e", "Edit", th),
+		primitives.HelpKeyBadge("Esc", "Back", th),
 	}
-
-	return footerStyle.Render(fmt.Sprintf("↑↓/jk: scroll%s  enter/p: preview  x: export  e: edit  esc: back", scrollInfo))
+	if s.ready {
+		pct := int(s.viewport.ScrollPercent() * 100)
+		badges = append([]*primitives.Badge{primitives.HelpKeyBadge(fmt.Sprintf("%d%%", pct), "", th)}, badges...)
+	}
+	return primitives.RenderHelpFooter(th, badges...)
 }
 
 // GetCV returns the CV data.
@@ -362,4 +548,17 @@ func (s *ReviewScreen) getTheme() themes.Theme {
 		}
 	}
 	return themes.NewDefaultTheme()
+}
+
+// getSummaryText extracts the summary text from the CV sections.
+func (s *ReviewScreen) getSummaryText() string {
+	if s.cv == nil {
+		return ""
+	}
+	for _, section := range s.cv.Sections {
+		if section.SectionType == "summary" && section.Summary != "" {
+			return section.Summary
+		}
+	}
+	return ""
 }
