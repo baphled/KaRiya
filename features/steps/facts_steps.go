@@ -324,12 +324,7 @@ func iSelectCompetencyCategory(ctx context.Context, category string) (context.Co
 }
 
 func iTabToRoleFit(ctx context.Context) (context.Context, error) {
-	env, err := support.RequireEnv(ctx)
-	if err != nil {
-		return ctx, err
-	}
-	env.TabWithFormProcessing()
-	return ctx, nil
+	return iTabToCompetencyCategories(ctx)
 }
 
 func iSelectRoleFit(ctx context.Context, role string) (context.Context, error) {
@@ -367,12 +362,7 @@ func iSelectRoleFit(ctx context.Context, role string) (context.Context, error) {
 }
 
 func iTabToAudienceRelevance(ctx context.Context) (context.Context, error) {
-	env, err := support.RequireEnv(ctx)
-	if err != nil {
-		return ctx, err
-	}
-	env.TabWithFormProcessing()
-	return ctx, nil
+	return iTabToCompetencyCategories(ctx)
 }
 
 func iSelectAudience(ctx context.Context, audience string) (context.Context, error) {
@@ -658,12 +648,7 @@ func iOpenTheFactsEditor(ctx context.Context) (context.Context, error) {
 }
 
 func iRejectAllSuggestedFacts(ctx context.Context) (context.Context, error) {
-	env, err := support.RequireEnv(ctx)
-	if err != nil {
-		return ctx, err
-	}
-	env.PressKeyRune('r')
-	return ctx, nil
+	return iPressRToRefresh(ctx)
 }
 
 func thereShouldBeAFactWithText(ctx context.Context, text string) error {

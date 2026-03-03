@@ -132,8 +132,7 @@ func (m *ModalHelper) WaitForModalToDisappear(text string) error {
 // Side effects:
 //   - Sends confirm key event to the test environment.
 func (m *ModalHelper) NavigateToPreview() error {
-	m.env.Confirm()
-	return nil
+	return m.ConfirmModal()
 }
 
 // PressKeyToExport presses the specified key to open export modal.

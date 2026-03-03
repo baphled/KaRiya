@@ -385,13 +385,7 @@ func iShouldSeeTheSkillSuggestionsModal(ctx context.Context) error {
 }
 
 func iShouldStillBeOnSkillSuggestionsModal(ctx context.Context) error {
-	env, err := support.RequireEnv(ctx)
-	if err != nil {
-		return err
-	}
-	view := env.GetView()
-	gomega.Expect(view).To(gomega.ContainSubstring("Review Skill Suggestions"))
-	return nil
+	return iShouldSeeTheSkillSuggestionsModal(ctx)
 }
 
 func iShouldSeeTheSkillDetailView(ctx context.Context) error {
@@ -613,12 +607,7 @@ func theInferenceCompletes(ctx context.Context) error {
 }
 
 func iAcceptTheFirstSuggestion(ctx context.Context) (context.Context, error) {
-	env, err := support.RequireEnv(ctx)
-	if err != nil {
-		return ctx, err
-	}
-	env.PressKeyRune('a')
-	return ctx, nil
+	return iPressAToAddSkill(ctx)
 }
 
 func iRejectTheFirstSuggestion(ctx context.Context) (context.Context, error) {
@@ -631,13 +620,7 @@ func iRejectTheFirstSuggestion(ctx context.Context) (context.Context, error) {
 }
 
 func theSuggestionShouldBeMarkedAsRejected(ctx context.Context) error {
-	env, err := support.RequireEnv(ctx)
-	if err != nil {
-		return err
-	}
-	view := env.GetView()
-	gomega.Expect(view).To(gomega.ContainSubstring("Review Skill Suggestions"))
-	return nil
+	return iShouldSeeTheSkillSuggestionsModal(ctx)
 }
 
 // Skill assertion functions

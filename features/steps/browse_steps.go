@@ -272,21 +272,11 @@ func iShouldSeeTheDeleteConfirmation(ctx context.Context) error {
 }
 
 func iCancelTheConfirmation(ctx context.Context) (context.Context, error) {
-	env, err := support.RequireEnv(ctx)
-	if err != nil {
-		return ctx, err
-	}
-	env.Cancel()
-	return ctx, nil
+	return iPressEscape(ctx)
 }
 
 func iConfirmTheDeletion(ctx context.Context) (context.Context, error) {
-	env, err := support.RequireEnv(ctx)
-	if err != nil {
-		return ctx, err
-	}
-	env.Confirm()
-	return ctx, nil
+	return iPressEnterToViewDetails(ctx)
 }
 
 func iShouldBeAbleToGoBackToTheMenu(ctx context.Context) error {

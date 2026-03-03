@@ -483,12 +483,7 @@ func iAcceptTheSuggestedBurst(ctx context.Context) (context.Context, error) {
 // Confirming without first calling createSuggestedBurstFromEvents means
 // no burst is persisted — this is the rejection mechanism for this flow.
 func iRejectTheSuggestedBurst(ctx context.Context) (context.Context, error) {
-	env, err := support.RequireEnv(ctx)
-	if err != nil {
-		return ctx, err
-	}
-	env.Confirm()
-	return ctx, nil
+	return iSelectQuickCaptureStrategy(ctx)
 }
 
 func theAcceptedBurstShouldHaveAtLeastNEventIDs(ctx context.Context, minCount int) error {
@@ -688,12 +683,7 @@ func thereShouldBeSkillsIncluding(ctx context.Context, skillName string) error {
 }
 
 func iOpenTheReviewEnrichment(ctx context.Context) (context.Context, error) {
-	env, err := support.RequireEnv(ctx)
-	if err != nil {
-		return ctx, err
-	}
-	env.PressKeyRune('e')
-	return ctx, nil
+	return iEditTheSuggestedBurst(ctx)
 }
 
 func iChangeEventCompanyTo(ctx context.Context, company string) (context.Context, error) {
@@ -881,12 +871,7 @@ func iPressFToOpenFactsEditor(ctx context.Context) (context.Context, error) {
 
 // iPressEToOpenReviewEnrichment opens the review enrichment modal.
 func iPressEToOpenReviewEnrichment(ctx context.Context) (context.Context, error) {
-	env, err := support.RequireEnv(ctx)
-	if err != nil {
-		return ctx, err
-	}
-	env.PressKeyRune('e')
-	return ctx, nil
+	return iEditTheSuggestedBurst(ctx)
 }
 
 // iShouldSeeTheBurstsModal asserts the bursts modal is visible.
@@ -992,12 +977,7 @@ func iShouldSeeSkillWithConfidence(ctx context.Context, skillName string) error 
 }
 
 func iRejectAllSuggestedSkills(ctx context.Context) (context.Context, error) {
-	env, err := support.RequireEnv(ctx)
-	if err != nil {
-		return ctx, err
-	}
-	env.PressKeyRune('r')
-	return ctx, nil
+	return iRejectAllSuggestions(ctx)
 }
 
 func iAcceptTheSkill(ctx context.Context, skillName string) (context.Context, error) {
