@@ -1,7 +1,11 @@
 package main
 
-func main() {}
+func main() {
+	// Intentionally empty: test fixture for analyzer validation
+}
 
-func init() {}
+func init() {
+	// Intentionally empty: test fixture for analyzer validation
+}
 
 func ExportedInMain() {} // want `exported function ExportedInMain missing doc comment`

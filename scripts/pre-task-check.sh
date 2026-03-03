@@ -19,7 +19,7 @@ READY=true
 
 # Check 1: Session started?
 echo -n "1. Session started (hooks verified): "
-if [ -f ".git/hooks/pre-commit" ] && [ -f ".git/hooks/commit-msg" ]; then
+if [[ -f ".git/hooks/pre-commit" ]] && [ -f ".git/hooks/commit-msg" ]]; then
     echo -e "${GREEN}YES${NC}"
 else
     echo -e "${RED}NO${NC} - Run: make session-start"
@@ -29,7 +29,7 @@ fi
 # Check 2: On correct branch?
 echo -n "2. On feature branch (not main/master): "
 BRANCH=$(git branch --show-current)
-if [ "$BRANCH" != "main" ] && [ "$BRANCH" != "master" ]; then
+if [[ "$BRANCH" != "main" ]] && [ "$BRANCH" != "master" ]]; then
     echo -e "${GREEN}YES${NC} ($BRANCH)"
 else
     echo -e "${YELLOW}WARNING${NC} - On $BRANCH, consider creating feature branch"
@@ -65,11 +65,11 @@ fi
 echo -n "6. Pattern check: "
 VIOLATIONS=0
 DIRECT_HUH=$(grep -rn "form \*huh\.Form" internal/cli/intents/*.go 2>/dev/null | grep -v "_test.go" || true)
-if [ -n "$DIRECT_HUH" ]; then VIOLATIONS=$((VIOLATIONS+1)); fi
+if [[ -n "$DIRECT_HUH" ]]; then VIOLATIONS=$((VIOLATIONS+1)); fi
 HARDCODED=$(grep -rn "lipgloss\.Color(\"#[0-9A-Fa-f]" internal/cli/intents/*.go internal/cli/models/*.go 2>/dev/null | grep -v "_test.go" || true)
-if [ -n "$HARDCODED" ]; then VIOLATIONS=$((VIOLATIONS+1)); fi
+if [[ -n "$HARDCODED" ]]; then VIOLATIONS=$((VIOLATIONS+1)); fi
 
-if [ $VIOLATIONS -eq 0 ]; then
+if [[ $VIOLATIONS -eq 0 ]]; then
     echo -e "${GREEN}PASS${NC}"
 else
     echo -e "${YELLOW}$VIOLATIONS issue(s)${NC} - Pre-existing, be aware"
@@ -78,7 +78,7 @@ fi
 echo ""
 echo "================================================"
 
-if [ "$READY" = true ]; then
+if [[ "$READY" = true ]]; then
     echo -e "${GREEN}READY TO START TASK${NC}"
     echo ""
     echo "Next steps:"

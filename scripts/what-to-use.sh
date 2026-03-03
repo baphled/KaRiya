@@ -5,7 +5,7 @@
 
 NEED="${1:-}"
 
-if [ -z "$NEED" ]; then
+if [[ -z "$NEED" ]]; then
     echo "Usage: make what-to-use NEED=\"keyword\""
     echo ""
     echo "Keywords: table, form, color, view, footer, modal, list, crud, filter, sort, text, button, input, badge, box, spacing"

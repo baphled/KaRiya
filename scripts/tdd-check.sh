@@ -15,7 +15,7 @@ NC='\033[0m' # No Color
 # The features/ directory contains BDD step definitions which are test code, not production code
 STAGED_PROD_FILES=$(git diff --cached --name-only --diff-filter=AM | grep '\.go$' | grep -v '_test\.go$' | grep -v '^features/' || true)
 
-if [ -z "$STAGED_PROD_FILES" ]; then
+if [[ -z "$STAGED_PROD_FILES" ]]; then
     # No production Go files staged, TDD check not applicable
     exit 0
 fi
@@ -31,7 +31,7 @@ while IFS= read -r prod_file; do
     # Check if test file is staged
     if ! git diff --cached --name-only | grep -q "^${test_file}$"; then
         # Check if test file exists at all
-        if [ -f "$test_file" ]; then
+        if [[ -f "$test_file" ]]; then
             echo -e "${YELLOW}⚠️  Production file modified but test not updated: ${prod_file}${NC}"
             MISSING_TESTS+=("$prod_file")
             TDD_VIOLATIONS=$((TDD_VIOLATIONS+1))
@@ -44,7 +44,7 @@ while IFS= read -r prod_file; do
 done <<< "$STAGED_PROD_FILES"
 
 # Report results
-if [ $TDD_VIOLATIONS -eq 0 ]; then
+if [[ $TDD_VIOLATIONS -eq 0 ]]; then
     echo -e "${GREEN}✅ TDD check passed: Test files staged with production code${NC}"
     exit 0
 else

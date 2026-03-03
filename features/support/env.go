@@ -236,7 +236,9 @@ func NewBDDTestingT(t *testing.T) *BDDTestingT {
 //
 // Side effects:
 //   - None.
-func (b *BDDTestingT) Helper() {}
+func (b *BDDTestingT) Helper() {
+	// Intentionally empty: satisfies testing.TB interface requirement
+}
 
 // TempDir returns a temporary directory.
 //

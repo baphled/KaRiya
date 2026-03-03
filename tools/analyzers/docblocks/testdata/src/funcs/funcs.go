@@ -45,6 +45,9 @@ func FullyDocumented(x int) int { return x * 2 }
 //
 // Side effects:
 //   - None.
-func VoidNoParams() {}
+func VoidNoParams() {
+	// Intentionally empty: test fixture for analyzer validation
+}
 
-func unexportedNoDoc() {}
+//lint:ignore U1000 test fixture for analyzer - intentionally unused
+func unexportedNoDoc() {} // intentionally empty: test fixture for analyzer validation

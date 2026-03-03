@@ -44,25 +44,32 @@ ERROR_COUNT=0
 WARNING_COUNT=0
 
 log_info() {
+    local message="$1"
     if [[ "$VERBOSE" == "true" ]]; then
-        echo -e "${GREEN}[INFO]${NC} $1"
+        echo -e "${GREEN}[INFO]${NC} $message"
     else
-        echo -e "${GREEN}✓${NC} $1"
+        echo -e "${GREEN}✓${NC} $message"
     fi
+    return 0
 }
 
 log_warn() {
-    echo -e "${YELLOW}[WARN]${NC} $1" >&2
+    local message="$1"
+    echo -e "${YELLOW}[WARN]${NC} $message" >&2
     ((WARNING_COUNT++))
+    return 0
 }
 
 log_error() {
-    echo -e "${RED}[ERROR]${NC} $1" >&2
+    local message="$1"
+    echo -e "${RED}[ERROR]${NC} $message" >&2
     ((ERROR_COUNT++))
+    return 0
 }
 
 log_section() {
     echo -e "${BLUE}=== $1 ===${NC}"
+    return 0
 }
 
 # Check 1: Packages with missing doc.go files
@@ -83,6 +90,7 @@ check_missing_doc_go() {
     if [[ "$missing" -eq 0 ]]; then
         log_info "✓ All packages have doc.go files"
     fi
+    return 0
 }
 
 # Check 2: Package comment validation
@@ -121,6 +129,7 @@ check_package_comments() {
     if [[ "$issues" -eq 0 ]]; then
         log_info "✓ All package comments are valid"
     fi
+    return 0
 }
 
 # Check 3: Exported identifier documentation
@@ -204,6 +213,7 @@ check_exported_docs() {
     else
         log_error "Found $missing_docs missing and $incomplete_docs incomplete documentation items"
     fi
+    return 0
 }
 
 # Check 4: Inline comments prohibition
@@ -238,12 +248,13 @@ check_inline_comments() {
     else
         log_warn "Found $inline_comments inline comments"
     fi
+    return 0
 }
 
 # Auto-fix issues
 fix_issues() {
     if [[ "$FIX" != "true" ]]; then
-        return
+        return 0
     fi
     
     log_section "Attempting to fix issues"
@@ -262,6 +273,7 @@ fix_issues() {
             log_info "✓ Fixed: $file"
         fi
     done
+    return 0
 }
 
 # Run all checks
@@ -293,6 +305,7 @@ main() {
         log_info "✓ Documentation validation passed"
         exit 0
     fi
+    return 0
 }
 
 # Script entry point
