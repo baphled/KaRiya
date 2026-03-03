@@ -260,12 +260,12 @@ var _ = Describe("Career Service - Fact Methods", func() {
 			Expect(err).To(HaveOccurred())
 		})
 
-		It("should reject fact with no source reference", func() {
+		It("should accept fact with no source reference (manual entry)", func() {
 			fact := fixtures.FactForValidation(uuid.New().String(), "Some achievement", career.RoleFitSeniorIC, []string{"technical"}, []string{"peer"}, "")
 
 			err := service.ValidateFact(ctx, fact)
 
-			Expect(err).To(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("should reject fact with aspirational language", func() {

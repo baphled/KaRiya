@@ -246,21 +246,20 @@ var _ = Describe("Fact", func() {
 			Expect(err.Error()).To(ContainSubstring("duplicate audience relevance types"))
 		})
 
-		It("should reject fact with no source reference", func() {
-			fact := &Fact{
-				ID:                   "fact-123",
-				Text:                 "Test",
-				CompetencyCategories: []string{"leadership"},
-				RoleFit:              RoleFitPrincipal,
-				AudienceRelevance:    []string{"hiring_manager"},
-				SourceEventID:        "",
-				SourceBurstID:        "",
-			}
+		It("should accept fact with no source reference (manual entry)", func() {
+	fact := &Fact{
+		ID:                   "fact-123",
+		Text:                 "Test",
+		CompetencyCategories: []string{"leadership"},
+		RoleFit:              RoleFitPrincipal,
+		AudienceRelevance:    []string{"hiring_manager"},
+		SourceEventID:        "",
+		SourceBurstID:        "",
+	}
 
-			err := fact.Validate()
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("at least one source"))
-		})
+	err := fact.Validate()
+	Expect(err).NotTo(HaveOccurred())
+})
 
 		It("should reject fact with aspirational language 'will'", func() {
 			fact := &Fact{
