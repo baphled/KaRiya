@@ -88,13 +88,19 @@ func registerCVExportSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^the clipboard should contain the CV as YAML$`, theClipboardShouldContainTheCVAsYAML)
 }
 
-func iHaveNoProfileConfigured(ctx context.Context) (context.Context, error) {
+// ensureTestEnv is a neutral helper that both profile steps use.
+// It validates the test environment without implying profile state.
+func ensureTestEnv(ctx context.Context) (context.Context, error) {
 	_, err := support.RequireEnv(ctx)
 	if err != nil {
 		return ctx, err
 	}
-	// Profile is empty by default in test env
 	return ctx, nil
+}
+
+func iHaveNoProfileConfigured(ctx context.Context) (context.Context, error) {
+	// Profile is empty by default in test env
+	return ensureTestEnv(ctx)
 }
 
 func iShouldSeeAnErrorOrWarning(ctx context.Context) error {
@@ -115,7 +121,7 @@ func iShouldSeeAnErrorOrWarning(ctx context.Context) error {
 }
 
 func iHaveAProfileConfigured(ctx context.Context) (context.Context, error) {
-	return iHaveNoProfileConfigured(ctx)
+	return ensureTestEnv(ctx)
 }
 
 func iHaveACompleteProfileWithEventsAndFacts(ctx context.Context) (context.Context, error) {
