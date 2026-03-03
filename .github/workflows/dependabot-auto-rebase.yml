@@ -1,0 +1,98 @@
+# Dependabot Auto Rebase Workflow
+#
+# Automatically rebases dependabot PRs after CI passes to keep them current
+# and prevent merge conflicts. Triggers on CI workflow completion.
+#
+# Flow:
+# 1. Dependabot opens a PR
+# 2. CI runs and passes
+# 3. This workflow triggers and rebases the PR onto the base branch
+# 4. The updated PR can then be auto-merged via auto-merge.yml
+
+name: Dependabot Auto Rebase
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  rebase-dependabot-pr:
+    name: Rebase Dependabot PR
+    runs-on: ubuntu-latest
+    # Only run when:
+    # - CI workflow completed successfully
+    # - The triggering event was a pull request
+    # - The actor is dependabot[bot]
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.actor == 'dependabot[bot]'
+    steps:
+      - name: Get PR number from workflow run
+        id: get-pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Fetch the PR associated with the workflow run's head branch
+          PR_NUMBER=$(gh api \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "/repos/${{ github.repository }}/pulls?head=${{ github.repository_owner }}:${{ github.event.workflow_run.head_branch }}&state=open" \
+            --jq '.[0].number // empty')
+          
+          if [ -z "$PR_NUMBER" ]; then
+            echo "No open PR found for branch ${{ github.event.workflow_run.head_branch }}"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          
+          echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+          echo "Found PR #$PR_NUMBER"
+
+      - name: Verify PR is from dependabot
+        if: steps.get-pr.outputs.skip != 'true'
+        id: verify-dependabot
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_AUTHOR=$(gh api \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "/repos/${{ github.repository }}/pulls/${{ steps.get-pr.outputs.pr_number }}" \
+            --jq '.user.login')
+          
+          if [ "$PR_AUTHOR" != "dependabot[bot]" ]; then
+            echo "PR author is $PR_AUTHOR, not dependabot[bot]. Skipping."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          
+          echo "Confirmed PR #${{ steps.get-pr.outputs.pr_number }} is from dependabot"
+
+      - name: Rebase PR onto base branch
+        if: steps.get-pr.outputs.skip != 'true' && steps.verify-dependabot.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Rebasing PR #${{ steps.get-pr.outputs.pr_number }}..."
+          
+          # gh pr update-branch --rebase rebases the PR onto the base branch
+          # It exits 0 even if already up to date, so we capture the output
+          OUTPUT=$(gh pr update-branch ${{ steps.get-pr.outputs.pr_number }} \
+            --repo "${{ github.repository }}" \
+            --rebase 2>&1) || true
+          
+          echo "$OUTPUT"
+          
+          if echo "$OUTPUT" | grep -qi "already up to date"; then
+            echo "PR is already up to date with base branch"
+          elif echo "$OUTPUT" | grep -qi "updated"; then
+            echo "Successfully rebased PR #${{ steps.get-pr.outputs.pr_number }}"
+          else
+            echo "Rebase completed"
+          fi
