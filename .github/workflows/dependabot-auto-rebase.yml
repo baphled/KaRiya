@@ -26,6 +26,9 @@ jobs:
   rebase-dependabot-pr:
     name: Rebase Dependabot PR
     runs-on: ubuntu-latest
+    concurrency:
+      group: dependabot-rebase-${{ github.ref }}
+      cancel-in-progress: true
     # Only run when:
     # - CI workflow completed successfully on a PR, OR
     # - A push to the next branch occurred
@@ -50,7 +53,7 @@ jobs:
             PR_NUMBERS=$(gh api \
               -H "Accept: application/vnd.github+json" \
               -H "X-GitHub-Api-Version: 2022-11-28" \
-              "/repos/${REPO}/pulls?state=open&base=next" \
+              --paginate "/repos/${REPO}/pulls?state=open&base=next&per_page=100" \
               --jq '[.[] | select(.user.login == "dependabot[bot]") | .number] | join(",")')
             
             if [ -z "$PR_NUMBERS" ]; then
@@ -121,6 +124,7 @@ jobs:
           if [ "$EVENT_NAME" = "push" ]; then
             # For push events, rebase all PRs
             IFS=',' read -ra PR_ARRAY <<< "$PR_NUMBERS"
+            FAILED_PRS=""
             for PR in "${PR_ARRAY[@]}"; do
               echo "Rebasing PR #${PR}..."
               
@@ -136,11 +140,16 @@ jobs:
                 echo "PR #${PR} is already up to date with base branch"
               elif [ "$EXIT_CODE" -ne 0 ]; then
                 echo "gh pr update-branch failed for PR #${PR} with exit code $EXIT_CODE"
-                exit "$EXIT_CODE"
+                FAILED_PRS="${FAILED_PRS}${PR},"
               else
                 echo "Successfully rebased PR #${PR}"
               fi
             done
+            
+            if [ -n "$FAILED_PRS" ]; then
+              echo "Failed to rebase the following PRs: ${FAILED_PRS%,}"
+              exit 1
+            fi
           else
             # For workflow_run events, rebase single PR
             echo "Rebasing PR #${PR_NUMBER}..."
