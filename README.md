@@ -1,5 +1,7 @@
 # KaRiya: Career Event Capture for Engineers
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=baphled_KaRiya&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=baphled_KaRiya)
+
 KaRiya is a terminal user interface for capturing career achievements and generating tailored CVs. Built with Go and Bubble Tea, it transforms your career events into professional, role-specific CVs directly from your terminal—no external tools required.
 
 ## Prerequisites
