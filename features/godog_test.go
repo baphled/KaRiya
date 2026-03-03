@@ -52,15 +52,6 @@ func TestFeatures(t *testing.T) {
 	}
 }
 
-// InitializeSuite registers suite-level hooks for shared database setup and teardown.
-//
-// Expected: sc is a valid TestSuiteContext.
-// Returns: None.
-// Side effects: Registers suite-level hooks via support.RegisterSuiteHooks.
-func InitializeSuite(sc *godog.TestSuiteContext) {
-	support.RegisterSuiteHooks(sc)
-}
-
 // InitializeScenario sets up the scenario context with step definitions and hooks.
 //
 // Expected: sc is a valid ScenarioContext.

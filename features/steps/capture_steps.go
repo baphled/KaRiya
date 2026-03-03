@@ -34,7 +34,6 @@ const (
 //
 //nolint:funlen // Registration function has many steps by design.
 func RegisterCaptureSteps(sc *godog.ScenarioContext) {
-	sc.Step(`^I am on the main menu$`, iAmOnTheMainMenu)
 	sc.Step(`^I select "([^"]*)" from the menu$`, iSelectFromTheMenu)
 	sc.Step(`^I select quick capture strategy$`, iSelectQuickCaptureStrategy)
 	sc.Step(`^I select manual capture strategy$`, iSelectManualCaptureStrategy)
@@ -46,7 +45,6 @@ func RegisterCaptureSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I dismiss the success modal$`, iDismissTheSuccessModal)
 	sc.Step(`^I should be on the enrichment review screen$`, iShouldBeOnEnrichmentReviewScreen)
 	sc.Step(`^I confirm the review$`, iConfirmTheReview)
-	sc.Step(`^I should be on the main menu$`, iShouldBeOnTheMainMenu)
 	sc.Step(`^I cancel$`, iCancel)
 	sc.Step(`^I should see the strategy selection$`, iShouldSeeTheStrategySelection)
 	sc.Step(`^there should be (\d+) events?$`, thereShouldBeNEvents)
@@ -107,17 +105,6 @@ func RegisterCaptureSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I should see the metadata editor$`, iShouldSeeTheMetadataEditor)
 	sc.Step(`^I should see the burst editor$`, iShouldSeeTheBurstEditor)
 	sc.Step(`^I press the "([^"]*)" key$`, iPressTheKey)
-}
-
-func iAmOnTheMainMenu(ctx context.Context) (context.Context, error) {
-	env, err := support.RequireEnv(ctx)
-	if err != nil {
-		return ctx, err
-	}
-	if !env.IsInMenuState() {
-		return ctx, errors.New("expected to be on main menu but current view does not match")
-	}
-	return ctx, nil
 }
 
 func iSelectFromTheMenu(ctx context.Context, intentName string) (context.Context, error) {
@@ -262,17 +249,6 @@ func iConfirmTheReview(ctx context.Context) (context.Context, error) {
 		env.Confirm()
 	}
 	return ctx, nil
-}
-
-func iShouldBeOnTheMainMenu(ctx context.Context) error {
-	env, err := support.RequireEnv(ctx)
-	if err != nil {
-		return err
-	}
-	if !env.IsInMenuState() {
-		return errors.New("expected to be on main menu but current view does not match")
-	}
-	return nil
 }
 
 func iCancel(ctx context.Context) (context.Context, error) {

@@ -451,9 +451,18 @@ func (e *TestEnv) SendMessageWithFormProcessing(msg tea.Msg) *TestEnv {
 	if ok {
 		e.Model = model
 	}
-	e.processFormCmds(cmd, 10)
+
+	if cmd != nil {
+		e.processFormCmds(cmd, 10)
+	}
 
 	return e
+}
+
+// PressKeyWithFormProcessing sends a key and processes all resulting internal form messages.
+func (e *TestEnv) PressKeyWithFormProcessing(key tea.KeyType) *TestEnv {
+	e.T.Helper()
+	return e.SendMessageWithFormProcessing(tea.KeyMsg{Type: key})
 }
 
 // PressKeyRuneWithFormProcessing sends a rune key and processes all resulting

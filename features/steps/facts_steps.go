@@ -199,6 +199,10 @@ func iShouldSeeCompetencyCategories(ctx context.Context) error {
 		gomega.ContainSubstring("Categor"),
 		gomega.ContainSubstring("Technical"),
 		gomega.ContainSubstring("Leadership"),
+		gomega.ContainSubstring("Product"),
+		gomega.ContainSubstring("Consulting"),
+		gomega.ContainSubstring("Research"),
+		gomega.ContainSubstring("Mentoring"),
 	), "should display competency categories in view")
 	return nil
 }
@@ -290,11 +294,17 @@ func iSelectCompetencyCategory(ctx context.Context, category string) (context.Co
 	if err != nil {
 		return ctx, err
 	}
+
+	// Wait for field to be visible/focused
+	gomega.Eventually(func() string {
+		return env.GetView()
+	}, "5s").Should(gomega.ContainSubstring("Competency"), "should be on competency categories field")
+
 	// Navigate to the specific category
 	categories := []string{"Technical", "Leadership", "Product", "Consulting", "Research", "Mentoring"}
 	targetIdx := -1
 	for idx, cat := range categories {
-		if cat == category {
+		if strings.EqualFold(cat, category) {
 			targetIdx = idx
 			break
 		}
@@ -306,7 +316,7 @@ func iSelectCompetencyCategory(ctx context.Context, category string) (context.Co
 
 	// Multi-select starts at index 0. We need to move down to targetIdx.
 	for range targetIdx {
-		env.PressKeyRune('j')
+		env.PressKeyRuneWithFormProcessing('j')
 	}
 
 	env.PressKeyRuneWithFormProcessing(' ')
@@ -328,10 +338,15 @@ func iSelectRoleFit(ctx context.Context, role string) (context.Context, error) {
 		return ctx, err
 	}
 
+	// Wait for field to be visible/focused
+	gomega.Eventually(func() string {
+		return env.GetView()
+	}, "5s").Should(gomega.ContainSubstring("Role"), "should be on role fit field")
+
 	roles := []string{"Principal", "Engineering Manager", "Staff", "Senior IC"}
 	targetIdx := -1
 	for idx, r := range roles {
-		if r == role {
+		if strings.EqualFold(r, role) {
 			targetIdx = idx
 			break
 		}
@@ -343,7 +358,7 @@ func iSelectRoleFit(ctx context.Context, role string) (context.Context, error) {
 
 	// Select starts at index 0. Move down to targetIdx.
 	for range targetIdx {
-		env.PressKeyRune('j')
+		env.PressKeyRuneWithFormProcessing('j')
 	}
 
 	// In Select, pressing enter selects.
@@ -366,10 +381,15 @@ func iSelectAudience(ctx context.Context, audience string) (context.Context, err
 		return ctx, err
 	}
 
+	// Wait for field to be visible/focused
+	gomega.Eventually(func() string {
+		return env.GetView()
+	}, "5s").Should(gomega.ContainSubstring("Audience"), "should be on audience field")
+
 	audiences := []string{"Hiring Manager", "Recruiter", "Peer"}
 	targetIdx := -1
 	for idx, aud := range audiences {
-		if aud == audience {
+		if strings.EqualFold(aud, audience) {
 			targetIdx = idx
 			break
 		}
@@ -381,7 +401,7 @@ func iSelectAudience(ctx context.Context, audience string) (context.Context, err
 
 	// Multi-select starts at index 0. Move down to targetIdx.
 	for range targetIdx {
-		env.PressKeyRune('j')
+		env.PressKeyRuneWithFormProcessing('j')
 	}
 
 	env.PressKeyRuneWithFormProcessing(' ')
@@ -394,16 +414,47 @@ func iSubmitTheFactForm(ctx context.Context) (context.Context, error) {
 		return ctx, err
 	}
 
-	// Scrollable forms often have the Submit/Confirm button at the very end.
-	// We need to tab to it. Since there are roughly 5 fields (Text, Categories, Role, Audience, Strength),
-	// we tab enough times to reach the bottom.
-	for range 6 {
-		env.NextFormField()
-	}
+	// Fact form layout:
+	// 1. Fact Text (Text)
+	// 2. Competency Categories (MultiSelect)
+	// 3. Role Fit (Select)
+	// 4. Audience Relevance (MultiSelect)
+	// (Note: newScrollableForm appends huh.Confirm field as the 5th field)
+
+	// Ensure we are on the Audience Relevance field and it's initialized.
+	gomega.Eventually(func() string {
+		return env.GetView()
+	}, "5s").Should(gomega.ContainSubstring("Audience"), "should be on audience field before transitioning")
+
+	// Total 4 fields + 1 confirm field.
+	// We are currently on the Audience Relevance field after previous steps.
+
+	// We use env.NextFormField() to move from Audience Relevance to 'Save Changes' confirm field.
+	env.NextFormField()
+
+	// Before submitting, we verify the view shows 'Save Changes' or similar
+	gomega.Eventually(func() string {
+		return env.GetView()
+	}, "5s").Should(gomega.SatisfyAny(
+		gomega.ContainSubstring("Save Changes"),
+		gomega.ContainSubstring("Submit"),
+	), "should be on confirm field")
 
 	// Confirm field needs 'Y' or 'y' to toggle to 'Yes' (Submit) then Enter.
-	env.PressKeyRuneWithFormProcessing('Y')
-	env.PressEnterWithFormProcessing()
+	// We use PressKeyRuneWithFormProcessing to ensure internal form messages are processed.
+	env.PressKeyRuneWithFormProcessing('y')
+
+	// Verify that 'Submit' or 'Yes' is now selected in the confirm field
+	gomega.Eventually(func() string {
+		return env.GetView()
+	}, "5s").Should(gomega.ContainSubstring("Submit"), "Confirm field should be toggled to Submit")
+
+	// Final Enter to submit.
+	env.PressKeyWithFormProcessing(tea.KeyEnter)
+
+	for range 10 {
+		env.SendMessageWithFormProcessing(nil)
+	}
 
 	return ctx, nil
 }

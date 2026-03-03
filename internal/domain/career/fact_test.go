@@ -247,19 +247,19 @@ var _ = Describe("Fact", func() {
 		})
 
 		It("should accept fact with no source reference (manual entry)", func() {
-	fact := &Fact{
-		ID:                   "fact-123",
-		Text:                 "Test",
-		CompetencyCategories: []string{"leadership"},
-		RoleFit:              RoleFitPrincipal,
-		AudienceRelevance:    []string{"hiring_manager"},
-		SourceEventID:        "",
-		SourceBurstID:        "",
-	}
+			fact := &Fact{
+				ID:                   "fact-123",
+				Text:                 "Test",
+				CompetencyCategories: []string{"leadership"},
+				RoleFit:              RoleFitPrincipal,
+				AudienceRelevance:    []string{"hiring_manager"},
+				SourceEventID:        "",
+				SourceBurstID:        "",
+			}
 
-	err := fact.Validate()
-	Expect(err).NotTo(HaveOccurred())
-})
+			err := fact.Validate()
+			Expect(err).NotTo(HaveOccurred())
+		})
 
 		It("should reject fact with aspirational language 'will'", func() {
 			fact := &Fact{

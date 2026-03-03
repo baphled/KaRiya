@@ -97,22 +97,28 @@ func iEnterAsMyLocation(ctx context.Context, location string) error {
 
 // iPressEnter presses the enter key.
 func iPressEnter(ctx context.Context) error {
-	env := support.GetOnboardingEnv(ctx)
-	if env == nil {
-		return errors.New("onboarding environment not initialised: call 'I start the onboarding wizard' first")
+	if env := support.GetOnboardingEnv(ctx); env != nil {
+		env.PressEnter()
+		return nil
 	}
-	env.PressEnter()
-	return nil
+	if env, err := support.RequireEnv(ctx); err == nil {
+		env.Confirm()
+		return nil
+	}
+	return errors.New("no test environment found (neither onboarding nor full app)")
 }
 
 // iPressTab presses the tab key.
 func iPressTab(ctx context.Context) error {
-	env := support.GetOnboardingEnv(ctx)
-	if env == nil {
-		return errors.New("onboarding environment not initialised: call 'I start the onboarding wizard' first")
+	if env := support.GetOnboardingEnv(ctx); env != nil {
+		env.PressTab()
+		return nil
 	}
-	env.PressTab()
-	return nil
+	if env, err := support.RequireEnv(ctx); err == nil {
+		env.Tab()
+		return nil
+	}
+	return errors.New("no test environment found (neither onboarding nor full app)")
 }
 
 // iSkipOptionalFields tabs through optional fields and submits.
