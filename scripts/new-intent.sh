@@ -26,7 +26,7 @@ NC='\033[0m' # No Color
 
 # Get the name parameter
 NAME=$1
-if [ -z "$NAME" ]; then
+if [[ -z "$NAME" ]]; then
     echo -e "${RED}Error: NAME parameter required${NC}"
     echo ""
     echo "Usage: make new-intent NAME=feature_name"
@@ -55,10 +55,10 @@ echo -e "${BLUE}Creating intent structure for: ${GREEN}${NAME}${NC}"
 echo ""
 
 # Check if directories already exist
-if [ -d "$INTENT_DIR" ]; then
+if [[ -d "$INTENT_DIR" ]]; then
     echo -e "${YELLOW}Warning: Intent directory already exists: ${INTENT_DIR}${NC}"
     read -p "Overwrite? (y/N): " confirm
-    if [ "$confirm" != "y" ] && [ "$confirm" != "Y" ]; then
+    if [[ "$confirm" != "y" ]] && [ "$confirm" != "Y" ]]; then
         echo "Aborted."
         exit 1
     fi
@@ -75,7 +75,7 @@ process_template() {
     local template="$1"
     local output="$2"
     
-    if [ ! -f "$template" ]; then
+    if [[ ! -f "$template" ]]; then
         echo -e "${YELLOW}Warning: Template not found: ${template}${NC}"
         return
     fi
@@ -99,7 +99,7 @@ process_template "${TEMPLATE_DIR}/intent.go.template" "${INTENT_DIR}/intent.go"
 
 # Generate screen files
 echo -e "${BLUE}Generating screen files...${NC}"
-if [ -f "${TEMPLATE_DIR}/screens/list_screen.go.template" ]; then
+if [[ -f "${TEMPLATE_DIR}/screens/list_screen.go.template" ]]; then
     process_template "${TEMPLATE_DIR}/screens/list_screen.go.template" "${SCREEN_DIR}/list_screen.go"
 fi
 

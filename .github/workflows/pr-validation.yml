@@ -84,7 +84,7 @@ jobs:
           echo "Checking commits for AI attribution..."
 
           # Get commits between base and head
-          COMMITS=$(git log --format=%H $BASE_SHA..$HEAD_SHA)
+          COMMITS=$(git log --format=%H "${BASE_SHA}..${HEAD_SHA}")
 
           echo "Commits to check:"
           echo "$COMMITS"
@@ -186,7 +186,7 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           # Check commit messages for BREAKING CHANGE
-          if git log $BASE_SHA..$HEAD_SHA --format=%B | grep -qi "BREAKING CHANGE"; then
+          if git log "${BASE_SHA}..${HEAD_SHA}" --format=%B | grep -qi "BREAKING CHANGE"; then
             echo "has_breaking=true" >> $GITHUB_OUTPUT
             echo "⚠️  This PR contains BREAKING CHANGES"
           else

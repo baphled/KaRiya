@@ -9,7 +9,7 @@ set -euo pipefail
 
 SARIF_FILE="${1:-gosec.sarif}"
 
-if [ ! -f "$SARIF_FILE" ]; then
+if [[ ! -f "$SARIF_FILE" ]]; then
     echo "SARIF file not found: $SARIF_FILE"
     exit 1
 fi

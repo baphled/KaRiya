@@ -17,14 +17,14 @@ INVALID_HOOKS=()
 echo "Git Hooks Verification"
 echo ""
 
-if [ ! -e ".git" ]; then
+if [[ ! -e ".git" ]]; then
     echo -e "${RED}Error: Not in a git repository${NC}"
     exit 1
 fi
 
 HOOKS_PATH=$(git config --get core.hooksPath 2>/dev/null || true)
 
-if [ "$HOOKS_PATH" != ".git-hooks" ]; then
+if [[ "$HOOKS_PATH" != ".git-hooks" ]]; then
     echo -e "${YELLOW}core.hooksPath is not set to .git-hooks/${NC}"
     echo ""
     echo -e "${BLUE}Run: make install-git-hooks${NC}"
@@ -40,10 +40,10 @@ for hook in "${REQUIRED_HOOKS[@]}"; do
 
     echo -n "  $hook: "
 
-    if [ ! -f "$hook_path" ]; then
+    if [[ ! -f "$hook_path" ]]; then
         echo -e "${RED}missing${NC}"
         MISSING_HOOKS+=("$hook")
-    elif [ ! -x "$hook_path" ]; then
+    elif [[ ! -x "$hook_path" ]]; then
         echo -e "${YELLOW}not executable${NC}"
         INVALID_HOOKS+=("$hook")
     elif head -1 "$hook_path" | grep -q '^#!/'; then
@@ -56,14 +56,14 @@ done
 
 echo ""
 
-if [ ${#MISSING_HOOKS[@]} -eq 0 ] && [ ${#INVALID_HOOKS[@]} -eq 0 ]; then
+if [[ ${#MISSING_HOOKS[@]} -eq 0 ]] && [ ${#INVALID_HOOKS[@]} -eq 0 ]]; then
     echo -e "${GREEN}All git hooks are properly installed${NC}"
     exit 0
 else
     echo -e "${RED}Git hooks installation incomplete${NC}"
     echo ""
 
-    if [ ${#MISSING_HOOKS[@]} -gt 0 ]; then
+    if [[ ${#MISSING_HOOKS[@]} -gt 0 ]]; then
         echo "Missing hooks:"
         for hook in "${MISSING_HOOKS[@]}"; do
             echo "  - $hook"
@@ -71,7 +71,7 @@ else
         echo ""
     fi
 
-    if [ ${#INVALID_HOOKS[@]} -gt 0 ]; then
+    if [[ ${#INVALID_HOOKS[@]} -gt 0 ]]; then
         echo "Invalid/non-executable hooks:"
         for hook in "${INVALID_HOOKS[@]}"; do
             echo "  - $hook"

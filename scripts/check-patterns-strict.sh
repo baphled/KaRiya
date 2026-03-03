@@ -66,7 +66,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 
 for file in $NEW_FILES; do
     HARDCODED=$(grep -n 'lipgloss\.Color("#' "$file" 2>/dev/null || true)
-    if [ -n "$HARDCODED" ]; then
+    if [[ -n "$HARDCODED" ]]; then
         echo -e "${RED}❌ NEW FILE has hardcoded colors${NC}"
         echo "   File: $file"
         echo "   Use theme.Primary(), theme.Secondary(), etc."
@@ -84,7 +84,7 @@ for file in $ALL_STAGED; do
     # Skip test files - they can reference bug numbers and issue markers
     if [[ ! "$file" =~ _test\.go$ ]]; then
         FORBIDDEN=$(grep -n 'TODO\|FIXME\|XXX\|HACK\|NOTE:\|BUG' "$file" 2>/dev/null || true)
-        if [ -n "$FORBIDDEN" ]; then
+        if [[ -n "$FORBIDDEN" ]]; then
             echo -e "${RED}❌ Forbidden comment markers found${NC}"
             echo "   File: $file"
             echo "   Forbidden: TODO, FIXME, XXX, HACK, NOTE, BUG"
@@ -104,7 +104,7 @@ TEST_FILES=$(git diff --cached --name-only | grep '_test.go$' || true)
 
 for file in $TEST_FILES; do
     SKIPPED=$(grep -n 'XIt(\|XDescribe(\|XContext(\|Skip(' "$file" 2>/dev/null || true)
-    if [ -n "$SKIPPED" ]; then
+    if [[ -n "$SKIPPED" ]]; then
         echo -e "${RED}❌ Skipped tests found${NC}"
         echo "   File: $file"
         echo "   Skipped tests are not allowed"
@@ -113,7 +113,7 @@ for file in $TEST_FILES; do
     fi
 
     PENDING=$(grep -n 'PIt(\|PDescribe(\|PContext(' "$file" 2>/dev/null || true)
-    if [ -n "$PENDING" ]; then
+    if [[ -n "$PENDING" ]]; then
         echo -e "${RED}❌ Pending tests found${NC}"
         echo "   File: $file"
         echo "   Pending tests are not allowed"
@@ -132,7 +132,7 @@ DEBUG_PATTERNS='fmt\.Println\s*\(|fmt\.Printf\s*\(\s*"DEBUG|spew\.Dump|spew\.Pri
 for file in $ALL_STAGED; do
     if [[ ! "$file" =~ _test\.go$ ]]; then
         DEBUG=$(grep -nE "$DEBUG_PATTERNS" "$file" 2>/dev/null || true)
-        if [ -n "$DEBUG" ]; then
+        if [[ -n "$DEBUG" ]]; then
             echo -e "${RED}❌ Debug statements found${NC}"
             echo "   File: $file"
             echo "   Remove debug statements before committing"
@@ -155,7 +155,7 @@ for file in $NEW_FILES; do
 
     # Check for end-of-line comments (code before //)
     EOL_COMMENTS=$(grep -nE '^[[:space:]]*[^/].*[[:space:]]+//' "$file" 2>/dev/null | grep -v '_test.go' | grep -v '//go:' || true)
-    if [ -n "$EOL_COMMENTS" ]; then
+    if [[ -n "$EOL_COMMENTS" ]]; then
         echo -e "${RED}❌ End-of-line comments found${NC}"
         echo "   File: $file"
         echo "   Comments must be on their own line above the code (except in test files)"
@@ -187,7 +187,7 @@ for file in $NEW_FILES; do
         fi
     done < <(grep -n '^[[:space:]]*//[^/]' "$file" 2>/dev/null || true)
 
-    if [ "$MID_FUNC_COUNT" -gt 0 ]; then
+    if [[ "$MID_FUNC_COUNT" -gt 0 ]]; then
         echo -e "${RED}❌ Mid-function comments found${NC}"
         echo "   File: $file"
         echo "   Count: $MID_FUNC_COUNT"
@@ -204,7 +204,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 NEW_INTENTS=$(echo "$NEW_FILES" | grep '_intent\.go$' || true)
 for intent in $NEW_INTENTS; do
     E2E_FILE="${intent%_intent.go}_e2e_test.go"
-    if [ ! -f "$E2E_FILE" ]; then
+    if [[ ! -f "$E2E_FILE" ]]; then
         echo -e "${RED}❌ New intent missing E2E test${NC}"
         echo "   Intent: $intent"
         echo "   Required: $E2E_FILE"
@@ -226,12 +226,12 @@ done
 BUG_FILES=$(git diff --cached --name-only | grep 'bugs/BUG-' || true)
 for bug in $BUG_FILES; do
     BUG_NUM=$(echo "$bug" | grep -oP 'BUG-\d+' || true)
-    if [ -n "$BUG_NUM" ]; then
+    if [[ -n "$BUG_NUM" ]]; then
         # Find test files that mention the bug number in their diff
         REGRESSION_TEST=$(git diff --cached --name-only | grep '_test.go' | while read testfile; do
             git diff --cached "$testfile" | grep -q "$BUG_NUM" && echo "$testfile"
         done)
-        if [ -z "$REGRESSION_TEST" ]; then
+        if [[ -z "$REGRESSION_TEST" ]]; then
             echo -e "${RED}❌ Bug fix missing regression test${NC}"
             echo "   Bug: $BUG_NUM"
             echo "   Add E2E test with 'Bug Regressions' section mentioning $BUG_NUM"
@@ -245,9 +245,9 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo "8. DOCUMENTATION REQUIREMENTS"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-if [ -n "$NEW_INTENTS" ]; then
+if [[ -n "$NEW_INTENTS" ]]; then
     WORKFLOW_DOCS=$(git diff --cached --name-only | grep 'docs/workflows/' || true)
-    if [ -z "$WORKFLOW_DOCS" ]; then
+    if [[ -z "$WORKFLOW_DOCS" ]]; then
         echo -e "${RED}❌ New intent requires workflow documentation${NC}"
         echo "   Update docs/workflows/ with new intent documentation"
         VIOLATIONS=$((VIOLATIONS+1))
@@ -255,18 +255,18 @@ if [ -n "$NEW_INTENTS" ]; then
 fi
 
 NEW_UIKIT=$(echo "$NEW_FILES" | grep 'internal/cli/uikit/' || true)
-if [ -n "$NEW_UIKIT" ]; then
+if [[ -n "$NEW_UIKIT" ]]; then
     UIKIT_DOC=$(git diff --cached --name-only | grep 'docs/UIKIT_GUIDE.md' || true)
-    if [ -z "$UIKIT_DOC" ]; then
+    if [[ -z "$UIKIT_DOC" ]]; then
         echo -e "${RED}❌ New UIKit component requires UIKIT_GUIDE.md update${NC}"
         VIOLATIONS=$((VIOLATIONS+1))
     fi
 fi
 
 NEW_BEHAVIORS=$(echo "$NEW_FILES" | grep 'internal/cli/behaviors/' || true)
-if [ -n "$NEW_BEHAVIORS" ]; then
+if [[ -n "$NEW_BEHAVIORS" ]]; then
     DEV_DOCS=$(git diff --cached --name-only | grep 'docs/development/' || true)
-    if [ -z "$DEV_DOCS" ]; then
+    if [[ -z "$DEV_DOCS" ]]; then
         echo -e "${RED}❌ New behavior requires development documentation${NC}"
         VIOLATIONS=$((VIOLATIONS+1))
     fi
@@ -278,14 +278,14 @@ echo "9. BDD @wip TAG CHECK"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 FEATURE_FILES=$(git diff --cached --name-only | grep '\.feature$' || true)
-if [ -n "$FEATURE_FILES" ]; then
+if [[ -n "$FEATURE_FILES" ]]; then
     WIP_COUNT=0
     for file in $FEATURE_FILES; do
         FILE_WIP=$(grep -c '@wip' "$file" 2>/dev/null || echo 0)
         WIP_COUNT=$((WIP_COUNT + FILE_WIP))
     done
     
-    if [ "$WIP_COUNT" -gt 0 ]; then
+    if [[ "$WIP_COUNT" -gt 0 ]]; then
         echo -e "${YELLOW}⚠️  BDD scenarios with @wip tags: $WIP_COUNT${NC}"
         echo "   These scenarios are excluded from CI but should be completed"
         echo "   Run 'make bdd-wip' to see which scenarios need work"
@@ -293,7 +293,7 @@ if [ -n "$FEATURE_FILES" ]; then
         echo "   Files with @wip:"
         for file in $FEATURE_FILES; do
             COUNT=$(grep -c '@wip' "$file" 2>/dev/null || echo 0)
-            if [ "$COUNT" -gt 0 ]; then
+            if [[ "$COUNT" -gt 0 ]]; then
                 echo "     $file: $COUNT scenario(s)"
             fi
         done
@@ -309,7 +309,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo "10. COVERAGE CHECK"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-if [ -n "$ALL_STAGED" ]; then
+if [[ -n "$ALL_STAGED" ]]; then
     PACKAGES=$(echo "$ALL_STAGED" | xargs -I{} dirname {} | sort -u)
     for pkg in $PACKAGES; do
         # Skip mock packages - they are auto-generated and don't need tests
@@ -327,13 +327,13 @@ if [ -n "$ALL_STAGED" ]; then
             echo -e "${GREEN}✅ $pkg: skipped (test infrastructure)${NC}"
             continue
         fi
-        if [ -d "$pkg" ]; then
+        if [[ -d "$pkg" ]]; then
             COVERAGE_OUTPUT=$(go test -cover "./$pkg" 2>/dev/null || true)
             COVERAGE=$(echo "$COVERAGE_OUTPUT" | grep -oP 'coverage: \K[0-9.]+' || echo "0")
-            if [ -n "$COVERAGE" ]; then
+            if [[ -n "$COVERAGE" ]]; then
                 # Round to nearest integer (94.5+ rounds to 95)
                 COVERAGE_INT=$(printf "%.0f" "$COVERAGE" 2>/dev/null || echo "0")
-                if [ "$COVERAGE_INT" -lt 95 ]; then
+                if [[ "$COVERAGE_INT" -lt 95 ]]; then
                     echo -e "${RED}❌ Package coverage below 95%${NC}"
                     echo "   Package: $pkg"
                     echo "   Coverage: $COVERAGE%"
@@ -349,7 +349,7 @@ fi
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-if [ $VIOLATIONS -eq 0 ]; then
+if [[ $VIOLATIONS -eq 0 ]]; then
     echo -e "${GREEN}✅ All strict pattern checks passed${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     exit 0

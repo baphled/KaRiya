@@ -45,11 +45,11 @@ echo -e "${BLUE}Files changed: $FILE_COUNT${NC}"
 echo -e "${BLUE}Lines changed: $LINE_COUNT${NC}"
 
 # Warnings
-if [ "$FILE_COUNT" -gt 10 ]; then
+if [[ "$FILE_COUNT" -gt 10 ]]; then
     echo -e "${YELLOW}⚠️  Warning: More than 10 files changed. Consider splitting.${NC}"
 fi
 
-if [ "$LINE_COUNT" -gt 500 ]; then
+if [[ "$LINE_COUNT" -gt 500 ]]; then
     echo -e "${YELLOW}⚠️  Warning: More than 500 lines changed. Consider splitting (unless initial setup).${NC}"
 fi
 
@@ -59,7 +59,7 @@ echo "------------------------------------------------"
 echo "🔍 CHECKING FOR GENERATED FILES"
 echo "------------------------------------------------"
 GENERATED_FILES=$(git diff --cached --name-only | grep -E '\.(out|exe|dll|so|dylib|test)$' || true)
-if [ -n "$GENERATED_FILES" ]; then
+if [[ -n "$GENERATED_FILES" ]]; then
     echo -e "${RED}❌ Generated files detected! Remove from staging:${NC}"
     echo "$GENERATED_FILES"
     echo ""
@@ -71,7 +71,7 @@ fi
 
 # Check for coverage files
 COVERAGE_FILES=$(git diff --cached --name-only | grep -E 'coverage\.(out|html)' || true)
-if [ -n "$COVERAGE_FILES" ]; then
+if [[ -n "$COVERAGE_FILES" ]]; then
     echo -e "${RED}❌ Coverage files detected! Remove from staging:${NC}"
     echo "$COVERAGE_FILES"
     echo ""
@@ -161,7 +161,7 @@ echo "------------------------------------------------"
 echo "✨ FORMATTING CHECK"
 echo "------------------------------------------------"
 UNFORMATTED=$(gofmt -l . 2>&1 | grep -v '^vendor/' | grep '\.go$' || true)
-if [ -z "$UNFORMATTED" ]; then
+if [[ -z "$UNFORMATTED" ]]; then
     echo -e "${GREEN}✅ All files properly formatted${NC}"
 else
     echo -e "${YELLOW}⚠️  Unformatted files:${NC}"
@@ -176,13 +176,13 @@ echo "------------------------------------------------"
 echo "🏛️  ARCHITECTURAL LAYERS AFFECTED"
 echo "------------------------------------------------"
 LAYERS=$(git diff --cached --name-only | grep -E 'internal/(domain|service|repository|cli|logger)' | cut -d'/' -f2-3 | sort -u || true)
-if [ -n "$LAYERS" ]; then
+if [[ -n "$LAYERS" ]]; then
     echo "$LAYERS" | while read layer; do
         echo -e "${BLUE}  - $layer${NC}"
     done
 
     LAYER_COUNT=$(echo "$LAYERS" | wc -l | tr -d ' ')
-    if [ "$LAYER_COUNT" -gt 2 ]; then
+    if [[ "$LAYER_COUNT" -gt 2 ]]; then
         echo ""
         echo -e "${YELLOW}⚠️  Multiple layers affected ($LAYER_COUNT). Consider splitting by layer.${NC}"
     fi
@@ -198,7 +198,7 @@ echo "------------------------------------------------"
 
 CODE_FILES_CHECK=$(git diff --cached --name-only | grep -E '\.(go|js|ts|py|java|c|cpp|rs)$' || true)
 
-if [ -n "$CODE_FILES_CHECK" ]; then
+if [[ -n "$CODE_FILES_CHECK" ]]; then
     echo -e "${YELLOW}⚠️  Code files detected in commit${NC}"
     echo ""
     echo "If ANY code was AI-generated, your commit message MUST include:"

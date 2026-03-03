@@ -72,7 +72,7 @@ if ! command -v golangci-lint &> /dev/null; then
 fi
 
 # Check npm dependencies
-if [ ! -d "node_modules" ]; then
+if [[ ! -d "node_modules" ]]; then
     echo "Installing npm dependencies..."
     npm ci
 fi
@@ -163,7 +163,7 @@ echo -e "${BLUE}              CI CHECK SUMMARY${NC}"
 echo -e "${BLUE}================================================${NC}"
 echo ""
 
-if [ ${#PASSED_CHECKS[@]} -gt 0 ]; then
+if [[ ${#PASSED_CHECKS[@]} -gt 0 ]]; then
     echo -e "${GREEN}✅ Passed Checks (${#PASSED_CHECKS[@]}):${NC}"
     for check in "${PASSED_CHECKS[@]}"; do
         echo -e "  ${GREEN}✓${NC} $check"
@@ -171,7 +171,7 @@ if [ ${#PASSED_CHECKS[@]} -gt 0 ]; then
     echo ""
 fi
 
-if [ ${#FAILED_CHECKS[@]} -gt 0 ]; then
+if [[ ${#FAILED_CHECKS[@]} -gt 0 ]]; then
     echo -e "${RED}❌ Failed Checks (${#FAILED_CHECKS[@]}):${NC}"
     for check in "${FAILED_CHECKS[@]}"; do
         echo -e "  ${RED}✗${NC} $check"

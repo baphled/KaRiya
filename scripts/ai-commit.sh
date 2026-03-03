@@ -55,7 +55,7 @@ strip_ai_attribution() {
 # ============================================================================
 # AMEND MODE: Add AI attribution to existing HEAD commit
 # ============================================================================
-if [ "$AMEND" = "1" ]; then
+if [[ "$AMEND" = "1" ]]; then
     echo -e "${BLUE}🔄 AMEND MODE: Adding AI attribution to HEAD commit${NC}"
     echo ""
     
@@ -69,10 +69,10 @@ if [ "$AMEND" = "1" ]; then
     CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
     UPSTREAM=$(git rev-parse --abbrev-ref "@{upstream}" 2>/dev/null || echo "")
     
-    if [ -n "$UPSTREAM" ]; then
+    if [[ -n "$UPSTREAM" ]]; then
         # Check if HEAD is ahead of upstream
         AHEAD=$(git rev-list --count "$UPSTREAM..HEAD" 2>/dev/null || echo "0")
-        if [ "$AHEAD" = "0" ]; then
+        if [[ "$AHEAD" = "0" ]]; then
             echo -e "${RED}❌ ERROR: HEAD commit has already been pushed${NC}"
             echo ""
             echo "Cannot amend pushed commits. Options:"
@@ -121,7 +121,7 @@ else
     # ============================================================================
     
     # Step 1: Validate file provided and read commit message
-    if [ -z "$COMMIT_FILE" ]; then
+    if [[ -z "$COMMIT_FILE" ]]; then
         echo -e "${RED}❌ ERROR: Commit message file required${NC}"
         echo ""
         echo "Usage:"
@@ -142,7 +142,7 @@ else
     fi
 
     # Check if file exists and is readable
-    if [ ! -f "$COMMIT_FILE" ]; then
+    if [[ ! -f "$COMMIT_FILE" ]]; then
         echo -e "${RED}❌ ERROR: File not found: ${COMMIT_FILE}${NC}"
         echo ""
         echo "Create the file first:"
@@ -153,7 +153,7 @@ else
         exit 1
     fi
 
-    if [ ! -r "$COMMIT_FILE" ]; then
+    if [[ ! -r "$COMMIT_FILE" ]]; then
         echo -e "${RED}❌ ERROR: Cannot read file: ${COMMIT_FILE}${NC}"
         exit 1
     fi
@@ -162,7 +162,7 @@ else
     COMMIT_MSG=$(cat "$COMMIT_FILE")
 
     # Validate we have a message
-    if [ -z "$COMMIT_MSG" ]; then
+    if [[ -z "$COMMIT_MSG" ]]; then
         echo -e "${RED}❌ ERROR: Commit message file is empty${NC}"
         exit 1
     fi
@@ -239,25 +239,25 @@ fi
 # Auto-detect AI agent from environment
 detect_ai_agent() {
     # Check for explicit override first
-    if [ -n "$AI_AGENT" ]; then
+    if [[ -n "$AI_AGENT" ]]; then
         echo "$AI_AGENT"
         return
     fi
     
     # Detect Opencode (primary check)
-    if [ "$OPENCODE" = "1" ] || [ -n "$OPENCODE" ]; then
+    if [[ "$OPENCODE" = "1" ]] || [ -n "$OPENCODE" ]]; then
         echo "Opencode"
         return
     fi
     
     # Detect Claude Code
-    if [ -n "$CLAUDE_CODE" ]; then
+    if [[ -n "$CLAUDE_CODE" ]]; then
         echo "Claude Code"
         return
     fi
     
     # Detect Cursor
-    if [ -n "$CURSOR_SESSION" ] || [ -n "$CURSOR" ]; then
+    if [[ -n "$CURSOR_SESSION" ]] || [ -n "$CURSOR" ]]; then
         echo "Cursor"
         return
     fi
@@ -269,7 +269,7 @@ detect_ai_agent() {
 # Detect model - REQUIRED, no defaults
 detect_ai_model() {
     # Check for explicit override first
-    if [ -n "$AI_MODEL" ]; then
+    if [[ -n "$AI_MODEL" ]]; then
         echo "$AI_MODEL"
         return
     fi
@@ -315,7 +315,7 @@ AGENT_NAME=$(detect_ai_agent)
 MODEL_NAME=$(format_model_name "$(detect_ai_model)")
 
 # Validate agent detected
-if [ -z "$AGENT_NAME" ]; then
+if [[ -z "$AGENT_NAME" ]]; then
     echo -e "${RED}❌ ERROR: Could not detect AI agent${NC}"
     echo ""
     echo "Set the AI_AGENT environment variable:"
@@ -328,7 +328,7 @@ if [ -z "$AGENT_NAME" ]; then
 fi
 
 # Validate model - REQUIRED
-if [ -z "$MODEL_NAME" ]; then
+if [[ -z "$MODEL_NAME" ]]; then
     echo -e "${RED}❌ ERROR: AI_MODEL environment variable not set${NC}"
     echo ""
     echo "The model must be specified for accurate attribution."
@@ -349,15 +349,15 @@ fi
 REVIEWER_NAME=$(git config user.name)
 REVIEWER_EMAIL=$(git config user.email)
 
-if [ -z "$REVIEWER_NAME" ] || [ -z "$REVIEWER_EMAIL" ]; then
+if [[ -z "$REVIEWER_NAME" ]] || [[ -z "$REVIEWER_EMAIL" ]]; then
     echo -e "${RED}❌ ERROR: Git user identity is not fully configured${NC}"
     echo ""
-    if [ -z "$REVIEWER_NAME" ]; then
+    if [[ -z "$REVIEWER_NAME" ]]; then
         echo "Missing git user.name. Set it with:"
         echo "  git config user.name \"Your Name\""
         echo ""
     fi
-    if [ -z "$REVIEWER_EMAIL" ]; then
+    if [[ -z "$REVIEWER_EMAIL" ]]; then
         echo "Missing git user.email. Set it with:"
         echo "  git config user.email \"your.email@example.com\""
         echo ""
@@ -367,7 +367,7 @@ if [ -z "$REVIEWER_NAME" ] || [ -z "$REVIEWER_EMAIL" ]; then
     exit 1
 fi
 
-if [ -z "$REVIEWER_EMAIL" ]; then
+if [[ -z "$REVIEWER_EMAIL" ]]; then
     echo -e "${YELLOW}⚠️  Warning: git user.email not set${NC}"
     echo "Set it with: git config user.email \"your.email@example.com\""
     REVIEWER_EMAIL="unknown"
@@ -381,7 +381,7 @@ REVIEWER_FORMATTED="${REVIEWER_NAME} <${REVIEWER_EMAIL}>"
 # ============================================================================
 
 echo ""
-if [ "$AMEND" = "1" ]; then
+if [[ "$AMEND" = "1" ]]; then
     echo -e "${BLUE}🤖 Amending commit with AI attribution...${NC}"
 else
     echo -e "${BLUE}🤖 Creating AI-attributed commit...${NC}"
@@ -406,12 +406,12 @@ EOF
 COMMIT_FLAGS="-F $FINAL_MSG_FILE"
 
 # Add --amend flag if in AMEND mode
-if [ "$AMEND" = "1" ]; then
+if [[ "$AMEND" = "1" ]]; then
     COMMIT_FLAGS="$COMMIT_FLAGS --amend"
 fi
 
 # Add --no-verify flag if NO_VERIFY is set
-if [ "$NO_VERIFY" = "1" ]; then
+if [[ "$NO_VERIFY" = "1" ]]; then
     echo -e "${YELLOW}⚠️  Skipping pre-commit hooks (--no-verify)${NC}"
     echo ""
     COMMIT_FLAGS="$COMMIT_FLAGS --no-verify"
@@ -419,7 +419,7 @@ fi
 
 if git commit $COMMIT_FLAGS; then
     echo ""
-    if [ "$AMEND" = "1" ]; then
+    if [[ "$AMEND" = "1" ]]; then
         echo -e "${GREEN}✅ Commit amended successfully${NC}"
     else
         echo -e "${GREEN}✅ Commit created successfully${NC}"
@@ -443,7 +443,7 @@ fi
 # Step 6: Summary
 # ============================================================================
 
-if [ "$AMEND" = "1" ]; then
+if [[ "$AMEND" = "1" ]]; then
     echo -e "${GREEN}✅ AI attribution added to commit${NC}"
 else
     echo -e "${GREEN}✅ AI-attributed commit complete${NC}"
@@ -452,7 +452,7 @@ echo ""
 echo "Next steps:"
 echo "  git log -1                  # Review the commit"
 echo "  make check-compliance       # Run compliance checks"
-if [ "$AMEND" = "1" ]; then
+if [[ "$AMEND" = "1" ]]; then
     echo "  git push --force-with-lease # Push amended commit (if already pushed)"
 else
     echo "  git push                    # Push to remote (when ready)"

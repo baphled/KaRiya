@@ -17,12 +17,12 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-if [ ! -e ".git" ]; then
+if [[ ! -e ".git" ]]; then
     echo "Error: Not in a git repository"
     exit 1
 fi
 
-if [ ! -d ".git-hooks" ]; then
+if [[ ! -d ".git-hooks" ]]; then
     echo "Error: .git-hooks/ directory not found"
     exit 1
 fi
@@ -34,7 +34,7 @@ echo ""
 REQUIRED_HOOKS=("pre-commit" "commit-msg" "prepare-commit-msg")
 for hook in "${REQUIRED_HOOKS[@]}"; do
     hook_path=".git-hooks/$hook"
-    if [ -f "$hook_path" ]; then
+    if [[ -f "$hook_path" ]]; then
         chmod +x "$hook_path"
         echo -e "  ${GREEN}$hook${NC}"
     else
@@ -42,7 +42,7 @@ for hook in "${REQUIRED_HOOKS[@]}"; do
     fi
 done
 
-if [ -f "package.json" ] && command -v npm &> /dev/null; then
+if [[ -f "package.json" ]] && command -v npm &> /dev/null; then
     echo ""
     echo "Installing Node.js dependencies for commitlint..."
     if npm ci 2>/dev/null || npm install 2>/dev/null; then

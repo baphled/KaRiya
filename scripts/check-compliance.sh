@@ -41,7 +41,7 @@ echo "------------------------------------------------"
 # Formatting
 echo -n "Formatting (gofmt): "
 UNFORMATTED=$(gofmt -l . 2>&1 | grep -v '^vendor/' | grep '\.go$' || true)
-if [ -z "$UNFORMATTED" ]; then
+if [[ -z "$UNFORMATTED" ]]; then
     check_pass
 else
     check_fail "Run: go fmt ./..."
@@ -105,7 +105,7 @@ if command -v ginkgo &> /dev/null; then
     # Using Ginkgo
     # Exclude mock packages, test utilities, and packages with no statements from coverage calculation
     COVERAGE_OUTPUT=$(go test -cover ./... 2>/dev/null || true)
-    if [ -n "$COVERAGE_OUTPUT" ]; then
+    if [[ -n "$COVERAGE_OUTPUT" ]]; then
         # Filter out mocks, testutil (but keep e2e), and packages with 0.0% or "no test files"
         COVERAGE=$(echo "$COVERAGE_OUTPUT" | \
             grep -v '/mocks' | \
@@ -116,9 +116,9 @@ if command -v ginkgo &> /dev/null; then
             awk '$1 > 0 {sum+=$1; count++} END {if(count>0) printf "%.4f", sum/count; else print 0}')
         COVERAGE_INT=$(printf "%.0f" "$COVERAGE")
 
-        if [ "$COVERAGE_INT" -ge 80 ]; then
+        if [[ "$COVERAGE_INT" -ge 80 ]]; then
             echo -e "Project Average: ${GREEN}${COVERAGE}% ✅${NC}"
-        elif [ "$COVERAGE_INT" -ge 70 ]; then
+        elif [[ "$COVERAGE_INT" -ge 70 ]]; then
             echo -e "Project Average: ${YELLOW}${COVERAGE}% ⚠️${NC} (Target: 80%)"
             check_warn "Project average coverage below 80%"
         else
@@ -145,7 +145,7 @@ if command -v ginkgo &> /dev/null; then
                 }
             }')
         
-        if [ -n "$LOW_COVERAGE_MODULES" ]; then
+        if [[ -n "$LOW_COVERAGE_MODULES" ]]; then
             echo -e "${YELLOW}$LOW_COVERAGE_MODULES${NC}"
             echo ""
             echo -e "${BLUE}Tip: Add tests before modifying these packages.${NC}"
@@ -177,25 +177,25 @@ else
     echo "Lines changed: $LINE_COUNT"
 
     # Check file count
-    if [ "$FILE_COUNT" -gt 10 ]; then
+    if [[ "$FILE_COUNT" -gt 10 ]]; then
         check_warn "More than 10 files staged (consider atomic commits)"
     fi
 
     # Check line count
-    if [ "$LINE_COUNT" -gt 500 ]; then
+    if [[ "$LINE_COUNT" -gt 500 ]]; then
         check_warn "More than 500 lines changed (consider splitting)"
     fi
 
     # Check for generated files
     GENERATED=$(git diff --cached --name-only | grep -E '\.(out|exe|dll|so|test)$' || true)
-    if [ -n "$GENERATED" ]; then
+    if [[ -n "$GENERATED" ]]; then
         check_fail "Generated files in staging:"
         echo "$GENERATED" | sed 's/^/    /'
     fi
 
     # Check for coverage files
     COVERAGE_FILES=$(git diff --cached --name-only | grep -E 'coverage\.(out|html)' || true)
-    if [ -n "$COVERAGE_FILES" ]; then
+    if [[ -n "$COVERAGE_FILES" ]]; then
         check_fail "Coverage files in staging (should be in .gitignore):"
         echo "$COVERAGE_FILES" | sed 's/^/    /'
     fi
@@ -218,7 +218,7 @@ echo "------------------------------------------------"
 # Check domain layer purity (no external deps)
 echo -n "Domain Layer Purity: "
 DOMAIN_IMPORTS=$(find internal/domain -name "*.go" -type f 2>/dev/null | xargs grep -h "^import" 2>/dev/null | grep -E "(service|repository|cli)" || true)
-if [ -z "$DOMAIN_IMPORTS" ]; then
+if [[ -z "$DOMAIN_IMPORTS" ]]; then
     check_pass
 else
     check_fail "Domain layer has dependencies on other layers"
@@ -229,12 +229,12 @@ echo -n "Layer Structure: "
 REQUIRED_LAYERS=("internal/domain" "internal/service" "internal/repository")
 MISSING_LAYERS=()
 for layer in "${REQUIRED_LAYERS[@]}"; do
-    if [ ! -d "$layer" ]; then
+    if [[ ! -d "$layer" ]]; then
         MISSING_LAYERS+=("$layer")
     fi
 done
 
-if [ ${#MISSING_LAYERS[@]} -eq 0 ]; then
+if [[ ${#MISSING_LAYERS[@]} -eq 0 ]]; then
     check_pass
 else
     check_warn "Missing layers: ${MISSING_LAYERS[*]}"
@@ -250,9 +250,9 @@ echo "------------------------------------------------"
 
 # README
 echo -n "README.md: "
-if [ -f "README.md" ]; then
+if [[ -f "README.md" ]]; then
     LINES=$(wc -l < README.md)
-    if [ "$LINES" -gt 10 ]; then
+    if [[ "$LINES" -gt 10 ]]; then
         check_pass
     else
         check_warn "README exists but is sparse (${LINES} lines)"
@@ -263,7 +263,7 @@ fi
 
 # AGENTS.md
 echo -n "AGENTS.md: "
-if [ -f "AGENTS.md" ]; then
+if [[ -f "AGENTS.md" ]]; then
     check_pass
 else
     check_warn "Consider creating AGENTS.md for handover documentation"
@@ -271,7 +271,7 @@ fi
 
 # .gitignore
 echo -n ".gitignore: "
-if [ -f ".gitignore" ]; then
+if [[ -f ".gitignore" ]]; then
     if grep -q "coverage.out" .gitignore && grep -q "*.exe" .gitignore; then
         check_pass
     else
@@ -300,7 +300,7 @@ MISSING_DOCGO=$(go vet -vettool=./bin/docblocks \
     ./internal/cli/types/... \
     ./internal/cli/uikit/... \
     ./tools/analyzers/docblocks/... 2>&1 | grep "missing doc.go file" | wc -l)
-if [ "$MISSING_DOCGO" -eq 0 ]; then
+if [[ "$MISSING_DOCGO" -eq 0 ]]; then
     check_pass
 else
     check_fail "$MISSING_DOCGO packages missing doc.go files (run: make check-docblocks)"
@@ -319,7 +319,7 @@ TEST_COUNT=$(find . -name "*_test.go" -type f | wc -l)
 GO_FILES=$(find . -name "*.go" -not -name "*_test.go" -not -path "./vendor/*" -type f | wc -l)
 
 echo -n "Test Files: "
-if [ "$TEST_COUNT" -gt 0 ]; then
+if [[ "$TEST_COUNT" -gt 0 ]]; then
     RATIO=$(awk "BEGIN {printf \"%.1f\", $TEST_COUNT/$GO_FILES}")
     echo -e "${GREEN}${TEST_COUNT} test files${NC} (ratio: ${RATIO}:1)"
 else
@@ -329,7 +329,7 @@ fi
 # Check for Ginkgo suite files
 echo -n "Ginkgo Suites: "
 SUITE_COUNT=$(find . -name "suite_test.go" -type f | wc -l)
-if [ "$SUITE_COUNT" -gt 0 ]; then
+if [[ "$SUITE_COUNT" -gt 0 ]]; then
     check_pass
 else
     check_warn "No Ginkgo suite files found"
@@ -348,7 +348,7 @@ SKIPPED_TESTS=$(grep -rn "Skip(" --include="*_test.go" . 2>/dev/null | \
     grep -v "no display available" | \
     grep -v "no clipboard utilities" || true)
 
-if [ -z "$SKIPPED_TESTS" ]; then
+if [[ -z "$SKIPPED_TESTS" ]]; then
     check_pass
 else
     SKIP_COUNT=$(echo "$SKIPPED_TESTS" | wc -l)
@@ -373,7 +373,7 @@ echo "------------------------------------------------"
 
 # go.mod exists
 echo -n "go.mod: "
-if [ -f "go.mod" ]; then
+if [[ -f "go.mod" ]]; then
     check_pass
 else
     check_fail "Missing go.mod"
@@ -381,7 +381,7 @@ fi
 
 # go.sum exists
 echo -n "go.sum: "
-if [ -f "go.sum" ]; then
+if [[ -f "go.sum" ]]; then
     check_pass
 else
     check_warn "Missing go.sum (run: go mod tidy)"
@@ -405,7 +405,7 @@ echo "------------------------------------------------"
 
 # Check for proper internal/ structure
 echo -n "Internal Structure: "
-if [ -d "internal" ]; then
+if [[ -d "internal" ]]; then
     check_pass
 else
     check_warn "No internal/ directory (non-standard)"
@@ -413,7 +413,7 @@ fi
 
 # Check for cmd/ structure
 echo -n "Binary Structure: "
-if [ -d "cmd" ]; then
+if [[ -d "cmd" ]]; then
     check_pass
 else
     check_warn "No cmd/ directory (consider for binaries)"
@@ -421,7 +421,7 @@ fi
 
 # Check for Makefile
 echo -n "Makefile: "
-if [ -f "Makefile" ]; then
+if [[ -f "Makefile" ]]; then
     check_pass
 else
     check_warn "No Makefile (consider for task automation)"
@@ -473,7 +473,7 @@ echo "------------------------------------------------"
 # Check for direct *huh.Form usage in intents (should use wrapper models)
 echo -n "Form Wrapper Pattern: "
 DIRECT_HUH_FORM=$(grep -rn "form \*huh\.Form" internal/cli/intents/*.go 2>/dev/null | grep -v "_test.go" || true)
-if [ -z "$DIRECT_HUH_FORM" ]; then
+if [[ -z "$DIRECT_HUH_FORM" ]]; then
     check_pass
 else
     check_warn "Direct *huh.Form in intents (use wrapper models like CaptureForm)"
@@ -484,7 +484,7 @@ fi
 # Check for missing BaseIntent embedding
 echo -n "BaseIntent Embedding: "
 INTENTS_WITHOUT_BASE=$(grep -rL "BaseIntent" internal/cli/intents/*_intent.go 2>/dev/null | grep -v "_test.go" || true)
-if [ -z "$INTENTS_WITHOUT_BASE" ]; then
+if [[ -z "$INTENTS_WITHOUT_BASE" ]]; then
     check_pass
 else
     check_warn "Intents missing *BaseIntent embedding:"
@@ -494,7 +494,7 @@ fi
 # Check for hardcoded colors (should use theme package)
 echo -n "Theme Consistency (intents): "
 HARDCODED_INTENTS=$(grep -rn "lipgloss\.Color(\"#[0-9A-Fa-f]" internal/cli/intents/*.go 2>/dev/null | grep -v "_test.go" || true)
-if [ -z "$HARDCODED_INTENTS" ]; then
+if [[ -z "$HARDCODED_INTENTS" ]]; then
     check_pass
 else
     check_warn "Hardcoded colors in intents (use theme package)"
@@ -504,7 +504,7 @@ fi
 
 echo -n "Theme Consistency (models): "
 HARDCODED_MODELS=$(grep -rn "lipgloss\.Color(\"#[0-9A-Fa-f]" internal/cli/models/*.go 2>/dev/null | grep -v "_test.go" || true)
-if [ -z "$HARDCODED_MODELS" ]; then
+if [[ -z "$HARDCODED_MODELS" ]]; then
     check_pass
 else
     check_warn "Hardcoded colors in models (use theme package)"
@@ -516,7 +516,7 @@ fi
 echo -n "UIKit Primitives Usage: "
 RAW_STYLES=$(grep -rn "lipgloss\.NewStyle()" internal/cli/intents/*.go 2>/dev/null | grep -v "_test.go" | wc -l)
 PRIMITIVES_USAGE=$(grep -rn "primitives\." internal/cli/intents/*.go 2>/dev/null | grep -v "_test.go" | wc -l)
-if [ "$RAW_STYLES" -gt 20 ] && [ "$PRIMITIVES_USAGE" -lt 10 ]; then
+if [[ "$RAW_STYLES" -gt 20 ]] && [ "$PRIMITIVES_USAGE" -lt 10 ]]; then
     check_warn "Low primitives adoption: $RAW_STYLES raw styles vs $PRIMITIVES_USAGE primitives uses"
     echo "  Consider using uikit/primitives for semantic text (Title, Body, ErrorText, etc.)"
 else
@@ -527,7 +527,7 @@ fi
 echo -n "StandardView Usage: "
 INTENTS_COUNT=$(ls internal/cli/intents/*_intent.go 2>/dev/null | grep -v "_test.go" | wc -l)
 STANDARDVIEW_COUNT=$(grep -l "CreateStandardView\|StandardView" internal/cli/intents/*_intent.go 2>/dev/null | wc -l)
-if [ "$STANDARDVIEW_COUNT" -ge "$INTENTS_COUNT" ]; then
+if [[ "$STANDARDVIEW_COUNT" -ge "$INTENTS_COUNT" ]]; then
     check_pass
 else
     check_warn "Not all intents use StandardView ($STANDARDVIEW_COUNT/$INTENTS_COUNT)"
@@ -536,7 +536,7 @@ fi
 # Check for themed footer helpers usage
 echo -n "Themed Footer Usage: "
 FOOTER_HELPERS=$(grep -rn "ThemedNavigationFooter\|ThemedListFooter\|ThemedFormFooter\|CombineThemedFooters" internal/cli/intents/*.go 2>/dev/null | grep -v "_test.go" | wc -l)
-if [ "$FOOTER_HELPERS" -gt 5 ]; then
+if [[ "$FOOTER_HELPERS" -gt 5 ]]; then
     check_pass
 else
     check_warn "Low themed footer helper usage ($FOOTER_HELPERS uses)"
@@ -552,12 +552,12 @@ echo "================================================"
 echo "SUMMARY"
 echo "================================================"
 
-if [ $VIOLATIONS -eq 0 ] && [ $WARNINGS -eq 0 ]; then
+if [[ $VIOLATIONS -eq 0 ]] && [ $WARNINGS -eq 0 ]]; then
     echo -e "${GREEN}✅ ALL CHECKS PASSED${NC}"
     echo ""
     echo "Your project is compliant with all rules!"
     exit 0
-elif [ $VIOLATIONS -eq 0 ]; then
+elif [[ $VIOLATIONS -eq 0 ]]; then
     echo -e "${YELLOW}⚠️  ${WARNINGS} WARNING(S) FOUND${NC}"
     echo ""
     echo "Project is functional but has minor issues."
@@ -565,7 +565,7 @@ elif [ $VIOLATIONS -eq 0 ]; then
     exit 0
 else
     echo -e "${RED}❌ ${VIOLATIONS} VIOLATION(S) FOUND${NC}"
-    if [ $WARNINGS -gt 0 ]; then
+    if [[ $WARNINGS -gt 0 ]]; then
         echo -e "${YELLOW}⚠️  ${WARNINGS} WARNING(S) FOUND${NC}"
     fi
     echo ""
