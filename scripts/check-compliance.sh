@@ -20,16 +20,19 @@ WARNINGS=0
 # Helper function for checks
 check_pass() {
     echo -e "${GREEN}✅ Pass${NC}"
+    return 0
 }
 
 check_fail() {
-    echo -e "${RED}❌ Fail${NC} - $1"
+    echo -e "${RED}❌ Fail${NC} - $1" >&2
     VIOLATIONS=$((VIOLATIONS+1))
+    return 0
 }
 
 check_warn() {
     echo -e "${YELLOW}⚠️  Warning${NC} - $1"
     WARNINGS=$((WARNINGS+1))
+    return 0
 }
 
 # ============================================
@@ -564,9 +567,9 @@ elif [[ $VIOLATIONS -eq 0 ]]; then
     echo "Review warnings above for improvements."
     exit 0
 else
-    echo -e "${RED}❌ ${VIOLATIONS} VIOLATION(S) FOUND${NC}"
+    echo -e "${RED}❌ ${VIOLATIONS} VIOLATION(S) FOUND${NC}" >&2
     if [[ $WARNINGS -gt 0 ]]; then
-        echo -e "${YELLOW}⚠️  ${WARNINGS} WARNING(S) FOUND${NC}"
+        echo -e "${YELLOW}⚠️  ${WARNINGS} WARNING(S) FOUND${NC}" >&2
     fi
     echo ""
     echo "Fix violations before proceeding:"

@@ -50,6 +50,7 @@ strip_ai_attribution() {
         sed '/^Reviewed-By:/d' | \
         sed '/^AI-Model:/d' | \
         sed -e :a -e '/^\n*$/{$d;N;ba' -e '}'  # Remove trailing blank lines
+    return 0
 }
 
 # ============================================================================
@@ -61,7 +62,7 @@ if [[ "$AMEND" = "1" ]]; then
     
     # Safety check 1: Verify we have commits
     if ! git rev-parse HEAD &>/dev/null; then
-        echo -e "${RED}❌ ERROR: No commits in repository${NC}"
+        echo -e "${RED}❌ ERROR: No commits in repository${NC}" >&2
         exit 1
     fi
     
@@ -73,7 +74,7 @@ if [[ "$AMEND" = "1" ]]; then
         # Check if HEAD is ahead of upstream
         AHEAD=$(git rev-list --count "$UPSTREAM..HEAD" 2>/dev/null || echo "0")
         if [[ "$AHEAD" = "0" ]]; then
-            echo -e "${RED}❌ ERROR: HEAD commit has already been pushed${NC}"
+            echo -e "${RED}❌ ERROR: HEAD commit has already been pushed${NC}" >&2
             echo ""
             echo "Cannot amend pushed commits. Options:"
             echo "  1. Create a new commit with the fix"
@@ -122,7 +123,7 @@ else
     
     # Step 1: Validate file provided and read commit message
     if [[ -z "$COMMIT_FILE" ]]; then
-        echo -e "${RED}❌ ERROR: Commit message file required${NC}"
+        echo -e "${RED}❌ ERROR: Commit message file required${NC}" >&2
         echo ""
         echo "Usage:"
         echo "  make ai-commit FILE=/path/to/commit-msg.txt"
@@ -143,7 +144,7 @@ else
 
     # Check if file exists and is readable
     if [[ ! -f "$COMMIT_FILE" ]]; then
-        echo -e "${RED}❌ ERROR: File not found: ${COMMIT_FILE}${NC}"
+        echo -e "${RED}❌ ERROR: File not found: ${COMMIT_FILE}${NC}" >&2
         echo ""
         echo "Create the file first:"
         echo "  cat > ${COMMIT_FILE} << 'EOF'"
@@ -154,7 +155,7 @@ else
     fi
 
     if [[ ! -r "$COMMIT_FILE" ]]; then
-        echo -e "${RED}❌ ERROR: Cannot read file: ${COMMIT_FILE}${NC}"
+        echo -e "${RED}❌ ERROR: Cannot read file: ${COMMIT_FILE}${NC}" >&2
         exit 1
     fi
 
@@ -163,13 +164,13 @@ else
 
     # Validate we have a message
     if [[ -z "$COMMIT_MSG" ]]; then
-        echo -e "${RED}❌ ERROR: Commit message file is empty${NC}"
+        echo -e "${RED}❌ ERROR: Commit message file is empty${NC}" >&2
         exit 1
     fi
 
     # Validate message is not a placeholder
     if [[ "$COMMIT_MSG" =~ ^\.\.\.$ ]] || [[ "$COMMIT_MSG" =~ ^\.\.\.\s*$ ]] || [[ "$COMMIT_MSG" == "..." ]]; then
-        echo -e "${RED}❌ ERROR: Commit message cannot be '...' placeholder${NC}"
+        echo -e "${RED}❌ ERROR: Commit message cannot be '...' placeholder${NC}" >&2
         echo ""
         echo "Edit your file with an actual commit message:"
         echo "  ${COMMIT_FILE}"
@@ -181,7 +182,7 @@ else
     # Get first line and strip whitespace
     FIRST_LINE=$(echo "$COMMIT_MSG" | head -n1 | sed 's/[[:space:]]*$//')
     if [[ "$FIRST_LINE" =~ ^[a-z]+\([a-zA-Z0-9_-]+\):$ ]] || [[ "$FIRST_LINE" =~ ^[a-z]+:$ ]]; then
-        echo -e "${RED}❌ ERROR: Commit message has no description${NC}"
+        echo -e "${RED}❌ ERROR: Commit message has no description${NC}" >&2
         echo ""
         echo "Edit your file to add a description after the colon:"
         echo "  ${COMMIT_FILE}"
@@ -194,7 +195,7 @@ else
     echo -e "${BLUE}🔍 Checking for staged changes...${NC}"
 
     if git diff --cached --quiet; then
-        echo -e "${RED}❌ ERROR: No staged changes${NC}"
+        echo -e "${RED}❌ ERROR: No staged changes${NC}" >&2
         echo ""
         echo "You must stage changes before committing:"
         echo "  git add -p <file>          # Stage specific hunks interactively"
@@ -264,6 +265,7 @@ detect_ai_agent() {
     
     # No agent detected
     echo ""
+    return 0
 }
 
 # Detect model - REQUIRED, no defaults
@@ -276,6 +278,7 @@ detect_ai_model() {
     
     # No model detected
     echo ""
+    return 0
 }
 
 # Format model name to human-readable format
@@ -309,6 +312,7 @@ format_model_name() {
     formatted=$(echo "$formatted" | sed 's/^Gpt/GPT/g')
     
     echo "$formatted"
+    return 0
 }
 
 AGENT_NAME=$(detect_ai_agent)
@@ -316,7 +320,7 @@ MODEL_NAME=$(format_model_name "$(detect_ai_model)")
 
 # Validate agent detected
 if [[ -z "$AGENT_NAME" ]]; then
-    echo -e "${RED}❌ ERROR: Could not detect AI agent${NC}"
+    echo -e "${RED}❌ ERROR: Could not detect AI agent${NC}" >&2
     echo ""
     echo "Set the AI_AGENT environment variable:"
     echo "  export AI_AGENT='Opencode'"
@@ -329,7 +333,7 @@ fi
 
 # Validate model - REQUIRED
 if [[ -z "$MODEL_NAME" ]]; then
-    echo -e "${RED}❌ ERROR: AI_MODEL environment variable not set${NC}"
+    echo -e "${RED}❌ ERROR: AI_MODEL environment variable not set${NC}" >&2
     echo ""
     echo "The model must be specified for accurate attribution."
     echo ""
@@ -350,7 +354,7 @@ REVIEWER_NAME=$(git config user.name)
 REVIEWER_EMAIL=$(git config user.email)
 
 if [[ -z "$REVIEWER_NAME" ]] || [[ -z "$REVIEWER_EMAIL" ]]; then
-    echo -e "${RED}❌ ERROR: Git user identity is not fully configured${NC}"
+    echo -e "${RED}❌ ERROR: Git user identity is not fully configured${NC}" >&2
     echo ""
     if [[ -z "$REVIEWER_NAME" ]]; then
         echo "Missing git user.name. Set it with:"
@@ -434,7 +438,7 @@ if git commit $COMMIT_FLAGS; then
     rm -f "$FINAL_MSG_FILE"
 else
     echo ""
-    echo -e "${RED}❌ Commit failed${NC}"
+    echo -e "${RED}❌ Commit failed${NC}" >&2
     rm -f "$FINAL_MSG_FILE"
     exit 1
 fi

@@ -18,7 +18,7 @@ echo "Git Hooks Verification"
 echo ""
 
 if [[ ! -e ".git" ]]; then
-    echo -e "${RED}Error: Not in a git repository${NC}"
+    echo -e "${RED}Error: Not in a git repository${NC}" >&2
     exit 1
 fi
 

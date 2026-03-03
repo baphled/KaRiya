@@ -18,12 +18,12 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 if [[ ! -e ".git" ]]; then
-    echo "Error: Not in a git repository"
+    echo "Error: Not in a git repository" >&2
     exit 1
 fi
 
 if [[ ! -d ".git-hooks" ]]; then
-    echo "Error: .git-hooks/ directory not found"
+    echo "Error: .git-hooks/ directory not found" >&2
     exit 1
 fi
 

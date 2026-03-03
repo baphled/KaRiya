@@ -27,7 +27,7 @@ NC='\033[0m' # No Color
 # Get the name parameter
 NAME=$1
 if [[ -z "$NAME" ]]; then
-    echo -e "${RED}Error: NAME parameter required${NC}"
+    echo -e "${RED}Error: NAME parameter required${NC}" >&2
     echo ""
     echo "Usage: make new-intent NAME=feature_name"
     echo ""

@@ -23,10 +23,12 @@ NC='\033[0m' # No Color
 
 log_info() {
     echo -e "${GREEN}[INFO]${NC} $1"
+    return 0
 }
 
 log_warn() {
     echo -e "${YELLOW}[WARN]${NC} $1"
+    return 0
 }
 
 log_error() {
@@ -37,6 +39,7 @@ log_error() {
 get_package_name() {
     local dir="$1"
     basename "$dir"
+    return 0
 }
 
 # Check if package already has doc.go
@@ -61,12 +64,13 @@ extract_package_description() {
         comment=$(sed -n '1,10p' "$go_file" | grep "^// Package $package_name" | head -n1)
         if [[ -n "$comment" ]]; then
             echo "$comment" | sed "s|^// Package $package_name ||"
-            return
+            return 0
         fi
     fi
     
     # Fallback to generic description
     echo "provides $package_name functionality"
+    return 0
 }
 
 # Generate doc.go content
@@ -92,6 +96,7 @@ generate_doc_go() {
 //
 package $package_name
 EOF
+    return 0
 }
 
 # Main function
@@ -143,6 +148,7 @@ main() {
         log_warn "2. Add proper descriptions and usage examples"
         log_warn "3. Run 'make check-docblocks' to validate documentation"
     fi
+    return 0
 }
 
 # Script entry point

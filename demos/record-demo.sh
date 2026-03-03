@@ -13,6 +13,7 @@ cleanup() {
         mv "$BACKUP_FILE" "$CONFIG_FILE"
         echo "Config restored."
     fi
+    return 0
 }
 
 # Set trap to restore config on exit (success or failure)
