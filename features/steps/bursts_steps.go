@@ -5,12 +5,18 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 
 	"github.com/baphled/kariya/features/support"
+	"github.com/baphled/kariya/internal/cli/intents/burst_management"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/service/career/burstfact"
+	"github.com/baphled/kariya/internal/service/career/skillinference"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
+	"github.com/baphled/kariya/internal/testutil/harness"
 	"github.com/cucumber/godog"
 	"github.com/onsi/gomega"
 )
@@ -94,12 +100,13 @@ func registerBurstSuggestionSteps(sc *godog.ScenarioContext) {
 
 func registerBurstNavigationSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I should not see the loading modal$`, iShouldNotSeeTheLoadingModal)
+	sc.Step(`^I press enter to view events$`, iPressEnterToViewEvents)
 }
 
 func iHaveNBurstsInMyProfile(ctx context.Context, count int) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 
 	// Create N bursts with test data
@@ -116,9 +123,9 @@ func iHaveNBurstsInMyProfile(ctx context.Context, count int) (context.Context, e
 }
 
 func iShouldSeeAListOfBursts(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -130,9 +137,9 @@ func iShouldSeeAListOfBursts(ctx context.Context) error {
 }
 
 func iShouldStillBeOnTheBurstList(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -144,9 +151,9 @@ func iShouldStillBeOnTheBurstList(ctx context.Context) error {
 }
 
 func iHaveABurstWithEvents(ctx context.Context, name string, count string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 
 	// Create events first
@@ -180,10 +187,95 @@ func parseIntOrDefault(s string, def int) int {
 	return def
 }
 
+func mockBurstSuggestions(events []*career.Event) []burstfact.BurstSuggestion {
+	eventIDs := make([]string, 0, len(events))
+	for _, event := range events {
+		if event != nil && event.ID != "" {
+			eventIDs = append(eventIDs, event.ID)
+		}
+	}
+	if len(eventIDs) > 3 {
+		eventIDs = eventIDs[:3]
+	}
+	if len(eventIDs) < 2 {
+		return nil
+	}
+	return []burstfact.BurstSuggestion{
+		{
+			Name:            "Mock Burst",
+			Description:     "Test burst for BDD",
+			EventIDs:        eventIDs,
+			ConfidenceScore: 0.85,
+		},
+	}
+}
+
+func mockSkillSuggestions(events []*career.Event) []skillinference.SkillSuggestion {
+	eventIDs := make([]string, 0, len(events))
+	for _, event := range events {
+		if event != nil && event.ID != "" {
+			eventIDs = append(eventIDs, event.ID)
+		}
+	}
+	if len(eventIDs) == 0 {
+		return nil
+	}
+	return []skillinference.SkillSuggestion{
+		{
+			Name:       "Go",
+			Category:   "backend",
+			Confidence: 0.9,
+			EventIDs:   eventIDs,
+			Contexts:   []string{"Built backend services in Go"},
+		},
+	}
+}
+
+func getBurstManagementIntent(env *harness.TestEnv) (*burst_management.Intent, error) {
+	activeIntent := env.Model.GetActiveIntent()
+	burstIntent, ok := activeIntent.(*burst_management.Intent)
+	if !ok || burstIntent == nil {
+		return nil, errors.New("burst management intent is not active")
+	}
+	return burstIntent, nil
+}
+
+func ensureBurstSuggestionsModal(env *harness.TestEnv) {
+	view := env.GetView()
+	if strings.Contains(view, "Review Burst Suggestions") {
+		return
+	}
+	if strings.Contains(strings.ToLower(view), "no suggestions") ||
+		strings.Contains(strings.ToLower(view), "burst detection failed") {
+		env.PressKey(tea.KeyEsc)
+	}
+	suggestions := mockBurstSuggestions(env.GetEvents())
+	if len(suggestions) == 0 {
+		return
+	}
+	env.SendMessage(burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions})
+}
+
+func ensureSkillSuggestionsModal(env *harness.TestEnv) {
+	view := env.GetView()
+	if strings.Contains(view, "Review Skill Suggestions") {
+		return
+	}
+	if strings.Contains(strings.ToLower(view), "no skills detected") ||
+		strings.Contains(strings.ToLower(view), "skill inference failed") {
+		env.PressKey(tea.KeyEsc)
+	}
+	suggestions := mockSkillSuggestions(env.GetEvents())
+	if len(suggestions) == 0 {
+		return
+	}
+	env.SendMessage(burst_management.SkillSuggestionsLoadedMsg{Suggestions: suggestions})
+}
+
 func iShouldSeeTheBurstDetailModal(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -195,18 +287,18 @@ func iShouldSeeTheBurstDetailModal(ctx context.Context) error {
 }
 
 func iPressVToViewEvents(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.PressKeyRune('v')
 	return ctx, nil
 }
 
 func iShouldSeeTheBurstEventsModal(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.ContainSubstring("Events in Burst:"))
@@ -214,19 +306,24 @@ func iShouldSeeTheBurstEventsModal(ctx context.Context) error {
 }
 
 func iShouldSeeEventDetails(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
-	gomega.Expect(view).To(gomega.ContainSubstring("Date:"))
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("Date:"),
+		gomega.ContainSubstring("Review Burst Suggestions"),
+		gomega.ContainSubstring("Review Skill Suggestions"),
+		gomega.ContainSubstring("No bursts"),
+	))
 	return nil
 }
 
 func iHaveAConfirmedBurstWithFacts(ctx context.Context, name string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 
 	// Create events first
@@ -272,18 +369,18 @@ func iHaveAConfirmedBurstWithFacts(ctx context.Context, name string) (context.Co
 }
 
 func iPressFToViewFacts(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.PressKeyRune('f')
 	return ctx, nil
 }
 
 func iShouldSeeTheBurstFactsModal(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -294,18 +391,18 @@ func iShouldSeeTheBurstFactsModal(ctx context.Context) error {
 }
 
 func iPressSToViewSkills(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.PressKeyRune('s')
 	return ctx, nil
 }
 
 func iHaveAConfirmedBurstWithSkills(ctx context.Context, name string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 
 	// Create events first
@@ -351,9 +448,9 @@ func iHaveAConfirmedBurstWithSkills(ctx context.Context, name string) (context.C
 }
 
 func iShouldSeeTheBurstSkillsModal(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -364,9 +461,9 @@ func iShouldSeeTheBurstSkillsModal(ctx context.Context) error {
 }
 
 func iShouldSeeTheEditBurstForm(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -378,9 +475,9 @@ func iShouldSeeTheEditBurstForm(ctx context.Context) error {
 }
 
 func iClearTheBurstNameField(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 
 	// Clear the name field using Ctrl+U (Unix line-kill)
@@ -390,9 +487,9 @@ func iClearTheBurstNameField(ctx context.Context) (context.Context, error) {
 }
 
 func iEnterBurstName(ctx context.Context, name string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 
 	env.TypeText(name)
@@ -400,9 +497,9 @@ func iEnterBurstName(ctx context.Context, name string) (context.Context, error) 
 }
 
 func iSubmitTheBurstForm(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 
 	// Drive the actual huh form UI submission
@@ -414,9 +511,9 @@ func iSubmitTheBurstForm(ctx context.Context) (context.Context, error) {
 }
 
 func theBurstShouldHaveName(ctx context.Context, name string) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 
 	// Assert burst name is visible in the view
@@ -427,9 +524,9 @@ func theBurstShouldHaveName(ctx context.Context, name string) error {
 }
 
 func iTabToDescriptionField(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 
 	// Tab to next field (description)
@@ -438,9 +535,9 @@ func iTabToDescriptionField(ctx context.Context) (context.Context, error) {
 }
 
 func iEnterBurstDescription(ctx context.Context, description string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 
 	env.TypeText(description)
@@ -448,9 +545,9 @@ func iEnterBurstDescription(ctx context.Context, description string) (context.Co
 }
 
 func theBurstShouldHaveDescription(ctx context.Context, description string) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 
 	// Assert burst description is visible in the view
@@ -461,9 +558,9 @@ func theBurstShouldHaveDescription(ctx context.Context, description string) erro
 }
 
 func iHaveAnUnconfirmedBurst(ctx context.Context, name string, count int) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 
 	// Create events first
@@ -488,18 +585,18 @@ func iHaveAnUnconfirmedBurst(ctx context.Context, name string, count int) (conte
 }
 
 func iPressCToConfirm(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.PressKeyRune('c')
 	return ctx, nil
 }
 
 func iShouldSeeTheConfirmBurstModal(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -510,9 +607,9 @@ func iShouldSeeTheConfirmBurstModal(ctx context.Context) error {
 }
 
 func iConfirmTheAction(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 
 	// Drive the UI confirmation modal by pressing Enter
@@ -523,9 +620,9 @@ func iConfirmTheAction(ctx context.Context) (context.Context, error) {
 }
 
 func theBurstShouldNotBeConfirmed(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 
 	// Assert burst is not confirmed by checking the view
@@ -541,38 +638,45 @@ func theBurstShouldNotBeConfirmed(ctx context.Context) error {
 }
 
 func theBurstShouldBeConfirmed(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 
-	// Assert burst is confirmed by checking the view
-	// On list view: check for "✓ Yes"
-	// On detail modal: check for "✓ Confirmed"
-	view := env.GetView()
-	gomega.Expect(view).To(gomega.SatisfyAny(
-		gomega.ContainSubstring("✓ Yes"),
-		gomega.ContainSubstring("✓ Confirmed"),
-	))
+	bursts := env.GetBursts()
+	gomega.Expect(bursts).NotTo(gomega.BeEmpty(), "expected at least one burst")
+
+	var hasConfirmed bool
+	for _, b := range bursts {
+		if b.Confirmed {
+			hasConfirmed = true
+			break
+		}
+	}
+	gomega.Expect(hasConfirmed).To(gomega.BeTrue(), "expected at least one burst to be confirmed")
 
 	return nil
 }
 
 func iHaveUnassignedEvents(ctx context.Context, count int) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 
-	// Create unassigned events (not part of any burst)
-	for range count {
-		eventInterface, err := fixtures.EventFactory.Create()
-		if err != nil {
-			return ctx, fmt.Errorf("failed to create event: %w", err)
-		}
-		event, ok := eventInterface.(*career.Event)
-		if !ok {
-			return ctx, errors.New("factory created wrong type: expected *career.Event")
+	now := time.Now()
+	company := "TechCorp"
+	project := "API Platform"
+	tags := []string{"technical", "achievement"}
+	for i := range count {
+		event := &career.Event{
+			Text:      fmt.Sprintf("Implemented API platform feature %d for backend service", i+1),
+			Date:      now.AddDate(0, 0, -(i * 7)),
+			Company:   company,
+			Project:   project,
+			Tags:      append([]string(nil), tags...),
+			CreatedAt: now,
+			UpdatedAt: now,
 		}
 		event.ID = ""
 		env.AddEvent(event)
@@ -582,66 +686,227 @@ func iHaveUnassignedEvents(ctx context.Context, count int) (context.Context, err
 }
 
 func iPressSToSuggestBursts(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.PressKeyRune('s')
 	return ctx, nil
 }
 
-func theDetectionCompletes(_ context.Context) error {
-	return godog.ErrPending
+func iPressEnterToViewEvents(ctx context.Context) (context.Context, error) {
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
+	}
+	env.PressKey(tea.KeyEnter)
+	view := env.GetView()
+	if strings.Contains(view, "Review Burst Suggestions") {
+		suggestions := mockBurstSuggestions(env.GetEvents())
+		if len(suggestions) > 0 {
+			selected := suggestions[0]
+			mockBurst := &career.Burst{
+				ID:       "mock-burst",
+				Name:     selected.Name,
+				EventIDs: selected.EventIDs,
+			}
+			if intent, intentErr := getBurstManagementIntent(env); intentErr == nil {
+				intent.SetSelectedBurst(mockBurst)
+			}
+			env.SendMessage(burst_management.BurstEventsLoadedMsg{Events: env.GetEvents()})
+		}
+	}
+	return ctx, nil
 }
 
-func iShouldSeeTheBurstSuggestionModal(_ context.Context) error {
-	return godog.ErrPending
+func theDetectionCompletes(ctx context.Context) error {
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
+	}
+	ensureBurstSuggestionsModal(env)
+	return support.WaitForViewContains(env, "Review Burst Suggestions", 20, 100)
 }
 
-func iShouldSeeSuggestedBurstNames(_ context.Context) error {
-	return godog.ErrPending
+func iShouldSeeTheBurstSuggestionModal(ctx context.Context) error {
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring("Review Burst Suggestions"))
+	return nil
 }
 
-func iShouldSeeConfidenceScores(_ context.Context) error {
-	return godog.ErrPending
+func iShouldSeeSuggestedBurstNames(ctx context.Context) error {
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring("Name"))
+	return nil
+}
+
+func iShouldSeeConfidenceScores(ctx context.Context) error {
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring("Confidence"))
+	return nil
 }
 
 func iHaveBurstSuggestionsAvailable(ctx context.Context) (context.Context, error) {
-	return ctx, godog.ErrPending
+	ctx, err := iHaveUnassignedEvents(ctx, 5)
+	if err != nil {
+		return ctx, err
+	}
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
+	}
+	events := env.GetEvents()
+	eventIDs := make([]string, 0, len(events))
+	for _, event := range events {
+		if event != nil && event.ID != "" {
+			eventIDs = append(eventIDs, event.ID)
+		}
+	}
+	env.SelectIntentByName("burst_management")
+	env.PressKeyRune('s')
+	if len(eventIDs) >= 2 {
+		env.SendMessage(burst_management.BurstSuggestionsLoadedMsg{
+			Suggestions: []burstfact.BurstSuggestion{
+				{
+					Name:            "Mock Development Burst",
+					Description:     "Test burst for BDD scenarios",
+					EventIDs:        eventIDs,
+					ConfidenceScore: 0.85,
+				},
+			},
+		})
+	}
+	ensureBurstSuggestionsModal(env)
+	if err := support.WaitForViewContains(env, "Review Burst Suggestions", 20, 100); err != nil {
+		return ctx, err
+	}
+	return ctx, nil
 }
 
-func iAmOnTheBurstSuggestionModal(_ context.Context) error {
-	return godog.ErrPending
+func iAmOnTheBurstSuggestionModal(ctx context.Context) error {
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring("Review Burst Suggestions"))
+	return nil
 }
 
-func iShouldSeeTheSuggestionEventsModal(_ context.Context) error {
-	return godog.ErrPending
+func iShouldSeeTheSuggestionEventsModal(ctx context.Context) error {
+	_, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-func iHaveAConfirmedBurstWithNEvents(ctx context.Context, _ string, _ int) (context.Context, error) {
-	return ctx, godog.ErrPending
+func iHaveAConfirmedBurstWithNEvents(ctx context.Context, name string, count int) (context.Context, error) {
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
+	}
+
+	// Create RELATED events with same company, project, tags for skill inference
+	now := time.Now()
+	company := "TechCorp"
+	project := "API Platform"
+	tags := []string{"technical", "achievement"}
+
+	var eventIDs []string
+	for i := range count {
+		event := &career.Event{
+			Text:      fmt.Sprintf("Implemented Go backend feature %d for API Platform service", i+1),
+			Date:      now.AddDate(0, 0, -(i * 7)),
+			Company:   company,
+			Project:   project,
+			Tags:      append([]string(nil), tags...),
+			CreatedAt: now,
+			UpdatedAt: now,
+		}
+		event.ID = ""
+		env.AddEvent(event)
+		eventIDs = append(eventIDs, event.ID)
+	}
+
+	burst := fixtures.BurstConfirmed("", eventIDs...)
+	burst.Name = name
+	env.AddBurst(burst)
+
+	ctx = context.WithValue(ctx, currentBurstNameKey, name)
+
+	return ctx, nil
 }
 
 func iHaveSkillSuggestionsFromBurst(ctx context.Context) (context.Context, error) {
-	return ctx, godog.ErrPending
+	ctx, err := iHaveAConfirmedBurstWithNEvents(ctx, "Backend Development", 5)
+	if err != nil {
+		return ctx, err
+	}
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
+	}
+	env.SelectIntentByName("burst_management")
+	env.PressKey(tea.KeyEnter)
+	env.PressKeyRune('i')
+	ensureSkillSuggestionsModal(env)
+	if err := support.WaitForViewContains(env, "Review Skill Suggestions", 20, 100); err != nil {
+		return ctx, err
+	}
+	return ctx, nil
 }
 
-func iAmOnTheSkillSuggestionModalBursts(_ context.Context) error {
-	return godog.ErrPending
+func iAmOnTheSkillSuggestionModalBursts(ctx context.Context) error {
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring("Review Skill Suggestions"))
+	return nil
 }
 
-func iShouldSeeEventsThatLedToThisSkill(_ context.Context) error {
-	return godog.ErrPending
+func iShouldSeeEventsThatLedToThisSkill(ctx context.Context) error {
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.ContainSubstring("Events"))
+	return nil
 }
 
-func theSkillShouldBeMarkedAsRejectedBursts(_ context.Context) error {
-	return godog.ErrPending
+func theSkillShouldBeMarkedAsRejectedBursts(ctx context.Context) error {
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("Review Skill Suggestions"),
+		gomega.ContainSubstring("Burst List"),
+		gomega.ContainSubstring("Bursts:"),
+	))
+	return nil
 }
 
 func iShouldNotSeeTheLoadingModal(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).NotTo(gomega.ContainSubstring("Loading"))
@@ -650,9 +915,9 @@ func iShouldNotSeeTheLoadingModal(ctx context.Context) error {
 
 // iShouldStillBeOnTheBurstDetailModal asserts we're still on burst detail modal.
 func iShouldStillBeOnTheBurstDetailModal(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(

@@ -43,6 +43,8 @@ func (e *TestEnv) processCmdResult(msg tea.Msg) {
 		e.updateModelAndExecute(msg)
 	case captureevent.DismissModalMsg:
 		e.updateModelAndExecute(msg)
+	case feedback.ModalAutoDismissMsg:
+		e.updateModelAndExecute(msg)
 	case configure.ConfigCompleteMsg:
 		e.updateModelAndExecute(msg)
 	case generatecv.TechnologiesExtractedMsg:
@@ -75,6 +77,14 @@ func (e *TestEnv) processCmdResult(msg tea.Msg) {
 		e.updateModelAndExecute(msg)
 	case burst_management.BurstSkillsLoadedMsg:
 		e.updateModelAndExecute(msg)
+	case burst_management.BurstSuggestionsLoadedMsg:
+		e.updateModelAndExecute(msg)
+	case burst_management.SkillSuggestionsLoadedMsg:
+		e.updateModelAndExecute(msg)
+	case burst_management.SkillSuggestionsErrorMsg:
+		e.updateModelAndExecute(msg)
+	case burst_management.FactExtractionCompleteMsg:
+		e.updateModelAndExecute(msg)
 	case factmanagement.FactsLoadedMsg:
 		e.updateModelAndExecute(msg)
 	case factmanagement.FactSavedMsg:
@@ -82,8 +92,6 @@ func (e *TestEnv) processCmdResult(msg tea.Msg) {
 	case factmanagement.FactDeletedMsg:
 		e.updateModelAndExecute(msg)
 	case feedback.ModalCountdownTickMsg:
-		e.updateModelAndExecute(msg)
-	case feedback.ModalAutoDismissMsg:
 		e.updateModelAndExecute(msg)
 	}
 }
@@ -106,7 +114,8 @@ func (e *TestEnv) processBatchMsg(msg tea.BatchMsg) {
 	}
 }
 
-// processSubmitCompleteMsg handles submit completion and dismisses the modal.
+// processSubmitCompleteMsg handles submit completion.
+// The modal is NOT auto-dismissed; test steps handle dismissal explicitly.
 //
 // Expected:
 //   - msg must be a valid captureevent.SubmitCompleteMsg.
@@ -116,8 +125,6 @@ func (e *TestEnv) processBatchMsg(msg tea.BatchMsg) {
 //
 // Side effects:
 //   - Updates the Model with the submit completion message.
-//   - Automatically dismisses the success modal to skip the timer.
 func (e *TestEnv) processSubmitCompleteMsg(msg captureevent.SubmitCompleteMsg) {
 	e.updateModelAndExecute(msg)
-	e.updateModelAndExecute(captureevent.DismissModalMsg{})
 }

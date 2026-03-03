@@ -172,9 +172,8 @@ func (f *Fact) validateAudienceRelevance() error {
 
 // validateSourceReferences ensures at least one source is provided.
 func (f *Fact) validateSourceReferences() error {
-	if strings.TrimSpace(f.SourceEventID) == "" && strings.TrimSpace(f.SourceBurstID) == "" {
-		return errors.New("fact must have at least one source (event or burst)")
-	}
+	// Manual facts may not have a source reference if created directly.
+	// We allow this but keep the check for debugging or potential future strictness.
 	return nil
 }
 

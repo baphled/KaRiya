@@ -212,7 +212,12 @@ func (i *Intent) cancelEditorAndReturn() {
 // handleEditorModalResult handles the result from the editor modal.
 func (i *Intent) handleEditorModalResult(result *factmodals.EditResult) {
 	if result.Accepted {
-		i.applyEditorChanges(result)
+		// applyEditorChanges handles saving and potential error state transition blocks.
+		if !i.applyEditorChanges(result) {
+			// Save failed, error message already set in context/modal.
+			// Do NOT close the editor or change state.
+			return
+		}
 	}
 
 	// Clear modal and return to appropriate state.
@@ -228,7 +233,7 @@ func (i *Intent) handleEditorModalResult(result *factmodals.EditResult) {
 }
 
 // applyEditorChanges applies changes from the modal and saves the fact.
-func (i *Intent) applyEditorChanges(result *factmodals.EditResult) {
+func (i *Intent) applyEditorChanges(result *factmodals.EditResult) bool {
 	// Apply changes from the modal to the editing fact.
 	i.context.EditingFact.Text = result.Modified.Text
 	i.context.EditingFact.CompetencyCategories = result.Modified.CompetencyCategories
@@ -239,7 +244,7 @@ func (i *Intent) applyEditorChanges(result *factmodals.EditResult) {
 	// Save the fact.
 	if err := i.context.SaveEdit(); err != nil {
 		i.context.SetFormError("general", fmt.Sprintf("Save failed: %v", err))
-		return
+		return false
 	}
 
 	action := "updated"
@@ -258,6 +263,7 @@ func (i *Intent) applyEditorChanges(result *factmodals.EditResult) {
 	// Refresh table after save.
 	i.tableBehavior.SetItems(i.context.Facts)
 	i.syncTableSelection()
+	return true
 }
 
 // handleDeleteConfirmState handles messages in the delete confirm state.
@@ -268,7 +274,7 @@ func (i *Intent) handleDeleteConfirmState(msg tea.Msg) tea.Cmd {
 	}
 
 	switch keyMsg.String() {
-	case "y":
+	case "y", "enter":
 		if i.context.FactToDelete != nil {
 			if err := i.context.DeleteFact(i.context.FactToDelete.ID); err != nil {
 				i.result = &intents.IntentResult[*Result]{

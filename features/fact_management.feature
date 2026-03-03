@@ -184,6 +184,14 @@ Feature: Manage Career Facts
     Then I should still be on the fact list
     And there should be 0 facts
 
+  @happy
+  Scenario: Confirm delete fact with enter
+    Given I have a fact "Fact to delete"
+    When I select "fact_management" from the menu
+    And I press "d" to delete
+    And I confirm the deletion
+    Then I should still be on the fact list
+    And there should be 0 facts
 
   # ============================================================================
   # Validation

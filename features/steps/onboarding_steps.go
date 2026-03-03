@@ -2,6 +2,7 @@ package steps
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/baphled/kariya/features/support"
@@ -68,7 +69,7 @@ func iStartTheOnboardingWizard(ctx context.Context) (context.Context, error) {
 func iEnterAsMyName(ctx context.Context, name string) error {
 	env := support.GetOnboardingEnv(ctx)
 	if env == nil {
-		return godog.ErrPending
+		return errors.New("onboarding environment not initialised: call 'I start the onboarding wizard' first")
 	}
 	env.TypeText(name)
 	return nil
@@ -78,7 +79,7 @@ func iEnterAsMyName(ctx context.Context, name string) error {
 func iEnterAsMyEmail(ctx context.Context, email string) error {
 	env := support.GetOnboardingEnv(ctx)
 	if env == nil {
-		return godog.ErrPending
+		return errors.New("onboarding environment not initialised: call 'I start the onboarding wizard' first")
 	}
 	env.TypeText(email)
 	return nil
@@ -88,7 +89,7 @@ func iEnterAsMyEmail(ctx context.Context, email string) error {
 func iEnterAsMyLocation(ctx context.Context, location string) error {
 	env := support.GetOnboardingEnv(ctx)
 	if env == nil {
-		return godog.ErrPending
+		return errors.New("onboarding environment not initialised: call 'I start the onboarding wizard' first")
 	}
 	env.TypeText(location)
 	return nil
@@ -96,29 +97,35 @@ func iEnterAsMyLocation(ctx context.Context, location string) error {
 
 // iPressEnter presses the enter key.
 func iPressEnter(ctx context.Context) error {
-	env := support.GetOnboardingEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	if env := support.GetOnboardingEnv(ctx); env != nil {
+		env.PressEnter()
+		return nil
 	}
-	env.PressEnter()
-	return nil
+	if env, err := support.RequireEnv(ctx); err == nil {
+		env.Confirm()
+		return nil
+	}
+	return errors.New("no test environment found (neither onboarding nor full app)")
 }
 
 // iPressTab presses the tab key.
 func iPressTab(ctx context.Context) error {
-	env := support.GetOnboardingEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	if env := support.GetOnboardingEnv(ctx); env != nil {
+		env.PressTab()
+		return nil
 	}
-	env.PressTab()
-	return nil
+	if env, err := support.RequireEnv(ctx); err == nil {
+		env.Tab()
+		return nil
+	}
+	return errors.New("no test environment found (neither onboarding nor full app)")
 }
 
 // iSkipOptionalFields tabs through optional fields and submits.
 func iSkipOptionalFields(ctx context.Context) error {
 	env := support.GetOnboardingEnv(ctx)
 	if env == nil {
-		return godog.ErrPending
+		return errors.New("onboarding environment not initialised: call 'I start the onboarding wizard' first")
 	}
 	env.PressTab()
 	env.PressTab()
@@ -130,7 +137,7 @@ func iSkipOptionalFields(ctx context.Context) error {
 func onboardingWizardShouldBeComplete(ctx context.Context) error {
 	env := support.GetOnboardingEnv(ctx)
 	if env == nil {
-		return godog.ErrPending
+		return errors.New("onboarding environment not initialised: call 'I start the onboarding wizard' first")
 	}
 	gomega.Expect(env.IsCompleted()).To(gomega.BeTrue(), "Onboarding wizard should be complete")
 	return nil
@@ -140,7 +147,7 @@ func onboardingWizardShouldBeComplete(ctx context.Context) error {
 func profileShouldHaveName(ctx context.Context, name string) error {
 	env := support.GetOnboardingEnv(ctx)
 	if env == nil {
-		return godog.ErrPending
+		return errors.New("onboarding environment not initialised: call 'I start the onboarding wizard' first")
 	}
 	gomega.Expect(env.View()).To(gomega.ContainSubstring(name))
 	return nil
@@ -150,7 +157,7 @@ func profileShouldHaveName(ctx context.Context, name string) error {
 func profileShouldHaveEmail(ctx context.Context, email string) error {
 	env := support.GetOnboardingEnv(ctx)
 	if env == nil {
-		return godog.ErrPending
+		return errors.New("onboarding environment not initialised: call 'I start the onboarding wizard' first")
 	}
 	gomega.Expect(env.View()).To(gomega.ContainSubstring(email))
 	return nil
@@ -160,7 +167,7 @@ func profileShouldHaveEmail(ctx context.Context, email string) error {
 func profileShouldHaveLocation(ctx context.Context, location string) error {
 	env := support.GetOnboardingEnv(ctx)
 	if env == nil {
-		return godog.ErrPending
+		return errors.New("onboarding environment not initialised: call 'I start the onboarding wizard' first")
 	}
 	gomega.Expect(env.View()).To(gomega.ContainSubstring(location))
 	return nil
@@ -170,7 +177,7 @@ func profileShouldHaveLocation(ctx context.Context, location string) error {
 func iEnterAsMyTitle(ctx context.Context, title string) error {
 	env := support.GetOnboardingEnv(ctx)
 	if env == nil {
-		return godog.ErrPending
+		return errors.New("onboarding environment not initialised: call 'I start the onboarding wizard' first")
 	}
 	env.TypeText(title)
 	return nil
@@ -180,7 +187,7 @@ func iEnterAsMyTitle(ctx context.Context, title string) error {
 func iEnterAsMyGitHubUsername(ctx context.Context, username string) error {
 	env := support.GetOnboardingEnv(ctx)
 	if env == nil {
-		return godog.ErrPending
+		return errors.New("onboarding environment not initialised: call 'I start the onboarding wizard' first")
 	}
 	env.TypeText(username)
 	return nil
@@ -190,7 +197,7 @@ func iEnterAsMyGitHubUsername(ctx context.Context, username string) error {
 func iEnterAsMyPortfolio(ctx context.Context, portfolio string) error {
 	env := support.GetOnboardingEnv(ctx)
 	if env == nil {
-		return godog.ErrPending
+		return errors.New("onboarding environment not initialised: call 'I start the onboarding wizard' first")
 	}
 	env.TypeText(portfolio)
 	return nil
@@ -202,7 +209,7 @@ func iEnterAsMyPortfolio(ctx context.Context, portfolio string) error {
 func profileShouldHaveTitle(ctx context.Context, title string) error {
 	env := support.GetOnboardingEnv(ctx)
 	if env == nil {
-		return godog.ErrPending
+		return errors.New("onboarding environment not initialised: call 'I start the onboarding wizard' first")
 	}
 	gomega.Expect(env.View()).To(gomega.ContainSubstring(title))
 	return nil
@@ -212,7 +219,7 @@ func profileShouldHaveTitle(ctx context.Context, title string) error {
 func profileShouldHaveGitHubUsername(ctx context.Context, username string) error {
 	env := support.GetOnboardingEnv(ctx)
 	if env == nil {
-		return godog.ErrPending
+		return errors.New("onboarding environment not initialised: call 'I start the onboarding wizard' first")
 	}
 	gomega.Expect(env.View()).To(gomega.ContainSubstring(username))
 	return nil
@@ -222,7 +229,7 @@ func profileShouldHaveGitHubUsername(ctx context.Context, username string) error
 func profileShouldHavePortfolio(ctx context.Context, portfolio string) error {
 	env := support.GetOnboardingEnv(ctx)
 	if env == nil {
-		return godog.ErrPending
+		return errors.New("onboarding environment not initialised: call 'I start the onboarding wizard' first")
 	}
 	gomega.Expect(env.View()).To(gomega.ContainSubstring(portfolio))
 	return nil
@@ -232,7 +239,7 @@ func profileShouldHavePortfolio(ctx context.Context, portfolio string) error {
 func profileShouldNotHaveTitle(ctx context.Context) error {
 	env := support.GetOnboardingEnv(ctx)
 	if env == nil {
-		return godog.ErrPending
+		return errors.New("onboarding environment not initialised: call 'I start the onboarding wizard' first")
 	}
 	view := env.View()
 	gomega.Expect(view).NotTo(gomega.ContainSubstring("Title:"))
@@ -243,7 +250,7 @@ func profileShouldNotHaveTitle(ctx context.Context) error {
 func iShouldStillBeOnStep(ctx context.Context, step int) error {
 	env := support.GetOnboardingEnv(ctx)
 	if env == nil {
-		return godog.ErrPending
+		return errors.New("onboarding environment not initialised: call 'I start the onboarding wizard' first")
 	}
 	expected := fmt.Sprintf("Step %d of 3", step)
 	gomega.Expect(env.View()).To(gomega.ContainSubstring(expected))
@@ -254,7 +261,7 @@ func iShouldStillBeOnStep(ctx context.Context, step int) error {
 func iShouldSeeValidationErrorOnboarding(ctx context.Context) error {
 	env := support.GetOnboardingEnv(ctx)
 	if env == nil {
-		return godog.ErrPending
+		return errors.New("onboarding environment not initialised: call 'I start the onboarding wizard' first")
 	}
 	view := env.View()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -274,7 +281,7 @@ func iShouldSeeValidationErrorOnboarding(ctx context.Context) error {
 func iShouldStillSeeOnboardingWizard(ctx context.Context) error {
 	env := support.GetOnboardingEnv(ctx)
 	if env == nil {
-		return godog.ErrPending
+		return errors.New("onboarding environment not initialised: call 'I start the onboarding wizard' first")
 	}
 	gomega.Expect(env.View()).To(gomega.SatisfyAny(
 		gomega.ContainSubstring("Step"),

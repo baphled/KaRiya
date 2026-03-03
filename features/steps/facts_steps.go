@@ -17,30 +17,21 @@ import (
 )
 
 // RegisterFactsSteps registers fact management step definitions with Godog.
-//
-// Expected:
-//   - sc is a valid *godog.ScenarioContext.
-//
-// Side effects:
-//   - Registers step definitions with Godog.
-//
-//nolint:funlen // Registration function has many steps by design.
 func RegisterFactsSteps(sc *godog.ScenarioContext) {
+	registerFactBaseSteps(sc)
+	registerFactActionSteps(sc)
+	registerFactAssertionSteps(sc)
+}
+
+func registerFactBaseSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I have (\d+) facts? in my profile$`, iHaveNFactsInMyProfile)
 	sc.Step(`^I have (\d+) facts?$`, iHaveNFactsInMyProfile) // Alias
-	sc.Step(`^I should see a list of facts$`, iShouldSeeAListOfFacts)
-	sc.Step(`^I should see fact text$`, iShouldSeeFactText)
-	sc.Step(`^I should see strength signals$`, iShouldSeeStrengthSignals)
-	sc.Step(`^I should see categories$`, iShouldSeeCategories)
-	sc.Step(`^I should still be on the fact list$`, iShouldStillBeOnTheFactList)
 	sc.Step(`^I have a fact "([^"]*)"$`, iHaveAFact)
-	sc.Step(`^I should see the fact detail view$`, iShouldSeeTheFactDetailView)
-	sc.Step(`^I should see competency categories$`, iShouldSeeCompetencyCategories)
-	sc.Step(`^I should see role fit$`, iShouldSeeRoleFit)
-	sc.Step(`^I should see audience relevance$`, iShouldSeeAudienceRelevance)
+	sc.Step(`^I have a fact with category "([^"]*)"$`, iHaveAFactWithCategory)
+}
+
+func registerFactActionSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I press "n" to create new fact$`, iPressNToCreateNewFact)
-	sc.Step(`^I should see the fact editor form$`, iShouldSeeTheFactEditorForm)
-	sc.Step(`^there should be (\d+) facts?$`, thereShouldBeNFacts)
 	sc.Step(`^I enter fact text "([^"]*)"$`, iEnterFactText)
 	sc.Step(`^I tab to competency categories$`, iTabToCompetencyCategories)
 	sc.Step(`^I select competency category "([^"]*)"$`, iSelectCompetencyCategory)
@@ -49,37 +40,47 @@ func RegisterFactsSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I tab to audience relevance$`, iTabToAudienceRelevance)
 	sc.Step(`^I select audience "([^"]*)"$`, iSelectAudience)
 	sc.Step(`^I submit the fact form$`, iSubmitTheFactForm)
-	sc.Step(`^the fact should have text "([^"]*)"$`, theFactShouldHaveText)
-	sc.Step(`^the fact should have categories "([^"]*)"$`, theFactShouldHaveCategories)
-	sc.Step(`^the fact should have audiences "([^"]*)"$`, theFactShouldHaveAudiences)
-	sc.Step(`^I have a fact with category "([^"]*)"$`, iHaveAFactWithCategory)
 	sc.Step(`^I deselect competency category "([^"]*)"$`, iDeselectCompetencyCategory)
-	sc.Step(`^I should be on competency categories field$`, iShouldBeOnCompetencyCategoriesField)
-	sc.Step(`^I should be on role fit field$`, iShouldBeOnRoleFitField)
 	sc.Step(`^I press shift-tab$`, iPressShiftTab)
 	sc.Step(`^I clear the fact text field$`, iClearTheFactTextField)
 	sc.Step(`^I press "y" to confirm$`, iPressYToConfirm)
 	sc.Step(`^I enter fact text with (\d+) characters$`, iEnterFactTextWithNCharacters)
 	sc.Step(`^I press "r" to refresh$`, iPressRToRefresh)
-	sc.Step(`^the facts should be reloaded$`, theFactsShouldBeReloaded)
-	sc.Step(`^I should see available shortcuts$`, iShouldSeeAvailableShortcuts)
 	sc.Step(`^I press "([^"]*)" to toggle help$`, iPressToToggleHelp)
-
-	// Additional fact management steps
 	sc.Step(`^I accept all suggested facts$`, iAcceptAllSuggestedFacts)
 	sc.Step(`^I open the facts editor$`, iOpenTheFactsEditor)
 	sc.Step(`^I reject all suggested facts$`, iRejectAllSuggestedFacts)
+}
+
+func registerFactAssertionSteps(sc *godog.ScenarioContext) {
+	sc.Step(`^I should see a list of facts$`, iShouldSeeAListOfFacts)
+	sc.Step(`^I should see fact text$`, iShouldSeeFactText)
+	sc.Step(`^I should see strength signals$`, iShouldSeeStrengthSignals)
+	sc.Step(`^I should see categories$`, iShouldSeeCategories)
+	sc.Step(`^I should still be on the fact list$`, iShouldStillBeOnTheFactList)
+	sc.Step(`^I should see the fact detail view$`, iShouldSeeTheFactDetailView)
+	sc.Step(`^I should see competency categories$`, iShouldSeeCompetencyCategories)
+	sc.Step(`^I should see role fit$`, iShouldSeeRoleFit)
+	sc.Step(`^I should see audience relevance$`, iShouldSeeAudienceRelevance)
+	sc.Step(`^I should see the fact editor form$`, iShouldSeeTheFactEditorForm)
+	sc.Step(`^there should be (\d+) facts?$`, thereShouldBeNFacts)
+	sc.Step(`^the fact should have text "([^"]*)"$`, theFactShouldHaveText)
+	sc.Step(`^the fact should have categories "([^"]*)"$`, theFactShouldHaveCategories)
+	sc.Step(`^the fact should have audiences "([^"]*)"$`, theFactShouldHaveAudiences)
+	sc.Step(`^I should be on competency categories field$`, iShouldBeOnCompetencyCategoriesField)
+	sc.Step(`^I should be on role fit field$`, iShouldBeOnRoleFitField)
+	sc.Step(`^the facts should be reloaded$`, theFactsShouldBeReloaded)
+	sc.Step(`^I should see available shortcuts$`, iShouldSeeAvailableShortcuts)
 	sc.Step(`^there should be a fact with text "([^"]*)"$`, thereShouldBeAFactWithText)
 	sc.Step(`^I should be on audience field$`, iShouldBeOnAudienceField)
 }
 
 func iHaveNFactsInMyProfile(ctx context.Context, count int) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 
-	// Create N facts with test data
 	for range count {
 		factInterface, err := fixtures.FactFactory.Create()
 		if err != nil {
@@ -97,9 +98,9 @@ func iHaveNFactsInMyProfile(ctx context.Context, count int) (context.Context, er
 }
 
 func iShouldSeeAListOfFacts(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -111,9 +112,9 @@ func iShouldSeeAListOfFacts(ctx context.Context) error {
 }
 
 func iShouldSeeFactText(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -124,9 +125,9 @@ func iShouldSeeFactText(ctx context.Context) error {
 }
 
 func iShouldSeeStrengthSignals(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.ContainSubstring("Strength"), "should display strength signals in view")
@@ -134,9 +135,9 @@ func iShouldSeeStrengthSignals(ctx context.Context) error {
 }
 
 func iShouldSeeCategories(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.ContainSubstring("Categor"), "should display categories in view")
@@ -144,9 +145,9 @@ func iShouldSeeCategories(ctx context.Context) error {
 }
 
 func iShouldStillBeOnTheFactList(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).NotTo(gomega.ContainSubstring("Fact Text"), "should not be in fact editor after deletion")
@@ -154,12 +155,11 @@ func iShouldStillBeOnTheFactList(ctx context.Context) error {
 }
 
 func iHaveAFact(ctx context.Context, text string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 
-	// Create fact with given text
 	factInterface, err := fixtures.FactFactory.Create()
 	if err != nil {
 		return ctx, fmt.Errorf("failed to create fact: %w", err)
@@ -176,9 +176,9 @@ func iHaveAFact(ctx context.Context, text string) (context.Context, error) {
 }
 
 func iShouldSeeTheFactDetailView(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -189,9 +189,9 @@ func iShouldSeeTheFactDetailView(ctx context.Context) error {
 }
 
 func iShouldSeeCompetencyCategories(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -199,14 +199,18 @@ func iShouldSeeCompetencyCategories(ctx context.Context) error {
 		gomega.ContainSubstring("Categor"),
 		gomega.ContainSubstring("Technical"),
 		gomega.ContainSubstring("Leadership"),
+		gomega.ContainSubstring("Product"),
+		gomega.ContainSubstring("Consulting"),
+		gomega.ContainSubstring("Research"),
+		gomega.ContainSubstring("Mentoring"),
 	), "should display competency categories in view")
 	return nil
 }
 
 func iShouldSeeRoleFit(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.ContainSubstring("Role"), "should display role fit in view")
@@ -214,9 +218,9 @@ func iShouldSeeRoleFit(ctx context.Context) error {
 }
 
 func iShouldSeeAudienceRelevance(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.ContainSubstring("Audience"), "should display audience relevance in view")
@@ -224,18 +228,25 @@ func iShouldSeeAudienceRelevance(ctx context.Context) error {
 }
 
 func iPressNToCreateNewFact(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
-	env.PressKeyRune('n')
+
+	// 'n' key opens the editor from list state
+	env.PressKeyRuneWithFormProcessing('n')
+
+	// Wait for the form to be initialized and focused
+	gomega.Eventually(func() string {
+		return env.GetView()
+	}, "5s").Should(gomega.ContainSubstring("Fact Text"), "form should be visible after pressing 'n'")
 	return ctx, nil
 }
 
 func iShouldSeeTheFactEditorForm(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -248,99 +259,210 @@ func iShouldSeeTheFactEditorForm(ctx context.Context) error {
 }
 
 func thereShouldBeNFacts(ctx context.Context, expected int) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
-	facts := env.GetFacts()
-	gomega.Expect(facts).To(gomega.HaveLen(expected), fmt.Sprintf("expected %d facts in database, got %d", expected, len(facts)))
+	gomega.Eventually(func() int {
+		return len(env.GetFacts())
+	}, "5s").Should(gomega.Equal(expected), fmt.Sprintf("expected %d facts in database", expected))
 	return nil
 }
 
 func iEnterFactText(ctx context.Context, text string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.TypeText(text)
+	// We need to ensure the text is processed by huh
+	env.SendMessageWithFormProcessing(nil)
 	return ctx, nil
 }
 
 func iTabToCompetencyCategories(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
-	env.Tab()
+	env.TabWithFormProcessing()
 	return ctx, nil
 }
 
-func iSelectCompetencyCategory(ctx context.Context, _ string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+func iSelectCompetencyCategory(ctx context.Context, category string) (context.Context, error) {
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
-	env.PressKeyRune(' ')
+
+	// Wait for field to be visible/focused
+	gomega.Eventually(func() string {
+		return env.GetView()
+	}, "5s").Should(gomega.ContainSubstring("Competency"), "should be on competency categories field")
+
+	// Navigate to the specific category
+	categories := []string{"Technical", "Leadership", "Product", "Consulting", "Research", "Mentoring"}
+	targetIdx := -1
+	for idx, cat := range categories {
+		if strings.EqualFold(cat, category) {
+			targetIdx = idx
+			break
+		}
+	}
+
+	if targetIdx == -1 {
+		return ctx, fmt.Errorf("unknown category: %s", category)
+	}
+
+	// Multi-select starts at index 0. We need to move down to targetIdx.
+	for range targetIdx {
+		env.PressKeyRuneWithFormProcessing('j')
+	}
+
+	env.PressKeyRuneWithFormProcessing(' ')
 	return ctx, nil
 }
 
 func iTabToRoleFit(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
-	env.Tab()
+	env.TabWithFormProcessing()
 	return ctx, nil
 }
 
-func iSelectRoleFit(ctx context.Context, _ string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+func iSelectRoleFit(ctx context.Context, role string) (context.Context, error) {
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
-	env.Confirm()
+
+	// Wait for field to be visible/focused
+	gomega.Eventually(func() string {
+		return env.GetView()
+	}, "5s").Should(gomega.ContainSubstring("Role"), "should be on role fit field")
+
+	roles := []string{"Principal", "Engineering Manager", "Staff", "Senior IC"}
+	targetIdx := -1
+	for idx, r := range roles {
+		if strings.EqualFold(r, role) {
+			targetIdx = idx
+			break
+		}
+	}
+
+	if targetIdx == -1 {
+		return ctx, fmt.Errorf("unknown role: %s", role)
+	}
+
+	// Select starts at index 0. Move down to targetIdx.
+	for range targetIdx {
+		env.PressKeyRuneWithFormProcessing('j')
+	}
+
+	// In Select, pressing enter selects.
+	env.PressEnterWithFormProcessing()
 	return ctx, nil
 }
 
 func iTabToAudienceRelevance(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
-	env.Tab()
+	env.TabWithFormProcessing()
 	return ctx, nil
 }
 
-func iSelectAudience(ctx context.Context, _ string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+func iSelectAudience(ctx context.Context, audience string) (context.Context, error) {
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
-	env.PressKeyRune(' ')
+
+	// Wait for field to be visible/focused
+	gomega.Eventually(func() string {
+		return env.GetView()
+	}, "5s").Should(gomega.ContainSubstring("Audience"), "should be on audience field")
+
+	audiences := []string{"Hiring Manager", "Recruiter", "Peer"}
+	targetIdx := -1
+	for idx, aud := range audiences {
+		if strings.EqualFold(aud, audience) {
+			targetIdx = idx
+			break
+		}
+	}
+
+	if targetIdx == -1 {
+		return ctx, fmt.Errorf("unknown audience: %s", audience)
+	}
+
+	// Multi-select starts at index 0. Move down to targetIdx.
+	for range targetIdx {
+		env.PressKeyRuneWithFormProcessing('j')
+	}
+
+	env.PressKeyRuneWithFormProcessing(' ')
 	return ctx, nil
 }
 
 func iSubmitTheFactForm(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 
-	// Submit the form through the UI
-	// Navigate through all form fields and submit with Ctrl+S
-	// Fact form has: Text, CompetencyCategories, RoleFit, AudienceRelevance
-	for range 4 {
-		env.Tab()
+	// Fact form layout:
+	// 1. Fact Text (Text)
+	// 2. Competency Categories (MultiSelect)
+	// 3. Role Fit (Select)
+	// 4. Audience Relevance (MultiSelect)
+	// (Note: newScrollableForm appends huh.Confirm field as the 5th field)
+
+	// Ensure we are on the Audience Relevance field and it's initialized.
+	gomega.Eventually(func() string {
+		return env.GetView()
+	}, "5s").Should(gomega.ContainSubstring("Audience"), "should be on audience field before transitioning")
+
+	// Total 4 fields + 1 confirm field.
+	// We are currently on the Audience Relevance field after previous steps.
+
+	// We use env.NextFormField() to move from Audience Relevance to 'Save Changes' confirm field.
+	env.NextFormField()
+
+	// Before submitting, we verify the view shows 'Save Changes' or similar
+	gomega.Eventually(func() string {
+		return env.GetView()
+	}, "5s").Should(gomega.SatisfyAny(
+		gomega.ContainSubstring("Save Changes"),
+		gomega.ContainSubstring("Submit"),
+	), "should be on confirm field")
+
+	// Confirm field needs 'Y' or 'y' to toggle to 'Yes' (Submit) then Enter.
+	// We use PressKeyRuneWithFormProcessing to ensure internal form messages are processed.
+	env.PressKeyRuneWithFormProcessing('y')
+
+	// Verify that 'Submit' or 'Yes' is now selected in the confirm field
+	gomega.Eventually(func() string {
+		return env.GetView()
+	}, "5s").Should(gomega.ContainSubstring("Submit"), "Confirm field should be toggled to Submit")
+
+	// Final Enter to submit.
+	env.PressKeyWithFormProcessing(tea.KeyEnter)
+
+	for range 10 {
+		env.SendMessageWithFormProcessing(nil)
 	}
-	env.PressKey(tea.KeyCtrlS)
 
 	return ctx, nil
 }
 
 func theFactShouldHaveText(ctx context.Context, text string) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.ContainSubstring(text), fmt.Sprintf("should display fact text '%s' in view", text))
@@ -348,9 +470,9 @@ func theFactShouldHaveText(ctx context.Context, text string) error {
 }
 
 func theFactShouldHaveCategories(ctx context.Context, categories string) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	facts := env.GetFacts()
 	gomega.Expect(facts).NotTo(gomega.BeEmpty(), "expected at least one fact in database")
@@ -361,9 +483,9 @@ func theFactShouldHaveCategories(ctx context.Context, categories string) error {
 }
 
 func theFactShouldHaveAudiences(ctx context.Context, audiences string) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.ContainSubstring(audiences), fmt.Sprintf("should display audience '%s' in view", audiences))
@@ -371,12 +493,11 @@ func theFactShouldHaveAudiences(ctx context.Context, audiences string) error {
 }
 
 func iHaveAFactWithCategory(ctx context.Context, category string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 
-	// Create fact with given category
 	factInterface, err := fixtures.FactFactory.Create()
 	if err != nil {
 		return ctx, fmt.Errorf("failed to create fact: %w", err)
@@ -392,19 +513,14 @@ func iHaveAFactWithCategory(ctx context.Context, category string) (context.Conte
 	return ctx, nil
 }
 
-func iDeselectCompetencyCategory(ctx context.Context, _ string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
-	}
-	env.PressKeyRune(' ')
-	return ctx, nil
+func iDeselectCompetencyCategory(ctx context.Context, category string) (context.Context, error) {
+	return iSelectCompetencyCategory(ctx, category)
 }
 
 func iShouldBeOnCompetencyCategoriesField(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.ContainSubstring("Competency"), "should be on competency categories field")
@@ -412,9 +528,9 @@ func iShouldBeOnCompetencyCategoriesField(ctx context.Context) error {
 }
 
 func iShouldBeOnRoleFitField(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.ContainSubstring("Role"), "should be on role fit field")
@@ -422,58 +538,61 @@ func iShouldBeOnRoleFitField(ctx context.Context) error {
 }
 
 func iPressShiftTab(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
-	env.PressKeyRune('\t')
+	env.PressKey(tea.KeyShiftTab)
 	return ctx, nil
 }
 
 func iClearTheFactTextField(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
+	// Use Ctrl+U to clear line
 	env.PressKey(tea.KeyCtrlU)
+	env.SendMessageWithFormProcessing(nil)
 	return ctx, nil
 }
 
 func iPressYToConfirm(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
-	env.PressKeyRune('y')
+	env.PressKeyRuneWithFormProcessing('y')
 	return ctx, nil
 }
 
 func iEnterFactTextWithNCharacters(ctx context.Context, length int) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	text := make([]byte, length)
 	for i := range text {
 		text[i] = 'a'
 	}
 	env.TypeText(string(text))
+	env.SendMessageWithFormProcessing(nil)
 	return ctx, nil
 }
 
 func iPressRToRefresh(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.PressKeyRune('r')
 	return ctx, nil
 }
 
 func theFactsShouldBeReloaded(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.ContainSubstring("Fact"), "facts should be reloaded")
@@ -481,9 +600,9 @@ func theFactsShouldBeReloaded(ctx context.Context) error {
 }
 
 func iShouldSeeAvailableShortcuts(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(
@@ -495,36 +614,29 @@ func iShouldSeeAvailableShortcuts(ctx context.Context) error {
 }
 
 func iPressToToggleHelp(ctx context.Context, key string) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.PressKeyRune(rune(key[0]))
 	return ctx, nil
 }
 
-// iAcceptAllSuggestedFacts accepts all suggested facts.
-// Follows the BDD pattern (matching iAcceptTheSuggestedBurst): presses 'a' for
-// UI state management, then persists facts directly via the repository.
 func iAcceptAllSuggestedFacts(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
-
 	env.PressKeyRune('a')
-
 	events := env.GetEvents()
 	if len(events) == 0 {
 		return ctx, nil
 	}
-
 	latestEvent := events[len(events)-1]
 	facts, err := env.Service.ExtractFactsFromEvent(env.Ctx, latestEvent)
 	if err != nil {
 		return ctx, fmt.Errorf("extracting facts from event: %w", err)
 	}
-
 	factRepo := env.Service.GetFactRepository()
 	for i := range facts {
 		facts[i].ID = ""
@@ -533,46 +645,41 @@ func iAcceptAllSuggestedFacts(ctx context.Context) (context.Context, error) {
 			return ctx, fmt.Errorf("saving accepted fact: %w", saveErr)
 		}
 	}
-
 	return ctx, nil
 }
 
-// iOpenTheFactsEditor opens the facts editor.
 func iOpenTheFactsEditor(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.PressKeyRune('f')
 	return ctx, nil
 }
 
-// iRejectAllSuggestedFacts rejects all suggested facts.
 func iRejectAllSuggestedFacts(ctx context.Context) (context.Context, error) {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return ctx, godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	env.PressKeyRune('r')
 	return ctx, nil
 }
 
-// thereShouldBeAFactWithText asserts a fact with specific text exists.
 func thereShouldBeAFactWithText(ctx context.Context, text string) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.ContainSubstring(text), fmt.Sprintf("should display fact with text '%s' in view", text))
 	return nil
 }
 
-// iShouldBeOnAudienceField asserts the audience field is focused.
 func iShouldBeOnAudienceField(ctx context.Context) error {
-	env := support.GetAppEnv(ctx)
-	if env == nil {
-		return godog.ErrPending
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.SatisfyAny(

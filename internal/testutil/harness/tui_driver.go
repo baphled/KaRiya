@@ -309,16 +309,15 @@ func (e *TestEnv) NextFormField() *TestEnv {
 // cause infinite loops or stuck goroutines in tests. We only care about messages
 // that actually change application state.
 //
-// Commands that take longer than 500ms to execute (tick commands with delays) are skipped
-// to avoid slow tests from cursor blink animations (530ms each). The 500ms timeout
-// allows database operations to complete while still filtering out cursor blinks.
+// Commands that take longer than 5s to execute are skipped to avoid hanging tests.
+// The 5s timeout accommodates database operations (including inference) while still
+// filtering out stuck goroutines. Cursor blink ticks (530ms) are fast enough to pass.
 func (e *TestEnv) executeCmd(cmd tea.Cmd) {
 	if cmd == nil {
 		return
 	}
 
-	// Execute command with timeout to skip slow tick commands
-	// Cursor blink ticks take 530ms, database operations typically complete in <100ms
+	// Execute command with timeout to skip stuck commands
 	type result struct {
 		msg tea.Msg
 	}
@@ -333,8 +332,8 @@ func (e *TestEnv) executeCmd(cmd tea.Cmd) {
 			return
 		}
 		e.processCmdResult(r.msg)
-	case <-time.After(500 * time.Millisecond):
-		// Command is a slow tick (cursor blink, etc.) - skip it
+	case <-time.After(5 * time.Second):
+		// Command took too long - skip it to avoid hanging
 		return
 	}
 }
@@ -452,9 +451,18 @@ func (e *TestEnv) SendMessageWithFormProcessing(msg tea.Msg) *TestEnv {
 	if ok {
 		e.Model = model
 	}
-	e.processFormCmds(cmd, 10)
+
+	if cmd != nil {
+		e.processFormCmds(cmd, 10)
+	}
 
 	return e
+}
+
+// PressKeyWithFormProcessing sends a key and processes all resulting internal form messages.
+func (e *TestEnv) PressKeyWithFormProcessing(key tea.KeyType) *TestEnv {
+	e.T.Helper()
+	return e.SendMessageWithFormProcessing(tea.KeyMsg{Type: key})
 }
 
 // PressKeyRuneWithFormProcessing sends a rune key and processes all resulting

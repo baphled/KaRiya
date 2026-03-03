@@ -332,6 +332,30 @@ func GetAppEnv(ctx context.Context) *harness.TestEnv {
 	return env
 }
 
+// ErrEnvNotInitialised is returned when the test environment has not been set up.
+// A nil env means scenario setup failed — this is a test harness bug, not a pending step.
+var ErrEnvNotInitialised = errors.New("test environment not initialised: check BeforeScenario hook")
+
+// RequireEnv retrieves the test environment from context.
+// Returns a hard error if env is nil — setup failure should be red, not pending.
+//
+// Expected:
+//   - ctx is a valid context.Context with a TestEnv set via WithAppEnv.
+//
+// Returns:
+//   - TestEnv pointer and nil error on success.
+//   - nil and ErrEnvNotInitialised if env was not set.
+//
+// Side effects:
+//   - None.
+func RequireEnv(ctx context.Context) (*harness.TestEnv, error) {
+	env := GetAppEnv(ctx)
+	if env == nil {
+		return nil, ErrEnvNotInitialised
+	}
+	return env, nil
+}
+
 // WithAppEnv stores a TestEnv in the context.
 //
 // Expected:

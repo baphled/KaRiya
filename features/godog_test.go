@@ -7,6 +7,7 @@ import (
 
 	"github.com/baphled/kariya/features/steps"
 	"github.com/baphled/kariya/features/support"
+	"github.com/baphled/kariya/internal/testutil/harness"
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
 	. "github.com/onsi/gomega"
@@ -18,6 +19,7 @@ var opts = godog.Options{
 	Output: colors.Colored(os.Stdout),
 	Format: "pretty",
 	Tags:   "~@wip",
+	Strict: true,
 }
 
 func init() {
@@ -50,15 +52,6 @@ func TestFeatures(t *testing.T) {
 	}
 }
 
-// InitializeSuite registers suite-level hooks for shared database setup and teardown.
-//
-// Expected: sc is a valid TestSuiteContext.
-// Returns: None.
-// Side effects: Registers suite-level hooks via support.RegisterSuiteHooks.
-func InitializeSuite(sc *godog.TestSuiteContext) {
-	support.RegisterSuiteHooks(sc)
-}
-
 // InitializeScenario sets up the scenario context with step definitions and hooks.
 //
 // Expected: sc is a valid ScenarioContext.
@@ -74,4 +67,18 @@ func InitializeScenario(sc *godog.ScenarioContext) {
 	steps.RegisterBurstsSteps(sc)
 	steps.RegisterFactsSteps(sc)
 	steps.RegisterCVSteps(sc)
+}
+
+// InitializeSuite sets up suite-level hooks for shared database management.
+//
+// Expected: ctx is a valid TestSuiteContext.
+// Returns: None.
+// Side effects: Registers BeforeSuite and AfterSuite hooks.
+func InitializeSuite(ctx *godog.TestSuiteContext) {
+	ctx.BeforeSuite(func() {
+		harness.SetupShared()
+	})
+	ctx.AfterSuite(func() {
+		harness.CleanupShared()
+	})
 }

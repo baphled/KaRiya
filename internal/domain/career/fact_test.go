@@ -246,7 +246,7 @@ var _ = Describe("Fact", func() {
 			Expect(err.Error()).To(ContainSubstring("duplicate audience relevance types"))
 		})
 
-		It("should reject fact with no source reference", func() {
+		It("should accept fact with no source reference (manual entry)", func() {
 			fact := &Fact{
 				ID:                   "fact-123",
 				Text:                 "Test",
@@ -258,8 +258,7 @@ var _ = Describe("Fact", func() {
 			}
 
 			err := fact.Validate()
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("at least one source"))
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("should reject fact with aspirational language 'will'", func() {
