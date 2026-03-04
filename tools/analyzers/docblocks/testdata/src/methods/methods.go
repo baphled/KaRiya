@@ -38,5 +38,7 @@ func (r *Receiver) MethodMissingSideEffects() {} // want `exported method Method
 //   - None.
 func (r *Receiver) FullyDocMethod(x int) int { return x }
 
+// intentionally empty: test fixture for analyzer validation
+//
 //lint:ignore U1000 test fixture for analyzer - intentionally unused
-func (r *Receiver) unexportedMethod() {} // intentionally empty: test fixture for analyzer validation
+func (r *Receiver) unexportedMethod() {}

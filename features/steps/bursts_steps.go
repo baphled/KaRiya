@@ -686,12 +686,7 @@ func iHaveUnassignedEvents(ctx context.Context, count int) (context.Context, err
 }
 
 func iPressSToSuggestBursts(ctx context.Context) (context.Context, error) {
-	env, err := support.RequireEnv(ctx)
-	if err != nil {
-		return ctx, err
-	}
-	env.PressKeyRune('s')
-	return ctx, nil
+	return iPressSToViewSkills(ctx)
 }
 
 func iPressEnterToViewEvents(ctx context.Context) (context.Context, error) {
@@ -796,13 +791,7 @@ func iHaveBurstSuggestionsAvailable(ctx context.Context) (context.Context, error
 }
 
 func iAmOnTheBurstSuggestionModal(ctx context.Context) error {
-	env, err := support.RequireEnv(ctx)
-	if err != nil {
-		return err
-	}
-	view := env.GetView()
-	gomega.Expect(view).To(gomega.ContainSubstring("Review Burst Suggestions"))
-	return nil
+	return iShouldSeeTheBurstSuggestionModal(ctx)
 }
 
 func iShouldSeeTheSuggestionEventsModal(ctx context.Context) error {

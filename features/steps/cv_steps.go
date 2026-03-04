@@ -88,13 +88,19 @@ func registerCVExportSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^the clipboard should contain the CV as YAML$`, theClipboardShouldContainTheCVAsYAML)
 }
 
-func iHaveNoProfileConfigured(ctx context.Context) (context.Context, error) {
+// ensureTestEnv is a neutral helper that both profile steps use.
+// It validates the test environment without implying profile state.
+func ensureTestEnv(ctx context.Context) (context.Context, error) {
 	_, err := support.RequireEnv(ctx)
 	if err != nil {
 		return ctx, err
 	}
-	// Profile is empty by default in test env
 	return ctx, nil
+}
+
+func iHaveNoProfileConfigured(ctx context.Context) (context.Context, error) {
+	// Profile is empty by default in test env
+	return ensureTestEnv(ctx)
 }
 
 func iShouldSeeAnErrorOrWarning(ctx context.Context) error {
@@ -115,12 +121,7 @@ func iShouldSeeAnErrorOrWarning(ctx context.Context) error {
 }
 
 func iHaveAProfileConfigured(ctx context.Context) (context.Context, error) {
-	_, err := support.RequireEnv(ctx)
-	if err != nil {
-		return ctx, err
-	}
-	// Profile setup handled by config system - assume configured
-	return ctx, nil
+	return ensureTestEnv(ctx)
 }
 
 func iHaveACompleteProfileWithEventsAndFacts(ctx context.Context) (context.Context, error) {
@@ -325,12 +326,7 @@ func iAmOnTheCVReviewScreen(ctx context.Context) error {
 }
 
 func iPressEnterToPreview(ctx context.Context) (context.Context, error) {
-	env, err := support.RequireEnv(ctx)
-	if err != nil {
-		return ctx, err
-	}
-	env.Confirm()
-	return ctx, nil
+	return iConfirmSelection(ctx)
 }
 
 func iShouldSeeTheCVPreviewScreen(ctx context.Context) error {
@@ -390,18 +386,7 @@ func iShouldSeePersonalDetails(ctx context.Context) error {
 }
 
 func iShouldSeeAllCVSections(ctx context.Context) error {
-	env, err := support.RequireEnv(ctx)
-	if err != nil {
-		return err
-	}
-	// Check for CV sections
-	view := env.GetView()
-	gomega.Expect(view).To(gomega.SatisfyAny(
-		gomega.ContainSubstring("Experience"),
-		gomega.ContainSubstring("Skills"),
-		gomega.ContainSubstring("Summary"),
-	))
-	return nil
+	return iShouldSeeSectionNames(ctx)
 }
 
 func iShouldSeeBulletPoints(ctx context.Context) error {
@@ -421,12 +406,7 @@ func iShouldSeeBulletPoints(ctx context.Context) error {
 }
 
 func iPressEnterToConfirmCV(ctx context.Context) (context.Context, error) {
-	env, err := support.RequireEnv(ctx)
-	if err != nil {
-		return ctx, err
-	}
-	env.Confirm()
-	return ctx, nil
+	return iConfirmSelection(ctx)
 }
 
 func theCVGenerationShouldComplete(ctx context.Context) error {
@@ -479,12 +459,7 @@ func iPressKeyToExport(ctx context.Context, key string) (context.Context, error)
 }
 
 func iTabToLocation(ctx context.Context) (context.Context, error) {
-	env, err := support.RequireEnv(ctx)
-	if err != nil {
-		return ctx, err
-	}
-	env.Tab()
-	return ctx, nil
+	return iTabToAudienceField(ctx)
 }
 
 func iSelectFormat(ctx context.Context, format string) (context.Context, error) {
@@ -528,13 +503,7 @@ func iSelectLocation(ctx context.Context, location string) (context.Context, err
 }
 
 func iConfirmExport(ctx context.Context) (context.Context, error) {
-	env, err := support.RequireEnv(ctx)
-	if err != nil {
-		return ctx, err
-	}
-	// Confirm the export (press enter on the final confirm button)
-	env.Confirm()
-	return ctx, nil
+	return iConfirmSelection(ctx)
 }
 
 func iShouldSeeExportProgress(ctx context.Context) error {

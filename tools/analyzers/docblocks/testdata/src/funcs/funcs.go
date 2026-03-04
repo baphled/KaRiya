@@ -49,5 +49,7 @@ func VoidNoParams() {
 	// Intentionally empty: test fixture for analyzer validation
 }
 
+// intentionally empty: test fixture for analyzer validation
+//
 //lint:ignore U1000 test fixture for analyzer - intentionally unused
-func unexportedNoDoc() {} // intentionally empty: test fixture for analyzer validation
+func unexportedNoDoc() {}
