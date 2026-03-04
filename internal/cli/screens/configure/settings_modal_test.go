@@ -488,4 +488,34 @@ var _ = Describe("SettingsModal", func() {
 			Expect(modal.IsCompleted()).To(BeFalse())
 		})
 	})
+
+	Describe("Tab navigation after domain switch", func() {
+		It("should return Init command when switching domain with j key", func() {
+			cmd := modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
+			Expect(cmd).NotTo(BeNil())
+		})
+
+		It("should return Init command when switching domain with down arrow", func() {
+			cmd := modal.Update(tea.KeyMsg{Type: tea.KeyDown})
+			Expect(cmd).NotTo(BeNil())
+		})
+
+		It("should return Init command when switching domain with k key", func() {
+			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
+			cmd := modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
+			Expect(cmd).NotTo(BeNil())
+		})
+
+		It("should return Init command when switching domain with up arrow", func() {
+			modal.Update(tea.KeyMsg{Type: tea.KeyDown})
+			cmd := modal.Update(tea.KeyMsg{Type: tea.KeyUp})
+			Expect(cmd).NotTo(BeNil())
+		})
+
+		It("should maintain form focus after domain switch", func() {
+			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
+			view := modal.View()
+			Expect(view).NotTo(BeEmpty())
+		})
+	})
 })

@@ -178,12 +178,18 @@ func (m *SettingsModal) Update(msg tea.Msg) tea.Cmd {
 			if m.selectedIdx < len(m.domains)-1 {
 				m.selectedIdx++
 				m.rebuildActiveForm()
+				if m.activeForm != nil {
+					return m.activeForm.Init()
+				}
 			}
 			return nil
 		case "k", "up":
 			if m.selectedIdx > 0 {
 				m.selectedIdx--
 				m.rebuildActiveForm()
+				if m.activeForm != nil {
+					return m.activeForm.Init()
+				}
 			}
 			return nil
 		case "ctrl+s":
