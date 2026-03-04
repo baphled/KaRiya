@@ -174,7 +174,7 @@ func (m *SettingsModal) Init() tea.Cmd {
 func (m *SettingsModal) Update(msg tea.Msg) tea.Cmd {
 	if keyMsg, ok := msg.(tea.KeyMsg); ok {
 		switch keyMsg.String() {
-		case "j", "down":
+		case "down":
 			if m.selectedIdx < len(m.domains)-1 {
 				m.selectedIdx++
 				m.rebuildActiveForm()
@@ -183,7 +183,7 @@ func (m *SettingsModal) Update(msg tea.Msg) tea.Cmd {
 				}
 			}
 			return nil
-		case "k", "up":
+		case "up":
 			if m.selectedIdx > 0 {
 				m.selectedIdx--
 				m.rebuildActiveForm()
@@ -197,6 +197,13 @@ func (m *SettingsModal) Update(msg tea.Msg) tea.Cmd {
 			return nil
 		case "esc":
 			m.cancelled = true
+			return nil
+		case "tab", "shift+tab":
+			if m.activeForm != nil {
+				var cmd tea.Cmd
+				m.activeForm, cmd = forms.Update(m.activeForm, msg)
+				return cmd
+			}
 			return nil
 		}
 	}

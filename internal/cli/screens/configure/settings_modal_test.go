@@ -101,34 +101,66 @@ var _ = Describe("SettingsModal", func() {
 	})
 
 	Describe("Update", func() {
-		Context("when navigating with j key", func() {
-			It("should move to the next domain", func() {
+		Context("when pressing j key", func() {
+			It("should forward to form and not navigate domains", func() {
+				initialIdx := modal.selectedIdx
 				modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
-				view := modal.View()
-				Expect(view).NotTo(BeEmpty())
+				Expect(modal.selectedIdx).To(Equal(initialIdx))
+			})
+		})
+
+		Context("when pressing k key", func() {
+			It("should forward to form and not navigate domains", func() {
+				initialIdx := modal.selectedIdx
+				modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
+				Expect(modal.selectedIdx).To(Equal(initialIdx))
+			})
+		})
+
+		Context("when navigating with down arrow", func() {
+			It("should move to the next domain", func() {
+				initialIdx := modal.selectedIdx
+				modal.Update(tea.KeyMsg{Type: tea.KeyDown})
+				Expect(modal.selectedIdx).To(Equal(initialIdx + 1))
 			})
 
 			It("should not move beyond the last domain", func() {
 				for range 10 {
-					modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
+					modal.Update(tea.KeyMsg{Type: tea.KeyDown})
 				}
-				Expect(modal.IsCompleted()).To(BeFalse())
-				Expect(modal.IsCancelled()).To(BeFalse())
+				Expect(modal.selectedIdx).To(Equal(len(modal.domains) - 1))
 			})
 		})
 
-		Context("when navigating with k key", func() {
-			It("should not move above the first domain", func() {
-				modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
-				view := modal.View()
-				Expect(view).NotTo(BeEmpty())
+		Context("when navigating with up arrow", func() {
+			It("should move to the previous domain", func() {
+				modal.Update(tea.KeyMsg{Type: tea.KeyDown})
+				initialIdx := modal.selectedIdx
+				modal.Update(tea.KeyMsg{Type: tea.KeyUp})
+				Expect(modal.selectedIdx).To(Equal(initialIdx - 1))
 			})
 
-			It("should move back after moving forward", func() {
-				modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
-				modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
-				view := modal.View()
-				Expect(view).NotTo(BeEmpty())
+			It("should not move above the first domain", func() {
+				for range 10 {
+					modal.Update(tea.KeyMsg{Type: tea.KeyUp})
+				}
+				Expect(modal.selectedIdx).To(Equal(0))
+			})
+		})
+
+		Context("when pressing tab", func() {
+			It("should forward to form for field navigation", func() {
+				initialIdx := modal.selectedIdx
+				modal.Update(tea.KeyMsg{Type: tea.KeyTab})
+				Expect(modal.selectedIdx).To(Equal(initialIdx))
+			})
+		})
+
+		Context("when pressing shift+tab", func() {
+			It("should forward to form for reverse field navigation", func() {
+				initialIdx := modal.selectedIdx
+				modal.Update(tea.KeyMsg{Type: tea.KeyShiftTab})
+				Expect(modal.selectedIdx).To(Equal(initialIdx))
 			})
 		})
 
@@ -420,26 +452,24 @@ var _ = Describe("SettingsModal", func() {
 	Describe("Navigation boundary conditions", func() {
 		It("should not move down from last domain", func() {
 			for range 20 {
-				modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
+				modal.Update(tea.KeyMsg{Type: tea.KeyDown})
 			}
-			view := modal.View()
-			Expect(view).NotTo(BeEmpty())
+			Expect(modal.selectedIdx).To(Equal(len(modal.domains) - 1))
 		})
 
 		It("should not move up from first domain", func() {
 			for range 20 {
-				modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
+				modal.Update(tea.KeyMsg{Type: tea.KeyUp})
 			}
-			view := modal.View()
-			Expect(view).NotTo(BeEmpty())
+			Expect(modal.selectedIdx).To(Equal(0))
 		})
 	})
 
 	Describe("Multiple state transitions", func() {
 		It("should handle multiple navigation and action sequences", func() {
-			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
-			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
-			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
+			modal.Update(tea.KeyMsg{Type: tea.KeyDown})
+			modal.Update(tea.KeyMsg{Type: tea.KeyDown})
+			modal.Update(tea.KeyMsg{Type: tea.KeyUp})
 			Expect(modal.IsCompleted()).To(BeFalse())
 			Expect(modal.IsCancelled()).To(BeFalse())
 		})
@@ -489,20 +519,9 @@ var _ = Describe("SettingsModal", func() {
 		})
 	})
 
-	Describe("Tab navigation after domain switch", func() {
-		It("should return Init command when switching domain with j key", func() {
-			cmd := modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
-			Expect(cmd).NotTo(BeNil())
-		})
-
+	Describe("Domain navigation with arrow keys", func() {
 		It("should return Init command when switching domain with down arrow", func() {
 			cmd := modal.Update(tea.KeyMsg{Type: tea.KeyDown})
-			Expect(cmd).NotTo(BeNil())
-		})
-
-		It("should return Init command when switching domain with k key", func() {
-			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
-			cmd := modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
 			Expect(cmd).NotTo(BeNil())
 		})
 
@@ -513,7 +532,7 @@ var _ = Describe("SettingsModal", func() {
 		})
 
 		It("should maintain form focus after domain switch", func() {
-			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
+			modal.Update(tea.KeyMsg{Type: tea.KeyDown})
 			view := modal.View()
 			Expect(view).NotTo(BeEmpty())
 		})
