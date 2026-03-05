@@ -65,7 +65,13 @@ func (e *TestEnv) processCmdResult(msg tea.Msg) {
 		e.updateModelAndExecute(msg)
 	case skillsmanagement.SkillEventsForModalLoadedMsg:
 		e.updateModelAndExecute(msg)
+	case skillsmanagement.SkillSuggestionsLoadedMsg:
+		e.updateModelAndExecute(msg)
+	case skillsmanagement.SkillsCreatedMsg:
+		e.updateModelAndExecute(msg)
 	case burst_management.EditBurstMsg:
+		e.updateModelAndExecute(msg)
+	case burst_management.BurstEditCompleteMsg:
 		e.updateModelAndExecute(msg)
 	case burst_management.BurstDeletedMsg:
 		e.updateModelAndExecute(msg)

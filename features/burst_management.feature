@@ -241,7 +241,7 @@ Feature: Manage Career Bursts
     When I am on the skill suggestion modal
     And I press "a" to accept
     Then I should still be on the skill suggestions modal
-    And there should be 1 skill
+    And there should be 1 skill created
 
   @happy
   Scenario: Reject skill suggestion

@@ -17,6 +17,8 @@ import (
 	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	careersql "github.com/baphled/kariya/internal/repository/career/sql"
 	careerservice "github.com/baphled/kariya/internal/service/career"
+	cv "github.com/baphled/kariya/internal/service/career/cv"
+	"github.com/baphled/kariya/internal/service/career/skillinference"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -77,8 +79,12 @@ type TestEnv struct {
 	MemFactRepo  *careermemory.FactRepository
 
 	// Services
-	Service    *careerservice.Service
-	CLIService *service.CLIEventService
+	Service               *careerservice.Service
+	CLIService            *service.CLIEventService
+	SkillInferenceService skillinference.SkillInferenceService
+
+	// ClipboardStub is the stub clipboard for BDD tests (nil when not applicable)
+	ClipboardStub *StubClipboardWriter
 
 	// Context for async operations
 	Ctx context.Context
@@ -149,12 +155,27 @@ func Setup(t TestingT) *TestEnv {
 	// Create CLI service
 	cliService := service.NewCLIEventService(svc)
 
+	// Create stub skill inference service for deterministic BDD tests
+	skillInferenceService := NewStubSkillInferenceService(repos.Skill, repos.Event)
+
 	// Create bootstrap result (skipping onboarding for tests)
 	log := logger.DefaultLogger()
 	bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
 
-	// Create application model
-	model := app.NewModel(cliService, svc, bootstrapResult)
+	// Create stub clipboard for BDD tests (avoids real clipboard in headless/CI)
+	clipboardStub := &StubClipboardWriter{}
+	cvExportService := cv.NewExportServiceWithClipboard(log, clipboardStub, nil, repos.Skill)
+
+	// Create application model with custom registrar that uses stub skill inference and clipboard
+	registrar := app.NewDefaultIntentRegistrar(&app.RegistrarConfig{
+		CLIService:            cliService,
+		CareerService:         svc,
+		SkillInferenceService: skillInferenceService,
+		Log:                   log,
+		CVGenService:          bootstrapResult.Services.CVGenService,
+		CVExportService:       cvExportService,
+	})
+	model := app.NewModel(cliService, svc, bootstrapResult, app.WithIntentRegistrar(registrar))
 
 	// Set terminal dimensions to ensure forms render correctly.
 	// Without this, viewport calculations may use default 80x24, truncating forms.
@@ -179,18 +200,20 @@ func Setup(t TestingT) *TestEnv {
 	}
 
 	return &TestEnv{
-		T:          t,
-		Model:      model,
-		DB:         db,
-		DBPath:     dbPath,
-		EventRepo:  repos.Event,
-		BurstRepo:  repos.Burst,
-		FactRepo:   repos.Fact,
-		SkillRepo:  repos.Skill,
-		Service:    svc,
-		CLIService: cliService,
-		Ctx:        ctx,
-		cleanup:    cleanup,
+		T:                     t,
+		Model:                 model,
+		DB:                    db,
+		DBPath:                dbPath,
+		EventRepo:             repos.Event,
+		BurstRepo:             repos.Burst,
+		FactRepo:              repos.Fact,
+		SkillRepo:             repos.Skill,
+		Service:               svc,
+		CLIService:            cliService,
+		SkillInferenceService: skillInferenceService,
+		ClipboardStub:         clipboardStub,
+		Ctx:                   ctx,
+		cleanup:               cleanup,
 	}
 }
 
@@ -238,30 +261,47 @@ func SetupShared() {
 	// Create CLI service
 	cliService := service.NewCLIEventService(svc)
 
+	// Create stub skill inference service for deterministic BDD tests
+	skillInferenceService := NewStubSkillInferenceService(repos.Skill, repos.Event)
+
 	// Create bootstrap result (skipping onboarding for tests)
 	log := logger.DefaultLogger()
 	bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
 
-	// Create application model
-	model := app.NewModel(cliService, svc, bootstrapResult)
+	// Create stub clipboard for BDD tests (avoids real clipboard in headless/CI)
+	sharedClipboardStub := &StubClipboardWriter{}
+	cvExportService := cv.NewExportServiceWithClipboard(log, sharedClipboardStub, nil, repos.Skill)
+
+	// Create application model with custom registrar that uses stub skill inference and clipboard
+	registrar := app.NewDefaultIntentRegistrar(&app.RegistrarConfig{
+		CLIService:            cliService,
+		CareerService:         svc,
+		SkillInferenceService: skillInferenceService,
+		Log:                   log,
+		CVGenService:          bootstrapResult.Services.CVGenService,
+		CVExportService:       cvExportService,
+	})
+	model := app.NewModel(cliService, svc, bootstrapResult, app.WithIntentRegistrar(registrar))
 
 	// Set terminal dimensions to ensure modals render correctly.
 	// Without this, viewport calculations may use 0 height, showing only last lines.
 	model.Update(tea.WindowSizeMsg{Width: TerminalWidth, Height: TerminalHeightShared})
 
 	sharedEnv = &TestEnv{
-		T:          nil,
-		Model:      model,
-		DB:         db,
-		DBPath:     dbPath,
-		EventRepo:  repos.Event,
-		BurstRepo:  repos.Burst,
-		FactRepo:   repos.Fact,
-		SkillRepo:  repos.Skill,
-		Service:    svc,
-		CLIService: cliService,
-		Ctx:        context.Background(),
-		cleanup:    nil,
+		T:                     nil,
+		Model:                 model,
+		DB:                    db,
+		DBPath:                dbPath,
+		EventRepo:             repos.Event,
+		BurstRepo:             repos.Burst,
+		FactRepo:              repos.Fact,
+		SkillRepo:             repos.Skill,
+		Service:               svc,
+		CLIService:            cliService,
+		SkillInferenceService: skillInferenceService,
+		ClipboardStub:         sharedClipboardStub,
+		Ctx:                   context.Background(),
+		cleanup:               nil,
 	}
 }
 
@@ -304,9 +344,21 @@ func GetSharedEnv(t TestingT) *TestEnv {
 	log := logger.DefaultLogger()
 	bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), sharedEnv.Service, log)
 
+	// Create CV export service with shared stub clipboard
+	cvExportService := cv.NewExportServiceWithClipboard(log, sharedEnv.ClipboardStub, nil, sharedEnv.SkillRepo)
+
 	// Create fresh application model (only thing with UI state)
 	// Repositories and services are stateless, so we reuse them
-	model := app.NewModel(sharedEnv.CLIService, sharedEnv.Service, bootstrapResult)
+	// Reuse skill inference service from shared env
+	registrar := app.NewDefaultIntentRegistrar(&app.RegistrarConfig{
+		CLIService:            sharedEnv.CLIService,
+		CareerService:         sharedEnv.Service,
+		SkillInferenceService: sharedEnv.SkillInferenceService,
+		Log:                   log,
+		CVGenService:          bootstrapResult.Services.CVGenService,
+		CVExportService:       cvExportService,
+	})
+	model := app.NewModel(sharedEnv.CLIService, sharedEnv.Service, bootstrapResult, app.WithIntentRegistrar(registrar))
 
 	// Set terminal dimensions so modals and overlays render correctly.
 	// Without this, viewport calculations use 0x0, causing empty views.
@@ -342,8 +394,20 @@ func GetSharedEnvWithOnboarding(t TestingT) *TestEnv {
 	log := logger.DefaultLogger()
 	bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), sharedEnv.Service, log)
 
+	// Create CV export service with shared stub clipboard
+	cvExportService := cv.NewExportServiceWithClipboard(log, sharedEnv.ClipboardStub, nil, sharedEnv.SkillRepo)
+
 	// Create fresh application model
-	model := app.NewModel(sharedEnv.CLIService, sharedEnv.Service, bootstrapResult)
+	// Reuse skill inference service from shared env
+	registrar := app.NewDefaultIntentRegistrar(&app.RegistrarConfig{
+		CLIService:            sharedEnv.CLIService,
+		CareerService:         sharedEnv.Service,
+		SkillInferenceService: sharedEnv.SkillInferenceService,
+		Log:                   log,
+		CVGenService:          bootstrapResult.Services.CVGenService,
+		CVExportService:       cvExportService,
+	})
+	model := app.NewModel(sharedEnv.CLIService, sharedEnv.Service, bootstrapResult, app.WithIntentRegistrar(registrar))
 
 	// Update only what changes per-test
 	sharedEnv.T = t
@@ -445,12 +509,27 @@ func SetupWithOnboarding(t TestingT) *TestEnv {
 	// Create CLI service
 	cliService := service.NewCLIEventService(svc)
 
-	// Create bootstrap result (skipping onboarding for main app)
+	// Create stub skill inference service for deterministic BDD tests
+	skillInferenceService := NewStubSkillInferenceService(repos.Skill, repos.Event)
+
+	// Create bootstrap result (skipping onboarding for tests)
 	log := logger.DefaultLogger()
 	bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
 
-	// Create application model
-	model := app.NewModel(cliService, svc, bootstrapResult)
+	// Create stub clipboard for BDD tests (avoids real clipboard in headless/CI)
+	clipboardStub := &StubClipboardWriter{}
+	cvExportService := cv.NewExportServiceWithClipboard(log, clipboardStub, nil, repos.Skill)
+
+	// Create application model with custom registrar that uses stub skill inference and clipboard
+	registrar := app.NewDefaultIntentRegistrar(&app.RegistrarConfig{
+		CLIService:            cliService,
+		CareerService:         svc,
+		SkillInferenceService: skillInferenceService,
+		Log:                   log,
+		CVGenService:          bootstrapResult.Services.CVGenService,
+		CVExportService:       cvExportService,
+	})
+	model := app.NewModel(cliService, svc, bootstrapResult, app.WithIntentRegistrar(registrar))
 
 	cleanup := func() {
 		// Issue-007 fix: Restore previous config path (from BeforeSuite) instead of clearing
@@ -470,18 +549,20 @@ func SetupWithOnboarding(t TestingT) *TestEnv {
 	}
 
 	return &TestEnv{
-		T:          t,
-		Model:      model,
-		DB:         db,
-		DBPath:     dbPath,
-		EventRepo:  repos.Event,
-		BurstRepo:  repos.Burst,
-		FactRepo:   repos.Fact,
-		SkillRepo:  repos.Skill,
-		Service:    svc,
-		CLIService: cliService,
-		Ctx:        ctx,
-		cleanup:    cleanup,
+		T:                     t,
+		Model:                 model,
+		DB:                    db,
+		DBPath:                dbPath,
+		EventRepo:             repos.Event,
+		BurstRepo:             repos.Burst,
+		FactRepo:              repos.Fact,
+		SkillRepo:             repos.Skill,
+		Service:               svc,
+		CLIService:            cliService,
+		SkillInferenceService: skillInferenceService,
+		ClipboardStub:         clipboardStub,
+		Ctx:                   ctx,
+		cleanup:               cleanup,
 	}
 }
 
@@ -530,24 +611,41 @@ func SetupWithMemory(t TestingT) *TestEnv {
 	// Create CLI service
 	cliService := service.NewCLIEventService(svc)
 
+	// Create stub skill inference service for deterministic BDD tests
+	skillInferenceService := NewStubSkillInferenceService(skillRepo, eventRepo)
+
 	// Create bootstrap result (skipping onboarding for tests)
 	log := logger.DefaultLogger()
 	bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
 
-	// Create application model
-	model := app.NewModel(cliService, svc, bootstrapResult)
+	// Create stub clipboard for BDD tests (avoids real clipboard in headless/CI)
+	clipboardStub := &StubClipboardWriter{}
+	cvExportService := cv.NewExportServiceWithClipboard(log, clipboardStub, nil, skillRepo)
+
+	// Create application model with custom registrar that uses stub skill inference and clipboard
+	registrar := app.NewDefaultIntentRegistrar(&app.RegistrarConfig{
+		CLIService:            cliService,
+		CareerService:         svc,
+		SkillInferenceService: skillInferenceService,
+		Log:                   log,
+		CVGenService:          bootstrapResult.Services.CVGenService,
+		CVExportService:       cvExportService,
+	})
+	model := app.NewModel(cliService, svc, bootstrapResult, app.WithIntentRegistrar(registrar))
 
 	return &TestEnv{
-		T:            t,
-		Model:        model,
-		DB:           nil,
-		DBPath:       "",
-		MemEventRepo: eventRepo,
-		MemBurstRepo: burstRepo,
-		MemFactRepo:  factRepo,
-		Service:      svc,
-		CLIService:   cliService,
-		Ctx:          ctx,
+		T:                     t,
+		Model:                 model,
+		DB:                    nil,
+		DBPath:                "",
+		MemEventRepo:          eventRepo,
+		MemBurstRepo:          burstRepo,
+		MemFactRepo:           factRepo,
+		Service:               svc,
+		CLIService:            cliService,
+		SkillInferenceService: skillInferenceService,
+		ClipboardStub:         clipboardStub,
+		Ctx:                   ctx,
 		cleanup: func() {
 			// Issue-007 fix: Restore previous config path (from BeforeSuite) instead of clearing
 			config.SetConfigPathForTesting(prevConfigPath)

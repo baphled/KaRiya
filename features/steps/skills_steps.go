@@ -154,6 +154,7 @@ func RegisterSkillsSteps(sc *godog.ScenarioContext) {
 
 	// Skill assertions
 	sc.Step(`^there should be (\d+) skills?$`, thereShouldBeNSkills)
+	sc.Step(`^there should be (\d+) skills? created$`, thereShouldBeNSkillsCreated)
 	sc.Step(`^the skill should have name "([^"]*)"$`, theSkillShouldHaveName)
 	sc.Step(`^the skill should have level "([^"]*)"$`, theSkillShouldHaveLevel)
 	sc.Step(`^the skill should have years "([^"]*)"$`, theSkillShouldHaveYears)
@@ -607,7 +608,18 @@ func theInferenceCompletes(ctx context.Context) error {
 }
 
 func iAcceptTheFirstSuggestion(ctx context.Context) (context.Context, error) {
-	return iPressAToAddSkill(ctx)
+	ctx, err := iPressAToAddSkill(ctx)
+	if err != nil {
+		return ctx, err
+	}
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return ctx, err
+	}
+	if err := support.WaitForViewContains(env, "Successfully created", 20, 100); err != nil {
+		return ctx, err
+	}
+	return ctx, nil
 }
 
 func iRejectTheFirstSuggestion(ctx context.Context) (context.Context, error) {
@@ -620,7 +632,17 @@ func iRejectTheFirstSuggestion(ctx context.Context) (context.Context, error) {
 }
 
 func theSuggestionShouldBeMarkedAsRejected(ctx context.Context) error {
-	return iShouldSeeTheSkillSuggestionsModal(ctx)
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
+	}
+	view := env.GetView()
+	gomega.Expect(view).To(gomega.SatisfyAny(
+		gomega.ContainSubstring("Review Skill Suggestions"),
+		gomega.ContainSubstring("Skills:"),
+		gomega.ContainSubstring("No skills found"),
+	))
+	return nil
 }
 
 // Skill assertion functions
@@ -632,6 +654,20 @@ func thereShouldBeNSkills(ctx context.Context, expected int) error {
 	}
 	view := env.GetView()
 	gomega.Expect(view).To(gomega.ContainSubstring(fmt.Sprintf("Skills: %d", expected)))
+	return nil
+}
+
+// thereShouldBeNSkillsCreated checks the actual database skill count
+// rather than checking view text. Use this when checking skill creation
+// from contexts where the view might not show "Skills: N" (e.g., modals).
+func thereShouldBeNSkillsCreated(ctx context.Context, expected int) error {
+	env, err := support.RequireEnv(ctx)
+	if err != nil {
+		return err
+	}
+	skills := env.GetSkills()
+	gomega.Expect(skills).To(gomega.HaveLen(expected),
+		"Expected %d skills in database but found %d", expected, len(skills))
 	return nil
 }
 

@@ -52,6 +52,8 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case EditBurstMsg:
 		return i.handleEditBurstMsg(msg)
+	case BurstEditCompleteMsg:
+		return i.handleBurstEditComplete(msg)
 	case BurstEventsLoadedMsg:
 		return i.handleBurstEventsLoaded(msg)
 	case BurstFactsLoadedMsg:

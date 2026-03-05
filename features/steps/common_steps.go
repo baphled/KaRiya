@@ -13,8 +13,15 @@ import (
 )
 
 // RegisterCommonSteps registers shared step definitions with Godog.
+//
+// Expected:
+//   - scenariocontext must be valid.
+//
+// Side effects:
+//   - None.
 func RegisterCommonSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I have no data$`, iHaveNoData)
+	sc.Step(`^the database is empty$`, iHaveNoData) // Alias for "I have no data"
 	sc.Step(`^I should see "([^"]*)"$`, iShouldSee)
 	sc.Step(`^I should see one of:$`, iShouldSeeOneOf)
 	sc.Step(`^I close the modal$`, iCloseTheModal)
@@ -32,6 +39,7 @@ func RegisterCommonSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I see the extracting progress$`, iSeeTheExtractingProgress)
 	sc.Step(`^I press Ctrl+S to skip$`, iPressCtrlSToSkip)
 	sc.Step(`^I am on the main menu$`, iShouldBeOnTheMainMenu)
+	sc.Step(`^I should be on the main menu$`, iShouldBeOnTheMainMenu)
 }
 
 // getViewFromContext returns the current view from either app or onboarding env.

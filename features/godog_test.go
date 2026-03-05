@@ -62,6 +62,7 @@ func InitializeScenario(sc *godog.ScenarioContext) {
 	steps.RegisterCommonSteps(sc)
 	steps.RegisterOnboardingSteps(sc)
 	steps.RegisterCaptureSteps(sc)
+	steps.RegisterConfigureSteps(sc)
 	steps.RegisterBrowseSteps(sc)
 	steps.RegisterSkillsSteps(sc)
 	steps.RegisterBurstsSteps(sc)
