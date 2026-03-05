@@ -2,69 +2,80 @@ package cmd
 
 import (
 	"bytes"
-	"strings"
-	"testing"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	"github.com/spf13/cobra"
 )
 
-func TestRootCommand(t *testing.T) {
-	tests := []struct {
-		name           string
-		args           []string
-		expectedOutput string
-		expectError    bool
-	}{
-		{
-			name:           "version flag long",
-			args:           []string{"--version"},
-			expectedOutput: "kariya version",
-			expectError:    false,
-		},
-		{
-			name:           "version flag short",
-			args:           []string{"-v"},
-			expectedOutput: "kariya version",
-			expectError:    false,
-		},
-		{
-			name:           "help flag long",
-			args:           []string{"--help"},
-			expectedOutput: "KaRiya is a terminal user interface",
-			expectError:    false,
-		},
-		{
-			name:           "help flag short",
-			args:           []string{"-h"},
-			expectedOutput: "KaRiya is a terminal user interface",
-			expectError:    false,
-		},
-		{
-			name:           "no args shows help",
-			args:           []string{},
-			expectedOutput: "KaRiya is a terminal user interface",
-			expectError:    false,
-		},
-	}
+var _ = Describe("Root Command", func() {
+	var (
+		cmd *cobra.Command
+		out *bytes.Buffer
+	)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cmd := NewRootCmd()
-			out := new(bytes.Buffer)
+	BeforeEach(func() {
+		out = new(bytes.Buffer)
+	})
+
+	Context("version flag", func() {
+		It("should display version with long flag", func() {
+			cmd = NewRootCmd("test-version")
 			cmd.SetOut(out)
 			cmd.SetErr(out)
-			cmd.SetArgs(tt.args)
+			cmd.SetArgs([]string{"--version"})
 
 			err := cmd.Execute()
-			if tt.expectError && err == nil {
-				t.Errorf("expected error but got none")
-			}
-			if !tt.expectError && err != nil {
-				t.Errorf("unexpected error: %v", err)
-			}
-
-			output := out.String()
-			if !strings.Contains(output, tt.expectedOutput) {
-				t.Errorf("output %q does not contain %q", output, tt.expectedOutput)
-			}
+			Expect(err).NotTo(HaveOccurred())
+			Expect(out.String()).To(ContainSubstring("kariya version"))
 		})
-	}
-}
+
+		It("should display version with short flag", func() {
+			cmd = NewRootCmd("test-version")
+			cmd.SetOut(out)
+			cmd.SetErr(out)
+			cmd.SetArgs([]string{"-v"})
+
+			err := cmd.Execute()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(out.String()).To(ContainSubstring("kariya version"))
+		})
+	})
+
+	Context("help flag", func() {
+		It("should display help with long flag", func() {
+			cmd = NewRootCmd("test-version")
+			cmd.SetOut(out)
+			cmd.SetErr(out)
+			cmd.SetArgs([]string{"--help"})
+
+			err := cmd.Execute()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(out.String()).To(ContainSubstring("KaRiya is a terminal user interface"))
+		})
+
+		It("should display help with short flag", func() {
+			cmd = NewRootCmd("test-version")
+			cmd.SetOut(out)
+			cmd.SetErr(out)
+			cmd.SetArgs([]string{"-h"})
+
+			err := cmd.Execute()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(out.String()).To(ContainSubstring("KaRiya is a terminal user interface"))
+		})
+	})
+
+	Context("no arguments", func() {
+		It("should display help", func() {
+			cmd = NewRootCmd("test-version")
+			cmd.SetOut(out)
+			cmd.SetErr(out)
+			cmd.SetArgs([]string{})
+
+			err := cmd.Execute()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(out.String()).To(ContainSubstring("KaRiya is a terminal user interface"))
+		})
+	})
+})

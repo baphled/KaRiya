@@ -13,7 +13,7 @@ func main() {
 	os.Exit(run(os.Args[1:], os.Stdout, os.Stderr))
 }
 
-func run(args []string, out io.Writer, errOut io.Writer) int {
+func run(args []string, out, errOut io.Writer) int {
 	rootCmd := cmd.NewRootCmd(version)
 	rootCmd.SetOut(out)
 	rootCmd.SetErr(errOut)

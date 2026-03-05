@@ -1,4 +1,4 @@
-package cmd
+package cliutil_test
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestCmd(t *testing.T) {
+func TestShared(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Cmd Suite")
+	RunSpecs(t, "Shared Suite")
 }

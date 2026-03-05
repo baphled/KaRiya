@@ -83,16 +83,9 @@ func (ctx *CLIContext) initInMemoryService() error {
 func (ctx *CLIContext) initSQLiteService(errOut io.Writer) error {
 	dbPath := ctx.dbPath
 	if dbPath == "" {
-		homeDir, err := os.UserHomeDir()
+		var err error
+		dbPath, err = ctx.getDefaultDBPath(errOut)
 		if err != nil {
-			fmt.Fprintf(errOut, "Error getting home directory: %v\n", err)
-			return err
-		}
-		kariyaDir := filepath.Join(homeDir, ".kariya")
-		dbPath = filepath.Join(kariyaDir, "events.db")
-
-		if err := os.MkdirAll(kariyaDir, 0o750); err != nil {
-			fmt.Fprintf(errOut, "Error creating kariya directory: %v\n", err)
 			return err
 		}
 	}
@@ -120,4 +113,21 @@ func (ctx *CLIContext) initSQLiteService(errOut io.Writer) error {
 	ctx.svc.SetSkillRepository(repos.Skill)
 
 	return nil
+}
+
+func (ctx *CLIContext) getDefaultDBPath(errOut io.Writer) (string, error) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		fmt.Fprintf(errOut, "Error getting home directory: %v\n", err)
+		return "", err
+	}
+	kariyaDir := filepath.Join(homeDir, ".kariya")
+	dbPath := filepath.Join(kariyaDir, "events.db")
+
+	if err := os.MkdirAll(kariyaDir, 0o750); err != nil {
+		fmt.Fprintf(errOut, "Error creating kariya directory: %v\n", err)
+		return "", err
+	}
+
+	return dbPath, nil
 }
