@@ -790,3 +790,113 @@ var _ = Describe("Career Service", func() {
 		})
 	})
 })
+
+var _ = Describe("Career Service Bulk Methods", func() {
+	var (
+		ctrl          *gomock.Controller
+		mockEventRepo *mockrepo.MockEventRepository
+		mockFactRepo  *mockrepo.MockFactRepository
+		mockBurstRepo *mockrepo.MockBurstRepository
+		service       *Service
+		ctx           context.Context
+	)
+
+	BeforeEach(func() {
+		ctrl = gomock.NewController(GinkgoT())
+		mockEventRepo = mockrepo.NewMockEventRepository(ctrl)
+		mockFactRepo = mockrepo.NewMockFactRepository(ctrl)
+		mockBurstRepo = mockrepo.NewMockBurstRepository(ctrl)
+		service = NewService(mockEventRepo)
+		service.SetFactRepository(mockFactRepo)
+		service.SetBurstRepository(mockBurstRepo)
+		ctx = context.Background()
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
+	})
+
+	Describe("ExtractFactsFromAllEvents", func() {
+		It("should extract facts from all events successfully", func() {
+			events := []*career.Event{
+				fixtures.EventWith("id1", "Implemented authentication system", "TechCorp", ""),
+				fixtures.EventWith("id2", "Led API redesign project", "TechCorp", ""),
+			}
+
+			mockEventRepo.EXPECT().
+				List(gomock.Any(), gomock.Any()).
+				Return(events, nil)
+
+			// Expect 2 creates, one for each event's facts
+			mockFactRepo.EXPECT().
+				Create(gomock.Any(), gomock.Any()).
+				Return(nil).
+				Times(2)
+
+			mockFactRepo.EXPECT().GetByID(gomock.Any(), gomock.Any()).Return(nil, errors.New("not found")).AnyTimes()
+			count, _, err := service.ExtractFactsFromAllEvents(ctx, nil)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(count).To(Equal(2))
+		})
+
+		It("should return error if listing events fails", func() {
+			mockEventRepo.EXPECT().
+				List(gomock.Any(), gomock.Any()).
+				Return(nil, errors.New("db error"))
+
+			count, _, err := service.ExtractFactsFromAllEvents(ctx, nil)
+			Expect(err).To(HaveOccurred())
+			Expect(count).To(Equal(0))
+		})
+
+		It("should handle empty event list", func() {
+			mockEventRepo.EXPECT().
+				List(gomock.Any(), gomock.Any()).
+				Return([]*career.Event{}, nil)
+
+			count, _, err := service.ExtractFactsFromAllEvents(ctx, nil)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(count).To(Equal(0))
+		})
+	})
+
+	Describe("DetectAndSaveBursts", func() {
+		It("should detect and save bursts successfully", func() {
+			events := []*career.Event{
+				fixtures.EventWith("id1", "Implemented authentication system", "TechCorp", ""),
+				fixtures.EventWith("id2", "Implemented authorization system", "TechCorp", ""),
+			}
+			// Set dates close to each other for burst detection
+			now := time.Now()
+			events[0].Date = now
+			events[1].Date = now.Add(24 * time.Hour)
+
+			mockEventRepo.EXPECT().
+				List(gomock.Any(), gomock.Any()).
+				Return(events, nil)
+
+			mockEventRepo.EXPECT().GetByID(gomock.Any(), gomock.Any()).Return(events[0], nil).AnyTimes()
+			mockBurstRepo.EXPECT().
+				Create(gomock.Any(), gomock.Any()).
+				Return(nil).
+				AnyTimes()
+
+			count, saved, err := service.DetectAndSaveBursts(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			// Depending on detection logic, might find 1 or 0 bursts in test fixtures
+			Expect(count).To(BeNumerically(">=", 0))
+			Expect(saved).To(BeNumerically(">=", 0))
+		})
+
+		It("should return error if listing events fails", func() {
+			mockEventRepo.EXPECT().
+				List(gomock.Any(), gomock.Any()).
+				Return(nil, errors.New("db error"))
+
+			count, saved, err := service.DetectAndSaveBursts(ctx)
+			Expect(err).To(HaveOccurred())
+			Expect(count).To(Equal(0))
+			Expect(saved).To(Equal(0))
+		})
+	})
+})

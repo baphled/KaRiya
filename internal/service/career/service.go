@@ -1009,3 +1009,84 @@ func (s *Service) GetEventRepository() repo.EventRepository {
 func (s *Service) GetSkillRepository() repo.SkillRepository {
 	return s.skillRepo
 }
+
+// ExtractFactsFromAllEvents extracts and saves facts from all events in the database.
+func (s *Service) ExtractFactsFromAllEvents(ctx context.Context, progress func(current, total int)) (int, map[string]int, error) {
+	events, err := s.ListEvents(ctx, repo.EventListFilters{Limit: 10000})
+	if err != nil {
+		return 0, nil, fmt.Errorf("failed to list events: %w", err)
+	}
+
+	if len(events) == 0 {
+		return 0, nil, nil
+	}
+
+	factCount := 0
+	competencyCount := make(map[string]int)
+	totalEvents := len(events)
+
+	for i, event := range events {
+		if progress != nil {
+			progress(i+1, totalEvents)
+		}
+
+		facts, err := s.ExtractFactsFromEvent(ctx, event)
+		if err != nil {
+			s.logger.WithFields(map[string]string{
+				"event_id": event.ID,
+				"error":    err.Error(),
+			}).Warn("Failed to extract facts from event")
+			continue
+		}
+
+		for j := range facts {
+			if err := s.SaveFact(ctx, &facts[j]); err != nil {
+				if !errors.Is(err, ErrFactRepositoryNotConfigured) {
+					s.logger.WithFields(map[string]string{
+						"error": err.Error(),
+					}).Warn("Failed to save fact")
+				}
+			} else {
+				factCount++
+				for _, comp := range facts[j].CompetencyCategories {
+					competencyCount[comp]++
+				}
+			}
+		}
+	}
+
+	return factCount, competencyCount, nil
+}
+
+// DetectAndSaveBursts analyzes all events, suggests bursts, and saves them.
+func (s *Service) DetectAndSaveBursts(ctx context.Context) (int, int, error) {
+	events, err := s.ListEvents(ctx, repo.EventListFilters{Limit: 10000})
+	if err != nil {
+		return 0, 0, fmt.Errorf("failed to list events: %w", err)
+	}
+
+	if len(events) == 0 {
+		return 0, 0, nil
+	}
+
+	eventIDs := make([]string, len(events))
+	for i, event := range events {
+		eventIDs[i] = event.ID
+	}
+
+	suggestions, err := s.SuggestBursts(ctx, eventIDs)
+	if err != nil {
+		return 0, 0, fmt.Errorf("failed to suggest bursts: %w", err)
+	}
+
+	if len(suggestions) == 0 {
+		return 0, 0, nil
+	}
+
+	savedBursts, err := s.SaveBurstSuggestions(ctx, suggestions)
+	if err != nil {
+		return len(suggestions), 0, fmt.Errorf("failed to save burst suggestions: %w", err)
+	}
+
+	return len(suggestions), len(savedBursts), nil
+}
