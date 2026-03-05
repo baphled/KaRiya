@@ -214,7 +214,7 @@ jobs:
         continue-on-error: true  # Coverage may not exist
 
       - name: SonarCloud Scan
-        uses: sonarsource/sonarcloud-github-action@v3
+        uses: sonarsource/sonarcloud-github-action@v5
         continue-on-error: true  # Don't fail if SONAR_TOKEN not configured
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
