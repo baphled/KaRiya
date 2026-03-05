@@ -417,14 +417,14 @@ type SelectOption struct {
 //
 // Side effects:
 //   - None.
-func NewSelect(key, title, description string, options []SelectOption) *huh.Select[string] {
+func NewSelect(fieldKey, title, description string, options []SelectOption) *huh.Select[string] {
 	huhOptions := make([]huh.Option[string], len(options))
 	for i, opt := range options {
 		huhOptions[i] = huh.NewOption(opt.Value, opt.Key)
 	}
 
 	sel := huh.NewSelect[string]().
-		Key(key).
+		Key(fieldKey).
 		Title(title).
 		Options(huhOptions...)
 
@@ -447,14 +447,14 @@ func NewSelect(key, title, description string, options []SelectOption) *huh.Sele
 //
 // Side effects:
 //   - None.
-func NewMultiSelect(key, title, description string, options []SelectOption, limit int) *huh.MultiSelect[string] {
+func NewMultiSelect(fieldKey, title, description string, options []SelectOption, limit int) *huh.MultiSelect[string] {
 	huhOptions := make([]huh.Option[string], len(options))
 	for i, opt := range options {
 		huhOptions[i] = huh.NewOption(opt.Value, opt.Key)
 	}
 
 	multi := huh.NewMultiSelect[string]().
-		Key(key).
+		Key(fieldKey).
 		Title(title).
 		Options(huhOptions...)
 
@@ -479,9 +479,9 @@ func NewMultiSelect(key, title, description string, options []SelectOption, limi
 //
 // Side effects:
 //   - None.
-func NewConfirm(key, title, description, affirmative, negative string) *huh.Confirm {
+func NewConfirm(fieldKey, title, description, affirmative, negative string) *huh.Confirm {
 	confirm := huh.NewConfirm().
-		Key(key).
+		Key(fieldKey).
 		Title(title)
 
 	if description != "" {
