@@ -14,6 +14,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/domain/career"
+	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	"github.com/baphled/kariya/internal/service/career/burstfact"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
@@ -94,6 +95,35 @@ func executeAsyncCmd(cmd tea.Cmd) tea.Msg {
 		return messages[0]
 	}
 	return nil
+}
+
+// failingBurstRepository is a test repository that always returns an error on List.
+type failingBurstRepository struct {
+	err error
+}
+
+func (r *failingBurstRepository) Create(_ context.Context, _ *career.Burst) error {
+	return r.err
+}
+
+func (r *failingBurstRepository) GetByID(_ context.Context, _ string) (*career.Burst, error) {
+	return nil, r.err
+}
+
+func (r *failingBurstRepository) Update(_ context.Context, _ *career.Burst) error {
+	return r.err
+}
+
+func (r *failingBurstRepository) Delete(_ context.Context, _ string) error {
+	return r.err
+}
+
+func (r *failingBurstRepository) List(_ context.Context, _ careerrepo.BurstListFilters) ([]*career.Burst, error) {
+	return nil, r.err
+}
+
+func (r *failingBurstRepository) Count(_ context.Context, _ careerrepo.BurstListFilters) (int, error) {
+	return 0, r.err
 }
 
 var _ = Describe("Intent Methods", func() {
@@ -789,6 +819,160 @@ var _ = Describe("Intent Methods", func() {
 			Expect(intent.GetState()).To(Equal(burst_management.StateEdit))
 			// Modal should still be visible (form has validation error).
 			Expect(intent.HasVisibleEditModal()).To(BeTrue())
+		})
+	})
+
+	Describe("BurstEditCompleteMsg Handler", func() {
+		var (
+			intent *burst_management.Intent
+			ctx    *burst_management.IntentContext
+			repo   *careermemory.BurstRepository
+			burst  *career.Burst
+		)
+
+		BeforeEach(func() {
+			burst = fixtures.Burst("burst-1", "e1", "e2")
+			burst.Name = "Original Name"
+			burst.Description = "Original Description"
+
+			repo = careermemory.NewBurstRepository()
+			_ = repo.Create(context.Background(), burst)
+
+			ctx = &burst_management.IntentContext{
+				Bursts:          []*career.Burst{burst},
+				BurstRepository: repo,
+			}
+			ctx.Validate()
+
+			var err error
+			intent, err = burst_management.NewIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			intent.Init()
+		})
+
+		Context("when msg.Error is not nil", func() {
+			It("should show error modal with update failed message", func() {
+				msg := burst_management.BurstEditCompleteMsg{
+					Burst: nil,
+					Error: errors.New("repository update failed"),
+				}
+				intent.Update(msg)
+
+				Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+			})
+
+			It("should not change state when error occurs", func() {
+				initialState := intent.GetState()
+				msg := burst_management.BurstEditCompleteMsg{
+					Burst: nil,
+					Error: errors.New("repository update failed"),
+				}
+				intent.Update(msg)
+
+				Expect(intent.GetState()).To(Equal(initialState))
+			})
+		})
+
+		Context("when LoadBursts fails", func() {
+			BeforeEach(func() {
+				ctx = &burst_management.IntentContext{
+					Bursts:          []*career.Burst{burst},
+					BurstRepository: nil,
+				}
+				ctx.Validate()
+
+				var err error
+				intent, err = burst_management.NewIntent(ctx)
+				Expect(err).NotTo(HaveOccurred())
+				intent.Init()
+			})
+
+			It("should show error modal when LoadBursts returns error", func() {
+				failingRepo := &failingBurstRepository{err: errors.New("database connection lost")}
+				ctx.BurstRepository = failingRepo
+
+				msg := burst_management.BurstEditCompleteMsg{
+					Burst: burst,
+					Error: nil,
+				}
+				intent.Update(msg)
+
+				Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+			})
+		})
+
+		Context("when edit completes successfully", func() {
+			It("should update filteredBursts from context", func() {
+				secondBurst := fixtures.Burst("burst-2", "e3")
+				secondBurst.Name = "Second Burst"
+				_ = repo.Create(context.Background(), secondBurst)
+
+				msg := burst_management.BurstEditCompleteMsg{
+					Burst: burst,
+					Error: nil,
+				}
+				intent.Update(msg)
+
+				Expect(intent.GetFilteredBursts()).To(HaveLen(2))
+			})
+
+			It("should find and update selectedBurst by ID", func() {
+				burst.Name = "Updated Name"
+				_ = repo.Update(context.Background(), burst)
+
+				msg := burst_management.BurstEditCompleteMsg{
+					Burst: burst,
+					Error: nil,
+				}
+				intent.Update(msg)
+
+				Expect(intent.GetSelectedBurst()).NotTo(BeNil())
+				Expect(intent.GetSelectedBurst().ID).To(Equal("burst-1"))
+			})
+
+			It("should handle nil Burst in message gracefully", func() {
+				msg := burst_management.BurstEditCompleteMsg{
+					Burst: nil,
+					Error: nil,
+				}
+				intent.Update(msg)
+
+				Expect(intent.GetState()).To(Equal(burst_management.StateList))
+				Expect(intent.HasVisibleEditModal()).To(BeFalse())
+			})
+		})
+
+		Context("state transitions", func() {
+			It("should clear editModal on completion", func() {
+				msg := burst_management.BurstEditCompleteMsg{
+					Burst: burst,
+					Error: nil,
+				}
+				intent.Update(msg)
+
+				Expect(intent.HasVisibleEditModal()).To(BeFalse())
+			})
+
+			It("should set state to StateList", func() {
+				msg := burst_management.BurstEditCompleteMsg{
+					Burst: burst,
+					Error: nil,
+				}
+				intent.Update(msg)
+
+				Expect(intent.GetState()).To(Equal(burst_management.StateList))
+			})
+
+			It("should transition to BurstListScreen", func() {
+				msg := burst_management.BurstEditCompleteMsg{
+					Burst: burst,
+					Error: nil,
+				}
+				intent.Update(msg)
+
+				view := intent.View()
+				Expect(view).NotTo(BeEmpty())
+			})
 		})
 	})
 

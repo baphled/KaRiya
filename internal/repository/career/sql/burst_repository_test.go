@@ -13,34 +13,21 @@ import (
 	. "github.com/onsi/gomega"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	_ "modernc.org/sqlite"
 )
-
-func setupBurstTestDB() *gorm.DB {
-	sqlDB, err := stdsql.Open("sqlite", ":memory:")
-	Expect(err).NotTo(HaveOccurred())
-
-	db, err := gorm.Open(sqlite.New(sqlite.Config{
-		Conn: sqlDB,
-	}), &gorm.Config{})
-	Expect(err).NotTo(HaveOccurred())
-
-	err = db.AutoMigrate(&models.Burst{})
-	Expect(err).NotTo(HaveOccurred())
-
-	return db
-}
 
 var _ = Describe("Burst Repository", func() {
 	var (
 		repo *BurstRepository
-		db   *gorm.DB
+		tx   *gorm.DB
 		ctx  context.Context
 	)
 
 	BeforeEach(func() {
-		db = setupBurstTestDB()
-		repo = NewBurstRepository(db)
+		Expect(sharedGormDB).NotTo(BeNil(), "shared DB not initialized - BeforeSuite not run")
+		tx = sharedGormDB.Begin()
+		Expect(tx.Error).NotTo(HaveOccurred(), "failed to begin transaction")
+		DeferCleanup(func() { tx.Rollback() })
+		repo = NewBurstRepository(tx)
 		ctx = context.Background()
 	})
 
@@ -217,7 +204,7 @@ var _ = Describe("Burst Repository", func() {
 			b1 := fixtures.Burst("", "e1")
 			b1.Name = "Old Burst"
 			Expect(repo.Create(ctx, b1)).To(Succeed())
-			db.Model(&models.Burst{}).Where("id = ?", b1.ID).Update("created_at", now.Add(-72*time.Hour))
+			tx.Model(&models.Burst{}).Where("id = ?", b1.ID).Update("created_at", now.Add(-72*time.Hour))
 
 			time.Sleep(10 * time.Millisecond)
 			b2 := fixtures.Burst("", "e2")

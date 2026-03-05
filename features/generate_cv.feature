@@ -376,7 +376,7 @@ Feature: Generate CV
     And I select location "Clipboard"
     And I confirm export
     Then I should see export progress
-    And I should see "Exported to clipboard"
+    And the export should complete
     And the clipboard should contain the CV as text
 
   @happy
@@ -387,7 +387,7 @@ Feature: Generate CV
     And I select location "Clipboard"
     And I confirm export
     Then I should see export progress
-    And I should see "Exported to clipboard"
+    And the export should complete
     And the clipboard should contain the CV as markdown
 
   @happy
@@ -398,7 +398,7 @@ Feature: Generate CV
     And I select location "Clipboard"
     And I confirm export
     Then I should see export progress
-    And I should see "Exported to clipboard"
+    And the export should complete
     And the clipboard should contain the CV as YAML
 
   # ============================================================================

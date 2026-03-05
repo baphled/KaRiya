@@ -13,34 +13,21 @@ import (
 	. "github.com/onsi/gomega"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	_ "modernc.org/sqlite"
 )
-
-func setupFactTestDB() *gorm.DB {
-	sqlDB, err := stdsql.Open("sqlite", ":memory:")
-	Expect(err).NotTo(HaveOccurred())
-
-	db, err := gorm.Open(sqlite.New(sqlite.Config{
-		Conn: sqlDB,
-	}), &gorm.Config{})
-	Expect(err).NotTo(HaveOccurred())
-
-	err = db.AutoMigrate(&models.Fact{})
-	Expect(err).NotTo(HaveOccurred())
-
-	return db
-}
 
 var _ = Describe("Fact Repository", func() {
 	var (
 		repo *FactRepository
-		db   *gorm.DB
+		tx   *gorm.DB
 		ctx  context.Context
 	)
 
 	BeforeEach(func() {
-		db = setupFactTestDB()
-		repo = NewFactRepository(db)
+		Expect(sharedGormDB).NotTo(BeNil(), "shared DB not initialized - BeforeSuite not run")
+		tx = sharedGormDB.Begin()
+		Expect(tx.Error).NotTo(HaveOccurred(), "failed to begin transaction with shared DB")
+		DeferCleanup(func() { tx.Rollback() })
+		repo = NewFactRepository(tx)
 		ctx = context.Background()
 	})
 
@@ -276,7 +263,7 @@ var _ = Describe("Fact Repository", func() {
 			f1 := fixtures.FactWithCategories("", "Old fact", "", []string{"cat"}, []string{"aud"})
 			f1.RoleFit = career.RoleFitSeniorIC
 			Expect(repo.Create(ctx, f1)).To(Succeed())
-			db.Model(&models.Fact{}).Where("id = ?", f1.ID).Update("created_at", now.Add(-72*time.Hour))
+			tx.Model(&models.Fact{}).Where("id = ?", f1.ID).Update("created_at", now.Add(-72*time.Hour))
 
 			f2 := fixtures.FactWithCategories("", "New fact", "", []string{"cat"}, []string{"aud"})
 			f2.RoleFit = career.RoleFitSeniorIC
@@ -296,7 +283,7 @@ var _ = Describe("Fact Repository", func() {
 			f1 := fixtures.FactWithCategories("", "Old fact", "", []string{"cat"}, []string{"aud"})
 			f1.RoleFit = career.RoleFitSeniorIC
 			Expect(repo.Create(ctx, f1)).To(Succeed())
-			db.Model(&models.Fact{}).Where("id = ?", f1.ID).Update("created_at", now.Add(-72*time.Hour))
+			tx.Model(&models.Fact{}).Where("id = ?", f1.ID).Update("created_at", now.Add(-72*time.Hour))
 
 			f2 := fixtures.FactWithCategories("", "New fact", "", []string{"cat"}, []string{"aud"})
 			f2.RoleFit = career.RoleFitSeniorIC

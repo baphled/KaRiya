@@ -15,6 +15,23 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+// expectWindowsPermissionError handles the platform-specific behaviour of permission errors.
+// Windows does not enforce Unix-style permissions, so mkdir/write may succeed or fail
+// depending on ACLs. This helper verifies the expected behaviour on each platform.
+func expectWindowsPermissionError(err error, errorSubstring string, dirPath string) {
+	if runtime.GOOS == "windows" {
+		if err == nil {
+			_, statErr := os.Stat(dirPath)
+			Expect(statErr).NotTo(HaveOccurred())
+		} else {
+			Expect(err.Error()).To(ContainSubstring(errorSubstring))
+		}
+	} else {
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring(errorSubstring))
+	}
+}
+
 var _ = Describe("YAMLConfigManager", func() {
 	var (
 		manager *YAMLConfigManager
@@ -578,9 +595,6 @@ var _ = Describe("YAMLConfigManager", func() {
 			if os.Getuid() == 0 {
 				return
 			}
-			if runtime.GOOS == "windows" {
-				Skip("filesystem permissions not enforced on Windows")
-			}
 
 			parent := filepath.Join(tempDir, "readonly-parent")
 			Expect(os.Mkdir(parent, 0o555)).To(Succeed())
@@ -589,16 +603,12 @@ var _ = Describe("YAMLConfigManager", func() {
 			manager.configDir = filepath.Join(parent, "child")
 
 			err := manager.VerifyDirectory()
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("failed to create"))
+			expectWindowsPermissionError(err, "failed to create", manager.configDir)
 		})
 
 		It("should return error when directory is not writable", func() {
 			if os.Getuid() == 0 {
 				return
-			}
-			if runtime.GOOS == "windows" {
-				Skip("filesystem permissions not enforced on Windows")
 			}
 
 			readOnlyDir := filepath.Join(tempDir, "not-writable")
@@ -608,8 +618,7 @@ var _ = Describe("YAMLConfigManager", func() {
 			manager.configDir = readOnlyDir
 
 			err := manager.VerifyDirectory()
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("not writable"))
+			expectWindowsPermissionError(err, "not writable", manager.configDir)
 		})
 
 		It("should work with nil logger on existing directory", func() {

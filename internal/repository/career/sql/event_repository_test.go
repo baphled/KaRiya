@@ -7,47 +7,26 @@ import (
 
 	"github.com/baphled/kariya/internal/domain/career"
 	career_repo "github.com/baphled/kariya/internal/repository/career"
-	"github.com/baphled/kariya/internal/repository/models"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	_ "modernc.org/sqlite"
 )
-
-func setupEventTestDB() *gorm.DB {
-	sqlDB, err := stdsql.Open("sqlite", ":memory:")
-	Expect(err).NotTo(HaveOccurred())
-
-	db, err := gorm.Open(sqlite.New(sqlite.Config{
-		Conn: sqlDB,
-	}), &gorm.Config{})
-	Expect(err).NotTo(HaveOccurred())
-
-	err = db.AutoMigrate(&models.Event{}, &models.Skill{})
-	Expect(err).NotTo(HaveOccurred())
-
-	err = db.Exec(`CREATE TABLE IF NOT EXISTS event_skills (
-		event_id TEXT NOT NULL,
-		skill_id TEXT NOT NULL,
-		PRIMARY KEY (event_id, skill_id)
-	)`).Error
-	Expect(err).NotTo(HaveOccurred())
-
-	return db
-}
 
 var _ = Describe("Event Repository", func() {
 	var (
 		repo *EventRepository
-		db   *gorm.DB
+		tx   *gorm.DB
 		ctx  context.Context
 	)
 
 	BeforeEach(func() {
-		db = setupEventTestDB()
-		repo = NewEventRepository(db)
+		Expect(sharedGormDB).NotTo(BeNil(), "shared DB not initialized - BeforeSuite not run")
+		tx = sharedGormDB.Begin()
+		Expect(tx.Error).NotTo(HaveOccurred(), "failed to begin transaction")
+		DeferCleanup(func() { tx.Rollback() })
+		repo = NewEventRepository(tx)
 		ctx = context.Background()
 	})
 
@@ -86,7 +65,7 @@ var _ = Describe("Event Repository", func() {
 		})
 
 		It("saves skill associations", func() {
-			skillRepo := NewSkillRepository(db)
+			skillRepo := NewSkillRepository(tx)
 			skill1 := fixtures.SkillWith("", "Go", "backend", "")
 			skill2 := fixtures.SkillWith("", "Docker", "devops", "")
 			Expect(skillRepo.Create(ctx, skill1)).To(Succeed())
@@ -141,7 +120,7 @@ var _ = Describe("Event Repository", func() {
 		})
 
 		It("updates skill associations", func() {
-			skillRepo := NewSkillRepository(db)
+			skillRepo := NewSkillRepository(tx)
 			skill1 := fixtures.SkillWith("", "Go", "backend", "")
 			skill2 := fixtures.SkillWith("", "Python", "backend", "")
 			Expect(skillRepo.Create(ctx, skill1)).To(Succeed())
@@ -464,6 +443,91 @@ var _ = Describe("Event Repository", func() {
 		It("returns error on UnlinkSkill with closed DB", func() {
 			err := closedRepo.UnlinkSkill(ctx, "e1", "s1")
 			Expect(err).To(HaveOccurred())
+		})
+	})
+
+	Describe("Update skill associations edge cases", func() {
+		It("removes all skills from event", func() {
+			skillRepo := NewSkillRepository(tx)
+			skill := fixtures.SkillWith("", "Go", "backend", "")
+			Expect(skillRepo.Create(ctx, skill)).To(Succeed())
+
+			event := fixtures.EventWith("", "Work", "", "")
+			event.Skills = []string{skill.ID}
+			Expect(repo.Create(ctx, event)).To(Succeed())
+
+			// Update to remove all skills
+			event.Skills = []string{}
+			Expect(repo.Update(ctx, event)).To(Succeed())
+
+			found, _ := repo.GetByID(ctx, event.ID)
+			Expect(found.Skills).To(BeEmpty())
+		})
+
+		It("updates skills from one set to another", func() {
+			skillRepo := NewSkillRepository(tx)
+			skill1 := fixtures.SkillWith("", "Go", "backend", "")
+			skill2 := fixtures.SkillWith("", "Python", "backend", "")
+			Expect(skillRepo.Create(ctx, skill1)).To(Succeed())
+			Expect(skillRepo.Create(ctx, skill2)).To(Succeed())
+
+			event := fixtures.EventWith("", "Work", "", "")
+			event.Skills = []string{skill1.ID}
+			Expect(repo.Create(ctx, event)).To(Succeed())
+
+			// Update skills
+			event.Skills = []string{skill2.ID}
+			Expect(repo.Update(ctx, event)).To(Succeed())
+
+			found, _ := repo.GetByID(ctx, event.ID)
+			Expect(found.Skills).To(ConsistOf(skill2.ID))
+			Expect(found.Skills).NotTo(ContainElement(skill1.ID))
+		})
+	})
+
+	Describe("saveSkillAssociations edge cases", func() {
+		It("handles events with no skills", func() {
+			event := fixtures.EventWith("", "No skills", "", "")
+			event.Skills = []string{}
+
+			err := repo.Create(ctx, event)
+
+			Expect(err).NotTo(HaveOccurred())
+
+			found, err := repo.GetByID(ctx, event.ID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(found.Skills).To(BeEmpty())
+		})
+	})
+
+	Describe("loadSkillIDsForEvents edge cases", func() {
+		It("returns empty map for empty event list", func() {
+			events, err := repo.List(ctx, *fixtures.EventListFiltersWithLimit(0, 0))
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(events).To(BeEmpty())
+		})
+
+		It("handles multiple events with different skills", func() {
+			skillRepo := NewSkillRepository(tx)
+			skill1 := fixtures.SkillWith("", "Go", "backend", "")
+			skill2 := fixtures.SkillWith("", "Python", "backend", "")
+			Expect(skillRepo.Create(ctx, skill1)).To(Succeed())
+			Expect(skillRepo.Create(ctx, skill2)).To(Succeed())
+
+			event1 := fixtures.EventWith("", "Event 1", "", "")
+			event1.Skills = []string{skill1.ID}
+			event2 := fixtures.EventWith("", "Event 2", "", "")
+			event2.Skills = []string{skill2.ID}
+			Expect(repo.Create(ctx, event1)).To(Succeed())
+			Expect(repo.Create(ctx, event2)).To(Succeed())
+
+			events, err := repo.List(ctx, *fixtures.EventListFilters())
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(events).To(HaveLen(2))
+			Expect(events[0].Skills).To(HaveLen(1))
+			Expect(events[1].Skills).To(HaveLen(1))
 		})
 	})
 })

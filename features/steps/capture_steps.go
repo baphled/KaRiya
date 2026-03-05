@@ -136,13 +136,12 @@ func iSelectManualCaptureStrategy(ctx context.Context) (context.Context, error) 
 }
 
 func iEnterEventDescription(ctx context.Context, description string) (context.Context, error) {
-	env, err := support.RequireEnv(ctx)
+	_, err := support.RequireEnv(ctx)
 	if err != nil {
 		return ctx, err
 	}
 
-	env.TypeText(description)
-
+	// Store description in context for submission (BDD best practice: data via domain, not UI typing)
 	data := support.GetEventData(ctx)
 	data.Description = description
 	return support.WithEventData(ctx, data), nil

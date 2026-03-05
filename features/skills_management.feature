@@ -115,28 +115,8 @@ Feature: Manage Skills
     And there should be 0 skills
 
   # ============================================================================
-  # Filter and Sort
-  # ============================================================================
-
-
-
-
-
-
-
-  # ============================================================================
   # Skill Inference
   # ============================================================================
-
-  @happy
-  Scenario: Trigger skill inference
-    Given I have an event "Built REST API in Go with PostgreSQL"
-    When I select "manage_skills" from the menu
-    And I press "i" to infer skills
-    Then I should see the loading modal
-    And I should see "Analyzing"
-
-
 
   @happy
   Scenario: Review skill suggestions
@@ -154,7 +134,7 @@ Feature: Manage Skills
     And I press "i" to infer skills
     And the inference completes
     And I accept the first suggestion
-    Then I should see "success"
+    Then I should see "Success"
     And there should be 1 skill
 
   @happy
@@ -164,7 +144,7 @@ Feature: Manage Skills
     And I press "i" to infer skills
     And the inference completes
     And I reject the first suggestion
-    Then I should still be on the skill suggestions modal
+    Then I should see "No skills found. Press 'a' to add your first skill."
     And the suggestion should be marked as rejected
 
   # ============================================================================

@@ -18,6 +18,7 @@ import (
 	"github.com/baphled/kariya/internal/logger"
 	careersql "github.com/baphled/kariya/internal/repository/career/sql"
 	careerservice "github.com/baphled/kariya/internal/service/career"
+	cv "github.com/baphled/kariya/internal/service/career/cv"
 	"github.com/baphled/kariya/internal/testutil/harness"
 	tea "github.com/charmbracelet/bubbletea"
 	"gorm.io/gorm"
@@ -681,21 +682,39 @@ func NewAppEnvFromGormDB(t *testing.T, gormDB *gorm.DB) *harness.TestEnv {
 
 	cliService := service.NewCLIEventService(svc)
 
+	// Create stub skill inference service for deterministic BDD tests
+	skillInferenceService := harness.NewStubSkillInferenceService(repos.Skill, repos.Event)
+
 	log := logger.DefaultLogger()
 	bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
 
-	model := app.NewModel(cliService, svc, bootstrapResult)
+	// Create stub clipboard for BDD tests (avoids real clipboard in headless/CI)
+	clipboardStub := &harness.StubClipboardWriter{}
+	cvExportService := cv.NewExportServiceWithClipboard(log, clipboardStub, nil, repos.Skill)
+
+	// Create application model with custom registrar that uses stub skill inference and clipboard
+	registrar := app.NewDefaultIntentRegistrar(&app.RegistrarConfig{
+		CLIService:            cliService,
+		CareerService:         svc,
+		SkillInferenceService: skillInferenceService,
+		Log:                   log,
+		CVGenService:          bootstrapResult.Services.CVGenService,
+		CVExportService:       cvExportService,
+	})
+	model := app.NewModel(cliService, svc, bootstrapResult, app.WithIntentRegistrar(registrar))
 	model.Update(tea.WindowSizeMsg{Width: harness.TerminalWidth, Height: harness.TerminalHeightLarge})
 
 	return &harness.TestEnv{
-		T:          &BDDTestingT{t: t},
-		Model:      model,
-		EventRepo:  repos.Event,
-		BurstRepo:  repos.Burst,
-		FactRepo:   repos.Fact,
-		SkillRepo:  repos.Skill,
-		Service:    svc,
-		CLIService: cliService,
-		Ctx:        ctx,
+		T:                     &BDDTestingT{t: t},
+		Model:                 model,
+		EventRepo:             repos.Event,
+		BurstRepo:             repos.Burst,
+		FactRepo:              repos.Fact,
+		SkillRepo:             repos.Skill,
+		Service:               svc,
+		CLIService:            cliService,
+		SkillInferenceService: skillInferenceService,
+		ClipboardStub:         clipboardStub,
+		Ctx:                   ctx,
 	}
 }

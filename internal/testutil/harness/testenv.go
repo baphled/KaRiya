@@ -17,6 +17,8 @@ import (
 	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	careersql "github.com/baphled/kariya/internal/repository/career/sql"
 	careerservice "github.com/baphled/kariya/internal/service/career"
+	cv "github.com/baphled/kariya/internal/service/career/cv"
+	"github.com/baphled/kariya/internal/service/career/skillinference"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -28,6 +30,37 @@ const (
 	TerminalHeightLarge  = 100
 	TerminalHeightShared = 40
 )
+
+// testModelConfig holds common dependencies for creating test models.
+type testModelConfig struct {
+	cliService            *service.CLIEventService
+	careerService         *careerservice.Service
+	skillInferenceService skillinference.SkillInferenceService
+	clipboardStub         *StubClipboardWriter
+	skillRepo             careerrepo.SkillRepository
+	terminalHeight        int
+}
+
+// createTestModel creates the application model with all required dependencies.
+// This centralises the model creation logic to reduce duplication across Setup variants.
+func createTestModel(cfg *testModelConfig) *app.Model {
+	log := logger.DefaultLogger()
+	bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), cfg.careerService, log)
+	cvExportService := cv.NewExportServiceWithClipboard(log, cfg.clipboardStub, nil, cfg.skillRepo)
+
+	registrar := app.NewDefaultIntentRegistrar(&app.RegistrarConfig{
+		CLIService:            cfg.cliService,
+		CareerService:         cfg.careerService,
+		SkillInferenceService: cfg.skillInferenceService,
+		Log:                   log,
+		CVGenService:          bootstrapResult.Services.CVGenService,
+		CVExportService:       cvExportService,
+	})
+	model := app.NewModel(cfg.cliService, cfg.careerService, bootstrapResult, app.WithIntentRegistrar(registrar))
+	model.Update(tea.WindowSizeMsg{Width: TerminalWidth, Height: cfg.terminalHeight})
+
+	return model
+}
 
 // sharedEnv holds the shared test environment for BeforeSuite/AfterSuite pattern.
 // This avoids recreating the database for every test.
@@ -77,8 +110,12 @@ type TestEnv struct {
 	MemFactRepo  *careermemory.FactRepository
 
 	// Services
-	Service    *careerservice.Service
-	CLIService *service.CLIEventService
+	Service               *careerservice.Service
+	CLIService            *service.CLIEventService
+	SkillInferenceService skillinference.SkillInferenceService
+
+	// ClipboardStub is the stub clipboard for BDD tests (nil when not applicable)
+	ClipboardStub *StubClipboardWriter
 
 	// Context for async operations
 	Ctx context.Context
@@ -149,16 +186,19 @@ func Setup(t TestingT) *TestEnv {
 	// Create CLI service
 	cliService := service.NewCLIEventService(svc)
 
-	// Create bootstrap result (skipping onboarding for tests)
-	log := logger.DefaultLogger()
-	bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+	// Create stub dependencies for deterministic BDD tests
+	skillInferenceService := NewStubSkillInferenceService(repos.Skill, repos.Event)
+	clipboardStub := &StubClipboardWriter{}
 
-	// Create application model
-	model := app.NewModel(cliService, svc, bootstrapResult)
-
-	// Set terminal dimensions to ensure forms render correctly.
-	// Without this, viewport calculations may use default 80x24, truncating forms.
-	model.Update(tea.WindowSizeMsg{Width: TerminalWidth, Height: TerminalHeightLarge})
+	// Create application model with all test dependencies
+	model := createTestModel(&testModelConfig{
+		cliService:            cliService,
+		careerService:         svc,
+		skillInferenceService: skillInferenceService,
+		clipboardStub:         clipboardStub,
+		skillRepo:             repos.Skill,
+		terminalHeight:        TerminalHeightLarge,
+	})
 
 	cleanup := func() {
 		// Issue-007 fix: Restore previous config path (from BeforeSuite) instead of clearing
@@ -179,18 +219,20 @@ func Setup(t TestingT) *TestEnv {
 	}
 
 	return &TestEnv{
-		T:          t,
-		Model:      model,
-		DB:         db,
-		DBPath:     dbPath,
-		EventRepo:  repos.Event,
-		BurstRepo:  repos.Burst,
-		FactRepo:   repos.Fact,
-		SkillRepo:  repos.Skill,
-		Service:    svc,
-		CLIService: cliService,
-		Ctx:        ctx,
-		cleanup:    cleanup,
+		T:                     t,
+		Model:                 model,
+		DB:                    db,
+		DBPath:                dbPath,
+		EventRepo:             repos.Event,
+		BurstRepo:             repos.Burst,
+		FactRepo:              repos.Fact,
+		SkillRepo:             repos.Skill,
+		Service:               svc,
+		CLIService:            cliService,
+		SkillInferenceService: skillInferenceService,
+		ClipboardStub:         clipboardStub,
+		Ctx:                   ctx,
+		cleanup:               cleanup,
 	}
 }
 
@@ -238,30 +280,35 @@ func SetupShared() {
 	// Create CLI service
 	cliService := service.NewCLIEventService(svc)
 
-	// Create bootstrap result (skipping onboarding for tests)
-	log := logger.DefaultLogger()
-	bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+	// Create stub dependencies for deterministic BDD tests
+	skillInferenceService := NewStubSkillInferenceService(repos.Skill, repos.Event)
+	sharedClipboardStub := &StubClipboardWriter{}
 
-	// Create application model
-	model := app.NewModel(cliService, svc, bootstrapResult)
-
-	// Set terminal dimensions to ensure modals render correctly.
-	// Without this, viewport calculations may use 0 height, showing only last lines.
-	model.Update(tea.WindowSizeMsg{Width: TerminalWidth, Height: TerminalHeightShared})
+	// Create application model with all test dependencies
+	model := createTestModel(&testModelConfig{
+		cliService:            cliService,
+		careerService:         svc,
+		skillInferenceService: skillInferenceService,
+		clipboardStub:         sharedClipboardStub,
+		skillRepo:             repos.Skill,
+		terminalHeight:        TerminalHeightShared,
+	})
 
 	sharedEnv = &TestEnv{
-		T:          nil,
-		Model:      model,
-		DB:         db,
-		DBPath:     dbPath,
-		EventRepo:  repos.Event,
-		BurstRepo:  repos.Burst,
-		FactRepo:   repos.Fact,
-		SkillRepo:  repos.Skill,
-		Service:    svc,
-		CLIService: cliService,
-		Ctx:        context.Background(),
-		cleanup:    nil,
+		T:                     nil,
+		Model:                 model,
+		DB:                    db,
+		DBPath:                dbPath,
+		EventRepo:             repos.Event,
+		BurstRepo:             repos.Burst,
+		FactRepo:              repos.Fact,
+		SkillRepo:             repos.Skill,
+		Service:               svc,
+		CLIService:            cliService,
+		SkillInferenceService: skillInferenceService,
+		ClipboardStub:         sharedClipboardStub,
+		Ctx:                   context.Background(),
+		cleanup:               nil,
 	}
 }
 
@@ -300,17 +347,16 @@ func GetSharedEnv(t TestingT) *TestEnv {
 	// Reset database state (truncate all tables)
 	sharedEnv.resetDatabase()
 
-	// Create fresh bootstrap result (skipping onboarding for tests)
-	log := logger.DefaultLogger()
-	bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), sharedEnv.Service, log)
-
 	// Create fresh application model (only thing with UI state)
 	// Repositories and services are stateless, so we reuse them
-	model := app.NewModel(sharedEnv.CLIService, sharedEnv.Service, bootstrapResult)
-
-	// Set terminal dimensions so modals and overlays render correctly.
-	// Without this, viewport calculations use 0x0, causing empty views.
-	model.Update(tea.WindowSizeMsg{Width: TerminalWidth, Height: TerminalHeightShared})
+	model := createTestModel(&testModelConfig{
+		cliService:            sharedEnv.CLIService,
+		careerService:         sharedEnv.Service,
+		skillInferenceService: sharedEnv.SkillInferenceService,
+		clipboardStub:         sharedEnv.ClipboardStub,
+		skillRepo:             sharedEnv.SkillRepo,
+		terminalHeight:        TerminalHeightShared,
+	})
 
 	// Update only what changes per-test
 	sharedEnv.T = t
@@ -338,12 +384,15 @@ func GetSharedEnvWithOnboarding(t TestingT) *TestEnv {
 	// Reset database state (truncate all tables)
 	sharedEnv.resetDatabase()
 
-	// Create fresh bootstrap result
-	log := logger.DefaultLogger()
-	bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), sharedEnv.Service, log)
-
 	// Create fresh application model
-	model := app.NewModel(sharedEnv.CLIService, sharedEnv.Service, bootstrapResult)
+	model := createTestModel(&testModelConfig{
+		cliService:            sharedEnv.CLIService,
+		careerService:         sharedEnv.Service,
+		skillInferenceService: sharedEnv.SkillInferenceService,
+		clipboardStub:         sharedEnv.ClipboardStub,
+		skillRepo:             sharedEnv.SkillRepo,
+		terminalHeight:        TerminalHeightShared,
+	})
 
 	// Update only what changes per-test
 	sharedEnv.T = t
@@ -445,12 +494,19 @@ func SetupWithOnboarding(t TestingT) *TestEnv {
 	// Create CLI service
 	cliService := service.NewCLIEventService(svc)
 
-	// Create bootstrap result (skipping onboarding for main app)
-	log := logger.DefaultLogger()
-	bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+	// Create stub dependencies for deterministic BDD tests
+	skillInferenceService := NewStubSkillInferenceService(repos.Skill, repos.Event)
+	clipboardStub := &StubClipboardWriter{}
 
-	// Create application model
-	model := app.NewModel(cliService, svc, bootstrapResult)
+	// Create application model with all test dependencies
+	model := createTestModel(&testModelConfig{
+		cliService:            cliService,
+		careerService:         svc,
+		skillInferenceService: skillInferenceService,
+		clipboardStub:         clipboardStub,
+		skillRepo:             repos.Skill,
+		terminalHeight:        TerminalHeightLarge,
+	})
 
 	cleanup := func() {
 		// Issue-007 fix: Restore previous config path (from BeforeSuite) instead of clearing
@@ -470,18 +526,20 @@ func SetupWithOnboarding(t TestingT) *TestEnv {
 	}
 
 	return &TestEnv{
-		T:          t,
-		Model:      model,
-		DB:         db,
-		DBPath:     dbPath,
-		EventRepo:  repos.Event,
-		BurstRepo:  repos.Burst,
-		FactRepo:   repos.Fact,
-		SkillRepo:  repos.Skill,
-		Service:    svc,
-		CLIService: cliService,
-		Ctx:        ctx,
-		cleanup:    cleanup,
+		T:                     t,
+		Model:                 model,
+		DB:                    db,
+		DBPath:                dbPath,
+		EventRepo:             repos.Event,
+		BurstRepo:             repos.Burst,
+		FactRepo:              repos.Fact,
+		SkillRepo:             repos.Skill,
+		Service:               svc,
+		CLIService:            cliService,
+		SkillInferenceService: skillInferenceService,
+		ClipboardStub:         clipboardStub,
+		Ctx:                   ctx,
+		cleanup:               cleanup,
 	}
 }
 
@@ -530,24 +588,33 @@ func SetupWithMemory(t TestingT) *TestEnv {
 	// Create CLI service
 	cliService := service.NewCLIEventService(svc)
 
-	// Create bootstrap result (skipping onboarding for tests)
-	log := logger.DefaultLogger()
-	bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+	// Create stub dependencies for deterministic BDD tests
+	skillInferenceService := NewStubSkillInferenceService(skillRepo, eventRepo)
+	clipboardStub := &StubClipboardWriter{}
 
-	// Create application model
-	model := app.NewModel(cliService, svc, bootstrapResult)
+	// Create application model with all test dependencies
+	model := createTestModel(&testModelConfig{
+		cliService:            cliService,
+		careerService:         svc,
+		skillInferenceService: skillInferenceService,
+		clipboardStub:         clipboardStub,
+		skillRepo:             skillRepo,
+		terminalHeight:        TerminalHeightLarge,
+	})
 
 	return &TestEnv{
-		T:            t,
-		Model:        model,
-		DB:           nil,
-		DBPath:       "",
-		MemEventRepo: eventRepo,
-		MemBurstRepo: burstRepo,
-		MemFactRepo:  factRepo,
-		Service:      svc,
-		CLIService:   cliService,
-		Ctx:          ctx,
+		T:                     t,
+		Model:                 model,
+		DB:                    nil,
+		DBPath:                "",
+		MemEventRepo:          eventRepo,
+		MemBurstRepo:          burstRepo,
+		MemFactRepo:           factRepo,
+		Service:               svc,
+		CLIService:            cliService,
+		SkillInferenceService: skillInferenceService,
+		ClipboardStub:         clipboardStub,
+		Ctx:                   ctx,
 		cleanup: func() {
 			// Issue-007 fix: Restore previous config path (from BeforeSuite) instead of clearing
 			config.SetConfigPathForTesting(prevConfigPath)

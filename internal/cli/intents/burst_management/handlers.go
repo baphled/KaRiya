@@ -686,6 +686,41 @@ func (i *Intent) handleEditBurstMsg(msg EditBurstMsg) tea.Cmd {
 	return i.showBurstDetailModal(i.selectedBurst)
 }
 
+// handleBurstEditComplete handles the BurstEditCompleteMsg sent when a burst edit is complete.
+// This reloads the burst list and returns to the list screen.
+func (i *Intent) handleBurstEditComplete(msg BurstEditCompleteMsg) tea.Cmd {
+	if msg.Error != nil {
+		i.ShowErrorModal("Update Failed", msg.Error.Error())
+		return nil
+	}
+
+	// Reload bursts from repository to reflect the update
+	if err := i.context.LoadBursts(); err != nil {
+		i.ShowErrorModal("Load Failed", err.Error())
+		return nil
+	}
+
+	// Update filtered bursts with reloaded data
+	i.filteredBursts = i.context.Bursts
+
+	// Find and update selected burst by ID
+	if msg.Burst != nil {
+		for _, b := range i.filteredBursts {
+			if b.ID == msg.Burst.ID {
+				i.selectedBurst = b
+				break
+			}
+		}
+	}
+
+	// Close any open modal and return to list screen
+	i.editModal = nil
+	i.state = StateList
+	i.transitionToScreen(burstscreens.NewBurstListScreen(i.filteredBursts))
+
+	return nil
+}
+
 // handleBurstEventsLoaded handles the BurstEventsLoadedMsg.
 func (i *Intent) handleBurstEventsLoaded(msg BurstEventsLoadedMsg) tea.Cmd {
 	i.loadingEvents = false
