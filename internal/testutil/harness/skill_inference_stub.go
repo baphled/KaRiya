@@ -2,6 +2,7 @@ package harness
 
 import (
 	"context"
+	"sort"
 	"strings"
 
 	"github.com/baphled/kariya/internal/domain/career"
@@ -145,6 +146,10 @@ func (s *StubSkillInferenceService) InferSkillsFromEvents(
 			}
 		}
 	}
+
+	sort.Slice(suggestions, func(i, j int) bool {
+		return suggestions[i].Name < suggestions[j].Name
+	})
 
 	return &skillinference.InferenceResult{
 		Suggestions:        suggestions,

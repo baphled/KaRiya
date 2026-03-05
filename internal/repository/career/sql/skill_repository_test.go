@@ -23,6 +23,7 @@ var _ = Describe("Skill Repository", func() {
 	BeforeEach(func() {
 		Expect(sharedGormDB).NotTo(BeNil(), "shared DB not initialized - BeforeSuite not run")
 		tx = sharedGormDB.Begin()
+		Expect(tx.Error).NotTo(HaveOccurred())
 		DeferCleanup(func() { tx.Rollback() })
 		repo = NewSkillRepository(tx)
 		ctx = context.Background()

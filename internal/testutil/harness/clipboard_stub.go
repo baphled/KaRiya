@@ -18,10 +18,10 @@ type StubClipboardWriter struct {
 //   - Must be a valid string.
 //
 // Returns:
-//   - A error value.
+//   - An error value (nil on success).
 //
 // Side effects:
-//   - None.
+//   - Updates the in-memory clipboard content (s.content) under a mutex.
 func (s *StubClipboardWriter) WriteAll(text string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()

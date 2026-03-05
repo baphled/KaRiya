@@ -24,6 +24,7 @@ var _ = Describe("Event Repository", func() {
 	BeforeEach(func() {
 		Expect(sharedGormDB).NotTo(BeNil(), "shared DB not initialized - BeforeSuite not run")
 		tx = sharedGormDB.Begin()
+		Expect(tx.Error).NotTo(HaveOccurred(), "failed to begin transaction")
 		DeferCleanup(func() { tx.Rollback() })
 		repo = NewEventRepository(tx)
 		ctx = context.Background()

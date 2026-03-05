@@ -25,6 +25,7 @@ var _ = Describe("Fact Repository", func() {
 	BeforeEach(func() {
 		Expect(sharedGormDB).NotTo(BeNil(), "shared DB not initialized - BeforeSuite not run")
 		tx = sharedGormDB.Begin()
+		Expect(tx.Error).NotTo(HaveOccurred(), "failed to begin transaction with shared DB")
 		DeferCleanup(func() { tx.Rollback() })
 		repo = NewFactRepository(tx)
 		ctx = context.Background()
