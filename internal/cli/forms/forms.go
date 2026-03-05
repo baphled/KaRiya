@@ -26,6 +26,7 @@
 package forms
 
 import (
+	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 )
@@ -92,6 +93,23 @@ func Update(form Form, msg tea.Msg) (Form, tea.Cmd) {
 		return form, cmd
 	}
 	return f, cmd
+}
+
+// WithCustomSubmitKey configures a form to use a custom submit key binding.
+//
+// Expected:
+//   - form must be a valid Form.
+//   - keys must be valid key strings (e.g., "ctrl+s", "enter").
+//
+// Returns:
+//   - A Form value.
+//
+// Side effects:
+//   - None.
+func WithCustomSubmitKey(form Form, keys ...string) Form {
+	keymap := huh.NewDefaultKeyMap()
+	keymap.Input.Submit = key.NewBinding(key.WithKeys(keys...))
+	return form.WithKeyMap(keymap)
 }
 
 // Theme returns the Catppuccin theme configured for KaRiya forms.
@@ -275,6 +293,31 @@ func IsCompleted(form *huh.Form) bool {
 //   - None.
 func IsAborted(form *huh.Form) bool {
 	return form.State == huh.StateAborted
+}
+
+// IsTextInputFocused checks if the currently focused field is a text input
+// (either Input or Text). This is used to determine whether vim-style j/k
+// navigation should be disabled to allow typing those characters.
+//
+// Expected:
+//   - form may be nil (returns false).
+//
+// Returns:
+//   - true if the focused field is *huh.Input or *huh.Text.
+//   - false otherwise (including nil form).
+//
+// Side effects:
+//   - None.
+func IsTextInputFocused(form Form) bool {
+	if form == nil {
+		return false
+	}
+	focused := form.GetFocusedField()
+	switch focused.(type) {
+	case *huh.Input, *huh.Text:
+		return true
+	}
+	return false
 }
 
 // FieldConfig represents common field configuration options.

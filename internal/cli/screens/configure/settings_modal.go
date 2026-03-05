@@ -3,13 +3,14 @@ package configure
 import (
 	"fmt"
 
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+
 	"github.com/baphled/kariya/internal/cli/configtypes"
 	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/containers"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 const sectionListWidth = 16
@@ -116,6 +117,7 @@ func (m *SettingsModal) rebuildActiveForm() {
 	)
 
 	if m.activeForm != nil {
+		m.activeForm = forms.WithCustomSubmitKey(m.activeForm, "ctrl+s")
 		m.activeForm.Init()
 	}
 }
@@ -172,39 +174,42 @@ func (m *SettingsModal) Init() tea.Cmd {
 // Side effects:
 //   - May update selected section or form state.
 func (m *SettingsModal) Update(msg tea.Msg) tea.Cmd {
-	if keyMsg, ok := msg.(tea.KeyMsg); ok {
-		switch keyMsg.String() {
-		case "down":
-			if m.selectedIdx < len(m.domains)-1 {
-				m.selectedIdx++
-				m.rebuildActiveForm()
-				if m.activeForm != nil {
-					return m.activeForm.Init()
-				}
+	keyMsg, ok := msg.(tea.KeyMsg)
+	if !ok {
+		if m.activeForm != nil {
+			var cmd tea.Cmd
+			m.activeForm, cmd = forms.Update(m.activeForm, msg)
+			return cmd
+		}
+		return nil
+	}
+
+	switch keyMsg.Type {
+	case tea.KeyDown:
+		return m.navigateDown()
+	case tea.KeyUp:
+		return m.navigateUp()
+	case tea.KeyCtrlS:
+		m.completed = true
+		return nil
+	case tea.KeyEsc:
+		m.cancelled = true
+		return nil
+	case tea.KeyTab, tea.KeyShiftTab:
+		if m.activeForm != nil {
+			var cmd tea.Cmd
+			m.activeForm, cmd = forms.Update(m.activeForm, msg)
+			return cmd
+		}
+		return nil
+	case tea.KeyRunes:
+		if !forms.IsTextInputFocused(m.activeForm) {
+			switch keyMsg.String() {
+			case "j":
+				return m.navigateDown()
+			case "k":
+				return m.navigateUp()
 			}
-			return nil
-		case "up":
-			if m.selectedIdx > 0 {
-				m.selectedIdx--
-				m.rebuildActiveForm()
-				if m.activeForm != nil {
-					return m.activeForm.Init()
-				}
-			}
-			return nil
-		case "ctrl+s":
-			m.completed = true
-			return nil
-		case "esc":
-			m.cancelled = true
-			return nil
-		case "tab", "shift+tab":
-			if m.activeForm != nil {
-				var cmd tea.Cmd
-				m.activeForm, cmd = forms.Update(m.activeForm, msg)
-				return cmd
-			}
-			return nil
 		}
 	}
 
@@ -214,6 +219,28 @@ func (m *SettingsModal) Update(msg tea.Msg) tea.Cmd {
 		return cmd
 	}
 
+	return nil
+}
+
+func (m *SettingsModal) navigateDown() tea.Cmd {
+	if m.selectedIdx < len(m.domains)-1 {
+		m.selectedIdx++
+		m.rebuildActiveForm()
+		if m.activeForm != nil {
+			return m.activeForm.Init()
+		}
+	}
+	return nil
+}
+
+func (m *SettingsModal) navigateUp() tea.Cmd {
+	if m.selectedIdx > 0 {
+		m.selectedIdx--
+		m.rebuildActiveForm()
+		if m.activeForm != nil {
+			return m.activeForm.Init()
+		}
+	}
 	return nil
 }
 
@@ -356,11 +383,13 @@ func (m *SettingsModal) SetTheme(theme themes.Theme) {
 //   - height must be a positive integer.
 //
 // Side effects:
-//   - None.
+//   - Rebuilds the active form only if dimensions have changed.
 func (m *SettingsModal) SetDimensions(width, height int) {
-	m.width = width
-	m.height = height
-	m.rebuildActiveForm()
+	if m.width != width || m.height != height {
+		m.width = width
+		m.height = height
+		m.rebuildActiveForm()
+	}
 }
 
 func formatDomainLabel(domain configtypes.ConfigurationDomain) string {
