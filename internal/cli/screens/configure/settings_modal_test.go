@@ -101,34 +101,115 @@ var _ = Describe("SettingsModal", func() {
 	})
 
 	Describe("Update", func() {
-		Context("when navigating with j key", func() {
+		Context("when pressing j key (vim-style navigation)", func() {
+			var selectOnlyModal *SettingsModal
+
+			BeforeEach(func() {
+				selectSettings := map[configtypes.ConfigurationDomain][]*configtypes.ConfigurationSetting{
+					configtypes.DomainSystem: {
+						{Key: "log_level", Label: "Log Level", Value: "info", DefaultValue: "info", Type: "select", Options: []string{"debug", "info", "warn", "error"}},
+					},
+					configtypes.DomainExport: {
+						{Key: "default_destination", Label: "Default Destination", Value: "file", DefaultValue: "file", Type: "select", Options: []string{"file", "clipboard"}},
+					},
+					configtypes.DomainUI: {
+						{Key: "theme", Label: "Theme", Value: "dark", DefaultValue: "dark", Type: "select", Options: []string{"light", "dark"}},
+					},
+				}
+				selectOnlyModal = NewSettingsModal(selectSettings, 120, 40)
+			})
+
 			It("should move to the next domain", func() {
-				modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
-				view := modal.View()
-				Expect(view).NotTo(BeEmpty())
+				initialIdx := selectOnlyModal.selectedIdx
+				selectOnlyModal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
+				Expect(selectOnlyModal.selectedIdx).To(Equal(initialIdx + 1))
 			})
 
 			It("should not move beyond the last domain", func() {
 				for range 10 {
-					modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
+					selectOnlyModal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
 				}
-				Expect(modal.IsCompleted()).To(BeFalse())
-				Expect(modal.IsCancelled()).To(BeFalse())
+				Expect(selectOnlyModal.selectedIdx).To(Equal(len(selectOnlyModal.domains) - 1))
 			})
 		})
 
-		Context("when navigating with k key", func() {
-			It("should not move above the first domain", func() {
-				modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
-				view := modal.View()
-				Expect(view).NotTo(BeEmpty())
+		Context("when pressing k key (vim-style navigation)", func() {
+			var selectOnlyModal *SettingsModal
+
+			BeforeEach(func() {
+				selectSettings := map[configtypes.ConfigurationDomain][]*configtypes.ConfigurationSetting{
+					configtypes.DomainSystem: {
+						{Key: "log_level", Label: "Log Level", Value: "info", DefaultValue: "info", Type: "select", Options: []string{"debug", "info", "warn", "error"}},
+					},
+					configtypes.DomainExport: {
+						{Key: "default_destination", Label: "Default Destination", Value: "file", DefaultValue: "file", Type: "select", Options: []string{"file", "clipboard"}},
+					},
+					configtypes.DomainUI: {
+						{Key: "theme", Label: "Theme", Value: "dark", DefaultValue: "dark", Type: "select", Options: []string{"light", "dark"}},
+					},
+				}
+				selectOnlyModal = NewSettingsModal(selectSettings, 120, 40)
 			})
 
-			It("should move back after moving forward", func() {
-				modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
-				modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
-				view := modal.View()
-				Expect(view).NotTo(BeEmpty())
+			It("should move to the previous domain", func() {
+				selectOnlyModal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
+				initialIdx := selectOnlyModal.selectedIdx
+				selectOnlyModal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
+				Expect(selectOnlyModal.selectedIdx).To(Equal(initialIdx - 1))
+			})
+
+			It("should not move above the first domain", func() {
+				for range 10 {
+					selectOnlyModal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
+				}
+				Expect(selectOnlyModal.selectedIdx).To(Equal(0))
+			})
+		})
+
+		Context("when navigating with down arrow", func() {
+			It("should move to the next domain", func() {
+				initialIdx := modal.selectedIdx
+				modal.Update(tea.KeyMsg{Type: tea.KeyDown})
+				Expect(modal.selectedIdx).To(Equal(initialIdx + 1))
+			})
+
+			It("should not move beyond the last domain", func() {
+				for range 10 {
+					modal.Update(tea.KeyMsg{Type: tea.KeyDown})
+				}
+				Expect(modal.selectedIdx).To(Equal(len(modal.domains) - 1))
+			})
+		})
+
+		Context("when navigating with up arrow", func() {
+			It("should move to the previous domain", func() {
+				modal.Update(tea.KeyMsg{Type: tea.KeyDown})
+				initialIdx := modal.selectedIdx
+				modal.Update(tea.KeyMsg{Type: tea.KeyUp})
+				Expect(modal.selectedIdx).To(Equal(initialIdx - 1))
+			})
+
+			It("should not move above the first domain", func() {
+				for range 10 {
+					modal.Update(tea.KeyMsg{Type: tea.KeyUp})
+				}
+				Expect(modal.selectedIdx).To(Equal(0))
+			})
+		})
+
+		Context("when pressing tab", func() {
+			It("should forward to form for field navigation", func() {
+				initialIdx := modal.selectedIdx
+				modal.Update(tea.KeyMsg{Type: tea.KeyTab})
+				Expect(modal.selectedIdx).To(Equal(initialIdx))
+			})
+		})
+
+		Context("when pressing shift+tab", func() {
+			It("should forward to form for reverse field navigation", func() {
+				initialIdx := modal.selectedIdx
+				modal.Update(tea.KeyMsg{Type: tea.KeyShiftTab})
+				Expect(modal.selectedIdx).To(Equal(initialIdx))
 			})
 		})
 
@@ -204,6 +285,24 @@ var _ = Describe("SettingsModal", func() {
 			modal.SetDimensions(40, 10)
 			view := modal.View()
 			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("should not rebuild form when dimensions unchanged", func() {
+			initialForm := modal.activeForm
+			modal.SetDimensions(120, 40)
+			Expect(modal.activeForm).To(BeIdenticalTo(initialForm))
+		})
+
+		It("should rebuild form when width changes", func() {
+			initialForm := modal.activeForm
+			modal.SetDimensions(150, 40)
+			Expect(modal.activeForm).NotTo(BeIdenticalTo(initialForm))
+		})
+
+		It("should rebuild form when height changes", func() {
+			initialForm := modal.activeForm
+			modal.SetDimensions(120, 50)
+			Expect(modal.activeForm).NotTo(BeIdenticalTo(initialForm))
 		})
 	})
 
@@ -420,26 +519,24 @@ var _ = Describe("SettingsModal", func() {
 	Describe("Navigation boundary conditions", func() {
 		It("should not move down from last domain", func() {
 			for range 20 {
-				modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
+				modal.Update(tea.KeyMsg{Type: tea.KeyDown})
 			}
-			view := modal.View()
-			Expect(view).NotTo(BeEmpty())
+			Expect(modal.selectedIdx).To(Equal(len(modal.domains) - 1))
 		})
 
 		It("should not move up from first domain", func() {
 			for range 20 {
-				modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
+				modal.Update(tea.KeyMsg{Type: tea.KeyUp})
 			}
-			view := modal.View()
-			Expect(view).NotTo(BeEmpty())
+			Expect(modal.selectedIdx).To(Equal(0))
 		})
 	})
 
 	Describe("Multiple state transitions", func() {
 		It("should handle multiple navigation and action sequences", func() {
-			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
-			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
-			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
+			modal.Update(tea.KeyMsg{Type: tea.KeyDown})
+			modal.Update(tea.KeyMsg{Type: tea.KeyDown})
+			modal.Update(tea.KeyMsg{Type: tea.KeyUp})
 			Expect(modal.IsCompleted()).To(BeFalse())
 			Expect(modal.IsCancelled()).To(BeFalse())
 		})
@@ -475,6 +572,55 @@ var _ = Describe("SettingsModal", func() {
 		})
 	})
 
+	Describe("Enter key on input field", func() {
+		It("should not complete the modal when pressing Enter on an input field", func() {
+			profileSettings := makeSettingsWithDomain(
+				configtypes.DomainProfile,
+				&configtypes.ConfigurationSetting{Key: "name", Label: "Full Name", Value: "Test User", DefaultValue: "", Type: "string"},
+				&configtypes.ConfigurationSetting{Key: "email", Label: "Email", Value: "test@example.com", DefaultValue: "", Type: "string"},
+			)
+			inputModal := NewSettingsModal(profileSettings, 120, 40)
+			inputModal.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			Expect(inputModal.IsCompleted()).To(BeFalse())
+		})
+
+		It("should forward Enter key to the form without completing", func() {
+			profileSettings := makeSettingsWithDomain(
+				configtypes.DomainProfile,
+				&configtypes.ConfigurationSetting{Key: "name", Label: "Full Name", Value: "Test User", DefaultValue: "", Type: "string"},
+			)
+			inputModal := NewSettingsModal(profileSettings, 120, 40)
+			initialCompleted := inputModal.IsCompleted()
+			inputModal.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			Expect(inputModal.IsCompleted()).To(Equal(initialCompleted))
+			Expect(inputModal.IsCompleted()).To(BeFalse())
+		})
+
+		It("should not complete form after multiple Enter presses", func() {
+			profileSettings := makeSettingsWithDomain(
+				configtypes.DomainProfile,
+				&configtypes.ConfigurationSetting{Key: "name", Label: "Full Name", Value: "Test User", DefaultValue: "", Type: "string"},
+				&configtypes.ConfigurationSetting{Key: "email", Label: "Email", Value: "test@example.com", DefaultValue: "", Type: "string"},
+			)
+			inputModal := NewSettingsModal(profileSettings, 120, 40)
+			inputModal.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			inputModal.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			inputModal.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			Expect(inputModal.IsCompleted()).To(BeFalse())
+		})
+
+		It("should complete modal when pressing Ctrl+S", func() {
+			profileSettings := makeSettingsWithDomain(
+				configtypes.DomainProfile,
+				&configtypes.ConfigurationSetting{Key: "name", Label: "Full Name", Value: "Test User", DefaultValue: "", Type: "string"},
+			)
+			inputModal := NewSettingsModal(profileSettings, 120, 40)
+			Expect(inputModal.IsCompleted()).To(BeFalse())
+			inputModal.Update(tea.KeyMsg{Type: tea.KeyCtrlS})
+			Expect(inputModal.IsCompleted()).To(BeTrue())
+		})
+	})
+
 	Describe("Completed and Cancelled mutual exclusivity", func() {
 		It("should not be both completed and cancelled", func() {
 			modal.Update(tea.KeyMsg{Type: tea.KeyCtrlS})
@@ -486,6 +632,111 @@ var _ = Describe("SettingsModal", func() {
 			modal.Update(tea.KeyMsg{Type: tea.KeyEsc})
 			Expect(modal.IsCancelled()).To(BeTrue())
 			Expect(modal.IsCompleted()).To(BeFalse())
+		})
+	})
+
+	Describe("Domain navigation with arrow keys", func() {
+		It("should return Init command when switching domain with down arrow", func() {
+			cmd := modal.Update(tea.KeyMsg{Type: tea.KeyDown})
+			Expect(cmd).NotTo(BeNil())
+		})
+
+		It("should return Init command when switching domain with up arrow", func() {
+			modal.Update(tea.KeyMsg{Type: tea.KeyDown})
+			cmd := modal.Update(tea.KeyMsg{Type: tea.KeyUp})
+			Expect(cmd).NotTo(BeNil())
+		})
+
+		It("should maintain form focus after domain switch", func() {
+			modal.Update(tea.KeyMsg{Type: tea.KeyDown})
+			view := modal.View()
+			Expect(view).NotTo(BeEmpty())
+		})
+	})
+
+	Describe("Arrow keys always navigate regardless of text input focus", func() {
+		Context("when a text input field is focused", func() {
+			var textInputModal *SettingsModal
+
+			BeforeEach(func() {
+				profileSettings := makeSettingsWithDomain(
+					configtypes.DomainProfile,
+					&configtypes.ConfigurationSetting{Key: "name", Label: "Full Name", Value: "Test User", DefaultValue: "", Type: "string"},
+				)
+				textInputModal = NewSettingsModal(profileSettings, 120, 40)
+			})
+
+			It("should navigate down with down arrow even in text input", func() {
+				Expect(textInputModal.selectedIdx).To(Equal(0))
+				textInputModal.Update(tea.KeyMsg{Type: tea.KeyDown})
+				view := textInputModal.View()
+				Expect(view).NotTo(BeEmpty())
+			})
+
+			It("should navigate up with up arrow even in text input", func() {
+				view := textInputModal.View()
+				Expect(view).NotTo(BeEmpty())
+			})
+		})
+	})
+
+	Describe("j/k keys respect text input focus state", func() {
+		Context("when a text input field is focused", func() {
+			var textInputModal *SettingsModal
+
+			BeforeEach(func() {
+				profileSettings := map[configtypes.ConfigurationDomain][]*configtypes.ConfigurationSetting{
+					configtypes.DomainProfile: {
+						{Key: "name", Label: "Full Name", Value: "Test User", DefaultValue: "", Type: "string"},
+					},
+					configtypes.DomainSystem: {
+						{Key: "log_level", Label: "Log Level", Value: "info", DefaultValue: "info", Type: "select", Options: []string{"debug", "info", "warn", "error"}},
+					},
+				}
+				textInputModal = NewSettingsModal(profileSettings, 120, 40)
+				textInputModal.Update(tea.KeyMsg{Type: tea.KeyDown})
+			})
+
+			It("should NOT navigate with j key when text input is focused", func() {
+				initialIdx := textInputModal.selectedIdx
+				textInputModal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
+				Expect(textInputModal.selectedIdx).To(Equal(initialIdx))
+			})
+
+			It("should NOT navigate with k key when text input is focused", func() {
+				initialIdx := textInputModal.selectedIdx
+				textInputModal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
+				Expect(textInputModal.selectedIdx).To(Equal(initialIdx))
+			})
+		})
+
+		Context("when a non-text field is focused (select)", func() {
+			var selectModal *SettingsModal
+
+			BeforeEach(func() {
+				selectSettings := map[configtypes.ConfigurationDomain][]*configtypes.ConfigurationSetting{
+					configtypes.DomainSystem: {
+						{Key: "log_level", Label: "Log Level", Value: "info", DefaultValue: "info", Type: "select", Options: []string{"debug", "info", "warn", "error"}},
+					},
+					configtypes.DomainUI: {
+						{Key: "theme", Label: "Theme", Value: "dark", DefaultValue: "dark", Type: "select", Options: []string{"light", "dark"}},
+					},
+				}
+				selectModal = NewSettingsModal(selectSettings, 120, 40)
+			})
+
+			It("should navigate with j key when select field is focused", func() {
+				initialIdx := selectModal.selectedIdx
+				selectModal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
+				Expect(selectModal.selectedIdx).To(Equal(initialIdx + 1))
+			})
+
+			It("should navigate with k key when select field is focused", func() {
+				selectModal.Update(tea.KeyMsg{Type: tea.KeyDown})
+				initialIdx := selectModal.selectedIdx
+				selectModal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
+				Expect(selectModal.selectedIdx).To(Equal(initialIdx - 1))
+			})
 		})
 	})
 })

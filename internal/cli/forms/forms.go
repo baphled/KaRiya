@@ -26,6 +26,7 @@
 package forms
 
 import (
+	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 )
@@ -92,6 +93,23 @@ func Update(form Form, msg tea.Msg) (Form, tea.Cmd) {
 		return form, cmd
 	}
 	return f, cmd
+}
+
+// WithCustomSubmitKey configures a form to use a custom submit key binding.
+//
+// Expected:
+//   - form must be a valid Form.
+//   - keys must be valid key strings (e.g., "ctrl+s", "enter").
+//
+// Returns:
+//   - A Form value.
+//
+// Side effects:
+//   - None.
+func WithCustomSubmitKey(form Form, keys ...string) Form {
+	keymap := huh.NewDefaultKeyMap()
+	keymap.Input.Submit = key.NewBinding(key.WithKeys(keys...))
+	return form.WithKeyMap(keymap)
 }
 
 // Theme returns the Catppuccin theme configured for KaRiya forms.
@@ -277,6 +295,31 @@ func IsAborted(form *huh.Form) bool {
 	return form.State == huh.StateAborted
 }
 
+// IsTextInputFocused checks if the currently focused field is a text input
+// (either Input or Text). This is used to determine whether vim-style j/k
+// navigation should be disabled to allow typing those characters.
+//
+// Expected:
+//   - form may be nil (returns false).
+//
+// Returns:
+//   - true if the focused field is *huh.Input or *huh.Text.
+//   - false otherwise (including nil form).
+//
+// Side effects:
+//   - None.
+func IsTextInputFocused(form Form) bool {
+	if form == nil {
+		return false
+	}
+	focused := form.GetFocusedField()
+	switch focused.(type) {
+	case *huh.Input, *huh.Text:
+		return true
+	}
+	return false
+}
+
 // FieldConfig represents common field configuration options.
 type FieldConfig struct {
 	Key         string
@@ -374,14 +417,14 @@ type SelectOption struct {
 //
 // Side effects:
 //   - None.
-func NewSelect(key, title, description string, options []SelectOption) *huh.Select[string] {
+func NewSelect(fieldKey, title, description string, options []SelectOption) *huh.Select[string] {
 	huhOptions := make([]huh.Option[string], len(options))
 	for i, opt := range options {
 		huhOptions[i] = huh.NewOption(opt.Value, opt.Key)
 	}
 
 	sel := huh.NewSelect[string]().
-		Key(key).
+		Key(fieldKey).
 		Title(title).
 		Options(huhOptions...)
 
@@ -404,14 +447,14 @@ func NewSelect(key, title, description string, options []SelectOption) *huh.Sele
 //
 // Side effects:
 //   - None.
-func NewMultiSelect(key, title, description string, options []SelectOption, limit int) *huh.MultiSelect[string] {
+func NewMultiSelect(fieldKey, title, description string, options []SelectOption, limit int) *huh.MultiSelect[string] {
 	huhOptions := make([]huh.Option[string], len(options))
 	for i, opt := range options {
 		huhOptions[i] = huh.NewOption(opt.Value, opt.Key)
 	}
 
 	multi := huh.NewMultiSelect[string]().
-		Key(key).
+		Key(fieldKey).
 		Title(title).
 		Options(huhOptions...)
 
@@ -436,9 +479,9 @@ func NewMultiSelect(key, title, description string, options []SelectOption, limi
 //
 // Side effects:
 //   - None.
-func NewConfirm(key, title, description, affirmative, negative string) *huh.Confirm {
+func NewConfirm(fieldKey, title, description, affirmative, negative string) *huh.Confirm {
 	confirm := huh.NewConfirm().
-		Key(key).
+		Key(fieldKey).
 		Title(title)
 
 	if description != "" {
