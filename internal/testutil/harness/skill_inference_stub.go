@@ -39,6 +39,41 @@ func NewStubSkillInferenceService(
 	}
 }
 
+type skillDef struct {
+	key        string
+	name       string
+	category   string
+	confidence float64
+	context    string
+}
+
+func buildSkillMap() map[string]skillinference.SkillSuggestion {
+	defs := []skillDef{
+		{"go", "Go", "backend", 0.95, "Built service in Go"},
+		{"postgresql", "PostgreSQL", "database", 0.90, "Used PostgreSQL for storage"},
+		{"postgres", "PostgreSQL", "database", 0.90, "Used PostgreSQL for storage"},
+		{"python", "Python", "backend", 0.92, "Wrote Python scripts"},
+		{"javascript", "JavaScript", "frontend", 0.88, "Implemented features in JavaScript"},
+		{"react", "React", "frontend", 0.93, "Built UI with React"},
+		{"kubernetes", "Kubernetes", "devops", 0.91, "Deployed on Kubernetes"},
+		{"docker", "Docker", "devops", 0.89, "Containerized with Docker"},
+		{"aws", "AWS", "cloud", 0.94, "Deployed to AWS"},
+		{"api", "API Development", "backend", 0.87, "Implemented API platform features"},
+		{"backend", "Backend Development", "backend", 0.85, "Built backend services"},
+	}
+
+	skillMap := make(map[string]skillinference.SkillSuggestion, len(defs))
+	for _, d := range defs {
+		skillMap[d.key] = skillinference.SkillSuggestion{
+			Name:       d.name,
+			Category:   d.category,
+			Confidence: d.confidence,
+			Contexts:   []string{d.context},
+		}
+	}
+	return skillMap
+}
+
 // InferSkillsFromEvents returns deterministic skill suggestions based on event text.
 //
 // Expected:
@@ -63,74 +98,7 @@ func (s *StubSkillInferenceService) InferSkillsFromEvents(
 		}, nil
 	}
 
-	skillMap := map[string]skillinference.SkillSuggestion{
-		"go": {
-			Name:       "Go",
-			Category:   "backend",
-			Confidence: 0.95,
-			Contexts:   []string{"Built service in Go"},
-		},
-		"postgresql": {
-			Name:       "PostgreSQL",
-			Category:   "database",
-			Confidence: 0.90,
-			Contexts:   []string{"Used PostgreSQL for storage"},
-		},
-		"postgres": {
-			Name:       "PostgreSQL",
-			Category:   "database",
-			Confidence: 0.90,
-			Contexts:   []string{"Used PostgreSQL for storage"},
-		},
-		"python": {
-			Name:       "Python",
-			Category:   "backend",
-			Confidence: 0.92,
-			Contexts:   []string{"Wrote Python scripts"},
-		},
-		"javascript": {
-			Name:       "JavaScript",
-			Category:   "frontend",
-			Confidence: 0.88,
-			Contexts:   []string{"Implemented features in JavaScript"},
-		},
-		"react": {
-			Name:       "React",
-			Category:   "frontend",
-			Confidence: 0.93,
-			Contexts:   []string{"Built UI with React"},
-		},
-		"kubernetes": {
-			Name:       "Kubernetes",
-			Category:   "devops",
-			Confidence: 0.91,
-			Contexts:   []string{"Deployed on Kubernetes"},
-		},
-		"docker": {
-			Name:       "Docker",
-			Category:   "devops",
-			Confidence: 0.89,
-			Contexts:   []string{"Containerized with Docker"},
-		},
-		"aws": {
-			Name:       "AWS",
-			Category:   "cloud",
-			Confidence: 0.94,
-			Contexts:   []string{"Deployed to AWS"},
-		},
-		"api": {
-			Name:       "API Development",
-			Category:   "backend",
-			Confidence: 0.87,
-			Contexts:   []string{"Implemented API platform features"},
-		},
-		"backend": {
-			Name:       "Backend Development",
-			Category:   "backend",
-			Confidence: 0.85,
-			Contexts:   []string{"Built backend services"},
-		},
-	}
+	skillMap := buildSkillMap()
 
 	var suggestions []skillinference.SkillSuggestion
 	seen := make(map[string]bool)
