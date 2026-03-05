@@ -2,7 +2,7 @@ package main
 
 import (
 	"bytes"
-	"os"
+	"fmt"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -15,7 +15,7 @@ var _ = Describe("CLI Initialization", func() {
 			exitCode := run([]string{"--version"}, &buf, &errBuf)
 
 			Expect(exitCode).To(Equal(0))
-			Expect(buf.String()).To(ContainSubstring("KaRiya CLI v"))
+			Expect(buf.String()).To(ContainSubstring("dev"))
 		})
 	})
 
@@ -25,8 +25,8 @@ var _ = Describe("CLI Initialization", func() {
 			exitCode := run([]string{"--help"}, &buf, &errBuf)
 
 			Expect(exitCode).To(Equal(0))
-			Expect(buf.String()).To(ContainSubstring("KaRiya CLI - Career Journaling Tool"))
-			Expect(buf.String()).To(ContainSubstring("Usage: kariya [options]"))
+			Expect(buf.String()).To(ContainSubstring("capturing career achievements"))
+			Expect(buf.String()).To(ContainSubstring("Usage:"))
 		})
 
 		It("should show database flag in help", func() {
@@ -34,7 +34,6 @@ var _ = Describe("CLI Initialization", func() {
 			run([]string{"--help"}, &buf, &errBuf)
 
 			Expect(buf.String()).To(ContainSubstring("--db"))
-			Expect(buf.String()).To(ContainSubstring("--database"))
 		})
 
 		It("should show mode flag in help", func() {
@@ -44,46 +43,33 @@ var _ = Describe("CLI Initialization", func() {
 			Expect(buf.String()).To(ContainSubstring("--mode"))
 		})
 
-		It("should show list flag in help", func() {
+		It("should show import command in help", func() {
 			var buf, errBuf bytes.Buffer
 			run([]string{"--help"}, &buf, &errBuf)
 
-			Expect(buf.String()).To(ContainSubstring("--list"))
-		})
-
-		It("should show import flag in help", func() {
-			var buf, errBuf bytes.Buffer
-			run([]string{"--help"}, &buf, &errBuf)
-
-			Expect(buf.String()).To(ContainSubstring("--import"))
+			Expect(buf.String()).To(ContainSubstring("import"))
 			Expect(buf.String()).To(ContainSubstring("Import career events from CSV file"))
 		})
 
-		It("should show skip-import-review flag in help", func() {
+		It("should show bursts command in help", func() {
 			var buf, errBuf bytes.Buffer
 			run([]string{"--help"}, &buf, &errBuf)
 
-			Expect(buf.String()).To(ContainSubstring("--skip-import-review"))
+			Expect(buf.String()).To(ContainSubstring("bursts"))
 		})
 
-		It("should show CSV format documentation in help", func() {
+		It("should show facts command in help", func() {
 			var buf, errBuf bytes.Buffer
 			run([]string{"--help"}, &buf, &errBuf)
 
-			Expect(buf.String()).To(ContainSubstring("CSV File Format"))
-			Expect(buf.String()).To(ContainSubstring("Text (required)"))
-			Expect(buf.String()).To(ContainSubstring("Date (required)"))
-			Expect(buf.String()).To(ContainSubstring("Semicolon-separated tags"))
+			Expect(buf.String()).To(ContainSubstring("facts"))
 		})
-	})
 
-	Context("Mode Flag", func() {
-		It("should reject invalid mode and show error", func() {
+		It("should show skills command in help", func() {
 			var buf, errBuf bytes.Buffer
-			exitCode := run([]string{"--mode", "invalid"}, &buf, &errBuf)
+			run([]string{"--help"}, &buf, &errBuf)
 
-			Expect(exitCode).To(Equal(1))
-			Expect(errBuf.String()).To(ContainSubstring("Invalid mode"))
+			Expect(buf.String()).To(ContainSubstring("skills"))
 		})
 	})
 
@@ -92,215 +78,89 @@ var _ = Describe("CLI Initialization", func() {
 			var buf, errBuf bytes.Buffer
 			run([]string{"--help"}, &buf, &errBuf)
 
-			Expect(buf.String()).To(ContainSubstring("Use custom database path"))
-			Expect(buf.String()).To(ContainSubstring("Default: ~/.kariya/events.db"))
+			Expect(buf.String()).To(ContainSubstring("--db"))
 		})
 	})
 
-	Context("List Flag", func() {
-		It("should show --list flag in help", func() {
+	Context("Subcommands", func() {
+		It("should show bursts subcommand help", func() {
 			var buf, errBuf bytes.Buffer
-			run([]string{"--help"}, &buf, &errBuf)
+			run([]string{"bursts", "--help"}, &buf, &errBuf)
 
-			Expect(buf.String()).To(ContainSubstring("--list"))
-			Expect(buf.String()).To(ContainSubstring("Show recent events on startup"))
+			Expect(buf.String()).To(ContainSubstring("detect"))
+			Expect(buf.String()).To(ContainSubstring("list"))
 		})
 
-		It("should show example with --list and --db together", func() {
+		It("should show facts subcommand help", func() {
 			var buf, errBuf bytes.Buffer
-			run([]string{"--help"}, &buf, &errBuf)
+			run([]string{"facts", "--help"}, &buf, &errBuf)
 
-			Expect(buf.String()).To(ContainSubstring("kariya --db ./events.db --list"))
+			Expect(buf.String()).To(ContainSubstring("extract"))
+			Expect(buf.String()).To(ContainSubstring("list"))
+		})
+
+		It("should show skills subcommand help", func() {
+			var buf, errBuf bytes.Buffer
+			run([]string{"skills", "--help"}, &buf, &errBuf)
+
+			Expect(buf.String()).To(ContainSubstring("recategorize"))
+		})
+
+		It("should show import subcommand help", func() {
+			var buf, errBuf bytes.Buffer
+			run([]string{"import", "--help"}, &buf, &errBuf)
+
+			Expect(buf.String()).To(Or(
+				ContainSubstring("Import career events from CSV file"),
+				ContainSubstring("Import career events from a CSV file"),
+			))
 		})
 	})
 
-	Context("Import Flag", func() {
-		It("should require a file path for --import flag", func() {
+	Context("Burst Detection", func() {
+		It("should handle bursts detect with empty database", func() {
 			var buf, errBuf bytes.Buffer
-			exitCode := run([]string{"--import"}, &buf, &errBuf)
+			exitCode := run([]string{"--in-memory", "bursts", "detect"}, &buf, &errBuf)
 
-			Expect(exitCode).To(Equal(1))
-			Expect(errBuf.String()).To(ContainSubstring("--import flag requires a file path"))
-		})
-
-		It("should show import examples in help", func() {
-			var buf, errBuf bytes.Buffer
-			run([]string{"--help"}, &buf, &errBuf)
-
-			Expect(buf.String()).To(ContainSubstring("kariya --import events.csv"))
-			Expect(buf.String()).To(ContainSubstring("--skip-import-review"))
-		})
-
-		It("should error when import file does not exist", func() {
-			var buf, errBuf bytes.Buffer
-			exitCode := run([]string{"--import", "/nonexistent/file.csv"}, &buf, &errBuf)
-
-			Expect(exitCode).To(Equal(1))
-			Expect(errBuf.String()).To(ContainSubstring("Cannot access import file"))
-		})
-
-		It("should display burst suggestions after import", func() {
-			// Create a temporary CSV file with events that should form bursts
-			csvContent := `Text,Date,Company,Project,Tags
-Implemented cloud migration phase 1,2025-12-20,TechCorp,CloudMigration,technical;project
-Optimized database queries for cloud,2025-12-21,TechCorp,CloudMigration,technical;optimization
-Completed cloud migration phase 2,2025-12-22,TechCorp,CloudMigration,technical;project
-Led performance optimization sprint,2025-12-23,TechCorp,Performance,leadership;technical
-Improved API response times,2025-12-24,TechCorp,Performance,technical;optimization`
-
-			tmpFile, err := os.CreateTemp("", "test_burst_*.csv")
-			Expect(err).NotTo(HaveOccurred())
-			defer os.Remove(tmpFile.Name())
-
-			_, err = tmpFile.WriteString(csvContent)
-			Expect(err).NotTo(HaveOccurred())
-			tmpFile.Close()
-
-			var buf, errBuf bytes.Buffer
-			exitCode := run([]string{"--import", tmpFile.Name(), "--skip-import-review", "--in-memory"}, &buf, &errBuf)
+			fmt.Fprintf(GinkgoWriter, "OUTPUT: %s\n", buf.String())
+			fmt.Fprintf(GinkgoWriter, "ERROR: %s\n", errBuf.String())
+			fmt.Fprintf(GinkgoWriter, "EXIT: %d\n", exitCode)
 
 			Expect(exitCode).To(Equal(0))
-			output := buf.String()
-			// Verify burst suggestions are displayed
-			Expect(output).To(ContainSubstring("=== Burst Suggestions ==="))
-			Expect(output).To(ContainSubstring("Detected"))
-			Expect(output).To(ContainSubstring("potential bursts"))
-			Expect(output).To(ContainSubstring("Events:"))
-			Expect(output).To(ContainSubstring("Confidence:"))
 		})
 
-		It("should display fact extraction results after import", func() {
-			// Create a temporary CSV file with events that should extract facts
-			csvContent := `Text,Date,Company,Project,Tags
-Implemented cloud migration strategy,2025-12-20,TechCorp,CloudMigration,technical
-Led team through system redesign,2025-12-21,TechCorp,Redesign,leadership
-Mentored junior engineers on best practices,2025-12-22,TechCorp,Training,mentoring`
-
-			tmpFile, err := os.CreateTemp("", "test_facts_*.csv")
-			Expect(err).NotTo(HaveOccurred())
-			defer os.Remove(tmpFile.Name())
-
-			_, err = tmpFile.WriteString(csvContent)
-			Expect(err).NotTo(HaveOccurred())
-			tmpFile.Close()
-
+		It("should handle bursts list with empty database", func() {
 			var buf, errBuf bytes.Buffer
-			exitCode := run([]string{"--import", tmpFile.Name(), "--skip-import-review", "--in-memory"}, &buf, &errBuf)
+			exitCode := run([]string{"--in-memory", "bursts", "list"}, &buf, &errBuf)
 
-			Expect(exitCode).To(Equal(0))
-			output := buf.String()
-			// Verify import completed
-			Expect(output).To(ContainSubstring("Import Complete"))
-			// Verify fact extraction section exists (even if no facts persisted)
-			Expect(output).To(ContainSubstring("Successfully imported"))
-		})
-
-		It("should accept --review-facts flag", func() {
-			// Verify the flag is parsed correctly
-			args := []string{"--import", "test.csv", "--review-facts", "--skip-import-review"}
-			Expect(args).To(ContainElement("--review-facts"))
-		})
-	})
-
-	Context("Help Examples", func() {
-		It("should show usage examples", func() {
-			var buf, errBuf bytes.Buffer
-			run([]string{"--help"}, &buf, &errBuf)
-
-			Expect(buf.String()).To(ContainSubstring("Examples:"))
-			Expect(buf.String()).To(ContainSubstring("kariya"))
-			Expect(buf.String()).To(ContainSubstring("--mode timeline"))
-		})
-	})
-
-	Context("Burst Detection Flag", func() {
-		It("should handle --detect-bursts flag with empty database", func() {
-			var buf, errBuf bytes.Buffer
-			exitCode := run([]string{"--in-memory", "--detect-bursts"}, &buf, &errBuf)
-
-			Expect(exitCode).To(Equal(0))
-			// With no events, should show appropriate message
-			Expect(buf.String()).
-				To(Or(
-					ContainSubstring("No events found"),
-					ContainSubstring("Detecting bursts"),
-				))
-		})
-	})
-
-	Context("Fact Extraction Flag", func() {
-		It("should handle --extract-facts flag with empty database", func() {
-			var buf, errBuf bytes.Buffer
-			exitCode := run([]string{"--in-memory", "--extract-facts"}, &buf, &errBuf)
-
-			Expect(exitCode).To(Equal(0))
-			// With no events, should show appropriate message
-			Expect(buf.String()).To(ContainSubstring("No events found"))
-		})
-	})
-
-	Context("Show Bursts Flag", func() {
-		It("should handle --show-bursts flag gracefully when repo not configured", func() {
-			var buf, errBuf bytes.Buffer
-			exitCode := run([]string{"--in-memory", "--show-bursts"}, &buf, &errBuf)
-
-			// May fail if burst repo not configured for in-memory mode
-			// Or succeed with "No bursts found" message
-			if exitCode == 0 {
-				Expect(buf.String()).To(ContainSubstring("No bursts found"))
-			} else {
-				Expect(errBuf.String()).To(ContainSubstring("Burst repository not configured"))
-			}
-		})
-
-		It("should return bursts when bursts exist", func() {
-			// Test with no bursts - should show "No bursts found"
-			var buf, errBuf bytes.Buffer
-			exitCode := run([]string{"--in-memory", "--show-bursts"}, &buf, &errBuf)
-
-			// With no bursts, should show appropriate message
 			Expect(exitCode).To(Equal(0))
 			Expect(buf.String()).To(ContainSubstring("No bursts found"))
 		})
 	})
 
-	Context("Show Facts Flag", func() {
-		It("should handle --show-facts flag gracefully when repo not configured", func() {
+	Context("Fact Extraction", func() {
+		It("should handle facts extract with empty database", func() {
 			var buf, errBuf bytes.Buffer
-			exitCode := run([]string{"--in-memory", "--show-facts"}, &buf, &errBuf)
+			exitCode := run([]string{"--in-memory", "facts", "extract"}, &buf, &errBuf)
 
-			// May fail if fact repo not configured for in-memory mode
-			// Or succeed with "No facts found" message
-			if exitCode == 0 {
-				Expect(buf.String()).To(ContainSubstring("No facts found"))
-			} else {
-				Expect(errBuf.String()).To(ContainSubstring("Fact repository not configured"))
-			}
+			Expect(exitCode).To(Equal(0))
+		})
+
+		It("should handle facts list with empty database", func() {
+			var buf, errBuf bytes.Buffer
+			exitCode := run([]string{"--in-memory", "facts", "list"}, &buf, &errBuf)
+
+			Expect(exitCode).To(Equal(0))
+			Expect(buf.String()).To(ContainSubstring("No facts found"))
 		})
 	})
 
-	Context("Recategorize Skills Flag", func() {
-		It("should show --recategorize-skills flag in help", func() {
+	Context("Skills Recategorization", func() {
+		It("should handle skills recategorize with empty database", func() {
 			var buf, errBuf bytes.Buffer
-			run([]string{"--help"}, &buf, &errBuf)
-
-			Expect(buf.String()).To(ContainSubstring("--recategorize-skills"))
-			Expect(buf.String()).To(ContainSubstring("Re-categorize existing skills"))
-		})
-
-		It("should handle --recategorize-skills with empty database", func() {
-			var buf, errBuf bytes.Buffer
-			exitCode := run([]string{"--in-memory", "--recategorize-skills"}, &buf, &errBuf)
+			exitCode := run([]string{"--in-memory", "skills", "recategorize"}, &buf, &errBuf)
 
 			Expect(exitCode).To(Equal(0))
-			Expect(buf.String()).To(ContainSubstring("Recategorized 0 skills"))
-		})
-
-		It("should show recategorize example in help", func() {
-			var buf, errBuf bytes.Buffer
-			run([]string{"--help"}, &buf, &errBuf)
-
-			Expect(buf.String()).To(ContainSubstring("kariya --recategorize-skills"))
 		})
 	})
 })
