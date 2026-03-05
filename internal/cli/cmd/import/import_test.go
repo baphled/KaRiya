@@ -2,9 +2,10 @@ package importcmd_test
 
 import (
 	"bytes"
-	"os"
-	"path/filepath"
+	"fmt"
+	"strings"
 
+	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/cobra"
@@ -56,182 +57,179 @@ var _ = Describe("Import Command", func() {
 	})
 
 	Describe("HandleImport", func() {
-		Context("with missing file", func() {
-			It("should return 1 for nonexistent file", func() {
+		Context("with nil reader", func() {
+			It("should return 1", func() {
 				svc := ctx.Service()
 				Expect(svc).NotTo(BeNil())
 
 				code := importcmd.HandleImport(importcmd.ImportParams{
-					FilePath: "/nonexistent/file.csv",
-					Service:  svc,
-					Out:      new(bytes.Buffer),
-					ErrOut:   new(bytes.Buffer),
-				})
-				Expect(code).To(Equal(1))
-			})
-
-			It("should write error message", func() {
-				svc := ctx.Service()
-				Expect(svc).NotTo(BeNil())
-				out := new(bytes.Buffer)
-
-				code := importcmd.HandleImport(importcmd.ImportParams{
-					FilePath: "/nonexistent/file.csv",
-					Service:  svc,
-					Out:      out,
-					ErrOut:   new(bytes.Buffer),
-				})
+					Reader:  nil,
+					Service: svc,
+					Out:     new(bytes.Buffer),
+					ErrOut:  new(bytes.Buffer),
+				}, tea.WithInput(nil))
 				Expect(code).To(Equal(1))
 			})
 		})
 
-		Context("with valid CSV file", func() {
-			It("should handle empty CSV file", func() {
-				tmpDir := GinkgoT().TempDir()
-				csvPath := filepath.Join(tmpDir, "test.csv")
-
-				err := os.WriteFile(csvPath, []byte(""), 0o600)
-				Expect(err).NotTo(HaveOccurred())
-
+		Context("with empty CSV", func() {
+			It("should return 1 for completely empty reader", func() {
 				svc := ctx.Service()
 				Expect(svc).NotTo(BeNil())
 
+				reader := bytes.NewBufferString("")
 				code := importcmd.HandleImport(importcmd.ImportParams{
-					FilePath: csvPath,
-					Service:  svc,
-					Out:      new(bytes.Buffer),
-					ErrOut:   new(bytes.Buffer),
-				})
-				Expect(code).To(BeNumerically(">=", 0))
+					Reader:  reader,
+					Service: svc,
+					Out:     new(bytes.Buffer),
+					ErrOut:  new(bytes.Buffer),
+				}, tea.WithInput(nil))
+				Expect(code).To(Equal(1))
 			})
 
-			It("should handle CSV with headers only", func() {
-				tmpDir := GinkgoT().TempDir()
-				csvPath := filepath.Join(tmpDir, "test.csv")
-
-				csvContent := "date,text,context\n"
-				err := os.WriteFile(csvPath, []byte(csvContent), 0o600)
-				Expect(err).NotTo(HaveOccurred())
-
+			It("should return 1 for CSV with only headers", func() {
 				svc := ctx.Service()
 				Expect(svc).NotTo(BeNil())
 
+				csvData := "Date,Text,Company\n"
+				reader := bytes.NewBufferString(csvData)
 				code := importcmd.HandleImport(importcmd.ImportParams{
-					FilePath: csvPath,
-					Service:  svc,
-					Out:      new(bytes.Buffer),
-					ErrOut:   new(bytes.Buffer),
-				})
-				Expect(code).To(BeNumerically(">=", 0))
-			})
-
-			It("should handle CSV with valid data", func() {
-				tmpDir := GinkgoT().TempDir()
-				csvPath := filepath.Join(tmpDir, "test.csv")
-
-				csvContent := "date,text,context\n2024-01-01,Test event,Test context\n"
-				err := os.WriteFile(csvPath, []byte(csvContent), 0o600)
-				Expect(err).NotTo(HaveOccurred())
-
-				svc := ctx.Service()
-				Expect(svc).NotTo(BeNil())
-				out := new(bytes.Buffer)
-
-				code := importcmd.HandleImport(importcmd.ImportParams{
-					FilePath: csvPath,
-					Service:  svc,
-					Out:      out,
-					ErrOut:   new(bytes.Buffer),
-				})
-				Expect(code).To(BeNumerically(">=", 0))
-			})
-
-			It("should write output to stdout", func() {
-				tmpDir := GinkgoT().TempDir()
-				csvPath := filepath.Join(tmpDir, "test.csv")
-
-				csvContent := "date,text,context\n2024-01-01,Test event,Test context\n"
-				err := os.WriteFile(csvPath, []byte(csvContent), 0o600)
-				Expect(err).NotTo(HaveOccurred())
-
-				svc := ctx.Service()
-				Expect(svc).NotTo(BeNil())
-				out := new(bytes.Buffer)
-
-				code := importcmd.HandleImport(importcmd.ImportParams{
-					FilePath: csvPath,
-					Service:  svc,
-					Out:      out,
-					ErrOut:   new(bytes.Buffer),
-				})
-				Expect(code).To(BeNumerically(">=", 0))
+					Reader:  reader,
+					Service: svc,
+					Out:     new(bytes.Buffer),
+					ErrOut:  new(bytes.Buffer),
+				}, tea.WithInput(nil))
+				Expect(code).To(Equal(1))
 			})
 		})
 
-		Context("with multiple rows", func() {
-			It("should handle multiple CSV rows", func() {
-				tmpDir := GinkgoT().TempDir()
-				csvPath := filepath.Join(tmpDir, "test.csv")
-
-				csvContent := "date,text,context\n2024-01-01,Event 1,Context 1\n2024-01-02,Event 2,Context 2\n2024-01-03,Event 3,Context 3\n"
-				err := os.WriteFile(csvPath, []byte(csvContent), 0o600)
-				Expect(err).NotTo(HaveOccurred())
-
+		Context("with valid CSV data", func() {
+			It("should process single valid row", func() {
 				svc := ctx.Service()
 				Expect(svc).NotTo(BeNil())
+
+				csvData := `Date,Text,Company,Skills
+2024-01-15,Implemented authentication system,TechCorp,Go;Security
+`
+				reader := bytes.NewBufferString(csvData)
 				out := new(bytes.Buffer)
 
 				code := importcmd.HandleImport(importcmd.ImportParams{
-					FilePath: csvPath,
-					Service:  svc,
-					Out:      out,
-					ErrOut:   new(bytes.Buffer),
-				})
-				Expect(code).To(BeNumerically(">=", 0))
+					Reader:  reader,
+					Service: svc,
+					Out:     out,
+					ErrOut:  new(bytes.Buffer),
+				}, tea.WithInput(nil))
+				Expect(code).To(Equal(0))
+				Expect(out.String()).To(ContainSubstring("Import Complete"))
+			})
+
+			It("should process multiple valid rows", func() {
+				svc := ctx.Service()
+				Expect(svc).NotTo(BeNil())
+
+				csvData := `Date,Text,Company,Skills
+2024-01-15,Implemented authentication,TechCorp,Go;Security
+2024-01-16,Built REST API,TechCorp,Go;API
+2024-01-17,Deployed to production,TechCorp,DevOps;Kubernetes
+`
+				reader := bytes.NewBufferString(csvData)
+				out := new(bytes.Buffer)
+
+				code := importcmd.HandleImport(importcmd.ImportParams{
+					Reader:  reader,
+					Service: svc,
+					Out:     out,
+					ErrOut:  new(bytes.Buffer),
+				}, tea.WithInput(nil))
+				Expect(code).To(Equal(0))
+				Expect(out.String()).To(ContainSubstring("Import Complete"))
+				Expect(out.String()).To(ContainSubstring("Successfully imported:"))
 			})
 		})
 
-		Context("error handling", func() {
-			It("should handle service errors gracefully", func() {
-				tmpDir := GinkgoT().TempDir()
-				csvPath := filepath.Join(tmpDir, "test.csv")
-
-				csvContent := "date,text,context\n2024-01-01,Test event,Test context\n"
-				err := os.WriteFile(csvPath, []byte(csvContent), 0o600)
-				Expect(err).NotTo(HaveOccurred())
-
+		Context("with malformed CSV", func() {
+			It("should handle invalid CSV structure", func() {
 				svc := ctx.Service()
 				Expect(svc).NotTo(BeNil())
 
+				csvData := "Invalid,CSV,Data\nNo proper structure"
+				reader := bytes.NewBufferString(csvData)
+
 				code := importcmd.HandleImport(importcmd.ImportParams{
-					FilePath: csvPath,
-					Service:  svc,
-					Out:      new(bytes.Buffer),
-					ErrOut:   new(bytes.Buffer),
-				})
-				Expect(code).To(BeNumerically(">=", 0))
+					Reader:  reader,
+					Service: svc,
+					Out:     new(bytes.Buffer),
+					ErrOut:  new(bytes.Buffer),
+				}, tea.WithInput(nil))
+				Expect(code).To(Equal(1))
 			})
+		})
 
-			It("should return valid exit code", func() {
-				tmpDir := GinkgoT().TempDir()
-				csvPath := filepath.Join(tmpDir, "test.csv")
-
-				csvContent := "date,text,context\n2024-01-01,Test event,Test context\n"
-				err := os.WriteFile(csvPath, []byte(csvContent), 0o600)
-				Expect(err).NotTo(HaveOccurred())
-
+		Context("output formatting", func() {
+			It("should display import statistics", func() {
 				svc := ctx.Service()
 				Expect(svc).NotTo(BeNil())
 
+				csvData := `Date,Text,Company,Skills
+2024-01-15,Event one,TestCo,Go
+2024-01-16,Event two,TestCo,Python
+`
+				reader := bytes.NewBufferString(csvData)
+				out := new(bytes.Buffer)
+
 				code := importcmd.HandleImport(importcmd.ImportParams{
-					FilePath: csvPath,
-					Service:  svc,
-					Out:      new(bytes.Buffer),
-					ErrOut:   new(bytes.Buffer),
-				})
-				Expect(code).To(BeNumerically(">=", 0))
-				Expect(code).To(BeNumerically("<=", 1))
+					Reader:  reader,
+					Service: svc,
+					Out:     out,
+					ErrOut:  new(bytes.Buffer),
+				}, tea.WithInput(nil))
+				Expect(code).To(Equal(0))
+
+				output := out.String()
+				Expect(output).To(ContainSubstring("Total rows processed:"))
+				Expect(output).To(ContainSubstring("Successfully imported:"))
 			})
+		})
+
+		Context("edge cases", func() {
+			It("should handle CSV with special characters", func() {
+				svc := ctx.Service()
+				Expect(svc).NotTo(BeNil())
+
+				csvData := `Date,Text,Company,Skills
+2024-01-15,"Event with, comma",TestCo,Go
+`
+				reader := bytes.NewBufferString(csvData)
+
+				code := importcmd.HandleImport(importcmd.ImportParams{
+					Reader:  reader,
+					Service: svc,
+					Out:     new(bytes.Buffer),
+					ErrOut:  new(bytes.Buffer),
+				}, tea.WithInput(nil))
+				Expect(code).To(Equal(0))
+			})
+
+			It("should handle CSV with long text", func() {
+				svc := ctx.Service()
+				Expect(svc).NotTo(BeNil())
+
+				longText := strings.Repeat("A very long event description ", 50)
+				csvData := fmt.Sprintf(`Date,Text,Company,Skills
+2024-01-15,"%s",TestCo,Go
+`, longText)
+				reader := bytes.NewBufferString(csvData)
+
+				code := importcmd.HandleImport(importcmd.ImportParams{
+					Reader:  reader,
+					Service: svc,
+					Out:     new(bytes.Buffer),
+					ErrOut:  new(bytes.Buffer),
+				}, tea.WithInput(nil))
+				Expect(code).To(Equal(0))
+			})
+
 		})
 	})
 })

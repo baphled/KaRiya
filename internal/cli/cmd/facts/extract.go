@@ -11,10 +11,11 @@ import (
 	domain "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 // ExtractFacts extracts facts from all events.
-func ExtractFacts(svc *careerservice.Service, out io.Writer, _ io.Writer) int {
+func ExtractFacts(svc *careerservice.Service, out io.Writer, _ io.Writer, opts ...tea.ProgramOption) int {
 	ctx := context.Background()
 
 	events, err := svc.ListEvents(ctx, career.EventListFilters{Limit: 10000})
@@ -28,7 +29,7 @@ func ExtractFacts(svc *careerservice.Service, out io.Writer, _ io.Writer) int {
 		return 0
 	}
 
-	factCount, competencyCount, err := extractAndSaveFacts(ctx, svc, events)
+	factCount, competencyCount, err := extractAndSaveFacts(ctx, svc, events, opts...)
 	if err != nil {
 		cliutil.PrintError(fmt.Sprintf("Error extracting facts: %v", err))
 		return 1
@@ -44,7 +45,12 @@ func ExtractFacts(svc *careerservice.Service, out io.Writer, _ io.Writer) int {
 	return 0
 }
 
-func extractAndSaveFacts(ctx context.Context, svc *careerservice.Service, events []*domain.Event) (int, map[string]int, error) {
+func extractAndSaveFacts(
+	ctx context.Context,
+	svc *careerservice.Service,
+	events []*domain.Event,
+	opts ...tea.ProgramOption,
+) (int, map[string]int, error) {
 	factCount := 0
 	competencyCount := make(map[string]int)
 
@@ -56,7 +62,7 @@ func extractAndSaveFacts(ctx context.Context, svc *careerservice.Service, events
 			update(i + 1)
 		}
 		return nil
-	})
+	}, opts...)
 
 	return factCount, competencyCount, err
 }

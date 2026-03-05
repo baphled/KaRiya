@@ -11,10 +11,11 @@ import (
 	"github.com/baphled/kariya/internal/cli/uikit/theme"
 	"github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 // ListFacts displays all existing facts.
-func ListFacts(svc *careerservice.Service, out io.Writer, _ io.Writer) int {
+func ListFacts(svc *careerservice.Service, out io.Writer, _ io.Writer, _ ...tea.ProgramOption) int {
 	ctx := context.Background()
 
 	factRepo := svc.GetFactRepository()

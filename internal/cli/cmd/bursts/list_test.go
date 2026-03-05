@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 
+	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -34,7 +35,7 @@ var _ = Describe("ListBursts", func() {
 			svc := ctx.Service()
 			Expect(svc).NotTo(BeNil())
 
-			code := bursts.ListBursts(svc, out, err)
+			code := bursts.ListBursts(svc, out, err, tea.WithInput(nil))
 			Expect(code).To(Equal(0))
 		})
 
@@ -42,7 +43,7 @@ var _ = Describe("ListBursts", func() {
 			svc := ctx.Service()
 			Expect(svc).NotTo(BeNil())
 
-			code := bursts.ListBursts(svc, out, err)
+			code := bursts.ListBursts(svc, out, err, tea.WithInput(nil))
 			Expect(code).To(Equal(0))
 			Expect(err.Len()).To(Equal(0))
 		})
@@ -63,7 +64,7 @@ var _ = Describe("ListBursts", func() {
 			svc := ctx.Service()
 			Expect(svc).NotTo(BeNil())
 
-			code := bursts.ListBursts(svc, out, err)
+			code := bursts.ListBursts(svc, out, err, tea.WithInput(nil))
 			Expect(code).To(Equal(0))
 		})
 
@@ -71,7 +72,7 @@ var _ = Describe("ListBursts", func() {
 			svc := ctx.Service()
 			Expect(svc).NotTo(BeNil())
 
-			code := bursts.ListBursts(svc, out, err)
+			code := bursts.ListBursts(svc, out, err, tea.WithInput(nil))
 			Expect(code).To(Equal(0))
 			Expect(out.String()).To(ContainSubstring("Bursts"))
 		})
@@ -80,7 +81,7 @@ var _ = Describe("ListBursts", func() {
 			svc := ctx.Service()
 			Expect(svc).NotTo(BeNil())
 
-			code := bursts.ListBursts(svc, out, err)
+			code := bursts.ListBursts(svc, out, err, tea.WithInput(nil))
 			Expect(code).To(Equal(0))
 			Expect(out.String()).To(ContainSubstring("Authentication Project"))
 		})
@@ -90,7 +91,7 @@ var _ = Describe("ListBursts", func() {
 			Expect(svc).NotTo(BeNil())
 
 			Expect(func() {
-				bursts.ListBursts(svc, out, err)
+				bursts.ListBursts(svc, out, err, tea.WithInput(nil))
 			}).NotTo(Panic())
 		})
 	})
@@ -113,7 +114,7 @@ var _ = Describe("ListBursts", func() {
 			svc := ctx.Service()
 			Expect(svc).NotTo(BeNil())
 
-			code := bursts.ListBursts(svc, out, err)
+			code := bursts.ListBursts(svc, out, err, tea.WithInput(nil))
 			Expect(code).To(Equal(0))
 			Expect(out.String()).To(ContainSubstring("Total bursts: 3"))
 		})
@@ -124,7 +125,7 @@ var _ = Describe("ListBursts", func() {
 			svc := ctx.Service()
 			Expect(svc).NotTo(BeNil())
 
-			code := bursts.ListBursts(svc, out, err)
+			code := bursts.ListBursts(svc, out, err, tea.WithInput(nil))
 			Expect(code).To(BeNumerically(">=", 0))
 		})
 
@@ -132,14 +133,14 @@ var _ = Describe("ListBursts", func() {
 			svc := ctx.Service()
 			Expect(svc).NotTo(BeNil())
 
-			code := bursts.ListBursts(svc, out, err)
+			code := bursts.ListBursts(svc, out, err, tea.WithInput(nil))
 			Expect(code).To(BeNumerically(">=", 0))
 			Expect(code).To(BeNumerically("<=", 1))
 		})
 
 		It("should handle nil service gracefully", func() {
 			Expect(func() {
-				bursts.ListBursts(nil, out, err)
+				bursts.ListBursts(nil, out, err, tea.WithInput(nil))
 			}).To(Panic())
 		})
 	})

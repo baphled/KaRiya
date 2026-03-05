@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 
+	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -34,7 +35,7 @@ var _ = Describe("ListFacts", func() {
 			svc := ctx.Service()
 			Expect(svc).NotTo(BeNil())
 
-			code := facts.ListFacts(svc, out, err)
+			code := facts.ListFacts(svc, out, err, tea.WithInput(nil))
 			Expect(code).To(Equal(0))
 		})
 
@@ -42,7 +43,7 @@ var _ = Describe("ListFacts", func() {
 			svc := ctx.Service()
 			Expect(svc).NotTo(BeNil())
 
-			code := facts.ListFacts(svc, out, err)
+			code := facts.ListFacts(svc, out, err, tea.WithInput(nil))
 			Expect(code).To(Equal(0))
 			Expect(err.Len()).To(Equal(0))
 		})
@@ -62,7 +63,7 @@ var _ = Describe("ListFacts", func() {
 			svc := ctx.Service()
 			Expect(svc).NotTo(BeNil())
 
-			code := facts.ListFacts(svc, out, err)
+			code := facts.ListFacts(svc, out, err, tea.WithInput(nil))
 			Expect(code).To(Equal(0))
 		})
 
@@ -70,7 +71,7 @@ var _ = Describe("ListFacts", func() {
 			svc := ctx.Service()
 			Expect(svc).NotTo(BeNil())
 
-			code := facts.ListFacts(svc, out, err)
+			code := facts.ListFacts(svc, out, err, tea.WithInput(nil))
 			Expect(code).To(Equal(0))
 			Expect(out.String()).To(ContainSubstring("Existing Facts"))
 		})
@@ -79,7 +80,7 @@ var _ = Describe("ListFacts", func() {
 			svc := ctx.Service()
 			Expect(svc).NotTo(BeNil())
 
-			code := facts.ListFacts(svc, out, err)
+			code := facts.ListFacts(svc, out, err, tea.WithInput(nil))
 			Expect(code).To(Equal(0))
 			Expect(out.String()).To(ContainSubstring("Implemented authentication system"))
 		})
@@ -89,7 +90,7 @@ var _ = Describe("ListFacts", func() {
 			Expect(svc).NotTo(BeNil())
 
 			Expect(func() {
-				facts.ListFacts(svc, out, err)
+				facts.ListFacts(svc, out, err, tea.WithInput(nil))
 			}).NotTo(Panic())
 		})
 	})
@@ -113,7 +114,7 @@ var _ = Describe("ListFacts", func() {
 			svc := ctx.Service()
 			Expect(svc).NotTo(BeNil())
 
-			code := facts.ListFacts(svc, out, err)
+			code := facts.ListFacts(svc, out, err, tea.WithInput(nil))
 			Expect(code).To(Equal(0))
 			Expect(out.String()).To(ContainSubstring("Total facts: 3"))
 		})
@@ -124,7 +125,7 @@ var _ = Describe("ListFacts", func() {
 			svc := ctx.Service()
 			Expect(svc).NotTo(BeNil())
 
-			code := facts.ListFacts(svc, out, err)
+			code := facts.ListFacts(svc, out, err, tea.WithInput(nil))
 			Expect(code).To(BeNumerically(">=", 0))
 		})
 
@@ -132,14 +133,14 @@ var _ = Describe("ListFacts", func() {
 			svc := ctx.Service()
 			Expect(svc).NotTo(BeNil())
 
-			code := facts.ListFacts(svc, out, err)
+			code := facts.ListFacts(svc, out, err, tea.WithInput(nil))
 			Expect(code).To(BeNumerically(">=", 0))
 			Expect(code).To(BeNumerically("<=", 1))
 		})
 
 		It("should handle nil service gracefully", func() {
 			Expect(func() {
-				facts.ListFacts(nil, out, err)
+				facts.ListFacts(nil, out, err, tea.WithInput(nil))
 			}).To(Panic())
 		})
 	})

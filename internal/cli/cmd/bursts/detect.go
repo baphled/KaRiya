@@ -12,11 +12,12 @@ import (
 	"github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	burst_fact "github.com/baphled/kariya/internal/service/career/burstfact"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 // DetectBursts analyzes events and suggests burst groupings.
 // Detects bursts from all events and saves them to the repository.
-func DetectBursts(svc *careerservice.Service, out io.Writer, _ io.Writer) int {
+func DetectBursts(svc *careerservice.Service, out io.Writer, _ io.Writer, opts ...tea.ProgramOption) int {
 	ctx := context.Background()
 
 	events, err := svc.ListEvents(ctx, career.EventListFilters{Limit: 10000})
@@ -31,7 +32,7 @@ func DetectBursts(svc *careerservice.Service, out io.Writer, _ io.Writer) int {
 	}
 
 	eventIDs := extractEventIDs(events)
-	suggestions, err := detectBurstsFromEvents(ctx, svc, eventIDs, len(events))
+	suggestions, err := detectBurstsFromEvents(ctx, svc, eventIDs, len(events), opts...)
 	if err != nil {
 		cliutil.PrintError(fmt.Sprintf("Error detecting bursts: %v", err))
 		return 1
@@ -43,7 +44,7 @@ func DetectBursts(svc *careerservice.Service, out io.Writer, _ io.Writer) int {
 	}
 
 	displayBurstSuggestions(out, suggestions, len(events))
-	return saveBurstSuggestions(ctx, svc, suggestions)
+	return saveBurstSuggestions(ctx, svc, suggestions, opts...)
 }
 
 func extractEventIDs(events []*domain.Event) []string {
@@ -59,13 +60,14 @@ func detectBurstsFromEvents(
 	svc *careerservice.Service,
 	eventIDs []string,
 	eventCount int,
+	opts ...tea.ProgramOption,
 ) ([]burst_fact.BurstSuggestion, error) {
 	var suggestions []burst_fact.BurstSuggestion
 	err := cliutil.RunWithSpinner(fmt.Sprintf("Detecting bursts from %d events...", eventCount), func() error {
 		var err error
 		suggestions, err = svc.SuggestBursts(ctx, eventIDs)
 		return err
-	})
+	}, opts...)
 	return suggestions, err
 }
 
@@ -93,13 +95,14 @@ func saveBurstSuggestions(
 	ctx context.Context,
 	svc *careerservice.Service,
 	suggestions []burst_fact.BurstSuggestion,
+	opts ...tea.ProgramOption,
 ) int {
 	var savedBursts []*domain.Burst
 	err := cliutil.RunWithSpinner("Saving burst suggestions...", func() error {
 		var err error
 		savedBursts, err = svc.SaveBurstSuggestions(ctx, suggestions)
 		return err
-	})
+	}, opts...)
 
 	if err != nil {
 		cliutil.PrintError(fmt.Sprintf("Error saving burst suggestions: %v", err))

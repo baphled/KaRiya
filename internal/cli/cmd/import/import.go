@@ -12,15 +12,16 @@ import (
 	"github.com/baphled/kariya/internal/cli/cmd/cliutil"
 	"github.com/baphled/kariya/internal/cli/importer"
 	careerservice "github.com/baphled/kariya/internal/service/career"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 )
 
 // ImportParams holds parameters for the import operation.
 type ImportParams struct {
-	FilePath string
-	Service  *careerservice.Service
-	Out      io.Writer
-	ErrOut   io.Writer
+	Reader  io.Reader
+	Service *careerservice.Service
+	Out     io.Writer
+	ErrOut  io.Writer
 }
 
 // NewImportCmd creates the "import" command.
@@ -36,11 +37,25 @@ func NewImportCmd(ctx cliutil.ServiceContext) *cobra.Command {
 			if svc == nil {
 				return errors.New("service not initialized")
 			}
+
+			// Validate and open file
+			if err := validateFilePath(filePath); err != nil {
+				cliutil.PrintError(fmt.Sprintf("Cannot access import file '%s': %v", filePath, err))
+				return errors.New("file access failed")
+			}
+
+			file, err := os.Open(filePath) // #nosec G304 -- User-provided import file path is intentional
+			if err != nil {
+				cliutil.PrintError(fmt.Sprintf("Error opening import file: %v", err))
+				return errors.New("file open failed")
+			}
+			defer file.Close()
+
 			code := HandleImport(ImportParams{
-				FilePath: filePath,
-				Service:  svc,
-				Out:      cobraCmd.OutOrStdout(),
-				ErrOut:   cobraCmd.ErrOrStderr(),
+				Reader:  file,
+				Service: svc,
+				Out:     cobraCmd.OutOrStdout(),
+				ErrOut:  cobraCmd.ErrOrStderr(),
 			})
 			if code != 0 {
 				return errors.New("import failed")
@@ -57,33 +72,34 @@ func NewImportCmd(ctx cliutil.ServiceContext) *cobra.Command {
 	return importCmd
 }
 
-// HandleImport executes the import logic for a CSV file.
+// HandleImport executes the import logic from an io.Reader.
 // It parses the CSV, imports all rows, and displays results including
 // burst suggestions and fact extraction summaries.
 //
 // Expected:
-//   - params.FilePath must be a valid path to an accessible CSV file.
+//   - params.Reader must be a valid io.Reader with CSV data.
 //   - params.Service must be a valid career Service instance.
 //   - params.Out and params.ErrOut must be valid io.Writer instances.
+//   - opts are optional Bubble Tea program options for testing.
 //
 // Returns:
 //   - 0 on successful import (even if some rows were skipped).
-//   - 1 on error (file access, parsing, or import failure).
+//   - 1 on error (parsing or import failure).
 //
 // Side effects:
-//   - Reads from params.FilePath.
+//   - Reads from params.Reader.
 //   - Writes to params.Out and params.ErrOut.
 //   - Modifies the database via params.Service.
-func HandleImport(params ImportParams) int {
-	if err := validateFilePath(params.FilePath); err != nil {
-		cliutil.PrintError(fmt.Sprintf("Cannot access import file '%s': %v", params.FilePath, err))
+func HandleImport(params ImportParams, opts ...tea.ProgramOption) int {
+	if params.Reader == nil {
+		cliutil.PrintError("Reader cannot be nil")
 		return 1
 	}
 
 	ctx := context.Background()
 	importService := importer.NewImportService(params.Service)
 
-	parsedRows, err := parseCSVFile(ctx, params.FilePath, importService)
+	parsedRows, err := parseCSV(ctx, params.Reader, importService, opts...)
 	if err != nil {
 		return 1
 	}
@@ -95,7 +111,7 @@ func HandleImport(params ImportParams) int {
 
 	cliutil.PrintInfo(fmt.Sprintf("Found %d rows to import", len(parsedRows)))
 
-	result, err := importAllRows(ctx, importService, parsedRows)
+	result, err := importAllRows(ctx, importService, parsedRows, opts...)
 	if err != nil {
 		cliutil.PrintError(fmt.Sprintf("Error during import: %v", err))
 		return 1
@@ -110,20 +126,18 @@ func validateFilePath(filePath string) error {
 	return err
 }
 
-func parseCSVFile(ctx context.Context, filePath string, importService *importer.ImportService) ([]*importer.ParsedRow, error) {
-	file, err := os.Open(filePath) // #nosec G304 -- User-provided import file path is intentional
-	if err != nil {
-		cliutil.PrintError(fmt.Sprintf("Error opening import file: %v", err))
-		return nil, err
-	}
-	defer file.Close()
-
+func parseCSV(
+	ctx context.Context,
+	reader io.Reader,
+	importService *importer.ImportService,
+	opts ...tea.ProgramOption,
+) ([]*importer.ParsedRow, error) {
 	var parsedRows []*importer.ParsedRow
-	err = cliutil.RunWithSpinner("Parsing CSV file: "+filePath, func() error {
+	err := cliutil.RunWithSpinner("Parsing CSV...", func() error {
 		var err error
-		parsedRows, err = importService.PrepareImport(ctx, file)
+		parsedRows, err = importService.PrepareImport(ctx, reader)
 		return err
-	})
+	}, opts...)
 	if err != nil {
 		cliutil.PrintError(fmt.Sprintf("Error parsing CSV: %v", err))
 		return nil, err
@@ -136,10 +150,11 @@ func importAllRows(
 	ctx context.Context,
 	importService *importer.ImportService,
 	parsedRows []*importer.ParsedRow,
+	opts ...tea.ProgramOption,
 ) (*importer.ImportResult, error) {
 	selectedRows := make([]int, len(parsedRows))
 	for i := range parsedRows {
-		selectedRows[i] = i
+		selectedRows[i] = parsedRows[i].RowNumber
 	}
 
 	var result *importer.ImportResult
@@ -147,7 +162,7 @@ func importAllRows(
 		var err error
 		result, err = importService.ImportRows(ctx, parsedRows, selectedRows)
 		return err
-	})
+	}, opts...)
 	return result, err
 }
 
