@@ -15,6 +15,23 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+// expectWindowsPermissionError handles the platform-specific behaviour of permission errors.
+// Windows does not enforce Unix-style permissions, so mkdir/write may succeed or fail
+// depending on ACLs. This helper verifies the expected behaviour on each platform.
+func expectWindowsPermissionError(err error, errorSubstring string, dirPath string) {
+	if runtime.GOOS == "windows" {
+		if err == nil {
+			_, statErr := os.Stat(dirPath)
+			Expect(statErr).NotTo(HaveOccurred())
+		} else {
+			Expect(err.Error()).To(ContainSubstring(errorSubstring))
+		}
+	} else {
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring(errorSubstring))
+	}
+}
+
 var _ = Describe("YAMLConfigManager", func() {
 	var (
 		manager *YAMLConfigManager
@@ -586,23 +603,7 @@ var _ = Describe("YAMLConfigManager", func() {
 			manager.configDir = filepath.Join(parent, "child")
 
 			err := manager.VerifyDirectory()
-			if runtime.GOOS == "windows" {
-				// Windows does not enforce directory permissions the same way
-				// The mkdir might succeed or fail depending on ACLs
-				// We verify that either it succeeds OR fails with a permission error
-				if err == nil {
-					// On Windows, mkdir might succeed - verify directory exists
-					_, statErr := os.Stat(manager.configDir)
-					Expect(statErr).NotTo(HaveOccurred())
-				} else {
-					// Or it fails with an error about creation
-					Expect(err.Error()).To(ContainSubstring("failed to create"))
-				}
-			} else {
-				// Unix: strict permission enforcement
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("failed to create"))
-			}
+			expectWindowsPermissionError(err, "failed to create", manager.configDir)
 		})
 
 		It("should return error when directory is not writable", func() {
@@ -617,24 +618,7 @@ var _ = Describe("YAMLConfigManager", func() {
 			manager.configDir = readOnlyDir
 
 			err := manager.VerifyDirectory()
-			if runtime.GOOS == "windows" {
-				// Windows does not enforce Unix-style read-only directory permissions
-				// A read-only directory on Windows may still allow file creation
-				// We verify that either it succeeds OR fails with permission error
-				if err == nil {
-					// On Windows, directory might be considered writable
-					// Verify it exists and is accessible
-					_, statErr := os.Stat(manager.configDir)
-					Expect(statErr).NotTo(HaveOccurred())
-				} else {
-					// Or it fails with writable error
-					Expect(err.Error()).To(ContainSubstring("not writable"))
-				}
-			} else {
-				// Unix: strict permission enforcement
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("not writable"))
-			}
+			expectWindowsPermissionError(err, "not writable", manager.configDir)
 		})
 
 		It("should work with nil logger on existing directory", func() {
