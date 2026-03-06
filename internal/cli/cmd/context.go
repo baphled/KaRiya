@@ -66,6 +66,19 @@ func (ctx *CLIContext) Service() *careerservice.Service {
 	return ctx.svc
 }
 
+// Close closes the database connection if using SQLite.
+// For in-memory databases, this is a no-op.
+func (ctx *CLIContext) Close() error {
+	if ctx.svc != nil {
+		if eventRepo := ctx.svc.GetEventRepository(); eventRepo != nil {
+			if closer, ok := eventRepo.(interface{ Close() error }); ok {
+				return closer.Close()
+			}
+		}
+	}
+	return nil
+}
+
 func (ctx *CLIContext) initInMemoryService() error {
 	eventRepo := careermemory.NewEventRepository()
 	skillRepo := careermemory.NewSkillRepository()

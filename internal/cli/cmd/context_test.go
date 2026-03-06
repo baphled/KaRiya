@@ -80,6 +80,9 @@ var _ = Describe("CLIContext", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(ctx.svc).NotTo(BeNil())
 				Expect(errBuf.Len()).To(Equal(0))
+				DeferCleanup(func() {
+					ctx.Close()
+				})
 			})
 
 			It("should create database file", func() {
@@ -91,6 +94,9 @@ var _ = Describe("CLIContext", func() {
 
 				err := ctx.InitService(errBuf)
 				Expect(err).NotTo(HaveOccurred())
+				DeferCleanup(func() {
+					ctx.Close()
+				})
 
 				_, err = os.Stat(dbPath)
 				Expect(err).NotTo(HaveOccurred())
@@ -105,6 +111,9 @@ var _ = Describe("CLIContext", func() {
 
 				err := ctx.InitService(errBuf)
 				Expect(err).NotTo(HaveOccurred())
+				DeferCleanup(func() {
+					ctx.Close()
+				})
 
 				Expect(ctx.svc.GetEventRepository()).NotTo(BeNil())
 				Expect(ctx.svc.GetFactRepository()).NotTo(BeNil())
@@ -128,6 +137,9 @@ var _ = Describe("CLIContext", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(ctx.svc).NotTo(BeNil())
 				Expect(errBuf.Len()).To(Equal(0))
+				DeferCleanup(func() {
+					ctx.Close()
+				})
 			})
 
 			It("should create database at default path", func() {
@@ -142,6 +154,9 @@ var _ = Describe("CLIContext", func() {
 
 				err := ctx.InitService(errBuf)
 				Expect(err).NotTo(HaveOccurred())
+				DeferCleanup(func() {
+					ctx.Close()
+				})
 
 				expectedPath := filepath.Join(homeDir, ".kariya", "events.db")
 				_, err = os.Stat(expectedPath)
@@ -160,6 +175,9 @@ var _ = Describe("CLIContext", func() {
 
 				err := ctx.InitService(errBuf)
 				Expect(err).NotTo(HaveOccurred())
+				DeferCleanup(func() {
+					ctx.Close()
+				})
 
 				kariyaDir := filepath.Join(homeDir, ".kariya")
 				info, err := os.Stat(kariyaDir)
@@ -180,6 +198,9 @@ var _ = Describe("CLIContext", func() {
 
 				err := ctx.InitService(errBuf)
 				Expect(err).NotTo(HaveOccurred())
+				DeferCleanup(func() {
+					ctx.Close()
+				})
 
 				Expect(ctx.svc.GetEventRepository()).NotTo(BeNil())
 				Expect(ctx.svc.GetFactRepository()).NotTo(BeNil())
@@ -197,6 +218,9 @@ var _ = Describe("CLIContext", func() {
 				Expect(err).To(HaveOccurred())
 				Expect(ctx.svc).To(BeNil())
 				Expect(errBuf.Len()).To(BeNumerically(">", 0))
+				DeferCleanup(func() {
+					ctx.Close()
+				})
 			})
 		})
 
@@ -219,6 +243,9 @@ var _ = Describe("CLIContext", func() {
 				Expect(err).To(HaveOccurred())
 				Expect(ctx.svc).To(BeNil())
 				Expect(errBuf.Len()).To(BeNumerically(">", 0))
+				DeferCleanup(func() {
+					ctx.Close()
+				})
 			})
 		})
 
@@ -236,6 +263,9 @@ var _ = Describe("CLIContext", func() {
 				Expect(err).To(HaveOccurred())
 				Expect(ctx.svc).To(BeNil())
 				Expect(errBuf.Len()).To(BeNumerically(">", 0))
+				DeferCleanup(func() {
+					ctx.Close()
+				})
 			})
 		})
 
@@ -253,6 +283,9 @@ var _ = Describe("CLIContext", func() {
 				Expect(err).To(HaveOccurred())
 				Expect(ctx.svc).To(BeNil())
 				Expect(errBuf.Len()).To(BeNumerically(">", 0))
+				DeferCleanup(func() {
+					ctx.Close()
+				})
 			})
 		})
 
@@ -270,6 +303,9 @@ var _ = Describe("CLIContext", func() {
 				Expect(err).To(HaveOccurred())
 				Expect(ctx.svc).To(BeNil())
 				Expect(errBuf.Len()).To(BeNumerically(">", 0))
+				DeferCleanup(func() {
+					ctx.Close()
+				})
 			})
 		})
 
@@ -287,6 +323,9 @@ var _ = Describe("CLIContext", func() {
 				Expect(err).To(HaveOccurred())
 				Expect(ctx.svc).To(BeNil())
 				Expect(errBuf.Len()).To(BeNumerically(">", 0))
+				DeferCleanup(func() {
+					ctx.Close()
+				})
 			})
 		})
 
@@ -309,6 +348,9 @@ var _ = Describe("CLIContext", func() {
 				Expect(err).To(HaveOccurred())
 				Expect(ctx.svc).To(BeNil())
 				Expect(errBuf.Len()).To(BeNumerically(">", 0))
+				DeferCleanup(func() {
+					ctx.Close()
+				})
 			})
 		})
 
@@ -331,6 +373,9 @@ var _ = Describe("CLIContext", func() {
 				Expect(err).To(HaveOccurred())
 				Expect(ctx.svc).To(BeNil())
 				Expect(errBuf.Len()).To(BeNumerically(">", 0))
+				DeferCleanup(func() {
+					ctx.Close()
+				})
 			})
 		})
 
@@ -343,6 +388,9 @@ var _ = Describe("CLIContext", func() {
 				Expect(err).To(HaveOccurred())
 				Expect(ctx.svc).To(BeNil())
 				Expect(errBuf.Len()).To(BeNumerically(">", 0))
+				DeferCleanup(func() {
+					ctx.Close()
+				})
 			})
 		})
 	})
