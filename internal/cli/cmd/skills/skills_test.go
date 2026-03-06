@@ -14,6 +14,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/cmd/cliutil"
 	"github.com/baphled/kariya/internal/cli/cmd/skills"
 	careerservice "github.com/baphled/kariya/internal/service/career"
+	"github.com/baphled/kariya/internal/testutil"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
@@ -68,7 +69,8 @@ var _ = Describe("Skills Command", func() {
 			cmd.SetOut(out)
 			cmd.SetErr(new(bytes.Buffer))
 
-			_ = cmd.RunE(cmd, []string{})
+			err := cmd.RunE(cmd, []string{})
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("should return error when service is not initialized", func() {
@@ -83,7 +85,7 @@ var _ = Describe("Skills Command", func() {
 			Expect(err.Error()).To(ContainSubstring("service not initialized"))
 		})
 
-		It("should return error when recategorization fails", func() {
+		It("should successfully recategorize skills", func() {
 			cmd = skills.NewRecategorizeCmd(ctx, tea.WithInput(nil))
 			out := new(bytes.Buffer)
 			cmd.SetOut(out)
@@ -102,7 +104,8 @@ var _ = Describe("Skills Command", func() {
 			cmd.SetOut(out)
 			cmd.SetErr(new(bytes.Buffer))
 
-			_ = cmd.RunE(cmd, []string{})
+			err := cmd.RunE(cmd, []string{})
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("should use OutOrStdout for output", func() {
@@ -158,13 +161,13 @@ var _ = Describe("Skills Command", func() {
 
 		Context("when skill repository is nil", func() {
 			It("should return error code 1", func() {
-				nilSvc := skills.NilService()
+				nilSvc := testutil.NilService()
 				code := skills.RecategorizeSkills(nilSvc, out, err)
 				Expect(code).To(Equal(1))
 			})
 
 			It("should return error code 1 with different writers", func() {
-				nilSvc := skills.NilService()
+				nilSvc := testutil.NilService()
 				code := skills.RecategorizeSkills(nilSvc, io.Discard, io.Discard)
 				Expect(code).To(Equal(1))
 			})
@@ -253,7 +256,7 @@ var _ = Describe("Skills Command", func() {
 
 		Context("error handling", func() {
 			It("should handle service with nil repository gracefully", func() {
-				emptyService := skills.NilService()
+				emptyService := testutil.NilService()
 				code := skills.RecategorizeSkills(emptyService, out, err)
 				Expect(code).To(Equal(1))
 			})
