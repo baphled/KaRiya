@@ -6,8 +6,6 @@ import (
 	"io"
 
 	"github.com/baphled/kariya/internal/cli/cmd/cliutil"
-	"github.com/baphled/kariya/internal/cli/uikit/primitives"
-	"github.com/baphled/kariya/internal/cli/uikit/theme"
 	domain "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
@@ -16,7 +14,21 @@ import (
 )
 
 // DetectBursts analyzes events and suggests burst groupings.
-// Detects bursts from all events and saves them to the repository.
+//
+// Expected:
+//   - svc: Career service instance providing event and burst repository access
+//   - out: Writer for formatted output
+//   - _: Error writer (unused)
+//   - opts: Bubble Tea program options for spinner display
+//
+// Returns:
+//   - Exit code: 0 on success, 1 on error
+//
+// Side effects:
+//   - Queries event repository via context
+//   - Calls burst detection service
+//   - Saves burst suggestions to repository
+//   - Writes formatted output and status messages
 func DetectBursts(svc *careerservice.Service, out io.Writer, _ io.Writer, opts ...tea.ProgramOption) int {
 	ctx := context.Background()
 
@@ -43,8 +55,8 @@ func DetectBursts(svc *careerservice.Service, out io.Writer, _ io.Writer, opts .
 		return 0
 	}
 
-	displayBurstSuggestions(out, suggestions, len(events))
-	return saveBurstSuggestions(ctx, svc, suggestions, opts...)
+	DisplayBurstSuggestions(out, suggestions, len(events))
+	return SaveBurstSuggestions(ctx, svc, suggestions, opts...)
 }
 
 func extractEventIDs(events []*domain.Event) []string {
@@ -71,27 +83,39 @@ func detectBurstsFromEvents(
 	return suggestions, err
 }
 
-func displayBurstSuggestions(out io.Writer, suggestions []burst_fact.BurstSuggestion, eventCount int) {
-	th := theme.Default()
-	fmt.Fprintln(out, primitives.Title("Burst Detection Results", th).Render())
-	fmt.Fprintf(out, "Detected %d bursts from %d events:\n\n", len(suggestions), eventCount)
-
-	for i, burst := range suggestions {
-		burstName := burst.Name
-		if burstName == "" {
-			burstName = fmt.Sprintf("Burst %d", i+1)
-		}
-		fmt.Fprintf(out, "%d. %s\n", i+1, burstName)
-		fmt.Fprintf(out, "   Events: %d\n", len(burst.EventIDs))
-		if burst.Description != "" {
-			fmt.Fprintf(out, "   Description: %s\n", burst.Description)
-		}
-		fmt.Fprintf(out, "   Confidence: %.1f%%\n", burst.ConfidenceScore*100)
-		fmt.Fprintf(out, "\n")
-	}
+// DisplayBurstSuggestions is a thin wrapper around FormatBurstDetectionResults.
+//
+// Expected:
+//   - out: Writer to output formatted results
+//   - suggestions: Slice of burst suggestions to display
+//   - eventCount: Total number of events analyzed
+//
+// Returns:
+//   - None
+//
+// Side effects:
+//   - Writes formatted output to provided writer
+func DisplayBurstSuggestions(out io.Writer, suggestions []burst_fact.BurstSuggestion, eventCount int) {
+	output := FormatBurstDetectionResults(suggestions, eventCount)
+	fmt.Fprint(out, output)
 }
 
-func saveBurstSuggestions(
+// SaveBurstSuggestions saves burst suggestions and displays results.
+//
+// Expected:
+//   - ctx: Context for database operations
+//   - svc: Career service instance with burst repository
+//   - suggestions: Slice of burst suggestions to save
+//   - opts: Bubble Tea program options for spinner display
+//
+// Returns:
+//   - Exit code: 0 if all bursts saved successfully, 1 on error
+//
+// Side effects:
+//   - Saves bursts to repository via service
+//   - Displays spinner during save operation
+//   - Writes success/error messages to stderr via cliutil
+func SaveBurstSuggestions(
 	ctx context.Context,
 	svc *careerservice.Service,
 	suggestions []burst_fact.BurstSuggestion,
@@ -109,11 +133,11 @@ func saveBurstSuggestions(
 		return 1
 	}
 
-	savedCount := len(savedBursts)
-	if savedCount > 0 {
-		cliutil.PrintSuccess(fmt.Sprintf("Burst detection complete! Saved %d of %d bursts to database.", savedCount, len(suggestions)))
+	message, isSuccess := FormatSaveResults(savedBursts, len(suggestions))
+	if isSuccess {
+		cliutil.PrintSuccess(message)
 	} else {
-		cliutil.PrintInfo("Burst detection complete, but no bursts were saved (repository may not be configured).")
+		cliutil.PrintInfo(message)
 	}
 
 	return 0

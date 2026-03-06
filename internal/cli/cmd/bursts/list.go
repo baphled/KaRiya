@@ -6,14 +6,26 @@ import (
 	"io"
 
 	"github.com/baphled/kariya/internal/cli/cmd/cliutil"
-	"github.com/baphled/kariya/internal/cli/uikit/primitives"
-	"github.com/baphled/kariya/internal/cli/uikit/theme"
 	"github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 // ListBursts displays all existing bursts.
+//
+// Expected:
+//   - svc: Career service instance providing burst repository access
+//   - out: Writer for formatted output
+//   - _: Error writer (unused)
+//   - _: Bubble Tea program options (unused)
+//
+// Returns:
+//   - Exit code: 0 on success, 1 on error or repository not configured
+//
+// Side effects:
+//   - Queries burst repository via context
+//   - Writes error/info messages to stderr via cliutil
+//   - Writes formatted burst list to out writer
 func ListBursts(svc *careerservice.Service, out io.Writer, _ io.Writer, _ ...tea.ProgramOption) int {
 	ctx := context.Background()
 
@@ -34,28 +46,8 @@ func ListBursts(svc *careerservice.Service, out io.Writer, _ io.Writer, _ ...tea
 		return 0
 	}
 
-	th := theme.Default()
-	fmt.Fprintln(out, primitives.Title("Bursts", th).Render())
-
-	fmt.Fprintf(out, "Total bursts: %d\n\n", len(bursts))
-
-	for i, burst := range bursts {
-		burstName := burst.Name
-		if burstName == "" {
-			burstName = fmt.Sprintf("Burst %d", i+1)
-		}
-		fmt.Fprintf(out, "%d. %s\n", i+1, burstName)
-		fmt.Fprintf(out, "   ID: %s\n", burst.ID)
-		fmt.Fprintf(out, "   Events: %d\n", len(burst.EventIDs))
-		if burst.Description != "" {
-			fmt.Fprintf(out, "   Description: %s\n", burst.Description)
-		}
-		if burst.Description != "" {
-			fmt.Fprintf(out, "   Competency Focus: %s\n", burst.Description)
-		}
-		fmt.Fprintf(out, "   Created: %s\n", burst.CreatedAt.Format("2006-01-02 15:04:05"))
-		fmt.Fprintf(out, "\n")
-	}
+	output := FormatBurstList(bursts)
+	fmt.Fprint(out, output)
 
 	return 0
 }

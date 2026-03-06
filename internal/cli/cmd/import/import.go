@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"sort"
 
 	"github.com/baphled/kariya/internal/cli/cmd/cliutil"
 	"github.com/baphled/kariya/internal/cli/importer"
@@ -25,6 +24,15 @@ type ImportParams struct {
 }
 
 // NewImportCmd creates the "import" command.
+//
+// Expected:
+//   - ctx: ServiceContext with initialized Service
+//
+// Returns:
+//   - Configured cobra.Command for importing CSV files
+//
+// Side effects:
+//   - Registers "file" flag on the command
 func NewImportCmd(ctx cliutil.ServiceContext) *cobra.Command {
 	var filePath string
 
@@ -39,7 +47,7 @@ func NewImportCmd(ctx cliutil.ServiceContext) *cobra.Command {
 			}
 
 			// Validate and open file
-			if err := validateFilePath(filePath); err != nil {
+			if err := ValidateFilePath(filePath); err != nil {
 				cliutil.PrintError(fmt.Sprintf("Cannot access import file '%s': %v", filePath, err))
 				return errors.New("file access failed")
 			}
@@ -121,7 +129,18 @@ func HandleImport(params ImportParams, opts ...tea.ProgramOption) int {
 	return determineExitCode(result)
 }
 
-func validateFilePath(filePath string) error {
+// ValidateFilePath checks if a file exists and is accessible.
+//
+// Expected:
+//   - filePath: Path to file to validate
+//
+// Returns:
+//   - nil if file exists and is accessible
+//   - error from os.Stat if file cannot be accessed
+//
+// Side effects:
+//   - Calls os.Stat to check file existence
+func ValidateFilePath(filePath string) error {
 	_, err := os.Stat(filePath)
 	return err
 }
@@ -172,89 +191,56 @@ func displayImportResults(out io.Writer, result *importer.ImportResult) {
 	fmt.Fprintf(out, "Successfully imported: %d\n", result.SuccessCount)
 	fmt.Fprintf(out, "Skipped: %d\n", result.SkippedCount)
 
-	displayFailedRows(out, result)
-	displayBurstSuggestions(out, result)
-	displayFactExtraction(out, result)
+	DisplayFailedRows(out, result)
+	DisplayBurstSuggestions(out, result)
+	DisplayFactExtraction(out, result)
 }
 
-func displayFailedRows(out io.Writer, result *importer.ImportResult) {
-	if result.FailedCount == 0 {
-		return
-	}
-
-	fmt.Fprintf(out, "Failed: %d\n", result.FailedCount)
-	if len(result.FailedRows) == 0 {
-		return
-	}
-
-	fmt.Fprintf(out, "\nFailed rows (first 5):\n")
-	maxDisplay := 5
-	if len(result.FailedRows) < maxDisplay {
-		maxDisplay = len(result.FailedRows)
-	}
-
-	for i := range maxDisplay {
-		if result.FailedRows[i].Event != nil {
-			fmt.Fprintf(out, "  - %s\n", result.FailedRows[i].Event.Text)
-		}
+// DisplayFailedRows is a thin wrapper around FormatFailedRows.
+//
+// Expected:
+//   - out: io.Writer to write output to
+//   - result: ImportResult with FailedCount and FailedRows
+//
+// Side effects:
+//   - Writes formatted failed rows output to out
+func DisplayFailedRows(out io.Writer, result *importer.ImportResult) {
+	output := FormatFailedRows(result)
+	if output != "" {
+		fmt.Fprint(out, output)
 	}
 }
 
-func displayBurstSuggestions(out io.Writer, result *importer.ImportResult) {
-	if len(result.BurstSuggestions) == 0 {
-		return
+// DisplayBurstSuggestions is a thin wrapper around FormatBurstSuggestions.
+//
+// Expected:
+//   - out: io.Writer to write output to
+//   - result: ImportResult with BurstSuggestions
+//
+// Side effects:
+//   - Writes formatted burst suggestions to out
+func DisplayBurstSuggestions(out io.Writer, result *importer.ImportResult) {
+	output := FormatBurstSuggestions(result)
+	if output != "" {
+		fmt.Fprint(out, output)
 	}
-
-	fmt.Fprintf(out, "\n=== Burst Suggestions ===\n")
-	fmt.Fprintf(out, "Detected %d potential bursts from imported events:\n\n", len(result.BurstSuggestions))
-
-	for i, burst := range result.BurstSuggestions {
-		burstName := burst.Name
-		if burstName == "" {
-			burstName = fmt.Sprintf("Burst %d", i+1)
-		}
-		fmt.Fprintf(out, "%d. %s\n", i+1, burstName)
-		fmt.Fprintf(out, "   Events: %d | Confidence: %.1f%%\n", len(burst.EventIDs), burst.ConfidenceScore*100)
-	}
-	fmt.Fprintf(out, "\nThese bursts represent potential project groupings or themes.\n")
 }
 
-func displayFactExtraction(out io.Writer, result *importer.ImportResult) {
-	if result.ExtractedFactsCount == 0 {
-		return
+// DisplayFactExtraction is a thin wrapper around FormatFactExtraction.
+//
+// Expected:
+//   - out: io.Writer to write output to
+//   - result: ImportResult with ExtractedFactsCount and FactsByCompetency
+//
+// Side effects:
+//   - Writes formatted fact extraction output to out
+func DisplayFactExtraction(out io.Writer, result *importer.ImportResult) {
+	output := FormatFactExtraction(result)
+	if output != "" {
+		fmt.Fprint(out, output)
 	}
-
-	fmt.Fprintf(out, "\n=== Fact Extraction ===\n")
-	fmt.Fprintf(out, "Extracted %d facts from %d events\n", result.ExtractedFactsCount, len(result.CreatedEvents))
-
-	if len(result.FactsByCompetency) == 0 {
-		return
-	}
-
-	fmt.Fprintf(out, "\nCompetency breakdown:\n")
-	competencies := make([]string, 0, len(result.FactsByCompetency))
-	for c := range result.FactsByCompetency {
-		competencies = append(competencies, c)
-	}
-	sort.Strings(competencies)
-
-	for _, c := range competencies {
-		fmt.Fprintf(out, "  - %s: %d facts\n", c, result.FactsByCompetency[c])
-	}
-	fmt.Fprintf(out, "\nThese facts highlight key competencies and achievements.\n")
 }
 
 func determineExitCode(result *importer.ImportResult) int {
-	if result.SuccessCount > 0 {
-		cliutil.PrintSuccess("Import successful!")
-		return 0
-	}
-
-	if result.SkippedCount > 0 {
-		cliutil.PrintInfo("All rows were skipped (possibly duplicates).")
-		return 0
-	}
-
-	cliutil.PrintError("Import failed - no rows were imported.")
-	return 1
+	return CalculateExitCode(result)
 }

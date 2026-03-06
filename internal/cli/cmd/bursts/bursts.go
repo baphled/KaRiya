@@ -9,6 +9,15 @@ import (
 )
 
 // NewBurstsCmd creates the parent "bursts" command with subcommands.
+//
+// Expected:
+//   - ctx: ServiceContext with initialized Service
+//
+// Returns:
+//   - Configured cobra.Command with detect and list subcommands
+//
+// Side effects:
+//   - Adds detect and list subcommands to the parent command
 func NewBurstsCmd(ctx cliutil.ServiceContext) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "bursts",
@@ -23,6 +32,15 @@ func NewBurstsCmd(ctx cliutil.ServiceContext) *cobra.Command {
 }
 
 // NewDetectCmd creates the "detect" subcommand.
+//
+// Expected:
+//   - ctx: ServiceContext with initialized Service
+//
+// Returns:
+//   - Configured cobra.Command for burst detection
+//
+// Side effects:
+//   - None (command configuration only)
 func NewDetectCmd(ctx cliutil.ServiceContext) *cobra.Command {
 	return &cobra.Command{
 		Use:   "detect",
@@ -43,6 +61,15 @@ func NewDetectCmd(ctx cliutil.ServiceContext) *cobra.Command {
 }
 
 // NewListCmd creates the "list" subcommand.
+//
+// Expected:
+//   - ctx: ServiceContext with initialized Service
+//
+// Returns:
+//   - Configured cobra.Command for listing bursts
+//
+// Side effects:
+//   - None (command configuration only)
 func NewListCmd(ctx cliutil.ServiceContext) *cobra.Command {
 	return &cobra.Command{
 		Use:   "list",

@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"sort"
 
 	"github.com/baphled/kariya/internal/cli/cmd/cliutil"
 	domain "github.com/baphled/kariya/internal/domain/career"
@@ -15,6 +14,21 @@ import (
 )
 
 // ExtractFacts extracts facts from all events.
+//
+// Expected:
+//   - svc: Initialized career Service instance
+//   - out: io.Writer for output messages
+//   - _: io.Writer for error output (unused)
+//   - opts: Optional Bubble Tea program options for testing
+//
+// Returns:
+//   - 0 on success
+//   - 1 on error (retrieval, extraction, or save failure)
+//
+// Side effects:
+//   - Reads events from database via svc
+//   - Writes facts to database via svc
+//   - Writes output to out writer
 func ExtractFacts(svc *careerservice.Service, out io.Writer, _ io.Writer, opts ...tea.ProgramOption) int {
 	ctx := context.Background()
 
@@ -40,7 +54,7 @@ func ExtractFacts(svc *careerservice.Service, out io.Writer, _ io.Writer, opts .
 		return 0
 	}
 
-	displayExtractionResults(out, factCount, len(events), competencyCount)
+	DisplayExtractionResults(out, factCount, len(events), competencyCount)
 	cliutil.PrintSuccess("Fact extraction complete!")
 	return 0
 }
@@ -98,23 +112,17 @@ func updateCompetencyCounts(ctx context.Context, svc *careerservice.Service, eve
 	}
 }
 
-func displayExtractionResults(out io.Writer, factCount, eventCount int, competencyCount map[string]int) {
-	fmt.Fprintf(out, "\n=== Fact Extraction Results ===\n")
-	fmt.Fprintf(out, "Extracted %d facts from %d events\n\n", factCount, eventCount)
-
-	if len(competencyCount) == 0 {
-		return
-	}
-
-	fmt.Fprintf(out, "Competency breakdown:\n")
-	competencies := make([]string, 0, len(competencyCount))
-	for c := range competencyCount {
-		competencies = append(competencies, c)
-	}
-	sort.Strings(competencies)
-
-	for _, c := range competencies {
-		fmt.Fprintf(out, "  - %s: %d facts\n", c, competencyCount[c])
-	}
-	fmt.Fprintf(out, "\n")
+// DisplayExtractionResults writes formatted fact extraction results to the output.
+//
+// Expected:
+//   - out: io.Writer to write output to
+//   - factCount: Number of facts extracted
+//   - eventCount: Number of events processed
+//   - competencyCount: Map of competency names to counts
+//
+// Side effects:
+//   - Writes formatted output to out writer
+func DisplayExtractionResults(out io.Writer, factCount, eventCount int, competencyCount map[string]int) {
+	output := FormatExtractionResults(factCount, eventCount, competencyCount)
+	fmt.Fprint(out, output)
 }

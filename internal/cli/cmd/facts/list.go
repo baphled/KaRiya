@@ -4,17 +4,29 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"strings"
 
 	"github.com/baphled/kariya/internal/cli/cmd/cliutil"
-	"github.com/baphled/kariya/internal/cli/uikit/primitives"
-	"github.com/baphled/kariya/internal/cli/uikit/theme"
+	domain "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 // ListFacts displays all existing facts.
+//
+// Expected:
+//   - svc: Career service instance providing fact repository access
+//   - out: Writer for formatted output
+//   - _: Error writer (unused)
+//   - _: Bubble Tea program options (unused)
+//
+// Returns:
+//   - Exit code: 0 on success, 1 on error or repository not configured
+//
+// Side effects:
+//   - Queries fact repository via context
+//   - Writes error/info messages to stderr via cliutil
+//   - Writes formatted fact list to out writer
 func ListFacts(svc *careerservice.Service, out io.Writer, _ io.Writer, _ ...tea.ProgramOption) int {
 	ctx := context.Background()
 
@@ -35,26 +47,22 @@ func ListFacts(svc *careerservice.Service, out io.Writer, _ io.Writer, _ ...tea.
 		return 0
 	}
 
-	th := theme.Default()
-	fmt.Fprintln(out, primitives.Title("Existing Facts", th).Render())
-	fmt.Fprintf(out, "Total facts: %d\n\n", len(facts))
-
-	for i, fact := range facts {
-		fmt.Fprintf(out, "%d. %s\n", i+1, fact.Text)
-		fmt.Fprintf(out, "   ID: %s\n", fact.ID)
-		fmt.Fprintf(out, "   Source Event: %s\n", fact.SourceEventID)
-		if len(fact.CompetencyCategories) > 0 {
-			fmt.Fprintf(out, "   Competencies: %s\n", strings.Join(fact.CompetencyCategories, ", "))
-		}
-		if fact.RoleFit != "" {
-			fmt.Fprintf(out, "   Role Fit: %s\n", fact.RoleFit)
-		}
-		if len(fact.AudienceRelevance) > 0 {
-			fmt.Fprintf(out, "   Target Audiences: %s\n", strings.Join(fact.AudienceRelevance, ", "))
-		}
-		fmt.Fprintf(out, "   Created: %s\n", fact.CreatedAt.Format("2006-01-02 15:04:05"))
-		fmt.Fprintf(out, "\n")
-	}
-
+	DisplayFactList(out, facts)
 	return 0
+}
+
+// DisplayFactList writes formatted fact list to the output.
+//
+// Expected:
+//   - out: Writer to output formatted facts
+//   - facts: Slice of domain.Fact pointers to display
+//
+// Returns:
+//   - None
+//
+// Side effects:
+//   - Writes formatted output to provided writer
+func DisplayFactList(out io.Writer, facts []*domain.Fact) {
+	output := FormatFactList(facts)
+	fmt.Fprint(out, output)
 }
