@@ -224,4 +224,44 @@ var _ = Describe("ListFacts Error Paths", func() {
 			}).NotTo(Panic())
 		})
 	})
+
+	Describe("ExecuteListFacts", func() {
+		It("should fail with nil service", func() {
+			err := facts.ExecuteListFacts(nil, new(bytes.Buffer), new(bytes.Buffer), tea.WithInput(nil))
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("service not initialized"))
+		})
+
+		It("should succeed with valid service", func() {
+			cliCtx := cmdpkg.NewCLIContext("", true)
+			initErr := cliCtx.InitService(new(bytes.Buffer))
+			Expect(initErr).NotTo(HaveOccurred())
+
+			svc := cliCtx.Service()
+			Expect(svc).NotTo(BeNil())
+
+			err := facts.ExecuteListFacts(svc, new(bytes.Buffer), new(bytes.Buffer), tea.WithInput(nil))
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
+
+	Describe("ExecuteExtractFacts", func() {
+		It("should fail with nil service", func() {
+			err := facts.ExecuteExtractFacts(nil, new(bytes.Buffer), new(bytes.Buffer), tea.WithInput(nil))
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("service not initialized"))
+		})
+
+		It("should succeed with valid service", func() {
+			cliCtx := cmdpkg.NewCLIContext("", true)
+			initErr := cliCtx.InitService(new(bytes.Buffer))
+			Expect(initErr).NotTo(HaveOccurred())
+
+			svc := cliCtx.Service()
+			Expect(svc).NotTo(BeNil())
+
+			err := facts.ExecuteExtractFacts(svc, new(bytes.Buffer), new(bytes.Buffer), tea.WithInput(nil))
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
 })

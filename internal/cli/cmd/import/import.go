@@ -41,34 +41,7 @@ func NewImportCmd(ctx cliutil.ServiceContext) *cobra.Command {
 		Short: "Import events from CSV",
 		Long:  "Import events from a CSV file and process them for facts and bursts",
 		RunE: func(cobraCmd *cobra.Command, _ []string) error {
-			svc := ctx.Service()
-			if svc == nil {
-				return errors.New("service not initialized")
-			}
-
-			// Validate and open file
-			if err := ValidateFilePath(filePath); err != nil {
-				cliutil.PrintError(fmt.Sprintf("Cannot access import file '%s': %v", filePath, err))
-				return errors.New("file access failed")
-			}
-
-			file, err := os.Open(filePath) // #nosec G304 -- User-provided import file path is intentional
-			if err != nil {
-				cliutil.PrintError(fmt.Sprintf("Error opening import file: %v", err))
-				return errors.New("file open failed")
-			}
-			defer file.Close()
-
-			code := HandleImport(ImportParams{
-				Reader:  file,
-				Service: svc,
-				Out:     cobraCmd.OutOrStdout(),
-				ErrOut:  cobraCmd.ErrOrStderr(),
-			})
-			if code != 0 {
-				return errors.New("import failed")
-			}
-			return nil
+			return ExecuteImportFromFile(ctx.Service(), filePath, cobraCmd.OutOrStdout(), cobraCmd.ErrOrStderr())
 		},
 	}
 
@@ -78,6 +51,49 @@ func NewImportCmd(ctx cliutil.ServiceContext) *cobra.Command {
 	}
 
 	return importCmd
+}
+
+// executeImportFromFile validates and executes import from a file.
+//
+// Expected:
+//   - svc: initialized career Service
+//   - filePath: path to accessible CSV file
+//   - out/errOut: output writers
+//
+// Returns:
+//   - nil on successful import
+//   - error if file validation, opening, or import fails
+//
+// Side effects:
+//   - Opens and reads file
+//   - Modifies database via service
+func ExecuteImportFromFile(svc *careerservice.Service, filePath string, out, errOut io.Writer, opts ...tea.ProgramOption) error {
+	if svc == nil {
+		return errors.New("service not initialized")
+	}
+
+	if err := ValidateFilePath(filePath); err != nil {
+		cliutil.PrintError(fmt.Sprintf("Cannot access import file '%s': %v", filePath, err))
+		return errors.New("file access failed")
+	}
+
+	file, err := os.Open(filePath) // #nosec G304
+	if err != nil {
+		cliutil.PrintError(fmt.Sprintf("Error opening import file: %v", err))
+		return errors.New("file open failed")
+	}
+	defer file.Close()
+
+	code := HandleImport(ImportParams{
+		Reader:  file,
+		Service: svc,
+		Out:     out,
+		ErrOut:  errOut,
+	}, opts...)
+	if code != 0 {
+		return errors.New("import failed")
+	}
+	return nil
 }
 
 // HandleImport executes the import logic from an io.Reader.

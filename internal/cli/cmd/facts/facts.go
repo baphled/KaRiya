@@ -2,8 +2,11 @@ package facts
 
 import (
 	"errors"
+	"io"
 
 	"github.com/baphled/kariya/internal/cli/cmd/cliutil"
+	tea "github.com/charmbracelet/bubbletea"
+	careerservice "github.com/baphled/kariya/internal/service/career"
 	"github.com/spf13/cobra"
 )
 
@@ -46,17 +49,58 @@ func NewExtractCmd(ctx cliutil.ServiceContext) *cobra.Command {
 		Short: "Extract facts from events",
 		Long:  "Analyze events and extract facts, then save them to the repository",
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			svc := ctx.Service()
-			if svc == nil {
-				return errors.New("service not initialized")
-			}
-			code := ExtractFacts(svc, cmd.OutOrStdout(), cmd.ErrOrStderr())
-			if code != 0 {
-				return errors.New("fact extraction failed")
-			}
-			return nil
+			return ExecuteExtractFacts(ctx.Service(), cmd.OutOrStdout(), cmd.ErrOrStderr())
 		},
 	}
+}
+
+// ExecuteExtractFacts extracts facts from events in the database.
+//
+// Expected:
+//   - svc: initialized career Service
+//   - out/errOut: output writers
+//
+// Returns:
+//   - nil on success
+//   - error if service is nil or extraction fails
+//
+// Side effects:
+//   - Reads from database
+//   - Writes facts to database
+//   - Writes output to writers
+func ExecuteExtractFacts(svc *careerservice.Service, out, errOut io.Writer, opts ...tea.ProgramOption) error {
+	if svc == nil {
+		return errors.New("service not initialized")
+	}
+	code := ExtractFacts(svc, out, errOut, opts...)
+	if code != 0 {
+		return errors.New("fact extraction failed")
+	}
+	return nil
+}
+
+// ExecuteListFacts lists all facts from the database.
+//
+// Expected:
+//   - svc: initialized career Service
+//   - out/errOut: output writers
+//
+// Returns:
+//   - nil on success
+//   - error if service is nil or list fails
+//
+// Side effects:
+//   - Reads from database
+//   - Writes output to writers
+func ExecuteListFacts(svc *careerservice.Service, out, errOut io.Writer, opts ...tea.ProgramOption) error {
+	if svc == nil {
+		return errors.New("service not initialized")
+	}
+	code := ListFacts(svc, out, errOut, opts...)
+	if code != 0 {
+		return errors.New("list facts failed")
+	}
+	return nil
 }
 
 // NewListCmd creates the "list" subcommand.
@@ -75,15 +119,7 @@ func NewListCmd(ctx cliutil.ServiceContext) *cobra.Command {
 		Short: "List all facts",
 		Long:  "Display all existing facts from the repository",
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			svc := ctx.Service()
-			if svc == nil {
-				return errors.New("service not initialized")
-			}
-			code := ListFacts(svc, cmd.OutOrStdout(), cmd.ErrOrStderr())
-			if code != 0 {
-				return errors.New("listing facts failed")
-			}
-			return nil
+			return ExecuteListFacts(ctx.Service(), cmd.OutOrStdout(), cmd.ErrOrStderr())
 		},
 	}
 }

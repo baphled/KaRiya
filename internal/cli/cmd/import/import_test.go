@@ -255,5 +255,62 @@ var _ = Describe("Import Command", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 	})
-})
 
+	Describe("executeImportFromFile", func() {
+		var tempFile *os.File
+
+		BeforeEach(func() {
+			var err error
+			tempFile, err = os.CreateTemp("", "test-*.csv")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			if tempFile != nil {
+				os.Remove(tempFile.Name())
+			}
+		})
+
+		It("should fail with nil service", func() {
+			csvData := "Date,Text,Company\n2024-01-01,Test event with enough text for validation,Company\n"
+			_, err := tempFile.WriteString(csvData)
+			Expect(err).NotTo(HaveOccurred())
+			tempFile.Close()
+
+			err = importcmd.ExecuteImportFromFile(nil, tempFile.Name(), new(bytes.Buffer), new(bytes.Buffer), tea.WithInput(nil))
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("service not initialized"))
+		})
+
+		It("should fail with non-existent file", func() {
+			svc := ctx.Service()
+			Expect(svc).NotTo(BeNil())
+
+			err := importcmd.ExecuteImportFromFile(svc, "/nonexistent/file.csv", new(bytes.Buffer), new(bytes.Buffer), tea.WithInput(nil))
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("file access failed"))
+		})
+
+		It("should fail with empty CSV file", func() {
+			svc := ctx.Service()
+			Expect(svc).NotTo(BeNil())
+			tempFile.Close()
+
+			err := importcmd.ExecuteImportFromFile(svc, tempFile.Name(), new(bytes.Buffer), new(bytes.Buffer), tea.WithInput(nil))
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should handle valid CSV file successfully", func() {
+			svc := ctx.Service()
+			Expect(svc).NotTo(BeNil())
+
+			csvData := "Date,Text,Company\n2024-01-01,This is a test event with sufficient text content for import validation,TestCorp\n"
+			_, err := tempFile.WriteString(csvData)
+			Expect(err).NotTo(HaveOccurred())
+			tempFile.Close()
+
+			err = importcmd.ExecuteImportFromFile(svc, tempFile.Name(), new(bytes.Buffer), new(bytes.Buffer), tea.WithInput(nil))
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
+})
