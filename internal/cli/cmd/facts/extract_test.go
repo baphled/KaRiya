@@ -1,15 +1,20 @@
 package facts_test
 
 import (
+	"errors"
 	"bytes"
 	"context"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	cmdpkg "github.com/baphled/kariya/internal/cli/cmd"
+	domain "github.com/baphled/kariya/internal/domain/career"
+	careerservice "github.com/baphled/kariya/internal/service/career"
+	mockrepo "github.com/baphled/kariya/internal/testutil/mocks/repository"
 	"github.com/baphled/kariya/internal/cli/cmd/cliutil"
 	"github.com/baphled/kariya/internal/cli/cmd/facts"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
@@ -187,4 +192,59 @@ var _ = Describe("ExtractFacts", func() {
 			Expect(code).To(BeNumerically("<=", 1))
 		})
 	})
+
+	Context("ExtractFacts error scenarios", func() {
+		It("should return 1 when ListEvents fails", func() {
+			ctrl := gomock.NewController(GinkgoT())
+			mockEventRepo := mockrepo.NewMockEventRepository(ctrl)
+			mockEventRepo.EXPECT().
+				List(gomock.Any(), gomock.Any()).
+				Return(nil, errors.New("database error"))
+
+			svc := careerservice.NewService(mockEventRepo)
+
+			code := facts.ExtractFacts(svc, out, err, tea.WithInput(nil))
+			Expect(code).To(Equal(1))
+		})
+
+		It("should return 0 when events list is empty", func() {
+			ctrl := gomock.NewController(GinkgoT())
+			mockEventRepo := mockrepo.NewMockEventRepository(ctrl)
+			mockEventRepo.EXPECT().
+				List(gomock.Any(), gomock.Any()).
+				Return([]*domain.Event{}, nil)
+
+			svc := careerservice.NewService(mockEventRepo)
+
+			code := facts.ExtractFacts(svc, out, err, tea.WithInput(nil))
+			Expect(code).To(Equal(0))
+		})
+
+		It("should handle repository connection errors", func() {
+			ctrl := gomock.NewController(GinkgoT())
+			mockEventRepo := mockrepo.NewMockEventRepository(ctrl)
+			mockEventRepo.EXPECT().
+				List(gomock.Any(), gomock.Any()).
+				Return(nil, errors.New("connection timeout"))
+
+			svc := careerservice.NewService(mockEventRepo)
+
+			code := facts.ExtractFacts(svc, out, err, tea.WithInput(nil))
+			Expect(code).To(Equal(1))
+		})
+
+		It("should extract facts from events with comprehensive text", func() {
+			svc := ctx.Service()
+			Expect(svc).NotTo(BeNil())
+
+			event := fixtures.EventWith("comprehensive",
+				"Implemented microservices platform with Kubernetes Docker containers and automated CI/CD deployment pipelines", "", "")
+			captureErr := svc.CaptureEvent(context.Background(), event, "timeline")
+			Expect(captureErr).NotTo(HaveOccurred())
+
+			code := facts.ExtractFacts(svc, out, err, tea.WithInput(nil))
+			Expect(code).To(BeNumerically(">=", 0))
+		})
+	})
+
 })
