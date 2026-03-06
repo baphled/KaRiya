@@ -13,10 +13,17 @@ import (
 	cmdpkg "github.com/baphled/kariya/internal/cli/cmd"
 	"github.com/baphled/kariya/internal/cli/cmd/cliutil"
 	"github.com/baphled/kariya/internal/cli/cmd/skills"
+	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	"github.com/baphled/kariya/internal/testutil"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
+
+type mockServiceProvider struct {
+	svc *careerservice.Service
+}
+
+func (m *mockServiceProvider) Service() *careerservice.Service { return m.svc }
 
 var _ = Describe("Skills Command", func() {
 	var (
@@ -83,6 +90,19 @@ var _ = Describe("Skills Command", func() {
 			err := cobraCmd.RunE(cobraCmd, []string{})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("service not initialized"))
+		})
+
+		It("should return error when recategorization fails", func() {
+			svc := careerservice.NewService(careermemory.NewEventRepository())
+			provider := &mockServiceProvider{svc: svc}
+
+			cobraCmd := skills.NewRecategorizeCmd(provider, tea.WithInput(nil))
+			cobraCmd.SetOut(new(bytes.Buffer))
+			cobraCmd.SetErr(new(bytes.Buffer))
+
+			err := cobraCmd.RunE(cobraCmd, []string{})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("recategorization failed"))
 		})
 
 		It("should successfully recategorize skills", func() {

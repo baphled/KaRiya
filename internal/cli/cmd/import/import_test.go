@@ -56,6 +56,21 @@ var _ = Describe("Import Command", func() {
 			err := cmd.Execute()
 			Expect(err).To(HaveOccurred())
 		})
+
+		It("should return error when import fails via command", func() {
+			tmpFile, fileErr := os.CreateTemp("", "cmd-import-fail-*.csv")
+			Expect(fileErr).NotTo(HaveOccurred())
+			DeferCleanup(func() { os.Remove(tmpFile.Name()) })
+			tmpFile.Close()
+
+			cmd = importcmd.NewImportCmd(ctx)
+			cmd.SetOut(new(bytes.Buffer))
+			cmd.SetErr(new(bytes.Buffer))
+			cmd.SetArgs([]string{"--file", tmpFile.Name()})
+
+			err := cmd.Execute()
+			Expect(err).To(HaveOccurred())
+		})
 	})
 
 	Describe("HandleImport", func() {
@@ -312,6 +327,25 @@ var _ = Describe("Import Command", func() {
 
 			err = importcmd.ExecuteImportFromFile(svc, tempFile.Name(), new(bytes.Buffer), new(bytes.Buffer), tea.WithInput(nil))
 			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should fail when file cannot be opened", func() {
+			svc := ctx.Service()
+			Expect(svc).NotTo(BeNil())
+
+			csvData := "Date,Text,Company\n2024-01-01,Test event text,TestCo\n"
+			_, writeErr := tempFile.WriteString(csvData)
+			Expect(writeErr).NotTo(HaveOccurred())
+			tempFile.Close()
+
+			Expect(os.Chmod(tempFile.Name(), 0o000)).To(Succeed())
+			DeferCleanup(func() {
+				os.Chmod(tempFile.Name(), 0o644)
+			})
+
+			err := importcmd.ExecuteImportFromFile(svc, tempFile.Name(), new(bytes.Buffer), new(bytes.Buffer), tea.WithInput(nil))
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("file open failed"))
 		})
 	})
 })

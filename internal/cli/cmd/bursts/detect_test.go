@@ -145,6 +145,22 @@ var _ = Describe("DetectBursts", func() {
 	})
 })
 
+var _ = Describe("DisplayBurstSuggestions", func() {
+	It("should write formatted output", func() {
+		out := new(bytes.Buffer)
+		suggestions := []burst_fact.BurstSuggestion{
+			{
+				Name:        "Test Burst",
+				Description: "A test burst",
+				EventIDs:    []string{"event-1", "event-2"},
+			},
+		}
+
+		bursts.DisplayBurstSuggestions(out, suggestions, 5)
+		Expect(out.Len()).To(BeNumerically(">", 0))
+	})
+})
+
 var _ = Describe("DetectBursts Error Paths", func() {
 	var (
 		out *bytes.Buffer

@@ -2,7 +2,9 @@ package bursts_test
 
 import (
 	"bytes"
+	"errors"
 
+	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/cobra"
@@ -10,7 +12,16 @@ import (
 	cmdpkg "github.com/baphled/kariya/internal/cli/cmd"
 	"github.com/baphled/kariya/internal/cli/cmd/bursts"
 	"github.com/baphled/kariya/internal/cli/cmd/cliutil"
+	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
+	careerservice "github.com/baphled/kariya/internal/service/career"
+	mockrepo "github.com/baphled/kariya/internal/testutil/mocks/repository"
 )
+
+type mockServiceProvider struct {
+	svc *careerservice.Service
+}
+
+func (m *mockServiceProvider) Service() *careerservice.Service { return m.svc }
 
 var _ = Describe("Bursts Command", func() {
 	var (
@@ -81,6 +92,28 @@ var _ = Describe("Bursts Command", func() {
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("service not initialized"))
 		})
+
+		It("should return error when detection fails", func() {
+			ctrl := gomock.NewController(GinkgoT())
+			DeferCleanup(ctrl.Finish)
+
+			mockEventRepo := mockrepo.NewMockEventRepository(ctrl)
+			mockEventRepo.EXPECT().
+				List(gomock.Any(), gomock.Any()).
+				Return(nil, errors.New("database connection failed"))
+
+			svc := careerservice.NewService(mockEventRepo)
+			svc.SetBurstRepository(careermemory.NewBurstRepository())
+			provider := &mockServiceProvider{svc: svc}
+
+			cobraCmd := bursts.NewDetectCmd(provider)
+			cobraCmd.SetOut(new(bytes.Buffer))
+			cobraCmd.SetErr(new(bytes.Buffer))
+
+			err := cobraCmd.RunE(cobraCmd, []string{})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("burst detection failed"))
+		})
 	})
 
 	Describe("NewListCmd", func() {
@@ -112,6 +145,19 @@ var _ = Describe("Bursts Command", func() {
 			err := cobraCmd.RunE(cobraCmd, []string{})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("service not initialized"))
+		})
+
+		It("should return error when listing fails", func() {
+			svc := careerservice.NewService(careermemory.NewEventRepository())
+			provider := &mockServiceProvider{svc: svc}
+
+			cobraCmd := bursts.NewListCmd(provider)
+			cobraCmd.SetOut(new(bytes.Buffer))
+			cobraCmd.SetErr(new(bytes.Buffer))
+
+			err := cobraCmd.RunE(cobraCmd, []string{})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("listing bursts failed"))
 		})
 	})
 })

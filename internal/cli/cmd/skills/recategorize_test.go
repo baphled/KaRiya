@@ -3,15 +3,20 @@ package skills_test
 import (
 	"bytes"
 	"context"
+	"errors"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	cmdpkg "github.com/baphled/kariya/internal/cli/cmd"
 	"github.com/baphled/kariya/internal/cli/cmd/cliutil"
 	"github.com/baphled/kariya/internal/cli/cmd/skills"
+	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
+	careerservice "github.com/baphled/kariya/internal/service/career"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
+	mockrepo "github.com/baphled/kariya/internal/testutil/mocks/repository"
 )
 
 var _ = Describe("RecategorizeSkills", func() {
@@ -127,6 +132,22 @@ var _ = Describe("RecategorizeSkills", func() {
 			Expect(func() {
 				skills.RecategorizeSkills(nil, out, err, tea.WithInput(nil))
 			}).To(Panic())
+		})
+
+		It("should return exit code 1 when recategorization errors", func() {
+			ctrl := gomock.NewController(GinkgoT())
+			DeferCleanup(ctrl.Finish)
+
+			mockSkillRepo := mockrepo.NewMockSkillRepository(ctrl)
+			mockSkillRepo.EXPECT().
+				List(gomock.Any(), gomock.Any()).
+				Return(nil, errors.New("database error"))
+
+			svc := careerservice.NewService(careermemory.NewEventRepository())
+			svc.SetSkillRepository(mockSkillRepo)
+
+			code := skills.RecategorizeSkills(svc, out, err, tea.WithInput(nil))
+			Expect(code).To(Equal(1))
 		})
 	})
 })
