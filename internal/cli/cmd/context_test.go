@@ -124,6 +124,12 @@ var _ = Describe("CLIContext", func() {
 		})
 
 		Context("with SQLite and default path", func() {
+			BeforeEach(func() {
+				if runtime.GOOS == "windows" {
+					Skip("Windows file locking prevents cleanup of logger files in temp HOME")
+				}
+			})
+
 			It("should initialize service successfully", func() {
 				homeDir := GinkgoT().TempDir()
 				originalHome := os.Getenv("HOME")
