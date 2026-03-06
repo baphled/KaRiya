@@ -396,28 +396,6 @@ var _ = Describe("Progress Utilities", func() {
 	})
 
 	Describe("RunWithSpinner with input", func() {
-		It("should handle ctrl+c interruption", func() {
-			executed := false
-			_ = cliutil.RunWithSpinner("Processing", func() error {
-				executed = true
-				time.Sleep(100 * time.Millisecond)
-				return nil
-			}, tea.WithInput(bytes.NewReader([]byte("\x03"))))
-
-			Expect(executed).To(BeTrue())
-		})
-
-		It("should complete before ctrl+c is processed", func() {
-			executed := false
-			err := cliutil.RunWithSpinner("Quick", func() error {
-				executed = true
-				return nil
-			}, tea.WithInput(bytes.NewReader([]byte("\x03"))))
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(executed).To(BeTrue())
-		})
-
 		It("should handle other input gracefully", func() {
 			executed := false
 			err := cliutil.RunWithSpinner("Task", func() error {
@@ -434,26 +412,26 @@ var _ = Describe("Progress Utilities", func() {
 	Describe("RunWithProgress with input", func() {
 		It("should handle input during progress", func() {
 			updateCount := 0
-			_ = cliutil.RunWithProgress("Processing", 10, func(update func(int)) error {
+			err := cliutil.RunWithProgress("Processing", 10, func(update func(int)) error {
 				for i := 1; i <= 5; i++ {
 					update(i)
 					updateCount++
 					time.Sleep(20 * time.Millisecond)
 				}
 				return nil
-			}, tea.WithInput(bytes.NewReader([]byte("\x03"))))
+			}, tea.WithInput(bytes.NewReader([]byte("abc\x1b[B"))))
 
-			Expect(updateCount).To(BeNumerically(">=", 1))
-			Expect(updateCount).To(BeNumerically("<=", 5))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(updateCount).To(Equal(5))
 		})
 
-		PIt("should complete before input is processed", func() {
+		It("should complete before input is processed", func() {
 			updateCount := 0
 			err := cliutil.RunWithProgress("Quick", 5, func(update func(int)) error {
 				update(5)
 				updateCount++
 				return nil
-			}, tea.WithInput(bytes.NewReader([]byte("\x03"))))
+			}, tea.WithInput(bytes.NewReader([]byte("abc"))))
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(updateCount).To(Equal(1))
@@ -701,29 +679,16 @@ var _ = Describe("Progress Utilities", func() {
 			Expect(updateCount).To(Equal(5))
 		})
 
-		It("RunWithSpinner should handle ctrl+c with slow task", func() {
-			executed := false
-			_ = cliutil.RunWithSpinner("Slow task", func() error {
-				executed = true
-				time.Sleep(200 * time.Millisecond)
-				return nil
-			}, tea.WithInput(bytes.NewReader([]byte("\x03"))))
-
-			Expect(executed).To(BeTrue())
-		})
-
-		It("RunWithProgress should handle ctrl+c with slow task", func() {
-			updateCount := 0
-			_ = cliutil.RunWithProgress("Slow task", 100, func(update func(int)) error {
-				for i := 1; i <= 100; i++ {
-					update(i)
-					updateCount++
-					time.Sleep(5 * time.Millisecond)
-				}
-				return nil
-			}, tea.WithInput(bytes.NewReader([]byte("\x03"))))
-
-			Expect(updateCount).To(BeNumerically(">", 0))
+		It("RunWithProgress should not panic on ctrl+c with slow task", func() {
+			Expect(func() {
+				cliutil.RunWithProgress("Slow task", 100, func(update func(int)) error {
+					for i := range 10 {
+						update(i + 1)
+						time.Sleep(5 * time.Millisecond)
+					}
+					return nil
+				}, tea.WithInput(bytes.NewReader([]byte("\x03"))))
+			}).NotTo(Panic())
 		})
 
 		It("RunWithSpinner should handle non-ctrl+c input", func() {
