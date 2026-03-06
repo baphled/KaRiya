@@ -3,6 +3,7 @@ package importcmd_test
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -232,4 +233,27 @@ var _ = Describe("Import Command", func() {
 
 		})
 	})
+
+	Describe("ValidateFilePath", func() {
+		It("should return nil for existing file", func() {
+			tmpFile, err := os.CreateTemp("", "test-*.csv")
+			Expect(err).NotTo(HaveOccurred())
+			tmpFile.Close()
+			defer os.Remove(tmpFile.Name())
+
+			err = importcmd.ValidateFilePath(tmpFile.Name())
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should return error for non-existent file", func() {
+			err := importcmd.ValidateFilePath("/tmp/nonexistent_file_12345.csv")
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should return nil for existing directory", func() {
+			err := importcmd.ValidateFilePath("/tmp")
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
 })
+

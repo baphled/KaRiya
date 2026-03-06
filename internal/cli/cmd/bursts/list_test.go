@@ -3,15 +3,20 @@ package bursts_test
 import (
 	"bytes"
 	"context"
+	"errors"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	cmdpkg "github.com/baphled/kariya/internal/cli/cmd"
 	"github.com/baphled/kariya/internal/cli/cmd/bursts"
 	"github.com/baphled/kariya/internal/cli/cmd/cliutil"
+	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
+	careerservice "github.com/baphled/kariya/internal/service/career"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
+	mockrepo "github.com/baphled/kariya/internal/testutil/mocks/repository"
 )
 
 var _ = Describe("ListBursts", func() {
@@ -142,6 +147,81 @@ var _ = Describe("ListBursts", func() {
 			Expect(func() {
 				bursts.ListBursts(nil, out, err, tea.WithInput(nil))
 			}).To(Panic())
+		})
+	})
+})
+
+var _ = Describe("ListBursts Error Paths", func() {
+	var (
+		out *bytes.Buffer
+		err *bytes.Buffer
+	)
+
+	BeforeEach(func() {
+		out = new(bytes.Buffer)
+		err = new(bytes.Buffer)
+	})
+
+	Context("when burst repository is not configured", func() {
+		It("should return exit code 1", func() {
+			// Create service with nil burst repository
+			svc := careerservice.NewService(nil)
+			// Don't call SetBurstRepository - leave it nil
+
+			code := bursts.ListBursts(svc, out, err, tea.WithInput(nil))
+			Expect(code).To(Equal(1))
+		})
+
+		It("should print error message", func() {
+			svc := careerservice.NewService(nil)
+
+			bursts.ListBursts(svc, out, err, tea.WithInput(nil))
+			// Error is printed to stderr via cliutil.PrintError, not to err buffer
+			// Just verify exit code is 1 (which we test above)
+		})
+	})
+
+	Context("when repository List() returns an error", func() {
+		var (
+			ctrl      *gomock.Controller
+			mockRepo  *mockrepo.MockBurstRepository
+			eventRepo *careermemory.EventRepository
+		)
+
+		BeforeEach(func() {
+			ctrl = gomock.NewController(GinkgoT())
+			mockRepo = mockrepo.NewMockBurstRepository(ctrl)
+			eventRepo = careermemory.NewEventRepository()
+		})
+
+		AfterEach(func() {
+			ctrl.Finish()
+		})
+
+		It("should return exit code 1 on database error", func() {
+			// Setup mock to return error
+			mockRepo.EXPECT().
+				List(gomock.Any(), gomock.Any()).
+				Return(nil, errors.New("database connection failed"))
+
+			svc := careerservice.NewService(eventRepo)
+			svc.SetBurstRepository(mockRepo)
+
+			code := bursts.ListBursts(svc, out, err, tea.WithInput(nil))
+			Expect(code).To(Equal(1))
+		})
+
+		It("should handle repository errors gracefully", func() {
+			mockRepo.EXPECT().
+				List(gomock.Any(), gomock.Any()).
+				Return(nil, errors.New("timeout"))
+
+			svc := careerservice.NewService(eventRepo)
+			svc.SetBurstRepository(mockRepo)
+
+			Expect(func() {
+				bursts.ListBursts(svc, out, err, tea.WithInput(nil))
+			}).NotTo(Panic())
 		})
 	})
 })

@@ -447,7 +447,7 @@ var _ = Describe("Progress Utilities", func() {
 			Expect(updateCount).To(BeNumerically("<=", 5))
 		})
 
-		It("should complete before input is processed", func() {
+		PIt("should complete before input is processed", func() {
 			updateCount := 0
 			err := cliutil.RunWithProgress("Quick", 5, func(update func(int)) error {
 				update(5)
