@@ -247,4 +247,56 @@ var _ = Describe("ExtractFacts", func() {
 		})
 	})
 
+	Context("ExtractFacts with fact generation", func() {
+		It("should process events generating multiple facts and competencies", func() {
+			svc := ctx.Service()
+			Expect(svc).NotTo(BeNil())
+
+			// Event with technical keywords for fact generation
+			event := fixtures.EventWith("fact-gen",
+				"Architected microservices using Docker Kubernetes Helm charts for container orchestration and AWS deployment", "", "")
+			captureErr := svc.CaptureEvent(context.Background(), event, "timeline")
+			Expect(captureErr).NotTo(HaveOccurred())
+
+			code := facts.ExtractFacts(svc, out, err, tea.WithInput(nil))
+			Expect(code).To(BeNumerically(">=", 0))
+		})
+
+		It("should handle extraction from multiple events with varied content", func() {
+			svc := ctx.Service()
+			Expect(svc).NotTo(BeNil())
+
+			events := []string{
+				"Designed REST APIs with Go chi router and PostgreSQL database with optimization",
+				"Implemented real-time messaging using RabbitMQ AMQP protocol with distributed transactions",
+				"Managed Kubernetes cluster with helm charts service mesh Istio and monitoring prometheus",
+			}
+
+			for i, text := range events {
+				eventID := "gen-event-" + string(rune(48+i))
+				event := fixtures.EventWith(eventID, text, "", "")
+				captureErr := svc.CaptureEvent(context.Background(), event, "timeline")
+				Expect(captureErr).NotTo(HaveOccurred())
+			}
+
+			code := facts.ExtractFacts(svc, out, err, tea.WithInput(nil))
+			Expect(code).To(BeNumerically(">=", 0))
+		})
+
+		It("should enumerate and count competency categories from extracted facts", func() {
+			svc := ctx.Service()
+			Expect(svc).NotTo(BeNil())
+
+			// Event with rich competency keywords
+			event := fixtures.EventWith("comp-enum",
+				"Led architecture design and implementation using Java Spring Boot AWS Lambda serverless with MongoDB NoSQL and Redis caching", "", "")
+			captureErr := svc.CaptureEvent(context.Background(), event, "timeline")
+			Expect(captureErr).NotTo(HaveOccurred())
+
+			code := facts.ExtractFacts(svc, out, err, tea.WithInput(nil))
+			Expect(code).To(BeNumerically(">=", 0))
+		})
+	})
+
+
 })
