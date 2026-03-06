@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 
+	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -34,7 +35,7 @@ var _ = Describe("RecategorizeSkills", func() {
 			svc := ctx.Service()
 			Expect(svc).NotTo(BeNil())
 
-			code := skills.RecategorizeSkills(svc, out, err)
+			code := skills.RecategorizeSkills(svc, out, err, tea.WithInput(nil))
 			Expect(code).To(BeNumerically(">=", 0))
 		})
 	})
@@ -53,7 +54,7 @@ var _ = Describe("RecategorizeSkills", func() {
 			svc := ctx.Service()
 			Expect(svc).NotTo(BeNil())
 
-			code := skills.RecategorizeSkills(svc, out, err)
+			code := skills.RecategorizeSkills(svc, out, err, tea.WithInput(nil))
 			Expect(code).To(BeNumerically(">=", 0))
 		})
 
@@ -61,7 +62,7 @@ var _ = Describe("RecategorizeSkills", func() {
 			svc := ctx.Service()
 			Expect(svc).NotTo(BeNil())
 
-			code := skills.RecategorizeSkills(svc, out, err)
+			code := skills.RecategorizeSkills(svc, out, err, tea.WithInput(nil))
 			Expect(code).To(BeNumerically(">=", 0))
 		})
 
@@ -70,7 +71,7 @@ var _ = Describe("RecategorizeSkills", func() {
 			Expect(svc).NotTo(BeNil())
 
 			Expect(func() {
-				skills.RecategorizeSkills(svc, out, err)
+				skills.RecategorizeSkills(svc, out, err, tea.WithInput(nil))
 			}).NotTo(Panic())
 		})
 	})
@@ -91,7 +92,7 @@ var _ = Describe("RecategorizeSkills", func() {
 			svc := ctx.Service()
 			Expect(svc).NotTo(BeNil())
 
-			code := skills.RecategorizeSkills(svc, out, err)
+			code := skills.RecategorizeSkills(svc, out, err, tea.WithInput(nil))
 			Expect(code).To(BeNumerically(">=", 0))
 		})
 	})
@@ -101,7 +102,7 @@ var _ = Describe("RecategorizeSkills", func() {
 			svc := ctx.Service()
 			Expect(svc).NotTo(BeNil())
 
-			code := skills.RecategorizeSkills(svc, out, err)
+			code := skills.RecategorizeSkills(svc, out, err, tea.WithInput(nil))
 			Expect(code).To(BeNumerically(">=", 0))
 		})
 
@@ -109,7 +110,7 @@ var _ = Describe("RecategorizeSkills", func() {
 			svc := ctx.Service()
 			Expect(svc).NotTo(BeNil())
 
-			code := skills.RecategorizeSkills(svc, out, err)
+			code := skills.RecategorizeSkills(svc, out, err, tea.WithInput(nil))
 			Expect(code).To(BeNumerically(">=", 0))
 		})
 
@@ -117,14 +118,14 @@ var _ = Describe("RecategorizeSkills", func() {
 			svc := ctx.Service()
 			Expect(svc).NotTo(BeNil())
 
-			code := skills.RecategorizeSkills(svc, out, err)
+			code := skills.RecategorizeSkills(svc, out, err, tea.WithInput(nil))
 			Expect(code).To(BeNumerically(">=", 0))
 			Expect(code).To(BeNumerically("<=", 1))
 		})
 
 		It("should handle nil service gracefully", func() {
 			Expect(func() {
-				skills.RecategorizeSkills(nil, out, err)
+				skills.RecategorizeSkills(nil, out, err, tea.WithInput(nil))
 			}).To(Panic())
 		})
 	})

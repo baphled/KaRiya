@@ -209,24 +209,24 @@ var _ = Describe("Skills Command", func() {
 
 		Context("when recategorization is called without spinner options", func() {
 			It("should return a valid exit code", func() {
-				code := skills.RecategorizeSkills(svc, out, err)
+				code := skills.RecategorizeSkills(svc, out, err, tea.WithInput(nil))
 				Expect(code).To(BeElementOf(0, 1))
 			})
 
 			It("should accept different output writers", func() {
 				outBuf := new(bytes.Buffer)
 				errBuf := new(bytes.Buffer)
-				code := skills.RecategorizeSkills(svc, outBuf, errBuf)
+				code := skills.RecategorizeSkills(svc, outBuf, errBuf, tea.WithInput(nil))
 				Expect(code).To(BeElementOf(0, 1))
 			})
 
 			It("should handle io.Discard as output writer", func() {
-				code := skills.RecategorizeSkills(svc, io.Discard, io.Discard)
+				code := skills.RecategorizeSkills(svc, io.Discard, io.Discard, tea.WithInput(nil))
 				Expect(code).To(BeElementOf(0, 1))
 			})
 
 			It("should handle nil output writers", func() {
-				code := skills.RecategorizeSkills(svc, nil, nil)
+				code := skills.RecategorizeSkills(svc, nil, nil, tea.WithInput(nil))
 				Expect(code).To(BeElementOf(0, 1))
 			})
 		})
@@ -257,12 +257,12 @@ var _ = Describe("Skills Command", func() {
 		Context("error handling", func() {
 			It("should handle service with nil repository gracefully", func() {
 				emptyService := testutil.NilService()
-				code := skills.RecategorizeSkills(emptyService, out, err)
+				code := skills.RecategorizeSkills(emptyService, out, err, tea.WithInput(nil))
 				Expect(code).To(Equal(1))
 			})
 
 			It("should return non-zero code on repository error", func() {
-				code := skills.RecategorizeSkills(svc, out, err)
+				code := skills.RecategorizeSkills(svc, out, err, tea.WithInput(nil))
 				Expect(code).To(BeElementOf(0, 1))
 			})
 		})
