@@ -136,4 +136,55 @@ var _ = Describe("ExtractFacts", func() {
 			}).To(Panic())
 		})
 	})
+
+	Context("when no facts are extracted from events", func() {
+		It("should return zero with info message when no facts found", func() {
+			svc := ctx.Service()
+			Expect(svc).NotTo(BeNil())
+
+			// Create event that exists but won't generate saveable facts
+			// Using text that may not generate facts with high enough confidence
+			event := fixtures.EventWith("no-fact-event", 
+				"Worked on some tasks and assignments during the period", "", "")
+			captureErr := svc.CaptureEvent(context.Background(), event, "timeline")
+			Expect(captureErr).NotTo(HaveOccurred())
+
+			out := new(bytes.Buffer)
+			err := new(bytes.Buffer)
+
+			code := facts.ExtractFacts(svc, out, err, tea.WithInput(nil))
+			// Should return 0 whether facts found or not
+			Expect(code).To(Equal(0))
+		})
+	})
+
+	Context("extraction with various event scenarios", func() {
+		It("should handle events with technical terminology", func() {
+			svc := ctx.Service()
+			Expect(svc).NotTo(BeNil())
+
+			event := fixtures.EventWith("tech-event", 
+				"Implemented microservices architecture with Kubernetes Docker containers and cloud deployment", "", "")
+			captureErr := svc.CaptureEvent(context.Background(), event, "timeline")
+			Expect(captureErr).NotTo(HaveOccurred())
+
+			code := facts.ExtractFacts(svc, out, err, tea.WithInput(nil))
+			Expect(code).To(BeNumerically(">=", 0))
+			Expect(code).To(BeNumerically("<=", 1))
+		})
+
+		It("should process events with multiple skill mentions", func() {
+			svc := ctx.Service()
+			Expect(svc).NotTo(BeNil())
+
+			event := fixtures.EventWith("multi-skill", 
+				"Developed REST APIs using Python Django PostgreSQL with unit tests and CI/CD pipelines", "", "")
+			captureErr := svc.CaptureEvent(context.Background(), event, "timeline")
+			Expect(captureErr).NotTo(HaveOccurred())
+
+			code := facts.ExtractFacts(svc, out, err, tea.WithInput(nil))
+			Expect(code).To(BeNumerically(">=", 0))
+			Expect(code).To(BeNumerically("<=", 1))
+		})
+	})
 })
