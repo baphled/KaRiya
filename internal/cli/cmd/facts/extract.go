@@ -13,12 +13,49 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+// FactExtractionService defines the interface for operations needed by ExtractFacts.
+type FactExtractionService interface {
+	ListEvents(ctx context.Context, filters career.EventListFilters) ([]*domain.Event, error)
+	ExtractFactsFromEvent(ctx context.Context, event *domain.Event) ([]domain.Fact, error)
+	SaveFact(ctx context.Context, fact *domain.Fact) error
+}
+
+// CareerServiceAdapter adapts CareerService to FactExtractionService interface.
+type CareerServiceAdapter struct {
+	svc *careerservice.Service
+}
+
+// NewCareerServiceAdapter creates a new adapter.
+//
+// Expected:
+//   - svc: valid CareerService instance
+//
+// Returns:
+//   - CareerServiceAdapter implementing FactExtractionService
+//
+// Side effects: None
+func NewCareerServiceAdapter(svc *careerservice.Service) *CareerServiceAdapter {
+	return &CareerServiceAdapter{svc: svc}
+}
+
+func (a *CareerServiceAdapter) ListEvents(ctx context.Context, filters career.EventListFilters) ([]*domain.Event, error) {
+	return a.svc.ListEvents(ctx, filters)
+}
+
+func (a *CareerServiceAdapter) ExtractFactsFromEvent(ctx context.Context, event *domain.Event) ([]domain.Fact, error) {
+	return a.svc.ExtractFactsFromEvent(ctx, event)
+}
+
+func (a *CareerServiceAdapter) SaveFact(ctx context.Context, fact *domain.Fact) error {
+	return a.svc.SaveFact(ctx, fact)
+}
+
 // ExtractFacts extracts facts from all events.
 //
 // Expected:
 //   - svc: Initialized career Service instance
 //   - out: io.Writer for output messages
-//   - _: io.Writer for error output (unused)
+//   - errOut: io.Writer for error output
 //   - opts: Optional Bubble Tea program options for testing
 //
 // Returns:
@@ -28,8 +65,29 @@ import (
 // Side effects:
 //   - Reads events from database via svc
 //   - Writes facts to database via svc
-//   - Writes output to out writer
-func ExtractFacts(svc *careerservice.Service, out io.Writer, _ io.Writer, opts ...tea.ProgramOption) int {
+//   - Writes output to writers
+func ExtractFacts(svc *careerservice.Service, out io.Writer, errOut io.Writer, opts ...tea.ProgramOption) int {
+	adapter := NewCareerServiceAdapter(svc)
+	return ExtractFactsWithService(adapter, out, errOut, opts...)
+}
+
+// ExtractFactsWithService extracts facts using the FactExtractionService interface.
+//
+// Expected:
+//   - svc: FactExtractionService implementation
+//   - out: io.Writer for output messages
+//   - errOut: io.Writer for error output
+//   - opts: Optional Bubble Tea program options for testing
+//
+// Returns:
+//   - 0 on success
+//   - 1 on error (retrieval, extraction, or save failure)
+//
+// Side effects:
+//   - Reads events from service
+//   - Writes facts to service
+//   - Writes output to writers
+func ExtractFactsWithService(svc FactExtractionService, out io.Writer, errOut io.Writer, opts ...tea.ProgramOption) int {
 	ctx := context.Background()
 
 	events, err := svc.ListEvents(ctx, career.EventListFilters{Limit: 10000})
@@ -43,7 +101,7 @@ func ExtractFacts(svc *careerservice.Service, out io.Writer, _ io.Writer, opts .
 		return 0
 	}
 
-	factCount, competencyCount, err := extractAndSaveFacts(ctx, svc, events, opts...)
+	factCount, competencyCount, err := extractAndSaveFactsWithService(ctx, svc, events, opts...)
 	if err != nil {
 		cliutil.PrintError(fmt.Sprintf("Error extracting facts: %v", err))
 		return 1
@@ -59,9 +117,9 @@ func ExtractFacts(svc *careerservice.Service, out io.Writer, _ io.Writer, opts .
 	return 0
 }
 
-func extractAndSaveFacts(
+func extractAndSaveFactsWithService(
 	ctx context.Context,
-	svc *careerservice.Service,
+	svc FactExtractionService,
 	events []*domain.Event,
 	opts ...tea.ProgramOption,
 ) (int, map[string]int, error) {
@@ -70,9 +128,9 @@ func extractAndSaveFacts(
 
 	err := cliutil.RunWithProgress(fmt.Sprintf("Extracting facts from %d events...", len(events)), len(events), func(update func(int)) error {
 		for i := range events {
-			processedFacts := processEventFacts(ctx, svc, events[i])
+			processedFacts := processEventFactsWithService(ctx, svc, events[i])
 			factCount += processedFacts
-			updateCompetencyCounts(ctx, svc, events[i], competencyCount)
+			updateCompetencyCountsWithService(ctx, svc, events[i], competencyCount)
 			update(i + 1)
 		}
 		return nil
@@ -81,7 +139,7 @@ func extractAndSaveFacts(
 	return factCount, competencyCount, err
 }
 
-func processEventFacts(ctx context.Context, svc *careerservice.Service, event *domain.Event) int {
+func processEventFactsWithService(ctx context.Context, svc FactExtractionService, event *domain.Event) int {
 	facts, err := svc.ExtractFactsFromEvent(ctx, event)
 	if err != nil {
 		return 0
@@ -97,7 +155,7 @@ func processEventFacts(ctx context.Context, svc *careerservice.Service, event *d
 	return savedCount
 }
 
-func updateCompetencyCounts(ctx context.Context, svc *careerservice.Service, event *domain.Event, competencyCount map[string]int) {
+func updateCompetencyCountsWithService(ctx context.Context, svc FactExtractionService, event *domain.Event, competencyCount map[string]int) {
 	facts, err := svc.ExtractFactsFromEvent(ctx, event)
 	if err != nil {
 		return
@@ -112,17 +170,19 @@ func updateCompetencyCounts(ctx context.Context, svc *careerservice.Service, eve
 	}
 }
 
-// DisplayExtractionResults writes formatted fact extraction results to the output.
+// DisplayExtractionResults writes formatted extraction results to the output.
 //
 // Expected:
-//   - out: io.Writer to write output to
-//   - factCount: Number of facts extracted
-//   - eventCount: Number of events processed
-//   - competencyCount: Map of competency names to counts
+//   - out: io.Writer to write to
+//   - factCount: number of facts extracted
+//   - eventCount: number of events processed
+//   - competencyCount: map of competency categories and their counts
+//
+// Returns: None
 //
 // Side effects:
-//   - Writes formatted output to out writer
+//   - Writes formatted results to out writer
 func DisplayExtractionResults(out io.Writer, factCount, eventCount int, competencyCount map[string]int) {
-	output := FormatExtractionResults(factCount, eventCount, competencyCount)
-	fmt.Fprint(out, output)
+	results := FormatExtractionResults(factCount, eventCount, competencyCount)
+	fmt.Fprint(out, results)
 }

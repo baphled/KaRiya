@@ -1,9 +1,9 @@
 package facts_test
 
 import (
-	"errors"
 	"bytes"
 	"context"
+	"errors"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -12,14 +12,14 @@ import (
 	. "github.com/onsi/gomega"
 
 	cmdpkg "github.com/baphled/kariya/internal/cli/cmd"
-	domain "github.com/baphled/kariya/internal/domain/career"
-	careerservice "github.com/baphled/kariya/internal/service/career"
-	mockrepo "github.com/baphled/kariya/internal/testutil/mocks/repository"
 	"github.com/baphled/kariya/internal/cli/cmd/cliutil"
 	"github.com/baphled/kariya/internal/cli/cmd/facts"
+	domain "github.com/baphled/kariya/internal/domain/career"
+	careerepo "github.com/baphled/kariya/internal/repository/career"
+	careerservice "github.com/baphled/kariya/internal/service/career"
+	mockrepo "github.com/baphled/kariya/internal/testutil/mocks/repository"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
-
 var _ = Describe("ExtractFacts", func() {
 	var (
 		ctx cliutil.ServiceContext
@@ -299,4 +299,95 @@ var _ = Describe("ExtractFacts", func() {
 	})
 
 
+
+	Context("ExtractFactsWithService interface", func() {
+		It("should return 1 when ListEvents fails", func() {
+			mockSvc := &MockFactExtractionService{
+				ListEventsFunc: func(ctx context.Context, filters careerepo.EventListFilters) ([]*domain.Event, error) {
+					return nil, errors.New("database error")
+				},
+			}
+
+			code := facts.ExtractFactsWithService(mockSvc, out, err, tea.WithInput(nil))
+			Expect(code).To(Equal(1))
+		})
+
+		It("should return 0 when ListEvents returns empty list", func() {
+			mockSvc := &MockFactExtractionService{
+				ListEventsFunc: func(ctx context.Context, filters careerepo.EventListFilters) ([]*domain.Event, error) {
+					return []*domain.Event{}, nil
+				},
+			}
+
+			code := facts.ExtractFactsWithService(mockSvc, out, err, tea.WithInput(nil))
+			Expect(code).To(Equal(0))
+		})
+
+		It("should handle fact extraction failure", func() {
+			event := fixtures.EventWith("test", "Test event with sufficient text content", "", "")
+			mockSvc := &MockFactExtractionService{
+				ListEventsFunc: func(ctx context.Context, filters careerepo.EventListFilters) ([]*domain.Event, error) {
+					return []*domain.Event{event}, nil
+				},
+				ExtractFactsFromEventFunc: func(ctx context.Context, e *domain.Event) ([]domain.Fact, error) {
+					return nil, errors.New("extraction failed")
+				},
+			}
+
+			code := facts.ExtractFactsWithService(mockSvc, out, err, tea.WithInput(nil))
+			Expect(code).To(Equal(0))
+		})
+
+		It("should handle fact save failure gracefully", func() {
+			event := fixtures.EventWith("save", "Save test with comprehensive event description text", "", "")
+			testFacts := []domain.Fact{
+				{ID: "f1", SourceEventID: "save", Text: "Fact 1", CompetencyCategories: []string{"test"}},
+			}
+
+			mockSvc := &MockFactExtractionService{
+				ListEventsFunc: func(ctx context.Context, filters careerepo.EventListFilters) ([]*domain.Event, error) {
+					return []*domain.Event{event}, nil
+				},
+				ExtractFactsFromEventFunc: func(ctx context.Context, e *domain.Event) ([]domain.Fact, error) {
+					return testFacts, nil
+				},
+				SaveFactFunc: func(ctx context.Context, fact *domain.Fact) error {
+					return errors.New("save failed")
+				},
+			}
+
+			code := facts.ExtractFactsWithService(mockSvc, out, err, tea.WithInput(nil))
+			Expect(code).To(Equal(0))
+		})
+	})
+
+
 })
+
+// MockFactExtractionService is a mock implementation for testing.
+type MockFactExtractionService struct {
+	ListEventsFunc            func(ctx context.Context, filters careerepo.EventListFilters) ([]*domain.Event, error)
+	ExtractFactsFromEventFunc func(ctx context.Context, event *domain.Event) ([]domain.Fact, error)
+	SaveFactFunc              func(ctx context.Context, fact *domain.Fact) error
+}
+
+func (m *MockFactExtractionService) ListEvents(ctx context.Context, filters careerepo.EventListFilters) ([]*domain.Event, error) {
+	if m.ListEventsFunc != nil {
+		return m.ListEventsFunc(ctx, filters)
+	}
+	return []*domain.Event{}, nil
+}
+
+func (m *MockFactExtractionService) ExtractFactsFromEvent(ctx context.Context, event *domain.Event) ([]domain.Fact, error) {
+	if m.ExtractFactsFromEventFunc != nil {
+		return m.ExtractFactsFromEventFunc(ctx, event)
+	}
+	return []domain.Fact{}, nil
+}
+
+func (m *MockFactExtractionService) SaveFact(ctx context.Context, fact *domain.Fact) error {
+	if m.SaveFactFunc != nil {
+		return m.SaveFactFunc(ctx, fact)
+	}
+	return nil
+}
