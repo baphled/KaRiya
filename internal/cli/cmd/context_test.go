@@ -218,9 +218,6 @@ var _ = Describe("CLIContext", func() {
 				Expect(err).To(HaveOccurred())
 				Expect(ctx.svc).To(BeNil())
 				Expect(errBuf.Len()).To(BeNumerically(">", 0))
-				DeferCleanup(func() {
-					ctx.Close()
-				})
 			})
 		})
 
@@ -263,9 +260,6 @@ var _ = Describe("CLIContext", func() {
 				Expect(err).To(HaveOccurred())
 				Expect(ctx.svc).To(BeNil())
 				Expect(errBuf.Len()).To(BeNumerically(">", 0))
-				DeferCleanup(func() {
-					ctx.Close()
-				})
 			})
 		})
 
@@ -283,9 +277,6 @@ var _ = Describe("CLIContext", func() {
 				Expect(err).To(HaveOccurred())
 				Expect(ctx.svc).To(BeNil())
 				Expect(errBuf.Len()).To(BeNumerically(">", 0))
-				DeferCleanup(func() {
-					ctx.Close()
-				})
 			})
 		})
 
@@ -303,9 +294,6 @@ var _ = Describe("CLIContext", func() {
 				Expect(err).To(HaveOccurred())
 				Expect(ctx.svc).To(BeNil())
 				Expect(errBuf.Len()).To(BeNumerically(">", 0))
-				DeferCleanup(func() {
-					ctx.Close()
-				})
 			})
 		})
 
@@ -323,9 +311,6 @@ var _ = Describe("CLIContext", func() {
 				Expect(err).To(HaveOccurred())
 				Expect(ctx.svc).To(BeNil())
 				Expect(errBuf.Len()).To(BeNumerically(">", 0))
-				DeferCleanup(func() {
-					ctx.Close()
-				})
 			})
 		})
 
@@ -348,9 +333,6 @@ var _ = Describe("CLIContext", func() {
 				Expect(err).To(HaveOccurred())
 				Expect(ctx.svc).To(BeNil())
 				Expect(errBuf.Len()).To(BeNumerically(">", 0))
-				DeferCleanup(func() {
-					ctx.Close()
-				})
 			})
 		})
 
@@ -373,9 +355,6 @@ var _ = Describe("CLIContext", func() {
 				Expect(err).To(HaveOccurred())
 				Expect(ctx.svc).To(BeNil())
 				Expect(errBuf.Len()).To(BeNumerically(">", 0))
-				DeferCleanup(func() {
-					ctx.Close()
-				})
 			})
 		})
 
@@ -388,9 +367,6 @@ var _ = Describe("CLIContext", func() {
 				Expect(err).To(HaveOccurred())
 				Expect(ctx.svc).To(BeNil())
 				Expect(errBuf.Len()).To(BeNumerically(">", 0))
-				DeferCleanup(func() {
-					ctx.Close()
-				})
 			})
 		})
 	})
