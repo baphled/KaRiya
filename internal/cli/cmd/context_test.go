@@ -173,6 +173,9 @@ var _ = Describe("CLIContext", func() {
 			})
 
 			It("should create .kariya directory with correct permissions", func() {
+				if runtime.GOOS == "windows" {
+					Skip("Windows does not enforce Unix permissions")
+				}
 				homeDir := GinkgoT().TempDir()
 				originalHome := os.Getenv("HOME")
 				originalUserProfile := os.Getenv("USERPROFILE")
@@ -272,6 +275,9 @@ var _ = Describe("CLIContext", func() {
 
 		Context("with bad HOME directory", func() {
 			It("should return error for nonexistent HOME", func() {
+				if runtime.GOOS == "windows" {
+					Skip("Windows resolves Unix-style paths differently")
+				}
 				originalHome := os.Getenv("HOME")
 				originalUserProfile := os.Getenv("USERPROFILE")
 				DeferCleanup(func() {
