@@ -1,6 +1,8 @@
 package cmd_test
 
 import (
+	"bytes"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -13,8 +15,9 @@ var _ = Describe("Skills Commands", func() {
 		var ctx *cmdpkg.CLIContext
 
 		BeforeEach(func() {
-			ctx = &cmdpkg.CLIContext{InMemory: true}
-			initErr := ctx.InitService()
+			ctx = cmdpkg.NewCLIContext("", true)
+			errOut := &bytes.Buffer{}
+			initErr := ctx.InitService(errOut)
 			Expect(initErr).NotTo(HaveOccurred())
 		})
 

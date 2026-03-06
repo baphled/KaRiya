@@ -67,6 +67,7 @@ func ExtractFacts(
 }
 
 // ListFacts displays all existing facts.
+// ListFacts lists all facts from the fact repository and prints them to the provided writer.
 func ListFacts(svc *careerservice.Service, out io.Writer, errOut io.Writer) int {
 	ctx := context.Background()
 

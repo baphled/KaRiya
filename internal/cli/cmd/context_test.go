@@ -1,6 +1,7 @@
 package cmd_test
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 
@@ -11,10 +12,28 @@ import (
 )
 
 var _ = Describe("CLIContext", func() {
+	Describe("NewCLIContext", func() {
+		It("creates context with provided parameters", func() {
+			ctx := cmdpkg.NewCLIContext("/path/to/db", false)
+			Expect(ctx).NotTo(BeNil())
+			Expect(ctx.DBPath).To(Equal("/path/to/db"))
+			Expect(ctx.InMemory).To(BeFalse())
+			Expect(ctx.Service).To(BeNil())
+		})
+
+		It("creates context for in-memory mode", func() {
+			ctx := cmdpkg.NewCLIContext("", true)
+			Expect(ctx).NotTo(BeNil())
+			Expect(ctx.InMemory).To(BeTrue())
+			Expect(ctx.DBPath).To(Equal(""))
+		})
+	})
+
 	Describe("InitService", func() {
 		It("initializes service with in-memory repositories", func() {
-			ctx := &cmdpkg.CLIContext{InMemory: true}
-			err := ctx.InitService()
+			ctx := cmdpkg.NewCLIContext("", true)
+			errOut := &bytes.Buffer{}
+			err := ctx.InitService(errOut)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(ctx.Service).NotTo(BeNil())
 		})
@@ -25,8 +44,9 @@ var _ = Describe("CLIContext", func() {
 			defer os.RemoveAll(tmpDir)
 
 			dbPath := filepath.Join(tmpDir, "test.db")
-			ctx := &cmdpkg.CLIContext{InMemory: false, DBPath: dbPath}
-			err = ctx.InitService()
+			ctx := cmdpkg.NewCLIContext(dbPath, false)
+			errOut := &bytes.Buffer{}
+			err = ctx.InitService(errOut)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(ctx.Service).NotTo(BeNil())
 		})
@@ -37,21 +57,50 @@ var _ = Describe("CLIContext", func() {
 			defer os.RemoveAll(tmpDir)
 
 			dbPath := filepath.Join(tmpDir, "test.db")
-			ctx := &cmdpkg.CLIContext{InMemory: false, DBPath: dbPath}
-			err = ctx.InitService()
+			ctx := cmdpkg.NewCLIContext(dbPath, false)
+			errOut := &bytes.Buffer{}
+			err = ctx.InitService(errOut)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ctx.Service).NotTo(BeNil())
+		})
+
+		It("uses default path when DBPath is empty", func() {
+			ctx := cmdpkg.NewCLIContext("", false)
+			errOut := &bytes.Buffer{}
+			err := ctx.InitService(errOut)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(ctx.Service).NotTo(BeNil())
 		})
 
 		It("returns error when database path is invalid", func() {
-			ctx := &cmdpkg.CLIContext{InMemory: false, DBPath: "/invalid/path/that/does/not/exist/test.db"}
-			err := ctx.InitService()
+			ctx := cmdpkg.NewCLIContext("/invalid/path/that/does/not/exist/test.db", false)
+			errOut := &bytes.Buffer{}
+			err := ctx.InitService(errOut)
 			Expect(err).To(HaveOccurred())
 		})
 
-		It("returns error when home directory cannot be determined", func() {
-			// This test is difficult to implement without mocking os.UserHomeDir
-			// Skip for now as it requires more complex setup
+		It("writes error to errOut when initialization fails", func() {
+			ctx := cmdpkg.NewCLIContext("/invalid/path/that/does/not/exist/test.db", false)
+			errOut := &bytes.Buffer{}
+			err := ctx.InitService(errOut)
+			Expect(err).To(HaveOccurred())
+			Expect(errOut.String()).NotTo(BeEmpty())
+		})
+
+		It("configures all repositories on service", func() {
+			ctx := cmdpkg.NewCLIContext("", true)
+			errOut := &bytes.Buffer{}
+			err := ctx.InitService(errOut)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ctx.Service).NotTo(BeNil())
+		})
+
+		It("creates kariya directory when using default path", func() {
+			ctx := cmdpkg.NewCLIContext("", false)
+			errOut := &bytes.Buffer{}
+			err := ctx.InitService(errOut)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ctx.Service).NotTo(BeNil())
 		})
 	})
 })

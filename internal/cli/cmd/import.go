@@ -25,6 +25,9 @@ type ImportOptions struct {
 
 // HandleImport executes the import logic for a CSV file.
 //
+// Deprecated: Use runImport with ImportOptions for new code.
+// Maintained for backward compatibility with existing command signature.
+//
 //nolint:revive // Maintain backward compatibility with existing command signature
 func HandleImport(
 	filePath string,
@@ -49,6 +52,8 @@ func HandleImport(
 }
 
 // runImport executes the import logic.
+//
+// This function handles parsing, execution, and reporting for the import command.
 //
 //nolint:funlen // Comprehensive import logic including parsing, execution, and reporting
 func runImport(opts ImportOptions) int {
@@ -103,7 +108,7 @@ func runImport(opts ImportOptions) int {
 		return 1
 	}
 
-	displayImportResults(result, opts.Out)
+	DisplayImportResults(result, opts.Out)
 
 	if result.SuccessCount > 0 {
 		fmt.Fprintf(opts.Out, "\n✓ Import successful!\n")
@@ -117,7 +122,11 @@ func runImport(opts ImportOptions) int {
 	}
 }
 
-func displayImportResults(result *importer.ImportResult, out io.Writer) {
+// DisplayImportResults displays the results of an import operation.
+// DisplayImportResults prints a summary of the import, including success,
+// skipped, and failed counts, as well as burst suggestions and fact extraction
+// results.
+func DisplayImportResults(result *importer.ImportResult, out io.Writer) {
 	fmt.Fprintf(out, "\nImport Complete ===\n")
 	fmt.Fprintf(out, "Total rows processed: %d\n", result.TotalRows)
 	fmt.Fprintf(out, "Successfully imported: %d\n", result.SuccessCount)

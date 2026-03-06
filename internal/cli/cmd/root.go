@@ -36,7 +36,7 @@ func NewRootCmd(version string) *cobra.Command {
 			}
 			ctx.DBPath = dbPath
 			ctx.InMemory = inMemory
-			return ctx.InitService()
+			return ctx.InitService(cmd.ErrOrStderr())
 		},
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			mode, err := cmd.Flags().GetString("mode")

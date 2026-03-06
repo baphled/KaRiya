@@ -28,8 +28,8 @@ var _ = Describe("Bursts Commands", func() {
 	)
 
 	BeforeEach(func() {
-		ctx = &cmdpkg.CLIContext{InMemory: true}
-		initErr := ctx.InitService()
+		ctx = cmdpkg.NewCLIContext("", true)
+		initErr := ctx.InitService(errOut)
 		Expect(initErr).NotTo(HaveOccurred())
 
 		out = new(bytes.Buffer)

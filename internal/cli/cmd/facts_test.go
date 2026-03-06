@@ -27,8 +27,8 @@ var _ = Describe("Facts Commands", func() {
 	)
 
 	BeforeEach(func() {
-		ctx = &cmdpkg.CLIContext{InMemory: true}
-		initErr := ctx.InitService()
+		ctx = cmdpkg.NewCLIContext("", true)
+		initErr := ctx.InitService(errOut)
 		Expect(initErr).NotTo(HaveOccurred())
 
 		out = new(bytes.Buffer)

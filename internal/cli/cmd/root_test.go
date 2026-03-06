@@ -1,6 +1,7 @@
 package cmd_test
 
 import (
+	"bytes"
 	"errors"
 
 	"github.com/golang/mock/gomock"
@@ -57,7 +58,7 @@ var _ = Describe("Root Command", func() {
 
 	Describe("NewImportCmd", func() {
 		It("creates an import command with correct properties", func() {
-			ctx := &cmdpkg.CLIContext{InMemory: true}
+			ctx := cmdpkg.NewCLIContext("", true)
 			cmd := cmdpkg.NewImportCmd(ctx)
 			Expect(cmd).NotTo(BeNil())
 			Expect(cmd.Use).To(Equal("import <file>"))
@@ -65,7 +66,7 @@ var _ = Describe("Root Command", func() {
 		})
 
 		It("requires exactly one argument", func() {
-			ctx := &cmdpkg.CLIContext{InMemory: true}
+			ctx := cmdpkg.NewCLIContext("", true)
 			cmd := cmdpkg.NewImportCmd(ctx)
 			Expect(cmd.Args).NotTo(BeNil())
 			// Verify it's ExactArgs by checking the function behavior
@@ -74,14 +75,15 @@ var _ = Describe("Root Command", func() {
 		})
 
 		It("has RunE function", func() {
-			ctx := &cmdpkg.CLIContext{InMemory: true}
+			ctx := cmdpkg.NewCLIContext("", true)
 			cmd := cmdpkg.NewImportCmd(ctx)
 			Expect(cmd.RunE).NotTo(BeNil())
 		})
 
 		It("returns error when import fails", func() {
-			ctx := &cmdpkg.CLIContext{InMemory: true}
-			initErr := ctx.InitService()
+			ctx := cmdpkg.NewCLIContext("", true)
+			errOut := &bytes.Buffer{}
+			initErr := ctx.InitService(errOut)
 			Expect(initErr).NotTo(HaveOccurred())
 
 			cmd := cmdpkg.NewImportCmd(ctx)
@@ -94,7 +96,7 @@ var _ = Describe("Root Command", func() {
 
 	Describe("NewBurstsCmd", func() {
 		It("creates a bursts command with correct properties", func() {
-			ctx := &cmdpkg.CLIContext{InMemory: true}
+			ctx := cmdpkg.NewCLIContext("", true)
 			cmd := cmdpkg.NewBurstsCmd(ctx)
 			Expect(cmd).NotTo(BeNil())
 			Expect(cmd.Use).To(Equal("bursts"))
@@ -102,7 +104,7 @@ var _ = Describe("Root Command", func() {
 		})
 
 		It("has detect and list subcommands", func() {
-			ctx := &cmdpkg.CLIContext{InMemory: true}
+			ctx := cmdpkg.NewCLIContext("", true)
 			cmd := cmdpkg.NewBurstsCmd(ctx)
 			subcommands := cmd.Commands()
 			subcommandNames := make([]string, len(subcommands))
@@ -114,7 +116,7 @@ var _ = Describe("Root Command", func() {
 		})
 
 		It("detect subcommand has correct properties", func() {
-			ctx := &cmdpkg.CLIContext{InMemory: true}
+			ctx := cmdpkg.NewCLIContext("", true)
 			cmd := cmdpkg.NewBurstsCmd(ctx)
 			detectCmd, _, _ := cmd.Find([]string{"detect"})
 			Expect(detectCmd).NotTo(BeNil())
@@ -123,7 +125,7 @@ var _ = Describe("Root Command", func() {
 		})
 
 		It("list subcommand has correct properties", func() {
-			ctx := &cmdpkg.CLIContext{InMemory: true}
+			ctx := cmdpkg.NewCLIContext("", true)
 			cmd := cmdpkg.NewBurstsCmd(ctx)
 			listCmd, _, _ := cmd.Find([]string{"list"})
 			Expect(listCmd).NotTo(BeNil())
@@ -134,7 +136,7 @@ var _ = Describe("Root Command", func() {
 
 	Describe("NewFactsCmd", func() {
 		It("creates a facts command with correct properties", func() {
-			ctx := &cmdpkg.CLIContext{InMemory: true}
+			ctx := cmdpkg.NewCLIContext("", true)
 			cmd := cmdpkg.NewFactsCmd(ctx)
 			Expect(cmd).NotTo(BeNil())
 			Expect(cmd.Use).To(Equal("facts"))
@@ -142,7 +144,7 @@ var _ = Describe("Root Command", func() {
 		})
 
 		It("has extract and list subcommands", func() {
-			ctx := &cmdpkg.CLIContext{InMemory: true}
+			ctx := cmdpkg.NewCLIContext("", true)
 			cmd := cmdpkg.NewFactsCmd(ctx)
 			subcommands := cmd.Commands()
 			subcommandNames := make([]string, len(subcommands))
@@ -154,7 +156,7 @@ var _ = Describe("Root Command", func() {
 		})
 
 		It("extract subcommand has correct properties", func() {
-			ctx := &cmdpkg.CLIContext{InMemory: true}
+			ctx := cmdpkg.NewCLIContext("", true)
 			cmd := cmdpkg.NewFactsCmd(ctx)
 			extractCmd, _, _ := cmd.Find([]string{"extract"})
 			Expect(extractCmd).NotTo(BeNil())
@@ -163,7 +165,7 @@ var _ = Describe("Root Command", func() {
 		})
 
 		It("list subcommand has correct properties", func() {
-			ctx := &cmdpkg.CLIContext{InMemory: true}
+			ctx := cmdpkg.NewCLIContext("", true)
 			cmd := cmdpkg.NewFactsCmd(ctx)
 			listCmd, _, _ := cmd.Find([]string{"list"})
 			Expect(listCmd).NotTo(BeNil())
@@ -179,8 +181,9 @@ var _ = Describe("Root Command", func() {
 		)
 
 		BeforeEach(func() {
-			ctx = &cmdpkg.CLIContext{InMemory: true}
-			initErr := ctx.InitService()
+			ctx = cmdpkg.NewCLIContext("", true)
+			errOut := &bytes.Buffer{}
+			initErr := ctx.InitService(errOut)
 			Expect(initErr).NotTo(HaveOccurred())
 			progress = cliutil.MockProgressRunner{}
 		})
@@ -215,8 +218,9 @@ var _ = Describe("Root Command", func() {
 		})
 
 		It("bursts detect command returns error when detection fails", func() {
-			ctx := &cmdpkg.CLIContext{InMemory: true}
-			initErr := ctx.InitService()
+			ctx := cmdpkg.NewCLIContext("", true)
+			errOut := &bytes.Buffer{}
+			initErr := ctx.InitService(errOut)
 			Expect(initErr).NotTo(HaveOccurred())
 
 			// Mock the service to return an error
@@ -251,8 +255,9 @@ var _ = Describe("Root Command", func() {
 		})
 
 		It("bursts list command returns error when listing fails", func() {
-			ctx := &cmdpkg.CLIContext{InMemory: true}
-			initErr := ctx.InitService()
+			ctx := cmdpkg.NewCLIContext("", true)
+			errOut := &bytes.Buffer{}
+			initErr := ctx.InitService(errOut)
 			Expect(initErr).NotTo(HaveOccurred())
 
 			cmd := cmdpkg.NewBurstsCmd(ctx)
@@ -303,8 +308,9 @@ var _ = Describe("Root Command", func() {
 		})
 
 		It("facts extract command returns error when extraction fails", func() {
-			ctx := &cmdpkg.CLIContext{InMemory: true}
-			initErr := ctx.InitService()
+			ctx := cmdpkg.NewCLIContext("", true)
+			errOut := &bytes.Buffer{}
+			initErr := ctx.InitService(errOut)
 			Expect(initErr).NotTo(HaveOccurred())
 
 			// Mock the service to return an error
@@ -338,8 +344,9 @@ var _ = Describe("Root Command", func() {
 		})
 
 		It("facts list command returns error when listing fails", func() {
-			ctx := &cmdpkg.CLIContext{InMemory: true}
-			initErr := ctx.InitService()
+			ctx := cmdpkg.NewCLIContext("", true)
+			errOut := &bytes.Buffer{}
+			initErr := ctx.InitService(errOut)
 			Expect(initErr).NotTo(HaveOccurred())
 
 			cmd := cmdpkg.NewFactsCmd(ctx)
