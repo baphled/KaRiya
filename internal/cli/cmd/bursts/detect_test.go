@@ -79,7 +79,7 @@ var _ = Describe("DetectBursts", func() {
 			svc := ctx.Service()
 			Expect(svc).NotTo(BeNil())
 
-			code := bursts.DetectBursts(svc, out, err)
+			code := bursts.DetectBursts(svc, out, err, tea.WithInput(nil))
 			Expect(code).To(BeNumerically(">=", 0))
 			Expect(code).To(BeNumerically("<=", 1))
 		})
@@ -105,7 +105,7 @@ var _ = Describe("DetectBursts", func() {
 			Expect(svc).NotTo(BeNil())
 
 			Expect(func() {
-				bursts.DetectBursts(svc, out, err)
+				bursts.DetectBursts(svc, out, err, tea.WithInput(nil))
 			}).NotTo(Panic())
 		})
 

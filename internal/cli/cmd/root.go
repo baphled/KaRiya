@@ -9,7 +9,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/cmd/skills"
 )
 
-// NewRootCmd creates the root command for the KaRiya CLI
+// NewRootCmd creates the root command for the KaRiya CLI.
 func NewRootCmd(version string) *cobra.Command {
 	ctx := &CLIContext{}
 

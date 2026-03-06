@@ -78,7 +78,7 @@ var _ = Describe("ExtractFacts", func() {
 			svc := ctx.Service()
 			Expect(svc).NotTo(BeNil())
 
-			code := facts.ExtractFacts(svc, out, err)
+			code := facts.ExtractFacts(svc, out, err, tea.WithInput(nil))
 			Expect(code).To(BeNumerically(">=", 0))
 			Expect(code).To(BeNumerically("<=", 1))
 		})
@@ -104,7 +104,7 @@ var _ = Describe("ExtractFacts", func() {
 			Expect(svc).NotTo(BeNil())
 
 			Expect(func() {
-				facts.ExtractFacts(svc, out, err)
+				facts.ExtractFacts(svc, out, err, tea.WithInput(nil))
 			}).NotTo(Panic())
 		})
 

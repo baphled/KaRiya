@@ -53,7 +53,7 @@ func NewImportCmd(ctx cliutil.ServiceContext) *cobra.Command {
 	return importCmd
 }
 
-// executeImportFromFile validates and executes import from a file.
+// ExecuteImportFromFile validates and executes import from a file.
 //
 // Expected:
 //   - svc: initialized career Service

@@ -33,7 +33,7 @@ type CareerServiceAdapter struct {
 // Returns:
 //   - CareerServiceAdapter implementing FactExtractionService
 //
-// Side effects: None
+// Side effects: None.
 func NewCareerServiceAdapter(svc *careerservice.Service) *CareerServiceAdapter {
 	return &CareerServiceAdapter{svc: svc}
 }
@@ -120,7 +120,7 @@ func ExtractFacts(svc *careerservice.Service, out io.Writer, errOut io.Writer, o
 //   - Reads events from service
 //   - Writes facts to service
 //   - Writes output to writers
-func ExtractFactsWithService(svc FactExtractionService, out io.Writer, errOut io.Writer, opts ...tea.ProgramOption) int {
+func ExtractFactsWithService(svc FactExtractionService, out io.Writer, _ io.Writer, opts ...tea.ProgramOption) int {
 	ctx := context.Background()
 
 	events, err := svc.ListEvents(ctx, career.EventListFilters{Limit: 10000})
@@ -188,7 +188,12 @@ func processEventFactsWithService(ctx context.Context, svc FactExtractionService
 	return savedCount
 }
 
-func updateCompetencyCountsWithService(ctx context.Context, svc FactExtractionService, event *domain.Event, competencyCount map[string]int) {
+func updateCompetencyCountsWithService(
+	ctx context.Context,
+	svc FactExtractionService,
+	event *domain.Event,
+	competencyCount map[string]int,
+) {
 	facts, err := svc.ExtractFactsFromEvent(ctx, event)
 	if err != nil {
 		return

@@ -38,7 +38,7 @@ var _ = Describe("Facts Commands", func() {
 
 	Describe("ExtractFacts", func() {
 		It("returns 0 when no events exist", func() {
-			code := cmdpkg.ExtractFacts(ctx.Service, out, errOut, runner)
+			code := cmdpkg.ExtractFacts(ctx.Service(), out, errOut, runner)
 			Expect(code).To(Equal(0))
 			Expect(out.String()).To(ContainSubstring("No facts extracted"))
 		})
@@ -64,10 +64,10 @@ var _ = Describe("Facts Commands", func() {
 				"ID":   "event-1",
 				"Date": time.Now(),
 			}).(*career.Event)
-			captureErr := ctx.Service.CaptureEvent(context.Background(), event, "timeline")
+			captureErr := ctx.Service().CaptureEvent(context.Background(), event, "timeline")
 			Expect(captureErr).NotTo(HaveOccurred())
 
-			code := cmdpkg.ExtractFacts(ctx.Service, out, errOut, runner)
+			code := cmdpkg.ExtractFacts(ctx.Service(), out, errOut, runner)
 			Expect(code).To(Equal(0))
 			output := out.String()
 			Expect(output).To(ContainSubstring("Fact Extraction Results"))
@@ -78,15 +78,15 @@ var _ = Describe("Facts Commands", func() {
 
 	Describe("ListFacts", func() {
 		It("returns 0 when no facts exist", func() {
-			code := cmdpkg.ListFacts(ctx.Service, out, errOut)
+			code := cmdpkg.ListFacts(ctx.Service(), out, errOut)
 			Expect(code).To(Equal(0))
 			Expect(out.String()).To(ContainSubstring("No facts found"))
 		})
 
 		It("returns 1 when fact repository is not configured", func() {
-			ctx.Service.SetFactRepository(nil)
+			ctx.Service().SetFactRepository(nil)
 
-			code := cmdpkg.ListFacts(ctx.Service, out, errOut)
+			code := cmdpkg.ListFacts(ctx.Service(), out, errOut)
 			Expect(code).To(Equal(1))
 			Expect(errOut.String()).To(ContainSubstring("Fact repository not configured"))
 		})
@@ -101,9 +101,9 @@ var _ = Describe("Facts Commands", func() {
 				Return(nil, errors.New("database error")).
 				Times(1)
 
-			ctx.Service.SetFactRepository(mockFactRepo)
+			ctx.Service().SetFactRepository(mockFactRepo)
 
-			code := cmdpkg.ListFacts(ctx.Service, out, errOut)
+			code := cmdpkg.ListFacts(ctx.Service(), out, errOut)
 			Expect(code).To(Equal(1))
 			Expect(errOut.String()).To(ContainSubstring("Error retrieving facts"))
 		})
