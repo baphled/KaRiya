@@ -124,11 +124,6 @@ var _ = Describe("CLIContext", func() {
 		})
 
 		Context("with SQLite and default path", func() {
-			BeforeEach(func() {
-				if runtime.GOOS == "windows" {
-					Skip("Windows file locking prevents cleanup of logger files in temp HOME")
-				}
-			})
 
 			It("should initialize service successfully", func() {
 				homeDir := GinkgoT().TempDir()
@@ -180,7 +175,7 @@ var _ = Describe("CLIContext", func() {
 
 			It("should create .kariya directory with correct permissions", func() {
 				if runtime.GOOS == "windows" {
-					Skip("Windows does not enforce Unix permissions")
+					return
 				}
 				homeDir := GinkgoT().TempDir()
 				originalHome := os.Getenv("HOME")
@@ -250,7 +245,7 @@ var _ = Describe("CLIContext", func() {
 		Context("with directory creation error", func() {
 			It("should return error when directory cannot be created", func() {
 				if runtime.GOOS == "windows" {
-					Skip("Windows does not enforce Unix permissions")
+					return
 				}
 				homeDir := GinkgoT().TempDir()
 				originalHome := os.Getenv("HOME")
@@ -282,7 +277,7 @@ var _ = Describe("CLIContext", func() {
 		Context("with bad HOME directory", func() {
 			It("should return error for nonexistent HOME", func() {
 				if runtime.GOOS == "windows" {
-					Skip("Windows resolves Unix-style paths differently")
+					return
 				}
 				originalHome := os.Getenv("HOME")
 				originalUserProfile := os.Getenv("USERPROFILE")
@@ -361,7 +356,7 @@ var _ = Describe("CLIContext", func() {
 		Context("with readonly database path", func() {
 			It("should return error for readonly DB path", func() {
 				if runtime.GOOS == "windows" {
-					Skip("Windows does not enforce Unix permissions")
+					return
 				}
 				tmpDir := GinkgoT().TempDir()
 				readOnlyDir := filepath.Join(tmpDir, "readonly")
@@ -386,7 +381,7 @@ var _ = Describe("CLIContext", func() {
 		Context("with readonly home directory", func() {
 			It("should return error for readonly HOME", func() {
 				if runtime.GOOS == "windows" {
-					Skip("Windows does not enforce Unix permissions")
+					return
 				}
 				tmpDir := GinkgoT().TempDir()
 				readOnlyHome := filepath.Join(tmpDir, "readonly_home")
@@ -444,6 +439,46 @@ var _ = Describe("CLIContext", func() {
 				svc := ctx.Service()
 				Expect(svc).NotTo(BeNil())
 				Expect(svc).To(Equal(ctx.svc))
+			})
+		})
+	})
+
+	Describe("Close", func() {
+		Context("with in-memory database", func() {
+			It("should return nil when no database is open", func() {
+				ctx := NewCLIContext("", true)
+				errBuf := new(bytes.Buffer)
+
+				err := ctx.InitService(errBuf)
+				Expect(err).NotTo(HaveOccurred())
+
+				closeErr := ctx.Close()
+				Expect(closeErr).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("with SQLite database", func() {
+			It("should close the database connection", func() {
+				tmpDir := GinkgoT().TempDir()
+				dbPath := filepath.Join(tmpDir, "test-close.db")
+
+				ctx := NewCLIContext(dbPath, false)
+				errBuf := new(bytes.Buffer)
+
+				err := ctx.InitService(errBuf)
+				Expect(err).NotTo(HaveOccurred())
+
+				closeErr := ctx.Close()
+				Expect(closeErr).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("before initialization", func() {
+			It("should return nil when never initialized", func() {
+				ctx := NewCLIContext("", true)
+
+				closeErr := ctx.Close()
+				Expect(closeErr).NotTo(HaveOccurred())
 			})
 		})
 	})

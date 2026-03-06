@@ -114,15 +114,35 @@ var _ = Describe("Bursts Commands", func() {
 		})
 
 		Context("when bursts exist", func() {
-			It("returns 0 and displays burst header", func() {
+			It("displays default name for burst with empty Name", func() {
 				ctrl := gomock.NewController(GinkgoT())
 				defer ctrl.Finish()
 
 				mockBurstRepo := mockrepo.NewMockBurstRepository(ctrl)
-				bursts := []*career.Burst{fixtures.Burst("burst-1", "event-1", "event-2")}
 				mockBurstRepo.EXPECT().
 					List(gomock.Any(), gomock.Any()).
-					Return(bursts, nil).
+					Return([]*career.Burst{
+						{ID: "burst-1", Name: "", EventIDs: []string{"e1"}, CreatedAt: time.Now()},
+					}, nil).
+					Times(1)
+
+				ctx.Service().SetBurstRepository(mockBurstRepo)
+
+				code := cmdpkg.ListBursts(ctx.Service(), out, errOut)
+				Expect(code).To(Equal(0))
+				Expect(out.String()).To(ContainSubstring("Burst 1"))
+			})
+
+			It("displays description when burst has one", func() {
+				ctrl := gomock.NewController(GinkgoT())
+				defer ctrl.Finish()
+
+				mockBurstRepo := mockrepo.NewMockBurstRepository(ctrl)
+				mockBurstRepo.EXPECT().
+					List(gomock.Any(), gomock.Any()).
+					Return([]*career.Burst{
+						{ID: "burst-2", Name: "API Work", Description: "API modernisation burst", EventIDs: []string{"e1", "e2"}, CreatedAt: time.Now()},
+					}, nil).
 					Times(1)
 
 				ctx.Service().SetBurstRepository(mockBurstRepo)
@@ -130,8 +150,25 @@ var _ = Describe("Bursts Commands", func() {
 				code := cmdpkg.ListBursts(ctx.Service(), out, errOut)
 				Expect(code).To(Equal(0))
 				output := out.String()
-				Expect(output).To(ContainSubstring("=== Bursts ==="))
-				Expect(output).To(ContainSubstring("Total bursts"))
+				Expect(output).To(ContainSubstring("API Work"))
+				Expect(output).To(ContainSubstring("Description: API modernisation burst"))
+			})
+
+			It("returns 1 and displays error message when burst repo List fails", func() {
+				ctrl := gomock.NewController(GinkgoT())
+				defer ctrl.Finish()
+
+				mockBurstRepo := mockrepo.NewMockBurstRepository(ctrl)
+				mockBurstRepo.EXPECT().
+					List(gomock.Any(), gomock.Any()).
+					Return(nil, errors.New("repo failure")).
+					Times(1)
+
+				ctx.Service().SetBurstRepository(mockBurstRepo)
+
+				code := cmdpkg.ListBursts(ctx.Service(), out, errOut)
+				Expect(code).To(Equal(1))
+				Expect(errOut.String()).To(ContainSubstring("repo failure"))
 			})
 		})
 	})

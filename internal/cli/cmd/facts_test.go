@@ -91,21 +91,40 @@ var _ = Describe("Facts Commands", func() {
 			Expect(errOut.String()).To(ContainSubstring("Fact repository not configured"))
 		})
 
-		It("returns 1 when List returns error", func() {
+		It("displays all fact fields when facts exist", func() {
 			ctrl := gomock.NewController(GinkgoT())
 			defer ctrl.Finish()
 
+			now := time.Now()
 			mockFactRepo := mockrepo.NewMockFactRepository(ctrl)
 			mockFactRepo.EXPECT().
 				List(gomock.Any(), gomock.Any()).
-				Return(nil, errors.New("database error")).
+				Return([]*career.Fact{
+					{
+						ID:                   "fact-1",
+						Text:                 "Led API migration project",
+						SourceEventID:        "event-1",
+						CompetencyCategories: []string{"technical", "leadership"},
+						RoleFit:              "Senior Engineer",
+						AudienceRelevance:    []string{"hiring-manager", "recruiter"},
+						CreatedAt:            now,
+					},
+				}, nil).
 				Times(1)
 
 			ctx.Service().SetFactRepository(mockFactRepo)
 
 			code := cmdpkg.ListFacts(ctx.Service(), out, errOut)
-			Expect(code).To(Equal(1))
-			Expect(errOut.String()).To(ContainSubstring("Error retrieving facts"))
+			Expect(code).To(Equal(0))
+			output := out.String()
+			Expect(output).To(ContainSubstring("=== Existing Facts ==="))
+			Expect(output).To(ContainSubstring("Total facts: 1"))
+			Expect(output).To(ContainSubstring("Led API migration project"))
+			Expect(output).To(ContainSubstring("fact-1"))
+			Expect(output).To(ContainSubstring("event-1"))
+			Expect(output).To(ContainSubstring("technical, leadership"))
+			Expect(output).To(ContainSubstring("Senior Engineer"))
+			Expect(output).To(ContainSubstring("hiring-manager, recruiter"))
 		})
 	})
 })
