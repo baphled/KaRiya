@@ -72,7 +72,9 @@ func (ctx *CLIContext) Service() *careerservice.Service {
 // For in-memory databases, this is a no-op.
 func (ctx *CLIContext) Close() error {
 	if ctx.db != nil {
-		ctx.db.Exec("PRAGMA wal_checkpoint(TRUNCATE)") //nolint:errcheck // Best-effort WAL checkpoint before close.
+		if _, err := ctx.db.Exec("PRAGMA wal_checkpoint(TRUNCATE)"); err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: WAL checkpoint failed: %v\n", err)
+		}
 		return ctx.db.Close()
 	}
 	return nil

@@ -18,11 +18,29 @@ type FileOpener interface {
 type OSFileOpener struct{}
 
 // Open opens a file for reading using os.Open.
+//
+// Expected:
+//   - path must be a valid file path.
+//
+// Returns:
+//   - An io.ReadCloser for the opened file, or an error if the file cannot be opened.
+//
+// Side effects:
+//   - Opens a file descriptor on the filesystem.
 func (o OSFileOpener) Open(path string) (io.ReadCloser, error) {
 	return os.Open(path)
 }
 
 // Stat returns FileInfo for a given path using os.Stat.
+//
+// Expected:
+//   - path must be a valid file path.
+//
+// Returns:
+//   - os.FileInfo describing the named file, or an error if the file cannot be stated.
+//
+// Side effects:
+//   - Reads file metadata from the filesystem.
 func (o OSFileOpener) Stat(path string) (os.FileInfo, error) {
 	return os.Stat(path)
 }
@@ -37,11 +55,32 @@ type ProgressRunner interface {
 type DefaultProgressRunner struct{}
 
 // RunWithSpinner runs a task with a spinner using the default implementation.
+//
+// Expected:
+//   - message must be a non-empty string describing the task.
+//   - fn must be a non-nil function to execute.
+//
+// Returns:
+//   - An error if the task function fails, nil otherwise.
+//
+// Side effects:
+//   - Displays a spinner in the terminal during execution.
 func (d DefaultProgressRunner) RunWithSpinner(message string, fn func() error, opts ...tea.ProgramOption) error {
 	return RunWithSpinner(message, fn, opts...)
 }
 
 // RunWithProgress runs a task with a progress bar using the default implementation.
+//
+// Expected:
+//   - message must be a non-empty string describing the task.
+//   - total must be the expected number of items to process.
+//   - fn must be a non-nil function that calls update to report progress.
+//
+// Returns:
+//   - An error if the task function fails, nil otherwise.
+//
+// Side effects:
+//   - Displays a progress bar in the terminal during execution.
 func (d DefaultProgressRunner) RunWithProgress(
 	message string,
 	total int,
