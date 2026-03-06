@@ -96,20 +96,21 @@ var _ = Describe("Facts Commands", func() {
 			defer ctrl.Finish()
 
 			now := time.Now()
+			fact := fixtures.FactWithCategories(
+				"fact-1",
+				"Led API migration project",
+				"event-1",
+				[]string{"technical", "leadership"},
+				[]string{"hiring-manager", "recruiter"},
+			)
+			fact.CreatedAt = now
+			fact.RoleFit = "Senior Engineer"
+			facts := []*career.Fact{fact}
+
 			mockFactRepo := mockrepo.NewMockFactRepository(ctrl)
 			mockFactRepo.EXPECT().
 				List(gomock.Any(), gomock.Any()).
-				Return([]*career.Fact{
-					{
-						ID:                   "fact-1",
-						Text:                 "Led API migration project",
-						SourceEventID:        "event-1",
-						CompetencyCategories: []string{"technical", "leadership"},
-						RoleFit:              "Senior Engineer",
-						AudienceRelevance:    []string{"hiring-manager", "recruiter"},
-						CreatedAt:            now,
-					},
-				}, nil).
+				Return(facts, nil).
 				Times(1)
 
 			ctx.Service().SetFactRepository(mockFactRepo)

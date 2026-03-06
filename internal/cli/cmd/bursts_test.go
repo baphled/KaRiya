@@ -118,12 +118,14 @@ var _ = Describe("Bursts Commands", func() {
 				ctrl := gomock.NewController(GinkgoT())
 				defer ctrl.Finish()
 
+				burst := fixtures.Burst("burst-1", "e1")
+				burst.Name = ""
+				bursts := []*career.Burst{burst}
+
 				mockBurstRepo := mockrepo.NewMockBurstRepository(ctrl)
 				mockBurstRepo.EXPECT().
 					List(gomock.Any(), gomock.Any()).
-					Return([]*career.Burst{
-						{ID: "burst-1", Name: "", EventIDs: []string{"e1"}, CreatedAt: time.Now()},
-					}, nil).
+					Return(bursts, nil).
 					Times(1)
 
 				ctx.Service().SetBurstRepository(mockBurstRepo)
@@ -137,12 +139,15 @@ var _ = Describe("Bursts Commands", func() {
 				ctrl := gomock.NewController(GinkgoT())
 				defer ctrl.Finish()
 
+				burst := fixtures.Burst("burst-2", "e1", "e2")
+				burst.Name = "API Work"
+				burst.Description = "API modernisation burst"
+				bursts := []*career.Burst{burst}
+
 				mockBurstRepo := mockrepo.NewMockBurstRepository(ctrl)
 				mockBurstRepo.EXPECT().
 					List(gomock.Any(), gomock.Any()).
-					Return([]*career.Burst{
-						{ID: "burst-2", Name: "API Work", Description: "API modernisation burst", EventIDs: []string{"e1", "e2"}, CreatedAt: time.Now()},
-					}, nil).
+					Return(bursts, nil).
 					Times(1)
 
 				ctx.Service().SetBurstRepository(mockBurstRepo)

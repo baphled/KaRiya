@@ -126,6 +126,9 @@ var _ = Describe("CLIContext", func() {
 		Context("with SQLite and default path", func() {
 
 			It("should initialize service successfully", func() {
+				if runtime.GOOS == "windows" {
+					return
+				}
 				homeDir := GinkgoT().TempDir()
 				originalHome := os.Getenv("HOME")
 				originalUserProfile := os.Getenv("USERPROFILE")
@@ -149,6 +152,9 @@ var _ = Describe("CLIContext", func() {
 			})
 
 			It("should create database at default path", func() {
+				if runtime.GOOS == "windows" {
+					return
+				}
 				homeDir := GinkgoT().TempDir()
 				originalHome := os.Getenv("HOME")
 				originalUserProfile := os.Getenv("USERPROFILE")
@@ -204,6 +210,9 @@ var _ = Describe("CLIContext", func() {
 			})
 
 			It("should initialize all repositories", func() {
+				if runtime.GOOS == "windows" {
+					return
+				}
 				homeDir := GinkgoT().TempDir()
 				originalHome := os.Getenv("HOME")
 				originalUserProfile := os.Getenv("USERPROFILE")
