@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -246,12 +247,12 @@ var _ = Describe("Import Command", func() {
 		})
 
 		It("should return error for non-existent file", func() {
-			err := importcmd.ValidateFilePath("/tmp/nonexistent_file_12345.csv")
+			err := importcmd.ValidateFilePath(filepath.Join(os.TempDir(), "nonexistent_file_12345.csv"))
 			Expect(err).To(HaveOccurred())
 		})
 
 		It("should return nil for existing directory", func() {
-			err := importcmd.ValidateFilePath("/tmp")
+			err := importcmd.ValidateFilePath(os.TempDir())
 			Expect(err).NotTo(HaveOccurred())
 		})
 	})
