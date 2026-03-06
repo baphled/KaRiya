@@ -17,9 +17,10 @@ import (
 	domain "github.com/baphled/kariya/internal/domain/career"
 	careerepo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
-	mockrepo "github.com/baphled/kariya/internal/testutil/mocks/repository"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
+	mockrepo "github.com/baphled/kariya/internal/testutil/mocks/repository"
 )
+
 var _ = Describe("ExtractFacts", func() {
 	var (
 		ctx cliutil.ServiceContext
@@ -149,7 +150,7 @@ var _ = Describe("ExtractFacts", func() {
 
 			// Create event that exists but won't generate saveable facts
 			// Using text that may not generate facts with high enough confidence
-			event := fixtures.EventWith("no-fact-event", 
+			event := fixtures.EventWith("no-fact-event",
 				"Worked on some tasks and assignments during the period", "", "")
 			captureErr := svc.CaptureEvent(context.Background(), event, "timeline")
 			Expect(captureErr).NotTo(HaveOccurred())
@@ -168,7 +169,7 @@ var _ = Describe("ExtractFacts", func() {
 			svc := ctx.Service()
 			Expect(svc).NotTo(BeNil())
 
-			event := fixtures.EventWith("tech-event", 
+			event := fixtures.EventWith("tech-event",
 				"Implemented microservices architecture with Kubernetes Docker containers and cloud deployment", "", "")
 			captureErr := svc.CaptureEvent(context.Background(), event, "timeline")
 			Expect(captureErr).NotTo(HaveOccurred())
@@ -182,7 +183,7 @@ var _ = Describe("ExtractFacts", func() {
 			svc := ctx.Service()
 			Expect(svc).NotTo(BeNil())
 
-			event := fixtures.EventWith("multi-skill", 
+			event := fixtures.EventWith("multi-skill",
 				"Developed REST APIs using Python Django PostgreSQL with unit tests and CI/CD pipelines", "", "")
 			captureErr := svc.CaptureEvent(context.Background(), event, "timeline")
 			Expect(captureErr).NotTo(HaveOccurred())
@@ -298,8 +299,6 @@ var _ = Describe("ExtractFacts", func() {
 		})
 	})
 
-
-
 	Context("ExtractFactsWithService interface", func() {
 		It("should return 1 when ListEvents fails", func() {
 			mockSvc := &MockFactExtractionService{
@@ -341,7 +340,7 @@ var _ = Describe("ExtractFacts", func() {
 		It("should handle fact save failure gracefully", func() {
 			event := fixtures.EventWith("save", "Save test with comprehensive event description text", "", "")
 			testFacts := []domain.Fact{
-				{ID: "f1", SourceEventID: "save", Text: "Fact 1", CompetencyCategories: []string{"test"}},
+				*fixtures.Fact("f1", "save"),
 			}
 
 			mockSvc := &MockFactExtractionService{
@@ -360,7 +359,6 @@ var _ = Describe("ExtractFacts", func() {
 			Expect(code).To(Equal(0))
 		})
 	})
-
 
 })
 

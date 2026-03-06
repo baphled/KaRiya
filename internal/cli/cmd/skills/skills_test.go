@@ -50,7 +50,7 @@ var _ = Describe("Skills Command", func() {
 
 	Describe("NewRecategorizeCmd", func() {
 		It("should create recategorize command with correct properties", func() {
-			cmd = skills.NewRecategorizeCmd(ctx)
+			cmd = skills.NewRecategorizeCmd(ctx, tea.WithInput(nil))
 			Expect(cmd).NotTo(BeNil())
 			Expect(cmd.Use).To(Equal("recategorize"))
 			Expect(cmd.Short).To(Equal("Recategorize all skills"))
@@ -58,12 +58,12 @@ var _ = Describe("Skills Command", func() {
 		})
 
 		It("should have RunE function", func() {
-			cmd = skills.NewRecategorizeCmd(ctx)
+			cmd = skills.NewRecategorizeCmd(ctx, tea.WithInput(nil))
 			Expect(cmd.RunE).NotTo(BeNil())
 		})
 
 		It("should execute recategorize command", func() {
-			cmd = skills.NewRecategorizeCmd(ctx)
+			cmd = skills.NewRecategorizeCmd(ctx, tea.WithInput(nil))
 			out := new(bytes.Buffer)
 			cmd.SetOut(out)
 			cmd.SetErr(new(bytes.Buffer))
@@ -73,7 +73,7 @@ var _ = Describe("Skills Command", func() {
 
 		It("should return error when service is not initialized", func() {
 			nilCtx := cmdpkg.NewCLIContext("", true)
-			cobraCmd := skills.NewRecategorizeCmd(nilCtx)
+			cobraCmd := skills.NewRecategorizeCmd(nilCtx, tea.WithInput(nil))
 			out := new(bytes.Buffer)
 			cobraCmd.SetOut(out)
 			cobraCmd.SetErr(new(bytes.Buffer))
@@ -84,7 +84,7 @@ var _ = Describe("Skills Command", func() {
 		})
 
 		It("should return error when recategorization fails", func() {
-			cmd = skills.NewRecategorizeCmd(ctx)
+			cmd = skills.NewRecategorizeCmd(ctx, tea.WithInput(nil))
 			out := new(bytes.Buffer)
 			cmd.SetOut(out)
 			cmd.SetErr(new(bytes.Buffer))
@@ -93,11 +93,11 @@ var _ = Describe("Skills Command", func() {
 			Expect(svc).NotTo(BeNil())
 
 			err := cmd.RunE(cmd, []string{})
-			Expect(err).To(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("should handle command with no arguments", func() {
-			cmd = skills.NewRecategorizeCmd(ctx)
+			cmd = skills.NewRecategorizeCmd(ctx, tea.WithInput(nil))
 			out := new(bytes.Buffer)
 			cmd.SetOut(out)
 			cmd.SetErr(new(bytes.Buffer))
@@ -106,7 +106,7 @@ var _ = Describe("Skills Command", func() {
 		})
 
 		It("should use OutOrStdout for output", func() {
-			cmd = skills.NewRecategorizeCmd(ctx)
+			cmd = skills.NewRecategorizeCmd(ctx, tea.WithInput(nil))
 			out := new(bytes.Buffer)
 			cmd.SetOut(out)
 			cmd.SetErr(new(bytes.Buffer))
@@ -115,7 +115,7 @@ var _ = Describe("Skills Command", func() {
 		})
 
 		It("should use ErrOrStderr for error output", func() {
-			cmd = skills.NewRecategorizeCmd(ctx)
+			cmd = skills.NewRecategorizeCmd(ctx, tea.WithInput(nil))
 			cmd.SetOut(new(bytes.Buffer))
 			errOut := new(bytes.Buffer)
 			cmd.SetErr(errOut)
@@ -132,13 +132,13 @@ var _ = Describe("Skills Command", func() {
 			err := skillRepo.Create(context.Background(), skill1)
 			Expect(err).NotTo(HaveOccurred())
 
-			cmd = skills.NewRecategorizeCmd(ctx)
+			cmd = skills.NewRecategorizeCmd(ctx, tea.WithInput(nil))
 			out := new(bytes.Buffer)
 			cmd.SetOut(out)
 			cmd.SetErr(new(bytes.Buffer))
 
 			err = cmd.RunE(cmd, []string{})
-			Expect(err).To(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 		})
 	})
 

@@ -15,6 +15,19 @@ import (
 )
 
 // RecategorizeSkills recategorizes all skills based on keyword matching.
+//
+// Expected:
+//   - svc: initialized career Service
+//   - out/errOut: output writers (unused, reserved for future use)
+//   - opts: optional tea.ProgramOption for controlling terminal behavior
+//
+// Returns:
+//   - 0 on success, 1 on error
+//
+// Side effects:
+//   - Reads skills from database
+//   - Updates skill categories in database
+//   - Prints output to stdout via cliutil
 func RecategorizeSkills(svc *careerservice.Service, _ io.Writer, _ io.Writer, opts ...tea.ProgramOption) int {
 	ctx := context.Background()
 

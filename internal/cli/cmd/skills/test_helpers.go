@@ -6,6 +6,12 @@ import (
 
 // NilService creates an empty Service for testing error conditions.
 // This is a helper function to avoid inline struct violations in test files.
+//
+// Returns:
+//   - An empty careerservice.Service with no configured repositories
+//
+// Side effects:
+//   - None
 func NilService() *careerservice.Service {
 	return &careerservice.Service{}
 }

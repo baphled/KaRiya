@@ -5,8 +5,8 @@ import (
 	"io"
 
 	"github.com/baphled/kariya/internal/cli/cmd/cliutil"
-	tea "github.com/charmbracelet/bubbletea"
 	careerservice "github.com/baphled/kariya/internal/service/career"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 )
 

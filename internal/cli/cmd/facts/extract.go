@@ -38,14 +38,47 @@ func NewCareerServiceAdapter(svc *careerservice.Service) *CareerServiceAdapter {
 	return &CareerServiceAdapter{svc: svc}
 }
 
+// ListEvents delegates event listing to the career service.
+//
+// Expected:
+//   - ctx: context for the operation
+//   - filters: criteria for filtering events
+//
+// Returns:
+//   - Slice of matching events, or error
+//
+// Side effects:
+//   - Reads from database via career service
 func (a *CareerServiceAdapter) ListEvents(ctx context.Context, filters career.EventListFilters) ([]*domain.Event, error) {
 	return a.svc.ListEvents(ctx, filters)
 }
 
+// ExtractFactsFromEvent delegates fact extraction to the career service.
+//
+// Expected:
+//   - ctx: context for the operation
+//   - event: event to extract facts from
+//
+// Returns:
+//   - Extracted facts, or error
+//
+// Side effects:
+//   - May read from database via career service
 func (a *CareerServiceAdapter) ExtractFactsFromEvent(ctx context.Context, event *domain.Event) ([]domain.Fact, error) {
 	return a.svc.ExtractFactsFromEvent(ctx, event)
 }
 
+// SaveFact delegates fact persistence to the career service.
+//
+// Expected:
+//   - ctx: context for the operation
+//   - fact: fact to save
+//
+// Returns:
+//   - Error if save fails
+//
+// Side effects:
+//   - Writes to database via career service
 func (a *CareerServiceAdapter) SaveFact(ctx context.Context, fact *domain.Fact) error {
 	return a.svc.SaveFact(ctx, fact)
 }
