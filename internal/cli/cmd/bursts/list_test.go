@@ -21,7 +21,7 @@ import (
 
 var _ = Describe("ListBursts", func() {
 	var (
-		ctx cliutil.ServiceContext
+		ctx cliutil.ServiceProvider
 		out *bytes.Buffer
 		err *bytes.Buffer
 	)

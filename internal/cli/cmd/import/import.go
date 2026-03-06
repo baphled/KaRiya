@@ -26,14 +26,14 @@ type ImportParams struct {
 // NewImportCmd creates the "import" command.
 //
 // Expected:
-//   - ctx: ServiceContext with initialized Service
+//   - ctx: ServiceProvider with initialized Service
 //
 // Returns:
 //   - Configured cobra.Command for importing CSV files
 //
 // Side effects:
 //   - Registers "file" flag on the command
-func NewImportCmd(ctx cliutil.ServiceContext) *cobra.Command {
+func NewImportCmd(ctx cliutil.ServiceProvider) *cobra.Command {
 	var filePath string
 
 	importCmd := &cobra.Command{
@@ -46,7 +46,7 @@ func NewImportCmd(ctx cliutil.ServiceContext) *cobra.Command {
 	}
 
 	importCmd.Flags().StringVarP(&filePath, "file", "f", "", "Path to CSV file to import")
-	if err := importCmd.MarkFlagRequired("file"); err != nil {
+	if importCmd.MarkFlagRequired("file") != nil {
 		return nil
 	}
 

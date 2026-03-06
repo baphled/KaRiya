@@ -3,8 +3,8 @@ package cliutil
 
 import careerservice "github.com/baphled/kariya/internal/service/career"
 
-// ServiceContext defines the interface for CLI context that subcommands need.
-type ServiceContext interface {
+// ServiceProvider defines the interface for CLI context that subcommands need.
+type ServiceProvider interface {
 	// Service returns the initialized career service.
 	// Returns nil if InitService has not been called yet.
 	Service() *careerservice.Service

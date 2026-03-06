@@ -23,7 +23,7 @@ import (
 
 var _ = Describe("ExtractFacts", func() {
 	var (
-		ctx cliutil.ServiceContext
+		ctx cliutil.ServiceProvider
 		out *bytes.Buffer
 		err *bytes.Buffer
 	)

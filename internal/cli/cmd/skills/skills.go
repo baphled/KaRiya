@@ -11,14 +11,14 @@ import (
 // NewSkillsCmd creates the parent "skills" command with subcommands.
 //
 // Expected:
-//   - ctx: ServiceContext with initialized Service
+//   - ctx: ServiceProvider with initialized Service
 //
 // Returns:
 //   - Configured cobra.Command with recategorize subcommand
 //
 // Side effects:
 //   - Adds recategorize subcommand to the parent command
-func NewSkillsCmd(ctx cliutil.ServiceContext) *cobra.Command {
+func NewSkillsCmd(ctx cliutil.ServiceProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "skills",
 		Short: "Manage skills",
@@ -33,7 +33,7 @@ func NewSkillsCmd(ctx cliutil.ServiceContext) *cobra.Command {
 // NewRecategorizeCmd creates the "recategorize" subcommand.
 //
 // Expected:
-//   - ctx: ServiceContext with initialized Service
+//   - ctx: ServiceProvider with initialized Service
 //   - opts: optional tea.ProgramOption for controlling terminal behavior
 //
 // Returns:
@@ -41,7 +41,7 @@ func NewSkillsCmd(ctx cliutil.ServiceContext) *cobra.Command {
 //
 // Side effects:
 //   - None (command configuration only)
-func NewRecategorizeCmd(ctx cliutil.ServiceContext, opts ...tea.ProgramOption) *cobra.Command {
+func NewRecategorizeCmd(ctx cliutil.ServiceProvider, opts ...tea.ProgramOption) *cobra.Command {
 	return &cobra.Command{
 		Use:   "recategorize",
 		Short: "Recategorize all skills",

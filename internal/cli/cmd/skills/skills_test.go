@@ -20,7 +20,7 @@ import (
 
 var _ = Describe("Skills Command", func() {
 	var (
-		ctx cliutil.ServiceContext
+		ctx cliutil.ServiceProvider
 		cmd *cobra.Command
 	)
 

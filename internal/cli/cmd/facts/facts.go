@@ -13,14 +13,14 @@ import (
 // NewFactsCmd creates the parent "facts" command with subcommands.
 //
 // Expected:
-//   - ctx: ServiceContext with initialized Service
+//   - ctx: ServiceProvider with initialized Service
 //
 // Returns:
 //   - Configured cobra.Command with extract and list subcommands
 //
 // Side effects:
 //   - Adds extract and list subcommands to the parent command
-func NewFactsCmd(ctx cliutil.ServiceContext) *cobra.Command {
+func NewFactsCmd(ctx cliutil.ServiceProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "facts",
 		Short: "Manage facts",
@@ -36,14 +36,14 @@ func NewFactsCmd(ctx cliutil.ServiceContext) *cobra.Command {
 // NewExtractCmd creates the "extract" subcommand.
 //
 // Expected:
-//   - ctx: ServiceContext with initialized Service
+//   - ctx: ServiceProvider with initialized Service
 //
 // Returns:
 //   - Configured cobra.Command for fact extraction
 //
 // Side effects:
 //   - None (command configuration only)
-func NewExtractCmd(ctx cliutil.ServiceContext) *cobra.Command {
+func NewExtractCmd(ctx cliutil.ServiceProvider) *cobra.Command {
 	return &cobra.Command{
 		Use:   "extract",
 		Short: "Extract facts from events",
@@ -106,14 +106,14 @@ func ExecuteListFacts(svc *careerservice.Service, out, errOut io.Writer, opts ..
 // NewListCmd creates the "list" subcommand.
 //
 // Expected:
-//   - ctx: ServiceContext with initialized Service
+//   - ctx: ServiceProvider with initialized Service
 //
 // Returns:
 //   - Configured cobra.Command for listing facts
 //
 // Side effects:
 //   - None (command configuration only)
-func NewListCmd(ctx cliutil.ServiceContext) *cobra.Command {
+func NewListCmd(ctx cliutil.ServiceProvider) *cobra.Command {
 	return &cobra.Command{
 		Use:   "list",
 		Short: "List all facts",

@@ -180,7 +180,7 @@ func processEventFactsWithService(ctx context.Context, svc FactExtractionService
 
 	savedCount := 0
 	for j := range facts {
-		if err := svc.SaveFact(ctx, &facts[j]); err != nil {
+		if svc.SaveFact(ctx, &facts[j]) != nil {
 			continue
 		}
 		savedCount++
