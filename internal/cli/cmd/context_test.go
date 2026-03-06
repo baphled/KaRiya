@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -125,10 +126,14 @@ var _ = Describe("CLIContext", func() {
 		Context("with SQLite and default path", func() {
 			It("should initialize service successfully", func() {
 				homeDir := GinkgoT().TempDir()
+				originalHome := os.Getenv("HOME")
+				originalUserProfile := os.Getenv("USERPROFILE")
 				DeferCleanup(func() {
-					os.Setenv("HOME", os.Getenv("HOME"))
+					os.Setenv("HOME", originalHome)
+					os.Setenv("USERPROFILE", originalUserProfile)
 				})
 				os.Setenv("HOME", homeDir)
+				os.Setenv("USERPROFILE", homeDir)
 
 				ctx := NewCLIContext("", false)
 				errBuf := new(bytes.Buffer)
@@ -144,10 +149,14 @@ var _ = Describe("CLIContext", func() {
 
 			It("should create database at default path", func() {
 				homeDir := GinkgoT().TempDir()
+				originalHome := os.Getenv("HOME")
+				originalUserProfile := os.Getenv("USERPROFILE")
 				DeferCleanup(func() {
-					os.Setenv("HOME", os.Getenv("HOME"))
+					os.Setenv("HOME", originalHome)
+					os.Setenv("USERPROFILE", originalUserProfile)
 				})
 				os.Setenv("HOME", homeDir)
+				os.Setenv("USERPROFILE", homeDir)
 
 				ctx := NewCLIContext("", false)
 				errBuf := new(bytes.Buffer)
@@ -165,10 +174,14 @@ var _ = Describe("CLIContext", func() {
 
 			It("should create .kariya directory with correct permissions", func() {
 				homeDir := GinkgoT().TempDir()
+				originalHome := os.Getenv("HOME")
+				originalUserProfile := os.Getenv("USERPROFILE")
 				DeferCleanup(func() {
-					os.Setenv("HOME", os.Getenv("HOME"))
+					os.Setenv("HOME", originalHome)
+					os.Setenv("USERPROFILE", originalUserProfile)
 				})
 				os.Setenv("HOME", homeDir)
+				os.Setenv("USERPROFILE", homeDir)
 
 				ctx := NewCLIContext("", false)
 				errBuf := new(bytes.Buffer)
@@ -188,10 +201,14 @@ var _ = Describe("CLIContext", func() {
 
 			It("should initialize all repositories", func() {
 				homeDir := GinkgoT().TempDir()
+				originalHome := os.Getenv("HOME")
+				originalUserProfile := os.Getenv("USERPROFILE")
 				DeferCleanup(func() {
-					os.Setenv("HOME", os.Getenv("HOME"))
+					os.Setenv("HOME", originalHome)
+					os.Setenv("USERPROFILE", originalUserProfile)
 				})
 				os.Setenv("HOME", homeDir)
+				os.Setenv("USERPROFILE", homeDir)
 
 				ctx := NewCLIContext("", false)
 				errBuf := new(bytes.Buffer)
@@ -223,12 +240,19 @@ var _ = Describe("CLIContext", func() {
 
 		Context("with directory creation error", func() {
 			It("should return error when directory cannot be created", func() {
+				if runtime.GOOS == "windows" {
+					Skip("Windows does not enforce Unix permissions")
+				}
 				homeDir := GinkgoT().TempDir()
+				originalHome := os.Getenv("HOME")
+				originalUserProfile := os.Getenv("USERPROFILE")
 				DeferCleanup(func() {
-					os.Setenv("HOME", os.Getenv("HOME"))
+					os.Setenv("HOME", originalHome)
+					os.Setenv("USERPROFILE", originalUserProfile)
 					os.Chmod(filepath.Join(homeDir, "readonly"), 0o755)
 				})
 				os.Setenv("HOME", homeDir)
+				os.Setenv("USERPROFILE", homeDir)
 
 				readOnlyDir := filepath.Join(homeDir, "readonly")
 				Expect(os.Mkdir(readOnlyDir, 0o555)).To(Succeed())
@@ -248,10 +272,14 @@ var _ = Describe("CLIContext", func() {
 
 		Context("with bad HOME directory", func() {
 			It("should return error for nonexistent HOME", func() {
+				originalHome := os.Getenv("HOME")
+				originalUserProfile := os.Getenv("USERPROFILE")
 				DeferCleanup(func() {
-					os.Setenv("HOME", os.Getenv("HOME"))
+					os.Setenv("HOME", originalHome)
+					os.Setenv("USERPROFILE", originalUserProfile)
 				})
 				os.Setenv("HOME", "/nonexistent/path/that/cannot/be/created")
+				os.Setenv("USERPROFILE", "/nonexistent/path/that/cannot/be/created")
 
 				ctx := NewCLIContext("", false)
 				errBuf := new(bytes.Buffer)
@@ -265,10 +293,14 @@ var _ = Describe("CLIContext", func() {
 
 		Context("with empty HOME directory", func() {
 			It("should return error for empty HOME", func() {
+				originalHome := os.Getenv("HOME")
+				originalUserProfile := os.Getenv("USERPROFILE")
 				DeferCleanup(func() {
-					os.Setenv("HOME", os.Getenv("HOME"))
+					os.Setenv("HOME", originalHome)
+					os.Setenv("USERPROFILE", originalUserProfile)
 				})
 				os.Setenv("HOME", "")
+				os.Setenv("USERPROFILE", "")
 
 				ctx := NewCLIContext("", false)
 				errBuf := new(bytes.Buffer)
@@ -316,6 +348,9 @@ var _ = Describe("CLIContext", func() {
 
 		Context("with readonly database path", func() {
 			It("should return error for readonly DB path", func() {
+				if runtime.GOOS == "windows" {
+					Skip("Windows does not enforce Unix permissions")
+				}
 				tmpDir := GinkgoT().TempDir()
 				readOnlyDir := filepath.Join(tmpDir, "readonly")
 				DeferCleanup(func() {
@@ -338,15 +373,22 @@ var _ = Describe("CLIContext", func() {
 
 		Context("with readonly home directory", func() {
 			It("should return error for readonly HOME", func() {
+				if runtime.GOOS == "windows" {
+					Skip("Windows does not enforce Unix permissions")
+				}
 				tmpDir := GinkgoT().TempDir()
 				readOnlyHome := filepath.Join(tmpDir, "readonly_home")
+				originalHome := os.Getenv("HOME")
+				originalUserProfile := os.Getenv("USERPROFILE")
 				DeferCleanup(func() {
 					os.Chmod(readOnlyHome, 0o755)
-					os.Setenv("HOME", os.Getenv("HOME"))
+					os.Setenv("HOME", originalHome)
+					os.Setenv("USERPROFILE", originalUserProfile)
 				})
 
 				Expect(os.Mkdir(readOnlyHome, 0o555)).To(Succeed())
 				os.Setenv("HOME", readOnlyHome)
+				os.Setenv("USERPROFILE", readOnlyHome)
 
 				ctx := NewCLIContext("", false)
 				errBuf := new(bytes.Buffer)

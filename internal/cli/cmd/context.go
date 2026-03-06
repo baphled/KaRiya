@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"database/sql"
 	"fmt"
 	"io"
 	"os"
@@ -20,6 +21,7 @@ type CLIContext struct {
 	dbPath   string
 	inMemory bool
 	svc      *careerservice.Service
+	db       *sql.DB
 }
 
 // NewCLIContext creates a new CLIContext with the specified database configuration.
@@ -69,12 +71,8 @@ func (ctx *CLIContext) Service() *careerservice.Service {
 // Close closes the database connection if using SQLite.
 // For in-memory databases, this is a no-op.
 func (ctx *CLIContext) Close() error {
-	if ctx.svc != nil {
-		if eventRepo := ctx.svc.GetEventRepository(); eventRepo != nil {
-			if closer, ok := eventRepo.(interface{ Close() error }); ok {
-				return closer.Close()
-			}
-		}
+	if ctx.db != nil {
+		return ctx.db.Close()
 	}
 	return nil
 }
@@ -108,6 +106,7 @@ func (ctx *CLIContext) initSQLiteService(errOut io.Writer) error {
 		fmt.Fprintf(errOut, "Error opening database at '%s': %v\n", dbPath, err)
 		return err
 	}
+	ctx.db = db
 
 	if err := career.RunMigrations(db); err != nil {
 		fmt.Fprintf(errOut, "Error running migrations: %v\n", err)
