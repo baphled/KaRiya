@@ -27,13 +27,14 @@ type ImportParams struct {
 //
 // Expected:
 //   - ctx: ServiceProvider with initialized Service
+//   - opts: optional tea.ProgramOption for controlling terminal behavior
 //
 // Returns:
 //   - Configured cobra.Command for importing CSV files
 //
 // Side effects:
 //   - Registers "file" flag on the command
-func NewImportCmd(ctx cliutil.ServiceProvider) *cobra.Command {
+func NewImportCmd(ctx cliutil.ServiceProvider, opts ...tea.ProgramOption) *cobra.Command {
 	var filePath string
 
 	importCmd := &cobra.Command{
@@ -41,7 +42,7 @@ func NewImportCmd(ctx cliutil.ServiceProvider) *cobra.Command {
 		Short: "Import events from CSV",
 		Long:  "Import events from a CSV file and process them for facts and bursts",
 		RunE: func(cobraCmd *cobra.Command, _ []string) error {
-			return ExecuteImportFromFile(ctx.Service(), filePath, cobraCmd.OutOrStdout(), cobraCmd.ErrOrStderr())
+			return ExecuteImportFromFile(ctx.Service(), filePath, cobraCmd.OutOrStdout(), cobraCmd.ErrOrStderr(), opts...)
 		},
 	}
 

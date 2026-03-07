@@ -32,7 +32,7 @@ var _ = Describe("Import Command", func() {
 
 	Describe("NewImportCmd", func() {
 		It("should create command with correct properties", func() {
-			cmd = importcmd.NewImportCmd(ctx)
+			cmd = importcmd.NewImportCmd(ctx, tea.WithInput(nil))
 			Expect(cmd).NotTo(BeNil())
 			Expect(cmd.Use).To(Equal("import"))
 			Expect(cmd.Short).To(Equal("Import events from CSV"))
@@ -40,14 +40,14 @@ var _ = Describe("Import Command", func() {
 		})
 
 		It("should have file flag", func() {
-			cmd = importcmd.NewImportCmd(ctx)
+			cmd = importcmd.NewImportCmd(ctx, tea.WithInput(nil))
 			flag := cmd.Flag("file")
 			Expect(flag).NotTo(BeNil())
 			Expect(flag.Shorthand).To(Equal("f"))
 		})
 
 		It("should require file flag", func() {
-			cmd = importcmd.NewImportCmd(ctx)
+			cmd = importcmd.NewImportCmd(ctx, tea.WithInput(nil))
 			out := new(bytes.Buffer)
 			cmd.SetOut(out)
 			cmd.SetErr(new(bytes.Buffer))
@@ -63,7 +63,7 @@ var _ = Describe("Import Command", func() {
 			DeferCleanup(func() { os.Remove(tmpFile.Name()) })
 			tmpFile.Close()
 
-			cmd = importcmd.NewImportCmd(ctx)
+			cmd = importcmd.NewImportCmd(ctx, tea.WithInput(nil))
 			cmd.SetOut(new(bytes.Buffer))
 			cmd.SetErr(new(bytes.Buffer))
 			cmd.SetArgs([]string{"--file", tmpFile.Name()})
