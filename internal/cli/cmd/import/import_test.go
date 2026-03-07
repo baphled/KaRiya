@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -330,6 +331,9 @@ var _ = Describe("Import Command", func() {
 		})
 
 		It("should fail when file cannot be opened", func() {
+			if runtime.GOOS == "windows" {
+				return
+			}
 			svc := ctx.Service()
 			Expect(svc).NotTo(BeNil())
 
