@@ -14,6 +14,15 @@ type MockFileOpener struct {
 }
 
 // Open calls OpenFn if set, otherwise returns os.ErrNotExist.
+//
+// Expected:
+//   - path must be a valid file path.
+//
+// Returns:
+//   - An io.ReadCloser and nil error if OpenFn is set, otherwise nil and os.ErrNotExist.
+//
+// Side effects:
+//   - None (mock implementation).
 func (m MockFileOpener) Open(path string) (io.ReadCloser, error) {
 	if m.OpenFn != nil {
 		return m.OpenFn(path)
@@ -22,6 +31,15 @@ func (m MockFileOpener) Open(path string) (io.ReadCloser, error) {
 }
 
 // Stat calls StatFn if set, otherwise returns os.ErrNotExist.
+//
+// Expected:
+//   - path must be a valid file path.
+//
+// Returns:
+//   - os.FileInfo and nil error if StatFn is set, otherwise nil and os.ErrNotExist.
+//
+// Side effects:
+//   - None (mock implementation).
 func (m MockFileOpener) Stat(path string) (os.FileInfo, error) {
 	if m.StatFn != nil {
 		return m.StatFn(path)
@@ -36,6 +54,16 @@ type MockProgressRunner struct {
 }
 
 // RunWithSpinner calls RunWithSpinnerFn if set, otherwise executes fn directly.
+//
+// Expected:
+//   - message must be a non-empty string.
+//   - fn must be a non-nil function.
+//
+// Returns:
+//   - An error if the function fails, nil otherwise.
+//
+// Side effects:
+//   - None (mock implementation).
 func (m MockProgressRunner) RunWithSpinner(message string, fn func() error, opts ...tea.ProgramOption) error {
 	if m.RunWithSpinnerFn != nil {
 		return m.RunWithSpinnerFn(message, fn, opts...)
@@ -44,6 +72,16 @@ func (m MockProgressRunner) RunWithSpinner(message string, fn func() error, opts
 }
 
 // RunWithProgress calls RunWithProgressFn if set, otherwise executes fn directly with no-op update.
+//
+// Expected:
+//   - message must be a non-empty string.
+//   - fn must be a non-nil function that calls update to report progress.
+//
+// Returns:
+//   - An error if the function fails, nil otherwise.
+//
+// Side effects:
+//   - None (mock implementation).
 func (m MockProgressRunner) RunWithProgress(
 	message string,
 	total int,

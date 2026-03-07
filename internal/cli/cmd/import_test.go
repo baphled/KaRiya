@@ -54,7 +54,7 @@ var _ = Describe("Import Command", func() {
 
 	Describe("HandleImport", func() {
 		It("returns 0 on successful import", func() {
-			code := cmdpkg.HandleImport("test.csv", false, false, ctx.Service, out, errOut, opener, runner)
+			code := cmdpkg.HandleImport("test.csv", false, false, ctx.Service(), out, errOut, opener, runner)
 			Expect(code).To(Equal(0))
 			Expect(out.String()).To(ContainSubstring("Import successful"))
 		})
@@ -63,7 +63,7 @@ var _ = Describe("Import Command", func() {
 			opener.StatFn = func(_ string) (os.FileInfo, error) {
 				return nil, os.ErrNotExist
 			}
-			code := cmdpkg.HandleImport("nonexistent.csv", false, false, ctx.Service, out, errOut, opener, runner)
+			code := cmdpkg.HandleImport("nonexistent.csv", false, false, ctx.Service(), out, errOut, opener, runner)
 			Expect(code).To(Equal(1))
 			Expect(errOut.String()).To(ContainSubstring("Cannot access import file"))
 		})
@@ -72,7 +72,7 @@ var _ = Describe("Import Command", func() {
 			opener.OpenFn = func(_ string) (io.ReadCloser, error) {
 				return nil, os.ErrPermission
 			}
-			code := cmdpkg.HandleImport("test.csv", false, false, ctx.Service, out, errOut, opener, runner)
+			code := cmdpkg.HandleImport("test.csv", false, false, ctx.Service(), out, errOut, opener, runner)
 			Expect(code).To(Equal(1))
 			Expect(errOut.String()).To(ContainSubstring("Error opening import file"))
 		})
@@ -81,7 +81,7 @@ var _ = Describe("Import Command", func() {
 			runner.RunWithSpinnerFn = func(_ string, fn func() error, _ ...tea.ProgramOption) error {
 				return fmt.Errorf("parse error")
 			}
-			code := cmdpkg.HandleImport("test.csv", false, false, ctx.Service, out, errOut, opener, runner)
+			code := cmdpkg.HandleImport("test.csv", false, false, ctx.Service(), out, errOut, opener, runner)
 			Expect(code).To(Equal(1))
 			Expect(errOut.String()).To(ContainSubstring("Error parsing CSV"))
 		})
@@ -99,7 +99,7 @@ var _ = Describe("Import Command", func() {
 			opener.OpenFn = func(_ string) (io.ReadCloser, error) {
 				return io.NopCloser(bytes.NewReader([]byte("Date,Company,Project,Text,Tags\n"))), nil
 			}
-			code := cmdpkg.HandleImport("test.csv", false, false, ctx.Service, out, errOut, opener, runner)
+			code := cmdpkg.HandleImport("test.csv", false, false, ctx.Service(), out, errOut, opener, runner)
 			Expect(code).To(Equal(1))
 			Expect(errOut.String()).To(ContainSubstring("No valid rows found"))
 		})
@@ -113,7 +113,7 @@ var _ = Describe("Import Command", func() {
 				}
 				return fn()
 			}
-			code := cmdpkg.HandleImport("test.csv", false, false, ctx.Service, out, errOut, opener, runner)
+			code := cmdpkg.HandleImport("test.csv", false, false, ctx.Service(), out, errOut, opener, runner)
 			Expect(code).To(Equal(1))
 			Expect(errOut.String()).To(ContainSubstring("Error during import"))
 		})
@@ -123,18 +123,18 @@ var _ = Describe("Import Command", func() {
 	Describe("Exit code paths", func() {
 		It("returns 0 when SuccessCount > 0", func() {
 			// This is tested by the successful import test
-			code := cmdpkg.HandleImport("test.csv", false, false, ctx.Service, out, errOut, opener, runner)
+			code := cmdpkg.HandleImport("test.csv", false, false, ctx.Service(), out, errOut, opener, runner)
 			Expect(code).To(Equal(0))
 			Expect(out.String()).To(ContainSubstring("✓ Import successful"))
 		})
 
 		It("returns 0 when SkippedCount > 0 and SuccessCount = 0", func() {
 			// Import the same row twice to trigger duplicate detection
-			code := cmdpkg.HandleImport("test.csv", false, false, ctx.Service, out, errOut, opener, runner)
+			code := cmdpkg.HandleImport("test.csv", false, false, ctx.Service(), out, errOut, opener, runner)
 			Expect(code).To(Equal(0)) // First import succeeds
 
 			// Now import the same data again - should be skipped as duplicates
-			code = cmdpkg.HandleImport("test.csv", false, false, ctx.Service, out, errOut, opener, runner)
+			code = cmdpkg.HandleImport("test.csv", false, false, ctx.Service(), out, errOut, opener, runner)
 			// The second import should either succeed (if duplicates are skipped) or fail
 			Expect(code).To(BeElementOf(0, 1))
 		})

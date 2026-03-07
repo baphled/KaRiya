@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"database/sql"
 	"fmt"
 	"io"
 	"os"
@@ -12,119 +13,136 @@ import (
 	careerservice "github.com/baphled/kariya/internal/service/career"
 )
 
-// CLIContext holds shared state for CLI commands.
+// CLIContext holds shared configuration and service instances for Cobra commands.
 //
-// It manages database configuration and service initialization for all CLI operations.
-// Supports both in-memory and SQLite persistence modes.
+// It manages both in-memory and SQLite database initialization, providing a
+// centralized way to access the career service across all CLI commands.
 type CLIContext struct {
-	DBPath   string
-	InMemory bool
-	Service  *careerservice.Service
+	dbPath   string
+	inMemory bool
+	svc      *careerservice.Service
+	db       *sql.DB
 }
 
-// NewCLIContext creates a new CLIContext with the specified configuration.
+// NewCLIContext creates a new CLIContext with the specified database configuration.
 //
-// Parameters:
-//   - dbPath: Path to SQLite database file (ignored if inMemory is true)
-//   - inMemory: If true, uses in-memory repositories; otherwise uses SQLite
+// The service is not initialized in the constructor; call InitService() to
+// initialize it after creating the context.
 //
-// Returns:
-//   - A new CLIContext with uninitialized service (call InitService to initialize)
+// Returns: A new CLIContext with lazy-initialized service.
 //
-// Side effects:
-//   - None; service initialization is deferred to InitService
+// Side effects: None.
 func NewCLIContext(dbPath string, inMemory bool) *CLIContext {
 	return &CLIContext{
-		DBPath:   dbPath,
-		InMemory: inMemory,
+		dbPath:   dbPath,
+		inMemory: inMemory,
+		svc:      nil,
 	}
 }
 
-// InitService initializes the career service with appropriate repositories.
+// InitService initializes the career service with either in-memory or SQLite repositories.
 //
-// Initializes either in-memory or SQLite repositories based on configuration.
-// For SQLite mode, creates the database directory if needed and runs migrations.
+// For in-memory mode, creates memory-backed repositories with bidirectional wiring.
+// For SQLite mode, creates or opens the database at the specified path (or default
+// ~/.kariya/events.db), runs migrations, and initializes GORM repositories.
 //
-// Parameters:
-//   - errOut: io.Writer for error messages (allows testable error output)
+// Returns: nil on success, or an error if initialization fails.
 //
-// Returns:
-//   - nil on success
-//   - error if database initialization, migration, or repository setup fails
-//
-// Side effects:
-//   - Sets ctx.Service to initialized service
-//   - For SQLite mode: creates ~/.kariya directory if it doesn't exist
-//   - For SQLite mode: creates/opens database file
-//   - Writes error details to errOut on failure
+// Side effects: Creates database file and directories if using SQLite mode;
+// writes error messages to errOut on failure.
 func (ctx *CLIContext) InitService(errOut io.Writer) error {
-	if ctx.InMemory {
-		ctx.initInMemory()
-		return nil
+	if ctx.inMemory {
+		return ctx.initInMemoryService()
 	}
-	return ctx.initSQL(errOut)
+	return ctx.initSQLiteService(errOut)
 }
 
-func (ctx *CLIContext) initInMemory() {
+// Service returns the initialized career service.
+//
+// Returns nil if InitService has not been called yet.
+//
+// Returns: The initialized *careerservice.Service, or nil if not yet initialized.
+//
+// Side effects: None.
+func (ctx *CLIContext) Service() *careerservice.Service {
+	return ctx.svc
+}
+
+// Close closes the database connection if using SQLite.
+// For in-memory databases, this is a no-op.
+func (ctx *CLIContext) Close() error {
+	if ctx.db != nil {
+		if _, err := ctx.db.Exec("PRAGMA wal_checkpoint(TRUNCATE)"); err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: WAL checkpoint failed: %v\n", err)
+		}
+		return ctx.db.Close()
+	}
+	return nil
+}
+
+func (ctx *CLIContext) initInMemoryService() error {
 	eventRepo := careermemory.NewEventRepository()
 	skillRepo := careermemory.NewSkillRepository()
 	skillRepo.SetEventRepository(eventRepo)
 	eventRepo.SetSkillRepository(skillRepo)
 
-	svc := careerservice.NewService(eventRepo)
-	svc.SetFactRepository(careermemory.NewFactRepository())
-	svc.SetBurstRepository(careermemory.NewBurstRepository())
-	svc.SetSkillRepository(skillRepo)
-	ctx.Service = svc
+	ctx.svc = careerservice.NewService(eventRepo)
+	ctx.svc.SetFactRepository(careermemory.NewFactRepository())
+	ctx.svc.SetBurstRepository(careermemory.NewBurstRepository())
+	ctx.svc.SetSkillRepository(skillRepo)
+
+	return nil
 }
 
-func (ctx *CLIContext) initSQL(errOut io.Writer) error {
-	dbPath, err := ctx.getDBPath()
-	if err != nil {
-		fmt.Fprintf(errOut, "Error getting database path: %v\n", err)
-		return err
+func (ctx *CLIContext) initSQLiteService(errOut io.Writer) error {
+	dbPath := ctx.dbPath
+	if dbPath == "" {
+		var err error
+		dbPath, err = ctx.getDefaultDBPath(errOut)
+		if err != nil {
+			return err
+		}
 	}
 
 	db, err := careersql.OpenDB(dbPath)
 	if err != nil {
 		fmt.Fprintf(errOut, "Error opening database at '%s': %v\n", dbPath, err)
-		return fmt.Errorf("opening database at '%s': %w", dbPath, err)
+		return err
 	}
+	ctx.db = db
 
 	if err := career.RunMigrations(db); err != nil {
 		fmt.Fprintf(errOut, "Error running migrations: %v\n", err)
-		return fmt.Errorf("running migrations: %w", err)
+		return err
 	}
 
 	repos, err := careersql.NewRepositories(db)
 	if err != nil {
-		fmt.Fprintf(errOut, "Error initializing repositories: %v\n", err)
-		return fmt.Errorf("initializing GORM repositories: %w", err)
+		fmt.Fprintf(errOut, "Error initializing GORM repositories: %v\n", err)
+		return err
 	}
 
-	svc := careerservice.NewService(repos.Event)
-	svc.SetFactRepository(repos.Fact)
-	svc.SetBurstRepository(repos.Burst)
-	svc.SetSkillRepository(repos.Skill)
-	ctx.Service = svc
+	ctx.svc = careerservice.NewService(repos.Event)
+	ctx.svc.SetFactRepository(repos.Fact)
+	ctx.svc.SetBurstRepository(repos.Burst)
+	ctx.svc.SetSkillRepository(repos.Skill)
+
 	return nil
 }
 
-func (ctx *CLIContext) getDBPath() (string, error) {
-	dbPath := ctx.DBPath
-	if dbPath != "" {
-		return dbPath, nil
-	}
-
+func (ctx *CLIContext) getDefaultDBPath(errOut io.Writer) (string, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		return "", fmt.Errorf("getting home directory: %w", err)
+		fmt.Fprintf(errOut, "Error getting home directory: %v\n", err)
+		return "", err
 	}
 	kariyaDir := filepath.Join(homeDir, ".kariya")
-	dbPath = filepath.Join(kariyaDir, "events.db")
+	dbPath := filepath.Join(kariyaDir, "events.db")
 
 	if err := os.MkdirAll(kariyaDir, 0o750); err != nil {
-		return "", fmt.Errorf("creating kariya directory: %w", err)
+		fmt.Fprintf(errOut, "Error creating kariya directory: %v\n", err)
+		return "", err
 	}
+
 	return dbPath, nil
 }

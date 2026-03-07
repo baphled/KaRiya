@@ -292,9 +292,13 @@ jobs:
               if (t.isResolved || t.isOutdated) return false;
               const comment = t.comments.nodes[0];
               if (!comment) return false;
-              // Exclude bot-authored comments (e.g., Copilot)
-              const isBot = comment.author?.type === 'Bot' || comment.author?.login?.includes('[bot]');
-              return !isBot;
+               // Exclude bot-authored comments (e.g., Copilot, dependabot)
+               const login = comment.author?.login || '';
+               const isBot = comment.author?.type === 'Bot' || 
+                            login.includes('[bot]') || 
+                            login.startsWith('copilot-') ||
+                            login === 'dependabot[bot]';
+               return !isBot;
             });
 
             console.log(`\nTotal review threads: ${threads.length}`);

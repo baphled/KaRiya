@@ -33,7 +33,7 @@ func NewTUICommand(ctx *CLIContext, cfg CommandConfig) *cobra.Command {
 				opts = append(opts, tea.WithOutput(io.Discard))
 			}
 
-			if code := cfg.Action(ctx.Service, cmd.OutOrStdout(), cmd.ErrOrStderr(), runner, opts...); code != 0 {
+			if code := cfg.Action(ctx.Service(), cmd.OutOrStdout(), cmd.ErrOrStderr(), runner, opts...); code != 0 {
 				return fmt.Errorf("%s", cfg.FailMsg)
 			}
 			return nil
@@ -57,7 +57,7 @@ func NewListCommand(ctx *CLIContext, cfg ListConfig) *cobra.Command {
 		Short: cfg.Short,
 		Long:  cfg.Long,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			if code := cfg.Action(ctx.Service, cmd.OutOrStdout(), cmd.ErrOrStderr()); code != 0 {
+			if code := cfg.Action(ctx.Service(), cmd.OutOrStdout(), cmd.ErrOrStderr()); code != 0 {
 				return fmt.Errorf("%s", cfg.FailMsg)
 			}
 			return nil
