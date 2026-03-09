@@ -1,12 +1,21 @@
 package cmd
 
 import (
+	"errors"
+	"os"
+
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
 
+	"github.com/baphled/kariya/internal/cli/app"
+	"github.com/baphled/kariya/internal/cli/bootstrap"
 	"github.com/baphled/kariya/internal/cli/cmd/bursts"
 	"github.com/baphled/kariya/internal/cli/cmd/facts"
 	importcmd "github.com/baphled/kariya/internal/cli/cmd/import"
 	"github.com/baphled/kariya/internal/cli/cmd/skills"
+	cliservice "github.com/baphled/kariya/internal/cli/service"
+	"github.com/baphled/kariya/internal/logger"
 )
 
 // NewRootCmd creates the root command for the KaRiya CLI.
@@ -36,8 +45,41 @@ career events into professional, role-specific CVs directly from your terminal.`
 			return ctx.InitService(cmd.ErrOrStderr())
 		},
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			// Launch TUI when no subcommand specified
-			return cmd.Help()
+			// Check if stdin is a terminal before launching TUI
+			if !isatty.IsTerminal(os.Stdin.Fd()) {
+				return cmd.Help()
+			}
+
+			// Bootstrap: load config, run onboarding if needed, initialize services
+			service := ctx.Service()
+			log := logger.DefaultLogger()
+			bootstrapResult, err := bootstrap.Run(service, log)
+			if err != nil {
+				// ErrUserAborted means user pressed Ctrl+C during onboarding
+				// This should exit cleanly with code 0, not as an error
+				if errors.Is(err, bootstrap.ErrUserAborted) {
+					return nil
+				}
+				return err
+			}
+
+			// Create CLI service and app model
+			cliEventService := cliservice.NewCLIEventService(service)
+			model := app.NewModel(
+				cliEventService,
+				service,
+				bootstrapResult,
+				app.WithVersion(version),
+			)
+
+			// Launch Bubble Tea program with Cobra streams wired
+			program := tea.NewProgram(
+				model,
+				tea.WithInput(cmd.InOrStdin()),
+				tea.WithOutput(cmd.OutOrStdout()),
+			)
+			_, err = program.Run()
+			return err
 		},
 	}
 
