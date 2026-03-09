@@ -1,7 +1,10 @@
 package cmd
 
 import (
+	"os"
+
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
 
 	"github.com/baphled/kariya/internal/cli/app"
@@ -40,7 +43,12 @@ career events into professional, role-specific CVs directly from your terminal.`
 			ctx.inMemory = inMemory
 			return ctx.InitService(cmd.ErrOrStderr())
 		},
-		RunE: func(_ *cobra.Command, _ []string) error {
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			// Check if stdin is a terminal; if not, show help
+			if !isatty.IsTerminal(os.Stdin.Fd()) {
+				return cmd.Help()
+			}
+
 			// Launch TUI when no subcommand specified
 			careerService := ctx.Service()
 

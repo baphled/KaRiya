@@ -185,15 +185,7 @@ var _ = Describe("CLI Entry Point", func() {
 
 		Context("args parsing", func() {
 			It("should accept empty args slice", func() {
-				// Empty args now triggers TUI launch, which requires config isolation
-				tempDir := GinkgoT().TempDir()
-				configPath := filepath.Join(tempDir, "config.yaml")
-				config.SetConfigPathForTesting(configPath)
-				defer config.ResetConfigPath()
-
-				// TUI launch cannot be fully tested in unit tests (requires terminal)
-				Skip("TUI launch requires interactive terminal; verified via VHS demo and manual testing")
-
+				// Empty args should return 0 (help shown in non-TTY)
 				exitCode := run([]string{}, &outBuf, &errBuf)
 				Expect(exitCode).To(Equal(0))
 			})
