@@ -558,7 +558,11 @@ func generateHighlightsForAudience(cv *career.CVView, sections []*career.CVSecti
 		if len(topBullets) > 0 {
 			var sb strings.Builder
 			for _, bullet := range topBullets {
-				sb.WriteString("- " + bullet.Text + "\n")
+				text := bullet.Text
+				if text == "" {
+					text = bullet.EnhancedText
+				}
+				sb.WriteString("- " + text + "\n")
 			}
 			return sb.String()
 		}
@@ -573,7 +577,11 @@ func generateHighlightsForAudience(cv *career.CVView, sections []*career.CVSecti
 		}
 		var sb strings.Builder
 		for _, bullet := range bullets {
-			fmt.Fprintf(&sb, bulletListFmt, bullet.Text)
+			text := bullet.Text
+			if text == "" {
+				text = bullet.EnhancedText
+			}
+			sb.WriteString("- " + text + "\n")
 		}
 		return sb.String()
 	}

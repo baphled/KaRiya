@@ -1393,11 +1393,14 @@ var _ = Describe("ExportService YAML Export", func() {
 				yamlOutput, err := audService.ExportToYAML(ctx, audCV, audCV.Sections, nil)
 				Expect(err).NotTo(HaveOccurred())
 
-				highlightsIdx := strings.Index(yamlOutput, "highlights:")
-				Expect(highlightsIdx).To(BeNumerically(">", -1))
-				highlightsSection := yamlOutput[highlightsIdx:]
-				highIdx := strings.Index(highlightsSection, "Delivered key business outcome")
-				lowIdx := strings.Index(highlightsSection, "Built internal tool")
+				highlightsStart := strings.Index(yamlOutput, "highlights:")
+				Expect(highlightsStart).To(BeNumerically(">", -1))
+				highlightsEnd := strings.Index(yamlOutput[highlightsStart:], "\njobs:")
+				Expect(highlightsEnd).To(BeNumerically(">", -1))
+				highlightsOnly := yamlOutput[highlightsStart : highlightsStart+highlightsEnd]
+
+				highIdx := strings.Index(highlightsOnly, "Delivered key business outcome")
+				lowIdx := strings.Index(highlightsOnly, "Built internal tool")
 				Expect(highIdx).To(BeNumerically(">", -1))
 				Expect(lowIdx).To(BeNumerically(">", -1))
 				Expect(highIdx).To(BeNumerically("<", lowIdx),
