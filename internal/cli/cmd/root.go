@@ -44,8 +44,12 @@ career events into professional, role-specific CVs directly from your terminal.`
 			return ctx.InitService(cmd.ErrOrStderr())
 		},
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			// Check if stdin is a terminal; if not, show help
-			if !isatty.IsTerminal(os.Stdin.Fd()) {
+			// Check if both stdin and stdout are terminals; if not, show help
+			// This prevents launching TUI when output is piped or in non-interactive shells
+			stdinTTY := isatty.IsTerminal(os.Stdin.Fd()) || isatty.IsCygwinTerminal(os.Stdin.Fd())
+			stdoutTTY := isatty.IsTerminal(os.Stdout.Fd()) || isatty.IsCygwinTerminal(os.Stdout.Fd())
+
+			if !stdinTTY || !stdoutTTY {
 				return cmd.Help()
 			}
 
