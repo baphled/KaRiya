@@ -544,57 +544,82 @@ func maxHighlightsFromProfile(profile *config.ProfileConfig) int {
 }
 
 func generateHighlightsForAudience(cv *career.CVView, sections []*career.CVSection, profile *config.ProfileConfig) string {
-	if profile != nil && len(profile.WhatIBring) > 0 {
-		var sb strings.Builder
-		for _, item := range profile.WhatIBring {
-			fmt.Fprintf(&sb, bulletListFmt, item)
-		}
-		return sb.String()
+	if result := highlightsFromWhatIBring(profile); result != "" {
+		return result
 	}
 
-	if cv != nil && cv.TargetAudience != "" && cv.TargetAudience != "master" {
-		maxBullets := maxHighlightsFromProfile(profile)
-		topBullets := GetTopBulletsForAudience(*cv, cv.TargetAudience, maxBullets)
-		if len(topBullets) > 0 {
-			var sb strings.Builder
-			for _, bullet := range topBullets {
-				text := bullet.Text
-				if text == "" {
-					text = bullet.EnhancedText
-				}
-				sb.WriteString("- " + text + "\n")
-			}
-			return sb.String()
-		}
+	if result := highlightsFromAudienceScoring(cv, profile); result != "" {
+		return result
 	}
 
+	if result := highlightsFromConfidenceScoring(sections, profile); result != "" {
+		return result
+	}
+
+	return highlightsFromCoreStrengths(profile)
+}
+
+func highlightsFromWhatIBring(profile *config.ProfileConfig) string {
+	if profile == nil || len(profile.WhatIBring) == 0 {
+		return ""
+	}
+	return formatHighlightStrings(profile.WhatIBring)
+}
+
+func highlightsFromAudienceScoring(cv *career.CVView, profile *config.ProfileConfig) string {
+	if cv == nil || cv.TargetAudience == "" || cv.TargetAudience == "master" {
+		return ""
+	}
+	maxBullets := maxHighlightsFromProfile(profile)
+	topBullets := GetTopBulletsForAudience(*cv, cv.TargetAudience, maxBullets)
+	if len(topBullets) == 0 {
+		return ""
+	}
+	return formatHighlightBullets(topBullets)
+}
+
+func highlightsFromConfidenceScoring(sections []*career.CVSection, profile *config.ProfileConfig) string {
 	bullets := extractExperienceBullets(sections)
-	if len(bullets) > 0 {
-		sortBulletsByConfidenceAndRoleScore(bullets)
-		maxBullets := maxHighlightsFromProfile(profile)
-		if len(bullets) > maxBullets {
-			bullets = bullets[:maxBullets]
-		}
-		var sb strings.Builder
-		for _, bullet := range bullets {
-			text := bullet.Text
-			if text == "" {
-				text = bullet.EnhancedText
-			}
-			sb.WriteString("- " + text + "\n")
-		}
-		return sb.String()
+	if len(bullets) == 0 {
+		return ""
 	}
-
-	if profile != nil && len(profile.CoreStrengths) > 0 {
-		var sb strings.Builder
-		for _, strength := range profile.CoreStrengths {
-			fmt.Fprintf(&sb, bulletListFmt, strength)
-		}
-		return sb.String()
+	sortBulletsByConfidenceAndRoleScore(bullets)
+	maxBullets := maxHighlightsFromProfile(profile)
+	if len(bullets) > maxBullets {
+		bullets = bullets[:maxBullets]
 	}
+	return formatHighlightBullets(bullets)
+}
 
-	return ""
+func highlightsFromCoreStrengths(profile *config.ProfileConfig) string {
+	if profile == nil || len(profile.CoreStrengths) == 0 {
+		return ""
+	}
+	return formatHighlightStrings(profile.CoreStrengths)
+}
+
+func formatHighlightStrings(items []string) string {
+	var sb strings.Builder
+	for _, item := range items {
+		sb.WriteString("- " + item + "\n")
+	}
+	return sb.String()
+}
+
+func formatHighlightBullets(bullets []*career.CVBullet) string {
+	var sb strings.Builder
+	for _, bullet := range bullets {
+		text := bulletDisplayText(bullet)
+		sb.WriteString("- " + text + "\n")
+	}
+	return sb.String()
+}
+
+func bulletDisplayText(bullet *career.CVBullet) string {
+	if bullet.Text != "" {
+		return bullet.Text
+	}
+	return bullet.EnhancedText
 }
 
 func extractExperienceBullets(sections []*career.CVSection) []*career.CVBullet {
