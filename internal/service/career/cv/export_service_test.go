@@ -1366,6 +1366,43 @@ var _ = Describe("ExportService YAML Export", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(yamlOutput).To(ContainSubstring("highlights: \"\""))
 			})
+
+		})
+
+		Context("with audience-specific bullet ordering", func() {
+			It("uses audience relevance to order highlights", func() {
+				audService := NewExportServiceWithDeps(log, nil, nil)
+
+				highAudBullet := fixtures.CVBulletWith("b-high-aud", "section-1", "Delivered key business outcome")
+				highAudBullet.AudienceRelevance = map[string]float64{"hiring_manager": 0.99}
+				highAudBullet.Confidence = 0.5
+
+				lowAudBullet := fixtures.CVBulletWith("b-low-aud", "section-1", "Built internal tool")
+				lowAudBullet.AudienceRelevance = map[string]float64{"hiring_manager": 0.1}
+				lowAudBullet.Confidence = 0.9
+
+				expSection := fixtures.CVSectionWithContent("section-1", "cv-1", []*career.SectionContentGroup{
+					fixtures.ContentGroupWithBullets("Senior at TechCo", []*career.CVBullet{lowAudBullet, highAudBullet}),
+				})
+				expSection.Title = "Professional Experience"
+				expSection.SectionType = "experience"
+
+				audCV := fixtures.CVViewWith("cv-1", "Test CV", "Engineer", "hiring_manager")
+				audCV.Sections = []*career.CVSection{expSection}
+
+				yamlOutput, err := audService.ExportToYAML(ctx, audCV, audCV.Sections, nil)
+				Expect(err).NotTo(HaveOccurred())
+
+				highlightsIdx := strings.Index(yamlOutput, "highlights:")
+				Expect(highlightsIdx).To(BeNumerically(">", -1))
+				highlightsSection := yamlOutput[highlightsIdx:]
+				highIdx := strings.Index(highlightsSection, "Delivered key business outcome")
+				lowIdx := strings.Index(highlightsSection, "Built internal tool")
+				Expect(highIdx).To(BeNumerically(">", -1))
+				Expect(lowIdx).To(BeNumerically(">", -1))
+				Expect(highIdx).To(BeNumerically("<", lowIdx),
+					"Audience-scored bullet should appear before confidence-only bullet")
+			})
 		})
 	})
 	Describe("maxHighlightsFromProfile", func() {

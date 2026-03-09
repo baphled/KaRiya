@@ -415,7 +415,7 @@ func (es *ExportService) ExportToYAML(ctx context.Context, cv *career.CVView, se
 		Phone:      phone,
 		Links:      links,
 		Summary:    summary,
-		Highlights: generateHighlights(sections, effectiveProfile),
+		Highlights: generateHighlightsForAudience(cv, sections, effectiveProfile),
 		Jobs:       jobs,
 		Projects:   projects,
 		Skills:     skills,
@@ -543,13 +543,25 @@ func maxHighlightsFromProfile(profile *config.ProfileConfig) int {
 	return 5
 }
 
-func generateHighlights(sections []*career.CVSection, profile *config.ProfileConfig) string {
+func generateHighlightsForAudience(cv *career.CVView, sections []*career.CVSection, profile *config.ProfileConfig) string {
 	if profile != nil && len(profile.WhatIBring) > 0 {
 		var sb strings.Builder
 		for _, item := range profile.WhatIBring {
 			fmt.Fprintf(&sb, bulletListFmt, item)
 		}
 		return sb.String()
+	}
+
+	if cv != nil && cv.TargetAudience != "" && cv.TargetAudience != "master" {
+		maxBullets := maxHighlightsFromProfile(profile)
+		topBullets := GetTopBulletsForAudience(*cv, cv.TargetAudience, maxBullets)
+		if len(topBullets) > 0 {
+			var sb strings.Builder
+			for _, bullet := range topBullets {
+				sb.WriteString("- " + bullet.Text + "\n")
+			}
+			return sb.String()
+		}
 	}
 
 	bullets := extractExperienceBullets(sections)
