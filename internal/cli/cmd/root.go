@@ -1,12 +1,17 @@
 package cmd
 
 import (
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 
+	"github.com/baphled/kariya/internal/cli/app"
+	"github.com/baphled/kariya/internal/cli/bootstrap"
 	"github.com/baphled/kariya/internal/cli/cmd/bursts"
 	"github.com/baphled/kariya/internal/cli/cmd/facts"
 	importcmd "github.com/baphled/kariya/internal/cli/cmd/import"
 	"github.com/baphled/kariya/internal/cli/cmd/skills"
+	"github.com/baphled/kariya/internal/cli/service"
+	"github.com/baphled/kariya/internal/logger"
 )
 
 // NewRootCmd creates the root command for the KaRiya CLI.
@@ -35,9 +40,21 @@ career events into professional, role-specific CVs directly from your terminal.`
 			ctx.inMemory = inMemory
 			return ctx.InitService(cmd.ErrOrStderr())
 		},
-		RunE: func(cmd *cobra.Command, _ []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			// Launch TUI when no subcommand specified
-			return cmd.Help()
+			careerService := ctx.Service()
+
+			bootstrapResult, err := bootstrap.Run(careerService, logger.DefaultLogger())
+			if err != nil {
+				return err
+			}
+
+			cliService := service.NewCLIEventService(careerService)
+			model := app.NewModel(cliService, careerService, bootstrapResult)
+
+			p := tea.NewProgram(model, tea.WithAltScreen())
+			_, err = p.Run()
+			return err
 		},
 	}
 
