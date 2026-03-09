@@ -76,7 +76,7 @@ var _ = Describe("CLI Entry Point", func() {
 				// This test verifies that the command attempts to initialize and launch
 				// without panicking due to missing config isolation.
 				// In a real scenario, the TUI would render to the terminal.
-				Skip("TUI launch requires interactive terminal; tested via integration tests")
+				Skip("TUI launch requires interactive terminal; verified via VHS demo and manual testing")
 
 				exitCode := run([]string{}, &outBuf, &errBuf)
 				Expect(exitCode).To(Equal(0))
@@ -192,7 +192,7 @@ var _ = Describe("CLI Entry Point", func() {
 				defer config.ResetConfigPath()
 
 				// TUI launch cannot be fully tested in unit tests (requires terminal)
-				Skip("TUI launch requires interactive terminal; tested via integration tests")
+				Skip("TUI launch requires interactive terminal; verified via VHS demo and manual testing")
 
 				exitCode := run([]string{}, &outBuf, &errBuf)
 				Expect(exitCode).To(Equal(0))

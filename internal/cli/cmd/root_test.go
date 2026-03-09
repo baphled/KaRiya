@@ -86,7 +86,7 @@ var _ = Describe("Root Command", func() {
 			// This test verifies that the command attempts to initialize and launch
 			// without panicking due to missing config isolation.
 			// In a real scenario, the TUI would render to the terminal.
-			Skip("TUI launch requires interactive terminal; tested via integration tests")
+			Skip("TUI launch requires interactive terminal; verified via VHS demo and manual testing")
 
 			err := cmd.Execute()
 			Expect(err).NotTo(HaveOccurred())
