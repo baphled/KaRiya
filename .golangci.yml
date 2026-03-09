@@ -430,6 +430,7 @@ linters:
             - $gostd
             - github.com/baphled/kariya
             - github.com/charmbracelet
+            - github.com/mattn/go-isatty
             - github.com/google/uuid
             - github.com/mattn/go-sqlite3
             - modernc.org/sqlite

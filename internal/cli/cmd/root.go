@@ -1,12 +1,20 @@
 package cmd
 
 import (
+	"os"
+
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
 
+	"github.com/baphled/kariya/internal/cli/app"
+	"github.com/baphled/kariya/internal/cli/bootstrap"
 	"github.com/baphled/kariya/internal/cli/cmd/bursts"
 	"github.com/baphled/kariya/internal/cli/cmd/facts"
 	importcmd "github.com/baphled/kariya/internal/cli/cmd/import"
 	"github.com/baphled/kariya/internal/cli/cmd/skills"
+	"github.com/baphled/kariya/internal/cli/service"
+	"github.com/baphled/kariya/internal/logger"
 )
 
 // NewRootCmd creates the root command for the KaRiya CLI.
@@ -36,8 +44,29 @@ career events into professional, role-specific CVs directly from your terminal.`
 			return ctx.InitService(cmd.ErrOrStderr())
 		},
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			// Check if both stdin and stdout are terminals; if not, show help
+			// This prevents launching TUI when output is piped or in non-interactive shells
+			stdinTTY := isatty.IsTerminal(os.Stdin.Fd()) || isatty.IsCygwinTerminal(os.Stdin.Fd())
+			stdoutTTY := isatty.IsTerminal(os.Stdout.Fd()) || isatty.IsCygwinTerminal(os.Stdout.Fd())
+
+			if !stdinTTY || !stdoutTTY {
+				return cmd.Help()
+			}
+
 			// Launch TUI when no subcommand specified
-			return cmd.Help()
+			careerService := ctx.Service()
+
+			bootstrapResult, err := bootstrap.Run(careerService, logger.DefaultLogger())
+			if err != nil {
+				return err
+			}
+
+			cliService := service.NewCLIEventService(careerService)
+			model := app.NewModel(cliService, careerService, bootstrapResult)
+
+			p := tea.NewProgram(model, tea.WithAltScreen())
+			_, err = p.Run()
+			return err
 		},
 	}
 
