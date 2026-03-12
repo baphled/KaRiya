@@ -117,7 +117,7 @@ jobs:
 
       - name: Run golangci-lint (PR - full scan)
         if: github.event_name == 'pull_request'
-        uses: golangci/golangci-lint-action@v7
+        uses: golangci/golangci-lint-action@v9
         with:
           version: v2.8.0
           install-mode: binary
@@ -128,7 +128,7 @@ jobs:
 
       - name: Run golangci-lint (Push - full scan)
         if: github.event_name == 'push'
-        uses: golangci/golangci-lint-action@v7
+        uses: golangci/golangci-lint-action@v9
         with:
           version: v2.8.0
           install-mode: binary
