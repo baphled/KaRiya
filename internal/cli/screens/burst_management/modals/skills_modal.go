@@ -167,7 +167,7 @@ func renderSkillsContent(skills []*career.Skill, theme themes.Theme) string {
 	var b strings.Builder
 
 	for idx, skill := range skills {
-		b.WriteString(fmt.Sprintf("%d. %s\n", idx+1, skill.Name))
+		fmt.Fprintf(&b, "%d. %s\n", idx+1, skill.Name)
 
 		if skill.Category != "" {
 			catText := "   Category: " + skill.Category

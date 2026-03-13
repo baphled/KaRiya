@@ -182,13 +182,13 @@ func GetGroupedHelp() string {
 
 	var result strings.Builder
 	for groupName, keys := range groups {
-		result.WriteString(fmt.Sprintf("\n%s:\n", groupName))
+		fmt.Fprintf(&result, "\n%s:\n", groupName)
 		for _, key := range keys {
 			description, exists := KeyDescription[key]
 			if !exists {
 				description = string(key)
 			}
-			result.WriteString(fmt.Sprintf("  %s → %s\n", key, description))
+			fmt.Fprintf(&result, "  %s → %s\n", key, description)
 		}
 	}
 

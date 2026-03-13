@@ -221,7 +221,7 @@ func renderBurstDetailContent(burst *career.Burst, theme themes.Theme) string {
 
 	// Event count.
 	b.WriteString(primitives.NewText("Events:", theme).Bold().Render())
-	b.WriteString(fmt.Sprintf(" %d\n\n", len(burst.EventIDs)))
+	fmt.Fprintf(&b, " %d\n\n", len(burst.EventIDs))
 
 	// Confirmation details.
 	if burst.Confirmed && burst.ConfirmedAt != nil {
