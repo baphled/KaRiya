@@ -7,7 +7,6 @@ import (
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
 
-	"github.com/baphled/kariya/internal/cli/app"
 	"github.com/baphled/kariya/internal/cli/bootstrap"
 	"github.com/baphled/kariya/internal/cli/cmd/bursts"
 	"github.com/baphled/kariya/internal/cli/cmd/facts"
@@ -15,6 +14,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/cmd/skills"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/logger"
+	"github.com/baphled/kariya/internal/tui/app"
 )
 
 // NewRootCmd creates the root command for the KaRiya CLI.

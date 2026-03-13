@@ -372,7 +372,7 @@ func (s *DefaultSkillInferenceService) containsPattern(text string, words []stri
 		}
 
 		// Check proximity: count words between last match and current match
-		if i > 0 {
+		if i > 0 && i-1 < len(words) {
 			prevWordEnd := lastIndex + len(words[i-1])
 			currentWordStart := searchStart + index
 

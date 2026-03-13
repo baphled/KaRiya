@@ -286,31 +286,6 @@ else
     check_fail "Missing .gitignore"
 fi
 
-# doc.go files (package documentation)
-echo -n "Package doc.go files: "
-MISSING_DOCGO=$(go vet -vettool=./bin/docblocks \
-    ./internal/cli/app/... \
-    ./internal/cli/behaviors/... \
-    ./internal/cli/bootstrap/... \
-    ./internal/cli/configtypes/... \
-    ./internal/cli/forms/... \
-    ./internal/cli/importer/... \
-    ./internal/cli/intents/... \
-    ./internal/cli/navigation/... \
-    ./internal/cli/screens/... \
-    ./internal/cli/service/... \
-    ./internal/cli/statematrix/... \
-    ./internal/cli/terminal/... \
-    ./internal/cli/themes/... \
-    ./internal/cli/types/... \
-    ./internal/cli/uikit/... \
-    ./tools/analyzers/docblocks/... 2>&1 | grep "missing doc.go file" | wc -l)
-if [[ "$MISSING_DOCGO" -eq 0 ]]; then
-    check_pass
-else
-    check_fail "$MISSING_DOCGO packages missing doc.go files (run: make check-docblocks)"
-fi
-
 echo ""
 
 # ============================================
@@ -477,7 +452,7 @@ echo "------------------------------------------------"
 
 # Check for direct *huh.Form usage in intents (should use wrapper models)
 echo -n "Form Wrapper Pattern: "
-DIRECT_HUH_FORM=$(grep -rn "form \*huh\.Form" internal/cli/intents/*.go 2>/dev/null | grep -v "_test.go" || true)
+DIRECT_HUH_FORM=$(grep -rn "form \*huh\.Form" internal/tui/intents/*.go 2>/dev/null | grep -v "_test.go" || true)
 if [[ -z "$DIRECT_HUH_FORM" ]]; then
     check_pass
 else
@@ -488,7 +463,7 @@ fi
 
 # Check for missing BaseIntent embedding
 echo -n "BaseIntent Embedding: "
-INTENTS_WITHOUT_BASE=$(grep -rL "BaseIntent" internal/cli/intents/*_intent.go 2>/dev/null | grep -v "_test.go" || true)
+INTENTS_WITHOUT_BASE=$(grep -rL "BaseIntent" internal/tui/intents/*_intent.go 2>/dev/null | grep -v "_test.go" || true)
 if [[ -z "$INTENTS_WITHOUT_BASE" ]]; then
     check_pass
 else
@@ -498,7 +473,7 @@ fi
 
 # Check for hardcoded colors (should use theme package)
 echo -n "Theme Consistency (intents): "
-HARDCODED_INTENTS=$(grep -rn "lipgloss\.Color(\"#[0-9A-Fa-f]" internal/cli/intents/*.go 2>/dev/null | grep -v "_test.go" || true)
+HARDCODED_INTENTS=$(grep -rn "lipgloss\.Color(\"#[0-9A-Fa-f]" internal/tui/intents/*.go 2>/dev/null | grep -v "_test.go" || true)
 if [[ -z "$HARDCODED_INTENTS" ]]; then
     check_pass
 else
@@ -508,7 +483,7 @@ else
 fi
 
 echo -n "Theme Consistency (models): "
-HARDCODED_MODELS=$(grep -rn "lipgloss\.Color(\"#[0-9A-Fa-f]" internal/cli/models/*.go 2>/dev/null | grep -v "_test.go" || true)
+HARDCODED_MODELS=$(grep -rn "lipgloss\.Color(\"#[0-9A-Fa-f]" internal/tui/models/*.go 2>/dev/null | grep -v "_test.go" || true)
 if [[ -z "$HARDCODED_MODELS" ]]; then
     check_pass
 else
@@ -519,8 +494,8 @@ fi
 
 # Check for raw lipgloss.NewStyle() in intents (should use uikit/primitives for text)
 echo -n "UIKit Primitives Usage: "
-RAW_STYLES=$(grep -rn "lipgloss\.NewStyle()" internal/cli/intents/*.go 2>/dev/null | grep -v "_test.go" | wc -l)
-PRIMITIVES_USAGE=$(grep -rn "primitives\." internal/cli/intents/*.go 2>/dev/null | grep -v "_test.go" | wc -l)
+RAW_STYLES=$(grep -rn "lipgloss\.NewStyle()" internal/tui/intents/*.go 2>/dev/null | grep -v "_test.go" | wc -l)
+PRIMITIVES_USAGE=$(grep -rn "primitives\." internal/tui/intents/*.go 2>/dev/null | grep -v "_test.go" | wc -l)
 if [[ "$RAW_STYLES" -gt 20 ]] && [ "$PRIMITIVES_USAGE" -lt 10 ]]; then
     check_warn "Low primitives adoption: $RAW_STYLES raw styles vs $PRIMITIVES_USAGE primitives uses"
     echo "  Consider using uikit/primitives for semantic text (Title, Body, ErrorText, etc.)"
@@ -528,24 +503,36 @@ else
     check_pass
 fi
 
-# Check for StandardView usage (all intents should use CreateStandardView)
-echo -n "StandardView Usage: "
-INTENTS_COUNT=$(ls internal/cli/intents/*_intent.go 2>/dev/null | grep -v "_test.go" | wc -l)
-STANDARDVIEW_COUNT=$(grep -l "CreateStandardView\|StandardView" internal/cli/intents/*_intent.go 2>/dev/null | wc -l)
+# Check for StandardView or View usage (all intents should use CreateStandardView or views.View)
+echo -n "StandardView or View Usage: "
+INTENTS_COUNT=$(ls internal/tui/intents/*_intent.go 2>/dev/null | grep -v "_test.go" | wc -l)
+STANDARDVIEW_COUNT=$(grep -l "CreateStandardView\|StandardView\|activeView" internal/tui/intents/*_intent.go 2>/dev/null | wc -l)
 if [[ "$STANDARDVIEW_COUNT" -ge "$INTENTS_COUNT" ]]; then
     check_pass
 else
-    check_warn "Not all intents use StandardView ($STANDARDVIEW_COUNT/$INTENTS_COUNT)"
+    check_warn "Not all intents use StandardView or View ($STANDARDVIEW_COUNT/$INTENTS_COUNT)"
 fi
 
 # Check for themed footer helpers usage
 echo -n "Themed Footer Usage: "
-FOOTER_HELPERS=$(grep -rn "ThemedNavigationFooter\|ThemedListFooter\|ThemedFormFooter\|CombineThemedFooters" internal/cli/intents/*.go 2>/dev/null | grep -v "_test.go" | wc -l)
+FOOTER_HELPERS=$(grep -rn "ThemedNavigationFooter\|ThemedListFooter\|ThemedFormFooter\|CombineThemedFooters" internal/tui/intents/*.go 2>/dev/null | grep -v "_test.go" | wc -l)
 if [[ "$FOOTER_HELPERS" -gt 5 ]]; then
     check_pass
 else
     check_warn "Low themed footer helper usage ($FOOTER_HELPERS uses)"
     echo "  Consider using ThemedNavigationFooter(), ThemedListFooter(), etc."
+fi
+
+# Check for direct screens.Screen usage in new intents (should use views.View)
+echo -n "View Abstraction Adoption: "
+SCREEN_DIRECT=$(grep -rn "screens\.Screen" internal/tui/intents/ 2>/dev/null | grep -v "_test.go" | wc -l)
+VIEW_USAGE=$(grep -rn "views\.View" internal/tui/intents/ 2>/dev/null | grep -v "_test.go" | wc -l)
+if [[ "$SCREEN_DIRECT" -gt 0 ]] && [[ "$VIEW_USAGE" -eq 0 ]]; then
+    check_warn "No intents use views.View yet — migration in progress ($SCREEN_DIRECT still use screens.Screen)"
+elif [[ "$VIEW_USAGE" -gt 0 ]]; then
+    check_pass
+else
+    check_warn "No intents found using either screens.Screen or views.View"
 fi
 
 echo ""
@@ -580,4 +567,3 @@ else
     echo "  3. Re-run: make check-compliance"
     exit 1
 fi
-

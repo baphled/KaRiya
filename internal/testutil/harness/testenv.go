@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/baphled/kariya/internal/cli/app"
 	"github.com/baphled/kariya/internal/cli/bootstrap"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/config"
+	"github.com/baphled/kariya/internal/tui/app"
 
 	"github.com/baphled/kariya/internal/logger"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
@@ -48,7 +48,7 @@ func createTestModel(cfg *testModelConfig) *app.Model {
 	bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), cfg.careerService, log)
 	cvExportService := cv.NewExportServiceWithClipboard(log, cfg.clipboardStub, nil, cfg.skillRepo)
 
-	registrar := app.NewDefaultIntentRegistrar(&app.RegistrarConfig{
+	registrar := app.NewDefaultIntentRegisterer(&app.RegistrarConfig{
 		CLIService:            cfg.cliService,
 		CareerService:         cfg.careerService,
 		SkillInferenceService: cfg.skillInferenceService,
@@ -56,7 +56,7 @@ func createTestModel(cfg *testModelConfig) *app.Model {
 		CVGenService:          bootstrapResult.Services.CVGenService,
 		CVExportService:       cvExportService,
 	})
-	model := app.NewModel(cfg.cliService, cfg.careerService, bootstrapResult, app.WithIntentRegistrar(registrar))
+	model := app.NewModel(cfg.cliService, cfg.careerService, bootstrapResult, app.WithIntentRegisterer(registrar))
 	model.Update(tea.WindowSizeMsg{Width: TerminalWidth, Height: cfg.terminalHeight})
 
 	return model

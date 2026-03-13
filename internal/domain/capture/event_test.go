@@ -91,3 +91,82 @@ func TestNewEventFromInput_NilTagsAndCategories(t *testing.T) {
 	assert.Nil(t, event.Tags)
 	assert.Nil(t, event.Categories)
 }
+
+func TestUpdateEventFromInput_AllFields(t *testing.T) {
+	createdAt := time.Date(2024, 1, 10, 8, 30, 0, 0, time.UTC)
+	updatedAt := time.Date(2024, 1, 12, 9, 45, 0, 0, time.UTC)
+
+	input := capture.EditEventInput{
+		EventID:    "event-42",
+		Text:       "Updated event text for testing purposes",
+		Date:       "2024-06-15",
+		Company:    "TechCorp",
+		Project:    "API Modernisation",
+		Tags:       []string{"technical", "achievement"},
+		Categories: []string{"leadership"},
+		CreatedAt:  createdAt,
+		UpdatedAt:  updatedAt,
+	}
+
+	event, err := capture.UpdateEventFromInput(input)
+	require.NoError(t, err)
+
+	assert.Equal(t, "event-42", event.ID)
+	assert.Equal(t, input.Text, event.Text)
+	assert.Equal(t, input.Company, event.Company)
+	assert.Equal(t, input.Project, event.Project)
+	assert.Len(t, event.Tags, 2)
+	assert.Len(t, event.Categories, 1)
+	assert.Empty(t, event.Skills)
+	assert.Equal(t, createdAt, event.CreatedAt)
+	assert.Equal(t, updatedAt, event.UpdatedAt)
+
+	expectedDate := time.Date(2024, 6, 15, 0, 0, 0, 0, time.UTC)
+	assert.True(t, event.Date.Equal(expectedDate))
+}
+
+func TestUpdateEventFromInput_DefaultsDateToNow(t *testing.T) {
+	input := capture.EditEventInput{
+		EventID: "event-1",
+		Text:    "Some event text for testing purposes",
+	}
+
+	before := time.Now()
+	event, err := capture.UpdateEventFromInput(input)
+	after := time.Now()
+
+	require.NoError(t, err)
+	assert.False(t, event.Date.Before(before) || event.Date.After(after))
+}
+
+func TestUpdateEventFromInput_InvalidDate(t *testing.T) {
+	input := capture.EditEventInput{
+		EventID: "event-1",
+		Text:    "Some event text for testing purposes",
+		Date:    "not-a-date",
+	}
+
+	event, err := capture.UpdateEventFromInput(input)
+
+	assert.Nil(t, event)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unable to parse date")
+}
+
+func TestUpdateEventFromInput_PreservesTimestamps(t *testing.T) {
+	createdAt := time.Date(2023, 6, 1, 0, 0, 0, 0, time.UTC)
+	updatedAt := time.Date(2023, 7, 1, 0, 0, 0, 0, time.UTC)
+
+	input := capture.EditEventInput{
+		EventID:   "event-99",
+		Text:      "Preserved timestamps test event text",
+		CreatedAt: createdAt,
+		UpdatedAt: updatedAt,
+	}
+
+	event, err := capture.UpdateEventFromInput(input)
+	require.NoError(t, err)
+
+	assert.Equal(t, createdAt, event.CreatedAt)
+	assert.Equal(t, updatedAt, event.UpdatedAt)
+}

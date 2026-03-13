@@ -1,0 +1,325 @@
+package burst_test
+
+import (
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+
+	"github.com/baphled/kariya/internal/testutil/fixtures"
+	burstview "github.com/baphled/kariya/internal/tui/views/burst"
+	"github.com/baphled/kariya/internal/ui/display"
+	"github.com/baphled/kariya/internal/ui/themes"
+	tea "github.com/charmbracelet/bubbletea"
+)
+
+var _ = Describe("Facts", func() {
+	var (
+		modal     *burstview.Facts
+		burstID   string
+		burstName string
+		facts     []display.Fact
+		theme     themes.Theme
+	)
+
+	BeforeEach(func() {
+		burstID = "test-burst-id"
+		burstName = "Backend Development"
+		f1 := fixtures.FactFromBurst("f1", burstID)
+		f1.Text = "Designed scalable microservices architecture"
+		f1.CompetencyCategories = []string{"architecture", "system design"}
+		f1.StrengthSignal = "strong"
+
+		f2 := fixtures.FactFromBurst("f2", burstID)
+		f2.Text = "Improved API response time by 40%"
+		f2.CompetencyCategories = []string{"performance"}
+		f2.StrengthSignal = "strong"
+
+		f3 := fixtures.FactFromBurst("f3", burstID)
+		f3.Text = "Mentored junior developers on best practices"
+		f3.CompetencyCategories = []string{"mentoring"}
+		f3.StrengthSignal = "moderate"
+
+		facts = []display.Fact{
+			display.FactFromDomain(f1),
+			display.FactFromDomain(f2),
+			display.FactFromDomain(f3),
+		}
+		theme = themes.NewDefaultTheme()
+	})
+
+	Describe("NewFacts", func() {
+		It("creates modal with facts content", func() {
+			modal = burstview.NewFacts(burstID, burstName, facts, theme)
+
+			Expect(modal).NotTo(BeNil())
+			Expect(modal.GetBurstID()).To(Equal(burstID))
+		})
+
+		It("handles nil theme with default", func() {
+			modal = burstview.NewFacts(burstID, burstName, facts, nil)
+
+			Expect(modal).NotTo(BeNil())
+		})
+
+		It("handles empty facts list", func() {
+			modal = burstview.NewFacts(burstID, burstName, []display.Fact{}, theme)
+
+			Expect(modal).NotTo(BeNil())
+			modal.Show()
+			view := modal.View()
+			Expect(view).To(ContainSubstring("No facts"))
+		})
+
+		It("handles nil facts list", func() {
+			modal = burstview.NewFacts(burstID, burstName, nil, theme)
+
+			Expect(modal).NotTo(BeNil())
+		})
+
+		It("includes fact count in title", func() {
+			modal = burstview.NewFacts(burstID, burstName, facts, theme)
+			modal.Show()
+
+			view := modal.View()
+			Expect(view).To(ContainSubstring("3"))
+		})
+
+		It("includes burst name in title", func() {
+			modal = burstview.NewFacts(burstID, burstName, facts, theme)
+			modal.Show()
+
+			view := modal.View()
+			Expect(view).To(ContainSubstring("Backend Development"))
+		})
+	})
+
+	Describe("Init", func() {
+		BeforeEach(func() {
+			modal = burstview.NewFacts(burstID, burstName, facts, theme)
+		})
+
+		It("returns initialization command", func() {
+			cmd := modal.Init()
+			_ = cmd
+		})
+	})
+
+	Describe("Update", func() {
+		BeforeEach(func() {
+			modal = burstview.NewFacts(burstID, burstName, facts, theme)
+			modal.SetDimensions(80, 24)
+			modal.Show()
+		})
+
+		It("delegates to underlying modal", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}}
+
+			model, cmd := modal.Update(msg)
+
+			Expect(model).NotTo(BeNil())
+			_ = cmd
+		})
+
+		It("handles window size message", func() {
+			msg := tea.WindowSizeMsg{Width: 100, Height: 30}
+
+			model, cmd := modal.Update(msg)
+
+			Expect(model).NotTo(BeNil())
+			_ = cmd
+		})
+
+		It("handles escape key", func() {
+			msg := tea.KeyMsg{Type: tea.KeyEsc}
+
+			model, cmd := modal.Update(msg)
+
+			Expect(model).NotTo(BeNil())
+			_ = cmd
+		})
+	})
+
+	Describe("View", func() {
+		BeforeEach(func() {
+			modal = burstview.NewFacts(burstID, burstName, facts, theme)
+			modal.SetDimensions(80, 24)
+		})
+
+		It("renders facts when visible", func() {
+			modal.Show()
+
+			view := modal.View()
+
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("shows fact text", func() {
+			modal.Show()
+
+			view := modal.View()
+
+			Expect(view).To(ContainSubstring("Designed scalable microservices"))
+		})
+
+		It("shows competency categories", func() {
+			modal.Show()
+
+			view := modal.View()
+
+			Expect(view).To(ContainSubstring("architecture"))
+		})
+
+		It("shows strength signal", func() {
+			modal.Show()
+
+			view := modal.View()
+
+			Expect(view).To(ContainSubstring("strong"))
+		})
+
+		It("numbers facts", func() {
+			modal.Show()
+
+			view := modal.View()
+
+			// Modal may paginate, so we only check for first items visible in viewport.
+			Expect(view).To(ContainSubstring("1."))
+			Expect(view).To(ContainSubstring("2."))
+		})
+
+		It("shows empty state message when no facts", func() {
+			modal = burstview.NewFacts(burstID, burstName, []display.Fact{}, theme)
+			modal.Show()
+
+			view := modal.View()
+
+			Expect(view).To(ContainSubstring("No facts extracted"))
+		})
+	})
+
+	Describe("Visibility methods", func() {
+		BeforeEach(func() {
+			modal = burstview.NewFacts(burstID, burstName, facts, theme)
+		})
+
+		It("Show makes modal visible", func() {
+			modal.Hide()
+			Expect(modal.IsVisible()).To(BeFalse())
+
+			modal.Show()
+
+			Expect(modal.IsVisible()).To(BeTrue())
+		})
+
+		It("Hide makes modal invisible", func() {
+			modal.Show()
+			Expect(modal.IsVisible()).To(BeTrue())
+
+			modal.Hide()
+
+			Expect(modal.IsVisible()).To(BeFalse())
+		})
+	})
+
+	Describe("SetDimensions", func() {
+		It("sets terminal dimensions", func() {
+			modal = burstview.NewFacts(burstID, burstName, facts, theme)
+
+			modal.SetDimensions(100, 50)
+
+			Expect(modal).NotTo(BeNil())
+		})
+	})
+
+	Describe("SetFacts", func() {
+		It("updates the displayed facts", func() {
+			modal = burstview.NewFacts(burstID, burstName, facts, theme)
+			nf1 := fixtures.FactFromBurst("new-1", burstID)
+			nf1.Text = "New fact one"
+			nf2 := fixtures.FactFromBurst("new-2", burstID)
+			nf2.Text = "New fact two"
+			newFacts := []display.Fact{
+				display.FactFromDomain(nf1),
+				display.FactFromDomain(nf2),
+			}
+
+			modal.SetFacts(newFacts)
+			modal.Show()
+			view := modal.View()
+
+			Expect(view).To(ContainSubstring("New fact one"))
+		})
+
+		It("updates fact count in view", func() {
+			modal = burstview.NewFacts(burstID, burstName, facts, theme)
+			modal.Show()
+
+			// Initially 3 facts.
+			view := modal.View()
+			Expect(view).To(ContainSubstring("3"))
+
+			// Update to 1 fact.
+			sf := fixtures.FactFromBurst("single", burstID)
+			sf.Text = "Single fact"
+			modal.SetFacts([]display.Fact{display.FactFromDomain(sf)})
+			view = modal.View()
+			Expect(view).To(ContainSubstring("1"))
+		})
+	})
+
+	Describe("GetBurstID", func() {
+		It("returns the burst ID", func() {
+			modal = burstview.NewFacts(burstID, burstName, facts, theme)
+
+			result := modal.GetBurstID()
+
+			Expect(result).To(Equal(burstID))
+		})
+	})
+
+	Describe("Facts with optional fields", func() {
+		It("renders fact without categories", func() {
+			fnc := fixtures.FactFromBurst("f-no-cat", burstID)
+			fnc.Text = "Fact without categories"
+			fnc.CompetencyCategories = nil
+			fnc.StrengthSignal = "moderate"
+			factWithoutCategories := []display.Fact{display.FactFromDomain(fnc)}
+			modal = burstview.NewFacts(burstID, burstName, factWithoutCategories, theme)
+			modal.Show()
+
+			view := modal.View()
+
+			Expect(view).To(ContainSubstring("Fact without categories"))
+		})
+
+		It("renders fact without strength signal", func() {
+			fns := fixtures.FactFromBurst("f-no-str", burstID)
+			fns.Text = "Fact without strength"
+			fns.CompetencyCategories = []string{"delivery"}
+			fns.StrengthSignal = ""
+			factWithoutStrength := []display.Fact{display.FactFromDomain(fns)}
+			modal = burstview.NewFacts(burstID, burstName, factWithoutStrength, theme)
+			modal.Show()
+
+			view := modal.View()
+
+			Expect(view).To(ContainSubstring("Fact without strength"))
+		})
+	})
+
+	Describe("Esc Visibility", func() {
+		BeforeEach(func() {
+			modal = burstview.NewFacts(burstID, burstName, facts, theme)
+			modal.SetDimensions(80, 24)
+		})
+
+		It("IsVisible should be false after Esc", func() {
+			modal.Show()
+			Expect(modal.IsVisible()).To(BeTrue())
+
+			escMsg := tea.KeyMsg{Type: tea.KeyEsc}
+			modal.Update(escMsg)
+
+			Expect(modal.IsVisible()).To(BeFalse())
+		})
+	})
+})

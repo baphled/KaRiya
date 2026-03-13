@@ -29,6 +29,7 @@ examples/
 kariya
 kariya-*
 /cli
+generate-state-matrix
 
 # IDE / Editor
 .vscode/
@@ -88,3 +89,4 @@ tmp/
 # Tool config
 .commit_msg
 opencode.json
+commit.txt

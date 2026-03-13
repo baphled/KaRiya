@@ -1,0 +1,249 @@
+package forms_test
+
+import (
+	"time"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+
+	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
+	"github.com/baphled/kariya/internal/tui/forms"
+)
+
+var _ = Describe("MetadataForm", func() {
+	var testEvent *career.Event
+
+	BeforeEach(func() {
+		testEvent = fixtures.EventWith("event-123", "Test event", "Test Company", "Test Project")
+		testEvent.Date = time.Date(2024, 1, 7, 0, 0, 0, 0, time.UTC)
+		testEvent.Tags = []string{"go", "testing"}
+		testEvent.Categories = []string{"technical", "leadership"}
+		testEvent.Skills = []string{"skill-id-1", "skill-id-2"}
+	})
+
+	Describe("NewMetadataForm", func() {
+		It("should create a form with event data", func() {
+			data := forms.GetMetadataFormData(testEvent)
+			form := forms.NewMetadataForm(data, forms.MetadataFormConfig{
+				AvailableTags:       []string{"go", "python", "testing"},
+				AvailableCategories: []string{"technical", "leadership", "mentoring"},
+				AvailableSkills:     []*career.Skill{},
+			})
+
+			Expect(form).NotTo(BeNil())
+		})
+	})
+
+	Describe("MetadataFormData", func() {
+		It("should extract data from event", func() {
+			data := forms.GetMetadataFormData(testEvent)
+
+			Expect(data.Date).To(Equal("2024-01-07"))
+			Expect(data.Company).To(Equal("Test Company"))
+			Expect(data.Project).To(Equal("Test Project"))
+			Expect(data.Tags).To(Equal([]string{"go", "testing"}))
+			Expect(data.Categories).To(Equal([]string{"technical", "leadership"}))
+			Expect(data.Skills).To(Equal([]string{"skill-id-1", "skill-id-2"}))
+		})
+
+		It("should apply data to event", func() {
+			newEvent := fixtures.EventWith("", "", "", "")
+			data := &forms.MetadataFormData{
+				Date:       "2024-01-15",
+				Company:    "New Company",
+				Project:    "New Project",
+				Tags:       []string{"rust", "performance"},
+				Categories: []string{"research"},
+				Skills:     []string{"skill-id-3", "skill-id-4"},
+			}
+
+			err := forms.ApplyMetadataFormData(newEvent, data)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(newEvent.Date.Format("2006-01-02")).To(Equal("2024-01-15"))
+			Expect(newEvent.Company).To(Equal("New Company"))
+			Expect(newEvent.Project).To(Equal("New Project"))
+			Expect(newEvent.Tags).To(Equal([]string{"rust", "performance"}))
+			Expect(newEvent.Categories).To(Equal([]string{"research"}))
+			Expect(newEvent.Skills).To(Equal([]string{"skill-id-3", "skill-id-4"}))
+		})
+	})
+
+	Describe("ParseDateString", func() {
+		It("should parse YYYY-MM-DD format", func() {
+			date, err := forms.ParseDateString("2024-01-07")
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(date.Year()).To(Equal(2024))
+			Expect(date.Month()).To(Equal(time.January))
+			Expect(date.Day()).To(Equal(7))
+		})
+
+		It("should parse 'today'", func() {
+			date, err := forms.ParseDateString("today")
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(date.Year()).To(Equal(time.Now().Year()))
+			Expect(date.Month()).To(Equal(time.Now().Month()))
+			Expect(date.Day()).To(Equal(time.Now().Day()))
+		})
+
+		It("should parse relative dates - days", func() {
+			date, err := forms.ParseDateString("7 days ago")
+
+			Expect(err).NotTo(HaveOccurred())
+			expected := time.Now().AddDate(0, 0, -7)
+			Expect(date.Year()).To(Equal(expected.Year()))
+			Expect(date.Month()).To(Equal(expected.Month()))
+			Expect(date.Day()).To(Equal(expected.Day()))
+		})
+
+		It("should parse relative dates - weeks", func() {
+			date, err := forms.ParseDateString("2 weeks ago")
+
+			Expect(err).NotTo(HaveOccurred())
+			expected := time.Now().AddDate(0, 0, -14)
+			Expect(date.Year()).To(Equal(expected.Year()))
+			Expect(date.Month()).To(Equal(expected.Month()))
+			Expect(date.Day()).To(Equal(expected.Day()))
+		})
+
+		It("should parse relative dates - months", func() {
+			date, err := forms.ParseDateString("1 month ago")
+
+			Expect(err).NotTo(HaveOccurred())
+			expected := time.Now().AddDate(0, -1, 0)
+			Expect(date.Year()).To(Equal(expected.Year()))
+			Expect(date.Month()).To(Equal(expected.Month()))
+		})
+
+		It("should handle singular units", func() {
+			date, err := forms.ParseDateString("1 day ago")
+
+			Expect(err).NotTo(HaveOccurred())
+			expected := time.Now().AddDate(0, 0, -1)
+			Expect(date.Day()).To(Equal(expected.Day()))
+		})
+
+		It("should fail on invalid format", func() {
+			_, err := forms.ParseDateString("invalid")
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("invalid date format"))
+		})
+
+		It("should fail on invalid relative format", func() {
+			_, err := forms.ParseDateString("ago 1 week")
+
+			Expect(err).To(HaveOccurred())
+		})
+	})
+
+	Describe("NewMetadataForm with data", func() {
+		It("should create a form with initial data", func() {
+			data := &forms.MetadataFormData{
+				Date:       "2024-01-15",
+				Company:    "Initial Company",
+				Project:    "Initial Project",
+				Tags:       []string{"tag1"},
+				Categories: []string{"cat1"},
+			}
+
+			form := forms.NewMetadataForm(data, forms.MetadataFormConfig{
+				AvailableTags:       []string{"tag1", "tag2"},
+				AvailableCategories: []string{"cat1", "cat2"},
+				AvailableSkills:     []*career.Skill{},
+			})
+
+			Expect(form).NotTo(BeNil())
+		})
+	})
+
+	Describe("NewMetadataForm with dimensions", func() {
+		It("should create a height-constrained form", func() {
+			data := forms.GetMetadataFormData(testEvent)
+			form := forms.NewMetadataForm(data, forms.MetadataFormConfig{
+				AvailableTags:       []string{"go", "python", "testing"},
+				AvailableCategories: []string{"technical", "leadership"},
+				AvailableSkills:     []*career.Skill{},
+				Height:              20,
+			})
+
+			Expect(form).NotTo(BeNil())
+		})
+
+		It("should create a height-constrained form with data", func() {
+			data := &forms.MetadataFormData{
+				Date:       "2024-01-15",
+				Company:    "Height Test Co",
+				Project:    "Viewport Test",
+				Tags:       []string{"tag1"},
+				Categories: []string{"cat1"},
+			}
+
+			form := forms.NewMetadataForm(data, forms.MetadataFormConfig{
+				AvailableTags:       []string{"tag1", "tag2", "tag3"},
+				AvailableCategories: []string{"cat1", "cat2"},
+				AvailableSkills:     []*career.Skill{},
+				Height:              20,
+			})
+
+			Expect(form).NotTo(BeNil())
+		})
+
+		It("should create a dimension-constrained form", func() {
+			data := &forms.MetadataFormData{
+				Date:       "2024-01-15",
+				Company:    "Dimension Co",
+				Project:    "Modal Project",
+				Tags:       []string{"tag1"},
+				Categories: []string{"cat1"},
+			}
+
+			form := forms.NewMetadataForm(data, forms.MetadataFormConfig{
+				AvailableTags:       []string{"tag1", "tag2", "tag3"},
+				AvailableCategories: []string{"cat1", "cat2"},
+				AvailableSkills:     []*career.Skill{},
+				Width:               74,
+				Height:              20,
+			})
+
+			Expect(form).NotTo(BeNil())
+		})
+
+		It("should use DefaultFormHeight to calculate appropriate height", func() {
+			height := forms.DefaultFormHeight(40)
+			Expect(height).To(BeNumerically(">=", 10))
+			Expect(height).To(BeNumerically("<=", 30))
+		})
+
+		It("should enforce minimum height for small terminals", func() {
+			height := forms.DefaultFormHeight(15)
+			Expect(height).To(BeNumerically(">=", 10))
+		})
+	})
+
+	Describe("Modal form dimensions", func() {
+		It("should calculate ModalFormHeight with proper overhead", func() {
+			height := forms.ModalFormHeight(40)
+			Expect(height).To(BeNumerically(">=", 5))
+			Expect(height).To(Equal(40 - 20 - forms.HelpFooterHeight))
+		})
+
+		It("should enforce minimum ModalFormHeight for small terminals", func() {
+			height := forms.ModalFormHeight(20)
+			Expect(height).To(BeNumerically(">=", 5))
+		})
+
+		It("should calculate ModalFormWidth from modal width", func() {
+			width := forms.ModalFormWidth(80)
+			Expect(width).To(Equal(74))
+		})
+
+		It("should enforce minimum ModalFormWidth", func() {
+			width := forms.ModalFormWidth(20)
+			Expect(width).To(BeNumerically(">=", 30))
+		})
+	})
+})

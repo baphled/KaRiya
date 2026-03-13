@@ -7,23 +7,23 @@ import (
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 )
 
-// CLISkillService wraps the skill repository to provide CLI-specific skill operations.
-type CLISkillService struct {
+// CLISkillCreator wraps the skill repository to provide CLI-specific skill operations.
+type CLISkillCreator struct {
 	skillRepo careerrepo.SkillRepository
 }
 
-// NewCLISkillService creates a new CLI skill service.
+// NewCLISkillCreator creates a new CLI skill service.
 //
 // Expected:
 //   - skillRepo must be a valid SkillRepository instance.
 //
 // Returns:
-//   - A fully initialized CLISkillService ready for use.
+//   - A fully initialized CLISkillCreator ready for use.
 //
 // Side effects:
 //   - None.
-func NewCLISkillService(skillRepo careerrepo.SkillRepository) *CLISkillService {
-	return &CLISkillService{
+func NewCLISkillCreator(skillRepo careerrepo.SkillRepository) *CLISkillCreator {
+	return &CLISkillCreator{
 		skillRepo: skillRepo,
 	}
 }
@@ -39,6 +39,6 @@ func NewCLISkillService(skillRepo careerrepo.SkillRepository) *CLISkillService {
 //
 // Side effects:
 //   - Creates a new skill in the database.
-func (c *CLISkillService) Create(ctx context.Context, skill *career.Skill) error {
+func (c *CLISkillCreator) Create(ctx context.Context, skill *career.Skill) error {
 	return c.skillRepo.Create(ctx, skill)
 }

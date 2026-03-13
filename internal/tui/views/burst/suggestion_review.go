@@ -1,0 +1,905 @@
+package burst
+
+import (
+	"fmt"
+	"sort"
+	"strconv"
+	"strings"
+
+	"github.com/baphled/kariya/internal/ui/behaviors"
+	"github.com/baphled/kariya/internal/ui/display"
+	"github.com/baphled/kariya/internal/ui/themes"
+	"github.com/baphled/kariya/internal/ui/uikit/containers"
+	"github.com/baphled/kariya/internal/ui/uikit/primitives"
+	themes2 "github.com/baphled/kariya/internal/ui/uikit/theme"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+)
+
+const selectedLabel = "Selected:"
+
+// SuggestionAction represents an action taken on a suggestion.
+type SuggestionAction string
+
+// SuggestionAction constants represent the decisions a user can make on an
+// individual burst suggestion during the review workflow. The user sees a
+// paginated table of suggestions sorted by confidence score; navigating
+// with j/k or arrow keys highlights a row, and pressing the corresponding
+// key applies an action to the highlighted suggestion.
+const (
+	// SuggestionActionAccept marks the highlighted suggestion as approved
+	// and moves it to the accepted list. The suggestion is removed from the
+	// review table and will be persisted as a confirmed burst fact when the
+	// review session ends. The user presses a to trigger this action.
+	SuggestionActionAccept SuggestionAction = "accept"
+	// SuggestionActionReject discards the highlighted suggestion, removing
+	// it from the review table without recording it as a fact. The
+	// suggestion cannot be recovered after rejection. The user presses r to
+	// trigger this action.
+	SuggestionActionReject SuggestionAction = "reject"
+	// SuggestionActionCancel aborts the entire review session, closing the
+	// modal and discarding all pending accept or reject decisions made so
+	// far. No suggestions are persisted. The user presses Escape to trigger
+	// this action.
+	SuggestionActionCancel SuggestionAction = "cancel"
+	// SuggestionActionViewEvents requests the intent to display events
+	// associated with the currently selected suggestion. The modal hides
+	// itself so the intent can show an events sub-modal. The user presses
+	// Enter to trigger this action.
+	SuggestionActionViewEvents SuggestionAction = "view_events"
+)
+
+// SuggestionReview displays suggestions (burst or skill) for review in a table format.
+// Suggestions are sorted by confidence (highest first).
+// User can navigate through suggestions and accept/reject them.
+//
+// This modal is generic and supports both burst suggestions and skill suggestions
+// via type switching (see NewSuggestionReview for burst, NewSkillSuggestion for skills).
+type SuggestionReview struct {
+	burstTable *behaviors.TableBehavior[display.BurstSuggestion]
+	skillTable *behaviors.TableBehavior[display.SkillSuggestion]
+	factTable  *behaviors.TableBehavior[display.Fact]
+
+	suggestionType string
+
+	// Type-specific suggestion slices
+	burstSuggestions []display.BurstSuggestion
+	skillSuggestions []display.SkillSuggestion
+	factSuggestions  []display.Fact
+
+	// Type-specific accepted lists
+	acceptedBursts []display.BurstSuggestion
+	acceptedSkills []display.SkillSuggestion
+	acceptedFacts  []display.Fact
+
+	// Shared state
+	theme   themes.Theme
+	action  SuggestionAction
+	visible bool
+	width   int
+	height  int
+}
+
+// NewSuggestionReview creates a new burst suggestion review modal.
+//
+// Expected:
+//   - burstsuggestion must be valid.
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A fully initialized SuggestionReview ready for use.
+//
+// Side effects:
+//   - None.
+func NewSuggestionReview(suggestions []display.BurstSuggestion, theme themes.Theme) *SuggestionReview {
+	if theme == nil {
+		theme = themes.NewDefaultTheme()
+	}
+
+	sortedSuggestions := make([]display.BurstSuggestion, len(suggestions))
+	copy(sortedSuggestions, suggestions)
+	sort.Slice(sortedSuggestions, func(i, j int) bool {
+		return sortedSuggestions[i].ConfidenceScore > sortedSuggestions[j].ConfidenceScore
+	})
+
+	columns := []behaviors.ColumnDef{
+		{Title: "Name", Width: 30},
+		{Title: "Events", Width: 8},
+		{Title: "Confidence", Width: 24},
+	}
+
+	formatter := func(s display.BurstSuggestion, _ int) []string {
+		confidenceBar := primitives.CompactBar(s.ConfidenceScore, 15, nil).
+			ShowPercentage(true).
+			Render()
+		return []string{
+			s.Name,
+			strconv.Itoa(len(s.EventIDs)),
+			confidenceBar,
+		}
+	}
+
+	table := behaviors.NewTableBehavior(theme, columns, formatter).
+		EmptyMessage("No suggestions available").
+		PaginationPrefix("Suggestions").
+		PageSize(10)
+
+	table.SetItems(sortedSuggestions)
+
+	m := &SuggestionReview{
+		suggestionType:   "burst",
+		burstTable:       table,
+		burstSuggestions: sortedSuggestions,
+		acceptedBursts:   []display.BurstSuggestion{},
+		theme:            theme,
+		visible:          true,
+		width:            80,
+		height:           24,
+	}
+
+	return m
+}
+
+// NewSkillSuggestion creates a new skill suggestion review modal.
+//
+// Expected:
+//   - skillsuggestion must be valid.
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A fully initialized SuggestionReview ready for use.
+//
+// Side effects:
+//   - None.
+func NewSkillSuggestion(suggestions []display.SkillSuggestion, theme themes.Theme) *SuggestionReview {
+	if theme == nil {
+		theme = themes.NewDefaultTheme()
+	}
+
+	sortedSuggestions := make([]display.SkillSuggestion, len(suggestions))
+	copy(sortedSuggestions, suggestions)
+	sort.Slice(sortedSuggestions, func(i, j int) bool {
+		return sortedSuggestions[i].Confidence > sortedSuggestions[j].Confidence
+	})
+
+	// Define 4 columns for skills (Name, Category, Events, Confidence)
+	columns := []behaviors.ColumnDef{
+		{Title: "Skill", Width: 25},
+		{Title: "Category", Width: 12},
+		{Title: "Events", Width: 8},
+		{Title: "Confidence", Width: 24},
+	}
+
+	formatter := func(s display.SkillSuggestion, _ int) []string {
+		confidenceBar := primitives.CompactBar(s.Confidence, 15, nil).
+			ShowPercentage(true).
+			Render()
+		return []string{
+			s.Name,
+			s.Category,
+			strconv.Itoa(len(s.EventIDs)),
+			confidenceBar,
+		}
+	}
+
+	table := behaviors.NewTableBehavior(theme, columns, formatter).
+		EmptyMessage("No skills detected").
+		PaginationPrefix("Skills").
+		PageSize(10)
+
+	table.SetItems(sortedSuggestions)
+
+	m := &SuggestionReview{
+		suggestionType:   "skill",
+		skillTable:       table,
+		skillSuggestions: sortedSuggestions,
+		acceptedSkills:   []display.SkillSuggestion{},
+		theme:            theme,
+		visible:          true,
+		width:            80,
+		height:           24,
+	}
+
+	return m
+}
+
+// NewFactSuggestion creates a new fact suggestion review modal.
+//
+// Expected:
+//   - facts must be valid.
+//   - th must be a valid theme instance (can be nil).
+//
+// Returns:
+//   - A fully initialized SuggestionReview ready for use.
+//
+// Side effects:
+//   - None.
+func NewFactSuggestion(facts []display.Fact, theme themes.Theme) *SuggestionReview {
+	if theme == nil {
+		theme = themes.NewDefaultTheme()
+	}
+
+	sortedFacts := make([]display.Fact, len(facts))
+	copy(sortedFacts, facts)
+
+	columns := []behaviors.ColumnDef{
+		{Title: "Text", Width: 35},
+		{Title: "Categories", Width: 20},
+		{Title: "RoleFit", Width: 12},
+		{Title: "Strength", Width: 15},
+	}
+
+	formatter := func(f display.Fact, _ int) []string {
+		text := f.Text
+		if len(text) > 32 {
+			text = text[:32] + "..."
+		}
+		categories := strings.Join(f.CompetencyCategories, ", ")
+		return []string{
+			text,
+			categories,
+			f.RoleFit,
+			f.StrengthSignal,
+		}
+	}
+
+	table := behaviors.NewTableBehavior(theme, columns, formatter).
+		EmptyMessage("No facts detected").
+		PaginationPrefix("Facts").
+		PageSize(10)
+
+	table.SetItems(sortedFacts)
+
+	m := &SuggestionReview{
+		suggestionType:  "fact",
+		factTable:       table,
+		factSuggestions: sortedFacts,
+		acceptedFacts:   []display.Fact{},
+		theme:           theme,
+		visible:         true,
+		width:           80,
+		height:          24,
+	}
+
+	return m
+}
+
+// getTheme returns the theme or default if nil.
+func (m *SuggestionReview) getTheme() themes.Theme {
+	if m.theme != nil {
+		return m.theme
+	}
+	return themes2.Default()
+}
+
+// buildContent builds the content showing all suggestions.
+func (m *SuggestionReview) buildContent() string {
+	switch m.suggestionType {
+	case "burst":
+		return m.buildBurstContent()
+	case "skill":
+		return m.buildSkillContent()
+	case "fact":
+		return m.buildFactContent()
+	default:
+		return "Unknown suggestion type"
+	}
+}
+
+// buildBurstContent renders burst fact suggestions.
+func (m *SuggestionReview) buildBurstContent() string {
+	if len(m.burstSuggestions) == 0 {
+		return "No suggestions available"
+	}
+
+	theme := m.getTheme()
+	var content strings.Builder
+
+	content.WriteString(m.burstTable.Render())
+	content.WriteString("\n\n")
+
+	selected := m.burstTable.GetSelectedItem()
+	if selected != nil {
+		content.WriteString(primitives.NewText(selectedLabel, theme).Bold().Render())
+		content.WriteString(" " + selected.Name + "\n")
+		if selected.Description != "" {
+			content.WriteString(primitives.NewText("Description:", theme).Bold().Render())
+			content.WriteString(" " + selected.Description + "\n")
+		}
+	}
+
+	return content.String()
+}
+
+// buildSkillContent renders skill inference suggestions with usage contexts.
+func (m *SuggestionReview) buildSkillContent() string {
+	if len(m.skillSuggestions) == 0 {
+		return "No skills detected"
+	}
+
+	var content strings.Builder
+
+	content.WriteString(m.skillTable.Render())
+	content.WriteString("\n\n")
+
+	if selected := m.skillTable.GetSelectedItem(); selected != nil {
+		m.renderSelectedSkillDetail(&content, selected)
+	}
+
+	return content.String()
+}
+
+// renderSelectedSkillDetail writes the selected skill name, category badge, and usage contexts.
+func (m *SuggestionReview) renderSelectedSkillDetail(content *strings.Builder, selected *display.SkillSuggestion) {
+	theme := m.getTheme()
+
+	content.WriteString(primitives.NewText(selectedLabel, theme).Bold().Render())
+	content.WriteString(" " + selected.Name)
+
+	categoryBadge := primitives.NewBadge(selected.Category, theme).
+		Variant(primitives.BadgeTag).
+		Render()
+	content.WriteString(" " + categoryBadge + "\n")
+
+	m.renderUsageContexts(content, selected.Contexts)
+}
+
+// renderUsageContexts writes up to 3 usage contexts with an overflow indicator.
+func (m *SuggestionReview) renderUsageContexts(content *strings.Builder, contexts []string) {
+	if len(contexts) == 0 {
+		return
+	}
+
+	theme := m.getTheme()
+	content.WriteString("\n")
+	content.WriteString(primitives.NewText("Usage Contexts:", theme).Bold().Render())
+	content.WriteString("\n")
+
+	maxContexts := 3
+	if len(contexts) < maxContexts {
+		maxContexts = len(contexts)
+	}
+
+	for i := range maxContexts {
+		fmt.Fprintf(content, "  • %s\n", contexts[i])
+	}
+
+	if len(contexts) > 3 {
+		remaining := len(contexts) - 3
+		fmt.Fprintf(content, "  ... and %d more\n", remaining)
+	}
+}
+
+// buildFactContent renders fact suggestions with competency details.
+func (m *SuggestionReview) buildFactContent() string {
+	if len(m.factSuggestions) == 0 {
+		return "No facts detected"
+	}
+
+	var content strings.Builder
+
+	content.WriteString(m.factTable.Render())
+	content.WriteString("\n\n")
+
+	if selected := m.factTable.GetSelectedItem(); selected != nil {
+		m.renderSelectedFactDetail(&content, selected)
+	}
+
+	return content.String()
+}
+
+// renderSelectedFactDetail writes the selected fact text, role fit badge, and strength signal.
+func (m *SuggestionReview) renderSelectedFactDetail(content *strings.Builder, selected *display.Fact) {
+	theme := m.getTheme()
+
+	content.WriteString(primitives.NewText(selectedLabel, theme).Bold().Render())
+	content.WriteString(" " + selected.Text + "\n")
+
+	roleFitBadge := primitives.NewBadge(selected.RoleFit, theme).
+		Variant(primitives.BadgeTag).
+		Render()
+	content.WriteString("Role Fit: " + roleFitBadge + "\n")
+
+	content.WriteString("Strength: " + selected.StrengthSignal + "\n")
+
+	if len(selected.CompetencyCategories) > 0 {
+		content.WriteString("Categories: " + strings.Join(selected.CompetencyCategories, ", ") + "\n")
+	}
+}
+
+// buildFooter builds the footer with help badges.
+func (m *SuggestionReview) buildFooter() string {
+	theme := m.getTheme()
+
+	badges := []*primitives.Badge{
+		primitives.HelpKeyBadge("Enter", "View Events", theme),
+		primitives.AcceptBadge(theme),
+		primitives.RejectBadge(theme),
+		primitives.NavigateBadge(theme),
+		primitives.PageVimBadge(theme),
+		primitives.CancelBadge(theme),
+	}
+
+	return primitives.RenderHelpFooter(theme, badges...)
+}
+
+// Init initializes the modal.
+//
+// Returns:
+//   - A tea.Cmd value.
+//
+// Side effects:
+//   - None.
+func (m *SuggestionReview) Init() tea.Cmd {
+	return nil
+}
+
+// Update handles keyboard input.
+//
+// Expected:
+//   - msg must be a valid tea.Msg type.
+//
+// Returns:
+//   - tea.Model: the updated model.
+//   - tea.Cmd: command to execute.
+//
+// Side effects:
+//   - May update internal state based on key presses.
+//   - May hide modal on Escape, Enter, or when no suggestions remain.
+func (m *SuggestionReview) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if !m.IsVisible() {
+		return m, nil
+	}
+
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+
+		switch m.suggestionType {
+		case "burst":
+			m.burstTable.Dimensions(m.width-12, m.height-16)
+		case "skill":
+			m.skillTable.Dimensions(m.width-12, m.height-16)
+		case "fact":
+			m.factTable.Dimensions(m.width-12, m.height-16)
+		}
+		return m, nil
+
+	case tea.KeyMsg:
+		switch msg.Type {
+		case tea.KeyEsc:
+			m.action = SuggestionActionCancel
+			m.visible = false
+			return m, nil
+
+		case tea.KeyDown:
+			m.handleNavigation("down")
+			return m, nil
+
+		case tea.KeyUp:
+			m.handleNavigation("up")
+			return m, nil
+
+		case tea.KeyPgDown:
+			m.handleNavigation("pgdn")
+			return m, nil
+
+		case tea.KeyPgUp:
+			m.handleNavigation("pgup")
+			return m, nil
+
+		case tea.KeyEnter:
+			m.action = SuggestionActionViewEvents
+			m.visible = false
+			return m, nil
+
+		case tea.KeyRunes:
+			return m.handleRuneKey(msg)
+		}
+	}
+
+	return m, nil
+}
+
+// handleRuneKey handles rune key presses (vim-style navigation and actions).
+func (m *SuggestionReview) handleRuneKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "j":
+		m.handleNavigation("down")
+		return m, nil
+
+	case "k":
+		m.handleNavigation("up")
+		return m, nil
+
+	case "n":
+		m.handleNavigation("pgdn")
+		return m, nil
+
+	case "p":
+		m.handleNavigation("pgup")
+		return m, nil
+
+	case "a":
+		m.action = SuggestionActionAccept
+		m.handleAccept()
+
+		if !m.HasSuggestions() {
+			m.visible = false
+		}
+		return m, nil
+
+	case "r":
+		m.action = SuggestionActionReject
+		m.removeCurrentSuggestion()
+
+		if !m.HasSuggestions() {
+			m.visible = false
+		}
+		return m, nil
+	}
+
+	return m, nil
+}
+
+// handleNavigation delegates navigation to the correct table.
+func (m *SuggestionReview) handleNavigation(direction string) {
+	switch m.suggestionType {
+	case "burst":
+		m.burstTable.HandleNavigation(direction)
+	case "skill":
+		m.skillTable.HandleNavigation(direction)
+	case "fact":
+		m.factTable.HandleNavigation(direction)
+	}
+}
+
+// handleAccept adds current suggestion to accepted list and removes it.
+func (m *SuggestionReview) handleAccept() {
+	switch m.suggestionType {
+	case "burst":
+		selected := m.burstTable.GetSelectedItem()
+		if selected != nil {
+			m.acceptedBursts = append(m.acceptedBursts, *selected)
+			m.removeCurrentSuggestion()
+		}
+	case "skill":
+		selected := m.skillTable.GetSelectedItem()
+		if selected != nil {
+			m.acceptedSkills = append(m.acceptedSkills, *selected)
+			m.removeCurrentSuggestion()
+		}
+	case "fact":
+		selected := m.factTable.GetSelectedItem()
+		if selected != nil {
+			m.acceptedFacts = append(m.acceptedFacts, *selected)
+			m.removeCurrentSuggestion()
+		}
+	}
+}
+
+// removeCurrentSuggestion removes the currently selected suggestion from the list.
+func (m *SuggestionReview) removeCurrentSuggestion() {
+	switch m.suggestionType {
+	case "burst":
+		m.removeBurstSuggestionAtIndex(m.burstTable.GetSelectedIndex())
+	case "skill":
+		m.removeSkillSuggestionAtIndex(m.skillTable.GetSelectedIndex())
+	case "fact":
+		m.removeFactSuggestionAtIndex(m.factTable.GetSelectedIndex())
+	}
+}
+
+// removeBurstSuggestionAtIndex removes a burst suggestion at the given index and updates selection.
+func (m *SuggestionReview) removeBurstSuggestionAtIndex(idx int) {
+	if idx < 0 || idx >= len(m.burstSuggestions) {
+		return
+	}
+
+	m.burstSuggestions = append(m.burstSuggestions[:idx], m.burstSuggestions[idx+1:]...)
+	m.burstTable.SetItems(m.burstSuggestions)
+
+	if idx >= len(m.burstSuggestions) && len(m.burstSuggestions) > 0 {
+		idx = len(m.burstSuggestions) - 1
+	}
+	if len(m.burstSuggestions) > 0 {
+		m.burstTable.SetSelectedIndex(idx)
+	}
+}
+
+// removeSkillSuggestionAtIndex removes a skill suggestion at the given index and updates selection.
+func (m *SuggestionReview) removeSkillSuggestionAtIndex(idx int) {
+	if idx < 0 || idx >= len(m.skillSuggestions) {
+		return
+	}
+
+	m.skillSuggestions = append(m.skillSuggestions[:idx], m.skillSuggestions[idx+1:]...)
+	m.skillTable.SetItems(m.skillSuggestions)
+
+	if idx >= len(m.skillSuggestions) && len(m.skillSuggestions) > 0 {
+		idx = len(m.skillSuggestions) - 1
+	}
+	if len(m.skillSuggestions) > 0 {
+		m.skillTable.SetSelectedIndex(idx)
+	}
+}
+
+// removeFactSuggestionAtIndex removes a fact suggestion at the given index and updates selection.
+func (m *SuggestionReview) removeFactSuggestionAtIndex(idx int) {
+	if idx < 0 || idx >= len(m.factSuggestions) {
+		return
+	}
+
+	m.factSuggestions = append(m.factSuggestions[:idx], m.factSuggestions[idx+1:]...)
+	m.factTable.SetItems(m.factSuggestions)
+
+	if idx >= len(m.factSuggestions) && len(m.factSuggestions) > 0 {
+		idx = len(m.factSuggestions) - 1
+	}
+	if len(m.factSuggestions) > 0 {
+		m.factTable.SetSelectedIndex(idx)
+	}
+}
+
+// View renders the modal.
+//
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
+func (m *SuggestionReview) View() string {
+	if !m.visible {
+		return ""
+	}
+
+	theme := m.getTheme()
+
+	var titleText string
+	switch m.suggestionType {
+	case "burst":
+		titleText = "Review Burst Suggestions"
+	case "skill":
+		titleText = "Review Skill Suggestions"
+	case "fact":
+		titleText = "Review Fact Suggestions"
+	default:
+		titleText = "Review Suggestions"
+	}
+
+	title := primitives.Title(titleText, theme).Render()
+	content := m.buildContent()
+	footer := m.buildFooter()
+	modalContent := lipgloss.JoinVertical(lipgloss.Left, title, "", content, "", footer)
+
+	maxModalHeight := 30
+	terminalMaxHeight := int(float64(m.height) * 0.8)
+	if terminalMaxHeight < maxModalHeight {
+		maxModalHeight = terminalMaxHeight
+	}
+	if maxModalHeight < 15 {
+		maxModalHeight = 15
+	}
+
+	modalWidth := m.width - 12
+	if modalWidth < 60 {
+		modalWidth = 60
+	}
+	if modalWidth > 90 {
+		modalWidth = 90
+	}
+
+	return containers.NewBox(theme).
+		Content(modalContent).
+		Width(modalWidth).
+		Height(maxModalHeight).
+		Padding(2).
+		Background(theme.BackgroundColor()).
+		Render()
+}
+
+// IsVisible returns whether the modal is visible.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
+func (m *SuggestionReview) IsVisible() bool {
+	return m.visible
+}
+
+// Show makes the modal visible.
+//
+// Side effects:
+//   - None.
+func (m *SuggestionReview) Show() {
+	m.visible = true
+	m.action = ""
+}
+
+// Hide hides the modal.
+//
+// Side effects:
+//   - None.
+func (m *SuggestionReview) Hide() {
+	m.visible = false
+}
+
+// SetDimensions sets the terminal dimensions.
+//
+// Expected:
+//   - int must be valid.
+//
+// Side effects:
+//   - None.
+func (m *SuggestionReview) SetDimensions(width, height int) {
+	m.width = width
+	m.height = height
+
+	modalWidth := width - 12
+	if modalWidth < 60 {
+		modalWidth = 60
+	}
+	if modalWidth > 90 {
+		modalWidth = 90
+	}
+	contentWidth := modalWidth - 8
+
+	switch m.suggestionType {
+	case "burst":
+		m.burstTable.Dimensions(contentWidth, height-16)
+	case "skill":
+		m.skillTable.Dimensions(contentWidth, height-16)
+	case "fact":
+		m.factTable.Dimensions(contentWidth, height-16)
+	}
+}
+
+// GetAction returns the last action taken.
+//
+// Returns:
+//   - A SuggestionAction value.
+//
+// Side effects:
+//   - None.
+func (m *SuggestionReview) GetAction() SuggestionAction {
+	return m.action
+}
+
+// ClearAction clears the current action.
+//
+// Side effects:
+//   - None.
+func (m *SuggestionReview) ClearAction() {
+	m.action = ""
+}
+
+// GetAcceptedSuggestions returns all accepted burst suggestions.
+//
+// Returns:
+//   - A []display.BurstSuggestion value.
+//
+// Side effects:
+//   - None.
+func (m *SuggestionReview) GetAcceptedSuggestions() []display.BurstSuggestion {
+	return m.acceptedBursts
+}
+
+// GetAcceptedSkills returns all accepted skill suggestions.
+//
+// Returns:
+//   - A []display.SkillSuggestion value.
+//
+// Side effects:
+//   - None.
+func (m *SuggestionReview) GetAcceptedSkills() []display.SkillSuggestion {
+	return m.acceptedSkills
+}
+
+// GetAcceptedFacts returns all accepted fact suggestions.
+//
+// Returns:
+//   - A []display.Fact value.
+//
+// Side effects:
+//   - None.
+func (m *SuggestionReview) GetAcceptedFacts() []display.Fact {
+	return m.acceptedFacts
+}
+
+// GetCurrentFact returns the currently selected fact suggestion.
+//
+// Returns:
+//   - A fully initialized display.Fact ready for use.
+//
+// Side effects:
+//   - None.
+func (m *SuggestionReview) GetCurrentFact() *display.Fact {
+	return m.factTable.GetSelectedItem()
+}
+
+// GetCurrentSuggestion returns the currently selected burst suggestion.
+//
+// Returns:
+//   - A fully initialized display.BurstSuggestion ready for use.
+//
+// Side effects:
+//   - None.
+func (m *SuggestionReview) GetCurrentSuggestion() *display.BurstSuggestion {
+	return m.burstTable.GetSelectedItem()
+}
+
+// GetCurrentSkill returns the currently selected skill suggestion.
+//
+// Returns:
+//   - A fully initialized display.SkillSuggestion ready for use.
+//
+// Side effects:
+//   - None.
+func (m *SuggestionReview) GetCurrentSkill() *display.SkillSuggestion {
+	return m.skillTable.GetSelectedItem()
+}
+
+// HasSuggestions returns whether there are any suggestions left.
+//
+// Returns:
+//   - A bool value.
+//
+// Side effects:
+//   - None.
+func (m *SuggestionReview) HasSuggestions() bool {
+	switch m.suggestionType {
+	case "burst":
+		return len(m.burstSuggestions) > 0
+	case "skill":
+		return len(m.skillSuggestions) > 0
+	case "fact":
+		return len(m.factSuggestions) > 0
+	default:
+		return false
+	}
+}
+
+// GetSuggestionsCount returns the number of remaining suggestions.
+//
+// Returns:
+//   - A int value.
+//
+// Side effects:
+//   - None.
+func (m *SuggestionReview) GetSuggestionsCount() int {
+	switch m.suggestionType {
+	case "burst":
+		return len(m.burstSuggestions)
+	case "skill":
+		return len(m.skillSuggestions)
+	case "fact":
+		return len(m.factSuggestions)
+	default:
+		return 0
+	}
+}
+
+// GetAllSuggestions returns all burst suggestions in their current order (sorted by confidence).
+//
+// Returns:
+//   - A []display.BurstSuggestion value.
+//
+// Side effects:
+//   - None.
+func (m *SuggestionReview) GetAllSuggestions() []display.BurstSuggestion {
+	return m.burstSuggestions
+}
+
+// GetAllSkills returns all skill suggestions in their current order (sorted by confidence).
+//
+// Returns:
+//   - A []display.SkillSuggestion value.
+//
+// Side effects:
+//   - None.
+func (m *SuggestionReview) GetAllSkills() []display.SkillSuggestion {
+	return m.skillSuggestions
+}

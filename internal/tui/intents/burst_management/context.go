@@ -1,0 +1,157 @@
+// Package burst_management implements the BurstManagement intent for managing career bursts.
+package burst_management
+
+import (
+	"context"
+
+	"github.com/baphled/kariya/internal/domain/career"
+	careerrepo "github.com/baphled/kariya/internal/repository/career"
+)
+
+// IntentValidator holds the input parameters, dependencies, and mutable editing state
+// needed by the BurstManagement intent throughout its lifecycle.
+type IntentValidator struct {
+	// Bursts is the list of bursts to manage.
+	Bursts []*career.Burst
+
+	// Service provides burst and fact operations.
+	Service BurstService
+
+	// SkillInferenceService provides skill detection operations.
+	SkillInferenceService SkillInferenceService
+
+	// BurstRepository for direct burst CRUD operations.
+	BurstRepository careerrepo.BurstRepository
+
+	// SkillRepository for loading skills associated with burst events.
+	SkillRepository careerrepo.SkillRepository
+
+	// IsNewBurst indicates if we're creating a new burst.
+	IsNewBurst bool
+
+	// EditingBurst is the burst being edited (if any).
+	EditingBurst *career.Burst
+}
+
+// Validate ensures the context has all required fields initialized with safe defaults.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
+func (c *IntentValidator) Validate() error {
+	if c.Bursts == nil {
+		c.Bursts = make([]*career.Burst, 0)
+	}
+	return nil
+}
+
+// LoadBursts fetches all bursts from the repository and replaces the in-memory burst list.
+//
+// Returns:
+//   - A error value.
+//
+// Side effects:
+//   - None.
+func (c *IntentValidator) LoadBursts() error {
+	if c.BurstRepository == nil {
+		return nil
+	}
+
+	bursts, err := c.BurstRepository.List(context.Background(), careerrepo.BurstListFilters{})
+	if err != nil {
+		return err
+	}
+
+	c.Bursts = bursts
+	return nil
+}
+
+// CreateBurst validates and persists a new burst to the repository.
+//
+// Expected:
+//   - burst must be non-nil and pass domain validation.
+//
+// Returns:
+//   - A validation or repository error, or nil on success.
+//   - Nil when BurstRepository is not configured (no-op).
+//
+// Side effects:
+//   - Persists the burst to the underlying repository, which may assign an ID.
+func (c *IntentValidator) CreateBurst(burst *career.Burst) error {
+	if c.BurstRepository == nil {
+		return nil
+	}
+
+	if err := burst.Validate(); err != nil {
+		return err
+	}
+
+	return c.BurstRepository.Create(context.Background(), burst)
+}
+
+// UpdateBurst validates and persists changes to an existing burst in the repository.
+//
+// Expected:
+//   - burst must be non-nil, have a valid ID, and pass domain validation.
+//
+// Returns:
+//   - A validation or repository error, or nil on success.
+//   - Nil when BurstRepository is not configured (no-op).
+//
+// Side effects:
+//   - Overwrites the stored burst record with the provided values.
+func (c *IntentValidator) UpdateBurst(burst *career.Burst) error {
+	if c.BurstRepository == nil {
+		return nil
+	}
+
+	if err := burst.Validate(); err != nil {
+		return err
+	}
+
+	return c.BurstRepository.Update(context.Background(), burst)
+}
+
+// DeleteBurst removes a burst from the repository by its identifier.
+//
+// Expected:
+//   - burstID must be a non-empty identifier of an existing burst.
+//
+// Returns:
+//   - A repository error if deletion fails, or nil on success.
+//   - Nil when BurstRepository is not configured (no-op).
+//
+// Side effects:
+//   - Permanently removes the burst record from the repository.
+func (c *IntentValidator) DeleteBurst(burstID string) error {
+	if c.BurstRepository == nil {
+		return nil
+	}
+
+	return c.BurstRepository.Delete(context.Background(), burstID)
+}
+
+// StartNewBurst initializes a blank burst template and marks the context for creation mode.
+//
+// Side effects:
+//   - None.
+func (c *IntentValidator) StartNewBurst() {
+	c.EditingBurst = &career.Burst{
+		ID:          "",
+		Name:        "",
+		Description: "",
+		EventIDs:    make([]string, 0),
+	}
+	c.IsNewBurst = true
+}
+
+// CancelEdit discards the in-progress burst edit and resets editing state.
+//
+// Side effects:
+//   - None.
+func (c *IntentValidator) CancelEdit() {
+	c.EditingBurst = nil
+	c.IsNewBurst = false
+}

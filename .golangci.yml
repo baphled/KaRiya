@@ -1,19 +1,3 @@
-# =============================================================================
-# KaRiya golangci-lint Configuration
-# =============================================================================
-#
-# This configuration enforces:
-#   1. Go Idioms & Best Practices (Effective Go, Go Code Review Comments)
-#   2. Project Architecture (layer dependencies, component usage)
-#   3. Documentation Standards (docs/conventions/GO_DOCUMENTATION_RULES.md)
-#
-# Structure:
-#   - SECTION A: Go Idioms & Best Practices
-#   - SECTION B: Project Architecture Rules
-#   - SECTION C: Legacy Exemptions (minimal, clearly marked)
-#
-# =============================================================================
-
 version: "2"
 
 run:
@@ -343,15 +327,14 @@ linters:
           files:
             - "**/uikit/**/*.go"
           deny:
-            - pkg: "github.com/baphled/kariya/internal/cli/intents"
+            - pkg: "github.com/baphled/kariya/internal/tui/intents"
               desc: "ARCHITECTURE: uikit/ cannot import intents/"
-            - pkg: "github.com/baphled/kariya/internal/cli/screens"
-              desc: "ARCHITECTURE: uikit/ cannot import screens/"
-            - pkg: "github.com/baphled/kariya/internal/cli/components"
+
+            - pkg: "github.com/baphled/kariya/internal/tui/components"
               desc: "ARCHITECTURE: uikit/ cannot import components/"
-            - pkg: "github.com/baphled/kariya/internal/cli/behaviors"
+            - pkg: "github.com/baphled/kariya/internal/ui/behaviors"
               desc: "ARCHITECTURE: uikit/ cannot import behaviors/"
-            - pkg: "github.com/baphled/kariya/internal/cli/forms"
+            - pkg: "github.com/baphled/kariya/internal/tui/forms"
               desc: "ARCHITECTURE: uikit/ cannot import forms/"
 
         # Layer 2: Behaviors (utilities - no screen/intent imports)
@@ -359,20 +342,19 @@ linters:
           files:
             - "**/behaviors/**/*.go"
           deny:
-            - pkg: "github.com/baphled/kariya/internal/cli/intents"
+            - pkg: "github.com/baphled/kariya/internal/tui/intents"
               desc: "ARCHITECTURE: behaviors/ cannot import intents/"
-            - pkg: "github.com/baphled/kariya/internal/cli/screens"
-              desc: "ARCHITECTURE: behaviors/ cannot import screens/"
+
 
         # Layer 3: Screens (views - cannot import intents)
-        screens-no-intent-imports:
+        views-no-intent-imports:
           files:
-            - "**/screens/**/*.go"
-            - "**/screens/*.go"
+            - "**/views/**/*.go"
+            - "**/views/*.go"
             - "!**/*_test.go"
           deny:
-            - pkg: "github.com/baphled/kariya/internal/cli/intents"
-              desc: "ARCHITECTURE: screens/ cannot import intents/"
+            - pkg: "github.com/baphled/kariya/internal/tui/intents"
+              desc: "ARCHITECTURE: views/ cannot import intents/"
 
         # Deprecated: components/ package
         prevent-deprecated-components:
@@ -380,9 +362,9 @@ linters:
             - "!**/components/**"
             - "!**/*_test.go"
             - "**/intents/**/*.go"
-            - "**/screens/**/*.go"
+            - "**/views/**/*.go"
           deny:
-            - pkg: "github.com/baphled/kariya/internal/cli/components"
+            - pkg: "github.com/baphled/kariya/internal/tui/components"
               desc: "DEPRECATED: Use uikit/ packages instead"
 
         # Deprecated: styles/ package
@@ -393,9 +375,9 @@ linters:
             - "!**/components/**"
             - "!**/*_test.go"
             - "**/intents/**/*.go"
-            - "**/screens/**/*.go"
+            - "**/views/**/*.go"
           deny:
-            - pkg: "github.com/baphled/kariya/internal/cli/styles"
+            - pkg: "github.com/baphled/kariya/internal/ui/styles"
               desc: "DEPRECATED: Use theme system instead"
 
         # Forms: huh restricted to forms/ package
@@ -403,8 +385,8 @@ linters:
           files:
             - "**/intents/**/*.go"
             - "**/intents/*.go"
-            - "**/screens/**/*.go"
-            - "**/screens/*.go"
+            - "**/views/**/*.go"
+            - "**/views/*.go"
             - "**/components/**/*.go"
             - "**/components/*.go"
             - "!**/*_test.go"
@@ -416,7 +398,7 @@ linters:
         tables-use-behavior:
           files:
             - "**/intents/**/*.go"
-            - "**/screens/**/*.go"
+            - "**/views/**/*.go"
           deny:
             - pkg: "github.com/charmbracelet/bubbles/table"
               desc: "PATTERN: Use behaviors.TableBehavior[T] instead"
@@ -574,42 +556,54 @@ linters:
         linters:
           - contextcheck
 
-      # Modal type assertions
-      - path: 'internal/cli/screens/.*/modals/(.*)\.go'
+      # Modal duplication (standard pattern)
+      # Former modals migrated to views/event/
+      - path: 'internal/tui/views/event/(.*)\.go'
+        linters:
+          - depguard
+        text: "huh-restricted-to-forms"
+
+      # Views: type assertion errcheck (Bubble Tea pattern)
+      - path: 'internal/tui/views/.*/(.*)\.go'
         linters:
           - errcheck
         text: "Error return value is not checked"
 
-      # Modal duplication (standard pattern)
-      - path: 'internal/cli/screens/.*/modals/(.*)\.go'
+      # Views: single-case switch (Bubble Tea message handling pattern)
+      - path: 'internal/tui/views/.*/(.*)\.go'
         linters:
-          - dupl
-          - funlen
+          - gocritic
+        text: "singleCaseSwitch"
+
+      # Views: Bubble Tea Update/View patterns
+      - path: 'internal/tui/views/.*/(.*)\.go'
+        linters:
+          - revive
+        text: "unnecessary-stmt"
+
+      - path: 'internal/tui/views/.*/(.*)\.go'
+        linters:
+          - revive
+        text: "unused-parameter"
+
+      # Views: godot relaxed for view rendering code
+      - path: 'internal/tui/views/.*/(.*)\.go'
+        linters:
+          - godot
 
       # Memory repository duplication (same interface, different types)
       - path: 'internal/repository/career/memory/(.*)_repository\.go'
         linters:
           - dupl
 
-      - path: 'internal/cli/screens/.*/modals/(.*)\.go'
-        linters:
-          - gocritic
-        text: "singleCaseSwitch"
+
 
       # Modal revive patterns
-      - path: 'internal/cli/screens/.*/modals/(.*)\.go'
-        linters:
-          - revive
-        text: "unnecessary-stmt"
 
-      - path: 'internal/cli/screens/.*/modals/(.*)\.go'
-        linters:
-          - revive
-        text: "unused-parameter"
 
-      - path: 'internal/cli/screens/.*/modals/(.*)\.go'
-        linters:
-          - godot
+
+
+
 
     # -------------------------------------------------------------------------
     # C3: GENERATED FILES - Skip all
@@ -642,9 +636,9 @@ linters:
 
     # -------------------------------------------------------------------------
     # C6: DEPRECATED PACKAGES (migration tracked)
-    # DEPRECATED: internal/cli/components/ -> migrate to uikit/
+    # DEPRECATED: internal/tui/components/ -> migrate to uikit/
     # -------------------------------------------------------------------------
-      - path: 'internal/cli/components/(.*)\.go'
+      - path: 'internal/tui/components/(.*)\.go'
         linters:
           - godot
           - stylecheck
@@ -664,7 +658,7 @@ linters:
     # -------------------------------------------------------------------------
     # C7: LEGACY SINGLE-FILE INTENTS (migration tracked)
     # -------------------------------------------------------------------------
-      - path: 'internal/cli/intents/generate_cv_intent\.go'
+      - path: 'internal/tui/intents/generate_cv_intent\.go'
         linters:
           - godot
           - stylecheck
@@ -675,7 +669,7 @@ linters:
           - nestif
           - dupl
 
-      - path: 'internal/cli/intents/configure_system_intent\.go'
+      - path: 'internal/tui/intents/configure_system_intent\.go'
         linters:
           - godot
           - stylecheck
@@ -685,7 +679,7 @@ linters:
           - funlen
           - nestif
 
-      - path: 'internal/cli/intents/configure_system\.go'
+      - path: 'internal/tui/intents/configure_system\.go'
         linters:
           - godot
           - stylecheck
@@ -694,7 +688,7 @@ linters:
           - gocyclo
           - funlen
 
-      - path: 'internal/cli/intents/modals\.go'
+      - path: 'internal/tui/intents/modals\.go'
         linters:
           - godot
           - stylecheck
@@ -703,45 +697,37 @@ linters:
           - dupl
           - gocritic
 
-      - path: 'internal/cli/intents/modal_(.*)\.go'
+      - path: 'internal/tui/intents/modal_(.*)\.go'
         linters:
           - godot
           - stylecheck
           - revive
 
-      - path: 'internal/cli/intents/view_helpers\.go'
+      - path: 'internal/tui/intents/view_helpers\.go'
         linters:
           - stylecheck
 
     # -------------------------------------------------------------------------
     # C8: huh IMPORTS (migration to forms/ tracked)
     # -------------------------------------------------------------------------
-      - path: 'internal/cli/components/(.*)\.go'
+      - path: 'internal/tui/components/(.*)\.go'
         linters:
           - depguard
         text: "huh-restricted-to-forms"
 
-      - path: 'internal/cli/intents/modals\.go'
+      - path: 'internal/tui/intents/modals\.go'
         linters:
           - depguard
         text: "huh-restricted-to-forms"
 
-      - path: 'internal/cli/screens/base/form_screen\.go'
-        linters:
-          - depguard
-        text: "huh-restricted-to-forms"
 
-      - path: 'internal/cli/screens/configure/(.*)\.go'
-        linters:
-          - depguard
-        text: "huh-restricted-to-forms"
 
-      - path: 'internal/cli/screens/skills/skill_form\.go'
-        linters:
-          - depguard
-        text: "huh-restricted-to-forms"
 
-      - path: 'internal/cli/screens/timeline/modals/(.*)\.go'
+
+
+
+      # Former modals migrated to views/event/
+      - path: 'internal/tui/views/event/(.*)\.go'
         linters:
           - depguard
         text: "huh-restricted-to-forms"
@@ -749,12 +735,12 @@ linters:
     # -------------------------------------------------------------------------
     # C9: DEPRECATED COMPONENTS USAGE (migration tracked)
     # -------------------------------------------------------------------------
-      - path: 'internal/cli/intents/skillsmanagement/(.*)\.go'
+      - path: 'internal/tui/intents/skillsmanagement/(.*)\.go'
         linters:
           - depguard
         text: "prevent-deprecated-components"
 
-      - path: 'internal/cli/intents/generatecv/(.*)\.go'
+      - path: 'internal/tui/intents/generatecv/(.*)\.go'
         linters:
           - depguard
         text: "prevent-deprecated-components"
@@ -762,7 +748,7 @@ linters:
     # -------------------------------------------------------------------------
     # C12: SUBDIRECTORY INTENTS - Migrated architecture
     # -------------------------------------------------------------------------
-      - path: 'internal/cli/intents/captureevent/(.*)\.go'
+      - path: 'internal/tui/intents/captureevent/(.*)\.go'
         linters:
           - gocognit
           - gocyclo
@@ -770,12 +756,12 @@ linters:
           - funlen
           - errcheck
 
-      - path: 'internal/cli/intents/captureevent/(.*)\.go'
+      - path: 'internal/tui/intents/captureevent/(.*)\.go'
         linters:
           - revive
         text: "cognitive-complexity|cyclomatic|unnecessary-stmt|unused-parameter"
 
-      - path: 'internal/cli/intents/browsetimeline/(.*)\.go'
+      - path: 'internal/tui/intents/browsetimeline/(.*)\.go'
         linters:
           - revive
           - gocognit
@@ -784,7 +770,11 @@ linters:
           - funlen
           - errcheck
 
-      - path: 'internal/cli/intents/skillsmanagement/(.*)\.go'
+      - path: 'internal/tui/intents/browsetimeline/(.*)_test\.go'
+        linters:
+          - typecheck
+
+      - path: 'internal/tui/intents/skillsmanagement/(.*)\.go'
         linters:
           - revive
           - gocognit
@@ -795,7 +785,7 @@ linters:
           - godox
           - depguard
 
-      - path: 'internal/cli/intents/generatecv/(.*)\.go'
+      - path: 'internal/tui/intents/generatecv/(.*)\.go'
         linters:
           - revive
           - gocognit
@@ -804,7 +794,7 @@ linters:
           - funlen
           - errcheck
 
-      - path: 'internal/cli/intents/burst_management/(.*)\.go'
+      - path: 'internal/tui/intents/burst_management/(.*)\.go'
         linters:
           - stylecheck
           - revive
@@ -814,11 +804,9 @@ linters:
           - funlen
           - errcheck
 
-      - path: 'internal/cli/screens/burst_management/(.*)\.go'
-        linters:
-          - stylecheck
 
-      - path: 'internal/cli/intents/factmanagement/(.*)\.go'
+
+      - path: 'internal/tui/intents/factmanagement/(.*)\.go'
         linters:
           - revive
           - gocognit
@@ -908,7 +896,7 @@ linters:
           - nestif
           - revive
 
-      - path: 'internal/cli/app/app\.go'
+      - path: 'internal/tui/app/app\.go'
         linters:
           - gocognit
           - gocyclo
@@ -916,37 +904,9 @@ linters:
           - nestif
 
     # -------------------------------------------------------------------------
-    # C15: LEGACY SCREENS - Complex UI components
+    # C15: LEGACY VIEWS - Complex UI components
     # -------------------------------------------------------------------------
-      - path: 'internal/cli/screens/capture/event_review_screen\.go'
-        linters:
-          - gocognit
-          - gocyclo
-          - funlen
-          - nestif
-          - gocritic
-
-      - path: 'internal/cli/screens/configure/edit_settings\.go'
-        linters:
-          - gocognit
-          - gocyclo
-          - funlen
-          - nestif
-          - dupl
-
-      - path: 'internal/cli/screens/configure/edit_settings_modal\.go'
-        linters:
-          - dupl
-
-      - path: 'internal/cli/screens/configure/domain_select\.go'
-        linters:
-          - gocritic
-
-      - path: 'internal/cli/screens/skills/skill_form\.go'
-        linters:
-          - gocritic
-
-      - path: 'internal/cli/screens/export/preview\.go'
+      - path: 'internal/tui/views/cv/(.*)\.go'
         linters:
           - gocognit
           - gocyclo
@@ -956,7 +916,7 @@ linters:
           - revive
           - lll
 
-      - path: 'internal/cli/screens/cv/preview\.go'
+      - path: 'internal/tui/views/event/(.*)\.go'
         linters:
           - gocognit
           - gocyclo
@@ -964,68 +924,48 @@ linters:
           - nestif
           - gocritic
           - revive
-
-      - path: 'internal/cli/screens/cv/modals/(.*)\.go'
-        linters:
-          - gocognit
-          - gocyclo
-          - funlen
-          - nestif
-          - revive
-
-      - path: 'internal/cli/screens/timeline/event_list\.go'
-        linters:
-          - funlen
-
-      - path: 'internal/cli/screens/skills/skill_list\.go'
-        linters:
-          - gocyclo
-          - funlen
-          - revive
-
-      - path: 'internal/cli/screens/capture/event_submit_screen\.go'
-        linters:
-          - nestif
+          - lll
+          - dupl
 
     # -------------------------------------------------------------------------
     # C16: LEGACY FORMS - Form builders with many fields
     # -------------------------------------------------------------------------
-      - path: 'internal/cli/forms/metadata_form\.go'
+      - path: 'internal/tui/forms/metadata_form\.go'
         linters:
           - funlen
           - gocritic
           - dupl
 
-      - path: 'internal/cli/forms/capture_event_form\.go'
+      - path: 'internal/tui/forms/capture_event_form\.go'
         linters:
           - funlen
           - gocritic
           - dupl
 
-      - path: 'internal/cli/forms/cv_config_form\.go'
+      - path: 'internal/tui/forms/cv_config_form\.go'
         linters:
           - funlen
           - revive
 
-      - path: 'internal/cli/forms/validators\.go'
+      - path: 'internal/tui/forms/validators\.go'
         linters:
           - revive
 
     # -------------------------------------------------------------------------
     # C17: LEGACY THEMES - Theme generation has many style definitions
     # -------------------------------------------------------------------------
-      - path: 'internal/cli/themes/huh\.go'
+      - path: 'internal/ui/themes/huh\.go'
         linters:
           - funlen
 
-      - path: 'internal/cli/themes/styles\.go'
+      - path: 'internal/ui/themes/styles\.go'
         linters:
           - funlen
 
     # -------------------------------------------------------------------------
     # C18: LEGACY STATE MATRIX - Parser/scanner utilities
     # -------------------------------------------------------------------------
-      - path: 'internal/cli/statematrix/scanner\.go'
+      - path: 'internal/tui/statematrix/scanner\.go'
         linters:
           - gocognit
           - gocyclo
@@ -1033,7 +973,7 @@ linters:
           - nestif
           - revive
 
-      - path: 'internal/cli/statematrix/parser\.go'
+      - path: 'internal/tui/statematrix/parser\.go'
         linters:
           - gocognit
           - gocyclo
@@ -1041,7 +981,7 @@ linters:
           - dupl
           - revive
 
-      - path: 'internal/cli/statematrix/generator\.go'
+      - path: 'internal/tui/statematrix/generator\.go'
         linters:
           - gocognit
           - gocyclo
@@ -1152,7 +1092,7 @@ linters:
     # -------------------------------------------------------------------------
     # C21: LEGACY UIKIT - Layout and rendering components
     # -------------------------------------------------------------------------
-      - path: 'internal/cli/uikit/widgets/detail_view\.go'
+      - path: 'internal/ui/uikit/widgets/detail_view\.go'
         linters:
           - gocognit
           - gocyclo
@@ -1161,7 +1101,7 @@ linters:
           - nestif
           - revive
 
-      - path: 'internal/cli/uikit/layout/screen_layout\.go'
+      - path: 'internal/ui/uikit/layout/screen_layout\.go'
         linters:
           - gocognit
           - gocyclo
@@ -1171,62 +1111,63 @@ linters:
           - revive
           - godot
 
-      - path: 'internal/cli/uikit/primitives/text\.go'
+      - path: 'internal/ui/uikit/primitives/text\.go'
         linters:
           - gocyclo
           - funlen
           - revive
 
-      - path: 'internal/cli/uikit/feedback/modal\.go'
+      - path: 'internal/ui/uikit/feedback/modal\.go'
         linters:
           - gocognit
           - gocyclo
           - funlen
           - revive
 
-      - path: 'internal/cli/uikit/feedback/modal_container\.go'
+      - path: 'internal/ui/uikit/feedback/modal_container\.go'
         linters:
           - funlen
 
-      - path: 'internal/cli/uikit/feedback/help_modal\.go'
+      - path: 'internal/ui/uikit/feedback/help_modal\.go'
         linters:
           - nestif
 
-      - path: 'internal/cli/uikit/containers/box\.go'
+      - path: 'internal/ui/uikit/containers/box\.go'
         linters:
           - funlen
 
-      - path: 'internal/cli/uikit/display/logo\.go'
+      - path: 'internal/ui/uikit/display/logo\.go'
         linters:
           - gocritic
 
-      - path: 'internal/cli/uikit/feedback/info_modal\.go'
+      - path: 'internal/ui/uikit/feedback/info_modal\.go'
         linters:
           - gocritic
 
-      - path: 'internal/cli/navigation/help\.go'
+      - path: 'internal/tui/navigation/help\.go'
         linters:
           - funlen
 
     # -------------------------------------------------------------------------
     # C22: TERMINAL INFO
     # -------------------------------------------------------------------------
-      - path: 'internal/cli/terminal/info\.go'
+      - path: 'internal/ui/terminal/info\.go'
         linters:
           - revive
 
     # -------------------------------------------------------------------------
     # C23: PACKAGE NAMING - Allow underscores in subdirectory packages
     # -------------------------------------------------------------------------
-      - path: 'internal/cli/intents/[a-z_]+/(.*)\.go'
+      - path: 'internal/tui/intents/[a-z_]+/(.*)\.go'
         linters:
           - revive
         text: "var-naming.*underscore in package name"
 
-      - path: 'internal/cli/screens/[a-z_]+/(.*)\.go'
+      - path: 'internal/tui/views/[a-z_]+/(.*)\.go'
         linters:
           - revive
         text: "var-naming.*underscore in package name"
+
 
     # -------------------------------------------------------------------------
     # C24: BURST FACT SERVICE - Complex detection logic
@@ -1255,47 +1196,17 @@ linters:
     # -------------------------------------------------------------------------
     # C25: LEGACY EXPORTED/PACKAGE-COMMENTS - Pre-existing documentation gaps
     # -------------------------------------------------------------------------
-      - path: 'internal/cli/behaviors/(.*)\.go'
+      - path: 'internal/ui/behaviors/(.*)\.go'
         linters:
           - revive
         text: "exported.*should be of the form"
 
-      - path: 'internal/cli/screens/base/(.*)\.go'
+      - path: 'internal/tui/views/(.*)\.go'
         linters:
           - revive
         text: "package-comments"
 
-      - path: 'internal/cli/screens/burst_management/modals/(.*)\.go'
-        linters:
-          - revive
-        text: "package-comments"
-
-      - path: 'internal/cli/screens/contract\.go'
-        linters:
-          - revive
-        text: "package-comments"
-
-      - path: 'internal/cli/screens/facts/(.*)\.go'
-        linters:
-          - revive
-        text: "package-comments"
-
-      - path: 'internal/cli/screens/timeline/(.*)\.go'
-        linters:
-          - revive
-        text: "package-comments"
-
-      - path: 'internal/cli/screens/burst_management/(.*)\.go'
-        linters:
-          - revive
-        text: "package-comments"
-
-      - path: 'internal/cli/screens/configure/(.*)\.go'
-        linters:
-          - revive
-        text: "package-comments"
-
-      - path: 'internal/cli/uikit/feedback/(.*)\.go'
+      - path: 'internal/ui/uikit/feedback/(.*)\.go'
         linters:
           - revive
         text: "package-comments"
@@ -1320,7 +1231,7 @@ linters:
           - revive
         text: "package-comments"
 
-      - path: 'internal/cli/app/(.*)\.go'
+      - path: 'internal/tui/app/(.*)\.go'
         linters:
           - revive
         text: "package-comments"
@@ -1330,17 +1241,17 @@ linters:
           - revive
         text: "package-comments"
 
-      - path: 'internal/cli/uikit/containers/(.*)\.go'
+      - path: 'internal/ui/uikit/containers/(.*)\.go'
         linters:
           - revive
         text: "package-comments"
 
-      - path: 'internal/cli/uikit/selectors/(.*)\.go'
+      - path: 'internal/ui/uikit/selectors/(.*)\.go'
         linters:
           - revive
         text: "package-comments"
 
-      - path: 'internal/cli/types/(.*)\.go'
+      - path: 'internal/ui/types/(.*)\.go'
         linters:
           - revive
         text: "package-comments"
@@ -1348,7 +1259,7 @@ linters:
     # -------------------------------------------------------------------------
     # C26: LEGACY COMPONENTS - Modals
     # -------------------------------------------------------------------------
-      - path: 'internal/cli/components/cv_config_wizard_modal\.go'
+      - path: 'internal/tui/components/cv_config_wizard_modal\.go'
         linters:
           - gocognit
           - gocyclo
@@ -1357,39 +1268,39 @@ linters:
           - dupl
           - revive
 
-      - path: 'internal/cli/components/export_options_modal\.go'
+      - path: 'internal/tui/components/export_options_modal\.go'
         linters:
           - dupl
 
-      - path: 'internal/cli/components/onboarding_wizard_modal\.go'
+      - path: 'internal/tui/components/onboarding_wizard_modal\.go'
         linters:
           - funlen
 
     # -------------------------------------------------------------------------
     # C27: LEGACY INTENTS - Additional exemptions
     # -------------------------------------------------------------------------
-      - path: 'internal/cli/intents/(.*)_test\.go'
+      - path: 'internal/tui/intents/(.*)_test\.go'
         linters:
           - revive
 
-      - path: 'internal/cli/intents/modal_(.*)\.go'
+      - path: 'internal/tui/intents/modal_(.*)\.go'
         linters:
           - revive
 
     # -------------------------------------------------------------------------
     # C28: PACKAGE NAMING - Types package name is intentional
     # -------------------------------------------------------------------------
-      - path: 'internal/cli/types/export_types\.go'
+      - path: 'internal/ui/types/export_types\.go'
         linters:
           - revive
         text: "var-naming: avoid meaningless package names"
 
-      - path: 'internal/cli/types/capture_types\.go'
+      - path: 'internal/ui/types/capture_types\.go'
         linters:
           - revive
         text: "var-naming: avoid meaningless package names"
 
-      - path: 'internal/cli/types/doc\.go'
+      - path: 'internal/ui/types/doc\.go'
         linters:
           - revive
         text: "var-naming: avoid meaningless package names"

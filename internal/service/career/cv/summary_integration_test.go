@@ -5,16 +5,17 @@ import (
 	"io"
 	"strings"
 
+	"github.com/baphled/kariya/internal/ui/display"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/baphled/kariya/internal/cli/screens/cv"
 	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
 	cvsvc "github.com/baphled/kariya/internal/service/career/cv"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
+	cvview "github.com/baphled/kariya/internal/tui/views/cv"
 )
 
 var _ = Describe("Summary Format Integration", func() {
@@ -139,7 +140,7 @@ var _ = Describe("Summary Format Integration", func() {
 				Location: "London, UK",
 			}
 
-			summary := &cv.GenerationSummaryScreen{
+			summary := &cvview.GenerationSummary{
 				SelectedAudience: "Hiring Manager",
 				TechnologyFocus:  "Backend",
 				SourceEventCount: 5,
@@ -148,10 +149,10 @@ var _ = Describe("Summary Format Integration", func() {
 				TotalBullets:     countBulletsInSections(sections),
 			}
 
-			screen := cv.NewCVReviewScreenWithSummary(cvView, profileCfg, summary)
+			screen := cvview.NewReview(display.CVViewFromDomain(cvView), profileCfg, summary)
 			screen.Update(tea.WindowSizeMsg{Width: 120, Height: 60})
 
-			view := screen.View()
+			view := screen.RenderContent()
 
 			Expect(view).To(ContainSubstring("Summary"))
 			Expect(view).To(ContainSubstring("Migrated QuikCV backend"))
@@ -177,10 +178,10 @@ var _ = Describe("Summary Format Integration", func() {
 				Title:    "Senior Engineer",
 			}
 
-			screen := cv.NewCVPreviewScreenWithProfile(cvView, profileCfg)
+			screen := cvview.NewPreview(display.CVViewFromDomain(cvView), profileCfg)
 			screen.Update(tea.WindowSizeMsg{Width: 80, Height: 60})
 
-			view := screen.View()
+			view := screen.RenderContent()
 
 			Expect(view).To(ContainSubstring("Professional Summary"))
 

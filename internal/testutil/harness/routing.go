@@ -1,13 +1,14 @@
 package harness
 
 import (
-	"github.com/baphled/kariya/internal/cli/intents/burst_management"
-	"github.com/baphled/kariya/internal/cli/intents/captureevent"
-	configure "github.com/baphled/kariya/internal/cli/intents/configure"
-	"github.com/baphled/kariya/internal/cli/intents/factmanagement"
-	"github.com/baphled/kariya/internal/cli/intents/generatecv"
-	"github.com/baphled/kariya/internal/cli/intents/skillsmanagement"
-	"github.com/baphled/kariya/internal/cli/uikit/feedback"
+	"github.com/baphled/kariya/internal/tui/intents/browsetimeline"
+	"github.com/baphled/kariya/internal/tui/intents/burst_management"
+	"github.com/baphled/kariya/internal/tui/intents/captureevent"
+	configure "github.com/baphled/kariya/internal/tui/intents/configure"
+	"github.com/baphled/kariya/internal/tui/intents/factmanagement"
+	"github.com/baphled/kariya/internal/tui/intents/generatecv"
+	"github.com/baphled/kariya/internal/tui/intents/skillsmanagement"
+	"github.com/baphled/kariya/internal/ui/uikit/feedback"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -69,6 +70,12 @@ func (e *TestEnv) processCmdResult(msg tea.Msg) {
 		e.updateModelAndExecute(msg)
 	case skillsmanagement.SkillsCreatedMsg:
 		e.updateModelAndExecute(msg)
+	case browsetimeline.SkillsForModalLoadedMsg:
+		e.updateModelAndExecute(msg)
+	case browsetimeline.SkillPickerDataLoadedMsg:
+		e.updateModelAndExecute(msg)
+	case browsetimeline.SkillsRefreshedMsg:
+		e.updateModelAndExecute(msg)
 	case burst_management.EditBurstMsg:
 		e.updateModelAndExecute(msg)
 	case burst_management.BurstEditCompleteMsg:
@@ -87,9 +94,11 @@ func (e *TestEnv) processCmdResult(msg tea.Msg) {
 		e.updateModelAndExecute(msg)
 	case burst_management.SkillSuggestionsLoadedMsg:
 		e.updateModelAndExecute(msg)
-	case burst_management.SkillSuggestionsErrorMsg:
-		e.updateModelAndExecute(msg)
 	case burst_management.FactExtractionCompleteMsg:
+		e.updateModelAndExecute(msg)
+	case burst_management.BurstSavedMsg:
+		e.updateModelAndExecute(msg)
+	case burst_management.ConfirmBurstFactsLoadedMsg:
 		e.updateModelAndExecute(msg)
 	case factmanagement.FactsLoadedMsg:
 		e.updateModelAndExecute(msg)

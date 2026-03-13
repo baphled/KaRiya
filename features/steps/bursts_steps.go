@@ -11,12 +11,12 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 
 	"github.com/baphled/kariya/features/support"
-	"github.com/baphled/kariya/internal/cli/intents/burst_management"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/service/career/burstfact"
 	"github.com/baphled/kariya/internal/service/career/skillinference"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	"github.com/baphled/kariya/internal/testutil/harness"
+	"github.com/baphled/kariya/internal/tui/intents/burst_management"
 	"github.com/cucumber/godog"
 	"github.com/onsi/gomega"
 )

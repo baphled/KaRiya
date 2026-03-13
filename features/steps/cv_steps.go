@@ -12,8 +12,8 @@ import (
 	"github.com/onsi/gomega"
 
 	"github.com/baphled/kariya/features/support"
-	"github.com/baphled/kariya/internal/cli/intents/generatecv"
 	"github.com/baphled/kariya/internal/testutil/harness"
+	"github.com/baphled/kariya/internal/tui/intents/generatecv"
 )
 
 // RegisterCVSteps registers CV generation step definitions with Godog.

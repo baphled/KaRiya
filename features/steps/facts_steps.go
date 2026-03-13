@@ -17,6 +17,12 @@ import (
 )
 
 // RegisterFactsSteps registers fact management step definitions with Godog.
+//
+// Expected:
+//   - scenariocontext must be valid.
+//
+// Side effects:
+//   - None.
 func RegisterFactsSteps(sc *godog.ScenarioContext) {
 	registerFactBaseSteps(sc)
 	registerFactActionSteps(sc)

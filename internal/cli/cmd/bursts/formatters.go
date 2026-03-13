@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/baphled/kariya/internal/cli/uikit/primitives"
-	"github.com/baphled/kariya/internal/cli/uikit/theme"
 	domain "github.com/baphled/kariya/internal/domain/career"
 	burst_fact "github.com/baphled/kariya/internal/service/career/burstfact"
+	"github.com/baphled/kariya/internal/ui/uikit/primitives"
+	"github.com/baphled/kariya/internal/ui/uikit/theme"
 )
 
 // FormatBurstDetectionResults generates formatted output for burst detection results.
@@ -28,19 +28,19 @@ func FormatBurstDetectionResults(suggestions []burst_fact.BurstSuggestion, event
 	th := theme.Default()
 	b.WriteString(primitives.Title("Burst Detection Results", th).Render())
 	b.WriteString("\n")
-	b.WriteString(fmt.Sprintf("Detected %d bursts from %d events:\n\n", len(suggestions), eventCount))
+	fmt.Fprintf(&b, "Detected %d bursts from %d events:\n\n", len(suggestions), eventCount)
 
 	for i, burst := range suggestions {
 		burstName := burst.Name
 		if burstName == "" {
 			burstName = fmt.Sprintf("Burst %d", i+1)
 		}
-		b.WriteString(fmt.Sprintf("%d. %s\n", i+1, burstName))
-		b.WriteString(fmt.Sprintf("   Events: %d\n", len(burst.EventIDs)))
+		fmt.Fprintf(&b, "%d. %s\n", i+1, burstName)
+		fmt.Fprintf(&b, "   Events: %d\n", len(burst.EventIDs))
 		if burst.Description != "" {
-			b.WriteString(fmt.Sprintf("   Description: %s\n", burst.Description))
+			fmt.Fprintf(&b, "   Description: %s\n", burst.Description)
 		}
-		b.WriteString(fmt.Sprintf("   Confidence: %.1f%%\n", burst.ConfidenceScore*100))
+		fmt.Fprintf(&b, "   Confidence: %.1f%%\n", burst.ConfidenceScore*100)
 		b.WriteString("\n")
 	}
 
@@ -84,23 +84,23 @@ func FormatBurstList(bursts []*domain.Burst) string {
 	th := theme.Default()
 	b.WriteString(primitives.Title("Bursts", th).Render())
 	b.WriteString("\n")
-	b.WriteString(fmt.Sprintf("Total bursts: %d\n\n", len(bursts)))
+	fmt.Fprintf(&b, "Total bursts: %d\n\n", len(bursts))
 
 	for i, burst := range bursts {
 		burstName := burst.Name
 		if burstName == "" {
 			burstName = fmt.Sprintf("Burst %d", i+1)
 		}
-		b.WriteString(fmt.Sprintf("%d. %s\n", i+1, burstName))
-		b.WriteString(fmt.Sprintf("   ID: %s\n", burst.ID))
-		b.WriteString(fmt.Sprintf("   Events: %d\n", len(burst.EventIDs)))
+		fmt.Fprintf(&b, "%d. %s\n", i+1, burstName)
+		fmt.Fprintf(&b, "   ID: %s\n", burst.ID)
+		fmt.Fprintf(&b, "   Events: %d\n", len(burst.EventIDs))
 		if burst.Description != "" {
-			b.WriteString(fmt.Sprintf("   Description: %s\n", burst.Description))
+			fmt.Fprintf(&b, "   Description: %s\n", burst.Description)
 		}
 		if burst.Description != "" {
-			b.WriteString(fmt.Sprintf("   Competency Focus: %s\n", burst.Description))
+			fmt.Fprintf(&b, "   Competency Focus: %s\n", burst.Description)
 		}
-		b.WriteString(fmt.Sprintf("   Created: %s\n", burst.CreatedAt.Format("2006-01-02 15:04:05")))
+		fmt.Fprintf(&b, "   Created: %s\n", burst.CreatedAt.Format("2006-01-02 15:04:05"))
 		b.WriteString("\n")
 	}
 

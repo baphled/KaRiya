@@ -268,7 +268,7 @@ fix_issues() {
     find . -name "*.go" -not -path "./vendor/*" -not -path "./.git/*" -not -name "*_test.go" -not -name "doc.go" | \
     while read -r file; do
         if [[ -s "$file" ]]; then
-            ./scripts/fix-doc-blocks.sh "$file" > "${file}.tmp" && \
+            ./scripts/fix-doc-blocks.py "$file" > "${file}.tmp" && \
             mv "${file}.tmp" "$file" && \
             log_info "✓ Fixed: $file"
         fi
