@@ -32,9 +32,9 @@ func generateMermaidDiagram(component ComponentInfo) string {
 
 	// Start with ROOT state or first state
 	if rootState != nil {
-		sb.WriteString(fmt.Sprintf("    [*] --> %s\n", rootState.Constant))
+		fmt.Fprintf(&sb, "    [*] --> %s\n", rootState.Constant)
 	} else if len(component.States) > 0 {
-		sb.WriteString(fmt.Sprintf("    [*] --> %s\n", component.States[0].Constant))
+		fmt.Fprintf(&sb, "    [*] --> %s\n", component.States[0].Constant)
 	}
 
 	// Add transitions based on state types
@@ -44,55 +44,55 @@ func generateMermaidDiagram(component ComponentInfo) string {
 			// ROOT can go to next state or cancel to main menu
 			if i+1 < len(component.States) {
 				nextState := component.States[i+1]
-				sb.WriteString(fmt.Sprintf("    %s --> %s : proceed\n", state.Constant, nextState.Constant))
+				fmt.Fprintf(&sb, "    %s --> %s : proceed\n", state.Constant, nextState.Constant)
 			}
-			sb.WriteString(fmt.Sprintf("    %s --> [*] : cancel\n", state.Constant))
+			fmt.Fprintf(&sb, "    %s --> [*] : cancel\n", state.Constant)
 
 		case "Intermediate":
 			// Intermediate can go forward or back
 			if i+1 < len(component.States) {
 				nextState := component.States[i+1]
-				sb.WriteString(fmt.Sprintf("    %s --> %s : proceed\n", state.Constant, nextState.Constant))
+				fmt.Fprintf(&sb, "    %s --> %s : proceed\n", state.Constant, nextState.Constant)
 			}
 			if i > 0 {
 				prevState := component.States[i-1]
-				sb.WriteString(fmt.Sprintf("    %s --> %s : back\n", state.Constant, prevState.Constant))
+				fmt.Fprintf(&sb, "    %s --> %s : back\n", state.Constant, prevState.Constant)
 			}
 
 		case "Confirmation":
 			// Confirmation can accept, reject, or cancel
 			if i+1 < len(component.States) {
 				nextState := component.States[i+1]
-				sb.WriteString(fmt.Sprintf("    %s --> %s : confirm\n", state.Constant, nextState.Constant))
+				fmt.Fprintf(&sb, "    %s --> %s : confirm\n", state.Constant, nextState.Constant)
 			}
 			if i > 0 {
 				prevState := component.States[i-1]
-				sb.WriteString(fmt.Sprintf("    %s --> %s : cancel\n", state.Constant, prevState.Constant))
+				fmt.Fprintf(&sb, "    %s --> %s : cancel\n", state.Constant, prevState.Constant)
 			}
 
 		case "Async":
 			// Async operations complete or error
 			if i+1 < len(component.States) {
 				nextState := component.States[i+1]
-				sb.WriteString(fmt.Sprintf("    %s --> %s : complete\n", state.Constant, nextState.Constant))
+				fmt.Fprintf(&sb, "    %s --> %s : complete\n", state.Constant, nextState.Constant)
 			}
 			// Look for error state
 			for j := range component.States {
 				if component.States[j].Type == "Error" {
-					sb.WriteString(fmt.Sprintf("    %s --> %s : error\n", state.Constant, component.States[j].Constant))
+					fmt.Fprintf(&sb, "    %s --> %s : error\n", state.Constant, component.States[j].Constant)
 					break
 				}
 			}
 
 		case "Final", "Error":
 			// Terminal states go to end
-			sb.WriteString(fmt.Sprintf("    %s --> [*]\n", state.Constant))
+			fmt.Fprintf(&sb, "    %s --> [*]\n", state.Constant)
 
 		case "Modal":
 			// Modals return to parent state
 			if i > 0 {
 				prevState := component.States[i-1]
-				sb.WriteString(fmt.Sprintf("    %s --> %s : close\n", state.Constant, prevState.Constant))
+				fmt.Fprintf(&sb, "    %s --> %s : close\n", state.Constant, prevState.Constant)
 			}
 		}
 	}

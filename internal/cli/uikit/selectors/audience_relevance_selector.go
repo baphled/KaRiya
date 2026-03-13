@@ -81,9 +81,9 @@ func (a *AudienceRelevanceSelector) Render() string {
 	var b strings.Builder
 	for _, opt := range a.options {
 		if a.selected[opt] {
-			b.WriteString(fmt.Sprintf("[✓ %s] ", opt))
+			fmt.Fprintf(&b, "[✓ %s] ", opt)
 		} else {
-			b.WriteString(fmt.Sprintf("[ %s ] ", opt))
+			fmt.Fprintf(&b, "[ %s ] ", opt)
 		}
 	}
 	return b.String()

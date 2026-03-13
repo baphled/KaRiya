@@ -180,17 +180,17 @@ func (i *Intent) viewExportComplete() string {
 	if i.exportError != nil {
 		errorHeader := primitives.ErrorText("Export Failed", th).Bold().Render()
 		content.WriteString("\n" + errorHeader + "\n\n")
-		content.WriteString(fmt.Sprintf("Error: %v\n\n", i.exportError))
+		fmt.Fprintf(&content, "Error: %v\n\n", i.exportError)
 		content.WriteString("Try a different location or format.\n")
 	} else {
 		successHeader := primitives.SuccessText("Export Complete!", th).Bold().Render()
 		content.WriteString("\n" + successHeader + "\n\n")
 
 		formatName := exportFormatDisplayName(i.selectedExportFormat)
-		content.WriteString(fmt.Sprintf("Format: %s\n", formatName))
+		fmt.Fprintf(&content, "Format: %s\n", formatName)
 
 		if i.selectedExportOption == ExportOptionSaveToFile {
-			content.WriteString(fmt.Sprintf("Location: %s\n\n", i.exportedPath))
+			fmt.Fprintf(&content, "Location: %s\n\n", i.exportedPath)
 			content.WriteString("You can now share this file!\n")
 		} else {
 			content.WriteString("Location: Clipboard\n\n")

@@ -75,26 +75,26 @@ func RenderEventDetailContent(event *career.Event, theme themes.Theme) string {
 	var content strings.Builder
 	content.WriteString("\nEvent Details\n\n")
 
-	content.WriteString(fmt.Sprintf("Date: %s\n", event.Date.Format("2006-01-02")))
+	fmt.Fprintf(&content, "Date: %s\n", event.Date.Format("2006-01-02"))
 
 	if event.Company != "" {
-		content.WriteString(fmt.Sprintf("Company: %s\n", event.Company))
+		fmt.Fprintf(&content, "Company: %s\n", event.Company)
 	}
 	if event.Project != "" {
-		content.WriteString(fmt.Sprintf("Project: %s\n", event.Project))
+		fmt.Fprintf(&content, "Project: %s\n", event.Project)
 	}
 
-	content.WriteString(fmt.Sprintf("\nText:\n%s\n", event.Text))
+	fmt.Fprintf(&content, "\nText:\n%s\n", event.Text)
 
 	if len(event.Tags) > 0 {
-		content.WriteString(fmt.Sprintf("\nTags: %s\n", strings.Join(event.Tags, ", ")))
+		fmt.Fprintf(&content, "\nTags: %s\n", strings.Join(event.Tags, ", "))
 	}
 	if len(event.Categories) > 0 {
-		content.WriteString(fmt.Sprintf("Categories: %s\n", strings.Join(event.Categories, ", ")))
+		fmt.Fprintf(&content, "Categories: %s\n", strings.Join(event.Categories, ", "))
 	}
 
 	if len(event.Skills) > 0 {
-		content.WriteString(fmt.Sprintf("Skills: %d associated\n", len(event.Skills)))
+		fmt.Fprintf(&content, "Skills: %d associated\n", len(event.Skills))
 	}
 
 	return content.String()

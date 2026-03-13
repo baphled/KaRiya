@@ -297,30 +297,30 @@ func (s *ReviewScreen) renderGenerationSettings() string {
 
 	if s.summary.SelectedProfile != nil && s.summary.SelectedProfile.Name != "" {
 		profileName := s.summary.SelectedProfile.Name
-		b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Profile:"), valueStyle.Render(profileName)))
+		fmt.Fprintf(&b, "  %s %s\n", labelStyle.Render("Profile:"), valueStyle.Render(profileName))
 	}
 	if s.summary.SelectedAudience != "" {
-		b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Audience:"), valueStyle.Render(s.summary.SelectedAudience)))
+		fmt.Fprintf(&b, "  %s %s\n", labelStyle.Render("Audience:"), valueStyle.Render(s.summary.SelectedAudience))
 	}
 	if s.summary.TechnologyFocus != "" {
-		b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Tech Focus:"), valueStyle.Render(s.summary.TechnologyFocus)))
+		fmt.Fprintf(&b, "  %s %s\n", labelStyle.Render("Tech Focus:"), valueStyle.Render(s.summary.TechnologyFocus))
 	}
 	if len(s.summary.Technologies) > 0 {
 		techText := strings.Join(s.summary.Technologies, ", ")
-		b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Technologies:"), valueStyle.Render(techText)))
+		fmt.Fprintf(&b, "  %s %s\n", labelStyle.Render("Technologies:"), valueStyle.Render(techText))
 	}
 	if s.summary.FocusArea != "" {
-		b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Focus Area:"), valueStyle.Render(s.summary.FocusArea)))
+		fmt.Fprintf(&b, "  %s %s\n", labelStyle.Render("Focus Area:"), valueStyle.Render(s.summary.FocusArea))
 	}
 	if s.summary.SkillsFormat != "" {
 		skillsText := s.summary.SkillsFormat
 		if s.summary.SkillsLimit > 0 {
 			skillsText = fmt.Sprintf("%s (%d max)", skillsText, s.summary.SkillsLimit)
 		}
-		b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Skills Format:"), valueStyle.Render(skillsText)))
+		fmt.Fprintf(&b, "  %s %s\n", labelStyle.Render("Skills Format:"), valueStyle.Render(skillsText))
 	}
 	if s.summary.CVLength != "" {
-		b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("CV Length:"), valueStyle.Render(s.summary.CVLength)))
+		fmt.Fprintf(&b, "  %s %s\n", labelStyle.Render("CV Length:"), valueStyle.Render(s.summary.CVLength))
 	}
 	b.WriteString("\n")
 
@@ -340,9 +340,9 @@ func (s *ReviewScreen) renderPersonalDetails() string {
 	b.WriteString("\n")
 	b.WriteString(strings.Repeat("─", minInt(60, s.width-4)))
 	b.WriteString("\n")
-	b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Name:"), valueStyle.Render(profile.Name)))
-	b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Email:"), valueStyle.Render(profile.Email)))
-	b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Location:"), valueStyle.Render(profile.Location)))
+	fmt.Fprintf(&b, "  %s %s\n", labelStyle.Render("Name:"), valueStyle.Render(profile.Name))
+	fmt.Fprintf(&b, "  %s %s\n", labelStyle.Render("Email:"), valueStyle.Render(profile.Email))
+	fmt.Fprintf(&b, "  %s %s\n", labelStyle.Render("Location:"), valueStyle.Render(profile.Location))
 	b.WriteString("\n")
 
 	return b.String()
@@ -359,9 +359,9 @@ func (s *ReviewScreen) renderCVDetails() string {
 	b.WriteString("\n")
 	b.WriteString(strings.Repeat("─", minInt(60, s.width-4)))
 	b.WriteString("\n")
-	b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("CV Name:"), valueStyle.Render(s.cv.Name)))
-	b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Role:"), valueStyle.Render(s.cv.TargetRole)))
-	b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Audience:"), valueStyle.Render(s.cv.TargetAudience)))
+	fmt.Fprintf(&b, "  %s %s\n", labelStyle.Render("CV Name:"), valueStyle.Render(s.cv.Name))
+	fmt.Fprintf(&b, "  %s %s\n", labelStyle.Render("Role:"), valueStyle.Render(s.cv.TargetRole))
+	fmt.Fprintf(&b, "  %s %s\n", labelStyle.Render("Audience:"), valueStyle.Render(s.cv.TargetAudience))
 	b.WriteString("\n")
 
 	return b.String()
@@ -378,12 +378,12 @@ func (s *ReviewScreen) renderStatistics() string {
 	b.WriteString("\n")
 	b.WriteString(strings.Repeat("─", minInt(60, s.width-4)))
 	b.WriteString("\n")
-	b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Source Events:"), valueStyle.Render(strconv.Itoa(s.cv.SourceEventCount))))
-	b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Source Facts:"), valueStyle.Render(strconv.Itoa(s.cv.SourceFactCount))))
-	b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Sections:"), valueStyle.Render(strconv.Itoa(len(s.cv.Sections)))))
+	fmt.Fprintf(&b, "  %s %s\n", labelStyle.Render("Source Events:"), valueStyle.Render(strconv.Itoa(s.cv.SourceEventCount)))
+	fmt.Fprintf(&b, "  %s %s\n", labelStyle.Render("Source Facts:"), valueStyle.Render(strconv.Itoa(s.cv.SourceFactCount)))
+	fmt.Fprintf(&b, "  %s %s\n", labelStyle.Render("Sections:"), valueStyle.Render(strconv.Itoa(len(s.cv.Sections))))
 
 	totalBullets := s.countTotalBullets()
-	b.WriteString(fmt.Sprintf("  %s %s\n", labelStyle.Render("Total Bullets:"), valueStyle.Render(strconv.Itoa(totalBullets))))
+	fmt.Fprintf(&b, "  %s %s\n", labelStyle.Render("Total Bullets:"), valueStyle.Render(strconv.Itoa(totalBullets)))
 	b.WriteString("\n")
 
 	return b.String()
@@ -460,7 +460,7 @@ func (s *ReviewScreen) renderHighlights() string {
 		if text == "" {
 			text = bullet.EnhancedText
 		}
-		b.WriteString(fmt.Sprintf("  • %s\n", valueStyle.Render(text)))
+		fmt.Fprintf(&b, "  • %s\n", valueStyle.Render(text))
 	}
 	b.WriteString("\n")
 
@@ -495,10 +495,10 @@ func (s *ReviewScreen) renderSectionsList() string {
 			typeIndicator = "  ✎"
 		}
 
-		b.WriteString(fmt.Sprintf("%s %s %s\n",
+		fmt.Fprintf(&b, "%s %s %s\n",
 			typeIndicator,
 			valueStyle.Render(section.Title),
-			labelStyle.Render(fmt.Sprintf("(%d %s)", sectionBullets, bulletText))))
+			labelStyle.Render(fmt.Sprintf("(%d %s)", sectionBullets, bulletText)))
 	}
 
 	return b.String()

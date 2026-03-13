@@ -38,9 +38,9 @@ type ContentRenderer[T any] func(data T, width, height int) string
 //
 //	renderer := func(data *EventDetail, width, height int) string {
 //	    var b strings.Builder
-//	    b.WriteString(fmt.Sprintf("Title: %s\n", data.Title))
-//	    b.WriteString(fmt.Sprintf("Description: %s\n", data.Description))
-//	    b.WriteString(fmt.Sprintf("Date: %s\n", data.Date.Format("2006-01-02")))
+//	    fmt.Fprintf(&b, "Title: %s\n", data.Title)
+//	    fmt.Fprintf(&b, "Description: %s\n", data.Description)
+//	    fmt.Fprintf(&b, "Date: %s\n", data.Date.Format("2006-01-02"))
 //	    return b.String()
 //	}
 //

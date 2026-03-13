@@ -167,7 +167,7 @@ func renderFactsContent(facts []*career.Fact, theme themes.Theme) string {
 	var b strings.Builder
 
 	for idx, fact := range facts {
-		b.WriteString(fmt.Sprintf("%d. %s\n", idx+1, fact.Text))
+		fmt.Fprintf(&b, "%d. %s\n", idx+1, fact.Text)
 
 		if len(fact.CompetencyCategories) > 0 {
 			catText := "   Categories: " + strings.Join(fact.CompetencyCategories, ", ")

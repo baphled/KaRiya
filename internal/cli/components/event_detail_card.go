@@ -50,28 +50,28 @@ func (c *EventDetailCard) Render() string {
 	content.WriteString("\nEvent Details\n\n")
 
 	// Event header
-	content.WriteString(fmt.Sprintf("Date: %s\n", c.event.Date.Format("2006-01-02")))
+	fmt.Fprintf(&content, "Date: %s\n", c.event.Date.Format("2006-01-02"))
 
 	if c.event.Company != "" {
-		content.WriteString(fmt.Sprintf("Company: %s\n", c.event.Company))
+		fmt.Fprintf(&content, "Company: %s\n", c.event.Company)
 	}
 	if c.event.Project != "" {
-		content.WriteString(fmt.Sprintf("Project: %s\n", c.event.Project))
+		fmt.Fprintf(&content, "Project: %s\n", c.event.Project)
 	}
 
-	content.WriteString(fmt.Sprintf("\nText:\n%s\n", c.event.Text))
+	fmt.Fprintf(&content, "\nText:\n%s\n", c.event.Text)
 
 	// Tags and categories
 	if len(c.event.Tags) > 0 {
-		content.WriteString(fmt.Sprintf("\nTags: %s\n", strings.Join(c.event.Tags, ", ")))
+		fmt.Fprintf(&content, "\nTags: %s\n", strings.Join(c.event.Tags, ", "))
 	}
 	if len(c.event.Categories) > 0 {
-		content.WriteString(fmt.Sprintf("Categories: %s\n", strings.Join(c.event.Categories, ", ")))
+		fmt.Fprintf(&content, "Categories: %s\n", strings.Join(c.event.Categories, ", "))
 	}
 
 	// Skills (just show count, as we only have IDs)
 	if len(c.event.Skills) > 0 {
-		content.WriteString(fmt.Sprintf("Skills: %d associated\n", len(c.event.Skills)))
+		fmt.Fprintf(&content, "Skills: %d associated\n", len(c.event.Skills))
 	}
 
 	// Apply themed card styling

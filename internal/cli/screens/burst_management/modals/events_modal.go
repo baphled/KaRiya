@@ -167,7 +167,7 @@ func renderEventsContent(events []*career.Event, theme themes.Theme) string {
 	var b strings.Builder
 
 	for idx, event := range events {
-		b.WriteString(fmt.Sprintf("%d. %s\n", idx+1, event.Text))
+		fmt.Fprintf(&b, "%d. %s\n", idx+1, event.Text)
 		dateText := "   Date: " + event.Date.Format("2006-01-02")
 		b.WriteString(primitives.NewText(dateText, theme).
 			Foreground(theme.SecondaryColor()).Render())

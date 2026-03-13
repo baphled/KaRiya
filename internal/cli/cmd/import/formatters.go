@@ -27,7 +27,7 @@ func FormatFailedRows(result *importer.ImportResult) string {
 	}
 
 	var b strings.Builder
-	b.WriteString(fmt.Sprintf("Failed: %d\n", result.FailedCount))
+	fmt.Fprintf(&b, "Failed: %d\n", result.FailedCount)
 
 	if len(result.FailedRows) == 0 {
 		return b.String()
@@ -41,7 +41,7 @@ func FormatFailedRows(result *importer.ImportResult) string {
 
 	for i := range maxDisplay {
 		if result.FailedRows[i].Event != nil {
-			b.WriteString(fmt.Sprintf("  - %s\n", result.FailedRows[i].Event.Text))
+			fmt.Fprintf(&b, "  - %s\n", result.FailedRows[i].Event.Text)
 		}
 	}
 
@@ -66,15 +66,15 @@ func FormatBurstSuggestions(result *importer.ImportResult) string {
 
 	var b strings.Builder
 	b.WriteString("\n=== Burst Suggestions ===\n")
-	b.WriteString(fmt.Sprintf("Detected %d potential bursts from imported events:\n\n", len(result.BurstSuggestions)))
+	fmt.Fprintf(&b, "Detected %d potential bursts from imported events:\n\n", len(result.BurstSuggestions))
 
 	for i, burst := range result.BurstSuggestions {
 		burstName := burst.Name
 		if burstName == "" {
 			burstName = fmt.Sprintf("Burst %d", i+1)
 		}
-		b.WriteString(fmt.Sprintf("%d. %s\n", i+1, burstName))
-		b.WriteString(fmt.Sprintf("   Events: %d | Confidence: %.1f%%\n", len(burst.EventIDs), burst.ConfidenceScore*100))
+		fmt.Fprintf(&b, "%d. %s\n", i+1, burstName)
+		fmt.Fprintf(&b, "   Events: %d | Confidence: %.1f%%\n", len(burst.EventIDs), burst.ConfidenceScore*100)
 	}
 	b.WriteString("\nThese bursts represent potential project groupings or themes.\n")
 
@@ -99,7 +99,7 @@ func FormatFactExtraction(result *importer.ImportResult) string {
 
 	var b strings.Builder
 	b.WriteString("\n=== Fact Extraction ===\n")
-	b.WriteString(fmt.Sprintf("Extracted %d facts from %d events\n", result.ExtractedFactsCount, len(result.CreatedEvents)))
+	fmt.Fprintf(&b, "Extracted %d facts from %d events\n", result.ExtractedFactsCount, len(result.CreatedEvents))
 
 	if len(result.FactsByCompetency) == 0 {
 		return b.String()
@@ -113,7 +113,7 @@ func FormatFactExtraction(result *importer.ImportResult) string {
 	sort.Strings(competencies)
 
 	for _, c := range competencies {
-		b.WriteString(fmt.Sprintf("  - %s: %d facts\n", c, result.FactsByCompetency[c]))
+		fmt.Fprintf(&b, "  - %s: %d facts\n", c, result.FactsByCompetency[c])
 	}
 	b.WriteString("\nThese facts highlight key competencies and achievements.\n")
 
