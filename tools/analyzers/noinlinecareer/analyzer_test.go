@@ -1,33 +1,36 @@
 package noinlinecareer_test
 
 import (
-	"testing"
+	. "github.com/onsi/ginkgo/v2"
+	"golang.org/x/tools/go/analysis/analysistest"
 
 	"github.com/baphled/kariya/tools/analyzers/noinlinecareer"
-	"golang.org/x/tools/go/analysis/analysistest"
 )
 
-func TestViolationsDetected(t *testing.T) {
-	testdata := analysistest.TestData()
-	analysistest.Run(t, testdata, noinlinecareer.Analyzer, "violations")
-}
+var _ = Describe("Noinlinecareer Analyzer", func() {
+	var testdata string
 
-func TestCleanFilesPass(t *testing.T) {
-	testdata := analysistest.TestData()
-	analysistest.Run(t, testdata, noinlinecareer.Analyzer, "clean")
-}
+	BeforeEach(func() {
+		testdata = analysistest.TestData()
+	})
 
-func TestNonTestFilesSkipped(t *testing.T) {
-	testdata := analysistest.TestData()
-	analysistest.Run(t, testdata, noinlinecareer.Analyzer, "nontest")
-}
+	It("detects violations", func() {
+		analysistest.Run(GinkgoT(), testdata, noinlinecareer.Analyzer, "violations")
+	})
 
-func TestFixturePackagesExcluded(t *testing.T) {
-	testdata := analysistest.TestData()
-	analysistest.Run(t, testdata, noinlinecareer.Analyzer, "fixtures")
-}
+	It("passes clean files", func() {
+		analysistest.Run(GinkgoT(), testdata, noinlinecareer.Analyzer, "clean")
+	})
 
-func TestDomainCareerPackageExcluded(t *testing.T) {
-	testdata := analysistest.TestData()
-	analysistest.Run(t, testdata, noinlinecareer.Analyzer, "fake/domain/career")
-}
+	It("skips non-test files", func() {
+		analysistest.Run(GinkgoT(), testdata, noinlinecareer.Analyzer, "nontest")
+	})
+
+	It("excludes fixture packages", func() {
+		analysistest.Run(GinkgoT(), testdata, noinlinecareer.Analyzer, "fixtures")
+	})
+
+	It("excludes domain career package", func() {
+		analysistest.Run(GinkgoT(), testdata, noinlinecareer.Analyzer, "fake/domain/career")
+	})
+})
