@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
+	careermodel "github.com/baphled/kariya/internal/model/career"
 	career_repo "github.com/baphled/kariya/internal/repository/career"
-	"github.com/baphled/kariya/internal/repository/models"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -55,12 +55,12 @@ func (r *BurstRepository) Create(ctx context.Context, burst *career.Burst) error
 	burst.CreatedAt = now
 	burst.UpdatedAt = now
 
-	return r.db.WithContext(ctx).Create(models.BurstFromDomain(burst)).Error
+	return r.db.WithContext(ctx).Create(careermodel.BurstFromDomain(burst)).Error
 }
 
 // GetByID retrieves a burst by its ID.
 func (r *BurstRepository) GetByID(ctx context.Context, id string) (*career.Burst, error) {
-	var model models.Burst
+	var model careermodel.Burst
 	err := r.db.WithContext(ctx).First(&model, "id = ?", id).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, career_repo.ErrBurstNotFound
@@ -84,7 +84,7 @@ func (r *BurstRepository) GetByID(ctx context.Context, id string) (*career.Burst
 func (r *BurstRepository) Update(ctx context.Context, burst *career.Burst) error {
 	// Check if record exists first.
 	var count int64
-	if err := r.db.WithContext(ctx).Model(&models.Burst{}).Where("id = ?", burst.ID).Count(&count).Error; err != nil {
+	if err := r.db.WithContext(ctx).Model(&careermodel.Burst{}).Where("id = ?", burst.ID).Count(&count).Error; err != nil {
 		return err
 	}
 	if count == 0 {
@@ -92,7 +92,7 @@ func (r *BurstRepository) Update(ctx context.Context, burst *career.Burst) error
 	}
 
 	burst.UpdatedAt = time.Now()
-	return r.db.WithContext(ctx).Save(models.BurstFromDomain(burst)).Error
+	return r.db.WithContext(ctx).Save(careermodel.BurstFromDomain(burst)).Error
 }
 
 // Delete removes a burst from the database.
@@ -106,7 +106,7 @@ func (r *BurstRepository) Update(ctx context.Context, burst *career.Burst) error
 // Side effects:
 //   - None.
 func (r *BurstRepository) Delete(ctx context.Context, id string) error {
-	result := r.db.WithContext(ctx).Delete(&models.Burst{}, "id = ?", id)
+	result := r.db.WithContext(ctx).Delete(&careermodel.Burst{}, "id = ?", id)
 	if result.RowsAffected == 0 {
 		return career_repo.ErrBurstNotFound
 	}
@@ -115,12 +115,12 @@ func (r *BurstRepository) Delete(ctx context.Context, id string) error {
 
 // List retrieves bursts with optional filtering.
 func (r *BurstRepository) List(ctx context.Context, filters career_repo.BurstListFilters) ([]*career.Burst, error) {
-	query := r.db.WithContext(ctx).Model(&models.Burst{})
+	query := r.db.WithContext(ctx).Model(&careermodel.Burst{})
 	query = r.applyFilters(query, filters)
 	query = r.applySorting(query, filters)
 	query = r.applyPagination(query, filters)
 
-	var results []models.Burst
+	var results []careermodel.Burst
 	if err := query.Find(&results).Error; err != nil {
 		return nil, err
 	}
@@ -134,7 +134,7 @@ func (r *BurstRepository) List(ctx context.Context, filters career_repo.BurstLis
 
 // Count returns the number of bursts matching the given filters.
 func (r *BurstRepository) Count(ctx context.Context, filters career_repo.BurstListFilters) (int, error) {
-	query := r.db.WithContext(ctx).Model(&models.Burst{})
+	query := r.db.WithContext(ctx).Model(&careermodel.Burst{})
 	query = r.applyFilters(query, filters)
 
 	var count int64

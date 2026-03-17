@@ -3,7 +3,7 @@ package contract_test
 import (
 	stdsql "database/sql"
 
-	"github.com/baphled/kariya/internal/repository/models"
+	careermodel "github.com/baphled/kariya/internal/model/career"
 	. "github.com/onsi/gomega"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -19,7 +19,7 @@ func setupContractTestDB() *gorm.DB {
 	}), &gorm.Config{})
 	Expect(err).NotTo(HaveOccurred())
 
-	err = db.AutoMigrate(&models.Event{}, &models.Skill{}, &models.Fact{}, &models.Burst{})
+	err = db.AutoMigrate(&careermodel.Event{}, &careermodel.Skill{}, &careermodel.Fact{}, &careermodel.Burst{})
 	Expect(err).NotTo(HaveOccurred())
 
 	err = db.Exec(`CREATE TABLE IF NOT EXISTS event_skills (

@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
+	careermodel "github.com/baphled/kariya/internal/model/career"
 	career_repo "github.com/baphled/kariya/internal/repository/career"
-	"github.com/baphled/kariya/internal/repository/models"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -263,7 +263,7 @@ var _ = Describe("Fact Repository", func() {
 			f1 := fixtures.FactWithCategories("", "Old fact", "", []string{"cat"}, []string{"aud"})
 			f1.RoleFit = career.RoleFitSeniorIC
 			Expect(repo.Create(ctx, f1)).To(Succeed())
-			tx.Model(&models.Fact{}).Where("id = ?", f1.ID).Update("created_at", now.Add(-72*time.Hour))
+			tx.Model(&careermodel.Fact{}).Where("id = ?", f1.ID).Update("created_at", now.Add(-72*time.Hour))
 
 			f2 := fixtures.FactWithCategories("", "New fact", "", []string{"cat"}, []string{"aud"})
 			f2.RoleFit = career.RoleFitSeniorIC
@@ -283,7 +283,7 @@ var _ = Describe("Fact Repository", func() {
 			f1 := fixtures.FactWithCategories("", "Old fact", "", []string{"cat"}, []string{"aud"})
 			f1.RoleFit = career.RoleFitSeniorIC
 			Expect(repo.Create(ctx, f1)).To(Succeed())
-			tx.Model(&models.Fact{}).Where("id = ?", f1.ID).Update("created_at", now.Add(-72*time.Hour))
+			tx.Model(&careermodel.Fact{}).Where("id = ?", f1.ID).Update("created_at", now.Add(-72*time.Hour))
 
 			f2 := fixtures.FactWithCategories("", "New fact", "", []string{"cat"}, []string{"aud"})
 			f2.RoleFit = career.RoleFitSeniorIC

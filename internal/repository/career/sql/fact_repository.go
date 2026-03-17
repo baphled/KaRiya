@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
+	careermodel "github.com/baphled/kariya/internal/model/career"
 	career_repo "github.com/baphled/kariya/internal/repository/career"
-	"github.com/baphled/kariya/internal/repository/models"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -55,12 +55,12 @@ func (r *FactRepository) Create(ctx context.Context, fact *career.Fact) error {
 	fact.CreatedAt = now
 	fact.UpdatedAt = now
 
-	return r.db.WithContext(ctx).Create(models.FactFromDomain(fact)).Error
+	return r.db.WithContext(ctx).Create(careermodel.FactFromDomain(fact)).Error
 }
 
 // GetByID retrieves a fact by its ID.
 func (r *FactRepository) GetByID(ctx context.Context, id string) (*career.Fact, error) {
-	var model models.Fact
+	var model careermodel.Fact
 	err := r.db.WithContext(ctx).First(&model, "id = ?", id).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, career_repo.ErrFactNotFound
@@ -84,7 +84,7 @@ func (r *FactRepository) GetByID(ctx context.Context, id string) (*career.Fact, 
 func (r *FactRepository) Update(ctx context.Context, fact *career.Fact) error {
 	// Check if record exists first.
 	var count int64
-	if err := r.db.WithContext(ctx).Model(&models.Fact{}).Where("id = ?", fact.ID).Count(&count).Error; err != nil {
+	if err := r.db.WithContext(ctx).Model(&careermodel.Fact{}).Where("id = ?", fact.ID).Count(&count).Error; err != nil {
 		return err
 	}
 	if count == 0 {
@@ -92,7 +92,7 @@ func (r *FactRepository) Update(ctx context.Context, fact *career.Fact) error {
 	}
 
 	fact.UpdatedAt = time.Now()
-	return r.db.WithContext(ctx).Save(models.FactFromDomain(fact)).Error
+	return r.db.WithContext(ctx).Save(careermodel.FactFromDomain(fact)).Error
 }
 
 // Delete removes a fact from the database.
@@ -106,7 +106,7 @@ func (r *FactRepository) Update(ctx context.Context, fact *career.Fact) error {
 // Side effects:
 //   - None.
 func (r *FactRepository) Delete(ctx context.Context, id string) error {
-	result := r.db.WithContext(ctx).Delete(&models.Fact{}, "id = ?", id)
+	result := r.db.WithContext(ctx).Delete(&careermodel.Fact{}, "id = ?", id)
 	if result.RowsAffected == 0 {
 		return career_repo.ErrFactNotFound
 	}
@@ -115,12 +115,12 @@ func (r *FactRepository) Delete(ctx context.Context, id string) error {
 
 // List retrieves facts with optional filtering.
 func (r *FactRepository) List(ctx context.Context, filters career_repo.FactListFilters) ([]*career.Fact, error) {
-	query := r.db.WithContext(ctx).Model(&models.Fact{})
+	query := r.db.WithContext(ctx).Model(&careermodel.Fact{})
 	query = r.applyFilters(query, filters)
 	query = r.applySorting(query, filters)
 	query = r.applyPagination(query, filters)
 
-	var results []models.Fact
+	var results []careermodel.Fact
 	if err := query.Find(&results).Error; err != nil {
 		return nil, err
 	}
@@ -134,7 +134,7 @@ func (r *FactRepository) List(ctx context.Context, filters career_repo.FactListF
 
 // Count returns the number of facts matching the given filters.
 func (r *FactRepository) Count(ctx context.Context, filters career_repo.FactListFilters) (int, error) {
-	query := r.db.WithContext(ctx).Model(&models.Fact{})
+	query := r.db.WithContext(ctx).Model(&careermodel.Fact{})
 	query = r.applyFilters(query, filters)
 
 	var count int64
@@ -146,7 +146,7 @@ func (r *FactRepository) Count(ctx context.Context, filters career_repo.FactList
 
 // GetBySourceEventID retrieves all facts for a specific event.
 func (r *FactRepository) GetBySourceEventID(ctx context.Context, eventID string) ([]*career.Fact, error) {
-	var results []models.Fact
+	var results []careermodel.Fact
 	err := r.db.WithContext(ctx).Where("source_event_id = ?", eventID).Find(&results).Error
 	if err != nil {
 		return nil, err
@@ -161,7 +161,7 @@ func (r *FactRepository) GetBySourceEventID(ctx context.Context, eventID string)
 
 // GetBySourceBurstID retrieves all facts for a specific burst.
 func (r *FactRepository) GetBySourceBurstID(ctx context.Context, burstID string) ([]*career.Fact, error) {
-	var results []models.Fact
+	var results []careermodel.Fact
 	err := r.db.WithContext(ctx).Where("source_burst_id = ?", burstID).Find(&results).Error
 	if err != nil {
 		return nil, err

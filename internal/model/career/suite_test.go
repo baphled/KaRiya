@@ -1,4 +1,4 @@
-package models
+package career
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestModelsSuite(t *testing.T) {
+func TestCareerModelsSuite(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Repository Models Suite")
+	RunSpecs(t, "Career Models Suite")
 }

@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
+	careermodel "github.com/baphled/kariya/internal/model/career"
 	career_repo "github.com/baphled/kariya/internal/repository/career"
-	"github.com/baphled/kariya/internal/repository/models"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -55,7 +55,7 @@ func (r *EventRepository) Create(ctx context.Context, event *career.Event) error
 	event.CreatedAt = now
 	event.UpdatedAt = now
 
-	model := models.EventFromDomain(event)
+	model := careermodel.EventFromDomain(event)
 	if err := r.db.WithContext(ctx).Create(model).Error; err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func (r *EventRepository) Create(ctx context.Context, event *career.Event) error
 
 // GetByID retrieves a career event by its ID.
 func (r *EventRepository) GetByID(ctx context.Context, id string) (*career.Event, error) {
-	var model models.Event
+	var model careermodel.Event
 	err := r.db.WithContext(ctx).First(&model, "id = ?", id).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, career_repo.ErrEventNotFound
@@ -104,7 +104,7 @@ func (r *EventRepository) GetByID(ctx context.Context, id string) (*career.Event
 func (r *EventRepository) Update(ctx context.Context, event *career.Event) error {
 	// Check if record exists first.
 	var count int64
-	if err := r.db.WithContext(ctx).Model(&models.Event{}).Where("id = ?", event.ID).Count(&count).Error; err != nil {
+	if err := r.db.WithContext(ctx).Model(&careermodel.Event{}).Where("id = ?", event.ID).Count(&count).Error; err != nil {
 		return err
 	}
 	if count == 0 {
@@ -112,7 +112,7 @@ func (r *EventRepository) Update(ctx context.Context, event *career.Event) error
 	}
 
 	event.UpdatedAt = time.Now()
-	model := models.EventFromDomain(event)
+	model := careermodel.EventFromDomain(event)
 	if err := r.db.WithContext(ctx).Save(model).Error; err != nil {
 		return err
 	}
@@ -136,7 +136,7 @@ func (r *EventRepository) Update(ctx context.Context, event *career.Event) error
 // Side effects:
 //   - None.
 func (r *EventRepository) Delete(ctx context.Context, id string) error {
-	result := r.db.WithContext(ctx).Delete(&models.Event{}, "id = ?", id)
+	result := r.db.WithContext(ctx).Delete(&careermodel.Event{}, "id = ?", id)
 	if result.RowsAffected == 0 {
 		return career_repo.ErrEventNotFound
 	}
@@ -145,12 +145,12 @@ func (r *EventRepository) Delete(ctx context.Context, id string) error {
 
 // List retrieves career events with optional filtering.
 func (r *EventRepository) List(ctx context.Context, filters career_repo.EventListFilters) ([]*career.Event, error) {
-	query := r.db.WithContext(ctx).Model(&models.Event{})
+	query := r.db.WithContext(ctx).Model(&careermodel.Event{})
 	query = r.applyFilters(query, filters)
 	query = r.applySorting(query, filters)
 	query = r.applyPagination(query, filters)
 
-	var results []models.Event
+	var results []careermodel.Event
 	if err := query.Find(&results).Error; err != nil {
 		return nil, err
 	}
@@ -180,7 +180,7 @@ func (r *EventRepository) List(ctx context.Context, filters career_repo.EventLis
 
 // Count returns the number of events matching the given filters.
 func (r *EventRepository) Count(ctx context.Context, filters career_repo.EventListFilters) (int, error) {
-	query := r.db.WithContext(ctx).Model(&models.Event{})
+	query := r.db.WithContext(ctx).Model(&careermodel.Event{})
 	query = r.applyFilters(query, filters)
 
 	var count int64

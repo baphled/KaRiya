@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
+	careermodel "github.com/baphled/kariya/internal/model/career"
 	career_repo "github.com/baphled/kariya/internal/repository/career"
-	"github.com/baphled/kariya/internal/repository/models"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -204,7 +204,7 @@ var _ = Describe("Burst Repository", func() {
 			b1 := fixtures.Burst("", "e1")
 			b1.Name = "Old Burst"
 			Expect(repo.Create(ctx, b1)).To(Succeed())
-			tx.Model(&models.Burst{}).Where("id = ?", b1.ID).Update("created_at", now.Add(-72*time.Hour))
+			tx.Model(&careermodel.Burst{}).Where("id = ?", b1.ID).Update("created_at", now.Add(-72*time.Hour))
 
 			time.Sleep(10 * time.Millisecond)
 			b2 := fixtures.Burst("", "e2")

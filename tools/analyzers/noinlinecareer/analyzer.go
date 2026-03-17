@@ -89,14 +89,15 @@ func extractNamed(typ types.Type) *types.Named {
 }
 
 func isCareerPackage(pkgPath string) bool {
-	return pkgPath == "career" ||
-		strings.HasSuffix(pkgPath, "/career") ||
-		strings.Contains(pkgPath, "domain/career")
+	return strings.Contains(pkgPath, "domain/career") ||
+		strings.Contains(pkgPath, "model/career")
 }
 
 func isExcludedPackage(pkgPath string) bool {
 	exclusions := []string{
 		"domain/career",
+		"model/career",
+		"repository/career",
 		"fixtures",
 		"testutil/harness",
 	}

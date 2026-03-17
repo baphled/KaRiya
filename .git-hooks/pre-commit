@@ -170,7 +170,7 @@ fi
 # Staticcheck - catches unused code, simplifications, etc.
 # This is run in CI and was missing from pre-commit, causing CI failures
 if command -v staticcheck > /dev/null 2>&1; then
-    CHANGED_GO_FILES=$(git diff --cached --name-only | grep '\.go$' || true)
+    CHANGED_GO_FILES=$(git diff --cached --name-only | grep '\.go$' | grep -v '/testdata/' || true)
     if [ -n "$CHANGED_GO_FILES" ]; then
         echo "Running staticcheck on changed packages..."
         ALL_PACKAGES=$(echo "$CHANGED_GO_FILES" | xargs -I{} dirname {} | sort -u | sed 's|^|./|' | sed 's|$|/...|')
@@ -225,6 +225,10 @@ if command -v golangci-lint > /dev/null 2>&1; then
         # so we use a bash array and proper quoting instead of unquoted expansion.
         CHANGED_PACKAGES=()
         while IFS= read -r dir; do
+            # Skip testdata directories (contain fake packages for analyzer testing)
+            if [[ "$dir" == *"/testdata/"* ]]; then
+                continue
+            fi
             if [ -d "$dir" ]; then
                 CHANGED_PACKAGES+=("./$dir/...")
             fi
@@ -290,6 +294,10 @@ if [ "$SKIP_TESTS" != "1" ]; then
             pkg_dir=$(echo "$pkg" | sed 's|/\.\.\.$||' | sed 's|^\./||')
             # Skip test infrastructure packages (features/, internal/testutil)
             if [[ "$pkg_dir" == features/* ]] || [[ "$pkg_dir" == *"/testutil"* ]]; then
+                continue
+            fi
+            # Skip testdata directories (contain fake packages for analyzer testing)
+            if [[ "$pkg_dir" == *"/testdata/"* ]]; then
                 continue
             fi
             if ls "$pkg_dir"/*_test.go > /dev/null 2>&1; then

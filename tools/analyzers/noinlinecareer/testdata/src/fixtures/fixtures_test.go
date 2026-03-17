@@ -1,6 +1,6 @@
 package fixtures
 
-import "fake/career"
+import "fake/domain/career"
 
 func Event(id string) *career.Event {
 	return &career.Event{ID: id, Text: "fixture event " + id}

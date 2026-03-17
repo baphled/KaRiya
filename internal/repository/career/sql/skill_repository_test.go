@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
+	careermodel "github.com/baphled/kariya/internal/model/career"
 	career_repo "github.com/baphled/kariya/internal/repository/career"
-	"github.com/baphled/kariya/internal/repository/models"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -289,7 +289,7 @@ var _ = Describe("Skill Repository", func() {
 			skill = fixtures.SkillWith("", "Go", "backend", "")
 			Expect(repo.Create(ctx, skill)).To(Succeed())
 
-			event := &models.Event{ID: "event-1", Text: "Test", Date: time.Now(), CreatedAt: time.Now(), UpdatedAt: time.Now()}
+			event := &careermodel.Event{ID: "event-1", Text: "Test", Date: time.Now(), CreatedAt: time.Now(), UpdatedAt: time.Now()}
 			Expect(tx.Create(event).Error).NotTo(HaveOccurred())
 		})
 
@@ -329,7 +329,7 @@ var _ = Describe("Skill Repository", func() {
 			Expect(repo.Create(ctx, skill2)).To(Succeed())
 
 			for i := range 3 {
-				event := &models.Event{
+				event := &careermodel.Event{
 					ID:        "event-" + string(rune('a'+i)),
 					Text:      "Test",
 					Date:      time.Now(),
