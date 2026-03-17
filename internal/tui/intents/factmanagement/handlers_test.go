@@ -30,7 +30,7 @@ var _ = Describe("Handlers", func() {
 		testFact.RoleFit = "senior_ic"
 		mockRepo.facts = []*career.Fact{testFact}
 
-		intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
+		intentCtx := factmanagement.NewIntentValidator(ctx, mockRepo)
 		var err error
 		intent, err = factmanagement.NewIntent(intentCtx)
 		Expect(err).NotTo(HaveOccurred())
@@ -281,7 +281,7 @@ var _ = Describe("Handlers", func() {
 	Describe("View rendering at different states", func() {
 		Context("when not active", func() {
 			It("shows inactive message", func() {
-				intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
+				intentCtx := factmanagement.NewIntentValidator(ctx, mockRepo)
 				inactiveIntent, err := factmanagement.NewIntent(intentCtx)
 				Expect(err).NotTo(HaveOccurred())
 				view := inactiveIntent.View()
@@ -421,7 +421,7 @@ var _ = Describe("Handlers", func() {
 		Context("with no facts in list", func() {
 			BeforeEach(func() {
 				emptyRepo := NewIntentMockFactRepository()
-				intentCtx := factmanagement.NewIntentContext(ctx, emptyRepo)
+				intentCtx := factmanagement.NewIntentValidator(ctx, emptyRepo)
 				var err error
 				intent, err = factmanagement.NewIntent(intentCtx)
 				Expect(err).NotTo(HaveOccurred())
@@ -535,7 +535,7 @@ var _ = Describe("Handlers", func() {
 				longFact.RoleFit = "senior_ic"
 				mockRepo.facts = []*career.Fact{longFact}
 
-				intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
+				intentCtx := factmanagement.NewIntentValidator(ctx, mockRepo)
 				longIntent, err := factmanagement.NewIntent(intentCtx)
 				Expect(err).NotTo(HaveOccurred())
 				longIntent.Init()
@@ -551,7 +551,7 @@ var _ = Describe("Handlers", func() {
 				noStrengthFact.RoleFit = "senior_ic"
 				mockRepo.facts = []*career.Fact{noStrengthFact}
 
-				intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
+				intentCtx := factmanagement.NewIntentValidator(ctx, mockRepo)
 				nsIntent, err := factmanagement.NewIntent(intentCtx)
 				Expect(err).NotTo(HaveOccurred())
 				nsIntent.Init()
@@ -567,7 +567,7 @@ var _ = Describe("Handlers", func() {
 				catFact.RoleFit = "senior_ic"
 				mockRepo.facts = []*career.Fact{catFact}
 
-				intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
+				intentCtx := factmanagement.NewIntentValidator(ctx, mockRepo)
 				catIntent, err := factmanagement.NewIntent(intentCtx)
 				Expect(err).NotTo(HaveOccurred())
 				catIntent.Init()

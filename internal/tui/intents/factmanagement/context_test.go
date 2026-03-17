@@ -410,7 +410,7 @@ var _ = Describe("Context", func() {
 
 		Describe("UpdateFact", func() {
 			var (
-				intentCtx *factmanagement.IntentContext
+				intentCtx *factmanagement.IntentValidator
 				testFact  *career.Fact
 			)
 
@@ -418,7 +418,7 @@ var _ = Describe("Context", func() {
 				testFact = fixtures.Fact("fact-1", "event-1")
 				testFact.Text = "Original fact text"
 				mockRepo.facts = []*career.Fact{testFact}
-				intentCtx = factmanagement.NewIntentContext(ctx, mockRepo)
+				intentCtx = factmanagement.NewIntentValidator(ctx, mockRepo)
 				_ = intentCtx.LoadFacts() //nolint:errcheck // test setup
 			})
 
@@ -460,10 +460,10 @@ var _ = Describe("Context", func() {
 		})
 
 		Describe("CreateFact", func() {
-			var intentCtx *factmanagement.IntentContext
+			var intentCtx *factmanagement.IntentValidator
 
 			BeforeEach(func() {
-				intentCtx = factmanagement.NewIntentContext(ctx, mockRepo)
+				intentCtx = factmanagement.NewIntentValidator(ctx, mockRepo)
 			})
 
 			Context("with nil repository", func() {
@@ -499,7 +499,7 @@ var _ = Describe("Context", func() {
 			Context("when page is beyond range", func() {
 				It("returns empty slice", func() {
 					mockRepo.facts = []*career.Fact{fixtures.Fact("fact-1", "event-1")}
-					intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
+					intentCtx := factmanagement.NewIntentValidator(ctx, mockRepo)
 					_ = intentCtx.LoadFacts() //nolint:errcheck // test setup
 					intentCtx.CurrentPage = 100
 					pageFacts := intentCtx.GetPageFacts()
