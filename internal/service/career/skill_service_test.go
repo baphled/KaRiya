@@ -3,6 +3,7 @@ package career
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
@@ -141,6 +142,35 @@ var _ = Describe("Career Service - Skill Methods", func() {
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("failed to link skill to event"))
 			})
+		})
+	})
+
+	Describe("SaveSkill - timestamp preservation", func() {
+		It("preserves existing CreatedAt when non-zero", func() {
+			existingCreatedAt := time.Now().Add(-48 * time.Hour)
+			skill := fixtures.SkillWith("", "Go", "backend", "advanced")
+			skill.CreatedAt = existingCreatedAt
+
+			mockSkillRepo.EXPECT().
+				Create(gomock.Any(), gomock.Any()).
+				Return(nil)
+
+			err := service.SaveSkill(ctx, skill)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(skill.CreatedAt).To(Equal(existingCreatedAt))
+		})
+
+		It("sets CreatedAt when zero", func() {
+			skill := fixtures.SkillWith("", "Python", "backend", "intermediate")
+			skill.CreatedAt = time.Time{}
+
+			mockSkillRepo.EXPECT().
+				Create(gomock.Any(), gomock.Any()).
+				Return(nil)
+
+			err := service.SaveSkill(ctx, skill)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(skill.CreatedAt).NotTo(BeZero())
 		})
 	})
 })

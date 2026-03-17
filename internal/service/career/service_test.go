@@ -10,6 +10,8 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/baphled/kariya/internal/domain/career"
+	careerrepo "github.com/baphled/kariya/internal/repository/career"
+	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	mockrepo "github.com/baphled/kariya/internal/testutil/mocks/repository"
 )
@@ -897,6 +899,85 @@ var _ = Describe("Career Service Bulk Methods", func() {
 			Expect(err).To(HaveOccurred())
 			Expect(count).To(Equal(0))
 			Expect(saved).To(Equal(0))
+		})
+	})
+})
+
+var _ = Describe("Career Service - Repository Accessors", func() {
+	var (
+		repo    careerrepo.EventRepository
+		service *Service
+		ctx     context.Context
+	)
+
+	BeforeEach(func() {
+		repo = careermemory.NewEventRepository()
+		service = NewService(repo)
+		ctx = context.Background()
+	})
+
+	Describe("GetEventRepository", func() {
+		It("should return the event repository", func() {
+			eventRepo := service.GetEventRepository()
+			Expect(eventRepo).NotTo(BeNil())
+			Expect(eventRepo).To(Equal(repo))
+		})
+
+		It("should return same repository instance on multiple calls", func() {
+			repo1 := service.GetEventRepository()
+			repo2 := service.GetEventRepository()
+			Expect(repo1).To(BeIdenticalTo(repo2))
+		})
+
+		It("should allow using returned repository for operations", func() {
+			eventRepo := service.GetEventRepository()
+
+			event := fixtures.EventWith("test-event-1", "Test event via GetEventRepository", "TestCo", "")
+
+			err := eventRepo.Create(ctx, event)
+			Expect(err).NotTo(HaveOccurred())
+
+			retrieved, err := service.GetEventByID(ctx, event.ID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(retrieved.ID).To(Equal(event.ID))
+			Expect(retrieved.Text).To(Equal(event.Text))
+		})
+	})
+
+	Describe("GetSkillRepository", func() {
+		It("returns nil when no skill repository is set", func() {
+			skillRepo := service.GetSkillRepository()
+			Expect(skillRepo).To(BeNil())
+		})
+
+		It("returns the configured skill repository", func() {
+			memorySkillRepo := careermemory.NewSkillRepository()
+			service.SetSkillRepository(memorySkillRepo)
+
+			skillRepo := service.GetSkillRepository()
+			Expect(skillRepo).To(Equal(memorySkillRepo))
+		})
+
+		It("returns same instance on multiple calls", func() {
+			memorySkillRepo := careermemory.NewSkillRepository()
+			service.SetSkillRepository(memorySkillRepo)
+
+			repo1 := service.GetSkillRepository()
+			repo2 := service.GetSkillRepository()
+			Expect(repo1).To(BeIdenticalTo(repo2))
+		})
+	})
+
+	Describe("SetSkillRepository", func() {
+		It("sets the skill repository for use by SaveSkill", func() {
+			skillRepo := careermemory.NewSkillRepository()
+			service.SetSkillRepository(skillRepo)
+
+			skill := fixtures.SkillWith("", "Go", "backend", "advanced")
+
+			err := service.SaveSkill(ctx, skill)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(skill.ID).NotTo(BeEmpty())
 		})
 	})
 })
