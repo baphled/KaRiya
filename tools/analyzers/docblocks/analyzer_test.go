@@ -1,33 +1,36 @@
 package docblocks_test
 
 import (
-	"testing"
+	. "github.com/onsi/ginkgo/v2"
+	"golang.org/x/tools/go/analysis/analysistest"
 
 	"github.com/baphled/kariya/tools/analyzers/docblocks"
-	"golang.org/x/tools/go/analysis/analysistest"
 )
 
-func TestFunctions(t *testing.T) {
-	testdata := analysistest.TestData()
-	analysistest.Run(t, testdata, docblocks.Analyzer, "funcs")
-}
+var _ = Describe("Docblocks Analyzer", func() {
+	var testdata string
 
-func TestMethods(t *testing.T) {
-	testdata := analysistest.TestData()
-	analysistest.Run(t, testdata, docblocks.Analyzer, "methods")
-}
+	BeforeEach(func() {
+		testdata = analysistest.TestData()
+	})
 
-func TestTypes(t *testing.T) {
-	testdata := analysistest.TestData()
-	analysistest.Run(t, testdata, docblocks.Analyzer, "types")
-}
+	It("validates function docblocks", func() {
+		analysistest.Run(GinkgoT(), testdata, docblocks.Analyzer, "funcs")
+	})
 
-func TestConstVars(t *testing.T) {
-	testdata := analysistest.TestData()
-	analysistest.Run(t, testdata, docblocks.Analyzer, "constvars")
-}
+	It("validates method docblocks", func() {
+		analysistest.Run(GinkgoT(), testdata, docblocks.Analyzer, "methods")
+	})
 
-func TestExclusions(t *testing.T) {
-	testdata := analysistest.TestData()
-	analysistest.Run(t, testdata, docblocks.Analyzer, "mainpkg")
-}
+	It("validates type docblocks", func() {
+		analysistest.Run(GinkgoT(), testdata, docblocks.Analyzer, "types")
+	})
+
+	It("validates const and var docblocks", func() {
+		analysistest.Run(GinkgoT(), testdata, docblocks.Analyzer, "constvars")
+	})
+
+	It("handles exclusions in main package", func() {
+		analysistest.Run(GinkgoT(), testdata, docblocks.Analyzer, "mainpkg")
+	})
+})
