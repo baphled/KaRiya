@@ -51,18 +51,13 @@ func run(pass *analysis.Pass) (interface{}, error) {
 }
 
 func resolveCareerType(pass *analysis.Pass, lit *ast.CompositeLit) *types.Named {
-	typ := pass.TypesInfo.TypeOf(lit)
-	if typ == nil {
-		return nil
-	}
-
-	named := extractNamed(typ)
+	named := extractNamedType(pass.TypesInfo.TypeOf(lit))
 	if named == nil {
 		return nil
 	}
 
 	pkg := named.Obj().Pkg()
-	if pkg == nil {
+	if pkg == nil || !named.Obj().Exported() {
 		return nil
 	}
 
@@ -70,19 +65,19 @@ func resolveCareerType(pass *analysis.Pass, lit *ast.CompositeLit) *types.Named 
 		return nil
 	}
 
-	if !named.Obj().Exported() {
-		return nil
-	}
-
 	return named
 }
 
-func extractNamed(typ types.Type) *types.Named {
+func extractNamedType(typ types.Type) *types.Named {
+	if typ == nil {
+		return nil
+	}
+
 	switch t := typ.(type) {
 	case *types.Named:
 		return t
 	case *types.Pointer:
-		return extractNamed(t.Elem())
+		return extractNamedType(t.Elem())
 	default:
 		return nil
 	}

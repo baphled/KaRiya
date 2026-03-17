@@ -72,10 +72,14 @@ func (r *SkillRepository) Create(ctx context.Context, skill *career.Skill) error
 
 // GetByID retrieves a single skill by its unique identifier.
 //
-// The id parameter is matched against the primary key column. Returns the
-// fully populated domain Skill and nil error on success. Returns nil and
-// ErrSkillNotFound if no row matches. Returns nil and a GORM error for
-// any other database failure.
+// Expected:
+//   - id must be a valid skill identifier.
+//
+// Returns:
+//   - The skill if found, or nil with ErrSkillNotFound if not found.
+//
+// Side effects:
+//   - None.
 func (r *SkillRepository) GetByID(ctx context.Context, id string) (*career.Skill, error) {
 	var model careermodel.Skill
 	err := r.db.WithContext(ctx).First(&model, "id = ?", id).Error
@@ -90,10 +94,14 @@ func (r *SkillRepository) GetByID(ctx context.Context, id string) (*career.Skill
 
 // GetByName retrieves a single skill by name using case-insensitive matching.
 //
-// The name parameter is compared case-insensitively against the name column
-// using LOWER() on both sides. Returns the domain Skill and nil on a match.
-// Returns nil and ErrSkillNotFound when no row matches. Returns nil and a
-// GORM error for any other database failure.
+// Expected:
+//   - name must be a non-empty string.
+//
+// Returns:
+//   - The skill if found, or nil with ErrSkillNotFound if not found.
+//
+// Side effects:
+//   - None.
 func (r *SkillRepository) GetByName(ctx context.Context, name string) (*career.Skill, error) {
 	var model careermodel.Skill
 	err := r.db.WithContext(ctx).First(&model, "LOWER(name) = LOWER(?)", name).Error
@@ -149,16 +157,14 @@ func (r *SkillRepository) Delete(ctx context.Context, id string) error {
 
 // List retrieves all skills that satisfy the given filters.
 //
-// The filters parameter controls which skills are returned and in what
-// order. Supported filter fields are Category (exact match), Level (exact
-// match), and MinEvents (skills linked to at least N events via the
-// event_skills junction table). When filters is nil every skill is
-// returned. Sorting defaults to name ascending; set SortBy to "name",
-// "category", "events", or "last_used" with an optional SortOrder of
-// "desc" to override. Pagination is controlled by Limit and Offset.
+// Expected:
+//   - filters specifies the filtering, sorting, and pagination options.
 //
-// Returns the matching domain skills and nil on success. Returns nil and
-// a GORM error on database failure.
+// Returns:
+//   - A slice of skills matching the filters, or an error.
+//
+// Side effects:
+//   - None.
 func (r *SkillRepository) List(ctx context.Context, filters *career_repo.SkillListFilters) ([]*career.Skill, error) {
 	query := r.db.WithContext(ctx).Model(&careermodel.Skill{})
 	query = r.applyFilters(query, filters)
@@ -179,12 +185,14 @@ func (r *SkillRepository) List(ctx context.Context, filters *career_repo.SkillLi
 
 // Count returns the total number of skills that satisfy the given filters.
 //
-// The filters parameter accepts the same Category, Level, and MinEvents
-// constraints as List, but Limit, Offset, SortBy, and SortOrder are
-// ignored. When filters is nil the total count of all skills is returned.
+// Expected:
+//   - filters specifies the filtering options.
 //
-// Returns the count and nil on success. Returns 0 and a GORM error on
-// database failure.
+// Returns:
+//   - The count of matching skills, or an error.
+//
+// Side effects:
+//   - None.
 func (r *SkillRepository) Count(ctx context.Context, filters *career_repo.SkillListFilters) (int, error) {
 	query := r.db.WithContext(ctx).Model(&careermodel.Skill{})
 	query = r.applyFilters(query, filters)
@@ -297,12 +305,14 @@ func (r *SkillRepository) UnlinkFromEvent(ctx context.Context, skillID, eventID 
 
 // GetEventIDs returns the IDs of all career events linked to the given skill.
 //
-// The skillID parameter identifies the skill whose event associations are
-// queried from the event_skills junction table.
+// Expected:
+//   - skillID must be a valid skill identifier.
 //
-// Returns the event ID slice and nil on success. Returns nil and a
-// database error on failure. An empty slice is returned when the skill
-// has no linked events.
+// Returns:
+//   - A slice of event IDs, or an error.
+//
+// Side effects:
+//   - None.
 func (r *SkillRepository) GetEventIDs(ctx context.Context, skillID string) ([]string, error) {
 	var ids []string
 	err := r.db.WithContext(ctx).
@@ -313,11 +323,29 @@ func (r *SkillRepository) GetEventIDs(ctx context.Context, skillID string) ([]st
 }
 
 // GetByCategory retrieves all skills in a specific category.
+//
+// Expected:
+//   - category must be a valid category string.
+//
+// Returns:
+//   - A slice of skills in the category, or an error.
+//
+// Side effects:
+//   - None.
 func (r *SkillRepository) GetByCategory(ctx context.Context, category string) ([]*career.Skill, error) {
 	return r.List(ctx, &career_repo.SkillListFilters{Category: category})
 }
 
 // GetSkillsForEvent retrieves all skills associated with an event.
+//
+// Expected:
+//   - eventID must be a valid event identifier.
+//
+// Returns:
+//   - A slice of skills for the event, or an error.
+//
+// Side effects:
+//   - None.
 func (r *SkillRepository) GetSkillsForEvent(ctx context.Context, eventID string) ([]*career.Skill, error) {
 	var results []careermodel.Skill
 	err := r.db.WithContext(ctx).
@@ -336,6 +364,15 @@ func (r *SkillRepository) GetSkillsForEvent(ctx context.Context, eventID string)
 }
 
 // GetSkillsForEvents retrieves all unique skills linked to any of the given events.
+//
+// Expected:
+//   - eventIDs must be a slice of valid event identifiers.
+//
+// Returns:
+//   - A slice of unique skills across all events, or an error.
+//
+// Side effects:
+//   - None.
 func (r *SkillRepository) GetSkillsForEvents(ctx context.Context, eventIDs []string) ([]*career.Skill, error) {
 	if len(eventIDs) == 0 {
 		return []*career.Skill{}, nil
@@ -359,6 +396,15 @@ func (r *SkillRepository) GetSkillsForEvents(ctx context.Context, eventIDs []str
 }
 
 // GetEventCountsForSkills returns a map of skill IDs to event counts.
+//
+// Expected:
+//   - None.
+//
+// Returns:
+//   - A map of skill IDs to their event counts, or an error.
+//
+// Side effects:
+//   - None.
 func (r *SkillRepository) GetEventCountsForSkills(ctx context.Context) (map[string]int, error) {
 	type result struct {
 		SkillID string
@@ -382,6 +428,15 @@ func (r *SkillRepository) GetEventCountsForSkills(ctx context.Context) (map[stri
 }
 
 // GetLastUsedForSkills returns a map of skill IDs to their last used dates.
+//
+// Expected:
+//   - None.
+//
+// Returns:
+//   - A map of skill IDs to last used times, or an error.
+//
+// Side effects:
+//   - None.
 func (r *SkillRepository) GetLastUsedForSkills(ctx context.Context) (map[string]time.Time, error) {
 	type result struct {
 		SkillID  string
@@ -420,6 +475,15 @@ func (r *SkillRepository) GetLastUsedForSkills(ctx context.Context) (map[string]
 }
 
 // GetEventsUsingSkill returns all events that use a specific skill, ordered by date DESC.
+//
+// Expected:
+//   - skillID must be a valid skill identifier.
+//
+// Returns:
+//   - A slice of events using the skill, or an error.
+//
+// Side effects:
+//   - None.
 func (r *SkillRepository) GetEventsUsingSkill(ctx context.Context, skillID string) ([]*career.Event, error) {
 	var results []careermodel.Event
 	err := r.db.WithContext(ctx).

@@ -42,7 +42,7 @@ func NewBurstRepository(db *gorm.DB) *BurstRepository {
 //   - burst must be valid.
 //
 // Returns:
-//   - A error value.
+//   - An error value.
 //
 // Side effects:
 //   - None.
@@ -59,6 +59,15 @@ func (r *BurstRepository) Create(ctx context.Context, burst *career.Burst) error
 }
 
 // GetByID retrieves a burst by its ID.
+//
+// Expected:
+//   - id must be a valid burst identifier.
+//
+// Returns:
+//   - The burst if found, or nil with ErrBurstNotFound if not found.
+//
+// Side effects:
+//   - None.
 func (r *BurstRepository) GetByID(ctx context.Context, id string) (*career.Burst, error) {
 	var model careermodel.Burst
 	err := r.db.WithContext(ctx).First(&model, "id = ?", id).Error
@@ -77,7 +86,7 @@ func (r *BurstRepository) GetByID(ctx context.Context, id string) (*career.Burst
 //   - burst must be valid.
 //
 // Returns:
-//   - A error value.
+//   - An error value.
 //
 // Side effects:
 //   - None.
@@ -98,10 +107,10 @@ func (r *BurstRepository) Update(ctx context.Context, burst *career.Burst) error
 // Delete removes a burst from the database.
 //
 // Expected:
-//   - Must be a valid string.
+//   - id must be a valid string.
 //
 // Returns:
-//   - A error value.
+//   - An error value.
 //
 // Side effects:
 //   - None.
@@ -114,6 +123,15 @@ func (r *BurstRepository) Delete(ctx context.Context, id string) error {
 }
 
 // List retrieves bursts with optional filtering.
+//
+// Expected:
+//   - filters specifies the filtering, sorting, and pagination options.
+//
+// Returns:
+//   - A slice of bursts matching the filters, or an error.
+//
+// Side effects:
+//   - None.
 func (r *BurstRepository) List(ctx context.Context, filters career_repo.BurstListFilters) ([]*career.Burst, error) {
 	query := r.db.WithContext(ctx).Model(&careermodel.Burst{})
 	query = r.applyFilters(query, filters)
@@ -133,6 +151,15 @@ func (r *BurstRepository) List(ctx context.Context, filters career_repo.BurstLis
 }
 
 // Count returns the number of bursts matching the given filters.
+//
+// Expected:
+//   - filters specifies the filtering options.
+//
+// Returns:
+//   - The count of matching bursts, or an error.
+//
+// Side effects:
+//   - None.
 func (r *BurstRepository) Count(ctx context.Context, filters career_repo.BurstListFilters) (int, error) {
 	query := r.db.WithContext(ctx).Model(&careermodel.Burst{})
 	query = r.applyFilters(query, filters)
