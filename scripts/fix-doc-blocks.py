@@ -33,7 +33,7 @@ def parse_function_signature(
     """
     # Match function declarations: func Name(...) [ReturnType]
     # Handle methods too: func (r *Receiver) Name(...)
-    pattern = r"^func\s+(?:\([^)]+\)\s+)?(\w+)\s*\(([^)]*)\)\s*(\S+)?\s*{$"
+    pattern = r"^func\s+(?:\([^)]+\)\s+)?(\w+)\s*\(([^)]*)\)(?:\s+(\S+))?\s*\{$"
     match = re.match(pattern, line.strip())
 
     if not match:
