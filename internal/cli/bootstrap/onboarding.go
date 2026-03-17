@@ -1,28 +1,28 @@
 package bootstrap
 
 import (
-	"github.com/baphled/kariya/internal/cli/components"
-	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/config"
+	"github.com/baphled/kariya/internal/tui/views/onboarding"
+	"github.com/baphled/kariya/internal/ui/uikit/primitives"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// onboardingModel wraps the OnboardingWizardModal for standalone execution.
+// onboardingModel wraps the Wizard for standalone execution.
 // This runs as a separate Bubble Tea program before the main app starts.
 type onboardingModel struct {
-	wizard *components.OnboardingWizardModal
+	wizard *onboarding.Wizard
 	width  int
 	height int
 	result *config.ProfileConfig
 }
 
-// newOnboardingModel creates a new onboarding model.
+// newOnboardingModel creates a new onboarding model using onboarding.Wizard.
 func newOnboardingModel(cfg *config.ProfileConfig) *onboardingModel {
 	// Default dimensions - will be updated on first WindowSizeMsg.
 	width, height := 80, 24
 
 	return &onboardingModel{
-		wizard: components.NewOnboardingWizardModalWithConfig(width, height, cfg),
+		wizard: onboarding.NewWizardWithConfig(width, height, cfg),
 		width:  width,
 		height: height,
 	}

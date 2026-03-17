@@ -12,11 +12,11 @@ import (
 	"github.com/onsi/gomega"
 
 	"github.com/baphled/kariya/features/support"
-	skillsmanagement "github.com/baphled/kariya/internal/cli/intents/skillsmanagement"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/service/career/skillinference"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	"github.com/baphled/kariya/internal/testutil/harness"
+	skillsmanagement "github.com/baphled/kariya/internal/tui/intents/skillsmanagement"
 )
 
 type pendingSkillForm struct {

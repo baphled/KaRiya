@@ -81,21 +81,21 @@ check-docblocks:
 	@echo "Running docblocks analyzer..."
 	@go build -o ./bin/docblocks ./cmd/docblocks
 	@go vet -vettool=./bin/docblocks \
-		./internal/cli/app/... \
-		./internal/cli/behaviors/... \
+		./internal/tui/app/... \
+		./internal/ui/behaviors/... \
 		./internal/cli/bootstrap/... \
-		./internal/cli/configtypes/... \
-		./internal/cli/forms/... \
+		./internal/ui/configtypes/... \
+		./internal/tui/forms/... \
 		./internal/cli/importer/... \
-		./internal/cli/intents/... \
-		./internal/cli/navigation/... \
-		./internal/cli/screens/... \
+		./internal/tui/intents/... \
+		./internal/tui/navigation/... \
+		./internal/tui/views/... \
 		./internal/cli/service/... \
-		./internal/cli/statematrix/... \
-		./internal/cli/terminal/... \
-		./internal/cli/themes/... \
-		./internal/cli/types/... \
-		./internal/cli/uikit/... \
+		./internal/tui/statematrix/... \
+		./internal/ui/terminal/... \
+		./internal/ui/themes/... \
+		./internal/ui/types/... \
+		./internal/ui/uikit/... \
 		./tools/analyzers/docblocks/...
 	@echo "✅ Docblocks: all checks passed."
 
@@ -116,7 +116,7 @@ fix-all-documentation:
 		while read -r file; do \
 			if [ -s "$$file" ]; then \
 				echo "Processing $$file..."; \
-				./scripts/fix-doc-blocks.sh "$$file" > "$$file.tmp" && \
+				./scripts/fix-doc-blocks.py "$$file" > "$$file.tmp" && \
 				mv "$$file.tmp" "$$file" || true; \
 			fi; \
 		done
@@ -478,7 +478,7 @@ check-patterns:
 	@echo ""
 	@VIOLATIONS=0; \
 	echo "1. Form Wrapper Pattern:"; \
-	DIRECT_HUH=$$(grep -rn "form \*huh\.Form" internal/cli/intents/*.go 2>/dev/null | grep -v "_test.go" || true); \
+	DIRECT_HUH=$$(grep -rn "form \*huh\.Form" internal/tui/intents/*.go 2>/dev/null | grep -v "_test.go" || true); \
 	if [ -z "$$DIRECT_HUH" ]; then \
 		echo "   ✅ No direct *huh.Form in intents"; \
 	else \
@@ -488,7 +488,7 @@ check-patterns:
 	fi; \
 	echo ""; \
 	echo "2. BaseIntent Embedding:"; \
-	MISSING_BASE=$$(grep -rL "\*BaseIntent" internal/cli/intents/*_intent.go 2>/dev/null | grep -v "_test.go" || true); \
+	MISSING_BASE=$$(grep -rL "\*BaseIntent" internal/tui/intents/*_intent.go 2>/dev/null | grep -v "_test.go" || true); \
 	if [ -z "$$MISSING_BASE" ]; then \
 		echo "   ✅ All intents embed *BaseIntent"; \
 	else \
@@ -498,7 +498,7 @@ check-patterns:
 	fi; \
 	echo ""; \
 	echo "3. Theme Consistency (intents):"; \
-	HARDCODED=$$(grep -rn "lipgloss\.Color(\"#[0-9A-Fa-f]" internal/cli/intents/*.go 2>/dev/null | grep -v "_test.go" || true); \
+	HARDCODED=$$(grep -rn "lipgloss\.Color(\"#[0-9A-Fa-f]" internal/tui/intents/*.go 2>/dev/null | grep -v "_test.go" || true); \
 	if [ -z "$$HARDCODED" ]; then \
 		echo "   ✅ No hardcoded colors in intents"; \
 	else \
@@ -518,8 +518,8 @@ check-patterns:
 	fi; \
 	echo ""; \
 	echo "5. StandardView Usage:"; \
-	INTENTS_COUNT=$$(ls internal/cli/intents/*_intent.go 2>/dev/null | grep -v "_test.go" | wc -l); \
-	SV_COUNT=$$(grep -l "CreateStandardView\|StandardView\|ScreenLayout" internal/cli/intents/*_intent.go 2>/dev/null | wc -l); \
+	INTENTS_COUNT=$$(ls internal/tui/intents/*_intent.go 2>/dev/null | grep -v "_test.go" | wc -l); \
+	SV_COUNT=$$(grep -l "CreateStandardView\|StandardView\|ScreenLayout" internal/tui/intents/*_intent.go 2>/dev/null | wc -l); \
 	if [ "$$SV_COUNT" -ge "$$INTENTS_COUNT" ]; then \
 		echo "   ✅ All intents use StandardView/ScreenLayout ($$SV_COUNT/$$INTENTS_COUNT)"; \
 	else \
@@ -528,8 +528,8 @@ check-patterns:
 	fi; \
 	echo ""; \
 	echo "6. UIKit Badge Pattern (new code):"; \
-	DEPRECATED_BADGE=$$(grep -rn "components\.KeyBadge" internal/cli/intents/*.go 2>/dev/null | grep -v "_test.go" || true); \
-	UIKIT_BADGE=$$(grep -rn "primitives\..*Badge\|HelpKeyBadge" internal/cli/intents/*.go 2>/dev/null | grep -v "_test.go" || true); \
+	DEPRECATED_BADGE=$$(grep -rn "components\.KeyBadge" internal/tui/intents/*.go 2>/dev/null | grep -v "_test.go" || true); \
+	UIKIT_BADGE=$$(grep -rn "primitives\..*Badge\|HelpKeyBadge" internal/tui/intents/*.go 2>/dev/null | grep -v "_test.go" || true); \
 	if [ -n "$$UIKIT_BADGE" ]; then \
 		echo "   ✅ UIKit badges in use"; \
 	elif [ -n "$$DEPRECATED_BADGE" ]; then \
@@ -540,7 +540,7 @@ check-patterns:
 	fi; \
 	echo ""; \
 	echo "7. UIKit Modal Pattern (new code):"; \
-	UIKIT_MODAL=$$(grep -rn "feedback\.New.*Modal\|RenderModalOverlay" internal/cli/intents/*.go 2>/dev/null | grep -v "_test.go" || true); \
+	UIKIT_MODAL=$$(grep -rn "feedback\.New.*Modal\|RenderModalOverlay" internal/tui/intents/*.go 2>/dev/null | grep -v "_test.go" || true); \
 	if [ -n "$$UIKIT_MODAL" ]; then \
 		echo "   ✅ UIKit modal pattern in use"; \
 	else \
@@ -558,16 +558,16 @@ check-patterns:
 # Pattern enforcement check (quiet version for session-start)
 check-patterns-quiet:
 	@VIOLATIONS=0; \
-	DIRECT_HUH=$$(grep -rn "form \*huh\.Form" internal/cli/intents/*.go 2>/dev/null | grep -v "_test.go" || true); \
+	DIRECT_HUH=$$(grep -rn "form \*huh\.Form" internal/tui/intents/*.go 2>/dev/null | grep -v "_test.go" || true); \
 	if [ -n "$$DIRECT_HUH" ]; then VIOLATIONS=$$((VIOLATIONS+1)); fi; \
-	MISSING_BASE=$$(grep -rL "\*BaseIntent" internal/cli/intents/*_intent.go 2>/dev/null | grep -v "_test.go" || true); \
+	MISSING_BASE=$$(grep -rL "\*BaseIntent" internal/tui/intents/*_intent.go 2>/dev/null | grep -v "_test.go" || true); \
 	if [ -n "$$MISSING_BASE" ]; then VIOLATIONS=$$((VIOLATIONS+1)); fi; \
-	HARDCODED=$$(grep -rn "lipgloss\.Color(\"#[0-9A-Fa-f]" internal/cli/intents/*.go 2>/dev/null | grep -v "_test.go" || true); \
+	HARDCODED=$$(grep -rn "lipgloss\.Color(\"#[0-9A-Fa-f]" internal/tui/intents/*.go 2>/dev/null | grep -v "_test.go" || true); \
 	if [ -n "$$HARDCODED" ]; then VIOLATIONS=$$((VIOLATIONS+1)); fi; \
 	HARDCODED_MODELS=$$(grep -rn "lipgloss\.Color(\"#[0-9A-Fa-f]" internal/cli/models/*.go 2>/dev/null | grep -v "_test.go" || true); \
 	if [ -n "$$HARDCODED_MODELS" ]; then VIOLATIONS=$$((VIOLATIONS+1)); fi; \
-	INTENTS_COUNT=$$(ls internal/cli/intents/*_intent.go 2>/dev/null | grep -v "_test.go" | wc -l); \
-	SV_COUNT=$$(grep -l "CreateStandardView\|StandardView\|ScreenLayout" internal/cli/intents/*_intent.go 2>/dev/null | wc -l); \
+	INTENTS_COUNT=$$(ls internal/tui/intents/*_intent.go 2>/dev/null | grep -v "_test.go" | wc -l); \
+	SV_COUNT=$$(grep -l "CreateStandardView\|StandardView\|ScreenLayout" internal/tui/intents/*_intent.go 2>/dev/null | wc -l); \
 	if [ "$$SV_COUNT" -lt "$$INTENTS_COUNT" ]; then VIOLATIONS=$$((VIOLATIONS+1)); fi; \
 	if [ $$VIOLATIONS -eq 0 ]; then \
 		echo "✅ All pattern checks passed"; \
@@ -616,10 +616,10 @@ check-mocks-updated: generate-mocks
 fix-docs:
 	@if [ -z "$(FILE)" ]; then \
 		echo "Usage: make fix-docs FILE=path/to/file.go"; \
-		echo "Or: scripts/fix-doc-blocks.sh file.go > file_fixed.go"; \
+		echo "Or: scripts/fix-doc-blocks.py file.go > file_fixed.go"; \
 		exit 1; \
 	fi
-	@bash scripts/fix-doc-blocks.sh -i "$(FILE)"
+	@python3 scripts/fix-doc-blocks.py --in-place "$(FILE)"
 
 # Create new intent with subdirectory structure
 new-intent:

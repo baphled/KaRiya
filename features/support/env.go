@@ -9,9 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/baphled/kariya/internal/cli/app"
 	"github.com/baphled/kariya/internal/cli/bootstrap"
-	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
@@ -20,6 +18,8 @@ import (
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	cv "github.com/baphled/kariya/internal/service/career/cv"
 	"github.com/baphled/kariya/internal/testutil/harness"
+	"github.com/baphled/kariya/internal/tui/app"
+	"github.com/baphled/kariya/internal/tui/forms"
 	tea "github.com/charmbracelet/bubbletea"
 	"gorm.io/gorm"
 )
@@ -693,7 +693,7 @@ func NewAppEnvFromGormDB(t *testing.T, gormDB *gorm.DB) *harness.TestEnv {
 	cvExportService := cv.NewExportServiceWithClipboard(log, clipboardStub, nil, repos.Skill)
 
 	// Create application model with custom registrar that uses stub skill inference and clipboard
-	registrar := app.NewDefaultIntentRegistrar(&app.RegistrarConfig{
+	registrar := app.NewDefaultIntentRegisterer(&app.RegistrarConfig{
 		CLIService:            cliService,
 		CareerService:         svc,
 		SkillInferenceService: skillInferenceService,
@@ -701,7 +701,7 @@ func NewAppEnvFromGormDB(t *testing.T, gormDB *gorm.DB) *harness.TestEnv {
 		CVGenService:          bootstrapResult.Services.CVGenService,
 		CVExportService:       cvExportService,
 	})
-	model := app.NewModel(cliService, svc, bootstrapResult, app.WithIntentRegistrar(registrar))
+	model := app.NewModel(cliService, svc, bootstrapResult, app.WithIntentRegisterer(registrar))
 	model.Update(tea.WindowSizeMsg{Width: harness.TerminalWidth, Height: harness.TerminalHeightLarge})
 
 	return &harness.TestEnv{

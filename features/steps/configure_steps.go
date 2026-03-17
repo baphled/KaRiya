@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/baphled/kariya/features/support"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/cucumber/godog"
 	"github.com/onsi/gomega"
 )
@@ -12,10 +13,10 @@ import (
 // RegisterConfigureSteps registers configure system step definitions with Godog.
 //
 // Expected:
-//   - sc is a valid *godog.ScenarioContext.
+//   - scenariocontext must be valid.
 //
 // Side effects:
-//   - Registers step definitions with Godog.
+//   - None.
 func RegisterConfigureSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I press "," to open settings$`, iPressCommaToOpenSettings)
 	sc.Step(`^I should see the settings modal$`, iShouldSeeTheSettingsModal)
@@ -65,7 +66,7 @@ func iNavigateToSection(ctx context.Context, section string) (context.Context, e
 		if strings.Contains(view, targetIndicator) {
 			return ctx, nil
 		}
-		env.NavigateDown()
+		env.PressKey(tea.KeyDown)
 	}
 	return ctx, nil
 }

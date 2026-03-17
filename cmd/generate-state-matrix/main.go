@@ -7,13 +7,13 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/baphled/kariya/internal/cli/statematrix"
+	"github.com/baphled/kariya/internal/tui/statematrix"
 )
 
 func main() {
 	projectRoot := findProjectRoot()
-	intentsDir := filepath.Join(projectRoot, "internal", "cli", "intents")
-	screensDir := filepath.Join(projectRoot, "internal", "cli", "screens")
+	intentsDir := filepath.Join(projectRoot, "internal", "tui", "intents")
+	screensDir := filepath.Join(projectRoot, "internal", "tui", "screens")
 
 	fmt.Println("Generating state matrix...")
 	fmt.Printf("Scanning intents: %s\n", intentsDir)

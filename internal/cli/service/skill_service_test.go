@@ -9,9 +9,9 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("CLISkillService", func() {
+var _ = Describe("CLISkillCreator", func() {
 	var (
-		skillService *CLISkillService
+		skillService *CLISkillCreator
 		skillRepo    *careermemory.SkillRepository
 		ctx          context.Context
 	)
@@ -19,10 +19,10 @@ var _ = Describe("CLISkillService", func() {
 	BeforeEach(func() {
 		ctx = context.Background()
 		skillRepo = careermemory.NewSkillRepository()
-		skillService = NewCLISkillService(skillRepo)
+		skillService = NewCLISkillCreator(skillRepo)
 	})
 
-	Describe("NewCLISkillService", func() {
+	Describe("NewCLISkillCreator", func() {
 		It("should create a new service", func() {
 			Expect(skillService).ToNot(BeNil())
 			Expect(skillService.skillRepo).To(Equal(skillRepo))

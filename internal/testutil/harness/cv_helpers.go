@@ -7,10 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/baphled/kariya/internal/cli/app"
 	"github.com/baphled/kariya/internal/cli/bootstrap"
-	"github.com/baphled/kariya/internal/cli/intents"
-	"github.com/baphled/kariya/internal/cli/intents/generatecv"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
@@ -19,6 +16,9 @@ import (
 	careersql "github.com/baphled/kariya/internal/repository/career/sql"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	cv "github.com/baphled/kariya/internal/service/career/cv"
+	"github.com/baphled/kariya/internal/tui/app"
+	"github.com/baphled/kariya/internal/tui/intents"
+	"github.com/baphled/kariya/internal/tui/intents/generatecv"
 )
 
 // CVMockConfig holds mock service configuration for CV E2E tests.
@@ -99,7 +99,7 @@ func SetupWithCVMocks(t TestingT, mockCfg *CVMockConfig) *TestEnv {
 		cliService,
 		svc,
 		bootstrapResult,
-		app.WithIntentRegistrar(registrar),
+		app.WithIntentRegisterer(registrar),
 	)
 
 	cleanup := func() {
@@ -127,11 +127,11 @@ func SetupWithCVMocks(t TestingT, mockCfg *CVMockConfig) *TestEnv {
 	}
 }
 
-// cvMockRegistrar implements app.IntentRegistrar, delegating to
-// DefaultIntentRegistrar but overriding the generate_cv intent
+// cvMockRegistrar implements app.IntentRegisterer, delegating to
+// DefaultIntentRegisterer but overriding the generate_cv intent
 // with mock services.
 type cvMockRegistrar struct {
-	delegate    *app.DefaultIntentRegistrar
+	delegate    *app.DefaultIntentRegisterer
 	cliService  *service.CLIEventService
 	svc         *careerservice.Service
 	cvGenSvc    cv.CVGenerationService
@@ -147,7 +147,7 @@ func newCVMockRegistrar(
 	cvExportSvc *cv.ExportService,
 	log *logger.Logger,
 ) *cvMockRegistrar {
-	delegate := app.NewDefaultIntentRegistrar(&app.RegistrarConfig{
+	delegate := app.NewDefaultIntentRegisterer(&app.RegistrarConfig{
 		CLIService:      cliService,
 		CareerService:   svc,
 		Log:             log,
@@ -203,7 +203,7 @@ func (r *cvMockRegistrar) overrideGenerateCV(ctx context.Context, router *intent
 			scoringCfg = &appCfg.Scoring
 		}
 
-		cvCtx := &generatecv.IntentContext{
+		cvCtx := &generatecv.IntentValidator{
 			Events:                events,
 			Facts:                 facts,
 			AvailableProfiles:     createDefaultCVProfilesForTest(),
@@ -215,7 +215,6 @@ func (r *cvMockRegistrar) overrideGenerateCV(ctx context.Context, router *intent
 			SkillRepository:       r.svc.GetSkillRepository(),
 			EventRepository:       r.svc.GetEventRepository(),
 			ProfileConfig:         profileCfg,
-			AppContext:            ctx,
 		}
 
 		intent, intentErr := generatecv.NewIntent(cvCtx)

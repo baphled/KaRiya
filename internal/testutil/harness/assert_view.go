@@ -3,7 +3,7 @@ package harness
 import (
 	"strings"
 
-	"github.com/baphled/kariya/internal/cli/app"
+	"github.com/baphled/kariya/internal/tui/app"
 )
 
 // GetView returns the current view output.

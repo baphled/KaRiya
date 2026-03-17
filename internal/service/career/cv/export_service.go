@@ -14,11 +14,11 @@ import (
 	"time"
 
 	"github.com/atotto/clipboard"
-	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
+	"github.com/baphled/kariya/internal/tui/forms"
 	"gopkg.in/yaml.v3"
 )
 
@@ -232,11 +232,11 @@ func (es *ExportService) ExportToText(_ context.Context, cv *career.CVView, sect
 	buf.WriteString(strings.Repeat("=", len(cv.Name)) + "\n\n")
 
 	// Write metadata
-	buf.WriteString(fmt.Sprintf("Target Role: %s\n", cv.TargetRole))
-	buf.WriteString(fmt.Sprintf("Target Audience: %s\n", cv.TargetAudience))
-	buf.WriteString(fmt.Sprintf("Generated: %s\n", cv.GeneratedAt.Format("2006-01-02 15:04:05")))
-	buf.WriteString(fmt.Sprintf("Source Events: %d\n", cv.SourceEventCount))
-	buf.WriteString(fmt.Sprintf("Source Facts: %d\n\n", cv.SourceFactCount))
+	fmt.Fprintf(&buf, "Target Role: %s\n", cv.TargetRole)
+	fmt.Fprintf(&buf, "Target Audience: %s\n", cv.TargetAudience)
+	fmt.Fprintf(&buf, "Generated: %s\n", cv.GeneratedAt.Format("2006-01-02 15:04:05"))
+	fmt.Fprintf(&buf, "Source Events: %d\n", cv.SourceEventCount)
+	fmt.Fprintf(&buf, "Source Facts: %d\n\n", cv.SourceFactCount)
 
 	// Write sections
 	for _, section := range sections {
@@ -260,9 +260,9 @@ func (es *ExportService) ExportToText(_ context.Context, cv *career.CVView, sect
 			if group.Header != "" {
 				if group.StartDate != "" && group.EndDate != "" {
 					if group.StartDate == group.EndDate {
-						buf.WriteString(fmt.Sprintf("%s - %s\n\n", group.Header, group.StartDate))
+						fmt.Fprintf(&buf, "%s - %s\n\n", group.Header, group.StartDate)
 					} else {
-						buf.WriteString(fmt.Sprintf("%s - %s - %s\n\n", group.Header, group.StartDate, group.EndDate))
+						fmt.Fprintf(&buf, "%s - %s - %s\n\n", group.Header, group.StartDate, group.EndDate)
 					}
 				} else {
 					buf.WriteString(group.Header + "\n\n")
@@ -271,7 +271,7 @@ func (es *ExportService) ExportToText(_ context.Context, cv *career.CVView, sect
 
 			// Write bullets
 			for _, bullet := range group.Bullets {
-				buf.WriteString(fmt.Sprintf("• %s\n", bullet.Text))
+				fmt.Fprintf(&buf, "• %s\n", bullet.Text)
 			}
 			buf.WriteString("\n")
 		}
@@ -301,17 +301,17 @@ func (es *ExportService) ExportToMarkdown(ctx context.Context, cv *career.CVView
 	var buf bytes.Buffer
 
 	// Write header
-	buf.WriteString(fmt.Sprintf("# %s\n\n", cv.Name))
+	fmt.Fprintf(&buf, "# %s\n\n", cv.Name)
 
 	// Write metadata as comment
-	buf.WriteString(fmt.Sprintf("<!-- Target Role: %s -->\n", cv.TargetRole))
-	buf.WriteString(fmt.Sprintf("<!-- Target Audience: %s -->\n", cv.TargetAudience))
-	buf.WriteString(fmt.Sprintf("<!-- Generated: %s -->\n", cv.GeneratedAt.Format("2006-01-02 15:04:05")))
-	buf.WriteString(fmt.Sprintf("<!-- Source Events: %d, Facts: %d -->\n\n", cv.SourceEventCount, cv.SourceFactCount))
+	fmt.Fprintf(&buf, "<!-- Target Role: %s -->\n", cv.TargetRole)
+	fmt.Fprintf(&buf, "<!-- Target Audience: %s -->\n", cv.TargetAudience)
+	fmt.Fprintf(&buf, "<!-- Generated: %s -->\n", cv.GeneratedAt.Format("2006-01-02 15:04:05"))
+	fmt.Fprintf(&buf, "<!-- Source Events: %d, Facts: %d -->\n\n", cv.SourceEventCount, cv.SourceFactCount)
 
 	// Write sections
 	for _, section := range sections {
-		buf.WriteString(fmt.Sprintf("## %s\n\n", section.Title))
+		fmt.Fprintf(&buf, "## %s\n\n", section.Title)
 
 		// Handle summary section (prose)
 		if section.SectionType == "summary" && section.Summary != "" {
@@ -330,18 +330,18 @@ func (es *ExportService) ExportToMarkdown(ctx context.Context, cv *career.CVView
 			if group.Header != "" {
 				if group.StartDate != "" && group.EndDate != "" {
 					if group.StartDate == group.EndDate {
-						buf.WriteString(fmt.Sprintf("### %s - _%s_\n\n", group.Header, group.StartDate))
+						fmt.Fprintf(&buf, "### %s - _%s_\n\n", group.Header, group.StartDate)
 					} else {
-						buf.WriteString(fmt.Sprintf("### %s - _%s - %s_\n\n", group.Header, group.StartDate, group.EndDate))
+						fmt.Fprintf(&buf, "### %s - _%s - %s_\n\n", group.Header, group.StartDate, group.EndDate)
 					}
 				} else {
-					buf.WriteString(fmt.Sprintf("### %s\n\n", group.Header))
+					fmt.Fprintf(&buf, "### %s\n\n", group.Header)
 				}
 			}
 
 			// Write bullets
 			for _, bullet := range group.Bullets {
-				buf.WriteString(fmt.Sprintf("- %s\n", bullet.Text))
+				fmt.Fprintf(&buf, bulletListFmt, bullet.Text)
 			}
 			buf.WriteString("\n")
 		}
@@ -440,6 +440,9 @@ func (es *ExportService) getSummaryFromSectionsYAML(sections []*career.CVSection
 }
 
 const (
+	bulletListFmt     = "- %s\n"
+	bulletFormat      = "  * %s\n"
+	languagesFormat   = "Languages: %s\n"
 	githubURLPrefix   = "https://github.com/"
 	linkedInURLPrefix = "https://www.linkedin.com/in/"
 )
@@ -528,7 +531,7 @@ func (es *ExportService) buildYAMLProjects(sections []*career.CVSection) []yamlP
 func formatBulletsAsDescription(bullets []*career.CVBullet) string {
 	var sb strings.Builder
 	for _, bullet := range bullets {
-		sb.WriteString("- " + bullet.Text + "\n")
+		fmt.Fprintf(&sb, bulletListFmt, bullet.Text)
 	}
 	return sb.String()
 }
@@ -544,7 +547,7 @@ func generateHighlights(sections []*career.CVSection, profile *config.ProfileCon
 	if profile != nil && len(profile.WhatIBring) > 0 {
 		var sb strings.Builder
 		for _, item := range profile.WhatIBring {
-			sb.WriteString("- " + item + "\n")
+			fmt.Fprintf(&sb, bulletListFmt, item)
 		}
 		return sb.String()
 	}
@@ -558,7 +561,7 @@ func generateHighlights(sections []*career.CVSection, profile *config.ProfileCon
 		}
 		var sb strings.Builder
 		for _, bullet := range bullets {
-			sb.WriteString("- " + bullet.Text + "\n")
+			fmt.Fprintf(&sb, bulletListFmt, bullet.Text)
 		}
 		return sb.String()
 	}
@@ -566,7 +569,7 @@ func generateHighlights(sections []*career.CVSection, profile *config.ProfileCon
 	if profile != nil && len(profile.CoreStrengths) > 0 {
 		var sb strings.Builder
 		for _, strength := range profile.CoreStrengths {
-			sb.WriteString("- " + strength + "\n")
+			fmt.Fprintf(&sb, bulletListFmt, strength)
 		}
 		return sb.String()
 	}
@@ -862,8 +865,8 @@ func (es *ExportService) exportConsultingText(ctx context.Context, cv *career.CV
 	buf.WriteString(strings.Repeat("=", len(cv.Name)) + "\n\n")
 	buf.WriteString(profile.Role + "\n")
 	buf.WriteString(profile.Location + "\n")
-	buf.WriteString(fmt.Sprintf("Email: %s\n", profile.Email))
-	buf.WriteString(fmt.Sprintf("GitHub: %s\n\n", forms.GitHubURL(profile.GitHub)))
+	fmt.Fprintf(&buf, "Email: %s\n", profile.Email)
+	fmt.Fprintf(&buf, "GitHub: %s\n\n", forms.GitHubURL(profile.GitHub))
 
 	buf.WriteString(strings.Repeat("-", 80) + "\n\n")
 
@@ -885,7 +888,7 @@ func (es *ExportService) exportConsultingText(ctx context.Context, cv *career.CV
 				// Company header with dates
 				if group.Header != "" {
 					if group.StartDate != "" && group.EndDate != "" {
-						buf.WriteString(fmt.Sprintf("%s | %s - %s\n", group.Header, group.StartDate, group.EndDate))
+						fmt.Fprintf(&buf, "%s | %s - %s\n", group.Header, group.StartDate, group.EndDate)
 					} else {
 						buf.WriteString(group.Header + "\n")
 					}
@@ -894,7 +897,7 @@ func (es *ExportService) exportConsultingText(ctx context.Context, cv *career.CV
 				// Bullets from the bullets map
 				sectionBullets := bullets[section.ID]
 				for _, bullet := range sectionBullets {
-					buf.WriteString(fmt.Sprintf("  * %s\n", bullet.Text))
+					fmt.Fprintf(&buf, bulletFormat, bullet.Text)
 				}
 				buf.WriteString("\n")
 			}
@@ -906,7 +909,7 @@ func (es *ExportService) exportConsultingText(ctx context.Context, cv *career.CV
 		buf.WriteString("WHAT I BRING\n")
 		buf.WriteString(strings.Repeat("-", 12) + "\n\n")
 		for _, prop := range profile.ValuePropositions {
-			buf.WriteString(fmt.Sprintf("  * %s\n", prop))
+			fmt.Fprintf(&buf, bulletFormat, prop)
 		}
 		buf.WriteString("\n")
 	}
@@ -920,9 +923,9 @@ func (es *ExportService) exportConsultingMarkdown(ctx context.Context, cv *caree
 	profile := NarrativeProfileFromConfig(profileCfg)
 
 	// Profile header
-	buf.WriteString(fmt.Sprintf("# %s\n\n", cv.Name))
-	buf.WriteString(fmt.Sprintf("**%s** | %s\n\n", profile.Role, profile.Location))
-	buf.WriteString(fmt.Sprintf("Email: %s | GitHub: %s\n\n", profile.Email, forms.GitHubURL(profile.GitHub)))
+	fmt.Fprintf(&buf, "# %s\n\n", cv.Name)
+	fmt.Fprintf(&buf, "**%s** | %s\n\n", profile.Role, profile.Location)
+	fmt.Fprintf(&buf, "Email: %s | GitHub: %s\n\n", profile.Email, forms.GitHubURL(profile.GitHub))
 	buf.WriteString("---\n\n")
 
 	// Summary section
@@ -941,16 +944,16 @@ func (es *ExportService) exportConsultingMarkdown(ctx context.Context, cv *caree
 				// Company header with dates
 				if group.Header != "" {
 					if group.StartDate != "" && group.EndDate != "" {
-						buf.WriteString(fmt.Sprintf("### %s\n*%s - %s*\n\n", group.Header, group.StartDate, group.EndDate))
+						fmt.Fprintf(&buf, "### %s\n*%s - %s*\n\n", group.Header, group.StartDate, group.EndDate)
 					} else {
-						buf.WriteString(fmt.Sprintf("### %s\n\n", group.Header))
+						fmt.Fprintf(&buf, "### %s\n\n", group.Header)
 					}
 				}
 
 				// Bullets from the bullets map
 				sectionBullets := bullets[section.ID]
 				for _, bullet := range sectionBullets {
-					buf.WriteString(fmt.Sprintf("- %s\n", bullet.Text))
+					fmt.Fprintf(&buf, bulletListFmt, bullet.Text)
 				}
 				buf.WriteString("\n")
 			}
@@ -961,7 +964,7 @@ func (es *ExportService) exportConsultingMarkdown(ctx context.Context, cv *caree
 	if len(profile.ValuePropositions) > 0 {
 		buf.WriteString("## What I Bring\n\n")
 		for _, prop := range profile.ValuePropositions {
-			buf.WriteString(fmt.Sprintf("- %s\n", prop))
+			fmt.Fprintf(&buf, bulletListFmt, prop)
 		}
 		buf.WriteString("\n")
 	}
@@ -1002,7 +1005,7 @@ func ExportHighlightsForAudience(view career.CVView, profile config.ProfileConfi
 
 	buf.WriteString(strings.ToUpper(view.Name) + "\n")
 	buf.WriteString(strings.Repeat("=", len(view.Name)) + "\n")
-	buf.WriteString(fmt.Sprintf("%s | %s | %s\n\n", narrative.Role, narrative.Location, narrative.Email))
+	fmt.Fprintf(&buf, "%s | %s | %s\n\n", narrative.Role, narrative.Location, narrative.Email)
 
 	summaryPrefix, hasPrefix := audienceSummaryPrefixes[audience]
 	if hasPrefix {
@@ -1024,7 +1027,7 @@ func ExportHighlightsForAudience(view career.CVView, profile config.ProfileConfi
 			maxStrengths = len(narrative.CoreStrengths)
 		}
 		for i := range maxStrengths {
-			buf.WriteString(fmt.Sprintf("  * %s\n", narrative.CoreStrengths[i]))
+			fmt.Fprintf(&buf, bulletFormat, narrative.CoreStrengths[i])
 		}
 	} else {
 		buf.WriteString("  * Technical leadership and architecture\n")
@@ -1038,7 +1041,7 @@ func ExportHighlightsForAudience(view career.CVView, profile config.ProfileConfi
 
 	topBullets := GetTopBulletsForAudience(view, audience, 5)
 	for _, bullet := range topBullets {
-		buf.WriteString(fmt.Sprintf("  * %s\n", bullet.Text))
+		fmt.Fprintf(&buf, bulletFormat, bullet.Text)
 	}
 	buf.WriteString("\n")
 
@@ -1046,10 +1049,10 @@ func ExportHighlightsForAudience(view career.CVView, profile config.ProfileConfi
 		buf.WriteString("TECHNOLOGIES\n")
 		buf.WriteString(strings.Repeat("-", 12) + "\n\n")
 		if len(narrative.Languages) > 0 {
-			buf.WriteString(fmt.Sprintf("Languages: %s\n", strings.Join(narrative.Languages, ", ")))
+			fmt.Fprintf(&buf, languagesFormat, strings.Join(narrative.Languages, ", "))
 		}
 		if len(narrative.Systems) > 0 {
-			buf.WriteString(fmt.Sprintf("Systems: %s\n", strings.Join(narrative.Systems, ", ")))
+			fmt.Fprintf(&buf, "Systems: %s\n", strings.Join(narrative.Systems, ", "))
 		}
 		buf.WriteString("\n")
 	}
@@ -1065,7 +1068,7 @@ func (es *ExportService) exportHighlightsText(ctx context.Context, cv *career.CV
 	// Condensed profile header
 	buf.WriteString(strings.ToUpper(cv.Name) + "\n")
 	buf.WriteString(strings.Repeat("=", len(cv.Name)) + "\n")
-	buf.WriteString(fmt.Sprintf("%s | %s | %s\n\n", profile.Role, profile.Location, profile.Email))
+	fmt.Fprintf(&buf, "%s | %s | %s\n\n", profile.Role, profile.Location, profile.Email)
 
 	// Short summary
 	summary := getSummaryFromSections(sections)
@@ -1085,7 +1088,7 @@ func (es *ExportService) exportHighlightsText(ctx context.Context, cv *career.CV
 			maxStrengths = len(profile.CoreStrengths)
 		}
 		for i := range maxStrengths {
-			buf.WriteString(fmt.Sprintf("  * %s\n", profile.CoreStrengths[i]))
+			fmt.Fprintf(&buf, bulletListFmt, profile.CoreStrengths[i])
 		}
 	} else {
 		buf.WriteString("  * Technical leadership and architecture\n")
@@ -1100,7 +1103,7 @@ func (es *ExportService) exportHighlightsText(ctx context.Context, cv *career.CV
 
 	topBullets := es.getTopBulletsByConfidence(bullets, 5)
 	for _, bullet := range topBullets {
-		buf.WriteString(fmt.Sprintf("  * %s\n", bullet.Text))
+		fmt.Fprintf(&buf, bulletFormat, bullet.Text)
 	}
 	buf.WriteString("\n")
 
@@ -1109,10 +1112,10 @@ func (es *ExportService) exportHighlightsText(ctx context.Context, cv *career.CV
 		buf.WriteString("TECHNOLOGIES\n")
 		buf.WriteString(strings.Repeat("-", 12) + "\n\n")
 		if len(profile.Languages) > 0 {
-			buf.WriteString(fmt.Sprintf("Languages: %s\n", strings.Join(profile.Languages, ", ")))
+			fmt.Fprintf(&buf, languagesFormat, strings.Join(profile.Languages, ", "))
 		}
 		if len(profile.Systems) > 0 {
-			buf.WriteString(fmt.Sprintf("Systems: %s\n", strings.Join(profile.Systems, ", ")))
+			fmt.Fprintf(&buf, "Systems: %s\n", strings.Join(profile.Systems, ", "))
 		}
 		buf.WriteString("\n")
 	}
@@ -1126,8 +1129,8 @@ func (es *ExportService) exportHighlightsMarkdown(ctx context.Context, cv *caree
 	profile := NarrativeProfileFromConfig(profileCfg)
 
 	// Condensed profile header
-	buf.WriteString(fmt.Sprintf("# %s\n\n", cv.Name))
-	buf.WriteString(fmt.Sprintf("**%s** | %s | %s\n\n", profile.Role, profile.Location, profile.Email))
+	fmt.Fprintf(&buf, "# %s\n\n", cv.Name)
+	fmt.Fprintf(&buf, "**%s** | %s | %s\n\n", profile.Role, profile.Location, profile.Email)
 
 	// Short summary
 	summary := getSummaryFromSections(sections)
@@ -1145,7 +1148,7 @@ func (es *ExportService) exportHighlightsMarkdown(ctx context.Context, cv *caree
 			maxStrengths = len(profile.CoreStrengths)
 		}
 		for i := range maxStrengths {
-			buf.WriteString(fmt.Sprintf("- %s\n", profile.CoreStrengths[i]))
+			fmt.Fprintf(&buf, bulletListFmt, profile.CoreStrengths[i])
 		}
 	} else {
 		buf.WriteString("- Technical leadership and architecture\n")
@@ -1158,7 +1161,7 @@ func (es *ExportService) exportHighlightsMarkdown(ctx context.Context, cv *caree
 	buf.WriteString("## Selected Highlights\n\n")
 	topBullets := es.getTopBulletsByConfidence(bullets, 5)
 	for _, bullet := range topBullets {
-		buf.WriteString(fmt.Sprintf("- %s\n", bullet.Text))
+		fmt.Fprintf(&buf, bulletListFmt, bullet.Text)
 	}
 	buf.WriteString("\n")
 
@@ -1166,10 +1169,10 @@ func (es *ExportService) exportHighlightsMarkdown(ctx context.Context, cv *caree
 	if len(profile.Languages) > 0 || len(profile.Systems) > 0 {
 		buf.WriteString("## Technologies\n\n")
 		if len(profile.Languages) > 0 {
-			buf.WriteString(fmt.Sprintf("**Languages:** %s\n\n", strings.Join(profile.Languages, ", ")))
+			fmt.Fprintf(&buf, "**Languages:** %s\n\n", strings.Join(profile.Languages, ", "))
 		}
 		if len(profile.Systems) > 0 {
-			buf.WriteString(fmt.Sprintf("**Systems:** %s\n", strings.Join(profile.Systems, ", ")))
+			fmt.Fprintf(&buf, "**Systems:** %s\n", strings.Join(profile.Systems, ", "))
 		}
 		buf.WriteString("\n")
 	}
@@ -1284,9 +1287,9 @@ func (es *ExportService) exportNarrativeTextWithProfile(ctx context.Context, cv 
 	buf.WriteString(strings.Repeat("=", len(profile.Name)) + "\n\n")
 	buf.WriteString(profile.Role + "\n")
 	buf.WriteString(profile.Location + "\n")
-	buf.WriteString(fmt.Sprintf("Email: %s\n", profile.Email))
-	buf.WriteString(fmt.Sprintf("GitHub: %s\n", forms.GitHubURL(profile.GitHub)))
-	buf.WriteString(fmt.Sprintf("Portfolio: %s\n\n", profile.Portfolio))
+	fmt.Fprintf(&buf, "Email: %s\n", profile.Email)
+	fmt.Fprintf(&buf, "GitHub: %s\n", forms.GitHubURL(profile.GitHub))
+	fmt.Fprintf(&buf, "Portfolio: %s\n\n", profile.Portfolio)
 
 	buf.WriteString(strings.Repeat("-", 80) + "\n\n")
 
@@ -1304,16 +1307,16 @@ func (es *ExportService) exportNarrativeTextWithProfile(ctx context.Context, cv 
 	buf.WriteString("CORE STRENGTHS\n")
 	buf.WriteString(strings.Repeat("-", 14) + "\n\n")
 	for _, strength := range profile.CoreStrengths {
-		buf.WriteString(fmt.Sprintf("• %s\n", strength))
+		fmt.Fprintf(&buf, "• %s\n", strength)
 	}
 	buf.WriteString("\n")
 
 	// Languages & Technologies section
 	buf.WriteString("LANGUAGES & TECHNOLOGIES\n")
 	buf.WriteString(strings.Repeat("-", 24) + "\n\n")
-	buf.WriteString(fmt.Sprintf("Languages: %s\n", strings.Join(profile.Languages, ", ")))
-	buf.WriteString(fmt.Sprintf("Frontend: %s\n", strings.Join(profile.Frontend, ", ")))
-	buf.WriteString(fmt.Sprintf("Systems: %s\n\n", strings.Join(profile.Systems, ", ")))
+	fmt.Fprintf(&buf, languagesFormat, strings.Join(profile.Languages, ", "))
+	fmt.Fprintf(&buf, "Frontend: %s\n", strings.Join(profile.Frontend, ", "))
+	fmt.Fprintf(&buf, "Systems: %s\n\n", strings.Join(profile.Systems, ", "))
 
 	// Selected Experience section (filtered by confidence)
 	buf.WriteString("SELECTED EXPERIENCE\n")
@@ -1332,7 +1335,7 @@ func (es *ExportService) exportNarrativeTextWithProfile(ctx context.Context, cv 
 			if group.Header != "" {
 				if group.StartDate != "" && group.EndDate != "" {
 					buf.WriteString(group.Header + "\n")
-					buf.WriteString(fmt.Sprintf("%s - %s\n\n", group.StartDate, group.EndDate))
+					fmt.Fprintf(&buf, "%s - %s\n\n", group.StartDate, group.EndDate)
 				} else {
 					buf.WriteString(group.Header + "\n\n")
 				}
@@ -1340,7 +1343,7 @@ func (es *ExportService) exportNarrativeTextWithProfile(ctx context.Context, cv 
 
 			// High-confidence bullets only
 			for _, bullet := range highConfidenceBullets {
-				buf.WriteString(fmt.Sprintf("• %s\n", bullet.Text))
+				fmt.Fprintf(&buf, "• %s\n", bullet.Text)
 			}
 			buf.WriteString("\n")
 		}
@@ -1350,7 +1353,7 @@ func (es *ExportService) exportNarrativeTextWithProfile(ctx context.Context, cv 
 	buf.WriteString("WHAT I BRING\n")
 	buf.WriteString(strings.Repeat("-", 12) + "\n\n")
 	for _, prop := range profile.ValuePropositions {
-		buf.WriteString(fmt.Sprintf("• %s\n", prop))
+		fmt.Fprintf(&buf, "• %s\n", prop)
 	}
 	buf.WriteString("\n")
 
@@ -1366,12 +1369,12 @@ func (es *ExportService) exportNarrativeMarkdownWithProfile(ctx context.Context,
 	profile := NarrativeProfileFromConfig(profileCfg)
 
 	// Profile header
-	buf.WriteString(fmt.Sprintf("# %s\n\n", profile.Name))
-	buf.WriteString(fmt.Sprintf("**%s**\n", profile.Role))
+	fmt.Fprintf(&buf, "# %s\n\n", profile.Name)
+	fmt.Fprintf(&buf, "**%s**\n", profile.Role)
 	buf.WriteString(profile.Location + "\n")
-	buf.WriteString(fmt.Sprintf("Email: [%s](mailto:%s)\n", profile.Email, profile.Email))
-	buf.WriteString(fmt.Sprintf("GitHub: %s\n", forms.GitHubURL(profile.GitHub)))
-	buf.WriteString(fmt.Sprintf("Portfolio: %s\n\n", profile.Portfolio))
+	fmt.Fprintf(&buf, "Email: [%s](mailto:%s)\n", profile.Email, profile.Email)
+	fmt.Fprintf(&buf, "GitHub: %s\n", forms.GitHubURL(profile.GitHub))
+	fmt.Fprintf(&buf, "Portfolio: %s\n\n", profile.Portfolio)
 
 	buf.WriteString("---\n\n")
 
@@ -1387,15 +1390,15 @@ func (es *ExportService) exportNarrativeMarkdownWithProfile(ctx context.Context,
 	// Core Strengths section
 	buf.WriteString("## Core Strengths\n\n")
 	for _, strength := range profile.CoreStrengths {
-		buf.WriteString(fmt.Sprintf("- %s\n", strength))
+		fmt.Fprintf(&buf, bulletListFmt, strength)
 	}
 	buf.WriteString("\n")
 
 	// Languages & Technologies section
 	buf.WriteString("## Languages & Technologies\n\n")
-	buf.WriteString(fmt.Sprintf("**Languages:** %s\n", strings.Join(profile.Languages, ", ")))
-	buf.WriteString(fmt.Sprintf("**Frontend:** %s\n", strings.Join(profile.Frontend, ", ")))
-	buf.WriteString(fmt.Sprintf("**Systems:** %s\n\n", strings.Join(profile.Systems, ", ")))
+	fmt.Fprintf(&buf, "**Languages:** %s\n", strings.Join(profile.Languages, ", "))
+	fmt.Fprintf(&buf, "**Frontend:** %s\n", strings.Join(profile.Frontend, ", "))
+	fmt.Fprintf(&buf, "**Systems:** %s\n\n", strings.Join(profile.Systems, ", "))
 
 	// Selected Experience section (filtered by confidence)
 	buf.WriteString("## Selected Experience\n\n")
@@ -1412,16 +1415,16 @@ func (es *ExportService) exportNarrativeMarkdownWithProfile(ctx context.Context,
 			// Group header with dates
 			if group.Header != "" {
 				if group.StartDate != "" && group.EndDate != "" {
-					buf.WriteString(fmt.Sprintf("### %s\n", group.Header))
-					buf.WriteString(fmt.Sprintf("*%s - %s*\n\n", group.StartDate, group.EndDate))
+					fmt.Fprintf(&buf, "### %s\n", group.Header)
+					fmt.Fprintf(&buf, "*%s - %s*\n\n", group.StartDate, group.EndDate)
 				} else {
-					buf.WriteString(fmt.Sprintf("### %s\n\n", group.Header))
+					fmt.Fprintf(&buf, "### %s\n\n", group.Header)
 				}
 			}
 
 			// High-confidence bullets only
 			for _, bullet := range highConfidenceBullets {
-				buf.WriteString(fmt.Sprintf("- %s\n", bullet.Text))
+				fmt.Fprintf(&buf, bulletListFmt, bullet.Text)
 			}
 			buf.WriteString("\n")
 		}
@@ -1430,7 +1433,7 @@ func (es *ExportService) exportNarrativeMarkdownWithProfile(ctx context.Context,
 	// What I Bring section
 	buf.WriteString("## What I Bring\n\n")
 	for _, prop := range profile.ValuePropositions {
-		buf.WriteString(fmt.Sprintf("- %s\n", prop))
+		fmt.Fprintf(&buf, bulletListFmt, prop)
 	}
 	buf.WriteString("\n")
 

@@ -288,3 +288,160 @@ var _ = Describe("UpdateEventMetadata", func() {
 		Expect(err).To(HaveOccurred())
 	})
 })
+
+var _ = Describe("UpdateEvent", func() {
+	var (
+		repo   *careermemory.EventRepository
+		svc    *careerservice.Service
+		cliSvc *CLIEventService
+		ctx    context.Context
+	)
+
+	BeforeEach(func() {
+		ctx = context.Background()
+		repo = careermemory.NewEventRepository()
+		svc = careerservice.NewService(repo)
+		cliSvc = NewCLIEventService(svc)
+	})
+
+	It("should update an existing event", func() {
+		event := fixtures.EventWith("evt-1", "Original text here", "OrigCo", "OrigProj")
+		event.Date = time.Now().Add(-24 * time.Hour)
+		err := repo.Create(ctx, event)
+		Expect(err).ToNot(HaveOccurred())
+
+		newDate := time.Now()
+		err = cliSvc.UpdateEvent(ctx, "evt-1", "Updated text here", newDate,
+			WithCompany("NewCo"),
+			WithProject("NewProj"),
+			WithTags([]string{"technical"}),
+			WithCategories([]string{"technical"}),
+		)
+		Expect(err).ToNot(HaveOccurred())
+
+		retrieved, err := svc.GetEventByID(ctx, "evt-1")
+		Expect(err).ToNot(HaveOccurred())
+		Expect(retrieved.Text).To(Equal("Updated text here"))
+		Expect(retrieved.Company).To(Equal("NewCo"))
+		Expect(retrieved.Project).To(Equal("NewProj"))
+		Expect(retrieved.Tags).To(ContainElement("technical"))
+		Expect(retrieved.Categories).To(ContainElement("technical"))
+	})
+
+	It("should update with no options", func() {
+		event := fixtures.EventWith("evt-2", "Some text here", "", "")
+		event.Date = time.Now()
+		err := repo.Create(ctx, event)
+		Expect(err).ToNot(HaveOccurred())
+
+		err = cliSvc.UpdateEvent(ctx, "evt-2", "New text here", time.Now())
+		Expect(err).ToNot(HaveOccurred())
+	})
+})
+
+var _ = Describe("DeleteEvent", func() {
+	var (
+		repo   *careermemory.EventRepository
+		svc    *careerservice.Service
+		cliSvc *CLIEventService
+		ctx    context.Context
+	)
+
+	BeforeEach(func() {
+		ctx = context.Background()
+		repo = careermemory.NewEventRepository()
+		svc = careerservice.NewService(repo)
+		cliSvc = NewCLIEventService(svc)
+	})
+
+	It("should delete an existing event", func() {
+		event := fixtures.EventWith("evt-del", "To be deleted", "", "")
+		event.Date = time.Now()
+		err := repo.Create(ctx, event)
+		Expect(err).ToNot(HaveOccurred())
+
+		err = cliSvc.DeleteEvent(ctx, "evt-del")
+		Expect(err).ToNot(HaveOccurred())
+
+		_, err = svc.GetEventByID(ctx, "evt-del")
+		Expect(err).To(HaveOccurred())
+	})
+
+	It("should return error for non-existent event", func() {
+		err := cliSvc.DeleteEvent(ctx, "non-existent")
+		Expect(err).To(HaveOccurred())
+	})
+})
+
+var _ = Describe("GetSkillsForEvent", func() {
+	var (
+		eventRepo *careermemory.EventRepository
+		skillRepo *careermemory.SkillRepository
+		svc       *careerservice.Service
+		cliSvc    *CLIEventService
+		ctx       context.Context
+	)
+
+	BeforeEach(func() {
+		ctx = context.Background()
+		eventRepo = careermemory.NewEventRepository()
+		skillRepo = careermemory.NewSkillRepository()
+		eventRepo.SetSkillRepository(skillRepo)
+		skillRepo.SetEventRepository(eventRepo)
+		svc = careerservice.NewService(eventRepo)
+		svc.SetSkillRepository(skillRepo)
+		cliSvc = NewCLIEventService(svc)
+	})
+
+	It("should return skills for an event", func() {
+		event := fixtures.EventWith("evt-sk", "Event with skills", "", "")
+		err := eventRepo.Create(ctx, event)
+		Expect(err).ToNot(HaveOccurred())
+
+		skill := fixtures.SkillWith("sk-1", "Go", "backend", "advanced")
+		err = skillRepo.Create(ctx, skill)
+		Expect(err).ToNot(HaveOccurred())
+
+		err = eventRepo.LinkSkill(ctx, "evt-sk", "sk-1")
+		Expect(err).ToNot(HaveOccurred())
+
+		skills, err := cliSvc.GetSkillsForEvent(ctx, "evt-sk")
+		Expect(err).ToNot(HaveOccurred())
+		Expect(skills).To(HaveLen(1))
+	})
+
+	It("should return empty when no skills linked", func() {
+		event := fixtures.EventWith("evt-nosk", "Event without skills", "", "")
+		err := eventRepo.Create(ctx, event)
+		Expect(err).ToNot(HaveOccurred())
+
+		skills, err := cliSvc.GetSkillsForEvent(ctx, "evt-nosk")
+		Expect(err).ToNot(HaveOccurred())
+		Expect(skills).To(BeEmpty())
+	})
+
+	It("should return empty when service is nil", func() {
+		nilSvc := &CLIEventService{service: nil}
+		skills, err := nilSvc.GetSkillsForEvent(ctx, "any")
+		Expect(err).ToNot(HaveOccurred())
+		Expect(skills).To(BeEmpty())
+	})
+})
+
+var _ = Describe("ListEvents with nil filters", func() {
+	It("should handle nil filters gracefully", func() {
+		ctx := context.Background()
+		repo := careermemory.NewEventRepository()
+		svc := careerservice.NewService(repo)
+		cliSvc := NewCLIEventService(svc)
+
+		event := fixtures.EventWith("evt-nil-filter", "Test event for nil filter", "", "")
+		event.Date = time.Now()
+		err := repo.Create(ctx, event)
+		Expect(err).ToNot(HaveOccurred())
+
+		events, err := cliSvc.ListEvents(ctx, nil)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(events).ToNot(BeEmpty())
+	})
+})

@@ -1,0 +1,681 @@
+//nolint:errcheck // Test file - error handling for test setup is not relevant.
+package app_test
+
+import (
+	"context"
+	"path/filepath"
+	"testing"
+
+	"github.com/baphled/kariya/internal/cli/bootstrap"
+	"github.com/baphled/kariya/internal/cli/service"
+	"github.com/baphled/kariya/internal/config"
+	"github.com/baphled/kariya/internal/logger"
+	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
+	careerservice "github.com/baphled/kariya/internal/service/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
+	"github.com/baphled/kariya/internal/tui/app"
+	tea "github.com/charmbracelet/bubbletea"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+)
+
+var _ = Describe("App Menu Integration Tests", func() {
+	var (
+		model      *app.Model
+		repo       *careermemory.EventRepository
+		svc        *careerservice.Service
+		cliService *service.CLIEventService
+	)
+
+	BeforeEach(func() {
+		config.SetConfigPathForTesting(filepath.Join(GinkgoT().TempDir(), "config.yaml"))
+		ctx := context.Background()
+		repo = careermemory.NewEventRepository()
+		burstRepo := careermemory.NewBurstRepository()
+		factRepo := careermemory.NewFactRepository()
+		skillRepo := careermemory.NewSkillRepository()
+		svc = careerservice.NewService(repo)
+		svc.SetBurstRepository(burstRepo)
+		svc.SetFactRepository(factRepo)
+		svc.SetSkillRepository(skillRepo)
+		cliService = service.NewCLIEventService(svc)
+		//nolint:errcheck // Test setup - error handling not relevant.
+		repo.Create(ctx, fixtures.Event("e1"))
+		//nolint:errcheck // Test setup - error handling not relevant.
+		burstRepo.Create(ctx, fixtures.Burst("b1", "e1", "e2"))
+		//nolint:errcheck // Test setup - error handling not relevant.
+		factRepo.Create(ctx, fixtures.Fact("f1", "e1"))
+		log := logger.DefaultLogger()
+		bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+		model = app.NewModel(cliService, svc, bootstrapResult)
+		Expect(model).NotTo(BeNil())
+	})
+
+	AfterEach(func() {
+		config.ResetConfigPath()
+	})
+
+	Describe("Bubbles table integration", func() {
+		It("should align the cursor with the selected menu item", func() {
+			// Simulate model view
+			output := model.View()
+			// Check for the tagline since we now use ASCII art logo
+			Expect(output).To(ContainSubstring("Career Event Management System"))
+		})
+
+		It("should update cursor position through bubble navigation keys", func() {
+			// Navigate three steps down (to Generate CV)
+			// Menu: 0=Capture Event, 1=Browse Timeline, 2=Manage Skills, 3=Generate CV
+			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+			model = modelInterface.(*app.Model)
+			modelInterface, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+			model = modelInterface.(*app.Model)
+			modelInterface, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+			model = modelInterface.(*app.Model)
+			modelInterface, _ = model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			model = modelInterface.(*app.Model)
+			// Generate view
+			output := model.View()
+			// After selecting Generate CV intent, we should see the CV Configuration wizard modal
+			// (wizard flow is now enabled by default in production)
+			// The wizard shows "CV Configuration" title and profile selection
+			Expect(output).To(ContainSubstring("Select CV Profile"))
+			// Wizard modal should show step information
+			Expect(output).To(Or(
+				ContainSubstring("CV Configuration"),
+				ContainSubstring("Step 1: WHO"), // Wizard step title
+				ContainSubstring("Generate CV"), // Breadcrumb
+				ContainSubstring("..."),         // Truncated breadcrumb
+			))
+		})
+	})
+
+	Describe("Menu Navigation", func() {
+		It("should start in menu state", func() {
+			Expect(model).NotTo(BeNil())
+		})
+
+		It("should navigate down in menu", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")}
+			newModel, _ := model.Update(msg)
+			Expect(newModel).NotTo(BeNil())
+		})
+
+		It("should navigate up in menu", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("k")}
+			newModel, _ := model.Update(msg)
+			Expect(newModel).NotTo(BeNil())
+		})
+	})
+
+	Describe("Intent Activation", func() {
+		It("should activate CaptureEvent intent without panic", func() {
+			msg := tea.KeyMsg{Type: tea.KeyEnter}
+			newModel, cmd := model.Update(msg)
+			Expect(newModel).NotTo(BeNil())
+			Expect(cmd).NotTo(BeNil())
+		})
+
+		It("should activate BurstManagement intent without panic", func() {
+			modelInterface := tea.Model(model)
+			for i := range 5 {
+				_ = i
+				var cmd tea.Cmd
+				modelInterface, cmd = modelInterface.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+				_ = cmd
+			}
+			msg := tea.KeyMsg{Type: tea.KeyEnter}
+			newModel, cmd := modelInterface.Update(msg)
+			Expect(newModel).NotTo(BeNil())
+			Expect(cmd).NotTo(BeNil())
+		})
+
+		It("should activate FactManagement intent without panic", func() {
+			modelInterface := tea.Model(model)
+			for i := range 6 {
+				_ = i
+				var cmd tea.Cmd
+				modelInterface, cmd = modelInterface.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+				_ = cmd
+			}
+			msg := tea.KeyMsg{Type: tea.KeyEnter}
+			newModel, cmd := modelInterface.Update(msg)
+			Expect(newModel).NotTo(BeNil())
+			Expect(cmd).NotTo(BeNil())
+		})
+	})
+
+	Describe("Error Handling", func() {
+		It("should handle Ctrl+C to quit", func() {
+			msg := tea.KeyMsg{Type: tea.KeyCtrlC}
+			newModel, _ := model.Update(msg)
+			Expect(newModel).NotTo(BeNil())
+		})
+	})
+})
+
+var _ = Describe("Navigation Integration", func() {
+	var (
+		model      *app.Model
+		repo       *careermemory.EventRepository
+		svc        *careerservice.Service
+		cliService *service.CLIEventService
+	)
+
+	BeforeEach(func() {
+		config.SetConfigPathForTesting(filepath.Join(GinkgoT().TempDir(), "config.yaml"))
+		repo = careermemory.NewEventRepository()
+		burstRepo := careermemory.NewBurstRepository()
+		factRepo := careermemory.NewFactRepository()
+		skillRepo := careermemory.NewSkillRepository()
+		svc = careerservice.NewService(repo)
+		svc.SetBurstRepository(burstRepo)
+		svc.SetFactRepository(factRepo)
+		svc.SetSkillRepository(skillRepo)
+		cliService = service.NewCLIEventService(svc)
+		//nolint:errcheck // Test setup - error handling not relevant.
+		repo.Create(context.Background(), fixtures.Event("e1"))
+		//nolint:errcheck // Test setup - error handling not relevant.
+		burstRepo.Create(context.Background(), fixtures.Burst("b1", "e1"))
+		//nolint:errcheck // Test setup - error handling not relevant.
+		factRepo.Create(context.Background(), fixtures.FactWithCategories("f1", "dummy", "e1", []string{"leadership"}, []string{"peer"}))
+		log := logger.DefaultLogger()
+		bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+		model = app.NewModel(cliService, svc, bootstrapResult)
+	})
+
+	AfterEach(func() {
+		config.ResetConfigPath()
+	})
+
+	It("should start in menu state with menu visible", func() {
+		Expect(model).NotTo(BeNil())
+		output := model.View()
+		Expect(output).To(ContainSubstring("Career Event Management System"))
+	})
+
+	It("should navigate down the menu and select an intent, activating intent view", func() {
+		modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+		model = modelInterface.(*app.Model)
+		modelInterface, cmd := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+		model = modelInterface.(*app.Model)
+		Expect(model).NotTo(BeNil())
+		Expect(cmd).NotTo(BeNil())
+		output := model.View()
+		// After StandardView migration (Tasks 12-15), ALL screens show the logo/subtitle
+		Expect(output).To(ContainSubstring("Career Event Management System")) // Logo on all screens
+	})
+
+	It("should navigate menu, activate, then go back to menu via escape", func() {
+		modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+		model = modelInterface.(*app.Model)
+		output := model.View()
+		// After StandardView migration, logo appears on intent screens too
+		Expect(output).To(ContainSubstring("Career Event Management System"))
+		modelInterface, _ = model.Update(tea.KeyMsg{Type: tea.KeyEscape})
+		model = modelInterface.(*app.Model)
+		output = model.View()
+		Expect(output).To(ContainSubstring("Career Event Management System"))
+	})
+
+	It("should go back to menu after IntentCompletedMsg", func() {
+		modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+		model = modelInterface.(*app.Model)
+		modelInterface, _ = model.Update(app.IntentCompletedMsg{})
+		model = modelInterface.(*app.Model)
+		output := model.View()
+		Expect(output).To(ContainSubstring("Career Event Management System"))
+	})
+
+	It("should handle quick back/forward navigation, activating and quitting intents", func() {
+		modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+		model = modelInterface.(*app.Model)
+		modelInterface, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+		model = modelInterface.(*app.Model)
+		modelInterface, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+		model = modelInterface.(*app.Model)
+		modelInterface, _ = model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+		model = modelInterface.(*app.Model)
+		modelInterface, _ = model.Update(tea.KeyMsg{Type: tea.KeyEscape})
+		model = modelInterface.(*app.Model)
+		output := model.View()
+		Expect(output).To(ContainSubstring("Career Event Management System"))
+	})
+})
+
+func TestApp(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "App Integration Test Suite")
+}
+
+var _ = Describe("Intent Navigation - All Intents", func() {
+	var (
+		model      *app.Model
+		repo       *careermemory.EventRepository
+		svc        *careerservice.Service
+		cliService *service.CLIEventService
+	)
+
+	BeforeEach(func() {
+		config.SetConfigPathForTesting(filepath.Join(GinkgoT().TempDir(), "config.yaml"))
+		repo = careermemory.NewEventRepository()
+		burstRepo := careermemory.NewBurstRepository()
+		factRepo := careermemory.NewFactRepository()
+		skillRepo := careermemory.NewSkillRepository()
+		svc = careerservice.NewService(repo)
+		svc.SetBurstRepository(burstRepo)
+		svc.SetFactRepository(factRepo)
+		svc.SetSkillRepository(skillRepo)
+		cliService = service.NewCLIEventService(svc)
+		//nolint:errcheck // Test setup - error handling not relevant.
+		repo.Create(context.Background(), fixtures.Event("e1"))
+		//nolint:errcheck // Test setup - error handling not relevant.
+		burstRepo.Create(context.Background(), fixtures.Burst("b1", "e1"))
+		//nolint:errcheck // Test setup - error handling not relevant.
+		factRepo.Create(context.Background(), fixtures.FactWithCategories("f1", "dummy", "e1", []string{"leadership"}, []string{"peer"}))
+		log := logger.DefaultLogger()
+		bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+		model = app.NewModel(cliService, svc, bootstrapResult)
+	})
+
+	AfterEach(func() {
+		config.ResetConfigPath()
+	})
+
+	testIntentNavigation := func(menuIndex int, intentName string) {
+		It("should navigate within "+intentName+" intent", func() {
+			// Navigate to the menu item
+			for i := range menuIndex {
+				_ = i
+				modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+				model = modelInterface.(*app.Model)
+			}
+
+			// Verify we're at the right menu item
+			menuItems := model.GetMenuItems()
+			Expect(menuIndex).To(BeNumerically("<", len(menuItems)))
+
+			// Select the intent
+			modelInterface, cmd := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			model = modelInterface.(*app.Model)
+
+			// Execute any command from activation
+			if cmd != nil {
+				msg := cmd()
+				if msg != nil {
+					modelInterface, _ := model.Update(msg)
+					model = modelInterface.(*app.Model)
+				}
+			}
+
+			// Get the view - should NOT be the menu
+			viewBeforeNav := model.View()
+			Expect(viewBeforeNav).NotTo(ContainSubstring("KaRiya - Career Event Manager"),
+				"Intent "+intentName+" should show intent view, not menu")
+
+			// Try to navigate within the intent
+			modelInterface, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+			model = modelInterface.(*app.Model)
+
+			// Get view after navigation - should STILL not be the menu
+			viewAfterNav := model.View()
+			Expect(viewAfterNav).NotTo(ContainSubstring("KaRiya - Career Event Manager"),
+				"After navigation in "+intentName+", should still be in intent view, not back at menu")
+		})
+	}
+
+	Describe("Intent Selection and Navigation", func() {
+		testIntentNavigation(0, "CaptureEvent")
+		testIntentNavigation(1, "BrowseTimeline")
+		testIntentNavigation(2, "ManageSkills")
+		testIntentNavigation(3, "GenerateCV")
+		testIntentNavigation(4, "BurstManagement")
+		testIntentNavigation(5, "FactManagement")
+	})
+})
+
+var _ = Describe("Intent Navigation - Detailed", func() {
+	var (
+		model      *app.Model
+		repo       *careermemory.EventRepository
+		svc        *careerservice.Service
+		cliService *service.CLIEventService
+	)
+
+	BeforeEach(func() {
+		config.SetConfigPathForTesting(filepath.Join(GinkgoT().TempDir(), "config.yaml"))
+		repo = careermemory.NewEventRepository()
+		burstRepo := careermemory.NewBurstRepository()
+		factRepo := careermemory.NewFactRepository()
+		skillRepo := careermemory.NewSkillRepository()
+		svc = careerservice.NewService(repo)
+		svc.SetBurstRepository(burstRepo)
+		svc.SetFactRepository(factRepo)
+		svc.SetSkillRepository(skillRepo)
+		cliService = service.NewCLIEventService(svc)
+		//nolint:errcheck // Test setup - error handling not relevant.
+		repo.Create(context.Background(), fixtures.Event("e1"))
+		//nolint:errcheck // Test setup - error handling not relevant.
+		burstRepo.Create(context.Background(), fixtures.Burst("b1", "e1"))
+		//nolint:errcheck // Test setup - error handling not relevant.
+		factRepo.Create(context.Background(), fixtures.FactWithCategories("f1", "dummy", "e1", []string{"leadership"}, []string{"peer"}))
+		log := logger.DefaultLogger()
+		bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+		model = app.NewModel(cliService, svc, bootstrapResult)
+	})
+
+	AfterEach(func() {
+		config.ResetConfigPath()
+	})
+
+	selectIntent := func(menuIndex int) {
+		// Navigate to menu item
+		for range menuIndex {
+			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+			model = modelInterface.(*app.Model)
+		}
+
+		// Select intent
+		modelInterface, cmd := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+		model = modelInterface.(*app.Model)
+
+		// Execute command if present
+		if cmd != nil {
+			msg := cmd()
+			if msg != nil {
+				modelInterface, _ := model.Update(msg)
+				model = modelInterface.(*app.Model)
+			}
+		}
+	}
+
+	Describe("CaptureEvent Intent", func() {
+		It("should display capture event form", func() {
+			selectIntent(0)
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("should navigate with arrow keys within form", func() {
+			selectIntent(0)
+			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+			model = modelInterface.(*app.Model)
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+		})
+	})
+
+	Describe("BrowseTimeline Intent", func() {
+		It("should display timeline view", func() {
+			selectIntent(1)
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("should navigate timeline with arrow keys", func() {
+			selectIntent(1)
+			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+			model = modelInterface.(*app.Model)
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+		})
+	})
+
+	Describe("GenerateCV Intent", func() {
+		It("should display CV generation view", func() {
+			selectIntent(3)
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("should navigate with arrow keys", func() {
+			selectIntent(3)
+			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+			model = modelInterface.(*app.Model)
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+		})
+	})
+
+	Describe("ConfigureSystem Intent", func() {
+		It("should display configuration view", func() {
+			selectIntent(4)
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("should navigate with arrow keys", func() {
+			selectIntent(4)
+			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+			model = modelInterface.(*app.Model)
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+		})
+	})
+
+	Describe("BurstManagement Intent", func() {
+		It("should display burst management view", func() {
+			selectIntent(5)
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("should navigate with arrow keys", func() {
+			selectIntent(5)
+			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+			model = modelInterface.(*app.Model)
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+		})
+	})
+
+	Describe("FactManagement Intent", func() {
+		It("should display fact management view", func() {
+			selectIntent(6)
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("should navigate with arrow keys", func() {
+			selectIntent(6)
+			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+			model = modelInterface.(*app.Model)
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+		})
+	})
+})
+
+var _ = Describe("Intent List Navigation - Specific", func() {
+	var (
+		model      *app.Model
+		repo       *careermemory.EventRepository
+		svc        *careerservice.Service
+		cliService *service.CLIEventService
+	)
+
+	BeforeEach(func() {
+		config.SetConfigPathForTesting(filepath.Join(GinkgoT().TempDir(), "config.yaml"))
+		repo = careermemory.NewEventRepository()
+		burstRepo := careermemory.NewBurstRepository()
+		factRepo := careermemory.NewFactRepository()
+		skillRepo := careermemory.NewSkillRepository()
+		svc = careerservice.NewService(repo)
+		svc.SetBurstRepository(burstRepo)
+		svc.SetFactRepository(factRepo)
+		svc.SetSkillRepository(skillRepo)
+		cliService = service.NewCLIEventService(svc)
+		//nolint:errcheck // Test setup - error handling not relevant.
+		repo.Create(context.Background(), fixtures.Event("e1"))
+		//nolint:errcheck // Test setup - error handling not relevant.
+		repo.Create(context.Background(), fixtures.Event("e2"))
+		//nolint:errcheck // Test setup - error handling not relevant.
+		repo.Create(context.Background(), fixtures.Event("e3"))
+		//nolint:errcheck // Test setup - error handling not relevant.
+		burstRepo.Create(context.Background(), fixtures.Burst("b1", "e1"))
+		//nolint:errcheck // Test setup - error handling not relevant.
+		burstRepo.Create(context.Background(), fixtures.Burst("b2", "e2"))
+		//nolint:errcheck // Test setup - error handling not relevant.
+		burstRepo.Create(context.Background(), fixtures.Burst("b3", "e3"))
+		//nolint:errcheck // Test setup - error handling not relevant.
+		factRepo.Create(context.Background(), fixtures.FactWithCategories("f1", "fact 1", "e1", []string{"leadership"}, []string{"peer"}))
+		//nolint:errcheck // Test setup - error handling not relevant.
+		factRepo.Create(context.Background(), fixtures.FactWithCategories("f2", "fact 2", "e2", []string{"technical"}, []string{"peer"}))
+		//nolint:errcheck // Test setup - error handling not relevant.
+		factRepo.Create(context.Background(), fixtures.FactWithCategories("f3", "fact 3", "e3", []string{"communication"}, []string{"peer"}))
+		log := logger.DefaultLogger()
+		bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+		model = app.NewModel(cliService, svc, bootstrapResult)
+	})
+
+	AfterEach(func() {
+		config.ResetConfigPath()
+	})
+
+	selectIntent := func(menuIndex int) {
+		for range menuIndex {
+			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+			model = modelInterface.(*app.Model)
+		}
+		modelInterface, cmd := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+		model = modelInterface.(*app.Model)
+		if cmd != nil {
+			msg := cmd()
+			if msg != nil {
+				modelInterface, _ := model.Update(msg)
+				model = modelInterface.(*app.Model)
+			}
+		}
+	}
+
+	Describe("BrowseTimeline List Navigation", func() {
+		It("should allow navigating down the timeline with 'j'", func() {
+			selectIntent(1)  // BrowseTimeline
+			_ = model.View() // viewBefore
+
+			// Navigate down
+			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+			model = modelInterface.(*app.Model)
+
+			viewAfter := model.View()
+			// View should change when navigating (different item selected)
+			// At minimum, should still be in timeline view
+			Expect(viewAfter).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+		})
+
+		It("should allow navigating up the timeline with 'k'", func() {
+			selectIntent(1) // BrowseTimeline
+
+			// Navigate down first
+			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+			model = modelInterface.(*app.Model)
+
+			// Then navigate up
+			modelInterface, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("k")})
+			model = modelInterface.(*app.Model)
+
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+		})
+
+		It("should allow multiple consecutive down navigations", func() {
+			selectIntent(1) // BrowseTimeline
+
+			for range 3 {
+				modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+				model = modelInterface.(*app.Model)
+			}
+
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+		})
+	})
+
+	Describe("BurstManagement List Navigation", func() {
+		It("should allow navigating down the burst list with 'j'", func() {
+			selectIntent(5) // BurstManagement
+
+			// Navigate down
+			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+			model = modelInterface.(*app.Model)
+
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+		})
+
+		It("should allow navigating up the burst list with 'k'", func() {
+			selectIntent(5) // BurstManagement
+
+			// Navigate down first
+			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+			model = modelInterface.(*app.Model)
+
+			// Then navigate up
+			modelInterface, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("k")})
+			model = modelInterface.(*app.Model)
+
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+		})
+
+		It("should allow multiple consecutive down navigations in burst list", func() {
+			selectIntent(5) // BurstManagement
+
+			// Navigate down multiple times
+			for range 3 {
+				modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+				model = modelInterface.(*app.Model)
+			}
+
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+		})
+	})
+
+	Describe("FactManagement List Navigation", func() {
+		It("should allow navigating down the fact list with 'j'", func() {
+			selectIntent(6) // FactManagement
+
+			// Navigate down
+			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+			model = modelInterface.(*app.Model)
+
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+		})
+
+		It("should allow navigating up the fact list with 'k'", func() {
+			selectIntent(6) // FactManagement
+
+			// Navigate down first
+			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+			model = modelInterface.(*app.Model)
+
+			// Then navigate up
+			modelInterface, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("k")})
+			model = modelInterface.(*app.Model)
+
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+		})
+
+		It("should allow multiple consecutive down navigations in fact list", func() {
+			selectIntent(6) // FactManagement
+
+			// Navigate down multiple times
+			for range 3 {
+				modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+				model = modelInterface.(*app.Model)
+			}
+
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+		})
+	})
+})

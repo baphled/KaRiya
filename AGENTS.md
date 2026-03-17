@@ -58,7 +58,9 @@ Use `mcp_memory_create_entities` or `mcp_memory_add_observations`.
 | Build | `make build` |
 | Lint | `make vet && make staticcheck` |
 | Compliance | `make check-compliance` |
-| Commit | `make ai-commit FILE=/tmp/commit.txt` |
+| Commit | `AI_MODEL="claude-opus-4-6" make ai-commit FILE=/tmp/commit.txt` |
+
+**Note:** The `AI_AGENT` is auto-detected from the `OPENCODE` environment variable and should NOT be overridden.
 
 ## Code Style
 
@@ -84,11 +86,23 @@ import (
 ## Architecture
 
 ```
-App -> Intents -> Screens/Modals -> UIKit -> Behaviors
+App -> Intents -> Views/Modals -> UIKit -> Behaviors
 ```
 
-- `screens/` NEVER imports `intents/`
-- `uikit/` NEVER imports `screens/` or `intents/`
+- `views/` NEVER imports `intents/`
+- `uikit/` NEVER imports `views/` or `intents/`
+- All domain types MUST be converted to display types at intent boundaries
+- `internal/ui/display/` defines common types (Event, Skill, Burst, CVView, etc.)
+- Screens and views MUST NOT import `domain/career` or `service/career`
+- Intents use a 5-file pattern: `constants.go`, `types.go`, `intent.go`, `handlers.go`, `helpers.go`
+- Async service calls MUST return a message with an `Err error` field
+
+### Modal Orchestration
+
+- `ModalRegistry` is the central hub for modal coordination, rebuilt every render cycle
+- Priority-based rendering ensures critical alerts override standard views
+- Four standard adapters: `ErrorModalAdapter`, `FormModalAdapter[T]`, `ConfirmModalAdapter`, `ViewModalAdapter`
+- `FormViewAdapter` bridges `widgets.View` to `ManagedModal` for search/sort/filter overlays
 
 ### Components
 
@@ -96,8 +110,21 @@ App -> Intents -> Screens/Modals -> UIKit -> Behaviors
 |------|-----|-----|
 | Table | `behaviors.TableBehavior[T]` | `table.New()` |
 | Forms | `forms.NewInput()` | Direct `huh.*` |
+| Form Fields | `forms.FormValue[TD, TBind]` | Monolithic `Form[T]` |
 | Modals | `feedback.Modal` | Custom code |
 | Colors | `theme.Primary()` | `lipgloss.Color()` |
+| Badges | `primitives.BadgeBuilder` | Custom styling |
+
+- Views define package-level badge function slices for canonical patterns
+- Action keys are defined in `views/*/actions.go` with `ActionKey` constants
+- Navigation payloads use typed `Nav` structs handled by intents
+
+### Interface Contracts
+
+- `widgets.View` requires `RenderContent()`, `HelpText()`, `Init()`, and `Update()`
+- `Update()` returns `(tea.Cmd, ViewResult)` where result is `Navigate`, `Cancel`, `Submit`, or `Error`
+- Service operations are wrapped in `func() tea.Msg {}` closures
+- Handlers MUST check `msg.Err` before proceeding with state transitions
 
 ## Testing
 
@@ -112,6 +139,10 @@ App -> Intents -> Screens/Modals -> UIKit -> Behaviors
 - E2E: `internal/testutil/e2e/{workflow}_e2e_test.go`
 - BDD: `features/*.feature`
 
+### BDD Step Rules
+- Steps MUST use service-layer data creation
+- NEVER use `env.TypeText()`, `env.Tab()`, or `env.ClearTextField()` in `When` steps
+
 ## Git
 
 - Feature branches only (never commit to next/main)
@@ -125,7 +156,7 @@ App -> Intents -> Screens/Modals -> UIKit -> Behaviors
 - Write code before tests
 - Use `git commit` instead of `make ai-commit`
 - Add TODO/FIXME comments
-- Import `intents/` from `screens/`
+- Import `intents/` from `views/`
 - **Commit code when tests are failing or hanging without explicit user approval**
 - **Declare task complete when the USER has not confirmed completion**
 - **Make scope decisions (what's "separate", what's "additional", what can wait)**

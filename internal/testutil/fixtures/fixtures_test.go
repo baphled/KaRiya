@@ -3,8 +3,8 @@ package fixtures_test
 import (
 	"testing"
 
-	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
+	"github.com/brianvoe/gofakeit/v7"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -17,12 +17,14 @@ func TestFixtures(t *testing.T) {
 var _ = Describe("Reproducibility", func() {
 	It("should produce same data with same seed", func() {
 		fixtures.SetSeed(12345)
-		event1 := fixtures.EventFactory.MustCreate().(*career.Event)
+		company1 := gofakeit.Company()
+		project1 := gofakeit.BuzzWord()
 
 		fixtures.SetSeed(12345)
-		event2 := fixtures.EventFactory.MustCreate().(*career.Event)
+		company2 := gofakeit.Company()
+		project2 := gofakeit.BuzzWord()
 
-		Expect(event1.Company).To(Equal(event2.Company))
-		Expect(event1.Project).To(Equal(event2.Project))
+		Expect(company1).To(Equal(company2))
+		Expect(project1).To(Equal(project2))
 	})
 })

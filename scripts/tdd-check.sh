@@ -11,9 +11,9 @@ YELLOW='\033[1;33m'
 GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 
-# Get staged production Go files (excluding tests and BDD test infrastructure)
-# The features/ directory contains BDD step definitions which are test code, not production code
-STAGED_PROD_FILES=$(git diff --cached --name-only --diff-filter=AM | grep '\.go$' | grep -v '_test\.go$' | grep -v '^features/' || true)
+# Get staged production Go files (excluding tests, BDD test infrastructure, test utilities, and mocks)
+# The features/ directory contains BDD step definitions, testutil/ contains test helpers, mocks/ contains generated mocks
+STAGED_PROD_FILES=$(git diff --cached --name-only --diff-filter=AM | grep '\.go$' | grep -v '_test\.go$' | grep -v '^features/' | grep -v '/testutil/' | grep -v '/mocks/' || true)
 
 if [[ -z "$STAGED_PROD_FILES" ]]; then
     # No production Go files staged, TDD check not applicable

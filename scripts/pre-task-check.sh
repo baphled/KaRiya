@@ -64,9 +64,9 @@ fi
 # Check 6: Pattern check
 echo -n "6. Pattern check: "
 VIOLATIONS=0
-DIRECT_HUH=$(grep -rn "form \*huh\.Form" internal/cli/intents/*.go 2>/dev/null | grep -v "_test.go" || true)
+DIRECT_HUH=$(grep -rn "form \*huh\.Form" internal/tui/intents/*.go 2>/dev/null | grep -v "_test.go" || true)
 if [[ -n "$DIRECT_HUH" ]]; then VIOLATIONS=$((VIOLATIONS+1)); fi
-HARDCODED=$(grep -rn "lipgloss\.Color(\"#[0-9A-Fa-f]" internal/cli/intents/*.go internal/cli/models/*.go 2>/dev/null | grep -v "_test.go" || true)
+HARDCODED=$(grep -rn "lipgloss\.Color(\"#[0-9A-Fa-f]" internal/tui/intents/*.go internal/tui/models/*.go 2>/dev/null | grep -v "_test.go" || true)
 if [[ -n "$HARDCODED" ]]; then VIOLATIONS=$((VIOLATIONS+1)); fi
 
 if [[ $VIOLATIONS -eq 0 ]]; then

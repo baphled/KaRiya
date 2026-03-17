@@ -51,6 +51,53 @@ func NewEventFromInput(input EventInput) (*career.Event, error) {
 	return event, nil
 }
 
+// EditEventInput holds the raw data needed to update an existing career event.
+// This struct decouples event editing from any form library.
+type EditEventInput struct {
+	EventID    string
+	Text       string
+	Date       string
+	Company    string
+	Project    string
+	Tags       []string
+	Categories []string
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+}
+
+// UpdateEventFromInput creates a career.Event from edit input data,
+// preserving the original event ID and timestamps.
+//
+// Expected: Input.Date may be empty (defaults to now) or a valid date string.
+// Returns: A fully initialised career.Event, or a DateParseError for invalid dates.
+// Side effects: None.
+func UpdateEventFromInput(input EditEventInput) (*career.Event, error) {
+	var eventDate time.Time
+	var err error
+
+	if input.Date == "" {
+		eventDate = time.Now()
+	} else {
+		eventDate, err = parseDateString(input.Date)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &career.Event{
+		ID:         input.EventID,
+		Text:       input.Text,
+		Date:       eventDate,
+		Company:    input.Company,
+		Project:    input.Project,
+		Tags:       input.Tags,
+		Categories: input.Categories,
+		Skills:     []string{},
+		CreatedAt:  input.CreatedAt,
+		UpdatedAt:  input.UpdatedAt,
+	}, nil
+}
+
 // parseDateString parses a date string supporting ISO, US, UK formats plus "today" and "yesterday".
 func parseDateString(s string) (time.Time, error) {
 	switch s {
@@ -82,8 +129,11 @@ type DateParseError struct {
 
 // Error returns the error message for the unparseable date input.
 //
-// Returns: A string describing the parse failure.
-// Side effects: None.
+// Returns:
+//   - A string value.
+//
+// Side effects:
+//   - None.
 func (e *DateParseError) Error() string {
 	return "unable to parse date: " + e.Input
 }

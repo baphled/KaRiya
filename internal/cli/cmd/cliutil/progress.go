@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/baphled/kariya/internal/cli/uikit/feedback"
-	"github.com/baphled/kariya/internal/cli/uikit/primitives"
-	"github.com/baphled/kariya/internal/cli/uikit/theme"
+	"github.com/baphled/kariya/internal/ui/uikit/feedback"
+	"github.com/baphled/kariya/internal/ui/uikit/primitives"
+	"github.com/baphled/kariya/internal/ui/uikit/theme"
 	tea "github.com/charmbracelet/bubbletea"
 )
 

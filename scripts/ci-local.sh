@@ -146,7 +146,7 @@ run_check "Golangci-lint" \
 # 8. DOCBLOCKS (structured doc comment enforcement)
 # ============================================
 run_check "Docblocks Analyzer" \
-    "go build -o ./bin/docblocks ./cmd/docblocks && go vet -vettool=./bin/docblocks ./internal/cli/behaviors/... ./internal/cli/intents/... ./tools/analyzers/docblocks/..."
+    "go build -o ./bin/docblocks ./cmd/docblocks && go vet -vettool=./bin/docblocks ./internal/ui/behaviors/... ./internal/tui/intents/... ./tools/analyzers/docblocks/..."
 
 # ============================================
 # 9. INTENT ARCHITECTURE (architectural compliance)

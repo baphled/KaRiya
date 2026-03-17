@@ -5,9 +5,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/baphled/kariya/internal/cli/uikit/primitives"
-	"github.com/baphled/kariya/internal/cli/uikit/theme"
 	domain "github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/ui/uikit/primitives"
+	"github.com/baphled/kariya/internal/ui/uikit/theme"
 )
 
 // FormatExtractionResults generates formatted output for fact extraction results.
@@ -27,7 +27,7 @@ func FormatExtractionResults(factCount, eventCount int, competencyCount map[stri
 	var b strings.Builder
 
 	b.WriteString("\n=== Fact Extraction Results ===\n")
-	b.WriteString(fmt.Sprintf("Extracted %d facts from %d events\n\n", factCount, eventCount))
+	fmt.Fprintf(&b, "Extracted %d facts from %d events\n\n", factCount, eventCount)
 
 	if len(competencyCount) == 0 {
 		return b.String()
@@ -41,7 +41,7 @@ func FormatExtractionResults(factCount, eventCount int, competencyCount map[stri
 	sort.Strings(competencies)
 
 	for _, c := range competencies {
-		b.WriteString(fmt.Sprintf("  - %s: %d facts\n", c, competencyCount[c]))
+		fmt.Fprintf(&b, "  - %s: %d facts\n", c, competencyCount[c])
 	}
 	b.WriteString("\n")
 
@@ -65,22 +65,22 @@ func FormatFactList(facts []*domain.Fact) string {
 	th := theme.Default()
 	b.WriteString(primitives.Title("Existing Facts", th).Render())
 	b.WriteString("\n")
-	b.WriteString(fmt.Sprintf("Total facts: %d\n\n", len(facts)))
+	fmt.Fprintf(&b, "Total facts: %d\n\n", len(facts))
 
 	for i, fact := range facts {
-		b.WriteString(fmt.Sprintf("%d. %s\n", i+1, fact.Text))
-		b.WriteString(fmt.Sprintf("   ID: %s\n", fact.ID))
-		b.WriteString(fmt.Sprintf("   Source Event: %s\n", fact.SourceEventID))
+		fmt.Fprintf(&b, "%d. %s\n", i+1, fact.Text)
+		fmt.Fprintf(&b, "   ID: %s\n", fact.ID)
+		fmt.Fprintf(&b, "   Source Event: %s\n", fact.SourceEventID)
 		if len(fact.CompetencyCategories) > 0 {
-			b.WriteString(fmt.Sprintf("   Competencies: %s\n", strings.Join(fact.CompetencyCategories, ", ")))
+			fmt.Fprintf(&b, "   Competencies: %s\n", strings.Join(fact.CompetencyCategories, ", "))
 		}
 		if fact.RoleFit != "" {
-			b.WriteString(fmt.Sprintf("   Role Fit: %s\n", fact.RoleFit))
+			fmt.Fprintf(&b, "   Role Fit: %s\n", fact.RoleFit)
 		}
 		if len(fact.AudienceRelevance) > 0 {
-			b.WriteString(fmt.Sprintf("   Target Audiences: %s\n", strings.Join(fact.AudienceRelevance, ", ")))
+			fmt.Fprintf(&b, "   Target Audiences: %s\n", strings.Join(fact.AudienceRelevance, ", "))
 		}
-		b.WriteString(fmt.Sprintf("   Created: %s\n", fact.CreatedAt.Format("2006-01-02 15:04:05")))
+		fmt.Fprintf(&b, "   Created: %s\n", fact.CreatedAt.Format("2006-01-02 15:04:05"))
 		b.WriteString("\n")
 	}
 

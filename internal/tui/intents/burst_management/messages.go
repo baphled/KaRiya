@@ -1,0 +1,107 @@
+// Package burst_management implements the BurstManagement intent for managing career bursts.
+package burst_management
+
+import (
+	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/service/career/burstfact"
+	"github.com/baphled/kariya/internal/service/career/skillinference"
+)
+
+// Custom message types for BurstManagement state transitions.
+// ALL *Msg structs MUST be in this file.
+
+// BurstSelectedMsg indicates the user selected a burst.
+type BurstSelectedMsg struct {
+	Burst *career.Burst
+	Index int
+}
+
+// BurstEventsLoadedMsg is sent when events for a burst are loaded.
+type BurstEventsLoadedMsg struct {
+	Events []*career.Event
+	Error  error
+}
+
+// BurstFactsLoadedMsg is sent when facts for a burst are loaded.
+type BurstFactsLoadedMsg struct {
+	Facts []*career.Fact
+	Error error
+}
+
+// BurstSkillsLoadedMsg is sent when skills for a burst are loaded.
+type BurstSkillsLoadedMsg struct {
+	Skills []*career.Skill
+	Error  error
+}
+
+// BurstEditCompleteMsg is sent when burst editing is complete.
+type BurstEditCompleteMsg struct {
+	Burst               *career.Burst
+	Cancelled           bool
+	Error               error
+	OriginalName        string
+	OriginalDescription string
+}
+
+// BurstDeletedMsg is sent when a burst is deleted.
+type BurstDeletedMsg struct {
+	BurstID string
+	Error   error
+}
+
+// BurstConfirmedMsg is sent when a burst is confirmed.
+type BurstConfirmedMsg struct {
+	Burst *career.Burst
+	Error error
+}
+
+// FactExtractionCompleteMsg is sent when fact extraction is complete.
+type FactExtractionCompleteMsg struct {
+	Facts []*career.Fact
+	Burst *career.Burst
+	Error error
+}
+
+// BurstSuggestionsLoadedMsg is sent when burst detection completes.
+type BurstSuggestionsLoadedMsg struct {
+	Suggestions []burstfact.BurstSuggestion
+	Error       error
+}
+
+// SuggestionReviewCompleteMsg is sent when the suggestion review modal closes.
+type SuggestionReviewCompleteMsg struct {
+	AcceptedSuggestions []burstfact.BurstSuggestion
+	Cancelled           bool
+}
+
+// EditBurstMsg is sent when the edit modal completes successfully with updated burst data.
+type EditBurstMsg struct {
+	BurstID     string
+	Name        string
+	Description string
+}
+
+// SkillSuggestionsLoadedMsg is sent when skill inference completes.
+type SkillSuggestionsLoadedMsg struct {
+	Suggestions        []skillinference.SkillSuggestion
+	ExistingSkillNames []string
+	Error              error
+}
+
+// BurstSavedMsg is sent when a burst is saved from a suggestion.
+type BurstSavedMsg struct {
+	Burst *career.Burst
+	Error error
+}
+
+// ConfirmBurstFactsLoadedMsg is sent when facts for confirm modal are loaded.
+type ConfirmBurstFactsLoadedMsg struct {
+	Facts []*career.Fact
+	Error error
+}
+
+// SkillsCreatedMsg is sent when skills are created from accepted suggestions.
+type SkillsCreatedMsg struct {
+	Skills []*career.Skill
+	Error  error
+}

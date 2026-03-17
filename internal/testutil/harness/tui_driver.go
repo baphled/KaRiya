@@ -3,7 +3,7 @@ package harness
 import (
 	"time"
 
-	"github.com/baphled/kariya/internal/cli/app"
+	"github.com/baphled/kariya/internal/tui/app"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 )

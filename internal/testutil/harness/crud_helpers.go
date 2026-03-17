@@ -3,12 +3,7 @@ package harness
 import (
 	"time"
 
-	"github.com/baphled/kariya/internal/cli/app"
 	"github.com/baphled/kariya/internal/cli/bootstrap"
-	"github.com/baphled/kariya/internal/cli/intents/burst_management"
-	"github.com/baphled/kariya/internal/cli/intents/captureevent"
-	"github.com/baphled/kariya/internal/cli/intents/factmanagement"
-	"github.com/baphled/kariya/internal/cli/intents/skillsmanagement"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
@@ -16,6 +11,11 @@ import (
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careersql "github.com/baphled/kariya/internal/repository/career/sql"
 	careerservice "github.com/baphled/kariya/internal/service/career"
+	"github.com/baphled/kariya/internal/tui/app"
+	"github.com/baphled/kariya/internal/tui/intents/burst_management"
+	"github.com/baphled/kariya/internal/tui/intents/captureevent"
+	"github.com/baphled/kariya/internal/tui/intents/factmanagement"
+	"github.com/baphled/kariya/internal/tui/intents/skillsmanagement"
 )
 
 // SubmitEvent sends a SubmitMsg directly to the model with the given event.
@@ -31,7 +31,7 @@ import (
 func (e *TestEnv) SubmitEvent(event *career.Event) *TestEnv {
 	e.T.Helper()
 
-	return e.SendMessage(captureevent.SubmitMsg{Event: event, Err: nil})
+	return e.SendMessage(captureevent.SubmitMsg{Event: event, Error: nil})
 }
 
 // SubmitEventWithError sends a SubmitMsg with an error to trigger validation error handling.
@@ -47,7 +47,7 @@ func (e *TestEnv) SubmitEvent(event *career.Event) *TestEnv {
 func (e *TestEnv) SubmitEventWithError(event *career.Event, err error) *TestEnv {
 	e.T.Helper()
 
-	return e.SendMessage(captureevent.SubmitMsg{Event: event, Err: err})
+	return e.SendMessage(captureevent.SubmitMsg{Event: event, Error: err})
 }
 
 // SubmitSkill creates a skill in the repository and sends a SkillCreatedMsg.
@@ -249,17 +249,12 @@ func (e *TestEnv) ConfirmBurst(burst *career.Burst) *TestEnv {
 }
 
 // DismissSuccessModal bypasses the auto-dismiss countdown and immediately
-// dismisses the success modal. Use this to speed up tests that don't need
-// to verify countdown behavior. To test the actual countdown, send
-// ModalCountdownTickMsg messages explicitly instead.
 //
 // Returns:
 //   - A fully initialized TestEnv ready for use.
 //
 // Side effects:
-//   - Sends a captureevent.DismissModalMsg through the test environment.
-//   - Advances the Bubble Tea update loop and updates e.Model to the
-//     post-dismissal state of the success modal.
+//   - None.
 func (e *TestEnv) DismissSuccessModal() *TestEnv {
 	e.T.Helper()
 

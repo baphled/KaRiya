@@ -246,7 +246,7 @@ detect_ai_agent() {
     fi
     
     # Detect Opencode (primary check)
-    if [[ "$OPENCODE" = "1" ]] || [ -n "$OPENCODE" ]]; then
+    if [[ "$OPENCODE" = "1" ]] || [[ -n "$OPENCODE" ]]; then
         echo "Opencode"
         return
     fi
@@ -258,7 +258,7 @@ detect_ai_agent() {
     fi
     
     # Detect Cursor
-    if [[ -n "$CURSOR_SESSION" ]] || [ -n "$CURSOR" ]]; then
+    if [[ -n "$CURSOR_SESSION" ]] || [[ -n "$CURSOR" ]]; then
         echo "Cursor"
         return
     fi

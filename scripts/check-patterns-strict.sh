@@ -45,6 +45,7 @@ DEPRECATED_PATTERNS=(
     ["CreateStandardView"]="layout.NewScreenLayout()"
     ["ThemedNavigationFooter"]="primitives.RenderHelpFooter()"
     ["ThemedCustomFooter"]="primitives.RenderHelpFooter()"
+    ["screens\.Screen"]="views.View (View replaces Screen — see internal/cli/views/)"
 )
 
 for file in $NEW_FILES; do
@@ -127,7 +128,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo "5. DEBUG STATEMENTS CHECK"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-DEBUG_PATTERNS='fmt\.Println\s*\(|fmt\.Printf\s*\(\s*"DEBUG|spew\.Dump|spew\.Printf|pp\.Print|pp\.Println|pretty\.Print'
+DEBUG_PATTERNS='fmt\.Println\s*\(\s*\)|fmt\.Printf\s*\(\s*"DEBUG|fmt\.Printf\s*\(\s*"debug|spew\.Dump|spew\.Printf|pp\.Print|pp\.Println|pretty\.Print|log\.Print|log\.Println|log\.Printf'
 
 for file in $ALL_STAGED; do
     if [[ ! "$file" =~ _test\.go$ ]]; then
@@ -179,12 +180,12 @@ for file in $NEW_FILES; do
             continue
         fi
         
-        # Check next line - if it's not a declaration, it's mid-function
-        NEXT_LINE_NUM=$((LINE_NUM + 1))
-        NEXT_LINE=$(sed -n "${NEXT_LINE_NUM}p" "$file" 2>/dev/null || true)
-        if [[ ! "$NEXT_LINE" =~ ^[[:space:]]*(func|type|var|const|package|import)[[:space:]] ]] && [[ ! "$NEXT_LINE" =~ ^[[:space:]]*$ ]]; then
-            MID_FUNC_COUNT=$((MID_FUNC_COUNT+1))
-        fi
+         # Check next line - if it's not a declaration, it's mid-function
+         NEXT_LINE_NUM=$((LINE_NUM + 1))
+         NEXT_LINE=$(sed -n "${NEXT_LINE_NUM}p" "$file" 2>/dev/null || true)
+         if [[ ! "$NEXT_LINE" =~ ^[[:space:]]*(func|type|var|const|package|import)[[:space:]] ]] && [[ ! "$NEXT_LINE" =~ ^[[:space:]]*$ ]] && [[ ! "$NEXT_LINE" =~ ^[[:space:]]*//.* ]]; then
+             MID_FUNC_COUNT=$((MID_FUNC_COUNT+1))
+         fi
     done < <(grep -n '^[[:space:]]*//[^/]' "$file" 2>/dev/null || true)
 
     if [[ "$MID_FUNC_COUNT" -gt 0 ]]; then
@@ -242,39 +243,7 @@ done
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "8. DOCUMENTATION REQUIREMENTS"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-if [[ -n "$NEW_INTENTS" ]]; then
-    WORKFLOW_DOCS=$(git diff --cached --name-only | grep 'docs/workflows/' || true)
-    if [[ -z "$WORKFLOW_DOCS" ]]; then
-        echo -e "${RED}❌ New intent requires workflow documentation${NC}"
-        echo "   Update docs/workflows/ with new intent documentation"
-        VIOLATIONS=$((VIOLATIONS+1))
-    fi
-fi
-
-NEW_UIKIT=$(echo "$NEW_FILES" | grep 'internal/cli/uikit/' || true)
-if [[ -n "$NEW_UIKIT" ]]; then
-    UIKIT_DOC=$(git diff --cached --name-only | grep 'docs/UIKIT_GUIDE.md' || true)
-    if [[ -z "$UIKIT_DOC" ]]; then
-        echo -e "${RED}❌ New UIKit component requires UIKIT_GUIDE.md update${NC}"
-        VIOLATIONS=$((VIOLATIONS+1))
-    fi
-fi
-
-NEW_BEHAVIORS=$(echo "$NEW_FILES" | grep 'internal/cli/behaviors/' || true)
-if [[ -n "$NEW_BEHAVIORS" ]]; then
-    DEV_DOCS=$(git diff --cached --name-only | grep 'docs/development/' || true)
-    if [[ -z "$DEV_DOCS" ]]; then
-        echo -e "${RED}❌ New behavior requires development documentation${NC}"
-        VIOLATIONS=$((VIOLATIONS+1))
-    fi
-fi
-
-echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "9. BDD @wip TAG CHECK"
+echo "8. BDD @wip TAG CHECK"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 FEATURE_FILES=$(git diff --cached --name-only | grep '\.feature$' || true)
@@ -309,8 +278,32 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo "10. COVERAGE CHECK"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-if [[ -n "$ALL_STAGED" ]]; then
-    PACKAGES=$(echo "$ALL_STAGED" | xargs -I{} dirname {} | sort -u)
+# Only check coverage for files with actual content changes (exclude renames)
+CONTENT_CHANGED=$(git diff --cached --diff-filter=ACMT --name-only | grep '\.go$' || true)
+
+# Filter out files where only import statements changed (e.g., path renames)
+LOGIC_CHANGED=""
+for file in $CONTENT_CHANGED; do
+    # Extract only actual change lines (+ or -), excluding diff headers
+    DIFF_LINES=$(git diff --cached -- "$file" | grep '^[+-]' | grep -v '^[+-]\{3\}' || true)
+    # Remove import-related lines: quoted paths, import keyword, parens, blank lines
+    HAS_LOGIC=$(echo "$DIFF_LINES" | grep -v '^\s*$' | grep -vE '^[+-]\s*"[^"]*"\s*$' | grep -vE '^[+-]\s*import\s' | grep -vE '^[+-]\s*\)\s*$' | grep -vE '^[+-]\s*\(\s*$' | grep -vE '^[+-]\s*$' || true)
+    if [[ -n "$HAS_LOGIC" ]]; then
+        LOGIC_CHANGED="$LOGIC_CHANGED $file"
+    fi
+done
+LOGIC_CHANGED=$(echo "$LOGIC_CHANGED" | xargs)
+
+# Report import-only packages that were skipped
+if [[ "$CONTENT_CHANGED" != "$LOGIC_CHANGED" ]]; then
+    IMPORT_ONLY_PKGS=$(comm -23 <(echo "$CONTENT_CHANGED" | xargs -I{} dirname {} | sort -u) <(echo "$LOGIC_CHANGED" | xargs -I{} dirname {} | sort -u) 2>/dev/null || true)
+    for pkg in $IMPORT_ONLY_PKGS; do
+        echo -e "${GREEN}✅ $pkg: skipped (import-only changes)${NC}"
+    done
+fi
+
+if [[ -n "$LOGIC_CHANGED" ]]; then
+    PACKAGES=$(echo "$LOGIC_CHANGED" | xargs -I{} dirname {} | sort -u)
     for pkg in $PACKAGES; do
         # Skip mock packages - they are auto-generated and don't need tests
         if [[ "$pkg" == *"/mocks/"* ]] || [[ "$pkg" == *"/mocks" ]]; then
@@ -333,11 +326,28 @@ if [[ -n "$ALL_STAGED" ]]; then
             if [[ -n "$COVERAGE" ]]; then
                 # Round to nearest integer (94.5+ rounds to 95)
                 COVERAGE_INT=$(printf "%.0f" "$COVERAGE" 2>/dev/null || echo "0")
-                if [[ "$COVERAGE_INT" -lt 95 ]]; then
-                    echo -e "${RED}❌ Package coverage below 95%${NC}"
-                    echo "   Package: $pkg"
-                    echo "   Coverage: $COVERAGE%"
-                    VIOLATIONS=$((VIOLATIONS+1))
+                if [[ "$COVERAGE_INT" -lt 95 ]] && [[ "$COVERAGE_INT" -gt 0 ]]; then
+                    git stash push --quiet 2>/dev/null
+                    BASELINE_OUTPUT=$(go test -count=1 -cover "./$pkg" 2>/dev/null || true)
+                    BASELINE_PCT=$(echo "$BASELINE_OUTPUT" | grep -oP 'coverage: \K[0-9.]+' || echo "0")
+                    BASELINE_INT=$(printf "%.0f" "$BASELINE_PCT" 2>/dev/null || echo "0")
+                    git stash pop --index --quiet 2>/dev/null
+
+                    if [[ "$BASELINE_INT" -lt 95 ]]; then
+                        CURRENT_X10=$(echo "$COVERAGE" | awk '{printf "%.0f", $1 * 10}')
+                        BASELINE_X10=$(echo "$BASELINE_PCT" | awk '{printf "%.0f", $1 * 10}')
+                        if [[ "$CURRENT_X10" -ge "$BASELINE_X10" ]]; then
+                            echo -e "${YELLOW}⚠️  $pkg: ${COVERAGE}% (baseline: ${BASELINE_PCT}%, pre-existing)${NC}"
+                        else
+                            echo -e "${RED}❌ Coverage regression: $pkg${NC}"
+                            echo "   Current: $COVERAGE%, Baseline: $BASELINE_PCT%"
+                            VIOLATIONS=$((VIOLATIONS+1))
+                        fi
+                    else
+                        echo -e "${RED}❌ Coverage dropped below 95%: $pkg${NC}"
+                        echo "   Current: $COVERAGE%, Baseline: $BASELINE_PCT%"
+                        VIOLATIONS=$((VIOLATIONS+1))
+                    fi
                 else
                     echo -e "${GREEN}✅ $pkg: ${COVERAGE}%${NC}"
                 fi

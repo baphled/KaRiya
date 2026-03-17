@@ -47,8 +47,8 @@ RESULT_NAME="Result"
 STATE_NAME="State"
 
 # Paths
-INTENT_DIR="internal/cli/intents/${PACKAGE_NAME}"
-SCREEN_DIR="internal/cli/screens/${PACKAGE_NAME}"
+INTENT_DIR="internal/tui/intents/${PACKAGE_NAME}"
+SCREEN_DIR="internal/tui/views/${PACKAGE_NAME}"
 TEMPLATE_DIR="examples/intent_subdirectory_template"
 
 echo -e "${BLUE}Creating intent structure for: ${GREEN}${NAME}${NC}"

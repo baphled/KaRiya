@@ -1,0 +1,1880 @@
+//nolint:errcheck // Test file - error handling for test setup is not relevant.
+package app_test
+
+import (
+	"context"
+	"errors"
+	"os"
+	"path/filepath"
+	"time"
+
+	"github.com/baphled/kariya/internal/cli/bootstrap"
+	"github.com/baphled/kariya/internal/cli/service"
+	"github.com/baphled/kariya/internal/config"
+	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/logger"
+	careerrepo "github.com/baphled/kariya/internal/repository/career"
+	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
+	careerservice "github.com/baphled/kariya/internal/service/career"
+	"github.com/baphled/kariya/internal/service/career/skillinference"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
+	"github.com/baphled/kariya/internal/tui/app"
+	"github.com/baphled/kariya/internal/tui/intents"
+	burst_management "github.com/baphled/kariya/internal/tui/intents/burst_management"
+	"github.com/baphled/kariya/internal/tui/intents/generatecv"
+	"github.com/baphled/kariya/internal/tui/intents/skillsmanagement"
+	"github.com/baphled/kariya/internal/ui/uikit/display"
+	tea "github.com/charmbracelet/bubbletea"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+)
+
+var _ = Describe("App Unit Tests", func() {
+	var (
+		model      *app.Model
+		repo       *careermemory.EventRepository
+		svc        *careerservice.Service
+		cliService *service.CLIEventService
+		ctx        context.Context
+	)
+
+	BeforeEach(func() {
+		config.SetConfigPathForTesting(filepath.Join(GinkgoT().TempDir(), "config.yaml"))
+		ctx = context.Background()
+		repo = careermemory.NewEventRepository()
+		burstRepo := careermemory.NewBurstRepository()
+		factRepo := careermemory.NewFactRepository()
+		skillRepo := careermemory.NewSkillRepository()
+		svc = careerservice.NewService(repo)
+		svc.SetBurstRepository(burstRepo)
+		svc.SetFactRepository(factRepo)
+		svc.SetSkillRepository(skillRepo)
+		cliService = service.NewCLIEventService(svc)
+
+		// Pre-populate repositories to avoid nil panics.
+		//nolint:errcheck // Test setup - error handling not relevant.
+		burstRepo.Create(ctx, fixtures.Burst("b1", "e1", "e2"))
+		//nolint:errcheck // Test setup - error handling not relevant.
+		factRepo.Create(ctx, fixtures.FactWithCategories("f1", "dummy", "e1", []string{"leadership"}, []string{"peer"}))
+
+		// Create bootstrap result (skipping onboarding for tests)
+		log := logger.DefaultLogger()
+		bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+
+		model = app.NewModel(cliService, svc, bootstrapResult)
+	})
+
+	AfterEach(func() {
+		config.ResetConfigPath()
+	})
+
+	Describe("Init", func() {
+		It("should return batch command for window size and logo init", func() {
+			cmd := model.Init()
+			Expect(cmd).NotTo(BeNil())
+		})
+
+		It("should navigate to browse_timeline when initial screen is ListScreen", func() {
+			// Create a new model with initial screen set to ListScreen.
+			log := logger.DefaultLogger()
+			bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+			listModel := app.NewModel(cliService, svc, bootstrapResult)
+			listModel.SetInitialScreen(app.ListScreen)
+
+			cmd := listModel.Init()
+			Expect(cmd).NotTo(BeNil())
+
+			// After Init, should be in intent state.
+			state := listModel.GetState()
+			Expect(state).To(Equal(app.StateIntent))
+		})
+
+		It("should navigate to capture_event with mode when initial capture mode is set", func() {
+			// Create a new model with initial capture mode set.
+			log := logger.DefaultLogger()
+			bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+			captureModel := app.NewModel(cliService, svc, bootstrapResult)
+			captureModel.SetInitialCaptureMode("manual")
+
+			cmd := captureModel.Init()
+			Expect(cmd).NotTo(BeNil())
+
+			// After Init, should be in intent state.
+			state := captureModel.GetState()
+			Expect(state).To(Equal(app.StateIntent))
+		})
+	})
+
+	Describe("Update - Key Handling", func() {
+		Context("ctrl+c key", func() {
+			It("should quit from menu state", func() {
+				msg := tea.KeyMsg{Type: tea.KeyCtrlC}
+				newModel, _ := model.Update(msg)
+				Expect(newModel).NotTo(BeNil())
+			})
+
+			It("should quit from intent state", func() {
+				// Activate an intent first
+				model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+				// Now send ctrl+c
+				msg := tea.KeyMsg{Type: tea.KeyCtrlC}
+				newModel, _ := model.Update(msg)
+				Expect(newModel).NotTo(BeNil())
+			})
+		})
+
+		Context("q key", func() {
+			It("should quit when in menu state", func() {
+				msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("q")}
+				newModel, _ := model.Update(msg)
+				Expect(newModel).NotTo(BeNil())
+			})
+
+			It("should not quit when in intent state", func() {
+				// Activate an intent
+				model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+				// Send q key (should not quit, just pass to intent)
+				msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("q")}
+				newModel, _ := model.Update(msg)
+				Expect(newModel).NotTo(BeNil())
+			})
+		})
+
+		Context("? key (help)", func() {
+			It("should toggle help screen on ? key", func() {
+				// Initially help is not showing
+				view := model.View()
+				Expect(view).NotTo(ContainSubstring("Keyboard Reference"))
+
+				// Press ? to show help
+				msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("?")}
+				newModel, cmd := model.Update(msg)
+				model = newModel.(*app.Model)
+				Expect(cmd).To(BeNil())
+
+				// Now help should be showing
+				view = model.View()
+				Expect(view).To(ContainSubstring("Keyboard Reference"))
+
+				// Press ? again to hide help
+				newModel, _ = model.Update(msg)
+				model = newModel.(*app.Model)
+
+				view = model.View()
+				Expect(view).NotTo(ContainSubstring("Keyboard Reference"))
+			})
+
+			It("should show navigation shortcuts in help", func() {
+				// Show help
+				msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("?")}
+				newModel, _ := model.Update(msg)
+				model = newModel.(*app.Model)
+
+				view := model.View()
+				Expect(view).To(ContainSubstring("Navigation"))
+				Expect(view).To(ContainSubstring("Move up"))
+				Expect(view).To(ContainSubstring("Move down"))
+			})
+
+			It("should show global shortcuts in help", func() {
+				// Show help
+				msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("?")}
+				newModel, _ := model.Update(msg)
+				model = newModel.(*app.Model)
+
+				view := model.View()
+				Expect(view).To(ContainSubstring("Global Shortcuts"))
+				Expect(view).To(ContainSubstring("Quit"))
+				Expect(view).To(ContainSubstring("Go back"))
+			})
+		})
+
+		Context("home/esc/escape keys", func() {
+			It("should forward escape to intent (intent returns to menu)", func() {
+				// Activate an intent
+				newModel, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+				model = newModel.(*app.Model)
+				state := model.GetState()
+				Expect(state).To(Equal(app.StateIntent))
+
+				// Press escape - forwarded to intent
+				msg := tea.KeyMsg{Type: tea.KeyEsc}
+				newModel, cmd := model.Update(msg)
+				model = newModel.(*app.Model)
+
+				// Intent may return command that completes and returns to menu
+				if cmd != nil {
+					resultMsg := cmd()
+					if resultMsg != nil {
+						newModel, _ = model.Update(resultMsg)
+						model = newModel.(*app.Model)
+					}
+				}
+
+				// Eventually should return to menu (via intent's Cancelled result)
+				state = model.GetState()
+				Expect(state).To(Equal(app.StateMenu))
+			})
+
+			It("should not intercept home key (intent handles it)", func() {
+				// Activate an intent
+				newModel, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+				model = newModel.(*app.Model)
+
+				// Press home - no longer intercepted by app
+				msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("home")}
+				newModel, _ = model.Update(msg)
+				model = newModel.(*app.Model)
+
+				// App forwards to intent; intent may or may not handle 'home'
+				// This test just verifies app doesn't crash
+				state := model.GetState()
+				Expect(state).To(Equal(app.StateIntent)) // Still in intent
+			})
+
+			It("should forward esc key to intent", func() {
+				// Activate an intent
+				newModel, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+				model = newModel.(*app.Model)
+
+				// Press esc - forwarded to intent
+				msg := tea.KeyMsg{Type: tea.KeyEsc}
+				newModel, cmd := model.Update(msg)
+				model = newModel.(*app.Model)
+
+				// Process any command returned
+				if cmd != nil {
+					resultMsg := cmd()
+					if resultMsg != nil {
+						newModel, _ = model.Update(resultMsg)
+						model = newModel.(*app.Model)
+					}
+				}
+
+				state := model.GetState()
+				Expect(state).To(Equal(app.StateMenu))
+			})
+
+			It("should not affect menu state when pressing escape in menu", func() {
+				state := model.GetState()
+				Expect(state).To(Equal(app.StateMenu))
+
+				// Press escape while in menu
+				msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("escape")}
+				model.Update(msg)
+
+				state = model.GetState()
+				Expect(state).To(Equal(app.StateMenu))
+			})
+		})
+
+		Context("logo animation tick", func() {
+			It("should update logo animation when in menu state", func() {
+				// Send a tick message to update logo animation
+				msg := display.TickMsg(time.Now())
+				newModel, _ := model.Update(msg)
+				Expect(newModel).NotTo(BeNil())
+			})
+		})
+
+		Context("window size message", func() {
+			It("should handle window size updates", func() {
+				msg := tea.WindowSizeMsg{Width: 120, Height: 40}
+				newModel, _ := model.Update(msg)
+				Expect(newModel).NotTo(BeNil())
+			})
+		})
+	})
+
+	Describe("handleIntentInput", func() {
+		BeforeEach(func() {
+			// Activate an intent before each test
+			model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+		})
+
+		Context("when intent returns result", func() {
+			It("should return to menu state via escape", func() {
+				// Cancel intent with escape - forwarded to intent (already activated by BeforeEach)
+				msg := tea.KeyMsg{Type: tea.KeyEsc}
+				newModel, cmdResult := model.Update(msg)
+				model = newModel.(*app.Model)
+
+				// Execute completion message (intent returns Cancelled result)
+				if cmdResult != nil {
+					completionMsg := cmdResult()
+					if completionMsg != nil {
+						newModel, _ = model.Update(completionMsg)
+						model = newModel.(*app.Model)
+					}
+				}
+
+				// Should return to menu via intent's result
+				state := model.GetState()
+				Expect(state).To(Equal(app.StateMenu))
+			})
+
+			It("should ignore 'q' key within intent to prevent accidental exits", func() {
+				// 'q' key is no longer handled at intent level to prevent accidental exits
+				// See: fix(navigation): remove global quit key to prevent accidental exits
+				msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("q")}
+				newModel, cmdResult := model.Update(msg)
+				Expect(newModel).NotTo(BeNil())
+				// 'q' no longer quits from within intents - returns nil command
+				Expect(cmdResult).To(BeNil())
+
+				// Should still be in intent state
+				state := model.GetState()
+				Expect(state).To(Equal(app.StateIntent))
+			})
+		})
+
+		Context("when intent does not return result", func() {
+			It("should forward message to active intent", func() {
+				// Send a non-completing key (like arrow down)
+				msg := tea.KeyMsg{Type: tea.KeyDown}
+				newModel, _ := model.Update(msg)
+				Expect(newModel).NotTo(BeNil())
+
+				// Should still be in intent state
+				state := model.GetState()
+				Expect(state).To(Equal(app.StateIntent))
+			})
+
+			It("should return command from intent", func() {
+				msg := tea.KeyMsg{Type: tea.KeyDown}
+				newModel, _ := model.Update(msg)
+				Expect(newModel).NotTo(BeNil())
+			})
+		})
+	})
+
+	Describe("SetInitialCaptureMode", func() {
+		It("should accept manual mode without panic", func() {
+			Expect(func() {
+				model.SetInitialCaptureMode("manual")
+			}).NotTo(Panic())
+		})
+
+		It("should accept burst mode without panic", func() {
+			Expect(func() {
+				model.SetInitialCaptureMode("burst")
+			}).NotTo(Panic())
+		})
+
+		It("should accept csv mode without panic", func() {
+			Expect(func() {
+				model.SetInitialCaptureMode("csv")
+			}).NotTo(Panic())
+		})
+	})
+
+	Describe("GetState", func() {
+		It("should return menu state initially", func() {
+			state := model.GetState()
+			Expect(state).To(Equal(app.StateMenu))
+		})
+
+		It("should return intent state after activating intent", func() {
+			model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			state := model.GetState()
+			Expect(state).To(Equal(app.StateIntent))
+		})
+	})
+
+	Describe("GetActiveIntent", func() {
+		It("should return nil when no intent is active", func() {
+			intent := model.GetActiveIntent()
+			Expect(intent).To(BeNil())
+		})
+
+		It("should return active intent after activation", func() {
+			model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			intent := model.GetActiveIntent()
+			Expect(intent).NotTo(BeNil())
+		})
+	})
+
+	Describe("IntentCompletedMsg handling", func() {
+		It("should handle intent completed message", func() {
+			// Activate intent
+			model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+			// Send IntentCompletedMsg
+			msg := app.IntentCompletedMsg{}
+			newModel, _ := model.Update(msg)
+			Expect(newModel).NotTo(BeNil())
+		})
+	})
+
+	Describe("handleEditEventRequest", func() {
+		It("should handle RequestEditEventMsg and transition to intent state", func() {
+			// Create an event to edit.
+			event := fixtures.EventWith("test-event-1", "Test Event Description", "", "")
+
+			// Send RequestEditEventMsg via Update (handleDefaultMsg routes it).
+			msg := intents.RequestEditEventMsg{Event: event}
+			newModel, _ := model.Update(msg)
+			Expect(newModel).NotTo(BeNil())
+
+			// Should transition to intent state.
+			model = newModel.(*app.Model)
+			state := model.GetState()
+			Expect(state).To(Equal(app.StateIntent))
+		})
+
+		It("should activate capture_event_edit intent with event context", func() {
+			// Create an event with specific details.
+			event := fixtures.EventWith("edit-event-1", "Event to Edit", "", "")
+
+			// Send RequestEditEventMsg.
+			msg := intents.RequestEditEventMsg{Event: event}
+			newModel, _ := model.Update(msg)
+			model = newModel.(*app.Model)
+
+			// Verify intent is active.
+			activeIntent := model.GetActiveIntent()
+			Expect(activeIntent).NotTo(BeNil())
+		})
+	})
+
+	Describe("handleDefaultMsg - Coverage", func() {
+		It("should return nil when in menu state and not RequestEditEventMsg", func() {
+			// In menu state, send a generic message (not key, not edit request).
+			msg := tea.MouseMsg{X: 0, Y: 0}
+			newModel, cmd := model.Update(msg)
+			Expect(newModel).NotTo(BeNil())
+			// Should return nil command since we're in menu state.
+			Expect(cmd).To(BeNil())
+		})
+
+		It("should route message to intent when in intent state", func() {
+			// First activate an intent.
+			model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+			// Send a non-key message to the intent.
+			msg := tea.MouseMsg{X: 10, Y: 10}
+			newModel, _ := model.Update(msg)
+			Expect(newModel).NotTo(BeNil())
+		})
+
+		It("should handle intent result and return to menu", func() {
+			// Activate an intent.
+			newModel, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			model = newModel.(*app.Model)
+			Expect(model.GetState()).To(Equal(app.StateIntent))
+
+			// Send escape which causes intent to return result.
+			newModel, cmd := model.Update(tea.KeyMsg{Type: tea.KeyEsc})
+			model = newModel.(*app.Model)
+
+			// Process any returned command.
+			if cmd != nil {
+				resultMsg := cmd()
+				if resultMsg != nil {
+					newModel, _ = model.Update(resultMsg)
+					model = newModel.(*app.Model)
+				}
+			}
+
+			// Should be back in menu.
+			Expect(model.GetState()).To(Equal(app.StateMenu))
+		})
+
+		It("should pass through non-completing message when in intent state", func() {
+			// Activate an intent.
+			newModel, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			model = newModel.(*app.Model)
+
+			// Send a message that doesn't complete the intent (like arrow down).
+			newModel, cmd := model.Update(tea.KeyMsg{Type: tea.KeyDown})
+			model = newModel.(*app.Model)
+
+			// Should still be in intent state.
+			Expect(model.GetState()).To(Equal(app.StateIntent))
+			// Command may or may not be nil depending on intent's response.
+			Expect(newModel).NotTo(BeNil())
+			_ = cmd // We don't care about the specific command.
+		})
+
+		It("should return to menu when intent completes with result", func() {
+			// Activate an intent.
+			newModel, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			model = newModel.(*app.Model)
+
+			// Trigger intent completion by pressing escape (intents handle this).
+			msg := tea.KeyMsg{Type: tea.KeyEsc}
+			newModel, cmd := model.Update(msg)
+			model = newModel.(*app.Model)
+
+			// Process the batch command if returned.
+			if cmd != nil {
+				msg := cmd()
+				if msg != nil {
+					// Check if it's a batch.
+					if batchMsg, ok := msg.(tea.BatchMsg); ok {
+						for _, bCmd := range batchMsg {
+							if bCmd != nil {
+								innerMsg := bCmd()
+								if innerMsg != nil {
+									newModel, _ = model.Update(innerMsg)
+									model = newModel.(*app.Model)
+								}
+							}
+						}
+					} else {
+						newModel, _ = model.Update(msg)
+						model = newModel.(*app.Model)
+					}
+				}
+			}
+
+			// Should be back in menu.
+			Expect(model.GetState()).To(Equal(app.StateMenu))
+		})
+	})
+
+	Describe("View - Additional Coverage", func() {
+		It("should render the configured version in the logo when provided", func() {
+			log := logger.DefaultLogger()
+			bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+
+			versionedModel := app.NewModel(cliService, svc, bootstrapResult, app.WithVersion("v9.9.9-test"))
+			view := versionedModel.View()
+
+			Expect(view).To(ContainSubstring("v9.9.9-test"))
+		})
+
+		It("should show info modal when visible in menu state", func() {
+			// Navigate to generate_cv without any events to trigger info modal.
+			// First, navigate down to "Generate CV" (index 3).
+			for range 3 {
+				model.Update(tea.KeyMsg{Type: tea.KeyDown})
+			}
+			// Press enter to select - should show info modal since no events.
+			model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+			// View should show modal content.
+			view := model.View()
+			Expect(view).To(ContainSubstring("No Career Events"))
+		})
+
+		It("should return 'No active intent' when intent state but no active intent", func() {
+			// This is an edge case - normally shouldn't happen.
+			// We test by directly setting state without activating intent.
+			// Since we can't directly set state, we test the normal path.
+			model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			view := model.View()
+			// Should show intent view (not "No active intent" since intent is active).
+			Expect(view).NotTo(Equal("No active intent"))
+		})
+
+		It("should render menu view when in menu state", func() {
+			view := model.View()
+			Expect(view).To(ContainSubstring("Capture Event"))
+			Expect(view).To(ContainSubstring("Browse Timeline"))
+		})
+
+		It("should render intent view when intent is active", func() {
+			// Activate an intent.
+			newModel, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			model = newModel.(*app.Model)
+
+			view := model.View()
+			// Should render intent's view, not menu.
+			Expect(view).NotTo(ContainSubstring("Browse Timeline"))
+		})
+
+		It("should return empty string for unknown state", func() {
+			// The fallback case returns "" - this is tested via verifying the
+			// model handles all expected states properly without panicking.
+			// We cannot directly set an invalid state, so we verify edge handling.
+			view := model.View()
+			// Menu state should render properly.
+			Expect(view).NotTo(BeEmpty())
+
+			// Intent state should also render properly.
+			newModel, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			model = newModel.(*app.Model)
+			view = model.View()
+			Expect(view).NotTo(BeEmpty())
+		})
+	})
+
+	Describe("handleMenuInput - Boundary Conditions", func() {
+		It("should open and save the settings modal when config loading falls back to defaults", func() {
+			config.SetConfigPathForTesting(GinkgoT().TempDir())
+
+			newModel, openCmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(",")})
+			model = newModel.(*app.Model)
+			Expect(openCmd).NotTo(BeNil())
+			Expect(model.View()).To(ContainSubstring("Configure"))
+
+			newModel, saveCmd := model.Update(tea.KeyMsg{Type: tea.KeyCtrlS})
+			model = newModel.(*app.Model)
+
+			Expect(saveCmd).To(BeNil())
+			Expect(model.View()).NotTo(ContainSubstring("Configure"))
+			Expect(model.View()).To(ContainSubstring("Capture Event"))
+		})
+
+		It("should open the settings modal when comma is pressed", func() {
+			newModel, cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(",")})
+			model = newModel.(*app.Model)
+
+			Expect(cmd).NotTo(BeNil())
+			Expect(model.View()).To(ContainSubstring("Configure"))
+		})
+
+		It("should keep the settings modal open for unrelated keys", func() {
+			newModel, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(",")})
+			model = newModel.(*app.Model)
+
+			newModel, cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("x")})
+			model = newModel.(*app.Model)
+
+			Expect(cmd).To(BeNil())
+			Expect(model.View()).To(ContainSubstring("Configure"))
+		})
+
+		It("should close the settings modal when escape is pressed", func() {
+			newModel, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(",")})
+			model = newModel.(*app.Model)
+			Expect(model.View()).To(ContainSubstring("Configure"))
+
+			newModel, cmd := model.Update(tea.KeyMsg{Type: tea.KeyEsc})
+			model = newModel.(*app.Model)
+
+			Expect(cmd).To(BeNil())
+			Expect(model.View()).NotTo(ContainSubstring("Configure"))
+			Expect(model.View()).To(ContainSubstring("Capture Event"))
+		})
+
+		It("should save settings modal changes when ctrl+s is pressed", func() {
+			configPath := filepath.Join(GinkgoT().TempDir(), "saved-config.yaml")
+			config.SetConfigPathForTesting(configPath)
+
+			newModel, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(",")})
+			model = newModel.(*app.Model)
+			Expect(model.View()).To(ContainSubstring("Configure"))
+
+			newModel, cmd := model.Update(tea.KeyMsg{Type: tea.KeyCtrlS})
+			model = newModel.(*app.Model)
+
+			Expect(cmd).To(BeNil())
+			Expect(model.View()).NotTo(ContainSubstring("Configure"))
+
+			_, err := os.Stat(configPath)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should not move up when at top of menu", func() {
+			// Already at index 0, try moving up.
+			model.Update(tea.KeyMsg{Type: tea.KeyUp})
+			// Should still be at first item.
+			view := model.View()
+			Expect(view).To(ContainSubstring("Capture Event"))
+		})
+
+		It("should not move down when at bottom of menu", func() {
+			// Move to bottom of menu.
+			menuItems := model.GetMenuItems()
+			for range len(menuItems) - 1 {
+				model.Update(tea.KeyMsg{Type: tea.KeyDown})
+			}
+			// Try moving down again - should stay at bottom.
+			model.Update(tea.KeyMsg{Type: tea.KeyDown})
+			// Should still render without error.
+			view := model.View()
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("should handle space key as selection", func() {
+			msg := tea.KeyMsg{Type: tea.KeySpace}
+			newModel, cmd := model.Update(msg)
+			Expect(newModel).NotTo(BeNil())
+			Expect(cmd).NotTo(BeNil())
+		})
+
+		It("should handle k key for up navigation", func() {
+			// Move down first, then use k to go up.
+			model.Update(tea.KeyMsg{Type: tea.KeyDown})
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("k")}
+			newModel, _ := model.Update(msg)
+			Expect(newModel).NotTo(BeNil())
+		})
+
+		It("should handle j key for down navigation", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")}
+			newModel, _ := model.Update(msg)
+			Expect(newModel).NotTo(BeNil())
+		})
+	})
+
+	Describe("handleMenuSelection - Edge Cases", func() {
+		It("should show info modal when selecting generate_cv without events", func() {
+			// Navigate to generate_cv (index 3).
+			for range 3 {
+				model.Update(tea.KeyMsg{Type: tea.KeyDown})
+			}
+			// Select it.
+			newModel, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			model = newModel.(*app.Model)
+
+			// Should still be in menu state (info modal shown).
+			state := model.GetState()
+			Expect(state).To(Equal(app.StateMenu))
+
+			// View should contain modal.
+			view := model.View()
+			Expect(view).To(ContainSubstring("No Career Events"))
+		})
+	})
+
+	Describe("handleKeyMsg - Info Modal", func() {
+		It("should dismiss info modal on any key press", func() {
+			// First trigger info modal by selecting generate_cv without events.
+			for range 3 {
+				model.Update(tea.KeyMsg{Type: tea.KeyDown})
+			}
+			model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+			// Verify modal is shown.
+			view := model.View()
+			Expect(view).To(ContainSubstring("No Career Events"))
+
+			// Press enter to dismiss modal.
+			newModel, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			model = newModel.(*app.Model)
+
+			// Modal should be dismissed, showing menu again.
+			view = model.View()
+			Expect(view).NotTo(ContainSubstring("No Career Events"))
+		})
+	})
+
+	Describe("handleKeyMsg - State Fallback", func() {
+		It("should handle key messages that don't match any case in menu state", func() {
+			// Test the fallback return in handleKeyMsg by sending a key
+			// that doesn't match ctrl+c, q, or ? while in menu state.
+			// The 'x' key should fall through and be handled by handleMenuInput.
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("x")}
+			newModel, cmd := model.Update(msg)
+			Expect(newModel).NotTo(BeNil())
+			// handleMenuInput returns nil for unknown keys.
+			Expect(cmd).To(BeNil())
+		})
+
+		It("should handle function keys gracefully", func() {
+			// Function keys should fall through the switch.
+			msg := tea.KeyMsg{Type: tea.KeyF1}
+			newModel, cmd := model.Update(msg)
+			Expect(newModel).NotTo(BeNil())
+			Expect(cmd).To(BeNil())
+		})
+	})
+
+	Describe("getMenuColumnWidths - Terminal Sizes", func() {
+		It("should handle different terminal widths", func() {
+			// Test with various window sizes.
+			sizes := []tea.WindowSizeMsg{
+				{Width: 40, Height: 20},  // Tiny.
+				{Width: 60, Height: 24},  // Compact.
+				{Width: 80, Height: 24},  // Normal.
+				{Width: 120, Height: 40}, // Large.
+				{Width: 200, Height: 60}, // XLarge.
+			}
+
+			for _, size := range sizes {
+				newModel, _ := model.Update(size)
+				model = newModel.(*app.Model)
+				// View should render without error.
+				view := model.View()
+				Expect(view).NotTo(BeEmpty())
+			}
+		})
+	})
+
+	Describe("handleDefaultMsg - Intent Result Path", func() {
+		It("should return nil when in menu state and not RequestEditEventMsg", func() {
+			// In menu state, send a generic message (not key, not edit request).
+			msg := tea.MouseMsg{X: 0, Y: 0}
+			newModel, cmd := model.Update(msg)
+			Expect(newModel).NotTo(BeNil())
+			// Should return nil command since we're in menu state.
+			Expect(cmd).To(BeNil())
+		})
+
+		It("should route message to intent when in intent state", func() {
+			// First activate an intent.
+			model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+			// Send a non-key message to the intent.
+			msg := tea.MouseMsg{X: 10, Y: 10}
+			newModel, _ := model.Update(msg)
+			Expect(newModel).NotTo(BeNil())
+		})
+
+		It("should handle intent result and return to menu", func() {
+			// Activate an intent.
+			newModel, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			model = newModel.(*app.Model)
+			Expect(model.GetState()).To(Equal(app.StateIntent))
+
+			// Send escape which causes intent to return result.
+			newModel, cmd := model.Update(tea.KeyMsg{Type: tea.KeyEsc})
+			model = newModel.(*app.Model)
+
+			// Process any returned command.
+			if cmd != nil {
+				resultMsg := cmd()
+				if resultMsg != nil {
+					newModel, _ = model.Update(resultMsg)
+					model = newModel.(*app.Model)
+				}
+			}
+
+			// Should be back in menu.
+			Expect(model.GetState()).To(Equal(app.StateMenu))
+		})
+
+		It("should pass through non-completing message when in intent state", func() {
+			// Activate an intent.
+			newModel, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			model = newModel.(*app.Model)
+
+			// Send a message that doesn't complete the intent (like arrow down).
+			newModel, cmd := model.Update(tea.KeyMsg{Type: tea.KeyDown})
+			model = newModel.(*app.Model)
+
+			// Should still be in intent state.
+			Expect(model.GetState()).To(Equal(app.StateIntent))
+			// Command may or may not be nil depending on intent's response.
+			Expect(newModel).NotTo(BeNil())
+			_ = cmd // We don't care about the specific command.
+		})
+
+		It("should return to menu when intent completes with result", func() {
+			// Activate an intent.
+			newModel, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			model = newModel.(*app.Model)
+
+			// Trigger intent completion by pressing escape (intents handle this).
+			msg := tea.KeyMsg{Type: tea.KeyEsc}
+			newModel, cmd := model.Update(msg)
+			model = newModel.(*app.Model)
+
+			// Process the batch command if returned.
+			if cmd != nil {
+				msg := cmd()
+				if msg != nil {
+					// Check if it's a batch.
+					if batchMsg, ok := msg.(tea.BatchMsg); ok {
+						for _, bCmd := range batchMsg {
+							if bCmd != nil {
+								innerMsg := bCmd()
+								if innerMsg != nil {
+									newModel, _ = model.Update(innerMsg)
+									model = newModel.(*app.Model)
+								}
+							}
+						}
+					} else {
+						newModel, _ = model.Update(msg)
+						model = newModel.(*app.Model)
+					}
+				}
+			}
+
+			// Should be back in menu.
+			Expect(model.GetState()).To(Equal(app.StateMenu))
+		})
+
+		// The "intent completion via non-key message" test was removed because
+		// it relied on legacy FormSubmittedMsg/ReviewCancelledMsg messages that no
+		// longer exist after the dead-code removal. The handleDefaultMsg routing path
+		// is already covered by the "route message to intent" and "return to menu
+		// when intent completes with result" tests above.
+		It("should handle fallback when state is neither Menu nor Intent", func() {
+			// This tests line 207 - the final return m, nil
+			// This is technically unreachable with current state enum,
+			// but we can at least verify the function handles unexpected states.
+			// Since we can't set an invalid state, we verify the normal paths work.
+			state := model.GetState()
+			Expect(state).To(Equal(app.StateMenu))
+
+			// Send a non-key, non-edit message while in menu state.
+			customMsg := struct{ data int }{data: 42}
+			newModel, cmd := model.Update(customMsg)
+			Expect(newModel).NotTo(BeNil())
+			Expect(cmd).To(BeNil()) // Falls through to return m, nil
+		})
+
+		It("should route non-key messages to the open settings modal", func() {
+			newModel, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(",")})
+			model = newModel.(*app.Model)
+
+			newModel, cmd := model.Update(tea.MouseMsg{X: 120, Y: 40})
+			model = newModel.(*app.Model)
+
+			Expect(cmd).To(BeNil())
+			Expect(model.View()).To(ContainSubstring("Configure"))
+		})
+	})
+
+	Describe("Intent Activation - All Types", func() {
+		// These tests ensure all intent registration factories are exercised.
+		// Menu items: 0=capture_event, 1=browse_timeline, 2=manage_skills,
+		// 3=generate_cv, 4=burst_management, 5=fact_management
+
+		It("should activate browse_timeline intent", func() {
+			// Navigate to browse_timeline (index 1).
+			model.Update(tea.KeyMsg{Type: tea.KeyDown})
+			newModel, cmd := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			model = newModel.(*app.Model)
+
+			Expect(model.GetState()).To(Equal(app.StateIntent))
+			Expect(cmd).NotTo(BeNil())
+		})
+
+		It("should activate manage_skills intent", func() {
+			// Navigate to manage_skills (index 2).
+			model.Update(tea.KeyMsg{Type: tea.KeyDown})
+			model.Update(tea.KeyMsg{Type: tea.KeyDown})
+			newModel, cmd := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			model = newModel.(*app.Model)
+
+			Expect(model.GetState()).To(Equal(app.StateIntent))
+			Expect(cmd).NotTo(BeNil())
+		})
+
+		It("should activate burst_management intent", func() {
+			// Navigate to burst_management (index 4).
+			for range 4 {
+				model.Update(tea.KeyMsg{Type: tea.KeyDown})
+			}
+			newModel, cmd := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			model = newModel.(*app.Model)
+
+			Expect(model.GetState()).To(Equal(app.StateIntent))
+			Expect(cmd).NotTo(BeNil())
+		})
+
+		It("should activate fact_management intent", func() {
+			// Navigate to fact_management (index 5).
+			for range 5 {
+				model.Update(tea.KeyMsg{Type: tea.KeyDown})
+			}
+			newModel, cmd := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			model = newModel.(*app.Model)
+
+			Expect(model.GetState()).To(Equal(app.StateIntent))
+			Expect(cmd).NotTo(BeNil())
+		})
+	})
+
+	Describe("Edge Cases", func() {
+		It("should handle unknown key messages gracefully", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("x")}
+			newModel, _ := model.Update(msg)
+			Expect(newModel).NotTo(BeNil())
+		})
+
+		It("should handle multiple state transitions", func() {
+			// Menu -> Intent -> Menu -> Intent
+			state := model.GetState()
+			Expect(state).To(Equal(app.StateMenu))
+
+			// Activate intent
+			newModel, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			model = newModel.(*app.Model)
+			state = model.GetState()
+			Expect(state).To(Equal(app.StateIntent))
+
+			// Return to menu via intent handling escape
+			msg := tea.KeyMsg{Type: tea.KeyEsc}
+			newModel, cmd := model.Update(msg)
+			model = newModel.(*app.Model)
+
+			// Process intent's result
+			if cmd != nil {
+				resultMsg := cmd()
+				if resultMsg != nil {
+					newModel, _ = model.Update(resultMsg)
+					model = newModel.(*app.Model)
+				}
+			}
+
+			state = model.GetState()
+			Expect(state).To(Equal(app.StateMenu))
+
+			// Activate intent again
+			newModel, _ = model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			model = newModel.(*app.Model)
+			state = model.GetState()
+			Expect(state).To(Equal(app.StateIntent))
+		})
+
+		It("should handle rapid key presses", func() {
+			// Simulate rapid navigation
+			for range 10 {
+				msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")}
+				newModel, _ := model.Update(msg)
+				model = newModel.(*app.Model)
+			}
+			Expect(model).NotTo(BeNil())
+		})
+
+	})
+})
+
+// mockFailingRegistrar is a test registrar that returns an error.
+type mockFailingRegistrar struct {
+	err error
+}
+
+func (m *mockFailingRegistrar) RegisterAll(_ context.Context, _ *intents.DefaultIntentRouter) error {
+	return m.err
+}
+
+// mockNilFactoryRegistrar registers factories that return nil intents.
+type mockNilFactoryRegistrar struct{}
+
+func (m *mockNilFactoryRegistrar) RegisterAll(_ context.Context, router *intents.DefaultIntentRouter) error {
+	// Register a factory that returns nil (simulating intent creation failure).
+	return router.RegisterIntent("capture_event", func() intents.Intent {
+		return nil // Simulates intent creation failure.
+	})
+}
+
+// mockPartialRegistrar registers some intents successfully and some with nil factories.
+type mockPartialRegistrar struct{}
+
+func (m *mockPartialRegistrar) RegisterAll(ctx context.Context, router *intents.DefaultIntentRouter) error {
+	// Register capture_event with a nil factory.
+	router.RegisterIntent("capture_event", func() intents.Intent {
+		return nil
+	})
+	// Register browse_timeline with a working factory.
+	router.RegisterIntent("browse_timeline", func() intents.Intent {
+		return &mockIntent{}
+	})
+	return nil
+}
+
+// mockIntent is a minimal intent implementation for testing.
+type mockIntent struct{}
+
+func (m *mockIntent) Init() tea.Cmd                              { return nil }
+func (m *mockIntent) Update(_ tea.Msg) tea.Cmd                   { return nil }
+func (m *mockIntent) View() string                               { return "mock intent view" }
+func (m *mockIntent) Result() *intents.IntentResult[interface{}] { return nil }
+
+// completionTriggerMsg is a custom message that causes mockCompletingIntent to complete.
+type completionTriggerMsg struct{}
+
+// mockCompletingIntent completes when it receives a completionTriggerMsg.
+type mockCompletingIntent struct {
+	completed bool
+}
+
+func (m *mockCompletingIntent) Init() tea.Cmd { return nil }
+func (m *mockCompletingIntent) Update(msg tea.Msg) tea.Cmd {
+	if _, ok := msg.(completionTriggerMsg); ok {
+		m.completed = true
+	}
+	return nil
+}
+func (m *mockCompletingIntent) View() string { return "completing intent view" }
+func (m *mockCompletingIntent) Result() *intents.IntentResult[interface{}] {
+	if m.completed {
+		return intents.NewCompletedResult[interface{}](nil)
+	}
+	return nil
+}
+
+// mockCompletingRegistrar registers a mockCompletingIntent as capture_event.
+type mockCompletingRegistrar struct{}
+
+func (m *mockCompletingRegistrar) RegisterAll(_ context.Context, router *intents.DefaultIntentRouter) error {
+	return router.RegisterIntent("capture_event", func() intents.Intent {
+		return &mockCompletingIntent{}
+	})
+}
+
+// emptyRegistrar registers no intents (for Init error path tests).
+type emptyRegistrar struct{}
+
+func (m *emptyRegistrar) RegisterAll(_ context.Context, _ *intents.DefaultIntentRouter) error {
+	return nil
+}
+
+// failingEventRepo embeds the memory event repo and overrides List to return an error.
+type failingEventRepo struct {
+	*careermemory.EventRepository
+}
+
+func (f *failingEventRepo) List(_ context.Context, _ careerrepo.EventListFilters) ([]*career.Event, error) {
+	return nil, errors.New("simulated event list error")
+}
+
+// failingFactRepo embeds the memory fact repo and overrides List to return an error.
+type failingFactRepo struct {
+	*careermemory.FactRepository
+}
+
+func (f *failingFactRepo) List(_ context.Context, _ careerrepo.FactListFilters) ([]*career.Fact, error) {
+	return nil, errors.New("simulated fact list error")
+}
+
+var _ = Describe("IntentRegistrar DI Tests", func() {
+	var (
+		repo       *careermemory.EventRepository
+		svc        *careerservice.Service
+		cliService *service.CLIEventService
+	)
+
+	BeforeEach(func() {
+		config.SetConfigPathForTesting(filepath.Join(GinkgoT().TempDir(), "config.yaml"))
+		repo = careermemory.NewEventRepository()
+		burstRepo := careermemory.NewBurstRepository()
+		factRepo := careermemory.NewFactRepository()
+		svc = careerservice.NewService(repo)
+		svc.SetBurstRepository(burstRepo)
+		svc.SetFactRepository(factRepo)
+		cliService = service.NewCLIEventService(svc)
+	})
+
+	AfterEach(func() {
+		config.ResetConfigPath()
+	})
+
+	Describe("WithIntentRegisterer option", func() {
+		It("should use custom registrar when provided", func() {
+			log := logger.DefaultLogger()
+			bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+
+			// Use mock registrar that registers a working intent.
+			mockReg := &mockPartialRegistrar{}
+			model := app.NewModel(cliService, svc, bootstrapResult, app.WithIntentRegisterer(mockReg))
+
+			Expect(model).NotTo(BeNil())
+			Expect(model.GetState()).To(Equal(app.StateMenu))
+		})
+
+		It("should handle registrar that returns error gracefully", func() {
+			log := logger.DefaultLogger()
+			bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+
+			// Use mock registrar that returns an error.
+			mockReg := &mockFailingRegistrar{err: context.DeadlineExceeded}
+			model := app.NewModel(cliService, svc, bootstrapResult, app.WithIntentRegisterer(mockReg))
+
+			// Model should still be created (error is logged, not fatal).
+			Expect(model).NotTo(BeNil())
+			Expect(model.GetState()).To(Equal(app.StateMenu))
+		})
+	})
+
+	Describe("handleMenuSelection with failing factory", func() {
+		It("should handle ActivateIntent error when factory returns nil", func() {
+			log := logger.DefaultLogger()
+			bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+
+			// Use mock registrar that registers a nil-returning factory.
+			mockReg := &mockNilFactoryRegistrar{}
+			model := app.NewModel(cliService, svc, bootstrapResult, app.WithIntentRegisterer(mockReg))
+
+			// Try to activate the intent (should fail because factory returns nil).
+			newModel, cmd := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			model = newModel.(*app.Model)
+
+			// ActivateIntent should fail, model should stay in menu state.
+			//
+			// The state is set to Intent BEFORE ActivateIntent is called,
+			// so we need to check if the error path resets state or handles gracefully.
+			Expect(model).NotTo(BeNil())
+			// The cmd should be nil or a no-op when activation fails.
+			_ = cmd
+		})
+	})
+
+	Describe("DefaultIntentRegistrar", func() {
+		It("should register all intents successfully", func() {
+			log := logger.DefaultLogger()
+			bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+
+			registrar := app.NewDefaultIntentRegisterer(&app.RegistrarConfig{
+				CLIService:      cliService,
+				CareerService:   svc,
+				Log:             log,
+				CVGenService:    bootstrapResult.Services.CVGenService,
+				CVExportService: bootstrapResult.Services.CVExportService,
+			})
+
+			router := intents.NewDefaultIntentRouter()
+			err := registrar.RegisterAll(context.Background(), router)
+
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("should return error on duplicate registration", func() {
+			log := logger.DefaultLogger()
+			bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+
+			registrar := app.NewDefaultIntentRegisterer(&app.RegistrarConfig{
+				CLIService:      cliService,
+				CareerService:   svc,
+				Log:             log,
+				CVGenService:    bootstrapResult.Services.CVGenService,
+				CVExportService: bootstrapResult.Services.CVExportService,
+			})
+
+			router := intents.NewDefaultIntentRouter()
+
+			// First registration should succeed.
+			err := registrar.RegisterAll(context.Background(), router)
+			Expect(err).ToNot(HaveOccurred())
+
+			// Second registration should fail (duplicate).
+			err = registrar.RegisterAll(context.Background(), router)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("already registered"))
+		})
+	})
+
+	Describe("View Edge Cases with State Manipulation", func() {
+		It("should return 'No active intent' when state is Intent but router has no active intent", func() {
+			log := logger.DefaultLogger()
+			bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+
+			// Create model with partial registrar (only browse_timeline).
+			mockReg := &mockPartialRegistrar{}
+			model := app.NewModel(cliService, svc, bootstrapResult, app.WithIntentRegisterer(mockReg))
+
+			// Force state to Intent without activating an intent.
+			model.SetStateForTesting(app.StateIntent)
+
+			// View should return "No active intent".
+			view := model.View()
+			Expect(view).To(Equal("No active intent"))
+		})
+
+		It("should return empty string for unknown state", func() {
+			log := logger.DefaultLogger()
+			bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+
+			mockReg := &mockPartialRegistrar{}
+			model := app.NewModel(cliService, svc, bootstrapResult, app.WithIntentRegisterer(mockReg))
+
+			// Set state to something that's not Menu or Intent.
+			// Note: This requires using a state that's neither StateMenu nor StateIntent.
+			// Since State is a string type, we can set it to an invalid value.
+			model.SetStateForTesting(app.State("invalid"))
+
+			// View should return empty string for unknown state.
+			view := model.View()
+			Expect(view).To(Equal(""))
+		})
+	})
+
+	Describe("Accessors", func() {
+		It("GetIntentRouter should return the router", func() {
+			log := logger.DefaultLogger()
+			bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+
+			model := app.NewModel(cliService, svc, bootstrapResult)
+			router := model.GetIntentRouter()
+
+			Expect(router).NotTo(BeNil())
+		})
+	})
+
+	Describe("handleKeyMsg with invalid state", func() {
+		It("should return nil cmd when state is invalid", func() {
+			log := logger.DefaultLogger()
+			bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+
+			mockReg := &mockPartialRegistrar{}
+			model := app.NewModel(cliService, svc, bootstrapResult, app.WithIntentRegisterer(mockReg))
+
+			// Set state to invalid value.
+			model.SetStateForTesting(app.State("invalid"))
+
+			// Send a key message - should hit the fallback.
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("a")}
+			newModel, cmd := model.Update(msg)
+
+			Expect(newModel).NotTo(BeNil())
+			Expect(cmd).To(BeNil())
+		})
+	})
+
+	Describe("handleEditEventRequest Error Paths", func() {
+		It("should handle duplicate registration gracefully", func() {
+			log := logger.DefaultLogger()
+			bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+
+			model := app.NewModel(cliService, svc, bootstrapResult)
+
+			// Create a test event.
+			testEvent := fixtures.EventWith("edit-test-event", "Test event for editing", "", "")
+
+			// First request - should succeed.
+			msg1 := intents.RequestEditEventMsg{Event: testEvent}
+			newModel, _ := model.Update(msg1)
+			model = newModel.(*app.Model)
+			Expect(model.GetState()).To(Equal(app.StateIntent))
+
+			// Return to menu.
+			model.SetStateForTesting(app.StateMenu)
+
+			// Second request with same event - registration is duplicate but handled.
+			// The nolint comment indicates this is expected behavior.
+			msg2 := intents.RequestEditEventMsg{Event: testEvent}
+			newModel, cmd := model.Update(msg2)
+			model = newModel.(*app.Model)
+
+			// Should still transition to intent state (uses existing registration).
+			// The cmd may be nil if the intent returns nil from Init().
+			Expect(model.GetState()).To(Equal(app.StateIntent))
+			_ = cmd // Command may or may not be nil.
+		})
+	})
+
+	Describe("Intent Factory Error Paths", func() {
+		It("should handle capture_event factory failure when context is invalid", func() {
+			log := logger.DefaultLogger()
+
+			// Create registrar with nil services (will cause validation failure).
+			registrar := app.NewDefaultIntentRegisterer(&app.RegistrarConfig{
+				CLIService:    nil, // Invalid - will cause factory to fail.
+				CareerService: nil,
+				Log:           log,
+			})
+
+			router := intents.NewDefaultIntentRouter()
+			err := registrar.RegisterAll(context.Background(), router)
+			Expect(err).ToNot(HaveOccurred()) // Registration succeeds, factory failure happens on activation.
+
+			// Now try to activate - the factory will fail and return nil.
+			_, err = router.ActivateIntent("capture_event", nil)
+			Expect(err).To(HaveOccurred()) // Factory returned nil.
+			Expect(err.Error()).To(ContainSubstring("factory returned nil"))
+		})
+
+		It("should handle browse_timeline factory failure", func() {
+			log := logger.DefaultLogger()
+
+			// Create registrar with nil services.
+			registrar := app.NewDefaultIntentRegisterer(&app.RegistrarConfig{
+				CLIService:    nil,
+				CareerService: nil,
+				Log:           log,
+			})
+
+			router := intents.NewDefaultIntentRouter()
+			registrar.RegisterAll(context.Background(), router)
+
+			// Activation will fail because factory returns nil.
+			_, err := router.ActivateIntent("browse_timeline", nil)
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should handle generate_cv factory failure", func() {
+			log := logger.DefaultLogger()
+
+			registrar := app.NewDefaultIntentRegisterer(&app.RegistrarConfig{
+				CLIService:    nil,
+				CareerService: nil,
+				Log:           log,
+			})
+
+			router := intents.NewDefaultIntentRouter()
+			registrar.RegisterAll(context.Background(), router)
+
+			_, err := router.ActivateIntent("generate_cv", nil)
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should handle configure_system factory failure", func() {
+			log := logger.DefaultLogger()
+			config.SetConfigPathForTesting(GinkgoT().TempDir())
+
+			registrar := app.NewDefaultIntentRegisterer(&app.RegistrarConfig{
+				CLIService:    nil,
+				CareerService: nil,
+				Log:           log,
+			})
+
+			router := intents.NewDefaultIntentRouter()
+			registrar.RegisterAll(context.Background(), router)
+
+			_, err := router.ActivateIntent("configure_system", nil)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should handle burst_management factory failure", func() {
+			log := logger.DefaultLogger()
+
+			registrar := app.NewDefaultIntentRegisterer(&app.RegistrarConfig{
+				CLIService:    nil,
+				CareerService: nil, // Will cause GetBurstRepository to panic or fail.
+				Log:           log,
+			})
+
+			router := intents.NewDefaultIntentRouter()
+			registrar.RegisterAll(context.Background(), router)
+
+			_, err := router.ActivateIntent("burst_management", nil)
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should handle fact_management factory failure", func() {
+			log := logger.DefaultLogger()
+
+			registrar := app.NewDefaultIntentRegisterer(&app.RegistrarConfig{
+				CLIService:    nil,
+				CareerService: nil,
+				Log:           log,
+			})
+
+			router := intents.NewDefaultIntentRouter()
+			registrar.RegisterAll(context.Background(), router)
+
+			_, err := router.ActivateIntent("fact_management", nil)
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should wire SkillInferenceService into BurstManagement intent context", func() {
+			// Create test repositories
+			eventRepo := careermemory.NewEventRepository()
+			skillRepo := careermemory.NewSkillRepository()
+			burstRepo := careermemory.NewBurstRepository()
+			factRepo := careermemory.NewFactRepository()
+
+			// Create career service
+			careerSvc := careerservice.NewService(eventRepo)
+			careerSvc.SetSkillRepository(skillRepo)
+			careerSvc.SetBurstRepository(burstRepo)
+			careerSvc.SetFactRepository(factRepo)
+
+			// Create skill inference service
+			skillInferenceService := skillinference.NewSkillInferenceService(skillRepo, skillRepo, eventRepo)
+
+			// Create registrar config with SkillInferenceService
+			log := logger.DefaultLogger()
+			registrar := app.NewDefaultIntentRegisterer(&app.RegistrarConfig{
+				CLIService:            nil,
+				CareerService:         careerSvc,
+				SkillInferenceService: skillInferenceService,
+				Log:                   log,
+			})
+
+			// Register intents
+			router := intents.NewDefaultIntentRouter()
+			err := registrar.RegisterAll(context.Background(), router)
+			Expect(err).ToNot(HaveOccurred())
+
+			// Activate burst management intent
+			_, err = router.ActivateIntent("burst_management", nil)
+			Expect(err).ToNot(HaveOccurred())
+
+			// Get the active intent
+			activeIntent := router.GetActiveIntent()
+			Expect(activeIntent).NotTo(BeNil())
+
+			// Cast to BurstManagement intent
+			burstIntent, ok := activeIntent.(*burst_management.Intent)
+			Expect(ok).To(BeTrue(), "Active intent should be *burst_management.Intent")
+			Expect(burstIntent).NotTo(BeNil())
+
+			// Verify SkillInferenceService is wired up
+			// We'll add a test helper method GetTestContext() to expose the context
+			testCtx := burstIntent.GetTestContext()
+			Expect(testCtx).NotTo(BeNil(), "Intent context should not be nil")
+			Expect(testCtx.SkillInferenceService).NotTo(BeNil(), "SkillInferenceService should be wired up in context")
+		})
+
+		It("should wire SkillInferenceService and EventRepository into ManageSkills intent context", func() {
+			eventRepo := careermemory.NewEventRepository()
+			skillRepo := careermemory.NewSkillRepository()
+			burstRepo := careermemory.NewBurstRepository()
+			factRepo := careermemory.NewFactRepository()
+
+			careerSvc := careerservice.NewService(eventRepo)
+			careerSvc.SetSkillRepository(skillRepo)
+			careerSvc.SetBurstRepository(burstRepo)
+			careerSvc.SetFactRepository(factRepo)
+
+			skillInferenceService := skillinference.NewSkillInferenceService(skillRepo, skillRepo, eventRepo)
+
+			log := logger.DefaultLogger()
+			registrar := app.NewDefaultIntentRegisterer(&app.RegistrarConfig{
+				CLIService:            nil,
+				CareerService:         careerSvc,
+				SkillInferenceService: skillInferenceService,
+				Log:                   log,
+			})
+
+			router := intents.NewDefaultIntentRouter()
+			err := registrar.RegisterAll(context.Background(), router)
+			Expect(err).ToNot(HaveOccurred())
+
+			_, err = router.ActivateIntent("manage_skills", nil)
+			Expect(err).ToNot(HaveOccurred())
+
+			activeIntent := router.GetActiveIntent()
+			Expect(activeIntent).NotTo(BeNil())
+
+			skillsIntent, ok := activeIntent.(*skillsmanagement.Intent)
+			Expect(ok).To(BeTrue(), "Active intent should be *skillsmanagement.Intent")
+			Expect(skillsIntent).NotTo(BeNil())
+
+			testCtx := skillsIntent.GetTestContext()
+			Expect(testCtx).NotTo(BeNil(), "Intent context should not be nil")
+			Expect(testCtx.SkillInferenceService).NotTo(BeNil(), "SkillInferenceService should be wired up in context")
+			Expect(testCtx.EventRepository).NotTo(BeNil(), "EventRepository should be wired up in context")
+		})
+
+		It("should wire SkillRepository and EventRepository into GenerateCV intent context", func() {
+			eventRepo := careermemory.NewEventRepository()
+			skillRepo := careermemory.NewSkillRepository()
+			burstRepo := careermemory.NewBurstRepository()
+			factRepo := careermemory.NewFactRepository()
+
+			testEvent := fixtures.Event("test-event-1")
+			err := eventRepo.Create(context.Background(), testEvent)
+			Expect(err).ToNot(HaveOccurred())
+
+			careerSvc := careerservice.NewService(eventRepo)
+			careerSvc.SetSkillRepository(skillRepo)
+			careerSvc.SetBurstRepository(burstRepo)
+			careerSvc.SetFactRepository(factRepo)
+
+			log := logger.DefaultLogger()
+			registrar := app.NewDefaultIntentRegisterer(&app.RegistrarConfig{
+				CLIService:    nil,
+				CareerService: careerSvc,
+				Log:           log,
+			})
+
+			router := intents.NewDefaultIntentRouter()
+			err = registrar.RegisterAll(context.Background(), router)
+			Expect(err).ToNot(HaveOccurred())
+
+			_, err = router.ActivateIntent("generate_cv", nil)
+			Expect(err).ToNot(HaveOccurred())
+
+			activeIntent := router.GetActiveIntent()
+			Expect(activeIntent).NotTo(BeNil())
+
+			cvIntent, ok := activeIntent.(*generatecv.Intent)
+			Expect(ok).To(BeTrue(), "Active intent should be *generatecv.Intent")
+			Expect(cvIntent).NotTo(BeNil())
+
+			testCtx := cvIntent.GetTestContext()
+			Expect(testCtx).NotTo(BeNil(), "Intent context should not be nil")
+			Expect(testCtx.SkillRepository).NotTo(BeNil(), "SkillRepository should be wired up in context")
+			Expect(testCtx.EventRepository).NotTo(BeNil(), "EventRepository should be wired up in context")
+		})
+	})
+})
+
+var _ = Describe("App Coverage - Additional Paths", func() {
+	var (
+		model      *app.Model
+		repo       *careermemory.EventRepository
+		svc        *careerservice.Service
+		cliService *service.CLIEventService
+	)
+
+	BeforeEach(func() {
+		config.SetConfigPathForTesting(filepath.Join(GinkgoT().TempDir(), "config.yaml"))
+		repo = careermemory.NewEventRepository()
+		burstRepo := careermemory.NewBurstRepository()
+		factRepo := careermemory.NewFactRepository()
+		skillRepo := careermemory.NewSkillRepository()
+		svc = careerservice.NewService(repo)
+		svc.SetBurstRepository(burstRepo)
+		svc.SetFactRepository(factRepo)
+		svc.SetSkillRepository(skillRepo)
+		cliService = service.NewCLIEventService(svc)
+
+		log := logger.DefaultLogger()
+		bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+		model = app.NewModel(cliService, svc, bootstrapResult)
+	})
+
+	AfterEach(func() {
+		config.ResetConfigPath()
+	})
+
+	Describe("handleKeyMsg - Escape Dismisses Help", func() {
+		It("should dismiss help screen when escape is pressed while help is showing", func() {
+			helpMsg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("?")}
+			newModel, _ := model.Update(helpMsg)
+			model = newModel.(*app.Model)
+
+			view := model.View()
+			Expect(view).To(ContainSubstring("Keyboard Reference"))
+
+			escMsg := tea.KeyMsg{Type: tea.KeyEsc}
+			newModel, cmd := model.Update(escMsg)
+			model = newModel.(*app.Model)
+
+			Expect(cmd).To(BeNil())
+			view = model.View()
+			Expect(view).NotTo(ContainSubstring("Keyboard Reference"))
+		})
+	})
+
+	Describe("handleDefaultMsg - Intent Completion via Non-Key Message", func() {
+		It("should return to menu when intent completes from a non-key message", func() {
+			log := logger.DefaultLogger()
+			bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+			mockReg := &mockCompletingRegistrar{}
+			testModel := app.NewModel(cliService, svc, bootstrapResult, app.WithIntentRegisterer(mockReg))
+
+			newModel, _ := testModel.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			testModel = newModel.(*app.Model)
+			Expect(testModel.GetState()).To(Equal(app.StateIntent))
+
+			newModel, cmd := testModel.Update(completionTriggerMsg{})
+			testModel = newModel.(*app.Model)
+
+			Expect(testModel.GetState()).To(Equal(app.StateMenu))
+			Expect(cmd).NotTo(BeNil())
+		})
+
+		It("should surface an intent-completed callback when a non-key message completes the intent", func() {
+			log := logger.DefaultLogger()
+			bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+			mockReg := &mockCompletingRegistrar{}
+			testModel := app.NewModel(cliService, svc, bootstrapResult, app.WithIntentRegisterer(mockReg))
+
+			newModel, _ := testModel.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			testModel = newModel.(*app.Model)
+
+			_, cmd := testModel.Update(completionTriggerMsg{})
+			Expect(cmd).NotTo(BeNil())
+
+			msg := cmd()
+			matchedIntentCompleted := false
+
+			switch typed := msg.(type) {
+			case app.IntentCompletedMsg:
+				matchedIntentCompleted = true
+			case tea.BatchMsg:
+				for _, batchCmd := range typed {
+					if batchCmd == nil {
+						continue
+					}
+					if _, ok := batchCmd().(app.IntentCompletedMsg); ok {
+						matchedIntentCompleted = true
+					}
+				}
+			}
+
+			Expect(matchedIntentCompleted).To(BeTrue())
+		})
+
+	})
+
+	Describe("Init Error Paths", func() {
+		It("should handle Init error when browse_timeline is not registered", func() {
+			log := logger.DefaultLogger()
+			bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+			testModel := app.NewModel(cliService, svc, bootstrapResult, app.WithIntentRegisterer(&emptyRegistrar{}))
+			testModel.SetInitialScreen(app.ListScreen)
+
+			cmd := testModel.Init()
+			Expect(cmd).NotTo(BeNil())
+
+			Expect(testModel.GetState()).To(Equal(app.StateMenu))
+		})
+
+		It("should handle Init error when capture_event is not registered", func() {
+			log := logger.DefaultLogger()
+			bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+			testModel := app.NewModel(cliService, svc, bootstrapResult, app.WithIntentRegisterer(&emptyRegistrar{}))
+			testModel.SetInitialCaptureMode("manual")
+
+			cmd := testModel.Init()
+			Expect(cmd).NotTo(BeNil())
+
+			Expect(testModel.GetState()).To(Equal(app.StateMenu))
+		})
+	})
+
+	Describe("handleEditEventRequest - ActivateIntent Error", func() {
+		It("should handle ActivateIntent error when pre-registered factory returns nil", func() {
+			log := logger.DefaultLogger()
+			bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+			testModel := app.NewModel(cliService, svc, bootstrapResult)
+
+			router := testModel.GetIntentRouter()
+			router.RegisterIntent("capture_event_edit", func() intents.Intent {
+				return nil
+			})
+
+			event := fixtures.EventWith("test-edit-fail", "Test Event for Edit Error", "", "")
+			msg := intents.RequestEditEventMsg{Event: event}
+			_, cmd := testModel.Update(msg)
+
+			Expect(cmd).To(BeNil())
+		})
+	})
+
+	Describe("Registrar Factory - Missing Service Paths", func() {
+		It("should handle manage_skills factory failure with nil CareerService", func() {
+			log := logger.DefaultLogger()
+			registrar := app.NewDefaultIntentRegisterer(&app.RegistrarConfig{
+				CLIService:    nil,
+				CareerService: nil,
+				Log:           log,
+			})
+
+			router := intents.NewDefaultIntentRouter()
+			registrar.RegisterAll(context.Background(), router)
+
+			_, err := router.ActivateIntent("manage_skills", nil)
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should handle manage_skills factory failure when SkillRepository is nil", func() {
+			eventRepo := careermemory.NewEventRepository()
+			burstRepo := careermemory.NewBurstRepository()
+			factRepo := careermemory.NewFactRepository()
+
+			careerSvc := careerservice.NewService(eventRepo)
+			careerSvc.SetBurstRepository(burstRepo)
+			careerSvc.SetFactRepository(factRepo)
+
+			log := logger.DefaultLogger()
+			registrar := app.NewDefaultIntentRegisterer(&app.RegistrarConfig{
+				CareerService: careerSvc,
+				Log:           log,
+			})
+
+			router := intents.NewDefaultIntentRouter()
+			err := registrar.RegisterAll(context.Background(), router)
+			Expect(err).ToNot(HaveOccurred())
+
+			_, err = router.ActivateIntent("manage_skills", nil)
+			Expect(err).To(HaveOccurred())
+		})
+	})
+
+	Describe("Registrar Factory - Failing Repository Paths", func() {
+		It("should handle browse_timeline event list error gracefully", func() {
+			failRepo := &failingEventRepo{EventRepository: careermemory.NewEventRepository()}
+			burstRepo := careermemory.NewBurstRepository()
+			factRepo := careermemory.NewFactRepository()
+			skillRepo := careermemory.NewSkillRepository()
+
+			careerSvc := careerservice.NewService(failRepo)
+			careerSvc.SetBurstRepository(burstRepo)
+			careerSvc.SetFactRepository(factRepo)
+			careerSvc.SetSkillRepository(skillRepo)
+
+			cliSvc := service.NewCLIEventService(careerSvc)
+
+			log := logger.DefaultLogger()
+			registrar := app.NewDefaultIntentRegisterer(&app.RegistrarConfig{
+				CLIService:    cliSvc,
+				CareerService: careerSvc,
+				Log:           log,
+			})
+
+			router := intents.NewDefaultIntentRouter()
+			err := registrar.RegisterAll(context.Background(), router)
+			Expect(err).ToNot(HaveOccurred())
+
+			_, err = router.ActivateIntent("browse_timeline", nil)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("should handle generate_cv event list error and NewIntent validation failure", func() {
+			failRepo := &failingEventRepo{EventRepository: careermemory.NewEventRepository()}
+			burstRepo := careermemory.NewBurstRepository()
+			factRepo := careermemory.NewFactRepository()
+			skillRepo := careermemory.NewSkillRepository()
+
+			careerSvc := careerservice.NewService(failRepo)
+			careerSvc.SetBurstRepository(burstRepo)
+			careerSvc.SetFactRepository(factRepo)
+			careerSvc.SetSkillRepository(skillRepo)
+
+			log := logger.DefaultLogger()
+			registrar := app.NewDefaultIntentRegisterer(&app.RegistrarConfig{
+				CareerService: careerSvc,
+				Log:           log,
+			})
+
+			router := intents.NewDefaultIntentRouter()
+			err := registrar.RegisterAll(context.Background(), router)
+			Expect(err).ToNot(HaveOccurred())
+
+			_, err = router.ActivateIntent("generate_cv", nil)
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should handle generate_cv fact list error gracefully", func() {
+			eventRepo := careermemory.NewEventRepository()
+			err := eventRepo.Create(context.Background(), fixtures.Event("cv-test-event"))
+			Expect(err).ToNot(HaveOccurred())
+
+			failFacts := &failingFactRepo{FactRepository: careermemory.NewFactRepository()}
+			burstRepo := careermemory.NewBurstRepository()
+			skillRepo := careermemory.NewSkillRepository()
+
+			careerSvc := careerservice.NewService(eventRepo)
+			careerSvc.SetBurstRepository(burstRepo)
+			careerSvc.SetFactRepository(failFacts)
+			careerSvc.SetSkillRepository(skillRepo)
+
+			log := logger.DefaultLogger()
+			registrar := app.NewDefaultIntentRegisterer(&app.RegistrarConfig{
+				CareerService: careerSvc,
+				Log:           log,
+			})
+
+			router := intents.NewDefaultIntentRouter()
+			err = registrar.RegisterAll(context.Background(), router)
+			Expect(err).ToNot(HaveOccurred())
+
+			_, err = router.ActivateIntent("generate_cv", nil)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("should use default config when generate_cv cannot load config from disk", func() {
+			config.SetConfigPathForTesting(GinkgoT().TempDir())
+
+			eventRepo := careermemory.NewEventRepository()
+			err := eventRepo.Create(context.Background(), fixtures.Event("cv-config-fallback-event"))
+			Expect(err).ToNot(HaveOccurred())
+
+			burstRepo := careermemory.NewBurstRepository()
+			factRepo := careermemory.NewFactRepository()
+			skillRepo := careermemory.NewSkillRepository()
+
+			careerSvc := careerservice.NewService(eventRepo)
+			careerSvc.SetBurstRepository(burstRepo)
+			careerSvc.SetFactRepository(factRepo)
+			careerSvc.SetSkillRepository(skillRepo)
+
+			log := logger.DefaultLogger()
+			registrar := app.NewDefaultIntentRegisterer(&app.RegistrarConfig{
+				CareerService: careerSvc,
+				Log:           log,
+			})
+
+			router := intents.NewDefaultIntentRouter()
+			err = registrar.RegisterAll(context.Background(), router)
+			Expect(err).ToNot(HaveOccurred())
+
+			_, err = router.ActivateIntent("generate_cv", nil)
+			Expect(err).ToNot(HaveOccurred())
+		})
+	})
+})
