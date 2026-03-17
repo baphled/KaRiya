@@ -22,6 +22,7 @@ type CVView struct {
 	SourceEventCount int                    `json:"source_event_count"`
 	SourceFactCount  int                    `json:"source_fact_count"`
 	Sections         []*CVSection           `json:"sections,omitempty"`
+	Specialism       string                 `json:"specialism,omitempty"`
 }
 
 // Validate checks if the CVView meets all defined criteria.
@@ -393,6 +394,10 @@ func (cb *CVBullet) validateImpactLevel() error {
 // Stored as YAML files in $HOME/.kariya/cv_configs/
 // NOT stored in database - file-based configuration only.
 type CVConfig struct {
+	// Sector is the industry sector for the CV (e.g. "startup", "enterprise", "public-sector").
+	Sector string `yaml:"sector,omitempty" json:"sector,omitempty"`
+	// Specialism is derived from technology, position, and sector fields.
+	Specialism     string                 `yaml:"specialism,omitempty" json:"specialism,omitempty"`
 	Name           string                 `yaml:"name" json:"name"`
 	TargetRole     string                 `yaml:"target_role" json:"target_role"`
 	TargetAudience string                 `yaml:"target_audience" json:"target_audience"`

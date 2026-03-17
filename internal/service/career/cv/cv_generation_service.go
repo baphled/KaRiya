@@ -124,6 +124,8 @@ func (svc *DefaultCVGenerationService) GenerateCVFromConfig(ctx context.Context,
 		return nil, errors.New("configuration cannot be nil")
 	}
 
+	config.Specialism = DeriveSpecialism(config.TechnologyFocus, config.FocusArea, config.Sector)
+
 	// Validate configuration
 	if err := config.Validate(); err != nil {
 		svc.logger.Error("Invalid configuration: %v", err)
@@ -167,6 +169,7 @@ func (svc *DefaultCVGenerationService) GenerateCVFromConfig(ctx context.Context,
 			GeneratedAt:      time.Now(),
 			SourceEventCount: 0,
 			SourceFactCount:  0,
+			Specialism:       config.Specialism,
 		}, nil
 	}
 
@@ -256,6 +259,7 @@ func (svc *DefaultCVGenerationService) GenerateCVFromConfig(ctx context.Context,
 		SourceEventCount: len(events),
 		SourceFactCount:  len(facts),
 		Sections:         sections,
+		Specialism:       config.Specialism,
 	}
 
 	svc.logger.Info("CV generated successfully: %s (role: %s, sections: %d)", config.Name, config.TargetRole, len(sections))
