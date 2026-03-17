@@ -30,7 +30,10 @@ func DetectBursts(
 	err := runner.RunWithSpinner("Detecting bursts from events", func() error {
 		var err error
 		suggestionsCount, savedCount, err = svc.DetectAndSaveBursts(ctx)
-		return err
+		if err != nil {
+			return fmt.Errorf("burst detection failed in DetectAndSaveBursts: %w", err)
+		}
+		return nil
 	}, opts...)
 
 	if err != nil {

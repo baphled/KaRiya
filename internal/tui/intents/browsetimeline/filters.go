@@ -8,6 +8,13 @@ import (
 	"github.com/baphled/kariya/internal/ui/behaviors"
 )
 
+const (
+	sortByDate    = "date"
+	sortByText    = "text"
+	sortOrderAsc  = "asc"
+	sortOrderDesc = "desc"
+)
+
 // applyFilters filters the events based on current filter state.
 func (i *Intent) applyFilters() {
 	filtered := make([]*career.Event, 0)
@@ -206,16 +213,16 @@ func (i *Intent) eventHasAnyProject(evt *career.Event) bool {
 // sortEvents sorts the filtered events based on current sort settings.
 func (i *Intent) sortEvents(filtered []*career.Event) {
 	switch i.filters.SortBy {
-	case "date":
+	case sortByDate:
 		sort.Slice(filtered, func(a, b int) bool {
-			if i.filters.SortOrder == "asc" {
+			if i.filters.SortOrder == sortOrderAsc {
 				return filtered[a].Date.Before(filtered[b].Date)
 			}
 			return filtered[a].Date.After(filtered[b].Date)
 		})
-	case "text":
+	case sortByText:
 		sort.Slice(filtered, func(a, b int) bool {
-			if i.filters.SortOrder == "asc" {
+			if i.filters.SortOrder == sortOrderAsc {
 				return filtered[a].Text < filtered[b].Text
 			}
 			return filtered[a].Text > filtered[b].Text
@@ -243,8 +250,8 @@ func (i *Intent) HasActiveFilters() bool {
 		len(f.Projects) > 0 ||
 		f.DateFrom != "" ||
 		f.DateTo != "" ||
-		(f.SortBy != "" && f.SortBy != "date") ||
-		(f.SortOrder != "" && f.SortOrder != "desc")
+		(f.SortBy != "" && f.SortBy != sortByDate) ||
+		(f.SortOrder != "" && f.SortOrder != sortOrderDesc)
 }
 
 // ClearFilters removes the most recently applied filter layer, or resets
@@ -271,8 +278,8 @@ func (i *Intent) ClearFilters() {
 	case behaviors.FilterLayerTags:
 		i.filters.Tags = []string{}
 	case behaviors.FilterLayerSort:
-		i.filters.SortBy = "date"
-		i.filters.SortOrder = "desc"
+		i.filters.SortBy = sortByDate
+		i.filters.SortOrder = sortOrderDesc
 	}
 
 	if !i.HasActiveFilters() {
@@ -290,8 +297,8 @@ func (i *Intent) clearAllFilters() {
 		Projects:   []string{},
 		DateFrom:   "",
 		DateTo:     "",
-		SortBy:     "date",
-		SortOrder:  "desc",
+		SortBy:     sortByDate,
+		SortOrder:  sortOrderDesc,
 	}
 	if i.filterStack != nil {
 		i.filterStack.Clear()

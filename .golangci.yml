@@ -48,6 +48,7 @@ linters:
     - nilnil            # (nil, nil) returns
     - errname           # Sentinel errors prefixed Err, error types suffixed Error
     - errchkjson        # JSON encoding type safety
+    - wrapcheck         # Error wrapping for external packages (SonarCloud parity)
 
     # ---------------------------------------------------------------------------
     # Code Quality & Complexity
@@ -66,6 +67,8 @@ linters:
     - predeclared       # Shadowing Go predeclared identifiers
     - forcetypeassert   # Unchecked type assertions (panic risk)
     - usestdlibvars     # Use stdlib constants instead of literals
+    - goconst           # Repeated string literals (SonarCloud S1192)
+    - musttag           # Missing struct tags for marshalling
 
     # ---------------------------------------------------------------------------
     # Security
@@ -104,6 +107,13 @@ linters:
     - contextcheck      # context.Context usage
     - fatcontext        # Nested contexts in loops
 
+    # ---------------------------------------------------------------------------
+    # Resource Management (SonarCloud parity)
+    # ---------------------------------------------------------------------------
+    - bodyclose           # HTTP response body must be closed
+    - noctx               # HTTP requests must use context.Context
+    - sqlclosecheck       # SQL rows/statements must be closed
+
   settings:
     # ---------------------------------------------------------------------------
     # A1. Error Handling (Go idiom: never ignore errors)
@@ -121,6 +131,20 @@ linters:
       errorf: true
       asserts: true
       comparison: true
+
+    # ---------------------------------------------------------------------------
+    # A1b. Error Wrapping (SonarCloud parity)
+    # ---------------------------------------------------------------------------
+    wrapcheck:
+      ignore-sig-regexps:
+        - \.Unwrap\(
+        - \.Wrap\(
+        - \.Wrapf\(
+        - \.WithMessage\(
+        - \.WithMessagef\(
+        - \.WithStack\(
+      ignore-package-globs:
+        - github.com/baphled/kariya/*
 
     # ---------------------------------------------------------------------------
     # A2. Naming Conventions (Go idiom: short, clear names)
@@ -180,7 +204,7 @@ linters:
         # Complexity
         - name: cognitive-complexity
           severity: warning
-          arguments: [20]
+          arguments: [15]
         - name: cyclomatic
           severity: warning
           arguments: [15]
@@ -196,7 +220,7 @@ linters:
       min-complexity: 15
 
     gocognit:
-      min-complexity: 20
+      min-complexity: 15
 
     funlen:
       lines: 60
@@ -215,6 +239,13 @@ linters:
     # ---------------------------------------------------------------------------
     dupl:
       threshold: 100
+
+    # ---------------------------------------------------------------------------
+    # A4b. String Literal Duplication (SonarCloud S1192)
+    # ---------------------------------------------------------------------------
+    goconst:
+      min-len: 3
+      min-occurrences: 3
 
     # ---------------------------------------------------------------------------
     # A5. Interface Design (Go idiom: small interfaces)
@@ -464,6 +495,11 @@ linters:
           - staticcheck
         text: 'SA4011'
 
+      # EXC0005b: staticcheck - WriteString(Sprintf) suggestion (pre-existing)
+      - linters:
+          - staticcheck
+        text: 'QF1012'
+
       # EXC0006: gosec - unsafe calls
       - linters:
           - gosec
@@ -512,12 +548,15 @@ linters:
           - nolintlint
           - thelper
           - recvcheck
+          - goconst
+          - wrapcheck
+          - bodyclose
 
       - path: '(.+)_test\.go'
         linters:
           - revive
           - staticcheck
-        text: "dot-imports|unused-parameter|argument-limit|ST1000|ST1020|ST1021|ST1022"
+        text: "dot-imports|unused-parameter|argument-limit|ST1000|ST1020|ST1021|ST1022|cognitive-complexity"
 
       - path: '(.+)_test\.go'
         linters:
@@ -836,6 +875,11 @@ linters:
           - funlen
           - nestif
           - dupl
+
+      - path: 'internal/service/career/service\.go'
+        linters:
+          - revive
+        text: "cognitive-complexity"
 
       - path: 'internal/service/career/cv/section_builder\.go'
         linters:
@@ -1287,13 +1331,146 @@ linters:
         linters:
           - revive
 
+
     # -------------------------------------------------------------------------
-    # C28: PACKAGE NAMING - Types package name is intentional
+    # C29: NEW LINTER ADOPTION - Existing files exempted during rollout
+    # These linters are enforced on new/modified code. Existing violations
+    # tracked for incremental cleanup.
     # -------------------------------------------------------------------------
       - path: 'internal/ui/types/export_types\.go'
+
+      # goconst exemptions (existing repeated strings)
+      - path: 'internal/cli/screens/base/select_screen\.go'
         linters:
-          - revive
-        text: "var-naming: avoid meaningless package names"
+          - goconst
+      - path: 'internal/cli/screens/burst_management/modals/suggestion_review_modal\.go'
+        linters:
+          - goconst
+      - path: 'internal/cli/screens/cv/review\.go'
+        linters:
+          - goconst
+      - path: 'internal/cli/screens/timeline/modals/filter_modal\.go'
+        linters:
+          - goconst
+      - path: 'internal/cli/uikit/feedback/confirm_modal\.go'
+        linters:
+          - goconst
+      - path: 'internal/cli/statematrix/parser\.go'
+        linters:
+          - goconst
+      - path: 'internal/repository/career/sql/event_repository\.go'
+        linters:
+          - goconst
+      - path: 'internal/service/career/cv/bullet_generator\.go'
+        linters:
+          - goconst
+      - path: 'internal/service/career/cv/data_processing_service\.go'
+        linters:
+          - goconst
+      - path: 'internal/cli/screens/base/form_screen\.go'
+        linters:
+          - goconst
+      - path: 'internal/cli/uikit/feedback/info_modal\.go'
+        linters:
+          - goconst
+      - path: 'internal/repository/career/sql/fact_repository\.go'
+        linters:
+          - goconst
+      - path: 'internal/service/career/cv/section_builder\.go'
+        linters:
+          - goconst
+
+      # wrapcheck exemptions (existing unwrapped errors)
+      - path: 'internal/cli/app/registrar\.go'
+        linters:
+          - wrapcheck
+      - path: 'internal/cli/bootstrap/onboarding\.go'
+        linters:
+          - wrapcheck
+      - path: 'internal/cli/cmd/bursts/detect\.go'
+        linters:
+          - wrapcheck
+      - path: 'internal/cli/cmd/cliutil/interfaces\.go'
+        linters:
+          - wrapcheck
+      - path: 'internal/cli/cmd/facts/extract\.go'
+        linters:
+          - wrapcheck
+      - path: 'internal/cli/cmd/import/import\.go'
+        linters:
+          - wrapcheck
+      - path: 'internal/cli/intents/burst_management/context\.go'
+        linters:
+          - wrapcheck
+      - path: 'internal/cli/intents/skillsmanagement/context\.go'
+        linters:
+          - wrapcheck
+      - path: 'internal/cli/statematrix/(.*)\.go'
+        linters:
+          - wrapcheck
+      - path: 'internal/cli/themes/glamour\.go'
+        linters:
+          - wrapcheck
+      - path: 'internal/domain/career/cv\.go'
+        linters:
+          - wrapcheck
+      - path: 'internal/repository/career/migrator\.go'
+        linters:
+          - wrapcheck
+      - path: 'internal/repository/career/repositories\.go'
+        linters:
+          - wrapcheck
+      - path: 'internal/service/career/skillinference/detector\.go'
+        linters:
+          - wrapcheck
+          - gosec
+      - path: 'internal/service/career/technology/(.*)\.go'
+        linters:
+          - wrapcheck
+      - path: 'internal/service/career/cv/(.*)\.go'
+        linters:
+          - wrapcheck
+      - path: 'internal/testutil/harness/(.*)\.go'
+        linters:
+          - wrapcheck
+
+      # noctx exemptions (existing SQL/exec calls without context)
+      - path: 'internal/repository/career/migrator\.go'
+        linters:
+          - noctx
+      - path: 'features/support/env\.go'
+        linters:
+          - noctx
+          - wrapcheck
+      - path: 'internal/testutil/harness/testenv\.go'
+        linters:
+          - noctx
+
+      # staticcheck exemptions (existing WriteString(Sprintf) patterns)
+      - path: 'internal/cli/navigation/help\.go'
+        linters:
+          - staticcheck
+      - path: 'internal/cli/uikit/selectors/audience_relevance_selector\.go'
+        linters:
+          - staticcheck
+
+      # Additional C29 exemptions (missed in initial pass)
+      - path: 'internal/cli/intents/generatecv/views\.go'
+        linters:
+          - staticcheck
+      - path: 'features/steps/cv_steps\.go'
+        linters:
+          - wrapcheck
+      - path: 'internal/cli/cmd/context\.go'
+        linters:
+          - wrapcheck
+      - path: 'internal/cli/intents/burst_management/helpers\.go'
+        linters:
+          - wrapcheck
+      - path: 'internal/repository/career/sql/repositories\.go'
+        linters:
+          - wrapcheck
+
 
       - path: 'internal/ui/types/capture_types\.go'
         linters:
@@ -1304,6 +1481,34 @@ linters:
         linters:
           - revive
         text: "var-naming: avoid meaningless package names"
+
+      # C29 continued: cognitive complexity threshold alignment (20→15)
+      - path: 'internal/cli/screens/timeline/modals/filter_modal\.go'
+        linters:
+          - gocognit
+      - path: 'internal/cli/screens/timeline/modals/filter_modal\.go'
+        linters:
+          - revive
+        text: "cognitive-complexity"
+      - path: 'internal/cli/screens/timeline/modals/helpers\.go'
+        linters:
+          - gocognit
+      - path: 'internal/cli/screens/timeline/modals/helpers\.go'
+        linters:
+          - revive
+        text: "cognitive-complexity"
+      - path: 'internal/cli/uikit/feedback/help_modal\.go'
+        linters:
+          - gocognit
+      - path: 'internal/service/career/burstfact/extractor\.go'
+        linters:
+          - gocognit
+      - path: 'internal/service/career/cv/cv_helpers\.go'
+        linters:
+          - goconst
+      - path: 'internal/service/career/cv/export_service\.go'
+        linters:
+          - goconst
 
 # =============================================================================
 # FORMATTERS (v2 - separated from linters)

@@ -9,6 +9,24 @@ import (
 	"github.com/baphled/kariya/internal/ui/configtypes"
 )
 
+const (
+	fieldTypeBool       = "bool"
+	fieldTypeString     = "string"
+	fieldTypeInt        = "int"
+	fieldTypeList       = "list"
+	fieldTypeSelect     = "select"
+	fieldKeyEmail       = "email"
+	fieldKeyGithub      = "github"
+	fieldKeyPortfolio   = "portfolio"
+	confirmYes          = "Yes"
+	confirmNo           = "No"
+	urlPrefixHTTP       = "http://"
+	urlPrefixHTTPS      = "https://"
+	errMustBeNumber     = "must be a number"
+	errMustBeValidEmail = "must be a valid email address"
+	errMustBeValidURL   = "must be a valid URL starting with http:// or https://"
+)
+
 // ConfigureSettingsFormData holds bound form values for configuration settings.
 type ConfigureSettingsFormData struct {
 	Values          map[string]*string
@@ -33,7 +51,7 @@ func NewConfigureSettingsFormData(settings []*configtypes.ConfigurationSetting) 
 	}
 	for _, s := range settings {
 		switch s.Type {
-		case "bool":
+		case fieldTypeBool:
 			boolVal := SettingToBool(s.Value)
 			data.BoolValues[s.Key] = &boolVal
 		default:
@@ -57,21 +75,21 @@ func NewConfigureSettingField(
 	boolValues map[string]*bool,
 ) Field {
 	switch setting.Type {
-	case "string":
+	case fieldTypeString:
 		cfg := FieldConfig{
 			Key:         setting.Key,
 			Title:       setting.Label,
 			Description: setting.Description,
 		}
 		switch setting.Key {
-		case "email":
+		case fieldKeyEmail:
 			cfg.Validate = ValidateEmail
-		case "github", "portfolio":
+		case fieldKeyGithub, fieldKeyPortfolio:
 			cfg.Validate = ValidateURL
 		}
 		return NewInput(cfg).Value(values[setting.Key])
 
-	case "int":
+	case fieldTypeInt:
 		return NewInput(FieldConfig{
 			Key:         setting.Key,
 			Title:       setting.Label,
@@ -79,16 +97,16 @@ func NewConfigureSettingField(
 			Validate:    ValidateInteger,
 		}).Value(values[setting.Key])
 
-	case "bool":
+	case fieldTypeBool:
 		return NewConfirm(
 			setting.Key,
 			setting.Label,
 			setting.Description,
-			"Yes",
-			"No",
-		).Value(boolValues[setting.Key])
+			confirmYes,
+			confirmNo,
+		).Value(boolValues[setting.Key]) // confirmYes/confirmNo are for labels, not values
 
-	case "select":
+	case fieldTypeSelect:
 		if len(setting.Options) == 0 {
 			return nil
 		}
@@ -169,7 +187,7 @@ func ValidateInteger(val string) error {
 	}
 	_, err := strconv.Atoi(val)
 	if err != nil {
-		return errors.New("must be a number")
+		return errors.New(errMustBeNumber)
 	}
 	return nil
 }
@@ -186,7 +204,7 @@ func ValidateEmail(val string) error {
 		return nil
 	}
 	if !strings.Contains(val, "@") {
-		return errors.New("must be a valid email address")
+		return errors.New(errMustBeValidEmail)
 	}
 	return nil
 }
@@ -203,7 +221,7 @@ func ValidateURL(val string) error {
 		return nil
 	}
 	if !strings.HasPrefix(val, "http://") && !strings.HasPrefix(val, "https://") {
-		return errors.New("must be a valid URL starting with http:// or https://")
+		return errors.New(errMustBeValidURL)
 	}
 	return nil
 }
@@ -228,11 +246,11 @@ func GetConfigureSettingChanges(
 	changes := make(map[string]interface{})
 	for _, s := range settings {
 		switch s.Type {
-		case "bool":
+		case fieldTypeBool:
 			AppendBoolChange(changes, s.Key, data.BoolValues, originalValues)
-		case "int":
+		case fieldTypeInt:
 			AppendIntChange(changes, s.Key, data.Values, originalValues)
-		case "list":
+		case fieldTypeList:
 			AppendListChange(changes, s.Key, data.Values, originalValues)
 		default:
 			AppendStringChange(changes, s.Key, data.Values, originalValues)

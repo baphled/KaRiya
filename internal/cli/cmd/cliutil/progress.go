@@ -27,7 +27,7 @@ func RunWithSpinner(message string, fn func() error, opts ...tea.ProgramOption) 
 	p := tea.NewProgram(newSpinnerModel(message, resultChan), opts...)
 	m, err := p.Run()
 	if err != nil {
-		return err
+		return fmt.Errorf("spinner/progress operation failed: %w", err)
 	}
 
 	if sm, ok := m.(spinnerModel); ok {
@@ -127,7 +127,7 @@ func RunWithProgress(message string, total int, fn func(update func(current int)
 	p := tea.NewProgram(newProgressModel(message, total, progressChan, resultChan), opts...)
 	m, err := p.Run()
 	if err != nil {
-		return err
+		return fmt.Errorf("spinner/progress operation failed: %w", err)
 	}
 
 	if pm, ok := m.(progressModel); ok {

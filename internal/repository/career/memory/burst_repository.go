@@ -155,10 +155,16 @@ func (r *BurstRepository) applyFilters(bursts []*career.Burst, filters career_re
 	return filterByDateRange(bursts, func(b *career.Burst) time.Time { return b.CreatedAt }, filters.StartDate, filters.EndDate)
 }
 
+const (
+	sortFieldCreatedAt  = "created_at"
+	sortFieldName       = "name"
+	sortFieldEventCount = "event_count"
+)
+
 func (r *BurstRepository) applySorting(bursts []*career.Burst, filters career_repo.BurstListFilters) {
 	sortBy := filters.SortBy
 	if sortBy == "" {
-		sortBy = "created_at"
+		sortBy = sortFieldCreatedAt
 	}
 
 	asc := filters.SortOrder == "asc"
@@ -166,9 +172,9 @@ func (r *BurstRepository) applySorting(bursts []*career.Burst, filters career_re
 	sort.Slice(bursts, func(i, j int) bool {
 		var less bool
 		switch sortBy {
-		case "name":
+		case sortFieldName:
 			less = bursts[i].Name < bursts[j].Name
-		case "event_count":
+		case sortFieldEventCount:
 			less = len(bursts[i].EventIDs) < len(bursts[j].EventIDs)
 		default:
 			less = bursts[i].CreatedAt.Before(bursts[j].CreatedAt)
