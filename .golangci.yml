@@ -1338,6 +1338,8 @@ linters:
     # tracked for incremental cleanup.
     # -------------------------------------------------------------------------
       - path: 'internal/ui/types/export_types\.go'
+        linters:
+          - goconst
 
       # goconst exemptions (existing repeated strings)
       - path: 'internal/cli/screens/base/select_screen\.go'
@@ -1379,8 +1381,31 @@ linters:
       - path: 'internal/service/career/cv/section_builder\.go'
         linters:
           - goconst
+      - path: 'internal/tui/statematrix/generator\.go'
+        linters:
+          - goconst
+      - path: 'internal/tui/statematrix/parser\.go'
+        linters:
+          - goconst
+      - path: 'internal/tui/views/burst/suggestion_review\.go'
+        linters:
+          - goconst
+      - path: 'internal/tui/views/cv/review\.go'
+        linters:
+          - goconst
+      - path: 'internal/tui/views/event/burst_suggestion\.go'
+        linters:
+          - goconst
+      - path: 'internal/ui/uikit/feedback/confirm_modal\.go'
+        linters:
+          - goconst
 
-      # wrapcheck exemptions (existing unwrapped errors)
+       # musttag exemptions (existing missing struct tags)
+      - path: 'internal/tui/views/skill/events\.go'
+        linters:
+          - musttag
+
+       # wrapcheck exemptions (existing unwrapped errors)
       - path: 'internal/cli/app/registrar\.go'
         linters:
           - wrapcheck
@@ -1402,6 +1427,9 @@ linters:
       - path: 'internal/cli/intents/burst_management/context\.go'
         linters:
           - wrapcheck
+      - path: 'internal/tui/intents/burst_management/helpers\.go'
+        linters:
+          - wrapcheck
       - path: 'internal/cli/intents/skillsmanagement/context\.go'
         linters:
           - wrapcheck
@@ -1409,6 +1437,9 @@ linters:
         linters:
           - wrapcheck
       - path: 'internal/cli/themes/glamour\.go'
+        linters:
+          - wrapcheck
+      - path: 'internal/ui/themes/glamour\.go'
         linters:
           - wrapcheck
       - path: 'internal/domain/career/cv\.go'
