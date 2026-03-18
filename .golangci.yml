@@ -1436,6 +1436,12 @@ linters:
       - path: 'internal/cli/statematrix/(.*)\.go'
         linters:
           - wrapcheck
+      - path: 'internal/tui/statematrix/generator\.go'
+        linters:
+          - wrapcheck
+      - path: 'internal/tui/statematrix/scanner\.go'
+        linters:
+          - wrapcheck
       - path: 'internal/cli/themes/glamour\.go'
         linters:
           - wrapcheck
