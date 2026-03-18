@@ -41,7 +41,10 @@ func RecategorizeSkills(svc *careerservice.Service, _ io.Writer, _ io.Writer, op
 	err := cliutil.RunWithSpinner("Recategorizing skills...", func() error {
 		var err error
 		result, err = technology.RecategorizeSkills(ctx, skillRepo)
-		return err
+		if err != nil {
+			return fmt.Errorf("recategorizing skills in technology.RecategorizeSkills: %w", err)
+		}
+		return nil
 	}, opts...)
 
 	if err != nil {

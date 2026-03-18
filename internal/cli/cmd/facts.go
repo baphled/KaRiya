@@ -32,7 +32,10 @@ func ExtractFacts(
 		factCount, competencyCount, err = svc.ExtractFactsFromAllEvents(ctx, func(current, _ int) {
 			update(current)
 		})
-		return err
+		if err != nil {
+			return fmt.Errorf("fact extraction failed in ExtractFactsFromAllEvents: %w", err)
+		}
+		return nil
 	}, opts...)
 
 	if err != nil {

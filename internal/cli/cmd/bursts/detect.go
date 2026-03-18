@@ -78,7 +78,10 @@ func detectBurstsFromEvents(
 	err := cliutil.RunWithSpinner(fmt.Sprintf("Detecting bursts from %d events...", eventCount), func() error {
 		var err error
 		suggestions, err = svc.SuggestBursts(ctx, eventIDs)
-		return err
+		if err != nil {
+			return fmt.Errorf("burst detection failed: %w", err)
+		}
+		return nil
 	}, opts...)
 	return suggestions, err
 }
@@ -125,7 +128,10 @@ func SaveBurstSuggestions(
 	err := cliutil.RunWithSpinner("Saving burst suggestions...", func() error {
 		var err error
 		savedBursts, err = svc.SaveBurstSuggestions(ctx, suggestions)
-		return err
+		if err != nil {
+			return fmt.Errorf("burst detection failed: %w", err)
+		}
+		return nil
 	}, opts...)
 
 	if err != nil {

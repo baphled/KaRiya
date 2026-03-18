@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"io"
@@ -72,8 +73,8 @@ func (ctx *CLIContext) Service() *careerservice.Service {
 // For in-memory databases, this is a no-op.
 func (ctx *CLIContext) Close() error {
 	if ctx.db != nil {
-		if _, err := ctx.db.Exec("PRAGMA wal_checkpoint(TRUNCATE)"); err != nil {
-			fmt.Fprintf(os.Stderr, "Warning: WAL checkpoint failed: %v\n", err)
+		if _, err := ctx.db.ExecContext(context.Background(), "PRAGMA wal_checkpoint(TRUNCATE)"); err != nil {
+			return fmt.Errorf("WAL checkpoint failed: %w", err)
 		}
 		return ctx.db.Close()
 	}

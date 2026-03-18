@@ -77,7 +77,10 @@ func runImport(opts ImportOptions) int {
 	err = opts.Runner.RunWithSpinner(msg, func() error {
 		var err error
 		parsedRows, err = importService.PrepareImport(ctx, file)
-		return err
+		if err != nil {
+			return fmt.Errorf("import operation failed: %w", err)
+		}
+		return nil
 	}, opts.TeaOpts...)
 
 	if err != nil {
@@ -100,7 +103,10 @@ func runImport(opts ImportOptions) int {
 	err = opts.Runner.RunWithSpinner(msg, func() error {
 		var err error
 		result, err = importService.ImportRows(ctx, parsedRows, selectedRows)
-		return err
+		if err != nil {
+			return fmt.Errorf("import operation failed: %w", err)
+		}
+		return nil
 	}, opts.TeaOpts...)
 
 	if err != nil {

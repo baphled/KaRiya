@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -33,11 +34,11 @@ career events into professional, role-specific CVs directly from your terminal.`
 			// Initialize service for subcommands
 			dbPath, err := cmd.Flags().GetString("db")
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to get flag or run subcommand: %w", err)
 			}
 			inMemory, err := cmd.Flags().GetBool("in-memory")
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to get flag or run subcommand: %w", err)
 			}
 			ctx.dbPath = dbPath
 			ctx.inMemory = inMemory
@@ -58,15 +59,17 @@ career events into professional, role-specific CVs directly from your terminal.`
 
 			bootstrapResult, err := bootstrap.Run(careerService, logger.DefaultLogger())
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to get flag or run subcommand: %w", err)
 			}
 
 			cliService := service.NewCLIEventService(careerService)
 			model := app.NewModel(cliService, careerService, bootstrapResult)
 
 			p := tea.NewProgram(model, tea.WithAltScreen())
-			_, err = p.Run()
-			return err
+			if _, err = p.Run(); err != nil {
+				return fmt.Errorf("failed to get flag or run subcommand: %w", err)
+			}
+			return nil
 		},
 	}
 

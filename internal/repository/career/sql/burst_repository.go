@@ -181,15 +181,20 @@ func (r *BurstRepository) applyFilters(query *gorm.DB, filters career_repo.Burst
 	return query
 }
 
+const (
+	sortOrderAsc  = "ASC"
+	sortOrderDesc = "DESC"
+)
+
 func (r *BurstRepository) applySorting(query *gorm.DB, filters career_repo.BurstListFilters) *gorm.DB {
 	sortBy := filters.SortBy
 	if sortBy == "" {
 		sortBy = "created_at"
 	}
 
-	order := "DESC"
+	order := sortOrderDesc
 	if strings.EqualFold(filters.SortOrder, "asc") {
-		order = "ASC"
+		order = sortOrderAsc
 	}
 
 	switch sortBy {
