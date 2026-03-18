@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
+	models "github.com/baphled/kariya/internal/model/career"
 	career_repo "github.com/baphled/kariya/internal/repository/career"
-	"github.com/baphled/kariya/internal/repository/models"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -59,6 +59,15 @@ func (r *FactRepository) Create(ctx context.Context, fact *career.Fact) error {
 }
 
 // GetByID retrieves a fact by its ID.
+//
+// Expected:
+//   - id must be a valid fact identifier.
+//
+// Returns:
+//   - The fact if found, or nil with ErrFactNotFound if not found.
+//
+// Side effects:
+//   - None.
 func (r *FactRepository) GetByID(ctx context.Context, id string) (*career.Fact, error) {
 	var model models.Fact
 	err := r.db.WithContext(ctx).First(&model, "id = ?", id).Error
@@ -114,6 +123,15 @@ func (r *FactRepository) Delete(ctx context.Context, id string) error {
 }
 
 // List retrieves facts with optional filtering.
+//
+// Expected:
+//   - filters specifies the filtering, sorting, and pagination options.
+//
+// Returns:
+//   - A slice of facts matching the filters, or an error.
+//
+// Side effects:
+//   - None.
 func (r *FactRepository) List(ctx context.Context, filters career_repo.FactListFilters) ([]*career.Fact, error) {
 	query := r.db.WithContext(ctx).Model(&models.Fact{})
 	query = r.applyFilters(query, filters)
@@ -133,6 +151,15 @@ func (r *FactRepository) List(ctx context.Context, filters career_repo.FactListF
 }
 
 // Count returns the number of facts matching the given filters.
+//
+// Expected:
+//   - filters specifies the filtering options.
+//
+// Returns:
+//   - The count of matching facts, or an error.
+//
+// Side effects:
+//   - None.
 func (r *FactRepository) Count(ctx context.Context, filters career_repo.FactListFilters) (int, error) {
 	query := r.db.WithContext(ctx).Model(&models.Fact{})
 	query = r.applyFilters(query, filters)
@@ -145,6 +172,15 @@ func (r *FactRepository) Count(ctx context.Context, filters career_repo.FactList
 }
 
 // GetBySourceEventID retrieves all facts for a specific event.
+//
+// Expected:
+//   - eventID must be a valid event identifier.
+//
+// Returns:
+//   - A slice of facts for the event, or an error.
+//
+// Side effects:
+//   - None.
 func (r *FactRepository) GetBySourceEventID(ctx context.Context, eventID string) ([]*career.Fact, error) {
 	var results []models.Fact
 	err := r.db.WithContext(ctx).Where("source_event_id = ?", eventID).Find(&results).Error
@@ -160,6 +196,15 @@ func (r *FactRepository) GetBySourceEventID(ctx context.Context, eventID string)
 }
 
 // GetBySourceBurstID retrieves all facts for a specific burst.
+//
+// Expected:
+//   - burstID must be a valid burst identifier.
+//
+// Returns:
+//   - A slice of facts for the burst, or an error.
+//
+// Side effects:
+//   - None.
 func (r *FactRepository) GetBySourceBurstID(ctx context.Context, burstID string) ([]*career.Fact, error) {
 	var results []models.Fact
 	err := r.db.WithContext(ctx).Where("source_burst_id = ?", burstID).Find(&results).Error

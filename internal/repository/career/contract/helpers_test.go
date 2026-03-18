@@ -3,7 +3,7 @@ package contract_test
 import (
 	stdsql "database/sql"
 
-	"github.com/baphled/kariya/internal/repository/models"
+	models "github.com/baphled/kariya/internal/model/career"
 	. "github.com/onsi/gomega"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"

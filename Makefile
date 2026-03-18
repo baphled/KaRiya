@@ -130,9 +130,11 @@ bin/noinlinecareer: cmd/noinlinecareer/main.go tools/analyzers/noinlinecareer/an
 	@go build -o ./bin/noinlinecareer ./cmd/noinlinecareer
 	@echo "✅ Analyzer binary built."
 
-# Check fixture usage (fast - uses cached binary)
-check-fixtures: bin/noinlinecareer
+# Check fixture usage (always rebuilds analyzer to handle Go version changes)
+check-fixtures:
 	@echo "Running fixture usage analyzer..."
+	@mkdir -p bin
+	@go build -o ./bin/noinlinecareer ./cmd/noinlinecareer
 	@go vet -vettool=./bin/noinlinecareer ./...
 	@echo "✅ Fixture usage: all checks passed."
 

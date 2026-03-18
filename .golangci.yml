@@ -651,7 +651,7 @@ linters:
           - gocritic
 
       # GORM models intentionally mix pointer/value receivers
-      - path: 'internal/repository/models/career\.go'
+      - path: 'internal/model/career/.*\.go'
         linters:
           - recvcheck
 

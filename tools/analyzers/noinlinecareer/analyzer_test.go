@@ -1,33 +1,52 @@
 package noinlinecareer_test
 
 import (
-	"testing"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	"golang.org/x/tools/go/analysis/analysistest"
 
 	"github.com/baphled/kariya/tools/analyzers/noinlinecareer"
-	"golang.org/x/tools/go/analysis/analysistest"
 )
 
-func TestViolationsDetected(t *testing.T) {
-	testdata := analysistest.TestData()
-	analysistest.Run(t, testdata, noinlinecareer.Analyzer, "violations")
-}
+var _ = Describe("Noinlinecareer Analyzer", func() {
+	var testdata string
 
-func TestCleanFilesPass(t *testing.T) {
-	testdata := analysistest.TestData()
-	analysistest.Run(t, testdata, noinlinecareer.Analyzer, "clean")
-}
+	BeforeEach(func() {
+		testdata = analysistest.TestData()
+	})
 
-func TestNonTestFilesSkipped(t *testing.T) {
-	testdata := analysistest.TestData()
-	analysistest.Run(t, testdata, noinlinecareer.Analyzer, "nontest")
-}
+	Context("when files contain inline career types", func() {
+		It("reports violations", func() {
+			results := analysistest.Run(GinkgoT(), testdata, noinlinecareer.Analyzer, "violations")
+			Expect(results).NotTo(BeEmpty())
+		})
+	})
 
-func TestFixturePackagesExcluded(t *testing.T) {
-	testdata := analysistest.TestData()
-	analysistest.Run(t, testdata, noinlinecareer.Analyzer, "fixtures")
-}
+	Context("when files use proper imports", func() {
+		It("passes without issues", func() {
+			results := analysistest.Run(GinkgoT(), testdata, noinlinecareer.Analyzer, "clean")
+			Expect(results).NotTo(BeNil())
+		})
+	})
 
-func TestUnexportedTypesSkipped(t *testing.T) {
-	testdata := analysistest.TestData()
-	analysistest.Run(t, testdata, noinlinecareer.Analyzer, "fake/career")
-}
+	Context("when files are not test files", func() {
+		It("skips analysis", func() {
+			results := analysistest.Run(GinkgoT(), testdata, noinlinecareer.Analyzer, "nontest")
+			Expect(results).NotTo(BeNil())
+		})
+	})
+
+	Context("when the package is a fixture package", func() {
+		It("excludes from analysis", func() {
+			results := analysistest.Run(GinkgoT(), testdata, noinlinecareer.Analyzer, "fixtures")
+			Expect(results).NotTo(BeNil())
+		})
+	})
+
+	Context("when the package is domain/career", func() {
+		It("excludes from analysis", func() {
+			results := analysistest.Run(GinkgoT(), testdata, noinlinecareer.Analyzer, "fake/domain/career")
+			Expect(results).NotTo(BeNil())
+		})
+	})
+})

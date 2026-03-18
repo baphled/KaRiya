@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
+	models "github.com/baphled/kariya/internal/model/career"
 	career_repo "github.com/baphled/kariya/internal/repository/career"
-	"github.com/baphled/kariya/internal/repository/models"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -42,7 +42,7 @@ func NewEventRepository(db *gorm.DB) *EventRepository {
 //   - event must be valid.
 //
 // Returns:
-//   - A error value.
+//   - An error value.
 //
 // Side effects:
 //   - None.
@@ -69,6 +69,15 @@ func (r *EventRepository) Create(ctx context.Context, event *career.Event) error
 }
 
 // GetByID retrieves a career event by its ID.
+//
+// Expected:
+//   - id must be a valid event identifier.
+//
+// Returns:
+//   - The event if found, or nil with ErrEventNotFound if not found.
+//
+// Side effects:
+//   - None.
 func (r *EventRepository) GetByID(ctx context.Context, id string) (*career.Event, error) {
 	var model models.Event
 	err := r.db.WithContext(ctx).First(&model, "id = ?", id).Error
@@ -97,7 +106,7 @@ func (r *EventRepository) GetByID(ctx context.Context, id string) (*career.Event
 //   - event must be valid.
 //
 // Returns:
-//   - A error value.
+//   - An error value.
 //
 // Side effects:
 //   - None.
@@ -128,10 +137,10 @@ func (r *EventRepository) Update(ctx context.Context, event *career.Event) error
 // Delete removes a career event from the database.
 //
 // Expected:
-//   - Must be a valid string.
+//   - id must be a valid string.
 //
 // Returns:
-//   - A error value.
+//   - An error value.
 //
 // Side effects:
 //   - None.
@@ -144,6 +153,15 @@ func (r *EventRepository) Delete(ctx context.Context, id string) error {
 }
 
 // List retrieves career events with optional filtering.
+//
+// Expected:
+//   - filters specifies the filtering, sorting, and pagination options.
+//
+// Returns:
+//   - A slice of events matching the filters, or an error.
+//
+// Side effects:
+//   - None.
 func (r *EventRepository) List(ctx context.Context, filters career_repo.EventListFilters) ([]*career.Event, error) {
 	query := r.db.WithContext(ctx).Model(&models.Event{})
 	query = r.applyFilters(query, filters)
@@ -179,6 +197,15 @@ func (r *EventRepository) List(ctx context.Context, filters career_repo.EventLis
 }
 
 // Count returns the number of events matching the given filters.
+//
+// Expected:
+//   - filters specifies the filtering options.
+//
+// Returns:
+//   - The count of matching events, or an error.
+//
+// Side effects:
+//   - None.
 func (r *EventRepository) Count(ctx context.Context, filters career_repo.EventListFilters) (int, error) {
 	query := r.db.WithContext(ctx).Model(&models.Event{})
 	query = r.applyFilters(query, filters)
@@ -268,11 +295,11 @@ func (r *EventRepository) loadSkillIDs(ctx context.Context, eventID string) ([]s
 // LinkSkill creates an association between an event and a skill.
 //
 // Expected:
-//   - Must be a valid string.
-//   - Must be a valid string.
+//   - eventID must be a valid string identifier for an existing event.
+//   - skillID must be a valid string identifier for an existing skill.
 //
 // Returns:
-//   - A error value.
+//   - An error value.
 //
 // Side effects:
 //   - None.

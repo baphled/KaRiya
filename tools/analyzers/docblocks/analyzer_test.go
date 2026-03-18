@@ -1,33 +1,52 @@
 package docblocks_test
 
 import (
-	"testing"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	"golang.org/x/tools/go/analysis/analysistest"
 
 	"github.com/baphled/kariya/tools/analyzers/docblocks"
-	"golang.org/x/tools/go/analysis/analysistest"
 )
 
-func TestFunctions(t *testing.T) {
-	testdata := analysistest.TestData()
-	analysistest.Run(t, testdata, docblocks.Analyzer, "funcs")
-}
+var _ = Describe("Docblocks Analyzer", func() {
+	var testdata string
 
-func TestMethods(t *testing.T) {
-	testdata := analysistest.TestData()
-	analysistest.Run(t, testdata, docblocks.Analyzer, "methods")
-}
+	BeforeEach(func() {
+		testdata = analysistest.TestData()
+	})
 
-func TestTypes(t *testing.T) {
-	testdata := analysistest.TestData()
-	analysistest.Run(t, testdata, docblocks.Analyzer, "types")
-}
+	Describe("analysing exported functions", func() {
+		It("reports missing or malformed docblocks", func() {
+			results := analysistest.Run(GinkgoT(), testdata, docblocks.Analyzer, "funcs")
+			Expect(results).NotTo(BeEmpty())
+		})
+	})
 
-func TestConstVars(t *testing.T) {
-	testdata := analysistest.TestData()
-	analysistest.Run(t, testdata, docblocks.Analyzer, "constvars")
-}
+	Describe("analysing exported methods", func() {
+		It("reports missing or malformed docblocks", func() {
+			results := analysistest.Run(GinkgoT(), testdata, docblocks.Analyzer, "methods")
+			Expect(results).NotTo(BeEmpty())
+		})
+	})
 
-func TestExclusions(t *testing.T) {
-	testdata := analysistest.TestData()
-	analysistest.Run(t, testdata, docblocks.Analyzer, "mainpkg")
-}
+	Describe("analysing exported types", func() {
+		It("reports missing or malformed docblocks", func() {
+			results := analysistest.Run(GinkgoT(), testdata, docblocks.Analyzer, "types")
+			Expect(results).NotTo(BeEmpty())
+		})
+	})
+
+	Describe("analysing exported constants and variables", func() {
+		It("reports missing or malformed docblocks", func() {
+			results := analysistest.Run(GinkgoT(), testdata, docblocks.Analyzer, "constvars")
+			Expect(results).NotTo(BeEmpty())
+		})
+	})
+
+	Context("when the package is excluded", func() {
+		It("skips main package files", func() {
+			results := analysistest.Run(GinkgoT(), testdata, docblocks.Analyzer, "mainpkg")
+			Expect(results).NotTo(BeNil())
+		})
+	})
+})

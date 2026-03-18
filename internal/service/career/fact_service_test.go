@@ -10,6 +10,8 @@ import (
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
+	mockrepo "github.com/baphled/kariya/internal/testutil/mocks/repository"
+	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -563,6 +565,185 @@ var _ = Describe("Career Service - Fact Methods", func() {
 
 			factRepo := service.GetFactRepository()
 			Expect(factRepo).To(Equal(memoryFactRepo))
+		})
+	})
+
+	Describe("GetFactsBySourceEventID - nil repository", func() {
+		It("should return empty slice when repository is nil", func() {
+			serviceWithoutFact := NewService(repo)
+			facts, err := serviceWithoutFact.GetFactsBySourceEventID(ctx, "event-1")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(facts).To(BeEmpty())
+		})
+	})
+
+	Describe("GetFactsBySourceBurstID - nil repository", func() {
+		It("should return empty slice when repository is nil", func() {
+			serviceWithoutFact := NewService(repo)
+			facts, err := serviceWithoutFact.GetFactsBySourceBurstID(ctx, "burst-1")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(facts).To(BeEmpty())
+		})
+	})
+
+	Describe("ExtractFactsFromBurst - detector error path", func() {
+		It("returns empty facts when all burst events are missing", func() {
+			burst := fixtures.Burst(uuid.New().String(), "missing-1", "missing-2")
+			burst.Name = "Ghost burst"
+
+			facts, err := service.ExtractFactsFromBurst(ctx, burst)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(facts).To(BeEmpty())
+		})
+	})
+})
+
+var _ = Describe("Career Service - Fact Methods (Mock-Based)", func() {
+	var (
+		ctrl          *gomock.Controller
+		mockEventRepo *mockrepo.MockEventRepository
+		mockFactRepo  *mockrepo.MockFactRepository
+		svc           *Service
+		ctx           context.Context
+	)
+
+	BeforeEach(func() {
+		ctrl = gomock.NewController(GinkgoT())
+		mockEventRepo = mockrepo.NewMockEventRepository(ctrl)
+		mockFactRepo = mockrepo.NewMockFactRepository(ctrl)
+		svc = NewService(mockEventRepo)
+		svc.SetFactRepository(mockFactRepo)
+		ctx = context.Background()
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
+	})
+
+	Describe("SaveFact - update failure path", func() {
+		It("returns error when fact update fails", func() {
+			factID := uuid.New().String()
+			existingFact := fixtures.Fact(factID, "evt-1")
+			fact := fixtures.FactForSave("Updated achievement text", []string{"technical"}, career.RoleFitStaff, []string{"peer"}, "evt-1")
+			fact.ID = factID
+
+			mockFactRepo.EXPECT().
+				GetByID(gomock.Any(), factID).
+				Return(existingFact, nil)
+			mockFactRepo.EXPECT().
+				Update(gomock.Any(), gomock.Any()).
+				Return(errors.New("update failed"))
+
+			err := svc.SaveFact(ctx, fact)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("failed to update fact"))
+		})
+
+		It("returns error when fact create fails", func() {
+			fact := fixtures.FactForSave("New fact for create error", []string{"technical"}, career.RoleFitStaff, []string{"peer"}, "evt-1")
+
+			mockFactRepo.EXPECT().
+				GetByID(gomock.Any(), gomock.Any()).
+				Return(nil, errors.New("not found"))
+			mockFactRepo.EXPECT().
+				Create(gomock.Any(), gomock.Any()).
+				Return(errors.New("create failed"))
+
+			err := svc.SaveFact(ctx, fact)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("failed to create fact"))
+		})
+	})
+
+	Describe("GetFactsBySourceEventID - repo error path", func() {
+		It("returns error when repository query fails", func() {
+			mockFactRepo.EXPECT().
+				GetBySourceEventID(gomock.Any(), "evt-fail").
+				Return(nil, errors.New("database error"))
+
+			facts, err := svc.GetFactsBySourceEventID(ctx, "evt-fail")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("failed to retrieve facts"))
+			Expect(facts).To(BeNil())
+		})
+	})
+
+	Describe("GetFactsBySourceBurstID - repo error path", func() {
+		It("returns error when repository query fails", func() {
+			mockFactRepo.EXPECT().
+				GetBySourceBurstID(gomock.Any(), "burst-fail").
+				Return(nil, errors.New("database error"))
+
+			facts, err := svc.GetFactsBySourceBurstID(ctx, "burst-fail")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("failed to retrieve facts"))
+			Expect(facts).To(BeNil())
+		})
+	})
+
+	Describe("DeleteFact - repo error path", func() {
+		It("returns error when repository delete fails", func() {
+			mockFactRepo.EXPECT().
+				Delete(gomock.Any(), "fact-fail").
+				Return(errors.New("delete failed"))
+
+			err := svc.DeleteFact(ctx, "fact-fail")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("failed to delete fact"))
+		})
+	})
+
+	Describe("ExtractFactsFromAllEvents - progress callback", func() {
+		It("calls progress callback for each event", func() {
+			events := []*career.Event{
+				fixtures.EventWith("id-p1", "Implemented authentication system", "TechCorp", ""),
+				fixtures.EventWith("id-p2", "Led API redesign project", "TechCorp", ""),
+				fixtures.EventWith("id-p3", "Mentored junior developers", "TechCorp", ""),
+			}
+
+			mockEventRepo.EXPECT().
+				List(gomock.Any(), gomock.Any()).
+				Return(events, nil)
+			mockFactRepo.EXPECT().
+				GetByID(gomock.Any(), gomock.Any()).
+				Return(nil, errors.New("not found")).
+				AnyTimes()
+			mockFactRepo.EXPECT().
+				Create(gomock.Any(), gomock.Any()).
+				Return(nil).
+				AnyTimes()
+
+			var progressCalls []int
+			progress := func(current, total int) {
+				progressCalls = append(progressCalls, current)
+			}
+
+			count, _, err := svc.ExtractFactsFromAllEvents(ctx, progress)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(count).To(BeNumerically(">", 0))
+			Expect(progressCalls).To(Equal([]int{1, 2, 3}))
+		})
+
+		It("continues when individual fact save fails", func() {
+			events := []*career.Event{
+				fixtures.EventWith("id-sf1", "Implemented critical system", "TechCorp", ""),
+			}
+
+			mockEventRepo.EXPECT().
+				List(gomock.Any(), gomock.Any()).
+				Return(events, nil)
+			mockFactRepo.EXPECT().
+				GetByID(gomock.Any(), gomock.Any()).
+				Return(nil, errors.New("not found")).
+				AnyTimes()
+			mockFactRepo.EXPECT().
+				Create(gomock.Any(), gomock.Any()).
+				Return(errors.New("save failed")).
+				AnyTimes()
+
+			count, _, err := svc.ExtractFactsFromAllEvents(ctx, nil)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(count).To(Equal(0))
 		})
 	})
 })

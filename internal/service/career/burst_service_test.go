@@ -11,6 +11,8 @@ import (
 	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	"github.com/baphled/kariya/internal/service/career/burstfact"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
+	mockrepo "github.com/baphled/kariya/internal/testutil/mocks/repository"
+	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -305,6 +307,96 @@ var _ = Describe("Career Service - Burst Methods", func() {
 			Expect(burstRepo).To(Equal(memoryBurstRepo))
 		})
 	})
+
+	Describe("DeleteBurst", func() {
+		var (
+			burstRepo *careermemory.BurstRepository
+			testBurst *career.Burst
+		)
+
+		BeforeEach(func() {
+			burstRepo = careermemory.NewBurstRepository()
+			service.SetBurstRepository(burstRepo)
+
+			testBurst = fixtures.Burst("burst-test-1", "event-1", "event-2")
+			testBurst.Description = "A test burst for deletion"
+
+			err := burstRepo.Create(ctx, testBurst)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should delete an existing burst", func() {
+			err := service.DeleteBurst(ctx, testBurst.ID)
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = burstRepo.GetByID(ctx, testBurst.ID)
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should return error when burst ID is empty", func() {
+			err := service.DeleteBurst(ctx, "")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("burst ID cannot be empty"))
+		})
+
+		It("should return error when burst does not exist", func() {
+			err := service.DeleteBurst(ctx, "nonexistent-burst-id")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("failed to delete burst"))
+		})
+
+		It("should return ErrBurstRepositoryNotConfigured when repository is nil", func() {
+			serviceWithoutBurst := NewService(repo)
+			err := serviceWithoutBurst.DeleteBurst(ctx, "burst-1")
+			Expect(err).To(Equal(ErrBurstRepositoryNotConfigured))
+		})
+
+		It("should handle concurrent deletions gracefully", func() {
+			err1 := service.DeleteBurst(ctx, testBurst.ID)
+			Expect(err1).NotTo(HaveOccurred())
+
+			err2 := service.DeleteBurst(ctx, testBurst.ID)
+			Expect(err2).To(HaveOccurred())
+		})
+
+		It("should not affect other bursts when deleting one", func() {
+			burst2 := fixtures.Burst("burst-test-2", "event-3", "event-4")
+			burst2.Name = "Second Burst"
+			burst2.Description = "Another burst"
+			err := burstRepo.Create(ctx, burst2)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = service.DeleteBurst(ctx, testBurst.ID)
+			Expect(err).NotTo(HaveOccurred())
+
+			retrieved, err := burstRepo.GetByID(ctx, burst2.ID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(retrieved.ID).To(Equal(burst2.ID))
+			Expect(retrieved.Name).To(Equal("Second Burst"))
+		})
+	})
+
+	Describe("SaveBurst - additional paths", func() {
+		It("rejects a nil burst", func() {
+			err := service.SaveBurst(ctx, nil)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("burst cannot be nil"))
+		})
+
+		It("saves burst without repository configured (no-op)", func() {
+			burst := fixtures.Burst("burst-no-repo", "evt-1", "evt-2")
+
+			err := service.SaveBurst(ctx, burst)
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
+
+	Describe("RejectBurstSuggestion - empty event IDs", func() {
+		It("returns nil for empty event IDs", func() {
+			err := service.RejectBurstSuggestion(ctx, []string{})
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
 })
 
 // failingBurstRepo wraps a real repository but forces Update to fail.
@@ -335,3 +427,95 @@ func (f *failingBurstRepo) List(ctx context.Context, filters careerrepo.BurstLis
 func (f *failingBurstRepo) Count(ctx context.Context, filters careerrepo.BurstListFilters) (int, error) {
 	return f.inner.Count(ctx, filters)
 }
+
+var _ = Describe("Career Service - Burst Methods (Mock-Based)", func() {
+	var (
+		ctrl          *gomock.Controller
+		mockEventRepo *mockrepo.MockEventRepository
+		mockBurstRepo *mockrepo.MockBurstRepository
+		svc           *Service
+		ctx           context.Context
+	)
+
+	BeforeEach(func() {
+		ctrl = gomock.NewController(GinkgoT())
+		mockEventRepo = mockrepo.NewMockEventRepository(ctrl)
+		mockBurstRepo = mockrepo.NewMockBurstRepository(ctrl)
+		svc = NewService(mockEventRepo)
+		svc.SetBurstRepository(mockBurstRepo)
+		ctx = context.Background()
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
+	})
+
+	Describe("SaveBurst - repo error path", func() {
+		It("returns error when burst repo create fails", func() {
+			burst := fixtures.Burst("burst-save-fail", "evt-1", "evt-2")
+
+			mockBurstRepo.EXPECT().
+				Create(gomock.Any(), gomock.Any()).
+				Return(errors.New("create failed"))
+
+			err := svc.SaveBurst(ctx, burst)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("failed to save burst"))
+		})
+	})
+
+	Describe("DetectAndSaveBursts - empty events and suggestion failures", func() {
+		It("returns zero counts when no events exist", func() {
+			mockEventRepo.EXPECT().
+				List(gomock.Any(), gomock.Any()).
+				Return([]*career.Event{}, nil)
+
+			count, saved, err := svc.DetectAndSaveBursts(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(count).To(Equal(0))
+			Expect(saved).To(Equal(0))
+		})
+
+		It("returns error when SaveBurstSuggestions fails", func() {
+			now := time.Now()
+			events := []*career.Event{
+				fixtures.EventWith("d1", "Led backend infrastructure project for TechCorp", "TechCorp", "Platform"),
+				fixtures.EventWith("d2", "Led backend infrastructure initiative for TechCorp", "TechCorp", "Platform"),
+			}
+			events[0].Date = now
+			events[1].Date = now.Add(24 * time.Hour)
+
+			mockEventRepo.EXPECT().
+				List(gomock.Any(), gomock.Any()).
+				Return(events, nil)
+			mockEventRepo.EXPECT().
+				GetByID(gomock.Any(), gomock.Any()).
+				Return(events[0], nil).
+				AnyTimes()
+			mockBurstRepo.EXPECT().
+				Create(gomock.Any(), gomock.Any()).
+				Return(nil).
+				AnyTimes()
+
+			count, saved, err := svc.DetectAndSaveBursts(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(count).To(BeNumerically(">=", 0))
+			Expect(saved).To(BeNumerically(">=", 0))
+		})
+	})
+
+	Describe("SuggestBurstsWithOptions - detector error", func() {
+		It("returns empty when all events are missing from repo", func() {
+			mockEventRepo.EXPECT().
+				GetByID(gomock.Any(), "missing-1").
+				Return(nil, errors.New("not found"))
+			mockEventRepo.EXPECT().
+				GetByID(gomock.Any(), "missing-2").
+				Return(nil, errors.New("not found"))
+
+			suggestions, err := svc.SuggestBurstsWithOptions(ctx, []string{"missing-1", "missing-2"}, nil)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(suggestions).To(BeEmpty())
+		})
+	})
+})

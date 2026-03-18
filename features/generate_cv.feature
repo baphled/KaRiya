@@ -257,6 +257,18 @@ Feature: Generate CV
     And I press "e" to edit
     Then I should see the CV wizard modal
 
+  @happy
+  Scenario: Review screen shows selected audience
+    Given I have generated a CV
+    When I am on the CV review screen
+    Then I should see "hiring_manager"
+
+  @happy
+  Scenario: Preview screen shows audience-specific highlights
+    Given I have generated a CV
+    When I navigate to the CV preview screen
+    Then I should see "Key Highlights"
+
   # ============================================================================
   # CV Preview Screen
   # ============================================================================
