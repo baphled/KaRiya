@@ -1,0 +1,37 @@
+# Codecov Configuration
+# https://docs.codecov.com/docs/codecov-yaml
+
+coverage:
+  precision: 2
+  round: down
+  range: 0..100
+  
+  status:
+    project:
+      default:
+        target: 85%
+        threshold: 2%
+        base: auto
+        branches:
+          - main
+          - next
+    patch:
+      default:
+        target: 60%           # Lower threshold for refactoring/config PRs
+        threshold: 5%
+        branches:
+          - main
+          - next
+
+comment:
+  layout: "reach,diff,files,footer"
+  behavior: default
+  require_changes: false
+  require_base: no
+  require_head: yes
+  show_critical_path: yes
+
+# Ignore specific paths that cannot be covered
+ignore:
+  - "vendor"
+  - "node_modules"
