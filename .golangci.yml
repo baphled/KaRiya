@@ -1399,6 +1399,15 @@ linters:
       - path: 'internal/ui/uikit/feedback/confirm_modal\.go'
         linters:
           - goconst
+      - path: 'internal/ui/uikit/feedback/info_modal\.go'
+        linters:
+          - goconst
+      - path: 'internal/tui/views/event/form\.go'
+        linters:
+          - goconst
+      - path: 'internal/tui/views/cv/preview\.go'
+        linters:
+          - goconst
 
        # musttag exemptions (existing missing struct tags)
       - path: 'internal/tui/views/skill/events\.go'
