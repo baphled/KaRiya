@@ -196,7 +196,7 @@ jobs:
 
       - name: Comment on PR if breaking changes detected
         if: steps.breaking.outputs.has_breaking == 'true'
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             github.rest.issues.createComment({
@@ -239,7 +239,7 @@ jobs:
       pull-requests: read
     steps:
       - name: Check for unresolved review threads
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             // Get PR number from different event types
