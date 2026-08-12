@@ -2,13 +2,10 @@ package main
 
 import (
 	"bytes"
-	"path/filepath"
 	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	"github.com/baphled/kariya/internal/config"
 )
 
 var _ = Describe("CLI Entry Point", func() {
@@ -61,25 +58,6 @@ var _ = Describe("CLI Entry Point", func() {
 				output := outBuf.String()
 				Expect(output).To(ContainSubstring("--db"))
 				Expect(output).To(ContainSubstring("--in-memory"))
-			})
-		})
-
-		Context("with no arguments", func() {
-			It("should attempt to launch TUI", func() {
-				// TUI launch requires config isolation to prevent test pollution
-				tempDir := GinkgoT().TempDir()
-				configPath := filepath.Join(tempDir, "config.yaml")
-				config.SetConfigPathForTesting(configPath)
-				defer config.ResetConfigPath()
-
-				// TUI launch cannot be fully tested in unit tests (requires terminal)
-				// This test verifies that the command attempts to initialize and launch
-				// without panicking due to missing config isolation.
-				// In a real scenario, the TUI would render to the terminal.
-				Skip("TUI launch requires interactive terminal; verified via VHS demo and manual testing")
-
-				exitCode := run([]string{}, &outBuf, &errBuf)
-				Expect(exitCode).To(Equal(0))
 			})
 		})
 

@@ -1,5 +1,5 @@
 # Default TUI Launch Demo
-# Demonstrates running kariya with no arguments launches the interactive TUI
+# Demonstrates running kariya with no subcommand launches the interactive TUI
 
 Output demos/default-tui-launch.gif
 
