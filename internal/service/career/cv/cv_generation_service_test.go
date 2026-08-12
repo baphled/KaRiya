@@ -335,6 +335,29 @@ var _ = Describe("DefaultCVGenerationService", func() {
 			Expect(cv).NotTo(BeNil())
 			Expect(cv.ID).NotTo(BeEmpty())
 		})
+
+		It("should set Specialism in the generated CV based on TechnologyFocus, FocusArea, and Sector", func() {
+			config := fixtures.CVConfigWith("test-cv", "senior_ic", "hiring_manager")
+			config.TechnologyFocus = "JavaScript"
+			config.FocusArea = "frontend"
+			config.Sector = "public-sector"
+			config.EventFilters = make(map[string]interface{})
+
+			service := NewCVGenerationService(
+				NewEmptyRepository(),
+				NewEmptyFactRepository(),
+				NewMockConfigManager(),
+				NewEmptyBulletGenerator(),
+				NewMockDataProcessingService(),
+				NewEmptySectionBuilder(),
+				log,
+			)
+
+			cv, err := service.GenerateCVFromConfig(ctx, config)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cv).NotTo(BeNil())
+			Expect(cv.Specialism).To(Equal("Public Sector Engineering"))
+		})
 	})
 
 	Describe("Edge Cases", func() {
